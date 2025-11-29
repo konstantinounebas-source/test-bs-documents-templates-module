@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { FormTemplate } from "@/entities/FormTemplate";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import orderBy from 'lodash/orderBy';
-import { DndProvider } from '@hello-pangea/dnd';
+
 import { Badge } from "@/components/ui/badge";
 
 import CreateTemplateDialog from "../components/templates/CreateTemplateDialog";
