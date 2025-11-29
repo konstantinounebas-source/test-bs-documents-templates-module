@@ -1,0 +1,328 @@
+import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Edit, AlertTriangle, MapPin, ChevronDown, ChevronRight, Star, DollarSign } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+import UpdateStockDialog from "./UpdateStockDialog";
+
+export default function StockOverviewTable({ products, categories, vendors, isLoading, onDataUpdated }) {
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
+  const [expandedRows, setExpandedRows] = useState(new Set());
+
+  const getCategoryName = (categoryId) => {
+    const category = categories.find(c => c.id === categoryId);
+    return category?.name || 'N/A';
+  };
+
+  const getVendorName = (vendorId) => {
+    const vendor = vendors.find(v => v.id === vendorId);
+    return vendor?.name || 'N/A';
+  };
+
+  const handleUpdateStock = (product) => {
+    setSelectedProduct(product);
+    setShowUpdateDialog(true);
+  };
+
+  const toggleRow = (productId) => {
+    const newExpanded = new Set(expandedRows);
+    if (newExpanded.has(productId)) {
+      newExpanded.delete(productId);
+    } else {
+      newExpanded.add(productId);
+    }
+    setExpandedRows(newExpanded);
+  };
+
+  const renderUnitCost = (product) => {
+    const pvs = product.productVendors || [];
+    
+    if (pvs.length === 0) {
+      return <span className="text-slate-400">No vendors</span>;
+    }
+    
+    const preferredPV = pvs.find(pv => pv.is_preferred);
+    
+    if (preferredPV) {
+      return (
+        <div className="flex items-center gap-1">
+          <span className="font-semibold">€{preferredPV.unit_cost.toFixed(2)}</span>
+          <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+        </div>
+      );
+    }
+    
+    if (pvs.length === 1) {
+      return <span>€{pvs[0].unit_cost.toFixed(2)}</span>;
+    }
+    
+    // Multiple vendors, show range
+    const costs = pvs.map(pv => pv.unit_cost);
+    const minCost = Math.min(...costs);
+    const maxCost = Math.max(...costs);
+    
+    return (
+      <div>
+        <div className="font-semibold">€{minCost.toFixed(2)} - €{maxCost.toFixed(2)}</div>
+        <div className="text-xs text-slate-500">{pvs.length} vendors</div>
+      </div>
+    );
+  };
+
+  const renderTotalValue = (product) => {
+    const pvs = product.productVendors || [];
+    
+    if (pvs.length === 0) {
+      return <span className="text-slate-400">-</span>;
+    }
+    
+    const preferredPV = pvs.find(pv => pv.is_preferred);
+    const unitCost = preferredPV?.unit_cost || 
+                     (pvs.length > 0 ? pvs.reduce((s, pv) => s + pv.unit_cost, 0) / pvs.length : 0);
+    
+    const totalValue = product.available * unitCost;
+    
+    return (
+      <span className="font-semibold">
+        €{totalValue.toFixed(2)}
+      </span>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full" />
+        ))}
+      </div>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <div className="p-12 text-center">
+        <p className="text-slate-500">No products found matching your filters.</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-slate-50">
+              <TableHead className="w-10"></TableHead>
+              <TableHead>SKU</TableHead>
+              <TableHead>Product Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Total On Hand</TableHead>
+              <TableHead>Reserved</TableHead>
+              <TableHead>Available</TableHead>
+              <TableHead>Minimum Stock</TableHead>
+              <TableHead>Unit Cost</TableHead>
+              <TableHead>Total Value</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {products.map((product) => {
+              const isLowStock = product.available < (product.minimum_stock || 0);
+              const isOutOfStock = product.available === 0;
+              const isExpanded = expandedRows.has(product.id);
+              const hasMultipleLocations = product.items && product.items.length > 1;
+              const hasVendors = product.productVendors && product.productVendors.length > 0;
+              const canExpand = hasMultipleLocations || hasVendors;
+              
+              return (
+                <React.Fragment key={product.id}>
+                  <TableRow className="hover:bg-slate-50">
+                    <TableCell>
+                      {canExpand && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => toggleRow(product.id)}
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="h-4 w-4" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">{product.sku}</TableCell>
+                    <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell className="max-w-xs truncate text-sm text-slate-600">
+                      {product.description || '-'}
+                    </TableCell>
+                    <TableCell>{getCategoryName(product.category_id)}</TableCell>
+                    <TableCell>{product.total} {product.unit_of_measure}</TableCell>
+                    <TableCell className="text-orange-600">{product.reserved} {product.unit_of_measure}</TableCell>
+                    <TableCell>
+                      <span className={isLowStock ? 'text-red-600 font-semibold' : 'text-green-600 font-semibold'}>
+                        {product.available} {product.unit_of_measure}
+                      </span>
+                    </TableCell>
+                    <TableCell>{product.minimum_stock || 0} {product.unit_of_measure}</TableCell>
+                    <TableCell>{renderUnitCost(product)}</TableCell>
+                    <TableCell>{renderTotalValue(product)}</TableCell>
+                    <TableCell>
+                      {isOutOfStock ? (
+                        <Badge className="bg-red-100 text-red-800">
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          Out of Stock
+                        </Badge>
+                      ) : isLowStock ? (
+                        <Badge className="bg-orange-100 text-orange-800">
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          Low Stock
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-green-100 text-green-800">Healthy</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleUpdateStock(product)}
+                          title="Update Stock"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                  
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <TableRow className="bg-slate-50">
+                      <TableCell colSpan={13} className="p-0">
+                        <div className="px-12 py-4 space-y-4">
+                          {/* Stock by Location */}
+                          {hasMultipleLocations && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-slate-700">
+                                <MapPin className="w-4 h-4" />
+                                Stock by Location:
+                              </div>
+                              <div className="space-y-2">
+                                {product.items.map((item, idx) => {
+                                  const itemAvailable = (item.quantity_on_hand || 0) - (item.quantity_reserved || 0);
+                                  return (
+                                    <div 
+                                      key={idx} 
+                                      className="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-200"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <MapPin className="w-4 h-4 text-slate-400" />
+                                        <span className="font-medium text-slate-900">
+                                          {item.warehouse_location}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-6 text-sm">
+                                        <div>
+                                          <span className="text-slate-600">On Hand: </span>
+                                          <span className="font-semibold">{item.quantity_on_hand || 0}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-slate-600">Reserved: </span>
+                                          <span className="font-semibold text-orange-600">{item.quantity_reserved || 0}</span>
+                                        </div>
+                                        <div>
+                                          <span className="text-slate-600">Available: </span>
+                                          <span className="font-semibold text-green-600">{itemAvailable}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Vendors & Pricing */}
+                          {hasVendors && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-slate-700">
+                                <DollarSign className="w-4 h-4" />
+                                Vendors & Pricing:
+                              </div>
+                              <div className="space-y-2">
+                                {product.productVendors.map((pv, idx) => (
+                                  <div 
+                                    key={idx} 
+                                    className="flex items-center justify-between bg-white p-3 rounded-lg border border-slate-200"
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <span className="font-medium text-slate-900">
+                                        {getVendorName(pv.vendor_id)}
+                                      </span>
+                                      {pv.is_preferred && (
+                                        <Badge className="bg-yellow-100 text-yellow-800 flex items-center gap-1">
+                                          <Star className="w-3 h-3 fill-yellow-600" />
+                                          Preferred
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-6 text-sm">
+                                      <div>
+                                        <span className="text-slate-600">Unit Cost: </span>
+                                        <span className="font-semibold text-slate-900">€{pv.unit_cost.toFixed(2)}</span>
+                                      </div>
+                                      {pv.lead_time_days && (
+                                        <div>
+                                          <span className="text-slate-600">Lead Time: </span>
+                                          <span className="font-semibold">{pv.lead_time_days} days</span>
+                                        </div>
+                                      )}
+                                      {pv.minimum_order_quantity && (
+                                        <div>
+                                          <span className="text-slate-600">Min Order: </span>
+                                          <span className="font-semibold">{pv.minimum_order_quantity}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {!hasMultipleLocations && !hasVendors && (
+                            <p className="text-sm text-slate-500 text-center py-2">No additional details available</p>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      <UpdateStockDialog
+        open={showUpdateDialog}
+        onClose={() => {
+          setShowUpdateDialog(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+        onStockUpdated={onDataUpdated}
+      />
+    </>
+  );
+}

@@ -1,0 +1,1842 @@
+
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { base44 } from "@/api/base44Client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScanBarcode, Package, CheckCircle, AlertTriangle, ArrowRight, Info, Camera, X, Plus, Zap, TrendingUp, TrendingDown, Move, Activity, Upload, Image as ImageIcon, ShoppingCart } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+import CreateEditVendorDialog from "../components/warehouse/CreateEditVendorDialog";
+
+// Helper function to introduce a delay
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+export default function BarcodeScannerPage() {
+  const [products, setProducts] = useState([]);
+  const [stockItems, setStockItems] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [systemUsers, setSystemUsers] = useState([]);
+  const [appUsers, setAppUsers] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [scannedBarcode, setScannedBarcode] = useState("");
+  const [matchedProduct, setMatchedProduct] = useState(null);
+  const [movementType, setMovementType] = useState("IN");
+  const [quantity, setQuantity] = useState("1");
+  const [fromLocation, setFromLocation] = useState("");
+  const [toLocation, setToLocation] = useState("");
+  const [selectedPO, setSelectedPO] = useState("");
+  const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [waybillNumber, setWaybillNumber] = useState("");
+  const [chargedToPerson, setChargedToPerson] = useState("");
+  const [selectedVendor, setSelectedVendor] = useState("");
+  const [unitCost, setUnitCost] = useState("");
+  const [notes, setNotes] = useState("");
+  const [recentScans, setRecentScans] = useState([]);
+  const [scanResult, setScanResult] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showCreateVendorDialog, setShowCreateVendorDialog] = useState(false);
+  const [recentlyScannedProducts, setRecentlyScannedProducts] = useState([]);
+  const [movements, setMovements] = useState([]);
+  const [poItemInfo, setPOItemInfo] = useState(null);
+  const [uploadedPhotos, setUploadedPhotos] = useState([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const photoInputRef = useRef(null);
+
+  // New state for PO selection dialog
+  const [showPOSelectionDialog, setShowPOSelectionDialog] = useState(false);
+  const [selectedPOForBulkReceive, setSelectedPOForBulkReceive] = useState(null);
+  const [poItemsToReceive, setPOItemsToReceive] = useState([]);
+
+  // Camera scanning state
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraError, setCameraError] = useState(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const scanIntervalRef = useRef(null);
+
+  // Helper to format dates in Cyprus/Athens timezone
+  const formatLocalTime = (date) => {
+    try {
+      return date.toLocaleString('en-GB', {
+        timeZone: 'Europe/Athens',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+    } catch (error) {
+      console.error('Time formatting error:', error);
+      return date.toLocaleTimeString('el-GR');
+    }
+  };
+
+  const loadData = useCallback(async () => {
+    try {
+      // Load data sequentially with LARGER delays to avoid rate limiting
+      console.log("Loading products...");
+      const productsData = await base44.entities.Product.filter({ is_active: true });
+      setProducts(productsData);
+      
+      await delay(500);
+      console.log("Loading stock items...");
+      const stockData = await base44.entities.StockItem.list();
+      setStockItems(stockData);
+      
+      await delay(500);
+      console.log("Loading locations...");
+      const locationsData = await base44.entities.WarehouseLocation.filter({ is_active: true });
+      setLocations(locationsData);
+      
+      await delay(500);
+      console.log("Loading purchase orders...");
+      const allPoData = await base44.entities.PurchaseOrder.list().catch(() => []);
+      
+      await delay(500);
+      console.log("Loading current user...");
+      const user = await base44.auth.me();
+      setCurrentUser(user);
+      
+      await delay(500);
+      console.log("Loading system users...");
+      const sysUsers = await base44.entities.User.list().catch(() => []);
+      setSystemUsers(sysUsers);
+      
+      await delay(500);
+      console.log("Loading app users...");
+      const aUsers = await base44.entities.AppUser.list().catch(() => []);
+      setAppUsers(aUsers);
+      
+      await delay(500);
+      console.log("Loading vendors...");
+      const vendorsData = await base44.entities.Vendor.filter({ is_active: true });
+      setVendors(vendorsData);
+      
+      await delay(500);
+      console.log("Loading movements...");
+      const movementsData = await base44.entities.StockMovement.list("-created_date");
+      setMovements(movementsData);
+
+      // Process POs to include calculated received quantities based on movements
+      const processedPOs = allPoData.map(po => {
+        let updatedItems = (po.items || []).map(item => {
+          const receivedQty = movementsData
+            .filter(m =>
+              m.reference_type === 'PurchaseOrder' &&
+              m.reference_id === po.id &&
+              m.product_id === item.product_id &&
+              m.movement_type === 'IN'
+            )
+            .reduce((sum, m) => sum + m.quantity, 0);
+          return { ...item, quantity_received: receivedQty };
+        });
+
+        let newStatus = 'Confirmed';
+        const totalOrdered = updatedItems.reduce((sum, item) => sum + (item.quantity_ordered || 0), 0);
+        const totalReceived = updatedItems.reduce((sum, item) => sum + (item.quantity_received || 0), 0);
+
+        if (totalOrdered > 0) {
+          if (totalReceived >= totalOrdered) {
+            newStatus = 'Received';
+          } else if (totalReceived > 0) {
+            newStatus = 'Partially Received';
+          }
+        }
+
+        return { ...po, items: updatedItems, status: newStatus };
+      });
+
+      // Only show non-completed POs (Confirmed and Partially Received)
+      const filteredPOs = processedPOs.filter(po => 
+        ['Confirmed', 'Partially Received'].includes(po.status)
+      );
+      
+      setPurchaseOrders(filteredPOs);
+      console.log("Data loaded successfully");
+    } catch (error) {
+      console.error("Error loading data:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+    loadRecentScans();
+  }, [loadData]);
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (selectedPO && matchedProduct && movementType === "IN") {
+      const po = purchaseOrders.find(p => p.id === selectedPO);
+      if (po) {
+        setSelectedVendor(po.vendor_id);
+        
+        const poItem = po.items.find(item => item.product_id === matchedProduct.id);
+        if (poItem) {
+          const quantityOrdered = poItem.quantity_ordered;
+          const quantityReceived = poItem.quantity_received || 0;
+          const quantityRemaining = quantityOrdered - quantityReceived;
+          
+          setPOItemInfo({
+            quantityOrdered,
+            quantityReceived,
+            quantityRemaining,
+            unitCost: poItem.unit_cost
+          });
+          
+          setUnitCost(String(poItem.unit_cost));
+          
+          if (quantityRemaining > 0 && parseInt(quantity) > quantityRemaining) {
+            setQuantity(String(quantityRemaining));
+          }
+        } else {
+          setPOItemInfo(null);
+          setUnitCost("");
+        }
+      }
+    } else {
+      setPOItemInfo(null);
+      if (movementType === "IN" && !selectedPO) {
+        setSelectedVendor("");
+        setUnitCost("");
+      }
+    }
+  }, [selectedPO, matchedProduct, movementType, purchaseOrders, quantity]);
+
+  const loadRecentScans = () => {
+    try {
+      const stored = localStorage.getItem('recentlyScannedProducts');
+      if (stored) {
+        setRecentlyScannedProducts(JSON.parse(stored));
+      }
+    } catch (error) {
+      console.error("Error loading recent scans:", error);
+    }
+  };
+
+  const saveRecentScan = (productSku) => {
+    try {
+      let recent = [...recentlyScannedProducts];
+      recent = recent.filter(sku => sku !== productSku);
+      recent.unshift(productSku);
+      recent = recent.slice(0, 10);
+      
+      setRecentlyScannedProducts(recent);
+      localStorage.setItem('recentlyScannedProducts', JSON.stringify(recent));
+    } catch (error) {
+      console.error("Error saving recent scan:", error);
+    }
+  };
+
+  const startCamera = async () => {
+    setCameraError(null);
+    setShowCamera(true);
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+      }
+
+      if ('BarcodeDetector' in window) {
+        const barcodeDetector = new window.BarcodeDetector({
+          formats: [
+            'qr_code',
+            'ean_13',
+            'ean_8',
+            'code_128',
+            'code_39',
+            'code_93',
+            'codabar',
+            'upc_a',
+            'upc_e'
+          ]
+        });
+        
+        setIsScanning(true);
+        
+        scanIntervalRef.current = setInterval(async () => {
+          if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
+            try {
+              const barcodes = await barcodeDetector.detect(videoRef.current);
+              if (barcodes.length > 0) {
+                const barcode = barcodes[0].rawValue;
+                handleBarcodeDetected(barcode);
+              }
+            } catch (error) {
+              console.error('Barcode detection error:', error);
+            }
+          }
+        }, 200);
+        
+      } else {
+        setCameraError("Your browser doesn't support automatic barcode scanning. Please enter the code manually.");
+        stopCamera();
+      }
+      
+    } catch (error) {
+      console.error("Camera access error:", error);
+      let errorMessage = "Could not access camera. ";
+      
+      if (error.name === 'NotAllowedError') {
+        errorMessage += "Please allow camera access in your browser settings.";
+      } else if (error.name === 'NotFoundError') {
+        errorMessage += "No camera found on your device.";
+      } else {
+        errorMessage += "Please check your camera permissions.";
+      }
+      
+      setCameraError(errorMessage);
+      setShowCamera(false);
+    }
+  };
+
+  const stopCamera = () => {
+    setIsScanning(false);
+    
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
+    
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    
+    setShowCamera(false);
+  };
+
+  const handleBarcodeDetected = (barcode) => {
+    stopCamera();
+    setScannedBarcode(barcode);
+    
+    const product = products.find(
+      p => p.barcode === barcode || 
+           p.qr_code === barcode ||
+           p.sku === barcode
+    );
+
+    if (product) {
+      setMatchedProduct(product);
+      setScanResult({ type: 'success', message: `✓ Product found: ${product.name}` });
+      saveRecentScan(product.sku);
+    } else {
+      setMatchedProduct(null);
+      setScanResult({ type: 'error', message: `No product found with code: "${barcode}"` });
+    }
+  };
+
+  const handleManualSearch = async (e) => {
+    e.preventDefault();
+    if (!scannedBarcode.trim()) {
+      setScanResult({ type: 'error', message: 'Please enter a barcode, QR code, or SKU' });
+      return;
+    }
+
+    const product = products.find(
+      p => p.barcode === scannedBarcode.trim() || 
+           p.qr_code === scannedBarcode.trim() ||
+           p.sku === scannedBarcode.trim()
+    );
+
+    if (product) {
+      setMatchedProduct(product);
+      setScanResult({ type: 'success', message: `✓ Product found: ${product.name}` });
+      saveRecentScan(product.sku);
+    } else {
+      setMatchedProduct(null);
+      setScanResult({ type: 'error', message: `No product found with code: "${scannedBarcode.trim()}"` });
+    }
+  };
+
+  const getAvailableStockAtLocation = useCallback((productId, locationName) => {
+    const item = stockItems.find(
+      s => s.product_id === productId && s.warehouse_location === locationName
+    );
+    if (!item) return 0;
+    return (item.quantity_on_hand || 0) - (item.quantity_reserved || 0);
+  }, [stockItems]);
+
+  const getAvailableLocationsForProduct = useCallback(() => {
+    if (!matchedProduct) return [];
+    const uniqueLocations = [...new Set(
+      stockItems
+        .filter(s => s.product_id === matchedProduct.id && (s.quantity_on_hand || 0) > 0)
+        .map(s => s.warehouse_location)
+    )];
+    return uniqueLocations;
+  }, [matchedProduct, stockItems]);
+
+  const getProductStock = useCallback((productId) => {
+    const items = stockItems.filter(s => s.product_id === productId);
+    return items.reduce((sum, item) => sum + (item.quantity_on_hand || 0), 0);
+  }, [stockItems]);
+
+  const handlePhotoUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setIsUploadingPhoto(true);
+    try {
+      const uploadPromises = files.map(async (file) => {
+        const result = await base44.integrations.Core.UploadFile({ file });
+        return {
+          url: result.file_url,
+          filename: file.name,
+          uploaded_at: new Date().toISOString()
+        };
+      });
+
+      const uploadedFiles = await Promise.all(uploadPromises);
+      setUploadedPhotos(prev => [...prev, ...uploadedFiles]);
+      setScanResult({ type: 'success', message: `✓ Uploaded ${files.length} photo(s)` });
+    } catch (error) {
+      console.error("Error uploading photos:", error);
+      setScanResult({ type: 'error', message: 'Failed to upload photos' });
+    }
+    setIsUploadingPhoto(false);
+  };
+
+  const removePhoto = (index) => {
+    setUploadedPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleStockMovement = async () => {
+    if (!matchedProduct) {
+      setScanResult({ type: 'error', message: 'Please scan a product first' });
+      return;
+    }
+
+    const quantityNum = parseInt(quantity);
+    if (!quantityNum || quantityNum < 1) {
+      setScanResult({ type: 'error', message: 'Please enter a valid quantity (minimum 1)' });
+      return;
+    }
+
+    // Validation based on movement type
+    if (movementType === "TRANSFER") {
+      if (!fromLocation) {
+        setScanResult({ type: 'error', message: 'Please select a From Location for transfer' });
+        return;
+      }
+      if (!toLocation) {
+        setScanResult({ type: 'error', message: 'Please select a To Location for transfer' });
+        return;
+      }
+      if (fromLocation === toLocation) {
+        setScanResult({ type: 'error', message: 'From and To locations must be different' });
+        return;
+      }
+      
+      const availableStock = getAvailableStockAtLocation(matchedProduct.id, fromLocation);
+      if (availableStock < quantityNum) {
+        setScanResult({ 
+          type: 'error', 
+          message: `❌ Insufficient stock at "${fromLocation}". Available: ${availableStock} ${matchedProduct.unit_of_measure}, Required: ${quantityNum} ${matchedProduct.unit_of_measure}` 
+        });
+        return;
+      }
+    } else if (movementType === "IN") {
+      if (!toLocation) {
+        setScanResult({ type: 'error', message: 'Please select a warehouse location' });
+        return;
+      }
+      
+      if (!selectedVendor) {
+        setScanResult({ type: 'error', message: 'Please select a vendor for stock IN' });
+        return;
+      }
+      
+      const cost = parseFloat(unitCost);
+      if (unitCost !== "" && (isNaN(cost) || cost < 0)) {
+        setScanResult({ type: 'error', message: 'Please enter a valid unit cost' });
+        return;
+      }
+
+      // Validate against PO if one is selected
+      if (selectedPO) {
+        if (!poItemInfo) {
+          setScanResult({ 
+            type: 'error', 
+            message: `❌ Product "${matchedProduct.name}" is not included in the selected Purchase Order` 
+          });
+          return;
+        }
+        if (poItemInfo.quantityRemaining <= 0) {
+          setScanResult({ 
+            type: 'error', 
+            message: `❌ This product has already been fully received for this PO (${poItemInfo.quantityOrdered} ordered, ${poItemInfo.quantityReceived} received)` 
+          });
+          return;
+        }
+
+        if (quantityNum > poItemInfo.quantityRemaining) {
+          setScanResult({ 
+            type: 'error', 
+            message: `❌ Cannot receive ${quantityNum} units. Only ${poItemInfo.quantityRemaining} remaining in PO (${poItemInfo.quantityOrdered} ordered, ${poItemInfo.quantityReceived} already received)` 
+          });
+          return;
+        }
+      }
+
+    } else if (movementType === "OUT") {
+      if (!fromLocation) {
+        setScanResult({ type: 'error', message: 'Please select a warehouse location' });
+        return;
+      }
+      
+      if (!chargedToPerson) {
+        setScanResult({ type: 'error', message: 'Please select who this material is being charged to' });
+        return;
+      }
+
+      const availableStock = getAvailableStockAtLocation(matchedProduct.id, fromLocation);
+      if (availableStock < quantityNum) {
+        setScanResult({ 
+          type: 'error', 
+          message: `❌ Insufficient stock at "${fromLocation}". Available: ${availableStock} ${matchedProduct.unit_of_measure}, Required: ${quantityNum} ${matchedProduct.unit_of_measure}` 
+        });
+        return;
+      }
+    } else if (movementType === "ADJUSTMENT") {
+      if (!toLocation) {
+        setScanResult({ type: 'error', message: 'Please select a location for the adjustment' });
+        return;
+      }
+    }
+
+    setIsProcessing(true);
+    try {
+      // For IN movements, create or update ProductVendor relationship
+      if (movementType === "IN" && selectedVendor && unitCost !== "") {
+        const cost = parseFloat(unitCost);
+        
+        const existingPVs = await base44.entities.ProductVendor.filter({
+          product_id: matchedProduct.id,
+          vendor_id: selectedVendor
+        });
+        
+        if (existingPVs.length === 0) {
+          await base44.entities.ProductVendor.create({
+            product_id: matchedProduct.id,
+            vendor_id: selectedVendor,
+            unit_cost: cost,
+            is_preferred: false,
+            is_active: true
+          });
+        } else {
+          await base44.entities.ProductVendor.update(existingPVs[0].id, {
+            unit_cost: cost,
+            is_active: true
+          });
+        }
+      }
+
+      // Prepare movement data
+      const movementData = {
+        product_id: matchedProduct.id,
+        movement_type: movementType,
+        quantity: quantityNum,
+        from_location: movementType === "TRANSFER" || movementType === "OUT" ? fromLocation : null,
+        to_location: movementType === "TRANSFER" || movementType === "IN" || movementType === "ADJUSTMENT" ? toLocation : null,
+        performed_by: currentUser.email,
+        scanned_barcode: scannedBarcode,
+        notes: notes || null,
+        waybill_number: waybillNumber || null,
+        photos: uploadedPhotos.length > 0 ? uploadedPhotos : null
+      };
+
+      // Add charged_to_person for OUT movements
+      if (movementType === "OUT") {
+        movementData.charged_to_person = chargedToPerson;
+      }
+
+      // Add vendor reference for IN movements
+      if (movementType === "IN" && selectedVendor) {
+        movementData.reference_type = "Vendor";
+        movementData.reference_id = selectedVendor;
+      }
+
+      // Add PO or invoice reference for IN movements
+      if (movementType === "IN") {
+        if (selectedPO) {
+          movementData.reference_type = "PurchaseOrder";
+          movementData.reference_id = selectedPO;
+        } else if (invoiceNumber) {
+          movementData.reference_type = "Invoice";
+          movementData.reference_id = invoiceNumber;
+        }
+      }
+
+      // Create stock movement record
+      await base44.entities.StockMovement.create(movementData);
+
+      // Update stock items
+      if (movementType === "IN" || movementType === "ADJUSTMENT") {
+        const existingStock = stockItems.find(
+          s => s.product_id === matchedProduct.id && s.warehouse_location === toLocation
+        );
+
+        if (existingStock) {
+          await base44.entities.StockItem.update(existingStock.id, {
+            quantity_on_hand: (existingStock.quantity_on_hand || 0) + quantityNum
+          });
+        } else {
+          await base44.entities.StockItem.create({
+            product_id: matchedProduct.id,
+            warehouse_location: toLocation,
+            quantity_on_hand: quantityNum,
+            quantity_reserved: 0
+          });
+        }
+      } else if (movementType === "OUT") {
+        const existingStock = stockItems.find(
+          s => s.product_id === matchedProduct.id && s.warehouse_location === fromLocation
+        );
+
+        if (existingStock) {
+          await base44.entities.StockItem.update(existingStock.id, {
+            quantity_on_hand: Math.max(0, (existingStock.quantity_on_hand || 0) - quantityNum)
+          });
+        }
+      } else if (movementType === "TRANSFER") {
+        const fromStock = stockItems.find(
+          s => s.product_id === matchedProduct.id && s.warehouse_location === fromLocation
+        );
+        if (fromStock) {
+          await base44.entities.StockItem.update(fromStock.id, {
+            quantity_on_hand: Math.max(0, (fromStock.quantity_on_hand || 0) - quantityNum)
+          });
+        }
+
+        const toStock = stockItems.find(
+          s => s.product_id === matchedProduct.id && s.warehouse_location === toLocation
+        );
+        if (toStock) {
+          await base44.entities.StockItem.update(toStock.id, {
+            quantity_on_hand: (toStock.quantity_on_hand || 0) + quantityNum
+          });
+        } else {
+          await base44.entities.StockItem.create({
+            product_id: matchedProduct.id,
+            warehouse_location: toLocation,
+            quantity_on_hand: quantityNum,
+            quantity_reserved: 0
+          });
+        }
+      }
+
+      // Reload all data after all updates to reflect changes in stock and POs
+      await loadData();
+      
+      // Get charged person name for display
+      let chargedPersonName = '';
+      if (chargedToPerson) {
+        const sysUser = systemUsers.find(u => u.id === chargedToPerson || u.email === chargedToPerson);
+        const appUser = appUsers.find(u => u.id === chargedToPerson);
+        chargedPersonName = sysUser?.full_name || appUser?.full_name || chargedToPerson;
+      }
+
+      // Get vendor name for display
+      let vendorName = '';
+      if (selectedVendor) {
+        const vendor = vendors.find(v => v.id === selectedVendor);
+        vendorName = vendor?.name || '';
+      }
+
+      // Add to recent scans
+      setRecentScans(prev => [{
+        product: matchedProduct.name,
+        barcode: scannedBarcode,
+        type: movementType,
+        quantity: quantityNum,
+        fromLocation: fromLocation || '-',
+        toLocation: toLocation || '-',
+        chargedTo: chargedPersonName || '-',
+        vendor: vendorName || '-',
+        unitCost: movementType === "IN" && unitCost !== "" ? parseFloat(unitCost) : null,
+        waybill: waybillNumber || '-',
+        timestamp: new Date(),
+        hasPhotos: uploadedPhotos.length > 0
+      }, ...prev.slice(0, 9)]);
+
+      let successMsg = '';
+      if (movementType === "IN") {
+        successMsg = `✓ Added ${quantityNum} ${matchedProduct.unit_of_measure} to "${toLocation}" from ${vendorName}`;
+        if (unitCost !== "") {
+          successMsg += ` @ €${parseFloat(unitCost).toFixed(2)}`;
+        }
+      } else if (movementType === "OUT") {
+        successMsg = `✓ Charged ${quantityNum} ${matchedProduct.unit_of_measure} to ${chargedPersonName}`;
+      } else if (movementType === "TRANSFER") {
+        successMsg = `✓ Transferred ${quantityNum} ${matchedProduct.unit_of_measure} from "${fromLocation}" to "${toLocation}"`;
+      } else if (movementType === "ADJUSTMENT") {
+        successMsg = `✓ Adjusted ${quantityNum} ${matchedProduct.unit_of_measure} at "${toLocation}"`;
+      }
+
+      setScanResult({ type: 'success', message: successMsg });
+      saveRecentScan(matchedProduct.sku);
+
+      // Reset form
+      setScannedBarcode("");
+      setMatchedProduct(null);
+      setQuantity("1");
+      setFromLocation("");
+      setToLocation("");
+      setSelectedPO("");
+      setInvoiceNumber("");
+      setWaybillNumber("");
+      setChargedToPerson("");
+      setSelectedVendor("");
+      setUnitCost("");
+      setNotes("");
+      setPOItemInfo(null);
+      setUploadedPhotos([]);
+      
+    } catch (error) {
+      console.error("Error processing stock movement:", error);
+      setScanResult({ type: 'error', message: 'Failed to process stock movement. Please try again.' });
+    }
+    setIsProcessing(false);
+  };
+
+  const handleQuickTest = (sampleSku) => {
+    setScannedBarcode(sampleSku);
+    setTimeout(() => {
+      const product = products.find(p => p.sku === sampleSku);
+      if (product) {
+        setMatchedProduct(product);
+        setScanResult({ type: 'success', message: `✓ Product found: ${product.name}` });
+      }
+    }, 100);
+  };
+
+  const handleQuickTestPO = (poId) => {
+    const po = purchaseOrders.find(p => p.id === poId);
+    if (po) {
+      setSelectedPOForBulkReceive(po);
+      
+      // Initialize items to receive with remaining quantities
+      const itemsToReceive = po.items
+        .filter(item => (item.quantity_ordered - (item.quantity_received || 0)) > 0)
+        .map(item => ({
+          ...item,
+          quantity_to_receive: item.quantity_ordered - (item.quantity_received || 0),
+          selected: true
+        }));
+      
+      setPOItemsToReceive(itemsToReceive);
+      setShowPOSelectionDialog(true);
+    }
+  };
+
+  const handleBulkReceiveFromPO = async () => {
+    const selectedItems = poItemsToReceive.filter(item => item.selected && item.quantity_to_receive > 0);
+    
+    if (selectedItems.length === 0) {
+      setScanResult({ type: 'error', message: 'Please select at least one item to receive' });
+      return;
+    }
+
+    if (!toLocation) {
+      setScanResult({ type: 'error', message: 'Please select a warehouse location' });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const po = selectedPOForBulkReceive;
+      // const vendor = vendors.find(v => v.id === po.vendor_id); // Not used
+
+      // Process each selected item
+      for (const item of selectedItems) {
+        // const product = products.find(p => p.id === item.product_id); // Not used
+        // if (!product) continue;
+
+        // Create stock movement
+        await base44.entities.StockMovement.create({
+          product_id: item.product_id,
+          movement_type: "IN",
+          quantity: item.quantity_to_receive,
+          to_location: toLocation,
+          reference_type: "PurchaseOrder",
+          reference_id: po.id,
+          performed_by: currentUser.email,
+          notes: `Bulk receive from PO ${po.po_number}`,
+          photos: uploadedPhotos.length > 0 ? uploadedPhotos : null
+        });
+
+        // Update stock
+        const existingStock = stockItems.find(
+          s => s.product_id === item.product_id && s.warehouse_location === toLocation
+        );
+
+        if (existingStock) {
+          await base44.entities.StockItem.update(existingStock.id, {
+            quantity_on_hand: (existingStock.quantity_on_hand || 0) + item.quantity_to_receive
+          });
+        } else {
+          await base44.entities.StockItem.create({
+            product_id: item.product_id,
+            warehouse_location: toLocation,
+            quantity_on_hand: item.quantity_to_receive,
+            quantity_reserved: 0
+          });
+        }
+
+        // Update ProductVendor if unit cost exists
+        if (item.unit_cost) {
+          const existingPVs = await base44.entities.ProductVendor.filter({
+            product_id: item.product_id,
+            vendor_id: po.vendor_id
+          });
+          
+          if (existingPVs.length === 0) {
+            await base44.entities.ProductVendor.create({
+              product_id: item.product_id,
+              vendor_id: po.vendor_id,
+              unit_cost: item.unit_cost,
+              is_preferred: false,
+              is_active: true
+            });
+          }
+        }
+
+        // Small delay between items to avoid rate limiting
+        await delay(200);
+      }
+
+      await loadData();
+
+      setScanResult({ 
+        type: 'success', 
+        message: `✓ Successfully received ${selectedItems.length} items from PO ${po.po_number}` 
+      });
+
+      setShowPOSelectionDialog(false);
+      setSelectedPOForBulkReceive(null);
+      setPOItemsToReceive([]);
+      setToLocation("");
+      setUploadedPhotos([]);
+
+    } catch (error) {
+      console.error("Error processing bulk receive:", error);
+      setScanResult({ type: 'error', message: 'Failed to process bulk receive. Please try again.' });
+    }
+    setIsProcessing(false);
+  };
+
+  const getQuickTestProducts = () => {
+    const recent = recentlyScannedProducts
+      .map(sku => products.find(p => p.sku === sku))
+      .filter(Boolean)
+      .slice(0, 5);
+    
+    if (recent.length >= 5) {
+      return recent;
+    }
+    
+    const additional = products
+      .filter(p => !recent.find(r => r.id === p.id))
+      .slice(0, 5 - recent.length);
+    
+    return [...recent, ...additional];
+  };
+
+  const getOpenPOs = () => {
+    return purchaseOrders
+      .filter(po => po.status === 'Confirmed' || po.status === 'Partially Received')
+      .slice(0, 10); // Show up to 10 POs
+  };
+
+  const handleVendorCreated = async () => {
+    setShowCreateVendorDialog(false);
+    const vendorsData = await base44.entities.Vendor.filter({ is_active: true });
+    setVendors(vendorsData);
+    loadData();
+  };
+
+  const handleMovementTypeChange = (value) => {
+    setMovementType(value);
+    setFromLocation("");
+    setToLocation("");
+    setSelectedPO("");
+    setInvoiceNumber("");
+    setWaybillNumber("");
+    setChargedToPerson("");
+    setSelectedVendor("");
+    setUnitCost("");
+    setPOItemInfo(null);
+  };
+
+  const togglePOItemSelection = (index) => {
+    setPOItemsToReceive(prev => prev.map((item, i) => 
+      i === index ? { ...item, selected: !item.selected } : item
+    ));
+  };
+
+  const updatePOItemQuantity = (index, quantity) => {
+    setPOItemsToReceive(prev => prev.map((item, i) => 
+      i === index ? { ...item, quantity_to_receive: parseInt(quantity) || 0 } : item
+    ));
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-4 md:p-6">
+      <div className="max-w-5xl mx-auto space-y-4">
+        {/* Header */}
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Barcode Scanner</h1>
+          <p className="text-sm md:text-base text-slate-600">Scan products for quick stock operations</p>
+        </div>
+
+        {/* Info Alert */}
+        <Alert className="border-blue-200 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-sm text-blue-800">
+            <strong>How to use:</strong> Click "Scan with Camera" to use your device camera, or manually enter a barcode/QR/SKU and search.
+          </AlertDescription>
+        </Alert>
+
+        {cameraError && (
+          <Alert className="border-orange-200 bg-orange-50">
+            <AlertTriangle className="h-4 w-4 text-orange-600" />
+            <AlertDescription className="text-sm text-orange-800">
+              {cameraError}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Main Scanning Card */}
+        <Card className="border-slate-200">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ScanBarcode className="w-5 h-5" />
+              Scan Product
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Button 
+                onClick={startCamera}
+                size="lg"
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm md:text-base"
+              >
+                <Camera className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                Scan with Camera
+              </Button>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 right-0 flex items-center">
+                <div className="w-full border-t border-slate-300"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-slate-500">Or enter manually</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleManualSearch} className="space-y-3">
+              <div>
+                <Label htmlFor="barcode" className="text-sm md:text-base">Barcode / QR Code / SKU</Label>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    id="barcode"
+                    value={scannedBarcode}
+                    onChange={(e) => setScannedBarcode(e.target.value)}
+                    placeholder="Type code here..."
+                    className="flex-1 text-base h-11 md:h-12"
+                  />
+                  <Button 
+                    type="submit" 
+                    size="lg"
+                    variant="outline"
+                    disabled={!scannedBarcode.trim()}
+                    className="px-4 md:px-6 h-11 md:h-12"
+                  >
+                    <ScanBarcode className="w-4 h-4 md:w-5 md:h-5 md:mr-2" />
+                    <span className="hidden md:inline">Search</span>
+                  </Button>
+                </div>
+              </div>
+            </form>
+
+            {scanResult && (
+              <Alert className={
+                scanResult.type === 'success' 
+                  ? 'border-green-200 bg-green-50' 
+                  : 'border-red-200 bg-red-50'
+              }>
+                {scanResult.type === 'success' ? (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                )}
+                <AlertDescription className={`text-sm ${
+                  scanResult.type === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {scanResult.message}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {matchedProduct && (
+              <>
+                <Separator />
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="flex items-start gap-3">
+                    <Package className="w-6 h-6 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-lg text-blue-900 break-words">{matchedProduct.name}</p>
+                          {matchedProduct.description && (
+                            <p className="text-sm text-blue-700 mt-1 break-words">{matchedProduct.description}</p>
+                          )}
+                        </div>
+                        <Badge className="bg-blue-600 text-white flex-shrink-0">Matched ✓</Badge>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm text-blue-700 font-mono">
+                          <span className="font-semibold">SKU:</span> {matchedProduct.sku}
+                        </p>
+                        <p className="text-sm text-blue-600">
+                          <span className="font-semibold">Current Stock:</span> {getProductStock(matchedProduct.id)} {matchedProduct.unit_of_measure}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Movement Type Selection */}
+                  <div className="space-y-2">
+                    <Label>Τύπος Κίνησης *</Label>
+                    <Select value={movementType} onValueChange={handleMovementTypeChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="IN">
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-green-600" />
+                            <span>Εισαγωγή (IN)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="OUT">
+                          <div className="flex items-center gap-2">
+                            <TrendingDown className="w-4 h-4 text-red-600" />
+                            <span>Εξαγωγή (OUT)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="TRANSFER">
+                          <div className="flex items-center gap-2">
+                            <Move className="w-4 h-4 text-blue-600" />
+                            <span>Μεταφορά (TRANSFER)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="ADJUSTMENT">
+                          <div className="flex items-center gap-2">
+                            <Activity className="w-4 h-4 text-orange-600" />
+                            <span>Διόρθωση (ADJUSTMENT)</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Quantity *</Label>
+                    <Input
+                      id="quantity"
+                      type="text"
+                      inputMode="numeric"
+                      value={quantity}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || /^\d+$/.test(value)) {
+                          setQuantity(value);
+                        }
+                      }}
+                      onBlur={(e) => {
+                        const val = parseInt(e.target.value);
+                        if (isNaN(val) || val < 1) {
+                          setQuantity("1");
+                        }
+                      }}
+                      onFocus={(e) => e.target.select()}
+                    />
+                  </div>
+
+                  {/* Conditional Fields based on Movement Type */}
+                  {(movementType === "TRANSFER" || movementType === "OUT") && (
+                    <div className="space-y-2">
+                      <Label>Από Θέση *</Label>
+                      <Select value={fromLocation || 'no_location'} onValueChange={(val) => setFromLocation(val === 'no_location' ? '' : val)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Επιλέξτε θέση" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="no_location">-- Επιλέξτε --</SelectItem>
+                          {getAvailableLocationsForProduct().map(locName => (
+                            <SelectItem key={locName} value={locName}>
+                              {locName} ({getAvailableStockAtLocation(matchedProduct.id, locName)} διαθέσιμα)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {(movementType === "TRANSFER" || movementType === "IN" || movementType === "ADJUSTMENT") && (
+                    <div className="space-y-2">
+                      <Label>Θέση Αποθήκης *</Label>
+                      <Select value={toLocation || 'no_location'} onValueChange={(val) => setToLocation(val === 'no_location' ? '' : val)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Επιλέξτε θέση" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="no_location">-- Επιλέξτε --</SelectItem>
+                          {locations.filter(loc => loc.id && loc.name !== fromLocation).map(loc => (
+                            <SelectItem key={loc.id} value={loc.name}>
+                              {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {movementType === "IN" && (
+                    <>
+                      <Separator />
+                      <div className="space-y-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <p className="text-sm font-semibold text-yellow-900">Vendor & Pricing Information</p>
+                        
+                        <div className="space-y-2">
+                          <Label>Από Purchase Order (προαιρετικό)</Label>
+                          <div className="flex gap-2 items-center">
+                            <Select 
+                              value={selectedPO || 'no_po'} 
+                              onValueChange={(val) => {
+                                setSelectedPO(val === 'no_po' ? '' : val);
+                                if (val !== 'no_po') setInvoiceNumber("");
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Επιλέξτε PO ή κανένα" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="no_po">Χωρίς PO</SelectItem>
+                                {purchaseOrders.filter(po => po.id).map(po => {
+                                  const poItem = po.items.find(item => item.product_id === matchedProduct.id);
+                                  if (!poItem) return null;
+
+                                  const remaining = poItem.quantity_ordered - (poItem.quantity_received || 0);
+                                  const vendor = vendors.find(v => v.id === po.vendor_id);
+                                  
+                                  return (
+                                    <SelectItem key={po.id} value={po.id}>
+                                      PO #{po.po_number} - {vendor?.name || 'N/A'} (Υπόλοιπο: {remaining})
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {poItemInfo && (
+                          <Alert className="bg-blue-50 border-blue-200">
+                            <Info className="w-4 h-4 text-blue-600" />
+                            <AlertDescription className="text-blue-800">
+                              <strong>PO Info:</strong> Παραγγέλθηκαν {poItemInfo.quantityOrdered}, 
+                              παραλήφθηκαν {poItemInfo.quantityReceived}, 
+                              υπόλοιπο <strong>{poItemInfo.quantityRemaining}</strong> τεμάχια.
+                              Κόστος από PO: €{poItemInfo.unitCost.toFixed(2)}
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        {selectedPO && matchedProduct && !poItemInfo && (
+                          <Alert className="border-red-200 bg-red-50">
+                            <AlertTriangle className="h-4 w-4 text-red-600" />
+                            <AlertDescription className="text-red-800">
+                              <strong>Warning:</strong> Product "{matchedProduct.name}" is not included in the selected Purchase Order. Please select a different PO or proceed without a PO reference.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+
+                        <div>
+                          <Label>Προμηθευτής *</Label>
+                          <div className="flex gap-2">
+                            <Select 
+                              value={selectedVendor || 'no_vendor'} 
+                              onValueChange={(val) => setSelectedVendor(val === 'no_vendor' ? '' : val)}
+                              disabled={!!selectedPO}
+                            >
+                              <SelectTrigger className="flex-1">
+                                <SelectValue placeholder="Επιλέξτε προμηθευτή" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="no_vendor">-- Επιλέξτε --</SelectItem>
+                                {vendors.map((vendor) => (
+                                  <SelectItem key={vendor.id} value={vendor.id}>
+                                    {vendor.name} ({vendor.code})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setShowCreateVendorDialog(true)}
+                              title="Add new vendor"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label>Κόστος ανά μονάδα (€) {!selectedPO && "(προαιρετικό)"}</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={unitCost}
+                            onChange={(e) => setUnitCost(e.target.value)}
+                            placeholder="0.00"
+                            disabled={!!selectedPO}
+                          />
+                          <p className="text-xs text-yellow-700 mt-1">
+                            Cost per {matchedProduct.unit_of_measure} from this vendor
+                          </p>
+                        </div>
+
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 right-0 flex items-center">
+                            <div className="w-full border-t border-yellow-300"></div>
+                          </div>
+                          <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-yellow-50 px-2 text-yellow-700">Ή</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="invoice-number">Αριθμός Τιμολογίου</Label>
+                          <Input
+                            id="invoice-number"
+                            value={invoiceNumber}
+                            onChange={(e) => {
+                              setInvoiceNumber(e.target.value);
+                              if (e.target.value) setSelectedPO("");
+                            }}
+                            placeholder="π.χ. INV-2025-001"
+                            disabled={!!selectedPO}
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="waybill-in">Αριθμός Waybill (προαιρετικό)</Label>
+                          <Input
+                            id="waybill-in"
+                            value={waybillNumber}
+                            onChange={(e) => setWaybillNumber(e.target.value)}
+                            placeholder="π.χ. WB-2025-001"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {movementType === "OUT" && (
+                    <>
+                      <div>
+                        <Label>Χρέωση σε Άτομο *</Label>
+                        <Select value={chargedToPerson || 'no_person'} onValueChange={(val) => setChargedToPerson(val === 'no_person' ? '' : val)}>
+                          <SelectTrigger className="bg-yellow-50 border-yellow-300">
+                            <SelectValue placeholder="Επιλέξτε ποιος παραλαμβάνει" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="no_person">-- Επιλέξτε --</SelectItem>
+                            {systemUsers.length > 0 && (
+                              <>
+                                <SelectItem disabled value="_sys_header" className="font-semibold text-blue-600">
+                                  System Users
+                                </SelectItem>
+                                {systemUsers.map(user => (
+                                  <SelectItem key={`user_${user.id}`} value={user.id}>
+                                    {user.full_name} ({user.email})
+                                  </SelectItem>
+                                ))}
+                              </>
+                            )}
+                            {appUsers.length > 0 && (
+                              <>
+                                {systemUsers.length > 0 && <Separator className="my-1" />}
+                                <SelectItem disabled value="_app_header" className="font-semibold text-green-600">
+                                  Application Users
+                                </SelectItem>
+                                {appUsers.map(user => (
+                                  <SelectItem key={`app_user_${user.id}`} value={user.id}>
+                                    {user.full_name}
+                                  </SelectItem>
+                                ))}
+                              </>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="waybill">Αριθμός Waybill (προαιρετικό)</Label>
+                        <Input
+                          id="waybill"
+                          value={waybillNumber}
+                          onChange={(e) => setWaybillNumber(e.target.value)}
+                          placeholder="π.χ. WB-2025-001"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {/* Photo Upload Section */}
+                  <div className="space-y-2">
+                    <Label>Φωτογραφίες (προαιρετικό)</Label>
+                    <div className="flex gap-2">
+                      <input
+                        ref={photoInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => photoInputRef.current?.click()}
+                        disabled={isUploadingPhoto}
+                        className="w-full"
+                      >
+                        {isUploadingPhoto ? (
+                          <>
+                            <Upload className="w-4 h-4 mr-2 animate-spin" />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <ImageIcon className="w-4 h-4 mr-2" />
+                            Upload Photos
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    {uploadedPhotos.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {uploadedPhotos.map((photo, index) => (
+                          <div key={index} className="relative group">
+                            <img 
+                              src={photo.url} 
+                              alt={photo.filename}
+                              className="w-full h-24 object-cover rounded-lg border border-slate-200"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removePhoto(index)}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label>Σημειώσεις (προαιρετικό)</Label>
+                    <Input
+                      id="notes"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Προσθέστε επιπλέον σημειώσεις..."
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={handleStockMovement} 
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="lg"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <>Επεξεργασία...</>
+                  ) : (
+                    <>
+                      <ArrowRight className="w-5 h-5 mr-2" />
+                      Επεξεργασία Κίνησης Αποθέματος
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Test Section - Improved */}
+        <Card className="border-blue-200 bg-blue-50">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base md:text-lg flex items-center gap-2">
+              <Zap className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+              Quick Access - Products & Open POs
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Recent Products */}
+            {getQuickTestProducts().length > 0 && (
+              <div className="p-3 md:p-4 bg-white rounded-lg border border-slate-200">
+                <p className="text-xs md:text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <Package className="w-4 h-4" />
+                  Recent & Popular Products
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  {getQuickTestProducts().map((product, idx) => (
+                    <Button
+                      key={product.id}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleQuickTest(product.sku)}
+                      className="justify-start text-left h-auto py-2 px-3"
+                    >
+                      {idx < recentlyScannedProducts.length && (
+                        <span className="text-xs text-blue-600 mr-2">●</span>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-mono text-xs font-semibold">{product.sku}</div>
+                        <div className="text-xs text-slate-600 truncate">{product.name}</div>
+                      </div>
+                    </Button>
+                  ))}
+                </div>
+                {recentlyScannedProducts.length > 0 && (
+                  <p className="text-xs text-slate-500 mt-2">● = Recently scanned</p>
+                )}
+              </div>
+            )}
+
+            {/* Open POs - List View */}
+            {getOpenPOs().length > 0 && (
+              <div className="p-3 md:p-4 bg-white rounded-lg border border-slate-200">
+                <p className="text-xs md:text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                  <ShoppingCart className="w-4 h-4" />
+                  Open Purchase Orders ({getOpenPOs().length})
+                </p>
+                <div className="space-y-2">
+                  {getOpenPOs().map((po) => {
+                    const vendor = vendors.find(v => v.id === po.vendor_id);
+                    const totalRemaining = po.items.reduce((sum, item) => 
+                      sum + (item.quantity_ordered - (item.quantity_received || 0)), 0
+                    );
+                    const totalOrdered = po.items.reduce((sum, item) => sum + item.quantity_ordered, 0);
+                    const totalReceived = po.items.reduce((sum, item) => sum + (item.quantity_received || 0), 0);
+                    const percentReceived = totalOrdered > 0 ? Math.round((totalReceived / totalOrdered) * 100) : 0;
+                    
+                    return (
+                      <div
+                        key={po.id}
+                        className="border border-slate-200 rounded-lg p-3 hover:border-blue-300 hover:bg-blue-50/50 transition-all cursor-pointer"
+                        onClick={() => handleQuickTestPO(po.id)}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm text-slate-900">
+                              PO #{po.po_number}
+                            </div>
+                            <div className="text-xs text-slate-600 truncate">{vendor?.name || 'N/A'}</div>
+                          </div>
+                          <Badge variant="outline" className="text-xs whitespace-nowrap">
+                            {po.status}
+                          </Badge>
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-slate-600">Progress:</span>
+                            <span className="font-semibold">{percentReceived}%</span>
+                          </div>
+                          <div className="w-full bg-slate-200 rounded-full h-1.5">
+                            <div 
+                              className="bg-blue-600 h-1.5 rounded-full transition-all"
+                              style={{ width: `${percentReceived}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-slate-600 pt-1">
+                            <span>{totalReceived} / {totalOrdered} items received</span>
+                            <span className="font-semibold text-orange-600">{totalRemaining} remaining</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {getOpenPOs().length === 0 && (
+              <div className="p-4 bg-white rounded-lg border border-slate-200 text-center">
+                <ShoppingCart className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                <p className="text-sm text-slate-600">No open purchase orders</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Scans - Improved */}
+        {recentScans.length > 0 && (
+          <Card className="border-slate-200">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base md:text-lg">Recent Scans</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {recentScans.map((scan, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50 rounded-lg flex items-center justify-between border border-slate-200 gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{scan.product}</p>
+                      <div className="text-xs text-slate-600 space-y-0.5 mt-1">
+                        {scan.type === 'TRANSFER' && (
+                          <p>📦 {scan.fromLocation} → {scan.toLocation}</p>
+                        )}
+                        {scan.type === 'IN' && (
+                          <>
+                            <p>📍 To: {scan.toLocation}</p>
+                            <p>🏢 Vendor: {scan.vendor}</p>
+                            {scan.unitCost && (
+                              <p>💶 Cost: €{scan.unitCost.toFixed(2)} per unit</p>
+                            )}
+                          </>
+                        )}
+                        {scan.type === 'OUT' && (
+                          <>
+                            <p>📍 From: {scan.fromLocation}</p>
+                            <p>👤 Charged to: {scan.chargedTo}</p>
+                          </>
+                        )}
+                        {scan.waybill !== '-' && (
+                          <p>📋 Waybill: {scan.waybill}</p>
+                        )}
+                        {scan.hasPhotos && (
+                          <p className="text-blue-600">📷 Photos attached</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <Badge className={
+                        scan.type === 'IN' ? 'bg-green-600 text-white' : 
+                        scan.type === 'OUT' ? 'bg-red-600 text-white' :
+                        scan.type === 'TRANSFER' ? 'bg-blue-600 text-white' :
+                        'bg-orange-600 text-white'
+                      }>
+                        {scan.type === 'IN' && '+'}
+                        {scan.type === 'OUT' && '-'}
+                        {scan.quantity}
+                      </Badge>
+                      <p className="text-xs text-slate-500 mt-1">
+                        {formatLocalTime(scan.timestamp)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Camera Dialog */}
+      <Dialog open={showCamera} onOpenChange={(open) => !open && stopCamera()}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Camera className="w-5 h-5" />
+                Scanning Barcode...
+              </span>
+              <Button variant="ghost" size="icon" onClick={stopCamera}>
+                <X className="w-5 h-5" />
+              </Button>
+            </DialogTitle>
+            <DialogDescription>
+              {isScanning ? "Hold the barcode/QR code in front of the camera" : "Starting camera..."}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="relative bg-black rounded-lg overflow-hidden" style={{ aspectRatio: '16/9' }}>
+            <video
+              ref={videoRef}
+              className="w-full h-full object-cover"
+              playsInline
+              muted
+            />
+            
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-64 h-64 border-4 border-blue-500 rounded-lg opacity-50">
+                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-blue-500"></div>
+                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-blue-500"></div>
+                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-blue-500"></div>
+                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-blue-500"></div>
+              </div>
+            </div>
+            
+            {isScanning && (
+              <div className="absolute bottom-4 left-0 right-0 text-center">
+                <Badge className="bg-blue-600 text-white">Scanning...</Badge>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-center">
+            <Button onClick={stopCamera} variant="outline">
+              Cancel Scanning
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* PO Selection Dialog */}
+      <Dialog open={showPOSelectionDialog} onOpenChange={setShowPOSelectionDialog}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Receive Items from PO #{selectedPOForBulkReceive?.po_number}</DialogTitle>
+            <DialogDescription>
+              Select the items you want to receive and adjust quantities as needed
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedPOForBulkReceive && (
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-900">
+                  <strong>Vendor:</strong> {vendors.find(v => v.id === selectedPOForBulkReceive.vendor_id)?.name || 'N/A'}
+                </p>
+                <p className="text-sm text-blue-900 mt-1">
+                  <strong>Order Date:</strong> {new Date(selectedPOForBulkReceive.order_date).toLocaleDateString('en-GB')}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Θέση Αποθήκης *</Label>
+                <Select value={toLocation || 'no_location'} onValueChange={(val) => setToLocation(val === 'no_location' ? '' : val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Επιλέξτε θέση για όλα τα items" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no_location">-- Επιλέξτε --</SelectItem>
+                    {locations.filter(loc => loc.id).map(loc => (
+                      <SelectItem key={loc.id} value={loc.name}>
+                        {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Photo Upload for bulk receive */}
+              <div className="space-y-2">
+                <Label>Φωτογραφίες (προαιρετικό)</Label>
+                <div className="flex gap-2">
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={isUploadingPhoto}
+                    className="w-full"
+                  >
+                    {isUploadingPhoto ? (
+                      <>
+                        <Upload className="w-4 h-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="w-4 h-4 mr-2" />
+                        Upload Photos
+                      </>
+                    )}
+                  </Button>
+                </div>
+                {uploadedPhotos.length > 0 && (
+                  <div className="grid grid-cols-4 gap-2 mt-2">
+                    {uploadedPhotos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img 
+                          src={photo.url} 
+                          alt={photo.filename}
+                          className="w-full h-20 object-cover rounded-lg border border-slate-200"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(index)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={poItemsToReceive.every(item => item.selected)}
+                        onCheckedChange={(checked) => {
+                          setPOItemsToReceive(prev => prev.map(item => ({ ...item, selected: !!checked })));
+                        }}
+                      />
+                    </TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead>SKU</TableHead>
+                    <TableHead className="text-right">Ordered</TableHead>
+                    <TableHead className="text-right">Received</TableHead>
+                    <TableHead className="text-right">Remaining</TableHead>
+                    <TableHead className="text-right">Receive Now</TableHead>
+                    <TableHead className="text-right">Unit Cost</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {poItemsToReceive.map((item, index) => {
+                    const product = products.find(p => p.id === item.product_id);
+                    return (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <Checkbox
+                            checked={item.selected}
+                            onCheckedChange={() => togglePOItemSelection(index)}
+                          />
+                        </TableCell>
+                        <TableCell>{product?.name || 'Unknown'}</TableCell>
+                        <TableCell className="font-mono text-sm">{product?.sku || 'N/A'}</TableCell>
+                        <TableCell className="text-right">{item.quantity_ordered}</TableCell>
+                        <TableCell className="text-right">{item.quantity_received || 0}</TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {item.quantity_ordered - (item.quantity_received || 0)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="number"
+                            min="1"
+                            max={item.quantity_ordered - (item.quantity_received || 0)}
+                            value={item.quantity_to_receive}
+                            onChange={(e) => updatePOItemQuantity(index, e.target.value)}
+                            disabled={!item.selected}
+                            className="w-20 text-right"
+                          />
+                        </TableCell>
+                        <TableCell className="text-right">€{item.unit_cost?.toFixed(2) || '0.00'}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowPOSelectionDialog(false);
+                    setSelectedPOForBulkReceive(null);
+                    setPOItemsToReceive([]);
+                    setToLocation("");
+                    setUploadedPhotos([]);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleBulkReceiveFromPO}
+                  disabled={isProcessing || !toLocation || !poItemsToReceive.some(item => item.selected)}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Upload className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Receive Selected Items
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Vendor Dialog */}
+      <CreateEditVendorDialog
+        open={showCreateVendorDialog}
+        onClose={() => setShowCreateVendorDialog(false)}
+        onVendorSaved={handleVendorCreated}
+      />
+    </div>
+  );
+}
