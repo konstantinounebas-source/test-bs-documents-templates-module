@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function CreateEditProductDialog({ open, onClose, onProductSaved, product = null, categories, vendors }) {
   const [formData, setFormData] = useState({
@@ -26,6 +27,8 @@ export default function CreateEditProductDialog({ open, onClose, onProductSaved,
     preferred_vendor_id: ''
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [skuWarning, setSkuWarning] = useState(null);
+  const [checkingSku, setCheckingSku] = useState(false);
 
   useEffect(() => {
     if (product) {
@@ -61,7 +64,42 @@ export default function CreateEditProductDialog({ open, onClose, onProductSaved,
         preferred_vendor_id: ''
       });
     }
+    setSkuWarning(null);
   }, [product, open]);
+
+  const checkSkuUniqueness = async (sku) => {
+    if (!sku || sku.trim() === '') {
+      setSkuWarning(null);
+      return;
+    }
+
+    setCheckingSku(true);
+    try {
+      const existingProducts = await base44.entities.Product.filter({ sku: sku.trim() });
+      const duplicates = existingProducts.filter(p => p.id !== product?.id);
+      
+      if (duplicates.length > 0) {
+        setSkuWarning({
+          count: duplicates.length,
+          products: duplicates.slice(0, 3).map(p => p.name).join(', ')
+        });
+      } else {
+        setSkuWarning(null);
+      }
+    } catch (error) {
+      console.error("Error checking SKU uniqueness:", error);
+    }
+    setCheckingSku(false);
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.sku) {
+        checkSkuUniqueness(formData.sku);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [formData.sku]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -110,7 +148,24 @@ export default function CreateEditProductDialog({ open, onClose, onProductSaved,
                 onChange={(e) => setFormData({...formData, sku: e.target.value})}
                 placeholder="π.χ. PROD-001"
                 required
+                className={skuWarning ? 'border-yellow-500' : ''}
               />
+              {checkingSku && (
+                <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Έλεγχος μοναδικότητας...
+                </p>
+              )}
+              {skuWarning && (
+                <Alert className="mt-2 border-yellow-500 bg-yellow-50">
+                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                  <AlertDescription className="text-xs">
+                    <strong>Προσοχή:</strong> Το SKU "{formData.sku}" χρησιμοποιείται ήδη από {skuWarning.count} άλλο{skuWarning.count > 1 ? 'α' : ''} προϊόν{skuWarning.count > 1 ? 'τα' : ''}
+                    {skuWarning.products && `: ${skuWarning.products}`}. 
+                    <br />Συνιστάται να χρησιμοποιείτε μοναδικά SKU για κάθε προϊόν.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           </div>
 
