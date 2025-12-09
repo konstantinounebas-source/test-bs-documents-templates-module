@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import ProductCombobox from "./ProductCombobox";
 
 export default function BOMManager({ busStopTypes, components, products, selectedType, onComponentsUpdated }) {
   const [currentTypeId, setCurrentTypeId] = useState(selectedType?.id || '');
@@ -189,21 +190,12 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                               {absoluteIndex + 1}
                             </TableCell>
                             <TableCell>
-                              <Select
+                              <ProductCombobox
+                                products={products}
                                 value={component.product_id}
                                 onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select product" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {products.map((product) => (
-                                    <SelectItem key={product.id} value={product.id}>
-                                      {product.name} ({product.sku})
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                                placeholder="Select product"
+                              />
                             </TableCell>
                             <TableCell>
                               <Input
