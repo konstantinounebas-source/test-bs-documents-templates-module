@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Edit, Eye, AlertTriangle, Power, PowerOff, Star } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -27,7 +28,9 @@ export default function ProductsTable({
   productVendors,
   isLoading, 
   onProductSaved,
-  getStockForProduct
+  getStockForProduct,
+  selectedProductIds = [],
+  onToggleSelection
 }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -127,6 +130,7 @@ export default function ProductsTable({
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">
+              <TableHead className="w-12"></TableHead>
               <TableHead>SKU</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Description</TableHead>
@@ -145,6 +149,14 @@ export default function ProductsTable({
               
               return (
                 <TableRow key={product.id} className="hover:bg-slate-50">
+                  <TableCell>
+                    {onToggleSelection && (
+                      <Checkbox
+                        checked={selectedProductIds.includes(product.id)}
+                        onCheckedChange={() => onToggleSelection(product.id)}
+                      />
+                    )}
+                  </TableCell>
                   <TableCell className="font-mono text-sm">{product.sku}</TableCell>
                   <TableCell className="font-medium">{product.name}</TableCell>
                   <TableCell className="max-w-xs truncate text-sm text-slate-600">

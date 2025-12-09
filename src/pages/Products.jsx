@@ -1,16 +1,17 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Download, Package, Upload, X } from "lucide-react";
+import { Plus, Search, Download, Package, Upload, X, QrCode } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import ProductsTable from "../components/warehouse/ProductsTable";
 import CreateEditProductDialog from "../components/warehouse/CreateEditProductDialog";
 import ImportProductsDialog from "../components/warehouse/ImportProductsDialog";
 import PaginationControls from "../components/warehouse/PaginationControls";
+import ExportQRCodesDialog from "../components/warehouse/ExportQRCodesDialog";
 
 // Helper function to add delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -28,6 +29,8 @@ export default function ProductsPage() {
   const [activeFilter, setActiveFilter] = useState("active");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState("10");
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const [showExportQRDialog, setShowExportQRDialog] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -113,6 +116,26 @@ export default function ProductsPage() {
     return "";
   };
 
+  const toggleProductSelection = (productId) => {
+    setSelectedProductIds(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedProductIds.length === filteredProducts.length) {
+      setSelectedProductIds([]);
+    } else {
+      setSelectedProductIds(filteredProducts.map(p => p.id));
+    }
+  };
+
+  const getSelectedProducts = () => {
+    return products.filter(p => selectedProductIds.includes(p.id));
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -130,6 +153,15 @@ export default function ProductsPage() {
             >
               <Upload className="w-5 h-5 mr-2" />
               Import CSV
+            </Button>
+            <Button 
+              onClick={() => setShowExportQRDialog(true)}
+              variant="outline"
+              className="shadow-sm bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200"
+              disabled={selectedProductIds.length === 0}
+            >
+              <QrCode className="w-5 h-5 mr-2" />
+              Export QR ({selectedProductIds.length})
             </Button>
             <Button 
               onClick={() => setShowCreateDialog(true)}
@@ -193,14 +225,29 @@ export default function ProductsPage() {
         {/* Search and Active Filter Badge */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
           <div className="flex flex-col gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search products by name, SKU, or description..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-slate-50 border-slate-200"
-              />
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Search products by name, SKU, or description..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 bg-slate-50 border-slate-200"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="select-all"
+                  checked={selectedProductIds.length === filteredProducts.length && filteredProducts.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                />
+                <label 
+                  htmlFor="select-all" 
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer whitespace-nowrap"
+                >
+                  Επιλογή Όλων
+                </label>
+              </div>
             </div>
             
             {activeFilter !== "active" && (
@@ -212,6 +259,22 @@ export default function ProductsPage() {
                     <X className="w-3 h-3"/>
                   </button>
                 </Badge>
+              </div>
+            )}
+
+            {selectedProductIds.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Badge className="bg-purple-100 text-purple-800 py-1.5 px-3">
+                  {selectedProductIds.length} προϊόντα επιλεγμένα
+                </Badge>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setSelectedProductIds([])}
+                  className="h-7"
+                >
+                  Καθαρισμός
+                </Button>
               </div>
             )}
           </div>
@@ -228,6 +291,8 @@ export default function ProductsPage() {
             isLoading={isLoading}
             onProductSaved={loadData}
             getStockForProduct={getStockForProduct}
+            selectedProductIds={selectedProductIds}
+            onToggleSelection={toggleProductSelection}
           />
           
           <PaginationControls
@@ -254,6 +319,12 @@ export default function ProductsPage() {
         onProductsImported={loadData}
         categories={categories}
         vendors={vendors}
+      />
+
+      <ExportQRCodesDialog
+        open={showExportQRDialog}
+        onClose={() => setShowExportQRDialog(false)}
+        selectedProducts={getSelectedProducts()}
       />
     </div>
   );
