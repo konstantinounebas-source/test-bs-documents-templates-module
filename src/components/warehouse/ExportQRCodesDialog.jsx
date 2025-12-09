@@ -7,6 +7,7 @@ import { Loader2, Download, FileSpreadsheet, FileText } from "lucide-react";
 import QRCode from "qrcode";
 import ExcelJS from "exceljs";
 import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 export default function ExportQRCodesDialog({ open, onClose, selectedProducts }) {
   const [exportFormat, setExportFormat] = useState("pdf");
@@ -42,6 +43,13 @@ export default function ExportQRCodesDialog({ open, onClose, selectedProducts })
   };
 
   const exportToPDF = async () => {
+    // Create a temporary container for rendering labels
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    document.body.appendChild(container);
+
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -51,50 +59,67 @@ export default function ExportQRCodesDialog({ open, onClose, selectedProducts })
     const pageWidth = 210; // A4 width in mm
     const pageHeight = 297; // A4 height in mm
     const labelWidth = labelsPerRow === "2" ? 105 : 70; // Width per label
-    const labelHeight = 37; // Height per label (standard label size)
+    const labelHeight = 37; // Height per label
     const labelsPerRowNum = parseInt(labelsPerRow);
     const labelsPerPage = labelsPerRowNum * Math.floor(pageHeight / labelHeight);
     
     let labelIndex = 0;
+    let isFirstLabel = true;
 
     for (const product of selectedProducts) {
       const qrDataURL = await generateQRCodeDataURL(product.sku || product.id);
       if (!qrDataURL) continue;
 
+      // Create HTML label element
+      const labelElement = document.createElement('div');
+      labelElement.style.width = `${labelWidth * 3.78}px`; // Convert mm to px (1mm ≈ 3.78px)
+      labelElement.style.height = `${labelHeight * 3.78}px`;
+      labelElement.style.border = '1px solid #ccc';
+      labelElement.style.display = 'flex';
+      labelElement.style.alignItems = 'center';
+      labelElement.style.padding = '10px';
+      labelElement.style.boxSizing = 'border-box';
+      labelElement.style.backgroundColor = 'white';
+      labelElement.style.fontFamily = 'Arial, sans-serif';
+
+      labelElement.innerHTML = `
+        <img src="${qrDataURL}" style="width: 95px; height: 95px; margin-right: 15px;" />
+        <div style="flex: 1;">
+          <div style="font-size: 14px; font-weight: bold; margin-bottom: 5px;">${product.sku || 'N/A'}</div>
+          <div style="font-size: 11px; line-height: 1.3; word-wrap: break-word;">${product.name || 'Unknown Product'}</div>
+        </div>
+      `;
+
+      container.appendChild(labelElement);
+
+      // Convert to canvas and add to PDF
+      const canvas = await html2canvas(labelElement, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      
       const row = Math.floor(labelIndex % labelsPerPage / labelsPerRowNum);
       const col = labelIndex % labelsPerRowNum;
-
       const x = col * labelWidth;
       const y = row * labelHeight;
 
-      // Draw border (optional - comment out if not needed)
-      pdf.setDrawColor(200);
-      pdf.rect(x, y, labelWidth, labelHeight);
-
-      // Add QR Code
-      const qrSize = 25;
-      pdf.addImage(qrDataURL, 'PNG', x + 5, y + 5, qrSize, qrSize);
-
-      // Add SKU
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(product.sku || 'N/A', x + qrSize + 10, y + 10);
-
-      // Add Product Name
-      pdf.setFontSize(8);
-      pdf.setFont('helvetica', 'normal');
-      const productName = product.name || 'Unknown Product';
-      const maxWidth = labelWidth - qrSize - 20;
-      const splitName = pdf.splitTextToSize(productName, maxWidth);
-      pdf.text(splitName.slice(0, 2), x + qrSize + 10, y + 17);
-
-      labelIndex++;
-
-      // Add new page if needed
-      if (labelIndex % labelsPerPage === 0 && labelIndex < selectedProducts.length) {
+      if (!isFirstLabel && labelIndex % labelsPerPage === 0) {
         pdf.addPage();
       }
+      isFirstLabel = false;
+
+      pdf.addImage(imgData, 'PNG', x, y, labelWidth, labelHeight);
+
+      // Clean up
+      container.removeChild(labelElement);
+      labelIndex++;
     }
+
+    // Remove temporary container
+    document.body.removeChild(container);
 
     pdf.save(`QR_Labels_${new Date().toISOString().split('T')[0]}.pdf`);
   };
