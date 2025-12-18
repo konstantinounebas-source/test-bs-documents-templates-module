@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import CreateEditVendorDialog from "../components/warehouse/CreateEditVendorDialog";
 import PersonSearchCombobox from "../components/warehouse/PersonSearchCombobox";
 import VendorSearchCombobox from "../components/warehouse/VendorSearchCombobox";
+import ProductSearchCombobox from "../components/warehouse/ProductSearchCombobox";
 
 // Helper function to introduce a delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
