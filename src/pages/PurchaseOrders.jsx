@@ -836,7 +836,7 @@ export default function PurchaseOrdersPage() {
                                 value={item.quantity_ordered}
                                 onChange={(e) => handleItemChange(index, 'quantity_ordered', e.target.value)}
                                 required
-                                placeholder={item.bundle_quantity ? "Bundles" : "Qty"}
+                                placeholder="Quantity"
                               />
                             </TableCell>
                             <TableCell>
@@ -847,7 +847,7 @@ export default function PurchaseOrdersPage() {
                                 step="1"
                                 value={item.bundle_quantity || ''}
                                 onChange={(e) => handleItemChange(index, 'bundle_quantity', e.target.value)}
-                                placeholder="Πχ. 100"
+                                placeholder="π.χ. 100 τεμάχια"
                                 className="text-xs"
                               />
                             </TableCell>
@@ -860,6 +860,12 @@ export default function PurchaseOrdersPage() {
                                 onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value)}
                                 required
                               />
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-xs text-slate-600">
+                                {item.bundle_quantity && item.unit_cost ? 
+                                  (item.unit_cost / item.bundle_quantity).toFixed(4) : '-'}
+                              </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-semibold">
@@ -1061,7 +1067,7 @@ export default function PurchaseOrdersPage() {
                                 value={item.quantity_ordered}
                                 onChange={(e) => handleItemChange(index, 'quantity_ordered', e.target.value)}
                                 required
-                                placeholder={item.bundle_quantity ? "Bundles" : "Qty"}
+                                placeholder="Quantity"
                               />
                             </TableCell>
                             <TableCell>
@@ -1072,7 +1078,7 @@ export default function PurchaseOrdersPage() {
                                 step="1"
                                 value={item.bundle_quantity || ''}
                                 onChange={(e) => handleItemChange(index, 'bundle_quantity', e.target.value)}
-                                placeholder="Πχ. 100"
+                                placeholder="π.χ. 100 τεμάχια"
                                 className="text-xs"
                               />
                             </TableCell>
@@ -1085,6 +1091,12 @@ export default function PurchaseOrdersPage() {
                                 onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value)}
                                 required
                               />
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-xs text-slate-600">
+                                {item.bundle_quantity && item.unit_cost ? 
+                                  (item.unit_cost / item.bundle_quantity).toFixed(4) : '-'}
+                              </span>
                             </TableCell>
                             <TableCell>
                               <span className="font-semibold">
