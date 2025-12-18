@@ -801,6 +801,7 @@ export default function PurchaseOrdersPage() {
                         <TableHead className="w-24">Quantity *</TableHead>
                         <TableHead className="w-32">Unit Cost (€) *</TableHead>
                         <TableHead className="w-32">Total (€)</TableHead>
+                        <TableHead className="w-28">Bundle</TableHead>
                         <TableHead className="w-40">Expected Receipt</TableHead>
                         <TableHead className="w-16"></TableHead>
                       </TableRow>
@@ -808,6 +809,10 @@ export default function PurchaseOrdersPage() {
                     <TableBody>
                       {formData.items.map((item, index) => {
                         const availableProducts = getAvailableProductsForVendor();
+                        const vendorProductIds = productVendors
+                          .filter(pv => pv.vendor_id === formData.vendor_id && pv.is_active)
+                          .map(pv => pv.product_id);
+                        
                         return (
                           <TableRow key={index}>
                             <TableCell>
@@ -824,11 +829,17 @@ export default function PurchaseOrdersPage() {
                                       No active products available
                                     </div>
                                   ) : (
-                                    availableProducts.map((product) => (
-                                      <SelectItem key={product.id} value={product.id}>
-                                        {product.name} ({product.sku})
-                                      </SelectItem>
-                                    ))
+                                    availableProducts.map((product) => {
+                                      const isVendorProduct = vendorProductIds.includes(product.id);
+                                      return (
+                                        <SelectItem key={product.id} value={product.id}>
+                                          <div className="flex items-center gap-2">
+                                            {isVendorProduct && <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />}
+                                            <span>{product.name} ({product.sku})</span>
+                                          </div>
+                                        </SelectItem>
+                                      );
+                                    })
                                   )}
                                 </SelectContent>
                               </Select>
@@ -858,6 +869,14 @@ export default function PurchaseOrdersPage() {
                               <span className="font-semibold">
                                 {(item.total_cost || 0).toFixed(2)}
                               </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-center">
+                                <Checkbox
+                                  checked={item.is_bundle || false}
+                                  onCheckedChange={(checked) => handleItemChange(index, 'is_bundle', checked)}
+                                />
+                              </div>
                             </TableCell>
                             <TableCell>
                               <Input
@@ -1022,6 +1041,7 @@ export default function PurchaseOrdersPage() {
                         <TableHead className="w-24">Quantity *</TableHead>
                         <TableHead className="w-32">Unit Cost (€) *</TableHead>
                         <TableHead className="w-32">Total (€)</TableHead>
+                        <TableHead className="w-28">Bundle</TableHead>
                         <TableHead className="w-40">Expected Receipt</TableHead>
                         <TableHead className="w-16"></TableHead>
                       </TableRow>
@@ -1029,6 +1049,10 @@ export default function PurchaseOrdersPage() {
                     <TableBody>
                       {formData.items.map((item, index) => {
                         const availableProducts = getAvailableProductsForVendor();
+                        const vendorProductIds = productVendors
+                          .filter(pv => pv.vendor_id === formData.vendor_id && pv.is_active)
+                          .map(pv => pv.product_id);
+                        
                         return (
                           <TableRow key={index}>
                             <TableCell>
@@ -1045,11 +1069,17 @@ export default function PurchaseOrdersPage() {
                                       No active products available
                                     </div>
                                   ) : (
-                                    availableProducts.map((product) => (
-                                      <SelectItem key={product.id} value={product.id}>
-                                        {product.name} ({product.sku})
-                                      </SelectItem>
-                                    ))
+                                    availableProducts.map((product) => {
+                                      const isVendorProduct = vendorProductIds.includes(product.id);
+                                      return (
+                                        <SelectItem key={product.id} value={product.id}>
+                                          <div className="flex items-center gap-2">
+                                            {isVendorProduct && <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />}
+                                            <span>{product.name} ({product.sku})</span>
+                                          </div>
+                                        </SelectItem>
+                                      );
+                                    })
                                   )}
                                 </SelectContent>
                               </Select>
@@ -1079,6 +1109,14 @@ export default function PurchaseOrdersPage() {
                               <span className="font-semibold">
                                 {(item.total_cost || 0).toFixed(2)}
                               </span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center justify-center">
+                                <Checkbox
+                                  checked={item.is_bundle || false}
+                                  onCheckedChange={(checked) => handleItemChange(index, 'is_bundle', checked)}
+                                />
+                              </div>
                             </TableCell>
                             <TableCell>
                               <Input
