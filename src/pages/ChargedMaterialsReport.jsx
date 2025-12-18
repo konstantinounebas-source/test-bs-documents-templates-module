@@ -17,6 +17,7 @@ import PaginationControls from "../components/warehouse/PaginationControls";
 export default function ChargedMaterialsReportPage() {
   const [movements, setMovements] = useState([]);
   const [products, setProducts] = useState([]);
+  const [productVendors, setProductVendors] = useState([]);
   const [users, setUsers] = useState([]);
   const [appUsers, setAppUsers] = useState([]);
   const [stockItems, setStockItems] = useState([]);
@@ -48,9 +49,10 @@ export default function ChargedMaterialsReportPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [movementsData, productsData, usersData, appUsersData, stockData] = await Promise.all([
+      const [movementsData, productsData, productVendorsData, usersData, appUsersData, stockData] = await Promise.all([
         base44.entities.StockMovement.filter({ movement_type: "OUT" }),
         base44.entities.Product.list(),
+        base44.entities.ProductVendor.list().catch(() => []),
         base44.entities.User.list().catch(() => []),
         base44.entities.AppUser.list().catch(() => []),
         base44.entities.StockItem.list().catch(() => [])
@@ -61,6 +63,7 @@ export default function ChargedMaterialsReportPage() {
       
       setMovements(chargedMovements);
       setProducts(productsData);
+      setProductVendors(productVendorsData);
       setUsers(usersData);
       setAppUsers(appUsersData);
       setStockItems(stockData);
@@ -78,6 +81,24 @@ export default function ChargedMaterialsReportPage() {
 
   const getProduct = (productId) => {
     return products.find(p => p.id === productId);
+  };
+
+  const getProductUnitCost = (productId) => {
+    // Get unit cost from preferred vendor, or first active vendor, or product default
+    const activeVendors = productVendors.filter(pv => pv.product_id === productId && pv.is_active);
+    const preferredVendor = activeVendors.find(pv => pv.is_preferred);
+    
+    if (preferredVendor && preferredVendor.unit_cost) {
+      return preferredVendor.unit_cost;
+    }
+    
+    if (activeVendors.length > 0 && activeVendors[0].unit_cost) {
+      return activeVendors[0].unit_cost;
+    }
+    
+    // Fallback to product unit_cost if no vendor cost available
+    const product = products.find(p => p.id === productId);
+    return product?.unit_cost || 0;
   };
 
   // Get unique persons from movements
@@ -122,7 +143,8 @@ export default function ChargedMaterialsReportPage() {
       const product = getProduct(movement.product_id);
       if (!product) return;
       
-      const cost = (product.unit_cost || 0) * movement.quantity;
+      const unitCost = getProductUnitCost(movement.product_id);
+      const cost = unitCost * movement.quantity;
       
       if (!aggregated[person].products[movement.product_id]) {
         aggregated[person].products[movement.product_id] = {
@@ -163,8 +185,8 @@ export default function ChargedMaterialsReportPage() {
       }
       
       const person = movement.charged_to_person;
-      const product = getProduct(productId);
-      const cost = (product?.unit_cost || 0) * movement.quantity;
+      const unitCost = getProductUnitCost(productId);
+      const cost = unitCost * movement.quantity;
       
       if (!aggregated[productId].persons[person]) {
         aggregated[productId].persons[person] = {
@@ -328,7 +350,7 @@ export default function ChargedMaterialsReportPage() {
               'Product SKU': product.sku,
               'Product Name': product.name,
               'Total Quantity Charged': quantity,
-              'Unit Cost (€)': product.unit_cost || 0,
+              'Unit Cost (€)': getProductUnitCost(product.id).toFixed(2),
               'Total Cost (€)': cost.toFixed(2),
               'Unit of Measure': product.unit_of_measure,
               'Period': startDate && endDate ? `${format(new Date(startDate), 'dd/MM/yyyy')} - ${format(new Date(endDate), 'dd/MM/yyyy')}` : 'All Time'
@@ -343,7 +365,7 @@ export default function ChargedMaterialsReportPage() {
               'Product Name': materialData.product.name,
               'Person': personName,
               'Quantity Charged': quantity,
-              'Unit Cost (€)': materialData.product.unit_cost || 0,
+              'Unit Cost (€)': getProductUnitCost(materialData.product.id).toFixed(2),
               'Total Cost (€)': cost.toFixed(2),
               'Unit of Measure': materialData.product.unit_of_measure,
               'Period': startDate && endDate ? `${format(new Date(startDate), 'dd/MM/yyyy')} - ${format(new Date(endDate), 'dd/MM/yyyy')}` : 'All Time'
@@ -719,7 +741,7 @@ export default function ChargedMaterialsReportPage() {
                                         <TableCell className="font-mono text-sm">{product.sku}</TableCell>
                                         <TableCell className="font-medium">{product.name}</TableCell>
                                         <TableCell className="text-right font-bold text-lg">{quantity}</TableCell>
-                                        <TableCell className="text-right text-slate-600">€{(product.unit_cost || 0).toFixed(2)}</TableCell>
+                                        <TableCell className="text-right text-slate-600">€{getProductUnitCost(product.id).toFixed(2)}</TableCell>
                                         <TableCell className="text-right font-bold text-amber-600">€{cost.toFixed(2)}</TableCell>
                                         <TableCell>
                                           <Badge variant="outline">{product.unit_of_measure}</Badge>
@@ -814,7 +836,7 @@ export default function ChargedMaterialsReportPage() {
                                       <TableRow key={personName}>
                                         <TableCell className="font-medium">{personName}</TableCell>
                                         <TableCell className="text-right font-bold text-lg">{quantity}</TableCell>
-                                        <TableCell className="text-right text-slate-600">€{(materialData.product.unit_cost || 0).toFixed(2)}</TableCell>
+                                        <TableCell className="text-right text-slate-600">€{getProductUnitCost(materialData.product.id).toFixed(2)}</TableCell>
                                         <TableCell className="text-right font-bold text-amber-600">€{cost.toFixed(2)}</TableCell>
                                       </TableRow>
                                     ))}
