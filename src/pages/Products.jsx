@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Download, Package, Upload, X, QrCode } from "lucide-react";
+import { Plus, Search, Download, Package, Upload, X, QrCode, FileSpreadsheet } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import ExcelJS from 'exceljs';
 
 import ProductsTable from "../components/warehouse/ProductsTable";
 import CreateEditProductDialog from "../components/warehouse/CreateEditProductDialog";
@@ -136,6 +137,83 @@ export default function ProductsPage() {
     return products.filter(p => selectedProductIds.includes(p.id));
   };
 
+  const handleExportExcel = async () => {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Products');
+
+      // Define columns
+      worksheet.columns = [
+        { header: 'SKU', key: 'sku', width: 15 },
+        { header: 'Name', key: 'name', width: 30 },
+        { header: 'Description', key: 'description', width: 40 },
+        { header: 'Category', key: 'category', width: 20 },
+        { header: 'Unit Cost (€)', key: 'unit_cost', width: 12 },
+        { header: 'Current Stock', key: 'current_stock', width: 15 },
+        { header: 'Minimum Stock', key: 'minimum_stock', width: 15 },
+        { header: 'Unit of Measure', key: 'unit_of_measure', width: 15 },
+        { header: 'Status', key: 'status', width: 10 },
+      ];
+
+      // Style header row
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4B5563' }
+      };
+      worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+      // Add data
+      filteredProducts.forEach(product => {
+        const category = categories.find(c => c.id === product.category_id);
+        const currentStock = getStockForProduct(product.id);
+        
+        // Get unit cost from preferred vendor or product
+        const productVendorsForProduct = productVendors.filter(pv => pv.product_id === product.id && pv.is_active);
+        const preferredVendor = productVendorsForProduct.find(pv => pv.is_preferred);
+        const unitCost = preferredVendor?.unit_cost || productVendorsForProduct[0]?.unit_cost || product.unit_cost || 0;
+
+        worksheet.addRow({
+          sku: product.sku,
+          name: product.name,
+          description: product.description || '',
+          category: category?.name || 'N/A',
+          unit_cost: unitCost,
+          current_stock: currentStock,
+          minimum_stock: product.minimum_stock || 0,
+          unit_of_measure: product.unit_of_measure,
+          status: product.is_active ? 'Active' : 'Inactive'
+        });
+      });
+
+      // Auto-fit columns and add borders
+      worksheet.eachRow({ includeEmpty: false }, (row) => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+
+      // Generate buffer and download
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Products_${new Date().toISOString().split('T')[0]}.xlsx`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Failed to export to Excel. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -153,6 +231,14 @@ export default function ProductsPage() {
             >
               <Upload className="w-5 h-5 mr-2" />
               Import CSV
+            </Button>
+            <Button 
+              onClick={handleExportExcel}
+              variant="outline"
+              className="shadow-sm bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+            >
+              <FileSpreadsheet className="w-5 h-5 mr-2" />
+              Export Excel
             </Button>
             <Button 
               onClick={() => setShowExportQRDialog(true)}
