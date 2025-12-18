@@ -801,10 +801,11 @@ export default function PurchaseOrdersPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Product *</TableHead>
-                        <TableHead className="w-24">Bundles *</TableHead>
-                        <TableHead className="w-24">Qty/Bundle</TableHead>
+                        <TableHead className="w-24">Qty *</TableHead>
+                        <TableHead className="w-24">Pcs/Qty</TableHead>
                         <TableHead className="w-32">Unit Cost (€) *</TableHead>
-                        <TableHead className="w-32">Total (€)</TableHead>
+                        <TableHead className="w-32">Unit Cost/Pcs (€)</TableHead>
+                        <TableHead className="w-28">Total (€)</TableHead>
                         <TableHead className="w-40">Expected Receipt</TableHead>
                         <TableHead className="w-16"></TableHead>
                       </TableRow>
@@ -836,7 +837,7 @@ export default function PurchaseOrdersPage() {
                                 value={item.quantity_ordered}
                                 onChange={(e) => handleItemChange(index, 'quantity_ordered', e.target.value)}
                                 required
-                                placeholder="Quantity"
+                                placeholder="Qty"
                               />
                             </TableCell>
                             <TableCell>
@@ -847,7 +848,7 @@ export default function PurchaseOrdersPage() {
                                 step="1"
                                 value={item.bundle_quantity || ''}
                                 onChange={(e) => handleItemChange(index, 'bundle_quantity', e.target.value)}
-                                placeholder="π.χ. 100 τεμάχια"
+                                placeholder="π.χ. 100 τεμ."
                                 className="text-xs"
                               />
                             </TableCell>
@@ -1032,10 +1033,11 @@ export default function PurchaseOrdersPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Product *</TableHead>
-                        <TableHead className="w-24">Bundles *</TableHead>
-                        <TableHead className="w-24">Qty/Bundle</TableHead>
+                        <TableHead className="w-24">Qty *</TableHead>
+                        <TableHead className="w-24">Pcs/Qty</TableHead>
                         <TableHead className="w-32">Unit Cost (€) *</TableHead>
-                        <TableHead className="w-32">Total (€)</TableHead>
+                        <TableHead className="w-32">Unit Cost/Pcs (€)</TableHead>
+                        <TableHead className="w-28">Total (€)</TableHead>
                         <TableHead className="w-40">Expected Receipt</TableHead>
                         <TableHead className="w-16"></TableHead>
                       </TableRow>
