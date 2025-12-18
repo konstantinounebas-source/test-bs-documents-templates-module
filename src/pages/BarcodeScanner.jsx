@@ -20,6 +20,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 import CreateEditVendorDialog from "../components/warehouse/CreateEditVendorDialog";
+import CreateEditProductDialog from "../components/warehouse/CreateEditProductDialog";
 import PersonSearchCombobox from "../components/warehouse/PersonSearchCombobox";
 import VendorSearchCombobox from "../components/warehouse/VendorSearchCombobox";
 import ProductSearchCombobox from "../components/warehouse/ProductSearchCombobox";
@@ -73,6 +74,8 @@ export default function BarcodeScannerPage() {
   const [bulkInvoiceNumber, setBulkInvoiceNumber] = useState("");
   const [bulkInvoiceWaybill, setBulkInvoiceWaybill] = useState("");
   const [bulkInvoiceItems, setBulkInvoiceItems] = useState([]);
+  const [showCreateProductFromBulk, setShowCreateProductFromBulk] = useState(false);
+  const [showCreateVendorFromBulk, setShowCreateVendorFromBulk] = useState(false);
 
   // Camera scanning state
   const [showCamera, setShowCamera] = useState(false);
@@ -2051,12 +2054,25 @@ export default function BarcodeScannerPage() {
             <div className="grid grid-cols-2 gap-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
               <div>
                 <Label>Προμηθευτής *</Label>
-                <VendorSearchCombobox
-                  vendors={vendors}
-                  vendorProductIds={[]}
-                  value={bulkInvoiceVendor}
-                  onValueChange={setBulkInvoiceVendor}
-                />
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <VendorSearchCombobox
+                      vendors={vendors}
+                      vendorProductIds={[]}
+                      value={bulkInvoiceVendor}
+                      onValueChange={setBulkInvoiceVendor}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setShowCreateVendorFromBulk(true)}
+                    title="Δημιουργία νέου προμηθευτή"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
               <div>
                 <Label>Αριθμός Τιμολογίου *</Label>
@@ -2078,16 +2094,27 @@ export default function BarcodeScannerPage() {
 
             <div className="flex justify-between items-center">
               <Label className="text-base font-semibold">Προϊόντα</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddBulkInvoiceItem}
-                disabled={!bulkInvoiceVendor}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Προσθήκη Προϊόντος
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCreateProductFromBulk(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Νέο Προϊόν
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddBulkInvoiceItem}
+                  disabled={!bulkInvoiceVendor}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Προσθήκη Γραμμής
+                </Button>
+              </div>
             </div>
 
             {!bulkInvoiceVendor && (
@@ -2236,6 +2263,23 @@ export default function BarcodeScannerPage() {
         open={showCreateVendorDialog}
         onClose={() => setShowCreateVendorDialog(false)}
         onVendorSaved={handleVendorCreated}
+      />
+
+      {/* Create Vendor From Bulk Dialog */}
+      <CreateEditVendorDialog
+        open={showCreateVendorFromBulk}
+        onClose={() => setShowCreateVendorFromBulk(false)}
+        onVendorSaved={handleVendorCreatedFromBulk}
+      />
+
+      {/* Create Product From Bulk Dialog */}
+      <CreateEditProductDialog
+        open={showCreateProductFromBulk}
+        onClose={() => setShowCreateProductFromBulk(false)}
+        onProductSaved={handleProductCreatedFromBulk}
+        categories={categories}
+        vendors={vendors}
+        existingProducts={products}
       />
     </div>
   );
