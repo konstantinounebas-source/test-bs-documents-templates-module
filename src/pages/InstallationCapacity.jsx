@@ -436,7 +436,7 @@ export default function InstallationCapacityPage() {
                       >
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {comp.is_bottleneck && (
+                            {comp.available_stock < comp.total_requested && (
                               <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0" />
                             )}
                             <span className="font-medium">{comp.product_name}</span>
@@ -453,7 +453,9 @@ export default function InstallationCapacityPage() {
                           {comp.total_consumed} {comp.unit_of_measure}
                         </TableCell>
                         <TableCell>
-                          {comp.shortage > 0 ? (
+                          {comp.total_consumed === 0 ? (
+                            <span className="text-slate-400">-</span>
+                          ) : comp.shortage > 0 ? (
                             <Badge className="bg-red-100 text-red-800">
                               Short {comp.shortage} {comp.unit_of_measure}
                             </Badge>
