@@ -27,6 +27,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import PaginationControls from "../components/warehouse/PaginationControls";
+import ProductSearchCombobox from "../components/warehouse/ProductSearchCombobox";
 
 function PurchaseOrdersTable({
   orders,
@@ -399,7 +400,8 @@ export default function PurchaseOrdersPage() {
           unit_cost: 0,
           total_cost: 0,
           expected_receipt_date: prev.expected_delivery_date || '',
-          is_bundle: false
+          is_bundle: false,
+          bundle_quantity: null
         }
       ]
     }));
