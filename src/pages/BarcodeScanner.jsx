@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +20,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 import CreateEditVendorDialog from "../components/warehouse/CreateEditVendorDialog";
+import PersonSearchCombobox from "../components/warehouse/PersonSearchCombobox";
+import VendorSearchCombobox from "../components/warehouse/VendorSearchCombobox";
 
 // Helper function to introduce a delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -33,6 +34,7 @@ export default function BarcodeScannerPage() {
   const [systemUsers, setSystemUsers] = useState([]);
   const [appUsers, setAppUsers] = useState([]);
   const [vendors, setVendors] = useState([]);
+  const [productVendors, setProductVendors] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [scannedBarcode, setScannedBarcode] = useState("");
   const [matchedProduct, setMatchedProduct] = useState(null);
@@ -127,6 +129,11 @@ export default function BarcodeScannerPage() {
       console.log("Loading vendors...");
       const vendorsData = await base44.entities.Vendor.filter({ is_active: true });
       setVendors(vendorsData);
+      
+      await delay(500);
+      console.log("Loading product vendors...");
+      const pvData = await base44.entities.ProductVendor.list().catch(() => []);
+      setProductVendors(pvData);
       
       await delay(500);
       console.log("Loading movements...");
@@ -1205,23 +1212,17 @@ export default function BarcodeScannerPage() {
                         <div>
                           <Label>Προμηθευτής *</Label>
                           <div className="flex gap-2">
-                            <Select 
-                              value={selectedVendor || 'no_vendor'} 
-                              onValueChange={(val) => setSelectedVendor(val === 'no_vendor' ? '' : val)}
-                              disabled={!!selectedPO}
-                            >
-                              <SelectTrigger className="flex-1">
-                                <SelectValue placeholder="Επιλέξτε προμηθευτή" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="no_vendor">-- Επιλέξτε --</SelectItem>
-                                {vendors.map((vendor) => (
-                                  <SelectItem key={vendor.id} value={vendor.id}>
-                                    {vendor.name} ({vendor.code})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <div className="flex-1">
+                              <VendorSearchCombobox
+                                vendors={vendors}
+                                vendorProductIds={productVendors
+                                  .filter(pv => pv.product_id === matchedProduct?.id && pv.is_active)
+                                  .map(pv => pv.vendor_id)}
+                                value={selectedVendor}
+                                onValueChange={setSelectedVendor}
+                                disabled={!!selectedPO}
+                              />
+                            </div>
                             <Button
                               type="button"
                               variant="outline"
@@ -1290,39 +1291,12 @@ export default function BarcodeScannerPage() {
                     <>
                       <div>
                         <Label>Χρέωση σε Άτομο *</Label>
-                        <Select value={chargedToPerson || 'no_person'} onValueChange={(val) => setChargedToPerson(val === 'no_person' ? '' : val)}>
-                          <SelectTrigger className="bg-yellow-50 border-yellow-300">
-                            <SelectValue placeholder="Επιλέξτε ποιος παραλαμβάνει" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="no_person">-- Επιλέξτε --</SelectItem>
-                            {systemUsers.length > 0 && (
-                              <>
-                                <SelectItem disabled value="_sys_header" className="font-semibold text-blue-600">
-                                  System Users
-                                </SelectItem>
-                                {systemUsers.map(user => (
-                                  <SelectItem key={`user_${user.id}`} value={user.id}>
-                                    {user.full_name} ({user.email})
-                                  </SelectItem>
-                                ))}
-                              </>
-                            )}
-                            {appUsers.length > 0 && (
-                              <>
-                                {systemUsers.length > 0 && <Separator className="my-1" />}
-                                <SelectItem disabled value="_app_header" className="font-semibold text-green-600">
-                                  Application Users
-                                </SelectItem>
-                                {appUsers.map(user => (
-                                  <SelectItem key={`app_user_${user.id}`} value={user.id}>
-                                    {user.full_name}
-                                  </SelectItem>
-                                ))}
-                              </>
-                            )}
-                          </SelectContent>
-                        </Select>
+                        <PersonSearchCombobox
+                          systemUsers={systemUsers}
+                          appUsers={appUsers}
+                          value={chargedToPerson}
+                          onValueChange={setChargedToPerson}
+                        />
                       </div>
 
                       <div>
