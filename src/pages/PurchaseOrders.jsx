@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Eye, Send, CheckCircle, XCircle, Loader2, Trash2, Edit, ChevronDown, ChevronRight, Package } from "lucide-react";
+import { Plus, Search, Eye, Send, CheckCircle, XCircle, Loader2, Trash2, Edit, ChevronDown, ChevronRight, Package, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import PaginationControls from "../components/warehouse/PaginationControls";
 
 function PurchaseOrdersTable({
@@ -397,7 +398,8 @@ export default function PurchaseOrdersPage() {
           quantity_received: 0,
           unit_cost: 0,
           total_cost: 0,
-          expected_receipt_date: prev.expected_delivery_date || ''
+          expected_receipt_date: prev.expected_delivery_date || '',
+          is_bundle: false
         }
       ]
     }));
@@ -411,7 +413,18 @@ export default function PurchaseOrdersPage() {
   };
 
   const getAvailableProductsForVendor = () => {
-    return products.filter(p => p.is_active);
+    if (!formData.vendor_id) return products.filter(p => p.is_active);
+    
+    // Get products that this vendor has in ProductVendor
+    const vendorProductIds = productVendors
+      .filter(pv => pv.vendor_id === formData.vendor_id && pv.is_active)
+      .map(pv => pv.product_id);
+    
+    // Return vendor products first, then all other active products
+    const vendorProducts = products.filter(p => p.is_active && vendorProductIds.includes(p.id));
+    const otherProducts = products.filter(p => p.is_active && !vendorProductIds.includes(p.id));
+    
+    return [...vendorProducts, ...otherProducts];
   };
 
   const handleItemChange = (index, field, value) => {
