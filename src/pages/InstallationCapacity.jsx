@@ -3,12 +3,13 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { BarChart3, Calculator, AlertTriangle, CheckCircle, Package, GripVertical, X, Plus } from "lucide-react";
+import { BarChart3, Calculator, AlertTriangle, CheckCircle, Package, GripVertical, X, Plus, FileSpreadsheet } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import ExcelJS from 'exceljs';
 
 export default function InstallationCapacityPage() {
   const [busStopTypes, setBusStopTypes] = useState([]);
@@ -232,6 +233,86 @@ export default function InstallationCapacityPage() {
       type: busStopTypes.find(t => t.id === st.typeId)
     }));
 
+  const handleExportComponentAnalysis = async () => {
+    if (!capacityResults) return;
+
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Component Analysis');
+
+      // Define columns
+      worksheet.columns = [
+        { header: 'Product', key: 'product', width: 30 },
+        { header: 'SKU', key: 'sku', width: 20 },
+        { header: 'Available Stock', key: 'available_stock', width: 18 },
+        { header: 'Total Requested', key: 'total_requested', width: 18 },
+        { header: 'Will Consume', key: 'will_consume', width: 18 },
+        { header: 'Used By', key: 'used_by', width: 50 }
+      ];
+
+      // Style header row
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4B5563' }
+      };
+      worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+      // Add data
+      capacityResults.componentAnalysis.forEach(comp => {
+        const usedByText = comp.usages.map(usage => 
+          `#${usage.priority} ${usage.typeName}: ${usage.quantity_per_unit} × ${usage.requested_units} = ${usage.total_needed}${usage.actual_built !== undefined && usage.actual_built < usage.requested_units ? ` (built only ${usage.actual_built})` : ''}`
+        ).join('; ');
+
+        const row = worksheet.addRow({
+          product: comp.product_name,
+          sku: comp.product_sku,
+          available_stock: `${comp.available_stock} ${comp.unit_of_measure}`,
+          total_requested: `${comp.total_requested} ${comp.unit_of_measure}`,
+          will_consume: `${comp.total_consumed} ${comp.unit_of_measure}`,
+          used_by: usedByText
+        });
+
+        // Highlight bottleneck rows
+        if (comp.available_stock < comp.total_requested) {
+          row.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFEF2F2' }
+            };
+          });
+        }
+      });
+
+      // Add borders
+      worksheet.eachRow({ includeEmpty: false }, (row) => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+
+      // Generate buffer and download
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Component_Analysis_${new Date().toISOString().split('T')[0]}.xlsx`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Failed to export to Excel. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -410,10 +491,21 @@ export default function InstallationCapacityPage() {
             {/* Component Analysis */}
             <Card className="border-slate-200">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Component Analysis (Bottlenecks First)
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="w-5 h-5" />
+                    Component Analysis (Bottlenecks First)
+                  </CardTitle>
+                  <Button 
+                    onClick={handleExportComponentAnalysis}
+                    variant="outline"
+                    size="sm"
+                    className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 mr-2" />
+                    Export Excel
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -424,7 +516,6 @@ export default function InstallationCapacityPage() {
                       <TableHead>Available Stock</TableHead>
                       <TableHead>Total Requested</TableHead>
                       <TableHead>Will Consume</TableHead>
-                      <TableHead>Shortage</TableHead>
                       <TableHead>Used By</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -451,17 +542,6 @@ export default function InstallationCapacityPage() {
                         </TableCell>
                         <TableCell className={comp.total_consumed > comp.available_stock ? 'text-red-600 font-semibold' : 'text-green-600'}>
                           {comp.total_consumed} {comp.unit_of_measure}
-                        </TableCell>
-                        <TableCell>
-                          {comp.total_consumed === 0 ? (
-                            <span className="text-slate-400">-</span>
-                          ) : comp.shortage > 0 ? (
-                            <Badge className="bg-red-100 text-red-800">
-                              Short {comp.shortage} {comp.unit_of_measure}
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-green-100 text-green-800">OK</Badge>
-                          )}
                         </TableCell>
                         <TableCell>
                           <div className="space-y-1">
