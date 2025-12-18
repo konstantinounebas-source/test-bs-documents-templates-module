@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Download, Package, User, TrendingUp, MapPin, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Download, Package, User, TrendingUp, MapPin, ChevronDown, ChevronUp, Euro, Box } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import PaginationControls from "../components/warehouse/PaginationControls";
 
 export default function ChargedMaterialsReportPage() {
@@ -29,6 +30,8 @@ export default function ChargedMaterialsReportPage() {
   const [activeTab, setActiveTab] = useState("persons");
   const [expandedPersons, setExpandedPersons] = useState(new Set());
   const [expandedLocations, setExpandedLocations] = useState(new Set());
+  const [groupBy, setGroupBy] = useState("person"); // "person" or "material"
+  const [expandedMaterials, setExpandedMaterials] = useState(new Set());
 
   // Pagination states for persons tab
   const [personsCurrentPage, setPersonsCurrentPage] = useState(1);
@@ -111,27 +114,75 @@ export default function ChargedMaterialsReportPage() {
           person,
           personName: getUserName(person),
           products: {},
-          totalItems: 0
+          totalItems: 0,
+          totalCost: 0
         };
       }
       
       const product = getProduct(movement.product_id);
       if (!product) return;
       
+      const cost = (product.unit_cost || 0) * movement.quantity;
+      
       if (!aggregated[person].products[movement.product_id]) {
         aggregated[person].products[movement.product_id] = {
           product,
-          quantity: 0
+          quantity: 0,
+          cost: 0
         };
       }
       
       aggregated[person].products[movement.product_id].quantity += movement.quantity;
+      aggregated[person].products[movement.product_id].cost += cost;
       aggregated[person].totalItems += movement.quantity;
+      aggregated[person].totalCost += cost;
     });
     
     // Sort persons by name
     return Object.values(aggregated).sort((a, b) => 
       a.personName.localeCompare(b.personName)
+    );
+  };
+
+  // Aggregate by material
+  const aggregateByMaterial = () => {
+    const aggregated = {};
+    
+    filteredMovements.forEach(movement => {
+      const productId = movement.product_id;
+      if (!aggregated[productId]) {
+        const product = getProduct(productId);
+        if (!product) return;
+        
+        aggregated[productId] = {
+          product,
+          persons: {},
+          totalQuantity: 0,
+          totalCost: 0
+        };
+      }
+      
+      const person = movement.charged_to_person;
+      const product = getProduct(productId);
+      const cost = (product?.unit_cost || 0) * movement.quantity;
+      
+      if (!aggregated[productId].persons[person]) {
+        aggregated[productId].persons[person] = {
+          personName: getUserName(person),
+          quantity: 0,
+          cost: 0
+        };
+      }
+      
+      aggregated[productId].persons[person].quantity += movement.quantity;
+      aggregated[productId].persons[person].cost += cost;
+      aggregated[productId].totalQuantity += movement.quantity;
+      aggregated[productId].totalCost += cost;
+    });
+    
+    // Sort materials by name
+    return Object.values(aggregated).sort((a, b) => 
+      a.product.name.localeCompare(b.product.name)
     );
   };
 
@@ -196,6 +247,7 @@ export default function ChargedMaterialsReportPage() {
   };
 
   const personAggregates = aggregateByPerson();
+  const materialAggregates = aggregateByMaterial();
   const locationAggregates = aggregateByLocation();
 
   // Persons Pagination
@@ -235,33 +287,70 @@ export default function ChargedMaterialsReportPage() {
     setExpandedLocations(newExpanded);
   };
 
+  const toggleMaterialExpanded = (productId) => {
+    const newExpanded = new Set(expandedMaterials);
+    if (newExpanded.has(productId)) {
+      newExpanded.delete(productId);
+    } else {
+      newExpanded.add(productId);
+    }
+    setExpandedMaterials(newExpanded);
+  };
+
   // Calculate stats based on active tab
-  const stats = activeTab === "persons" ? {
-    totalPersons: personAggregates.length, // Use aggregate length for accurate count after filters
-    totalMovements: filteredMovements.length, // Total filtered movements (not just charged)
-    totalItemsCharged: filteredMovements.reduce((sum, m) => sum + (m.quantity || 0), 0)
-  } : {
-    totalLocations: locationAggregates.length, // Use aggregate length for accurate count after filters
-    totalProducts: new Set(stockItems.map(s => s.product_id)).size, // All unique products in stock overall
-    totalItemsInStock: locationAggregates.reduce((sum, loc) => sum + loc.totalItems, 0) // Sum of available items from aggregated locations
+  const stats = activeTab === "persons" ? (
+    groupBy === "person" ? {
+      totalPersons: personAggregates.length,
+      totalMovements: filteredMovements.length,
+      totalItemsCharged: filteredMovements.reduce((sum, m) => sum + (m.quantity || 0), 0),
+      totalCost: personAggregates.reduce((sum, p) => sum + (p.totalCost || 0), 0)
+    } : {
+      totalMaterials: materialAggregates.length,
+      totalMovements: filteredMovements.length,
+      totalItemsCharged: filteredMovements.reduce((sum, m) => sum + (m.quantity || 0), 0),
+      totalCost: materialAggregates.reduce((sum, m) => sum + (m.totalCost || 0), 0)
+    }
+  ) : {
+    totalLocations: locationAggregates.length,
+    totalProducts: new Set(stockItems.map(s => s.product_id)).size,
+    totalItemsInStock: locationAggregates.reduce((sum, loc) => sum + loc.totalItems, 0)
   };
 
   const handleExport = () => {
     const csvData = [];
     
     if (activeTab === "persons") {
-      personAggregates.forEach(personData => { // Export all, not just paginated
-        Object.values(personData.products).forEach(({ product, quantity }) => {
-          csvData.push({
-            'Person': personData.personName,
-            'Product SKU': product.sku,
-            'Product Name': product.name,
-            'Total Quantity Charged': quantity,
-            'Unit of Measure': product.unit_of_measure,
-            'Period': startDate && endDate ? `${format(new Date(startDate), 'dd/MM/yyyy')} - ${format(new Date(endDate), 'dd/MM/yyyy')}` : 'All Time'
+      if (groupBy === "person") {
+        personAggregates.forEach(personData => {
+          Object.values(personData.products).forEach(({ product, quantity, cost }) => {
+            csvData.push({
+              'Person': personData.personName,
+              'Product SKU': product.sku,
+              'Product Name': product.name,
+              'Total Quantity Charged': quantity,
+              'Unit Cost (€)': product.unit_cost || 0,
+              'Total Cost (€)': cost.toFixed(2),
+              'Unit of Measure': product.unit_of_measure,
+              'Period': startDate && endDate ? `${format(new Date(startDate), 'dd/MM/yyyy')} - ${format(new Date(endDate), 'dd/MM/yyyy')}` : 'All Time'
+            });
           });
         });
-      });
+      } else {
+        materialAggregates.forEach(materialData => {
+          Object.values(materialData.persons).forEach(({ personName, quantity, cost }) => {
+            csvData.push({
+              'Product SKU': materialData.product.sku,
+              'Product Name': materialData.product.name,
+              'Person': personName,
+              'Quantity Charged': quantity,
+              'Unit Cost (€)': materialData.product.unit_cost || 0,
+              'Total Cost (€)': cost.toFixed(2),
+              'Unit of Measure': materialData.product.unit_of_measure,
+              'Period': startDate && endDate ? `${format(new Date(startDate), 'dd/MM/yyyy')} - ${format(new Date(endDate), 'dd/MM/yyyy')}` : 'All Time'
+            });
+          });
+        });
+      }
     } else {
       locationAggregates.forEach(locationData => { // Export all, not just paginated
         Object.values(locationData.products).forEach(({ product, quantityOnHand, quantityReserved, quantityAvailable }) => {
@@ -352,17 +441,25 @@ export default function ChargedMaterialsReportPage() {
           </TabsList>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
             {activeTab === "persons" ? (
               <>
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs font-medium text-slate-600">Total Persons</p>
-                        <p className="text-2xl font-bold text-slate-900 mt-1">{stats.totalPersons}</p>
+                        <p className="text-xs font-medium text-slate-600">
+                          {groupBy === "person" ? "Total Persons" : "Total Materials"}
+                        </p>
+                        <p className="text-2xl font-bold text-slate-900 mt-1">
+                          {groupBy === "person" ? stats.totalPersons : stats.totalMaterials}
+                        </p>
                       </div>
-                      <User className="w-8 h-8 text-blue-500" />
+                      {groupBy === "person" ? (
+                        <User className="w-8 h-8 text-blue-500" />
+                      ) : (
+                        <Box className="w-8 h-8 text-blue-500" />
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -387,6 +484,18 @@ export default function ChargedMaterialsReportPage() {
                         <p className="text-2xl font-bold text-slate-900 mt-1">{stats.totalItemsCharged}</p>
                       </div>
                       <Package className="w-8 h-8 text-purple-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-slate-600">Total Cost</p>
+                        <p className="text-2xl font-bold text-slate-900 mt-1">€{stats.totalCost.toFixed(2)}</p>
+                      </div>
+                      <Euro className="w-8 h-8 text-amber-500" />
                     </div>
                   </CardContent>
                 </Card>
@@ -435,7 +544,23 @@ export default function ChargedMaterialsReportPage() {
           {/* Filters */}
           <Card>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="space-y-4">
+                {activeTab === "persons" && (
+                  <div className="flex items-center gap-6 pb-4 border-b">
+                    <Label className="text-sm font-semibold">Ομαδοποίηση:</Label>
+                    <RadioGroup value={groupBy} onValueChange={setGroupBy} className="flex gap-4">
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="person" id="group-person" />
+                        <Label htmlFor="group-person" className="cursor-pointer">Ανά Άτομο</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="material" id="group-material" />
+                        <Label htmlFor="group-material" className="cursor-pointer">Ανά Υλικό</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                   <Input
@@ -529,96 +654,199 @@ export default function ChargedMaterialsReportPage() {
                   </SelectContent>
                 </Select>
               </div>
+              </div>
             </CardContent>
           </Card>
 
           {/* Persons Tab Content */}
-          <TabsContent value="persons" className="mt-6 space-y-4"> {/* Added space-y-4 here */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Materials Charged by Person</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {paginatedPersons.map((personData) => { // Use paginatedPersons
-                    const isExpanded = expandedPersons.has(personData.person);
-                    return (
-                      <div key={personData.person} className="border rounded-lg overflow-hidden bg-white">
-                        <div 
-                          className="flex items-center justify-between p-4 hover:bg-slate-50 cursor-pointer transition-colors"
-                          onClick={() => togglePersonExpanded(personData.person)}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <User className="w-5 h-5 text-blue-600" />
+          <TabsContent value="persons" className="mt-6 space-y-4">
+            {groupBy === "person" ? (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Materials Charged by Person</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {paginatedPersons.map((personData) => {
+                        const isExpanded = expandedPersons.has(personData.person);
+                        return (
+                          <div key={personData.person} className="border rounded-lg overflow-hidden bg-white">
+                            <div 
+                              className="flex items-center justify-between p-4 hover:bg-slate-50 cursor-pointer transition-colors"
+                              onClick={() => togglePersonExpanded(personData.person)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <User className="w-5 h-5 text-blue-600" />
+                                </div>
+                                <div>
+                                  <h3 className="font-bold text-base">{personData.personName}</h3>
+                                  <p className="text-sm text-slate-600">
+                                    Total Items: <span className="font-semibold text-slate-900">{personData.totalItems}</span>
+                                    {' • '}
+                                    {Object.keys(personData.products).length} product{Object.keys(personData.products).length !== 1 ? 's' : ''}
+                                    {' • '}
+                                    Cost: <span className="font-semibold text-amber-600">€{personData.totalCost.toFixed(2)}</span>
+                                  </p>
+                                </div>
+                              </div>
+                              <Button variant="ghost" size="icon">
+                                {isExpanded ? (
+                                  <ChevronUp className="w-5 h-5" />
+                                ) : (
+                                  <ChevronDown className="w-5 h-5" />
+                                )}
+                              </Button>
                             </div>
-                            <div>
-                              <h3 className="font-bold text-base">{personData.personName}</h3>
-                              <p className="text-sm text-slate-600">
-                                Total Items: <span className="font-semibold text-slate-900">{personData.totalItems}</span>
-                                {' • '}
-                                {Object.keys(personData.products).length} product{Object.keys(personData.products).length !== 1 ? 's' : ''}
-                              </p>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="icon">
-                            {isExpanded ? (
-                              <ChevronUp className="w-5 h-5" />
-                            ) : (
-                              <ChevronDown className="w-5 h-5" />
+
+                            {isExpanded && (
+                              <div className="border-t bg-slate-50">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow className="hover:bg-transparent">
+                                      <TableHead>Product SKU</TableHead>
+                                      <TableHead>Product Name</TableHead>
+                                      <TableHead className="text-right">Quantity</TableHead>
+                                      <TableHead className="text-right">Unit Cost</TableHead>
+                                      <TableHead className="text-right">Total Cost</TableHead>
+                                      <TableHead>Unit</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {Object.values(personData.products).map(({ product, quantity, cost }) => (
+                                      <TableRow key={product.id}>
+                                        <TableCell className="font-mono text-sm">{product.sku}</TableCell>
+                                        <TableCell className="font-medium">{product.name}</TableCell>
+                                        <TableCell className="text-right font-bold text-lg">{quantity}</TableCell>
+                                        <TableCell className="text-right text-slate-600">€{(product.unit_cost || 0).toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-bold text-amber-600">€{cost.toFixed(2)}</TableCell>
+                                        <TableCell>
+                                          <Badge variant="outline">{product.unit_of_measure}</Badge>
+                                        </TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
                             )}
-                          </Button>
-                        </div>
-
-                        {isExpanded && (
-                          <div className="border-t bg-slate-50">
-                            <Table>
-                              <TableHeader>
-                                <TableRow className="hover:bg-transparent">
-                                  <TableHead>Product SKU</TableHead>
-                                  <TableHead>Product Name</TableHead>
-                                  <TableHead className="text-right">Quantity Charged</TableHead>
-                                  <TableHead>Unit</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {Object.values(personData.products).map(({ product, quantity }) => (
-                                  <TableRow key={product.id}>
-                                    <TableCell className="font-mono text-sm">{product.sku}</TableCell>
-                                    <TableCell className="font-medium">{product.name}</TableCell>
-                                    <TableCell className="text-right font-bold text-lg">{quantity}</TableCell>
-                                    <TableCell>
-                                      <Badge variant="outline">{product.unit_of_measure}</Badge>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                        );
+                      })}
 
-                  {paginatedPersons.length === 0 && ( // Check paginated length
-                    <div className="text-center py-12 text-slate-500">
-                      No charged materials found for the selected filters.
+                      {paginatedPersons.length === 0 && (
+                        <div className="text-center py-12 text-slate-500">
+                          No charged materials found for the selected filters.
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-            {personAggregates.length > 0 && (
-              <PaginationControls
-                currentPage={personsCurrentPage}
-                totalItems={personAggregates.length}
-                itemsPerPage={personsItemsPerPage}
-                onPageChange={setPersonsCurrentPage}
-                onItemsPerPageChange={(value) => {
-                  setPersonsItemsPerPage(value);
-                  setPersonsCurrentPage(1); // Reset to first page when items per page changes
-                }}
-              />
+                  </CardContent>
+                </Card>
+                {personAggregates.length > 0 && (
+                  <PaginationControls
+                    currentPage={personsCurrentPage}
+                    totalItems={personAggregates.length}
+                    itemsPerPage={personsItemsPerPage}
+                    onPageChange={setPersonsCurrentPage}
+                    onItemsPerPageChange={(value) => {
+                      setPersonsItemsPerPage(value);
+                      setPersonsCurrentPage(1);
+                    }}
+                  />
+                )}
+              </>
+            ) : (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Materials Charged by Material Type</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {materialAggregates.slice(
+                        (personsCurrentPage - 1) * parseInt(personsItemsPerPage === "all" ? materialAggregates.length : personsItemsPerPage),
+                        personsItemsPerPage === "all" ? materialAggregates.length : personsCurrentPage * parseInt(personsItemsPerPage)
+                      ).map((materialData) => {
+                        const isExpanded = expandedMaterials.has(materialData.product.id);
+                        return (
+                          <div key={materialData.product.id} className="border rounded-lg overflow-hidden bg-white">
+                            <div 
+                              className="flex items-center justify-between p-4 hover:bg-slate-50 cursor-pointer transition-colors"
+                              onClick={() => toggleMaterialExpanded(materialData.product.id)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                  <Box className="w-5 h-5 text-purple-600" />
+                                </div>
+                                <div>
+                                  <h3 className="font-bold text-base">{materialData.product.name}</h3>
+                                  <p className="text-sm text-slate-600">
+                                    SKU: <span className="font-mono">{materialData.product.sku}</span>
+                                    {' • '}
+                                    Total Quantity: <span className="font-semibold text-slate-900">{materialData.totalQuantity}</span>
+                                    {' • '}
+                                    Cost: <span className="font-semibold text-amber-600">€{materialData.totalCost.toFixed(2)}</span>
+                                  </p>
+                                </div>
+                              </div>
+                              <Button variant="ghost" size="icon">
+                                {isExpanded ? (
+                                  <ChevronUp className="w-5 h-5" />
+                                ) : (
+                                  <ChevronDown className="w-5 h-5" />
+                                )}
+                              </Button>
+                            </div>
+
+                            {isExpanded && (
+                              <div className="border-t bg-slate-50">
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow className="hover:bg-transparent">
+                                      <TableHead>Person</TableHead>
+                                      <TableHead className="text-right">Quantity</TableHead>
+                                      <TableHead className="text-right">Unit Cost</TableHead>
+                                      <TableHead className="text-right">Total Cost</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {Object.values(materialData.persons).map(({ personName, quantity, cost }) => (
+                                      <TableRow key={personName}>
+                                        <TableCell className="font-medium">{personName}</TableCell>
+                                        <TableCell className="text-right font-bold text-lg">{quantity}</TableCell>
+                                        <TableCell className="text-right text-slate-600">€{(materialData.product.unit_cost || 0).toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-bold text-amber-600">€{cost.toFixed(2)}</TableCell>
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </Table>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {materialAggregates.length === 0 && (
+                        <div className="text-center py-12 text-slate-500">
+                          No materials found for the selected filters.
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+                {materialAggregates.length > 0 && (
+                  <PaginationControls
+                    currentPage={personsCurrentPage}
+                    totalItems={materialAggregates.length}
+                    itemsPerPage={personsItemsPerPage}
+                    onPageChange={setPersonsCurrentPage}
+                    onItemsPerPageChange={(value) => {
+                      setPersonsItemsPerPage(value);
+                      setPersonsCurrentPage(1);
+                    }}
+                  />
+                )}
+              </>
             )}
           </TabsContent>
 
