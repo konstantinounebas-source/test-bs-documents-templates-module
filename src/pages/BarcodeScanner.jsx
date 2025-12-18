@@ -2147,12 +2147,17 @@ export default function BarcodeScannerPage() {
                       <TableHead className="w-[80px]">Qty *</TableHead>
                       <TableHead className="w-[100px]">Unit Cost (€)</TableHead>
                       <TableHead className="w-[90px]">Pcs/Qty</TableHead>
+                      <TableHead className="w-[90px]">Cost/Pc (€)</TableHead>
                       <TableHead className="w-[180px]">Θέση Αποθήκης *</TableHead>
                       <TableHead className="w-[60px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {bulkInvoiceItems.map((item, index) => {
+                      const costPerPc = item.unit_cost && item.bundle_quantity && parseFloat(item.bundle_quantity) > 0
+                        ? (parseFloat(item.unit_cost) / parseFloat(item.bundle_quantity)).toFixed(4)
+                        : '-';
+                      
                       return (
                         <TableRow key={index}>
                           <TableCell>
@@ -2195,6 +2200,9 @@ export default function BarcodeScannerPage() {
                               onChange={(e) => handleBulkInvoiceItemChange(index, 'bundle_quantity', e.target.value)}
                               placeholder="100"
                             />
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs">{costPerPc}</span>
                           </TableCell>
                           <TableCell>
                             <Select
