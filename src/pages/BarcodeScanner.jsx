@@ -37,6 +37,7 @@ export default function BarcodeScannerPage() {
   const [appUsers, setAppUsers] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [productVendors, setProductVendors] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [scannedBarcode, setScannedBarcode] = useState("");
   const [matchedProduct, setMatchedProduct] = useState(null);
@@ -146,6 +147,11 @@ export default function BarcodeScannerPage() {
       console.log("Loading product vendors...");
       const pvData = await base44.entities.ProductVendor.list().catch(() => []);
       setProductVendors(pvData);
+      
+      await delay(500);
+      console.log("Loading categories...");
+      const categoriesData = await base44.entities.ProductCategory.filter({ is_active: true });
+      setCategories(categoriesData);
       
       await delay(500);
       console.log("Loading movements...");
