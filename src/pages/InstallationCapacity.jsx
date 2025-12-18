@@ -19,6 +19,7 @@ export default function InstallationCapacityPage() {
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [capacityResults, setCapacityResults] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [exportOnlyBottlenecks, setExportOnlyBottlenecks] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -259,8 +260,13 @@ export default function InstallationCapacityPage() {
       };
       worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
 
+      // Filter data based on checkbox
+      const dataToExport = exportOnlyBottlenecks 
+        ? capacityResults.componentAnalysis.filter(comp => comp.available_stock < comp.total_requested)
+        : capacityResults.componentAnalysis;
+
       // Add data
-      capacityResults.componentAnalysis.forEach(comp => {
+      dataToExport.forEach(comp => {
         const usedByText = comp.usages.map(usage => 
           `#${usage.priority} ${usage.typeName}: ${usage.quantity_per_unit} × ${usage.requested_units} = ${usage.total_needed}${usage.actual_built !== undefined && usage.actual_built < usage.requested_units ? ` (built only ${usage.actual_built})` : ''}`
         ).join('; ');
@@ -304,7 +310,10 @@ export default function InstallationCapacityPage() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Component_Analysis_${new Date().toISOString().split('T')[0]}.xlsx`;
+      const filename = exportOnlyBottlenecks 
+        ? `Component_Analysis_Bottlenecks_${new Date().toISOString().split('T')[0]}.xlsx`
+        : `Component_Analysis_${new Date().toISOString().split('T')[0]}.xlsx`;
+      link.download = filename;
       link.click();
       window.URL.revokeObjectURL(url);
     } catch (error) {
@@ -496,15 +505,30 @@ export default function InstallationCapacityPage() {
                     <Package className="w-5 h-5" />
                     Component Analysis (Bottlenecks First)
                   </CardTitle>
-                  <Button 
-                    onClick={handleExportComponentAnalysis}
-                    variant="outline"
-                    size="sm"
-                    className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
-                  >
-                    <FileSpreadsheet className="w-4 h-4 mr-2" />
-                    Export Excel
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="export-bottlenecks-only"
+                        checked={exportOnlyBottlenecks}
+                        onCheckedChange={setExportOnlyBottlenecks}
+                      />
+                      <label 
+                        htmlFor="export-bottlenecks-only" 
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        Μόνο Bottlenecks
+                      </label>
+                    </div>
+                    <Button 
+                      onClick={handleExportComponentAnalysis}
+                      variant="outline"
+                      size="sm"
+                      className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 mr-2" />
+                      Export Excel
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
