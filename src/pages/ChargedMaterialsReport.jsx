@@ -222,7 +222,7 @@ export default function ChargedMaterialsReportPage() {
           const product = getProduct(s.product_id);
           return (s.warehouse_location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                  product?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                 product?.sku.toLowerCase().includes(searchTerm.toLowerCase())); // Also search by SKU
+                 product?.sku.toLowerCase().includes(searchTerm.toLowerCase()));
         });
 
     searchFilteredStock.forEach(stock => {
@@ -234,7 +234,7 @@ export default function ChargedMaterialsReportPage() {
           location,
           products: {},
           totalItems: 0,
-          totalValue: 0 // Not currently used, but keeping it as it was in the original thought process
+          totalCost: 0
         };
       }
       
@@ -242,23 +242,26 @@ export default function ChargedMaterialsReportPage() {
       if (!product) return;
       
       const availableQty = (stock.quantity_on_hand || 0) - (stock.quantity_reserved || 0);
+      const unitCost = getProductUnitCost(stock.product_id);
       
       // Only include if quantity available is > 0 and product filter matches
       if (availableQty > 0 && (productFilter === "all" || stock.product_id === productFilter)) {
-        // If product already exists for this location, update quantities, otherwise add
         if (!aggregated[location].products[stock.product_id]) {
           aggregated[location].products[stock.product_id] = {
             product,
             quantityOnHand: 0,
             quantityReserved: 0,
-            quantityAvailable: 0
+            quantityAvailable: 0,
+            cost: 0
           };
         }
         aggregated[location].products[stock.product_id].quantityOnHand += (stock.quantity_on_hand || 0);
         aggregated[location].products[stock.product_id].quantityReserved += (stock.quantity_reserved || 0);
         aggregated[location].products[stock.product_id].quantityAvailable += availableQty;
+        aggregated[location].products[stock.product_id].cost += availableQty * unitCost;
 
         aggregated[location].totalItems += availableQty;
+        aggregated[location].totalCost += availableQty * unitCost;
       }
     });
     
@@ -335,7 +338,8 @@ export default function ChargedMaterialsReportPage() {
   ) : {
     totalLocations: locationAggregates.length,
     totalProducts: new Set(stockItems.map(s => s.product_id)).size,
-    totalItemsInStock: locationAggregates.reduce((sum, loc) => sum + loc.totalItems, 0)
+    totalItemsInStock: locationAggregates.reduce((sum, loc) => sum + loc.totalItems, 0),
+    totalCost: locationAggregates.reduce((sum, loc) => sum + (loc.totalCost || 0), 0)
   };
 
   const handleExport = () => {
@@ -374,8 +378,8 @@ export default function ChargedMaterialsReportPage() {
         });
       }
     } else {
-      locationAggregates.forEach(locationData => { // Export all, not just paginated
-        Object.values(locationData.products).forEach(({ product, quantityOnHand, quantityReserved, quantityAvailable }) => {
+      locationAggregates.forEach(locationData => {
+        Object.values(locationData.products).forEach(({ product, quantityOnHand, quantityReserved, quantityAvailable, cost }) => {
           csvData.push({
             'Location': locationData.location,
             'Product SKU': product.sku,
@@ -383,6 +387,8 @@ export default function ChargedMaterialsReportPage() {
             'Quantity On Hand': quantityOnHand,
             'Quantity Reserved': quantityReserved,
             'Quantity Available': quantityAvailable,
+            'Unit Cost (€)': getProductUnitCost(product.id).toFixed(2),
+            'Total Value (€)': cost.toFixed(2),
             'Unit of Measure': product.unit_of_measure
           });
         });
@@ -463,7 +469,7 @@ export default function ChargedMaterialsReportPage() {
           </TabsList>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+          <div className={`grid grid-cols-1 gap-4 mt-6 ${activeTab === "persons" ? "md:grid-cols-4" : "md:grid-cols-4"}`}>
             {activeTab === "persons" ? (
               <>
                 <Card>
@@ -556,6 +562,18 @@ export default function ChargedMaterialsReportPage() {
                         <p className="text-2xl font-bold text-slate-900 mt-1">{stats.totalItemsInStock}</p>
                       </div>
                       <TrendingUp className="w-8 h-8 text-purple-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-slate-600">Total Stock Value</p>
+                        <p className="text-2xl font-bold text-slate-900 mt-1">€{stats.totalCost.toFixed(2)}</p>
+                      </div>
+                      <Euro className="w-8 h-8 text-amber-500" />
                     </div>
                   </CardContent>
                 </Card>
@@ -898,6 +916,8 @@ export default function ChargedMaterialsReportPage() {
                                 Total Available: <span className="font-semibold text-slate-900">{locationData.totalItems}</span>
                                 {' • '}
                                 {Object.keys(locationData.products).length} product{Object.keys(locationData.products).length !== 1 ? 's' : ''}
+                                {' • '}
+                                Value: <span className="font-semibold text-amber-600">€{locationData.totalCost.toFixed(2)}</span>
                               </p>
                             </div>
                           </div>
@@ -920,17 +940,21 @@ export default function ChargedMaterialsReportPage() {
                                   <TableHead className="text-right">On Hand</TableHead>
                                   <TableHead className="text-right">Reserved</TableHead>
                                   <TableHead className="text-right">Available</TableHead>
+                                  <TableHead className="text-right">Unit Cost</TableHead>
+                                  <TableHead className="text-right">Total Value</TableHead>
                                   <TableHead>Unit</TableHead>
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {Object.values(locationData.products).map(({ product, quantityOnHand, quantityReserved, quantityAvailable }) => (
+                                {Object.values(locationData.products).map(({ product, quantityOnHand, quantityReserved, quantityAvailable, cost }) => (
                                   <TableRow key={product.id}>
                                     <TableCell className="font-mono text-sm">{product.sku}</TableCell>
                                     <TableCell className="font-medium">{product.name}</TableCell>
                                     <TableCell className="text-right font-semibold">{quantityOnHand}</TableCell>
                                     <TableCell className="text-right text-orange-600 font-semibold">{quantityReserved}</TableCell>
                                     <TableCell className="text-right text-green-600 font-bold text-lg">{quantityAvailable}</TableCell>
+                                    <TableCell className="text-right text-slate-600">€{getProductUnitCost(product.id).toFixed(2)}</TableCell>
+                                    <TableCell className="text-right font-bold text-amber-600">€{cost.toFixed(2)}</TableCell>
                                     <TableCell>
                                       <Badge variant="outline">{product.unit_of_measure}</Badge>
                                     </TableCell>
