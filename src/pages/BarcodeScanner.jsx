@@ -48,6 +48,7 @@ export default function BarcodeScannerPage() {
   const [chargedToPerson, setChargedToPerson] = useState("");
   const [selectedVendor, setSelectedVendor] = useState("");
   const [unitCost, setUnitCost] = useState("");
+  const [bundleQuantity, setBundleQuantity] = useState("");
   const [notes, setNotes] = useState("");
   const [recentScans, setRecentScans] = useState([]);
   const [scanResult, setScanResult] = useState(null);
@@ -208,10 +209,12 @@ export default function BarcodeScannerPage() {
             quantityOrdered,
             quantityReceived,
             quantityRemaining,
-            unitCost: poItem.unit_cost
+            unitCost: poItem.unit_cost,
+            bundleQuantity: poItem.bundle_quantity
           });
           
           setUnitCost(String(poItem.unit_cost));
+          setBundleQuantity(String(poItem.bundle_quantity || ''));
           
           if (quantityRemaining > 0 && parseInt(quantity) > quantityRemaining) {
             setQuantity(String(quantityRemaining));
@@ -219,6 +222,7 @@ export default function BarcodeScannerPage() {
         } else {
           setPOItemInfo(null);
           setUnitCost("");
+          setBundleQuantity("");
         }
       }
     } else {
@@ -226,6 +230,7 @@ export default function BarcodeScannerPage() {
       if (movementType === "IN" && !selectedPO) {
         setSelectedVendor("");
         setUnitCost("");
+        setBundleQuantity("");
       }
     }
   }, [selectedPO, matchedProduct, movementType, purchaseOrders, quantity]);
@@ -238,8 +243,10 @@ export default function BarcodeScannerPage() {
       );
       if (pv && pv.unit_cost) {
         setUnitCost(String(pv.unit_cost));
+        setBundleQuantity(String(pv.bundle_quantity || ''));
       } else {
         setUnitCost("");
+        setBundleQuantity("");
       }
     }
   }, [selectedVendor, matchedProduct, movementType, selectedPO, productVendors]);
@@ -578,12 +585,14 @@ export default function BarcodeScannerPage() {
             vendor_id: selectedVendor,
             unit_cost: cost,
             is_preferred: false,
-            is_active: true
+            is_active: true,
+            bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
           });
         } else {
           await base44.entities.ProductVendor.update(existingPVs[0].id, {
             unit_cost: cost,
-            is_active: true
+            is_active: true,
+            bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
           });
         }
       }
@@ -745,6 +754,7 @@ export default function BarcodeScannerPage() {
       setChargedToPerson("");
       setSelectedVendor("");
       setUnitCost("");
+      setBundleQuantity("");
       setNotes("");
       setPOItemInfo(null);
       setUploadedPhotos([]);
@@ -853,7 +863,8 @@ export default function BarcodeScannerPage() {
               vendor_id: po.vendor_id,
               unit_cost: item.unit_cost,
               is_preferred: false,
-              is_active: true
+              is_active: true,
+              bundle_quantity: item.bundle_quantity
             });
           }
         }
@@ -922,6 +933,7 @@ export default function BarcodeScannerPage() {
     setChargedToPerson("");
     setSelectedVendor("");
     setUnitCost("");
+    setBundleQuantity("");
     setPOItemInfo(null);
   };
 
@@ -1209,7 +1221,10 @@ export default function BarcodeScannerPage() {
                               <strong>PO Info:</strong> Παραγγέλθηκαν {poItemInfo.quantityOrdered}, 
                               παραλήφθηκαν {poItemInfo.quantityReceived}, 
                               υπόλοιπο <strong>{poItemInfo.quantityRemaining}</strong> τεμάχια.
-                              Κόστος από PO: €{poItemInfo.unitCost.toFixed(2)}
+                              Κόστος από PO: €{poItemInfo.unitCost.toFixed(4)}
+                              {poItemInfo.bundleQuantity && parseFloat(poItemInfo.bundleQuantity) > 0 && (
+                                <> ({poItemInfo.bundleQuantity} τεμάχια/bundle, Κόστος/τεμάχιο: €{(poItemInfo.unitCost / poItemInfo.bundleQuantity).toFixed(4)})</>
+                              )}
                             </AlertDescription>
                           </Alert>
                         )}
@@ -1253,16 +1268,34 @@ export default function BarcodeScannerPage() {
                           <Label>Κόστος ανά μονάδα (€) {!selectedPO && "(προαιρετικό)"}</Label>
                           <Input
                             type="number"
-                            step="0.01"
+                            step="0.0001"
                             min="0"
                             value={unitCost}
                             onChange={(e) => setUnitCost(e.target.value)}
-                            placeholder="0.00"
+                            placeholder="0.0000"
                             disabled={!!selectedPO}
                           />
                           <p className="text-xs text-yellow-700 mt-1">
-                            Cost per {matchedProduct.unit_of_measure} from this vendor
+                            Κόστος ανά {matchedProduct.unit_of_measure} από αυτόν τον προμηθευτή
                           </p>
+                        </div>
+
+                        <div>
+                          <Label>Pcs/Qty (προαιρετικό)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={bundleQuantity || ''}
+                            onChange={(e) => setBundleQuantity(e.target.value)}
+                            placeholder="π.χ. 100 τεμ."
+                            disabled={!!selectedPO}
+                          />
+                          {unitCost && bundleQuantity && parseFloat(bundleQuantity) > 0 && (
+                            <p className="text-xs text-yellow-700 mt-1">
+                              Κόστος ανά τεμάχιο: €{(parseFloat(unitCost) / parseFloat(bundleQuantity)).toFixed(4)}
+                            </p>
+                          )}
                         </div>
 
                         <div className="relative">
@@ -1744,7 +1777,9 @@ export default function BarcodeScannerPage() {
                     <TableHead className="text-right">Received</TableHead>
                     <TableHead className="text-right">Remaining</TableHead>
                     <TableHead className="text-right">Receive Now</TableHead>
-                    <TableHead className="text-right">Unit Cost</TableHead>
+                    <TableHead className="text-right">Unit Cost (€)</TableHead>
+                    <TableHead className="text-right">Pcs/Qty</TableHead>
+                    <TableHead className="text-right">Cost/Pc (€)</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1776,7 +1811,13 @@ export default function BarcodeScannerPage() {
                             className="w-20 text-right"
                           />
                         </TableCell>
-                        <TableCell className="text-right">€{item.unit_cost?.toFixed(2) || '0.00'}</TableCell>
+                        <TableCell className="text-right">€{item.unit_cost?.toFixed(4) || '0.0000'}</TableCell>
+                        <TableCell className="text-right">{item.bundle_quantity || '-'}</TableCell>
+                        <TableCell className="text-right">
+                          {item.unit_cost && item.bundle_quantity && parseFloat(item.bundle_quantity) > 0
+                            ? `€${(item.unit_cost / parseFloat(item.bundle_quantity)).toFixed(4)}`
+                            : '-'}
+                        </TableCell>
                       </TableRow>
                     );
                   })}
