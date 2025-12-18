@@ -151,7 +151,7 @@ export default function InstallationCapacityPage() {
           }
         });
 
-        const canBuild = Math.floor(remainingStock / comp.quantity_required);
+        const canBuild = Math.max(0, Math.floor(remainingStock / comp.quantity_required));
         
         if (canBuild < maxCanBuild) {
           maxCanBuild = canBuild;
