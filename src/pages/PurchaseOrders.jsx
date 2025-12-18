@@ -25,7 +25,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import PaginationControls from "../components/warehouse/PaginationControls";
 import ProductSearchCombobox from "../components/warehouse/ProductSearchCombobox";
 
@@ -376,7 +375,8 @@ export default function PurchaseOrdersPage() {
         quantity_ordered: item.quantity_ordered,
         unit_cost: item.unit_cost,
         total_cost: item.total_cost,
-        expected_receipt_date: item.expected_receipt_date || ''
+        expected_receipt_date: item.expected_receipt_date || '',
+        bundle_quantity: item.bundle_quantity || null
       })),
       notes: po.notes || ''
     });
@@ -400,7 +400,6 @@ export default function PurchaseOrdersPage() {
           unit_cost: 0,
           total_cost: 0,
           expected_receipt_date: prev.expected_delivery_date || '',
-          is_bundle: false,
           bundle_quantity: null
         }
       ]
@@ -800,10 +799,10 @@ export default function PurchaseOrdersPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Product *</TableHead>
-                        <TableHead className="w-24">Quantity *</TableHead>
+                        <TableHead className="w-24">Bundles *</TableHead>
+                        <TableHead className="w-24">Qty/Bundle</TableHead>
                         <TableHead className="w-32">Unit Cost (€) *</TableHead>
                         <TableHead className="w-32">Total (€)</TableHead>
-                        <TableHead className="w-28">Bundle</TableHead>
                         <TableHead className="w-40">Expected Receipt</TableHead>
                         <TableHead className="w-16"></TableHead>
                       </TableRow>
@@ -818,33 +817,13 @@ export default function PurchaseOrdersPage() {
                         return (
                           <TableRow key={index}>
                             <TableCell>
-                              <Select
+                              <ProductSearchCombobox
+                                products={availableProducts}
+                                vendorProductIds={vendorProductIds}
                                 value={item.product_id}
                                 onValueChange={(value) => handleItemChange(index, 'product_id', value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select product" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {availableProducts.length === 0 ? (
-                                    <div className="p-2 text-sm text-slate-500">
-                                      No active products available
-                                    </div>
-                                  ) : (
-                                    availableProducts.map((product) => {
-                                      const isVendorProduct = vendorProductIds.includes(product.id);
-                                      return (
-                                        <SelectItem key={product.id} value={product.id}>
-                                          <div className="flex items-center gap-2">
-                                            {isVendorProduct && <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />}
-                                            <span>{product.name} ({product.sku})</span>
-                                          </div>
-                                        </SelectItem>
-                                      );
-                                    })
-                                  )}
-                                </SelectContent>
-                              </Select>
+                                placeholder="Select product..."
+                              />
                             </TableCell>
                             <TableCell>
                               <Input
@@ -855,6 +834,19 @@ export default function PurchaseOrdersPage() {
                                 value={item.quantity_ordered}
                                 onChange={(e) => handleItemChange(index, 'quantity_ordered', e.target.value)}
                                 required
+                                placeholder={item.bundle_quantity ? "Bundles" : "Qty"}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min="1"
+                                max="999999"
+                                step="1"
+                                value={item.bundle_quantity || ''}
+                                onChange={(e) => handleItemChange(index, 'bundle_quantity', e.target.value)}
+                                placeholder="Πχ. 100"
+                                className="text-xs"
                               />
                             </TableCell>
                             <TableCell>
@@ -871,14 +863,6 @@ export default function PurchaseOrdersPage() {
                               <span className="font-semibold">
                                 {(item.total_cost || 0).toFixed(2)}
                               </span>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-center">
-                                <Checkbox
-                                  checked={item.is_bundle || false}
-                                  onCheckedChange={(checked) => handleItemChange(index, 'is_bundle', checked)}
-                                />
-                              </div>
                             </TableCell>
                             <TableCell>
                               <Input
@@ -1040,10 +1024,10 @@ export default function PurchaseOrdersPage() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Product *</TableHead>
-                        <TableHead className="w-24">Quantity *</TableHead>
+                        <TableHead className="w-24">Bundles *</TableHead>
+                        <TableHead className="w-24">Qty/Bundle</TableHead>
                         <TableHead className="w-32">Unit Cost (€) *</TableHead>
                         <TableHead className="w-32">Total (€)</TableHead>
-                        <TableHead className="w-28">Bundle</TableHead>
                         <TableHead className="w-40">Expected Receipt</TableHead>
                         <TableHead className="w-16"></TableHead>
                       </TableRow>
@@ -1058,33 +1042,13 @@ export default function PurchaseOrdersPage() {
                         return (
                           <TableRow key={index}>
                             <TableCell>
-                              <Select
+                              <ProductSearchCombobox
+                                products={availableProducts}
+                                vendorProductIds={vendorProductIds}
                                 value={item.product_id}
                                 onValueChange={(value) => handleItemChange(index, 'product_id', value)}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select product" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {availableProducts.length === 0 ? (
-                                    <div className="p-2 text-sm text-slate-500">
-                                      No active products available
-                                    </div>
-                                  ) : (
-                                    availableProducts.map((product) => {
-                                      const isVendorProduct = vendorProductIds.includes(product.id);
-                                      return (
-                                        <SelectItem key={product.id} value={product.id}>
-                                          <div className="flex items-center gap-2">
-                                            {isVendorProduct && <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />}
-                                            <span>{product.name} ({product.sku})</span>
-                                          </div>
-                                        </SelectItem>
-                                      );
-                                    })
-                                  )}
-                                </SelectContent>
-                              </Select>
+                                placeholder="Select product..."
+                              />
                             </TableCell>
                             <TableCell>
                               <Input
@@ -1095,6 +1059,19 @@ export default function PurchaseOrdersPage() {
                                 value={item.quantity_ordered}
                                 onChange={(e) => handleItemChange(index, 'quantity_ordered', e.target.value)}
                                 required
+                                placeholder={item.bundle_quantity ? "Bundles" : "Qty"}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Input
+                                type="number"
+                                min="1"
+                                max="999999"
+                                step="1"
+                                value={item.bundle_quantity || ''}
+                                onChange={(e) => handleItemChange(index, 'bundle_quantity', e.target.value)}
+                                placeholder="Πχ. 100"
+                                className="text-xs"
                               />
                             </TableCell>
                             <TableCell>
@@ -1111,14 +1088,6 @@ export default function PurchaseOrdersPage() {
                               <span className="font-semibold">
                                 {(item.total_cost || 0).toFixed(2)}
                               </span>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center justify-center">
-                                <Checkbox
-                                  checked={item.is_bundle || false}
-                                  onCheckedChange={(checked) => handleItemChange(index, 'is_bundle', checked)}
-                                />
-                              </div>
                             </TableCell>
                             <TableCell>
                               <Input
