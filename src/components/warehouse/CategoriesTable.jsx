@@ -18,7 +18,7 @@ import {
 
 import CreateEditCategoryDialog from "./CreateEditCategoryDialog";
 
-export default function CategoriesTable({ categories, isLoading, onCategorySaved }) {
+export default function CategoriesTable({ categories, allCategories, isLoading, onCategorySaved }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -43,7 +43,7 @@ export default function CategoriesTable({ categories, isLoading, onCategorySaved
 
   const getParentCategoryName = (parentId) => {
     if (!parentId) return '-';
-    const parent = categories.find(c => c.id === parentId);
+    const parent = allCategories?.find(c => c.id === parentId) || categories.find(c => c.id === parentId);
     return parent?.name || 'N/A';
   };
 
@@ -127,7 +127,7 @@ export default function CategoriesTable({ categories, isLoading, onCategorySaved
         }}
         onCategorySaved={onCategorySaved}
         category={selectedCategory}
-        categories={categories}
+        categories={allCategories || categories}
       />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

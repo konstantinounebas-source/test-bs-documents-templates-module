@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -404,13 +403,14 @@ export default function VendorsCategoriesPage() {
           <TabsContent value="categories" className="mt-0">
             <div className="bg-white rounded-xl shadow-sm border border-slate-200">
               <CategoriesTable
-                categories={paginatedCategories.filter(c => !c.parent_category_id)}
+                categories={paginatedCategories}
+                allCategories={categories}
                 isLoading={isLoading}
                 onCategorySaved={loadData}
               />
               <PaginationControls
                 currentPage={categoriesCurrentPage}
-                totalItems={filteredCategories.filter(c => !c.parent_category_id).length}
+                totalItems={filteredCategories.length}
                 itemsPerPage={categoriesItemsPerPage}
                 onPageChange={setCategoriesCurrentPage}
                 onItemsPerPageChange={(value) => {
