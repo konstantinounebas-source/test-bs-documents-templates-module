@@ -2144,7 +2144,7 @@ export default function BarcodeScannerPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[200px]">Προϊόν *</TableHead>
-                      <TableHead className="w-[80px]">Ποσότητα *</TableHead>
+                      <TableHead className="w-[80px]">Qty *</TableHead>
                       <TableHead className="w-[100px]">Unit Cost (€)</TableHead>
                       <TableHead className="w-[90px]">Pcs/Qty</TableHead>
                       <TableHead className="w-[90px]">Cost/Pc (€)</TableHead>
