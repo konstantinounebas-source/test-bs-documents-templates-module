@@ -441,15 +441,17 @@ export default function PurchaseOrdersPage() {
       );
       if (pv) {
         newItems[index].unit_cost = pv.unit_cost;
-        newItems[index].total_cost = newItems[index].quantity_ordered * pv.unit_cost;
-      } else {
-        newItems[index].total_cost = newItems[index].quantity_ordered * (newItems[index].unit_cost || 0);
       }
     }
 
-    if (field === 'quantity_ordered' || field === 'unit_cost') {
-      const qty = field === 'quantity_ordered' ? parseFloat(value) || 0 : parseFloat(newItems[index].quantity_ordered) || 0;
-      const cost = field === 'unit_cost' ? parseFloat(value) || 0 : parseFloat(newItems[index].unit_cost) || 0;
+    if (field === 'bundle_quantity') {
+      const bundleQty = parseFloat(value) || null;
+      newItems[index].is_bundle = bundleQty && bundleQty > 1;
+    }
+
+    if (field === 'quantity_ordered' || field === 'unit_cost' || field === 'bundle_quantity') {
+      const qty = parseFloat(newItems[index].quantity_ordered) || 0;
+      const cost = parseFloat(newItems[index].unit_cost) || 0;
       newItems[index].total_cost = qty * cost;
     }
 
