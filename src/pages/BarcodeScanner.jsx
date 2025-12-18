@@ -230,6 +230,20 @@ export default function BarcodeScannerPage() {
     }
   }, [selectedPO, matchedProduct, movementType, purchaseOrders, quantity]);
 
+  // Auto-fill unit cost from ProductVendor when vendor is selected
+  useEffect(() => {
+    if (movementType === "IN" && selectedVendor && matchedProduct && !selectedPO) {
+      const pv = productVendors.find(
+        pv => pv.product_id === matchedProduct.id && pv.vendor_id === selectedVendor && pv.is_active
+      );
+      if (pv && pv.unit_cost) {
+        setUnitCost(String(pv.unit_cost));
+      } else {
+        setUnitCost("");
+      }
+    }
+  }, [selectedVendor, matchedProduct, movementType, selectedPO, productVendors]);
+
   const loadRecentScans = () => {
     try {
       const stored = localStorage.getItem('recentlyScannedProducts');
