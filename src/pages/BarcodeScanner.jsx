@@ -934,6 +934,17 @@ export default function BarcodeScannerPage() {
     loadData();
   };
 
+  const handleVendorCreatedFromBulk = async (newVendor) => {
+    await loadData();
+    setBulkInvoiceVendor(newVendor.id);
+    setShowCreateVendorFromBulk(false);
+  };
+
+  const handleProductCreatedFromBulk = async () => {
+    await loadData();
+    setShowCreateProductFromBulk(false);
+  };
+
   const handleMovementTypeChange = (value) => {
     setMovementType(value);
     setFromLocation("");
