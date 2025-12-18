@@ -66,6 +66,13 @@ export default function BarcodeScannerPage() {
   const [selectedPOForBulkReceive, setSelectedPOForBulkReceive] = useState(null);
   const [poItemsToReceive, setPOItemsToReceive] = useState([]);
 
+  // Bulk invoice entry state
+  const [showBulkInvoiceDialog, setShowBulkInvoiceDialog] = useState(false);
+  const [bulkInvoiceVendor, setBulkInvoiceVendor] = useState("");
+  const [bulkInvoiceNumber, setBulkInvoiceNumber] = useState("");
+  const [bulkInvoiceWaybill, setBulkInvoiceWaybill] = useState("");
+  const [bulkInvoiceItems, setBulkInvoiceItems] = useState([]);
+
   // Camera scanning state
   const [showCamera, setShowCamera] = useState(false);
   const [cameraError, setCameraError] = useState(null);
@@ -949,6 +956,166 @@ export default function BarcodeScannerPage() {
     ));
   };
 
+  const handleOpenBulkInvoice = () => {
+    setBulkInvoiceVendor("");
+    setBulkInvoiceNumber("");
+    setBulkInvoiceWaybill("");
+    setBulkInvoiceItems([]);
+    setShowBulkInvoiceDialog(true);
+  };
+
+  const handleAddBulkInvoiceItem = () => {
+    setBulkInvoiceItems(prev => [...prev, {
+      product_id: '',
+      quantity: 1,
+      unit_cost: '',
+      bundle_quantity: '',
+      warehouse_location: ''
+    }]);
+  };
+
+  const handleRemoveBulkInvoiceItem = (index) => {
+    setBulkInvoiceItems(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleBulkInvoiceItemChange = (index, field, value) => {
+    setBulkInvoiceItems(prev => prev.map((item, i) => {
+      if (i !== index) return item;
+      
+      const updatedItem = { ...item, [field]: value };
+      
+      // Auto-fill unit cost from ProductVendor when product is selected
+      if (field === 'product_id' && value && bulkInvoiceVendor) {
+        const pv = productVendors.find(
+          pv => pv.product_id === value && pv.vendor_id === bulkInvoiceVendor && pv.is_active
+        );
+        if (pv) {
+          updatedItem.unit_cost = String(pv.unit_cost || '');
+          updatedItem.bundle_quantity = String(pv.bundle_quantity || '');
+        }
+      }
+      
+      return updatedItem;
+    }));
+  };
+
+  const handleSubmitBulkInvoice = async () => {
+    if (!bulkInvoiceVendor) {
+      setScanResult({ type: 'error', message: 'Παρακαλώ επιλέξτε προμηθευτή' });
+      return;
+    }
+
+    if (!bulkInvoiceNumber) {
+      setScanResult({ type: 'error', message: 'Παρακαλώ εισάγετε αριθμό τιμολογίου' });
+      return;
+    }
+
+    if (bulkInvoiceItems.length === 0) {
+      setScanResult({ type: 'error', message: 'Παρακαλώ προσθέστε τουλάχιστον ένα προϊόν' });
+      return;
+    }
+
+    for (let i = 0; i < bulkInvoiceItems.length; i++) {
+      const item = bulkInvoiceItems[i];
+      if (!item.product_id) {
+        setScanResult({ type: 'error', message: `Παρακαλώ επιλέξτε προϊόν για τη γραμμή ${i + 1}` });
+        return;
+      }
+      if (!item.warehouse_location) {
+        setScanResult({ type: 'error', message: `Παρακαλώ επιλέξτε θέση αποθήκης για τη γραμμή ${i + 1}` });
+        return;
+      }
+      if (!item.quantity || parseInt(item.quantity) < 1) {
+        setScanResult({ type: 'error', message: `Παρακαλώ εισάγετε έγκυρη ποσότητα για τη γραμμή ${i + 1}` });
+        return;
+      }
+    }
+
+    setIsProcessing(true);
+    try {
+      for (const item of bulkInvoiceItems) {
+        const quantityNum = parseInt(item.quantity);
+        const cost = parseFloat(item.unit_cost) || 0;
+
+        // Create or update ProductVendor if unit cost is provided
+        if (cost > 0) {
+          const existingPVs = await base44.entities.ProductVendor.filter({
+            product_id: item.product_id,
+            vendor_id: bulkInvoiceVendor
+          });
+          
+          if (existingPVs.length === 0) {
+            await base44.entities.ProductVendor.create({
+              product_id: item.product_id,
+              vendor_id: bulkInvoiceVendor,
+              unit_cost: cost,
+              is_preferred: false,
+              is_active: true,
+              bundle_quantity: item.bundle_quantity ? parseFloat(item.bundle_quantity) : null
+            });
+          } else {
+            await base44.entities.ProductVendor.update(existingPVs[0].id, {
+              unit_cost: cost,
+              is_active: true,
+              bundle_quantity: item.bundle_quantity ? parseFloat(item.bundle_quantity) : null
+            });
+          }
+        }
+
+        // Create stock movement
+        await base44.entities.StockMovement.create({
+          product_id: item.product_id,
+          movement_type: "IN",
+          quantity: quantityNum,
+          to_location: item.warehouse_location,
+          reference_type: "Invoice",
+          reference_id: bulkInvoiceNumber,
+          performed_by: currentUser.email,
+          waybill_number: bulkInvoiceWaybill || null,
+          notes: `Bulk invoice entry: ${bulkInvoiceNumber}`
+        });
+
+        // Update stock
+        const existingStock = stockItems.find(
+          s => s.product_id === item.product_id && s.warehouse_location === item.warehouse_location
+        );
+
+        if (existingStock) {
+          await base44.entities.StockItem.update(existingStock.id, {
+            quantity_on_hand: (existingStock.quantity_on_hand || 0) + quantityNum
+          });
+        } else {
+          await base44.entities.StockItem.create({
+            product_id: item.product_id,
+            warehouse_location: item.warehouse_location,
+            quantity_on_hand: quantityNum,
+            quantity_reserved: 0
+          });
+        }
+
+        await delay(200);
+      }
+
+      await loadData();
+
+      setScanResult({ 
+        type: 'success', 
+        message: `✓ Καταχωρήθηκαν επιτυχώς ${bulkInvoiceItems.length} προϊόντα από τιμολόγιο ${bulkInvoiceNumber}` 
+      });
+
+      setShowBulkInvoiceDialog(false);
+      setBulkInvoiceVendor("");
+      setBulkInvoiceNumber("");
+      setBulkInvoiceWaybill("");
+      setBulkInvoiceItems([]);
+
+    } catch (error) {
+      console.error("Error processing bulk invoice:", error);
+      setScanResult({ type: 'error', message: 'Αποτυχία καταχώρησης τιμολογίου. Παρακαλώ δοκιμάστε ξανά.' });
+    }
+    setIsProcessing(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-6">
       <div className="max-w-5xl mx-auto space-y-4">
@@ -985,6 +1152,15 @@ export default function BarcodeScannerPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-2">
+              <Button 
+                onClick={handleOpenBulkInvoice}
+                size="lg"
+                variant="outline"
+                className="flex-1 border-green-600 text-green-700 hover:bg-green-50 text-sm md:text-base"
+              >
+                <Plus className="w-4 h-4 md:w-5 md:h-5 mr-2" />
+                Bulk Invoice Entry
+              </Button>
               <Button 
                 onClick={startCamera}
                 size="lg"
@@ -1857,6 +2033,200 @@ export default function BarcodeScannerPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Invoice Entry Dialog */}
+      <Dialog open={showBulkInvoiceDialog} onOpenChange={setShowBulkInvoiceDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Μαζική Καταχώρηση Τιμολογίου</DialogTitle>
+            <DialogDescription>
+              Καταχωρήστε πολλά προϊόντα από τον ίδιο προμηθευτή και καθορίστε τη θέση αποθήκης για το καθένα
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div>
+                <Label>Προμηθευτής *</Label>
+                <VendorSearchCombobox
+                  vendors={vendors}
+                  vendorProductIds={[]}
+                  value={bulkInvoiceVendor}
+                  onValueChange={setBulkInvoiceVendor}
+                />
+              </div>
+              <div>
+                <Label>Αριθμός Τιμολογίου *</Label>
+                <Input
+                  value={bulkInvoiceNumber}
+                  onChange={(e) => setBulkInvoiceNumber(e.target.value)}
+                  placeholder="π.χ. INV-2025-001"
+                />
+              </div>
+              <div className="col-span-2">
+                <Label>Αριθμός Waybill (προαιρετικό)</Label>
+                <Input
+                  value={bulkInvoiceWaybill}
+                  onChange={(e) => setBulkInvoiceWaybill(e.target.value)}
+                  placeholder="π.χ. WB-2025-001"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center">
+              <Label className="text-base font-semibold">Προϊόντα</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleAddBulkInvoiceItem}
+                disabled={!bulkInvoiceVendor}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Προσθήκη Προϊόντος
+              </Button>
+            </div>
+
+            {!bulkInvoiceVendor && (
+              <p className="text-sm text-slate-500">Επιλέξτε προμηθευτή για να προσθέσετε προϊόντα</p>
+            )}
+
+            {bulkInvoiceItems.length > 0 && (
+              <div className="border rounded-lg overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[200px]">Προϊόν *</TableHead>
+                      <TableHead className="w-[80px]">Ποσότητα *</TableHead>
+                      <TableHead className="w-[100px]">Unit Cost (€)</TableHead>
+                      <TableHead className="w-[90px]">Pcs/Qty</TableHead>
+                      <TableHead className="w-[90px]">Cost/Pc (€)</TableHead>
+                      <TableHead className="w-[180px]">Θέση Αποθήκης *</TableHead>
+                      <TableHead className="w-[60px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bulkInvoiceItems.map((item, index) => {
+                      const costPerPc = item.unit_cost && item.bundle_quantity && parseFloat(item.bundle_quantity) > 0
+                        ? (parseFloat(item.unit_cost) / parseFloat(item.bundle_quantity)).toFixed(4)
+                        : '-';
+                      
+                      return (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <ProductSearchCombobox
+                              products={products.filter(p => p.is_active)}
+                              vendorProductIds={productVendors
+                                .filter(pv => pv.vendor_id === bulkInvoiceVendor && pv.is_active)
+                                .map(pv => pv.product_id)}
+                              value={item.product_id}
+                              onValueChange={(value) => handleBulkInvoiceItemChange(index, 'product_id', value)}
+                              placeholder="Επιλογή..."
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={item.quantity}
+                              onChange={(e) => handleBulkInvoiceItemChange(index, 'quantity', e.target.value)}
+                              placeholder="Qty"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              step="0.0001"
+                              min="0"
+                              value={item.unit_cost}
+                              onChange={(e) => handleBulkInvoiceItemChange(index, 'unit_cost', e.target.value)}
+                              placeholder="0.0000"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={item.bundle_quantity}
+                              onChange={(e) => handleBulkInvoiceItemChange(index, 'bundle_quantity', e.target.value)}
+                              placeholder="100"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs">{costPerPc}</span>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={item.warehouse_location || 'no_location'}
+                              onValueChange={(val) => handleBulkInvoiceItemChange(index, 'warehouse_location', val === 'no_location' ? '' : val)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Θέση" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="no_location">-- Επιλέξτε --</SelectItem>
+                                {locations.filter(loc => loc.id).map(loc => (
+                                  <SelectItem key={loc.id} value={loc.name}>
+                                    {loc.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleRemoveBulkInvoiceItem(index)}
+                            >
+                              <X className="w-4 h-4 text-red-600" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowBulkInvoiceDialog(false);
+                  setBulkInvoiceVendor("");
+                  setBulkInvoiceNumber("");
+                  setBulkInvoiceWaybill("");
+                  setBulkInvoiceItems([]);
+                }}
+              >
+                Ακύρωση
+              </Button>
+              <Button
+                onClick={handleSubmitBulkInvoice}
+                disabled={isProcessing || bulkInvoiceItems.length === 0}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isProcessing ? (
+                  <>
+                    <Upload className="w-4 h-4 mr-2 animate-spin" />
+                    Επεξεργασία...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Καταχώρηση Τιμολογίου
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
