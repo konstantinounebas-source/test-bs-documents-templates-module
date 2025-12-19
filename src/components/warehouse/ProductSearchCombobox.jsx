@@ -15,7 +15,9 @@ export default function ProductSearchCombobox({
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const selectedProduct = products.find(p => p.id === value);
+  // Handle empty string values
+  const actualValue = value || null;
+  const selectedProduct = products.find(p => p.id === actualValue);
 
   const filteredProducts = products.filter(product => {
     if (!searchTerm) return true;
@@ -72,7 +74,7 @@ export default function ProductSearchCombobox({
                   >
                     <Check
                       className={`mr-2 h-4 w-4 ${
-                        value === product.id ? "opacity-100" : "opacity-0"
+                        actualValue === product.id ? "opacity-100" : "opacity-0"
                       }`}
                     />
                     <div className="flex items-center gap-2 flex-1">
