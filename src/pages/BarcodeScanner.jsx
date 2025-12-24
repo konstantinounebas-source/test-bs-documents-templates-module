@@ -1484,7 +1484,6 @@ export default function BarcodeScannerPage() {
                                   .map(pv => pv.vendor_id)}
                                 value={selectedVendor}
                                 onValueChange={setSelectedVendor}
-                                disabled={!!selectedPO}
                               />
                             </div>
                             <Button
@@ -1512,7 +1511,6 @@ export default function BarcodeScannerPage() {
                                 setUnitCost("");
                               }
                             }}
-                            disabled={!!selectedPO}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -1526,7 +1524,7 @@ export default function BarcodeScannerPage() {
 
                         {costInputMethod === 'unit' ? (
                           <div>
-                            <Label>Κόστος ανά μονάδα (€) {!selectedPO && "(προαιρετικό)"}</Label>
+                            <Label>Κόστος ανά μονάδα (€) (προαιρετικό)</Label>
                             <Input
                               type="number"
                               step="0.0001"
@@ -1534,7 +1532,6 @@ export default function BarcodeScannerPage() {
                               value={unitCost}
                               onChange={(e) => setUnitCost(e.target.value)}
                               placeholder="0.0000"
-                              disabled={!!selectedPO}
                             />
                             <p className="text-xs text-yellow-700 mt-1">
                               Κόστος ανά {matchedProduct.unit_of_measure} από αυτόν τον προμηθευτή
@@ -1590,7 +1587,6 @@ export default function BarcodeScannerPage() {
                             value={bundleQuantity || ''}
                             onChange={(e) => setBundleQuantity(e.target.value)}
                             placeholder="π.χ. 100 τεμ."
-                            disabled={!!selectedPO}
                           />
                           {unitCost && bundleQuantity && parseFloat(bundleQuantity) > 0 && (
                             <p className="text-xs text-yellow-700 mt-1">
@@ -1618,7 +1614,6 @@ export default function BarcodeScannerPage() {
                               if (e.target.value) setSelectedPO("");
                             }}
                             placeholder="π.χ. INV-2025-001"
-                            disabled={!!selectedPO}
                           />
                         </div>
 
