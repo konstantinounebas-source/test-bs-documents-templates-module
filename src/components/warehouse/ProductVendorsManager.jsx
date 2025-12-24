@@ -86,6 +86,19 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
       await base44.entities.Product.update(product.id, {
         preferred_vendor_id: null
       });
+      
+      // Set all ProductVendors as not preferred
+      const allPVs = await base44.entities.ProductVendor.filter({ product_id: product.id });
+      for (const pv of allPVs) {
+        if (pv.is_preferred) {
+          await base44.entities.ProductVendor.update(pv.id, { is_preferred: false });
+        }
+      }
+      
+      // Reload local data first
+      await loadProductVendors();
+      
+      // Then notify parent
       if (onUpdate) await onUpdate();
     } catch (error) {
       console.error("Error selecting average price:", error);
@@ -138,12 +151,16 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
       await base44.entities.Product.update(product.id, {
         preferred_vendor_id: vendorInfo.vendorId
       });
-      
+
+      // Reload local data first
+      await loadProductVendors();
+
+      // Then notify parent to reload
       if (onUpdate) await onUpdate();
-    } catch (error) {
+      } catch (error) {
       console.error("Error selecting vendor price:", error);
-    }
-  };
+      }
+      };
 
   if (!product) return null;
 
