@@ -107,6 +107,7 @@ export default function StockMovementsTable({ movements, products, users, isLoad
             <TableHead>Type</TableHead>
             <TableHead>Product</TableHead>
             <TableHead className="text-right">Quantity</TableHead>
+            <TableHead className="text-right">Total Value</TableHead>
             <TableHead>From</TableHead>
             <TableHead>To</TableHead>
             <TableHead>Charged To</TableHead>
@@ -119,7 +120,7 @@ export default function StockMovementsTable({ movements, products, users, isLoad
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={11} className="h-24 text-center">
+              <TableCell colSpan={12} className="h-24 text-center">
                 <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-400" />
               </TableCell>
             </TableRow>
@@ -152,6 +153,15 @@ export default function StockMovementsTable({ movements, products, users, isLoad
                     }>
                       {movement.quantity} {product.unit_of_measure}
                     </span>
+                  </TableCell>
+                  <TableCell className="text-right font-semibold">
+                    {movement.unit_cost ? (
+                      <span className="text-blue-600">
+                        €{(parseFloat(movement.unit_cost) * movement.quantity).toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">-</span>
+                    )}
                   </TableCell>
                   <TableCell className="text-sm">
                     {movement.from_location || '-'}
@@ -201,7 +211,7 @@ export default function StockMovementsTable({ movements, products, users, isLoad
             })
           ) : (
             <TableRow>
-              <TableCell colSpan={11} className="h-24 text-center">
+              <TableCell colSpan={12} className="h-24 text-center">
                 <p className="text-slate-500">No stock movements found.</p>
               </TableCell>
             </TableRow>
