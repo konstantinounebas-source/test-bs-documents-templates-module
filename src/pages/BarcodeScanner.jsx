@@ -275,17 +275,15 @@ export default function BarcodeScannerPage() {
   useEffect(() => {
     if (costInputMethod === 'total' && movementType === "IN" && !selectedPO) {
       const qty = parseFloat(quantity) || 0;
-      const bundleQty = parseFloat(bundleQuantity) || 1;
       const totalCost = parseFloat(totalItemCost) || 0;
       const discountVal = parseFloat(discount) || 0;
       
       if (qty > 0 && totalCost > 0) {
-        const totalQuantity = qty * bundleQty;
         const adjustedTotalCost = totalCost * (1 - discountVal / 100);
-        setUnitCost(String((adjustedTotalCost / totalQuantity).toFixed(4)));
+        setUnitCost(String((adjustedTotalCost / qty).toFixed(4)));
       }
     }
-  }, [costInputMethod, quantity, bundleQuantity, totalItemCost, discount, movementType, selectedPO]);
+  }, [costInputMethod, quantity, totalItemCost, discount, movementType, selectedPO]);
 
   const loadRecentScans = () => {
     try {
@@ -1047,14 +1045,12 @@ export default function BarcodeScannerPage() {
       // Calculate unit cost when using total cost method
       if (updatedItem.cost_input_method === 'total') {
         const qty = parseFloat(updatedItem.quantity) || 0;
-        const bundleQty = parseFloat(updatedItem.bundle_quantity) || 1;
         const totalCost = parseFloat(updatedItem.total_item_cost) || 0;
         const discount = parseFloat(updatedItem.discount) || 0;
         
         if (qty > 0 && totalCost > 0) {
-          const totalQuantity = qty * bundleQty;
           const adjustedTotalCost = totalCost * (1 - discount / 100);
-          updatedItem.unit_cost = String((adjustedTotalCost / totalQuantity).toFixed(4));
+          updatedItem.unit_cost = String((adjustedTotalCost / qty).toFixed(4));
         }
       }
       
