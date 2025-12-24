@@ -39,10 +39,21 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
   };
 
   const renderUnitCost = (product) => {
+    // Use product's average unit_cost (calculated from IN movements)
+    if (product.unit_cost && product.unit_cost > 0) {
+      return (
+        <div>
+          <div className="font-semibold">€{product.unit_cost.toFixed(2)}</div>
+          <div className="text-xs text-slate-500">Average</div>
+        </div>
+      );
+    }
+    
+    // Fallback to vendor pricing if no movements recorded yet
     const pvs = product.productVendors || [];
     
     if (pvs.length === 0) {
-      return <span className="text-slate-400">No vendors</span>;
+      return <span className="text-slate-400">No cost data</span>;
     }
     
     const preferredPV = pvs.find(pv => pv.is_preferred);
@@ -74,15 +85,12 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
   };
 
   const renderTotalValue = (product) => {
-    const pvs = product.productVendors || [];
+    // Use product's average unit_cost (calculated from IN movements)
+    const unitCost = product.unit_cost || 0;
     
-    if (pvs.length === 0) {
+    if (unitCost === 0) {
       return <span className="text-slate-400">-</span>;
     }
-    
-    const preferredPV = pvs.find(pv => pv.is_preferred);
-    const unitCost = preferredPV?.unit_cost || 
-                     (pvs.length > 0 ? pvs.reduce((s, pv) => s + pv.unit_cost, 0) / pvs.length : 0);
     
     const totalValue = product.available * unitCost;
     

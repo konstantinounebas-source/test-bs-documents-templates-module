@@ -88,25 +88,28 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     e.preventDefault();
     setIsSaving(true);
     try {
+      const quantity = formData.quantity ? parseFloat(formData.quantity) : movement.quantity;
+      const unitCost = formData.unit_cost ? parseFloat(formData.unit_cost) : null;
+      
       // Prepare update data with quantity and unit_cost as numbers
       const updateData = {
         ...formData,
-        quantity: formData.quantity ? parseFloat(formData.quantity) : movement.quantity,
-        unit_cost: formData.unit_cost ? parseFloat(formData.unit_cost) : null,
+        quantity: quantity,
+        unit_cost: unitCost,
         bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null
       };
 
-      // If IN movement and vendor/cost provided, update ProductVendor
-      if (movement.movement_type === 'IN' && formData.reference_id && formData.unit_cost) {
-        const cost = parseFloat(formData.unit_cost);
-        if (!isNaN(cost) && cost > 0) {
+      // If IN movement and vendor/cost provided, update ProductVendor and Product average cost
+      if (movement.movement_type === 'IN' && formData.reference_id && unitCost) {
+        if (!isNaN(unitCost) && unitCost > 0) {
+          // Update ProductVendor
           const existingPVs = await base44.entities.ProductVendor.filter({
             product_id: movement.product_id,
             vendor_id: formData.reference_id
           });
           
           const pvData = {
-            unit_cost: cost,
+            unit_cost: unitCost,
             is_active: true,
             bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null
           };
@@ -120,6 +123,21 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
             });
           } else {
             await base44.entities.ProductVendor.update(existingPVs[0].id, pvData);
+          }
+
+          // Update Product average cost
+          const product = products.find(p => p.id === movement.product_id);
+          if (product) {
+            const totalCostPaid = (product.total_cost_paid || 0) + (quantity * unitCost);
+            const totalQuantityPurchased = (product.total_quantity_purchased || 0) + quantity;
+            const averageUnitCost = totalCostPaid / totalQuantityPurchased;
+
+            await base44.entities.Product.update(movement.product_id, {
+              unit_cost: averageUnitCost,
+              last_unit_cost: unitCost,
+              total_cost_paid: totalCostPaid,
+              total_quantity_purchased: totalQuantityPurchased
+            });
           }
         }
       }
