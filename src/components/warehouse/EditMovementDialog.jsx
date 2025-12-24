@@ -57,6 +57,23 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     }
   }, [movement, productVendors]);
 
+  // Calculate unit cost when using total cost method
+  useEffect(() => {
+    if (formData.cost_input_method === 'total' && movement) {
+      const qty = movement.quantity || 0;
+      const totalCost = parseFloat(formData.total_item_cost) || 0;
+      const discountVal = parseFloat(formData.discount) || 0;
+      
+      if (qty > 0 && totalCost > 0) {
+        const adjustedTotalCost = totalCost * (1 - discountVal / 100);
+        setFormData(prev => ({
+          ...prev,
+          unit_cost: String((adjustedTotalCost / qty).toFixed(4))
+        }));
+      }
+    }
+  }, [formData.cost_input_method, formData.total_item_cost, formData.discount, movement]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
@@ -115,23 +132,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   const unitCost = parseFloat(formData.unit_cost) || 0;
   const bundleQty = parseFloat(formData.bundle_quantity) || 0;
   const costPerPiece = unitCost > 0 && bundleQty > 0 ? (unitCost / bundleQty).toFixed(4) : null;
-
-  // Calculate unit cost when using total cost method
-  React.useEffect(() => {
-    if (formData.cost_input_method === 'total' && movement) {
-      const qty = movement.quantity || 0;
-      const totalCost = parseFloat(formData.total_item_cost) || 0;
-      const discountVal = parseFloat(formData.discount) || 0;
-      
-      if (qty > 0 && totalCost > 0) {
-        const adjustedTotalCost = totalCost * (1 - discountVal / 100);
-        setFormData(prev => ({
-          ...prev,
-          unit_cost: String((adjustedTotalCost / qty).toFixed(4))
-        }));
-      }
-    }
-  }, [formData.cost_input_method, formData.total_item_cost, formData.discount, movement]);
 
   return (
     <>
