@@ -293,7 +293,9 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                       <TableRow key={movement.id} className="bg-slate-50/50">
                         <TableCell>
                           <div className="text-sm">
-                            {getVendorName(movement.reference_id)}
+                            {movement.reference_type === 'Vendor' && movement.reference_id 
+                              ? getVendorName(movement.reference_id) 
+                              : (movement.reference_type || 'Manual Entry')}
                             <p className="text-xs text-slate-500">
                               {new Date(movement.created_date).toLocaleDateString('el-GR')}
                             </p>
@@ -304,13 +306,13 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                         </TableCell>
                         <TableCell className="font-semibold">
                           {movement.unit_cost && movement.unit_cost > 0 ? (
-                            <>€{movement.unit_cost.toFixed(4)}</>
+                            <>€{Number(movement.unit_cost).toFixed(4)}</>
                           ) : (
                             <span className="text-slate-400">N/A</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-sm text-slate-500">{movement.quantity} {product.unit_of_measure}</TableCell>
                         <TableCell>-</TableCell>
+                        <TableCell className="text-sm text-slate-500">{movement.quantity} {product.unit_of_measure}</TableCell>
                         <TableCell>
                           <Badge className="bg-slate-200 text-slate-700">Historical</Badge>
                         </TableCell>
