@@ -140,7 +140,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50">
-                    <TableHead>Vendor</TableHead>
+                    <TableHead>Invoice</TableHead>
                     <TableHead>Waybill</TableHead>
                     <TableHead>Unit Cost</TableHead>
                     <TableHead>Lead Time</TableHead>
@@ -177,8 +177,8 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                             {movement.waybill_number || '-'}
                           </TableCell>
                           <TableCell className="font-semibold">
-                            {movement.unit_price && movement.unit_price > 0 ? (
-                              <>€{Number(movement.unit_price).toFixed(4)}</>
+                            {movement.unit_cost && movement.unit_cost > 0 ? (
+                              <>€{Number(movement.unit_cost).toFixed(4)}</>
                             ) : (
                               <span className="text-slate-400">N/A</span>
                             )}
