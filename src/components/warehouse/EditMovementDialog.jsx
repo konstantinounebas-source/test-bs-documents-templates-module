@@ -17,7 +17,10 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     reference_type: '',
     reference_id: '',
     unit_cost: '',
-    bundle_quantity: ''
+    bundle_quantity: '',
+    cost_input_method: 'unit',
+    total_item_cost: '',
+    discount: '0'
   });
   const [isSaving, setIsSaving] = useState(false);
   const [showCreateVendorDialog, setShowCreateVendorDialog] = useState(false);
@@ -46,7 +49,10 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         reference_type: movement.reference_type || '',
         reference_id: movement.reference_id || '',
         unit_cost: movement.unit_cost || '',
-        bundle_quantity: bundleQty
+        bundle_quantity: bundleQty,
+        cost_input_method: 'unit',
+        total_item_cost: '',
+        discount: '0'
       });
     }
   }, [movement, productVendors]);
@@ -110,6 +116,23 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   const bundleQty = parseFloat(formData.bundle_quantity) || 0;
   const costPerPiece = unitCost > 0 && bundleQty > 0 ? (unitCost / bundleQty).toFixed(4) : null;
 
+  // Calculate unit cost when using total cost method
+  React.useEffect(() => {
+    if (formData.cost_input_method === 'total' && movement) {
+      const qty = movement.quantity || 0;
+      const totalCost = parseFloat(formData.total_item_cost) || 0;
+      const discountVal = parseFloat(formData.discount) || 0;
+      
+      if (qty > 0 && totalCost > 0) {
+        const adjustedTotalCost = totalCost * (1 - discountVal / 100);
+        setFormData(prev => ({
+          ...prev,
+          unit_cost: String((adjustedTotalCost / qty).toFixed(4))
+        }));
+      }
+    }
+  }, [formData.cost_input_method, formData.total_item_cost, formData.discount, movement]);
+
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
@@ -166,20 +189,87 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                 </div>
 
                 <div>
-                  <Label htmlFor="unit_cost">Κόστος ανά μονάδα (€)</Label>
-                  <Input
-                    id="unit_cost"
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={formData.unit_cost}
-                    onChange={(e) => setFormData({ ...formData, unit_cost: e.target.value })}
-                    placeholder="0.0000"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Κόστος ανά {product?.unit_of_measure || 'μονάδα'} από αυτόν τον προμηθευτή
-                  </p>
+                  <Label>Μέθοδος Εισαγωγής Κόστους</Label>
+                  <Select 
+                    value={formData.cost_input_method} 
+                    onValueChange={(val) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        cost_input_method: val,
+                        total_item_cost: val === 'unit' ? '' : prev.total_item_cost,
+                        discount: val === 'unit' ? '0' : prev.discount,
+                        unit_cost: val === 'unit' ? prev.unit_cost : ''
+                      }));
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unit">Ανά Μονάδα</SelectItem>
+                      <SelectItem value="total">Συνολικό Κόστος + Έκπτωση</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+
+                {formData.cost_input_method === 'unit' ? (
+                  <div>
+                    <Label htmlFor="unit_cost">Κόστος ανά μονάδα (€)</Label>
+                    <Input
+                      id="unit_cost"
+                      type="number"
+                      step="0.0001"
+                      min="0"
+                      value={formData.unit_cost}
+                      onChange={(e) => setFormData({ ...formData, unit_cost: e.target.value })}
+                      placeholder="0.0000"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Κόστος ανά {product?.unit_of_measure || 'μονάδα'} από αυτόν τον προμηθευτή
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <Label htmlFor="total_item_cost">Συνολικό Κόστος Προϊόντος (€)</Label>
+                      <Input
+                        id="total_item_cost"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={formData.total_item_cost}
+                        onChange={(e) => setFormData({ ...formData, total_item_cost: e.target.value })}
+                        placeholder="0.00"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Το συνολικό κόστος για {movement?.quantity || 0} {product?.unit_of_measure || 'μονάδες'} πριν την έκπτωση
+                      </p>
+                    </div>
+                    <div>
+                      <Label htmlFor="discount">Έκπτωση (%)</Label>
+                      <Input
+                        id="discount"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={formData.discount}
+                        onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                        placeholder="0"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Ποσοστό έκπτωσης επί του συνολικού κόστους
+                      </p>
+                    </div>
+                    {formData.unit_cost && (
+                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-sm text-blue-900">
+                          <strong>Υπολογιζόμενο Κόστος ανά Μονάδα:</strong> €{parseFloat(formData.unit_cost).toFixed(4)}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
 
                 <div>
                   <Label htmlFor="bundle_quantity">Pcs/Qty (προαιρετικό)</Label>
