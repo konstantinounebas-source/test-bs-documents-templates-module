@@ -88,10 +88,12 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     e.preventDefault();
     setIsSaving(true);
     try {
-      // Prepare update data with quantity
+      // Prepare update data with quantity and unit_cost as numbers
       const updateData = {
         ...formData,
-        quantity: formData.quantity ? parseFloat(formData.quantity) : movement.quantity
+        quantity: formData.quantity ? parseFloat(formData.quantity) : movement.quantity,
+        unit_cost: formData.unit_cost ? parseFloat(formData.unit_cost) : null,
+        bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null
       };
 
       // If IN movement and vendor/cost provided, update ProductVendor
