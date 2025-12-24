@@ -61,19 +61,18 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
       const pvData = await base44.entities.ProductVendor.filter({ product_id: product.id });
       setProductVendors(pvData);
       
-      // Also load recent IN movements for this product to show historical costs
+      // Also load recent IN movements for this product (latest 5)
       const movements = await base44.entities.StockMovement.filter({
         product_id: product.id,
         movement_type: 'IN'
       });
       
-      // Get unique movements with costs (latest 5)
-      const movementsWithCosts = movements
-        .filter(m => m.unit_cost && m.unit_cost > 0)
+      // Get latest 5 movements (regardless of cost)
+      const latestMovements = movements
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
         .slice(0, 5);
       
-      setRecentMovements(movementsWithCosts);
+      setRecentMovements(latestMovements);
     } catch (error) {
       console.error("Error loading product vendors:", error);
     }
@@ -282,7 +281,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                   <TableRow>
                     <TableCell colSpan={7} className="bg-slate-50">
                       <p className="text-xs font-semibold text-slate-600">
-                        Πρόσφατες IN Κινήσεις με Κόστος {recentMovements.length > 0 && `(${recentMovements.length})`}
+                        Πρόσφατες IN Κινήσεις {recentMovements.length > 0 && `(${recentMovements.length})`}
                       </p>
                     </TableCell>
                   </TableRow>
@@ -300,7 +299,13 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                         <TableCell className="font-mono text-sm">
                           {movement.waybill_number || '-'}
                         </TableCell>
-                        <TableCell className="font-semibold">€{movement.unit_cost?.toFixed(4)}</TableCell>
+                        <TableCell className="font-semibold">
+                          {movement.unit_cost && movement.unit_cost > 0 ? (
+                            <>€{movement.unit_cost.toFixed(4)}</>
+                          ) : (
+                            <span className="text-slate-400">N/A</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-sm text-slate-500">{movement.quantity} {product.unit_of_measure}</TableCell>
                         <TableCell>-</TableCell>
                         <TableCell>
@@ -314,7 +319,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                   ) : (
                     <TableRow className="bg-slate-50/50">
                       <TableCell colSpan={7} className="text-center text-sm text-slate-500 py-4">
-                        Δεν υπάρχουν IN κινήσεις με κόστος για αυτό το προϊόν
+                        Δεν υπάρχουν IN κινήσεις για αυτό το προϊόν
                       </TableCell>
                     </TableRow>
                   )}
