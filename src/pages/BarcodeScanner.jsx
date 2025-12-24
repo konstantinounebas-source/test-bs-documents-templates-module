@@ -989,7 +989,10 @@ export default function BarcodeScannerPage() {
     setBulkInvoiceItems(prev => [...prev, {
       product_id: '',
       quantity: 1,
+      cost_input_method: 'unit', // 'unit' or 'total'
       unit_cost: '',
+      total_item_cost: '',
+      discount: 0,
       bundle_quantity: '',
       warehouse_location: ''
     }]);
@@ -1013,6 +1016,20 @@ export default function BarcodeScannerPage() {
         if (pv) {
           updatedItem.unit_cost = String(pv.unit_cost || '');
           updatedItem.bundle_quantity = String(pv.bundle_quantity || '');
+        }
+      }
+      
+      // Calculate unit cost when using total cost method
+      if (updatedItem.cost_input_method === 'total') {
+        const qty = parseFloat(updatedItem.quantity) || 0;
+        const bundleQty = parseFloat(updatedItem.bundle_quantity) || 1;
+        const totalCost = parseFloat(updatedItem.total_item_cost) || 0;
+        const discount = parseFloat(updatedItem.discount) || 0;
+        
+        if (qty > 0 && totalCost > 0) {
+          const totalQuantity = qty * bundleQty;
+          const adjustedTotalCost = totalCost * (1 - discount / 100);
+          updatedItem.unit_cost = String((adjustedTotalCost / totalQuantity).toFixed(4));
         }
       }
       
@@ -2145,7 +2162,9 @@ export default function BarcodeScannerPage() {
                     <TableRow>
                       <TableHead className="w-[200px]">Προϊόν *</TableHead>
                       <TableHead className="w-[80px]">Qty *</TableHead>
-                      <TableHead className="w-[100px]">Unit Cost (€)</TableHead>
+                      <TableHead className="w-[120px]">Μέθοδος Κόστους</TableHead>
+                      <TableHead className="w-[110px]">Unit Cost / Total (€)</TableHead>
+                      <TableHead className="w-[80px]">Έκπτωση (%)</TableHead>
                       <TableHead className="w-[90px]">Pcs/Qty</TableHead>
                       <TableHead className="w-[90px]">Cost/Pc (€)</TableHead>
                       <TableHead className="w-[100px]">Total Cost (€)</TableHead>
@@ -2155,12 +2174,17 @@ export default function BarcodeScannerPage() {
                   </TableHeader>
                   <TableBody>
                     {bulkInvoiceItems.map((item, index) => {
-                      const costPerPc = item.unit_cost && item.bundle_quantity && parseFloat(item.bundle_quantity) > 0
-                        ? (parseFloat(item.unit_cost) / parseFloat(item.bundle_quantity)).toFixed(4)
+                      const unitCost = parseFloat(item.unit_cost) || 0;
+                      const bundleQty = parseFloat(item.bundle_quantity) || 1;
+                      const qty = parseFloat(item.quantity) || 0;
+                      
+                      const costPerPc = unitCost > 0 && bundleQty > 0
+                        ? (unitCost / bundleQty).toFixed(4)
                         : '-';
-                      const totalCost = item.quantity && item.unit_cost
-                        ? (parseFloat(item.quantity) * parseFloat(item.unit_cost)).toFixed(2)
-                        : '-';
+                      
+                      const totalCost = item.cost_input_method === 'total' && item.total_item_cost
+                        ? (parseFloat(item.total_item_cost) * (1 - (parseFloat(item.discount) || 0) / 100)).toFixed(2)
+                        : (qty > 0 && unitCost > 0 ? (qty * unitCost * bundleQty).toFixed(2) : '-');
                       
                       return (
                         <TableRow key={index}>
@@ -2186,14 +2210,59 @@ export default function BarcodeScannerPage() {
                             />
                           </TableCell>
                           <TableCell>
-                            <Input
-                              type="number"
-                              step="0.0001"
-                              min="0"
-                              value={item.unit_cost}
-                              onChange={(e) => handleBulkInvoiceItemChange(index, 'unit_cost', e.target.value)}
-                              placeholder="0.0000"
-                            />
+                            <Select
+                              value={item.cost_input_method || 'unit'}
+                              onValueChange={(val) => handleBulkInvoiceItemChange(index, 'cost_input_method', val)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="unit">Ανά Μονάδα</SelectItem>
+                                <SelectItem value="total">Συνολικό + Έκπτωση</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            {item.cost_input_method === 'unit' ? (
+                              <Input
+                                type="number"
+                                step="0.0001"
+                                min="0"
+                                value={item.unit_cost}
+                                onChange={(e) => handleBulkInvoiceItemChange(index, 'unit_cost', e.target.value)}
+                                placeholder="0.0000"
+                              />
+                            ) : (
+                              <div className="space-y-1">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={item.total_item_cost}
+                                  onChange={(e) => handleBulkInvoiceItemChange(index, 'total_item_cost', e.target.value)}
+                                  placeholder="Συνολικό"
+                                />
+                                {item.unit_cost && (
+                                  <p className="text-xs text-slate-600">Unit: €{parseFloat(item.unit_cost).toFixed(4)}</p>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {item.cost_input_method === 'total' ? (
+                              <Input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="100"
+                                value={item.discount}
+                                onChange={(e) => handleBulkInvoiceItemChange(index, 'discount', e.target.value)}
+                                placeholder="0"
+                              />
+                            ) : (
+                              <span className="text-xs text-slate-400">-</span>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Input
