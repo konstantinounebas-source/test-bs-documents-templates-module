@@ -50,7 +50,10 @@ export default function BarcodeScannerPage() {
   const [waybillNumber, setWaybillNumber] = useState("");
   const [chargedToPerson, setChargedToPerson] = useState("");
   const [selectedVendor, setSelectedVendor] = useState("");
+  const [costInputMethod, setCostInputMethod] = useState("unit"); // 'unit' or 'total'
   const [unitCost, setUnitCost] = useState("");
+  const [totalItemCost, setTotalItemCost] = useState("");
+  const [discount, setDiscount] = useState("0");
   const [bundleQuantity, setBundleQuantity] = useState("");
   const [notes, setNotes] = useState("");
   const [recentScans, setRecentScans] = useState([]);
@@ -267,6 +270,22 @@ export default function BarcodeScannerPage() {
       }
     }
   }, [selectedVendor, matchedProduct, movementType, selectedPO, productVendors]);
+
+  // Calculate unit cost when using total cost method
+  useEffect(() => {
+    if (costInputMethod === 'total' && movementType === "IN" && !selectedPO) {
+      const qty = parseFloat(quantity) || 0;
+      const bundleQty = parseFloat(bundleQuantity) || 1;
+      const totalCost = parseFloat(totalItemCost) || 0;
+      const discountVal = parseFloat(discount) || 0;
+      
+      if (qty > 0 && totalCost > 0) {
+        const totalQuantity = qty * bundleQty;
+        const adjustedTotalCost = totalCost * (1 - discountVal / 100);
+        setUnitCost(String((adjustedTotalCost / totalQuantity).toFixed(4)));
+      }
+    }
+  }, [costInputMethod, quantity, bundleQuantity, totalItemCost, discount, movementType, selectedPO]);
 
   const loadRecentScans = () => {
     try {
@@ -770,7 +789,10 @@ export default function BarcodeScannerPage() {
       setWaybillNumber("");
       setChargedToPerson("");
       setSelectedVendor("");
+      setCostInputMethod("unit");
       setUnitCost("");
+      setTotalItemCost("");
+      setDiscount("0");
       setBundleQuantity("");
       setNotes("");
       setPOItemInfo(null);
@@ -960,7 +982,10 @@ export default function BarcodeScannerPage() {
     setWaybillNumber("");
     setChargedToPerson("");
     setSelectedVendor("");
+    setCostInputMethod("unit");
     setUnitCost("");
+    setTotalItemCost("");
+    setDiscount("0");
     setBundleQuantity("");
     setPOItemInfo(null);
   };
@@ -1479,20 +1504,86 @@ export default function BarcodeScannerPage() {
                         </div>
 
                         <div>
-                          <Label>Κόστος ανά μονάδα (€) {!selectedPO && "(προαιρετικό)"}</Label>
-                          <Input
-                            type="number"
-                            step="0.0001"
-                            min="0"
-                            value={unitCost}
-                            onChange={(e) => setUnitCost(e.target.value)}
-                            placeholder="0.0000"
+                          <Label>Μέθοδος Εισαγωγής Κόστους</Label>
+                          <Select 
+                            value={costInputMethod} 
+                            onValueChange={(val) => {
+                              setCostInputMethod(val);
+                              if (val === 'unit') {
+                                setTotalItemCost("");
+                                setDiscount("0");
+                              } else {
+                                setUnitCost("");
+                              }
+                            }}
                             disabled={!!selectedPO}
-                          />
-                          <p className="text-xs text-yellow-700 mt-1">
-                            Κόστος ανά {matchedProduct.unit_of_measure} από αυτόν τον προμηθευτή
-                          </p>
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="unit">Ανά Μονάδα</SelectItem>
+                              <SelectItem value="total">Συνολικό Κόστος + Έκπτωση</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
+
+                        {costInputMethod === 'unit' ? (
+                          <div>
+                            <Label>Κόστος ανά μονάδα (€) {!selectedPO && "(προαιρετικό)"}</Label>
+                            <Input
+                              type="number"
+                              step="0.0001"
+                              min="0"
+                              value={unitCost}
+                              onChange={(e) => setUnitCost(e.target.value)}
+                              placeholder="0.0000"
+                              disabled={!!selectedPO}
+                            />
+                            <p className="text-xs text-yellow-700 mt-1">
+                              Κόστος ανά {matchedProduct.unit_of_measure} από αυτόν τον προμηθευτή
+                            </p>
+                          </div>
+                        ) : (
+                          <>
+                            <div>
+                              <Label>Συνολικό Κόστος Προϊόντος (€)</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={totalItemCost}
+                                onChange={(e) => setTotalItemCost(e.target.value)}
+                                placeholder="0.00"
+                              />
+                              <p className="text-xs text-yellow-700 mt-1">
+                                Το συνολικό κόστος πριν την έκπτωση
+                              </p>
+                            </div>
+                            <div>
+                              <Label>Έκπτωση (%)</Label>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="100"
+                                value={discount}
+                                onChange={(e) => setDiscount(e.target.value)}
+                                placeholder="0"
+                              />
+                              <p className="text-xs text-yellow-700 mt-1">
+                                Ποσοστό έκπτωσης επί του συνολικού κόστους
+                              </p>
+                            </div>
+                            {unitCost && (
+                              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                <p className="text-sm text-blue-900">
+                                  <strong>Υπολογιζόμενο Κόστος ανά Μονάδα:</strong> €{parseFloat(unitCost).toFixed(4)}
+                                </p>
+                              </div>
+                            )}
+                          </>
+                        )}
 
                         <div>
                           <Label>Pcs/Qty (προαιρετικό)</Label>
