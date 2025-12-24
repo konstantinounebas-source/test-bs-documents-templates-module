@@ -35,6 +35,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
         .slice(0, 10);
       
+      console.log('Loaded movements:', latestMovements);
       setRecentMovements(latestMovements);
     } catch (error) {
       console.error("Error loading IN movements:", error);
@@ -140,7 +141,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50">
-                    <TableHead>Invoice</TableHead>
+                    <TableHead>Vendor</TableHead>
                     <TableHead>Waybill</TableHead>
                     <TableHead>Unit Cost</TableHead>
                     <TableHead>Lead Time</TableHead>
@@ -177,7 +178,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                             {movement.waybill_number || '-'}
                           </TableCell>
                           <TableCell className="font-semibold">
-                            {movement.unit_cost && movement.unit_cost > 0 ? (
+                            {(movement.unit_cost !== null && movement.unit_cost !== undefined && movement.unit_cost > 0) ? (
                               <>€{Number(movement.unit_cost).toFixed(4)}</>
                             ) : (
                               <span className="text-slate-400">N/A</span>
