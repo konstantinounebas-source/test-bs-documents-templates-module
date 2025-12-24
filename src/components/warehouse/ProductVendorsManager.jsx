@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Loader2, Star } from "lucide-react";
 
 export default function ProductVendorsManager({ product, vendors, onUpdate }) {
   const [recentMovements, setRecentMovements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [productVendors, setProductVendors] = useState([]);
 
   useEffect(() => {
     if (product?.id) {
@@ -19,6 +20,10 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
   const loadProductVendors = async () => {
     setIsLoading(true);
     try {
+      // Load ProductVendors for preferred vendor info
+      const pvData = await base44.entities.ProductVendor.filter({ product_id: product.id });
+      setProductVendors(pvData);
+      
       // Load recent IN movements for this product (latest 10)
       const movements = await base44.entities.StockMovement.filter({
         product_id: product.id,
@@ -44,6 +49,38 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
     return vendor?.name || 'Unknown';
   };
 
+  const isPreferredVendor = (vendorId) => {
+    return productVendors.some(pv => pv.vendor_id === vendorId && pv.is_preferred);
+  };
+
+  const handleSelectAveragePrice = async () => {
+    if (!product.unit_cost || product.unit_cost <= 0) return;
+    
+    // Update product's preferred_vendor_id to null (indicating average cost is selected)
+    try {
+      await base44.entities.Product.update(product.id, {
+        preferred_vendor_id: null
+      });
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      console.error("Error selecting average price:", error);
+    }
+  };
+
+  const handleSelectVendorPrice = async (movement) => {
+    if (!movement.reference_id || movement.reference_type !== 'Vendor') return;
+    
+    // Set the vendor as preferred
+    try {
+      await base44.entities.Product.update(product.id, {
+        preferred_vendor_id: movement.reference_id
+      });
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      console.error("Error selecting vendor price:", error);
+    }
+  };
+
   if (!product) return null;
 
   return (
@@ -60,17 +97,29 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
         ) : (
           <div className="space-y-4">
             {/* Average Cost Section - Always Show */}
-            <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+            <div 
+              className={`p-4 rounded-lg cursor-pointer transition-all ${
+                !product.preferred_vendor_id && product.unit_cost > 0
+                  ? 'bg-blue-100 border-2 border-blue-400 shadow-md' 
+                  : 'bg-blue-50 border-2 border-blue-200 hover:border-blue-300'
+              }`}
+              onClick={handleSelectAveragePrice}
+            >
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-blue-900">Μέσος Όρος Κόστους (από IN κινήσεις)</p>
-                  <p className="text-xs text-blue-700 mt-1">
-                    {product.unit_cost && product.unit_cost > 0 ? (
-                      <>Υπολογισμένος από {product.total_quantity_purchased || 0} {product.unit_of_measure} συνολικά</>
-                    ) : (
-                      <>Δεν υπάρχουν IN κινήσεις με κόστος ακόμα</>
-                    )}
-                  </p>
+                <div className="flex items-center gap-2">
+                  {!product.preferred_vendor_id && product.unit_cost > 0 && (
+                    <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                  )}
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900">Μέσος Όρος Κόστους (από IN κινήσεις)</p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      {product.unit_cost && product.unit_cost > 0 ? (
+                        <>Υπολογισμένος από {product.total_quantity_purchased || 0} {product.unit_of_measure} συνολικά</>
+                      ) : (
+                        <>Δεν υπάρχουν IN κινήσεις με κόστος ακόμα</>
+                      )}
+                    </p>
+                  </div>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-blue-900">
@@ -102,39 +151,53 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                 </TableHeader>
                 <TableBody>
                   {recentMovements.length > 0 ? (
-                    recentMovements.map((movement) => (
-                      <TableRow key={movement.id}>
-                        <TableCell>
-                          <div className="text-sm font-medium">
-                            {movement.reference_type === 'Vendor' && movement.reference_id 
-                              ? getVendorName(movement.reference_id) 
-                              : (movement.reference_type || 'Manual Entry')}
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm">
-                          {movement.waybill_number || '-'}
-                        </TableCell>
-                        <TableCell className="font-semibold">
-                          {movement.unit_cost && movement.unit_cost > 0 ? (
-                            <>€{Number(movement.unit_cost).toFixed(4)}</>
-                          ) : (
-                            <span className="text-slate-400">N/A</span>
-                          )}
-                        </TableCell>
-                        <TableCell>-</TableCell>
-                        <TableCell className="text-sm text-slate-600">{movement.quantity} {product.unit_of_measure}</TableCell>
-                        <TableCell>
-                          <Badge className="bg-blue-100 text-blue-800">IN</Badge>
-                        </TableCell>
-                        <TableCell className="text-right text-xs text-slate-600">
-                          {new Date(movement.created_date).toLocaleDateString('el-GR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric'
-                          })}
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    recentMovements.map((movement) => {
+                      const isPreferred = movement.reference_type === 'Vendor' && 
+                                         movement.reference_id && 
+                                         product.preferred_vendor_id === movement.reference_id;
+                      const hasVendor = movement.reference_type === 'Vendor' && movement.reference_id;
+                      
+                      return (
+                        <TableRow 
+                          key={movement.id}
+                          className={`${hasVendor ? 'cursor-pointer hover:bg-slate-50' : ''} ${
+                            isPreferred ? 'bg-yellow-50' : ''
+                          }`}
+                          onClick={() => hasVendor && handleSelectVendorPrice(movement)}
+                        >
+                          <TableCell>
+                            <div className="text-sm font-medium flex items-center gap-2">
+                              {isPreferred && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
+                              {hasVendor
+                                ? getVendorName(movement.reference_id) 
+                                : (movement.reference_type || 'Manual Entry')}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-mono text-sm">
+                            {movement.waybill_number || '-'}
+                          </TableCell>
+                          <TableCell className="font-semibold">
+                            {movement.unit_price && movement.unit_price > 0 ? (
+                              <>€{Number(movement.unit_price).toFixed(4)}</>
+                            ) : (
+                              <span className="text-slate-400">N/A</span>
+                            )}
+                          </TableCell>
+                          <TableCell>-</TableCell>
+                          <TableCell className="text-sm text-slate-600">{movement.quantity} {product.unit_of_measure}</TableCell>
+                          <TableCell>
+                            <Badge className="bg-blue-100 text-blue-800">IN</Badge>
+                          </TableCell>
+                          <TableCell className="text-right text-xs text-slate-600">
+                            {new Date(movement.created_date).toLocaleDateString('el-GR', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   ) : (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center text-sm text-slate-500 py-4">
