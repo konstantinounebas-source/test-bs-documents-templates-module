@@ -97,11 +97,48 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
     const vendorInfo = getVendorFromMovement(movement);
     if (!vendorInfo) return;
     
-    // Set the vendor as preferred
+    const unitCost = movement.unit_cost;
+    if (!unitCost || unitCost <= 0) {
+      console.error("Movement has no valid unit cost");
+      return;
+    }
+    
     try {
+      // Update or create ProductVendor with the selected unit cost
+      const existingPVs = await base44.entities.ProductVendor.filter({
+        product_id: product.id,
+        vendor_id: vendorInfo.vendorId
+      });
+      
+      const pvData = {
+        unit_cost: unitCost,
+        is_preferred: true,
+        is_active: true
+      };
+      
+      if (existingPVs.length === 0) {
+        await base44.entities.ProductVendor.create({
+          product_id: product.id,
+          vendor_id: vendorInfo.vendorId,
+          ...pvData
+        });
+      } else {
+        await base44.entities.ProductVendor.update(existingPVs[0].id, pvData);
+      }
+      
+      // Set all other ProductVendors for this product as not preferred
+      const allPVs = await base44.entities.ProductVendor.filter({ product_id: product.id });
+      for (const pv of allPVs) {
+        if (pv.vendor_id !== vendorInfo.vendorId && pv.is_preferred) {
+          await base44.entities.ProductVendor.update(pv.id, { is_preferred: false });
+        }
+      }
+      
+      // Set the vendor as preferred in Product
       await base44.entities.Product.update(product.id, {
         preferred_vendor_id: vendorInfo.vendorId
       });
+      
       if (onUpdate) await onUpdate();
     } catch (error) {
       console.error("Error selecting vendor price:", error);
@@ -180,9 +217,19 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                   {recentMovements.length > 0 ? (
                     recentMovements.map((movement) => {
                       const vendorInfo = getVendorFromMovement(movement);
-                      const isPreferred = vendorInfo && product.preferred_vendor_id === vendorInfo.vendorId;
                       const hasVendor = vendorInfo !== null;
                       const needsVendor = !hasVendor && movement.reference_type === 'Invoice';
+                      
+                      // Check if this vendor is preferred AND has matching unit cost in ProductVendor
+                      let isPreferred = false;
+                      if (vendorInfo && product.preferred_vendor_id === vendorInfo.vendorId) {
+                        const matchingPV = productVendors.find(pv => 
+                          pv.vendor_id === vendorInfo.vendorId && 
+                          pv.is_preferred &&
+                          pv.unit_cost === movement.unit_cost
+                        );
+                        isPreferred = !!matchingPV;
+                      }
 
                       return (
                         <TableRow 
