@@ -1375,12 +1375,12 @@ export default function BarcodeScannerPage() {
                   {(movementType === "TRANSFER" || movementType === "OUT") && (
                     <div className="space-y-2">
                       <Label>Από Θέση *</Label>
-                      <Select value={fromLocation || 'no_location'} onValueChange={(val) => setFromLocation(val === 'no_location' ? '' : val)}>
+                      <Select value={fromLocation || 'none'} onValueChange={(val) => setFromLocation(val === 'none' ? '' : val)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Επιλέξτε θέση" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="no_location">-- Επιλέξτε --</SelectItem>
+                          <SelectItem value="none">-- Επιλέξτε --</SelectItem>
                           {getAvailableLocationsForProduct().map(locName => (
                             <SelectItem key={locName} value={locName}>
                               {locName} ({getAvailableStockAtLocation(matchedProduct.id, locName)} διαθέσιμα)
@@ -1394,12 +1394,12 @@ export default function BarcodeScannerPage() {
                   {(movementType === "TRANSFER" || movementType === "IN" || movementType === "ADJUSTMENT") && (
                     <div className="space-y-2">
                       <Label>Θέση Αποθήκης *</Label>
-                      <Select value={toLocation || 'no_location'} onValueChange={(val) => setToLocation(val === 'no_location' ? '' : val)}>
+                      <Select value={toLocation || 'none'} onValueChange={(val) => setToLocation(val === 'none' ? '' : val)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Επιλέξτε θέση" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="no_location">-- Επιλέξτε --</SelectItem>
+                          <SelectItem value="none">-- Επιλέξτε --</SelectItem>
                           {locations.filter(loc => loc.id && loc.name !== fromLocation).map(loc => (
                             <SelectItem key={loc.id} value={loc.name}>
                               {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
@@ -1420,17 +1420,17 @@ export default function BarcodeScannerPage() {
                           <Label>Από Purchase Order (προαιρετικό)</Label>
                           <div className="flex gap-2 items-center">
                             <Select 
-                              value={selectedPO || 'no_po'} 
+                              value={selectedPO || 'none'} 
                               onValueChange={(val) => {
-                                setSelectedPO(val === 'no_po' ? '' : val);
-                                if (val !== 'no_po') setInvoiceNumber("");
+                                setSelectedPO(val === 'none' ? '' : val);
+                                if (val !== 'none') setInvoiceNumber("");
                               }}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Επιλέξτε PO ή κανένα" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="no_po">Χωρίς PO</SelectItem>
+                                <SelectItem value="none">Χωρίς PO</SelectItem>
                                 {purchaseOrders.filter(po => po.id).map(po => {
                                   const poItem = po.items.find(item => item.product_id === matchedProduct.id);
                                   if (!poItem) return null;
@@ -1985,12 +1985,12 @@ export default function BarcodeScannerPage() {
 
               <div className="space-y-2">
                 <Label>Θέση Αποθήκης *</Label>
-                <Select value={toLocation || 'no_location'} onValueChange={(val) => setToLocation(val === 'no_location' ? '' : val)}>
+                <Select value={toLocation || 'none'} onValueChange={(val) => setToLocation(val === 'none' ? '' : val)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Επιλέξτε θέση για όλα τα items" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="no_location">-- Επιλέξτε --</SelectItem>
+                    <SelectItem value="none">-- Επιλέξτε --</SelectItem>
                     {locations.filter(loc => loc.id).map(loc => (
                       <SelectItem key={loc.id} value={loc.name}>
                         {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
@@ -2364,14 +2364,14 @@ export default function BarcodeScannerPage() {
                           </TableCell>
                           <TableCell>
                             <Select
-                              value={item.warehouse_location || 'no_location'}
-                              onValueChange={(val) => handleBulkInvoiceItemChange(index, 'warehouse_location', val === 'no_location' ? '' : val)}
+                              value={item.warehouse_location || 'none'}
+                              onValueChange={(val) => handleBulkInvoiceItemChange(index, 'warehouse_location', val === 'none' ? '' : val)}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Θέση" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="no_location">-- Επιλέξτε --</SelectItem>
+                                <SelectItem value="none">-- Επιλέξτε --</SelectItem>
                                 {locations.filter(loc => loc.id).map(loc => (
                                   <SelectItem key={loc.id} value={loc.name}>
                                     {loc.name}
