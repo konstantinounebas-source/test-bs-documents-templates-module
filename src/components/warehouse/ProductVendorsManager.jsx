@@ -162,18 +162,29 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
           <div className="space-y-4">
             {/* Average Cost Section - Always Show */}
             <div 
-              className={`p-4 rounded-lg cursor-pointer transition-all ${
+              className={`p-4 rounded-lg transition-all ${
                 !product.preferred_vendor_id && product.unit_cost > 0
                   ? 'bg-yellow-100 border-2 border-yellow-400 shadow-md' 
-                  : 'bg-blue-50 border-2 border-blue-200 hover:border-blue-300 hover:shadow'
+                  : 'bg-blue-50 border-2 border-blue-200'
               }`}
-              onClick={handleSelectAveragePrice}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {!product.preferred_vendor_id && product.unit_cost > 0 && (
-                    <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                  )}
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-8 w-8 ${
+                      !product.preferred_vendor_id && product.unit_cost > 0
+                        ? 'text-yellow-600 hover:text-yellow-700'
+                        : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                    onClick={handleSelectAveragePrice}
+                    disabled={!product.unit_cost || product.unit_cost <= 0}
+                  >
+                    <Star className={`w-5 h-5 ${
+                      !product.preferred_vendor_id && product.unit_cost > 0 ? 'fill-yellow-500' : ''
+                    }`} />
+                  </Button>
                   <div>
                     <p className="text-sm font-semibold text-blue-900">Μέσος Όρος Κόστους (από IN κινήσεις)</p>
                     <p className="text-xs text-blue-700 mt-1">
@@ -204,6 +215,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50">
+                    <TableHead className="w-12"></TableHead>
                     <TableHead>Vendor</TableHead>
                     <TableHead>Waybill</TableHead>
                     <TableHead>Unit Cost</TableHead>
@@ -234,14 +246,28 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                       return (
                         <TableRow 
                           key={movement.id}
-                          className={`${hasVendor ? 'cursor-pointer hover:bg-slate-100' : ''} ${
-                            isPreferred ? 'bg-yellow-100 border-l-4 border-yellow-500' : ''
-                          }`}
-                          onClick={(e) => hasVendor && handleSelectVendorPrice(e, movement)}
+                          className={isPreferred ? 'bg-yellow-100' : ''}
                         >
                           <TableCell>
-                            <div className="text-sm font-medium flex items-center gap-2">
-                              {isPreferred && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
+                            {hasVendor && movement.unit_cost > 0 ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className={`h-7 w-7 ${
+                                  isPreferred
+                                    ? 'text-yellow-600 hover:text-yellow-700'
+                                    : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                                onClick={(e) => handleSelectVendorPrice(e, movement)}
+                              >
+                                <Star className={`w-4 h-4 ${isPreferred ? 'fill-yellow-500' : ''}`} />
+                              </Button>
+                            ) : (
+                              <div className="h-7 w-7" />
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm font-medium">
                               {hasVendor ? (
                                 vendorInfo.vendorName
                               ) : needsVendor ? (
