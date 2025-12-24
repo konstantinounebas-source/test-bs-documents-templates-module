@@ -2271,7 +2271,7 @@ export default function BarcodeScannerPage() {
                       
                       const totalCost = item.cost_input_method === 'total' && item.total_item_cost
                         ? (parseFloat(item.total_item_cost) * (1 - (parseFloat(item.discount) || 0) / 100)).toFixed(2)
-                        : (qty > 0 && unitCost > 0 ? (qty * unitCost * bundleQty).toFixed(2) : '-');
+                        : (qty > 0 && unitCost > 0 ? (qty * unitCost).toFixed(2) : '-');
                       
                       return (
                         <TableRow key={index}>
