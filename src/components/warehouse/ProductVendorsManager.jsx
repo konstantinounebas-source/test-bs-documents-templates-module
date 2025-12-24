@@ -92,7 +92,8 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
     }
   };
 
-  const handleSelectVendorPrice = async (movement) => {
+  const handleSelectVendorPrice = async (e, movement) => {
+    e.stopPropagation();
     const vendorInfo = getVendorFromMovement(movement);
     if (!vendorInfo) return;
     
@@ -101,7 +102,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
       await base44.entities.Product.update(product.id, {
         preferred_vendor_id: vendorInfo.vendorId
       });
-      if (onUpdate) onUpdate();
+      if (onUpdate) await onUpdate();
     } catch (error) {
       console.error("Error selecting vendor price:", error);
     }
