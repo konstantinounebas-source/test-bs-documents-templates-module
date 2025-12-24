@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,9 @@ export default function StockMovementsPage() {
   const [products, setProducts] = useState([]);
   const [locations, setLocations] = useState([]);
   const [users, setUsers] = useState([]);
+  const [vendors, setVendors] = useState([]);
+  const [productVendors, setProductVendors] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -71,6 +73,21 @@ export default function StockMovementsPage() {
         ...appUsers.map(u => ({ ...u, type: 'app' }))
       ];
       setUsers(allUsers);
+      
+      await delay(400);
+      console.log("Loading vendors...");
+      const vendorsData = await base44.entities.Vendor.filter({ is_active: true });
+      setVendors(vendorsData);
+      
+      await delay(400);
+      console.log("Loading product vendors...");
+      const pvData = await base44.entities.ProductVendor.list().catch(() => []);
+      setProductVendors(pvData);
+      
+      await delay(400);
+      console.log("Loading categories...");
+      const categoriesData = await base44.entities.ProductCategory.filter({ is_active: true });
+      setCategories(categoriesData);
       
       console.log("Data loaded successfully");
     } catch (error) {
@@ -420,8 +437,9 @@ export default function StockMovementsPage() {
         }}
         movement={selectedMovement}
         products={products}
-        locations={locations}
-        users={users}
+        vendors={vendors}
+        productVendors={productVendors}
+        categories={categories}
         onSave={handleSaveEdit}
       />
     </div>
