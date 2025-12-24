@@ -152,24 +152,29 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
           <form onSubmit={handleSubmit} className="space-y-4">
             {isInMovement && (
               <>
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 space-y-2">
-                  <p className="text-sm text-blue-900">
-                    <strong>Προϊόν:</strong> {product?.name || 'N/A'}
-                  </p>
-                  <p className="text-sm text-blue-700 font-mono">
-                    <strong>SKU:</strong> {product?.sku || 'N/A'}
-                  </p>
+                <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div>
+                    <p className="text-xs text-blue-600 font-semibold uppercase">Προϊόν</p>
+                    <p className="text-sm text-blue-900 font-medium">{product?.name || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-600 font-semibold uppercase">SKU</p>
+                    <p className="text-sm text-blue-700 font-mono">{product?.sku || 'N/A'}</p>
+                  </div>
                   {category && (
-                    <p className="text-sm text-blue-700">
-                      <strong>Κατηγορία:</strong> {category.name}
-                    </p>
+                    <div>
+                      <p className="text-xs text-blue-600 font-semibold uppercase">Κατηγορία</p>
+                      <p className="text-sm text-blue-700">{category.name}</p>
+                    </div>
                   )}
-                  <p className="text-sm text-blue-700">
-                    <strong>Μονάδα Μέτρησης:</strong> {product?.unit_of_measure || 'N/A'}
-                  </p>
-                  <p className="text-sm text-blue-900 font-semibold">
-                    <strong>Ποσότητα:</strong> {movement?.quantity || 0} {product?.unit_of_measure || ''}
-                  </p>
+                  <div>
+                    <p className="text-xs text-blue-600 font-semibold uppercase">Μονάδα Μέτρησης</p>
+                    <p className="text-sm text-blue-700">{product?.unit_of_measure || 'N/A'}</p>
+                  </div>
+                  <div className="col-span-2 pt-2 border-t border-blue-300">
+                    <p className="text-xs text-blue-600 font-semibold uppercase">Ποσότητα Κίνησης</p>
+                    <p className="text-lg text-blue-900 font-bold">{movement?.quantity || 0} {product?.unit_of_measure || ''}</p>
+                  </div>
                 </div>
 
                 <div>
