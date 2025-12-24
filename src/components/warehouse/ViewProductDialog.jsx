@@ -19,9 +19,17 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
     }
   }, [product?.id, open]);
 
+  const [currentProduct, setCurrentProduct] = useState(null);
+
   const loadProductVendors = async () => {
     setIsLoadingVendors(true);
     try {
+      // Reload product to get latest unit_cost calculations
+      const products = await base44.entities.Product.filter({ id: product.id });
+      if (products.length > 0) {
+        setCurrentProduct(products[0]);
+      }
+      
       const pvData = await base44.entities.ProductVendor.filter({ product_id: product.id });
       setProductVendors(pvData);
     } catch (error) {
@@ -260,7 +268,7 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
 
           {/* Product Vendors */}
           <ProductVendorsManager 
-            product={product} 
+            product={currentProduct || product} 
             vendors={vendors}
             onUpdate={loadProductVendors}
           />
