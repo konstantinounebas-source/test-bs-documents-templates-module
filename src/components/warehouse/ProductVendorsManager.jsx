@@ -72,6 +72,9 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
         .slice(0, 5);
       
+      console.log('Recent movements loaded:', latestMovements);
+      console.log('Product unit_cost:', product.unit_cost);
+      
       setRecentMovements(latestMovements);
     } catch (error) {
       console.error("Error loading product vendors:", error);
