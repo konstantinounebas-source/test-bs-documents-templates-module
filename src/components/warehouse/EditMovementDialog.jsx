@@ -10,13 +10,14 @@ import VendorSearchCombobox from "@/components/warehouse/VendorSearchCombobox";
 import CreateEditVendorDialog from "@/components/warehouse/CreateEditVendorDialog";
 import { base44 } from "@/api/base44Client";
 
-export default function EditMovementDialog({ open, onClose, movement, onSave, vendors = [], productVendors = [], products = [] }) {
+export default function EditMovementDialog({ open, onClose, movement, onSave, vendors = [], productVendors = [], products = [], categories = [] }) {
   const [formData, setFormData] = useState({
     notes: '',
     waybill_number: '',
     reference_type: '',
     reference_id: '',
-    unit_cost: ''
+    unit_cost: '',
+    bundle_quantity: ''
   });
   const [isSaving, setIsSaving] = useState(false);
   const [showCreateVendorDialog, setShowCreateVendorDialog] = useState(false);
@@ -28,15 +29,27 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
   useEffect(() => {
     if (movement) {
+      // Try to get bundle_quantity from ProductVendor if available
+      let bundleQty = '';
+      if (movement.reference_id && movement.product_id) {
+        const pv = productVendors.find(
+          pv => pv.product_id === movement.product_id && pv.vendor_id === movement.reference_id
+        );
+        if (pv && pv.bundle_quantity) {
+          bundleQty = String(pv.bundle_quantity);
+        }
+      }
+
       setFormData({
         notes: movement.notes || '',
         waybill_number: movement.waybill_number || '',
         reference_type: movement.reference_type || '',
         reference_id: movement.reference_id || '',
-        unit_cost: movement.unit_cost || ''
+        unit_cost: movement.unit_cost || '',
+        bundle_quantity: bundleQty
       });
     }
-  }, [movement]);
+  }, [movement, productVendors]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,19 +64,21 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
             vendor_id: formData.reference_id
           });
           
+          const pvData = {
+            unit_cost: cost,
+            is_active: true,
+            bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null
+          };
+          
           if (existingPVs.length === 0) {
             await base44.entities.ProductVendor.create({
               product_id: movement.product_id,
               vendor_id: formData.reference_id,
-              unit_cost: cost,
               is_preferred: false,
-              is_active: true
+              ...pvData
             });
           } else {
-            await base44.entities.ProductVendor.update(existingPVs[0].id, {
-              unit_cost: cost,
-              is_active: true
-            });
+            await base44.entities.ProductVendor.update(existingPVs[0].id, pvData);
           }
         }
       }
@@ -86,14 +101,19 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
   const isInMovement = movement.movement_type === 'IN';
   const product = products.find(p => p.id === movement.product_id);
+  const category = product ? categories.find(c => c.id === product.category_id) : null;
   const vendorProductIds = productVendors
     .filter(pv => pv.product_id === movement.product_id && pv.is_active)
     .map(pv => pv.vendor_id);
 
+  const unitCost = parseFloat(formData.unit_cost) || 0;
+  const bundleQty = parseFloat(formData.bundle_quantity) || 0;
+  const costPerPiece = unitCost > 0 && bundleQty > 0 ? (unitCost / bundleQty).toFixed(4) : null;
+
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Επεξεργασία Κίνησης</DialogTitle>
           </DialogHeader>
@@ -101,9 +121,20 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
           <form onSubmit={handleSubmit} className="space-y-4">
             {isInMovement && (
               <>
-                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 space-y-2">
                   <p className="text-sm text-blue-900">
-                    <strong>Προϊόν:</strong> {product?.name || 'N/A'} ({product?.sku || 'N/A'})
+                    <strong>Προϊόν:</strong> {product?.name || 'N/A'}
+                  </p>
+                  <p className="text-sm text-blue-700 font-mono">
+                    <strong>SKU:</strong> {product?.sku || 'N/A'}
+                  </p>
+                  {category && (
+                    <p className="text-sm text-blue-700">
+                      <strong>Κατηγορία:</strong> {category.name}
+                    </p>
+                  )}
+                  <p className="text-sm text-blue-700">
+                    <strong>Μονάδα Μέτρησης:</strong> {product?.unit_of_measure || 'N/A'}
                   </p>
                 </div>
 
@@ -145,6 +176,27 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     onChange={(e) => setFormData({ ...formData, unit_cost: e.target.value })}
                     placeholder="0.0000"
                   />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Κόστος ανά {product?.unit_of_measure || 'μονάδα'} από αυτόν τον προμηθευτή
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="bundle_quantity">Pcs/Qty (προαιρετικό)</Label>
+                  <Input
+                    id="bundle_quantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={formData.bundle_quantity}
+                    onChange={(e) => setFormData({ ...formData, bundle_quantity: e.target.value })}
+                    placeholder="π.χ. 100 τεμ."
+                  />
+                  {costPerPiece && (
+                    <p className="text-xs text-slate-700 mt-1">
+                      <strong>Κόστος ανά τεμάχιο:</strong> €{costPerPiece}
+                    </p>
+                  )}
                 </div>
               </>
             )}
