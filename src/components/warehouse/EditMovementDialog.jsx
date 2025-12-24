@@ -20,7 +20,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     bundle_quantity: '',
     cost_input_method: 'unit',
     total_item_cost: '',
-    discount: '0'
+    discount: '0',
+    quantity: ''
   });
   const [isSaving, setIsSaving] = useState(false);
   const [showCreateVendorDialog, setShowCreateVendorDialog] = useState(false);
@@ -60,15 +61,16 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         bundle_quantity: bundleQty,
         cost_input_method: 'unit',
         total_item_cost: '',
-        discount: '0'
+        discount: '0',
+        quantity: movement.quantity ? String(movement.quantity) : ''
       });
     }
   }, [movement, productVendors]);
 
   // Calculate unit cost when using total cost method
   useEffect(() => {
-    if (formData.cost_input_method === 'total' && movement) {
-      const qty = movement.quantity || 0;
+    if (formData.cost_input_method === 'total') {
+      const qty = parseFloat(formData.quantity) || 0;
       const totalCost = parseFloat(formData.total_item_cost) || 0;
       const discountVal = parseFloat(formData.discount) || 0;
       
@@ -80,12 +82,18 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         }));
       }
     }
-  }, [formData.cost_input_method, formData.total_item_cost, formData.discount, movement]);
+  }, [formData.cost_input_method, formData.total_item_cost, formData.discount, formData.quantity]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     try {
+      // Prepare update data with quantity
+      const updateData = {
+        ...formData,
+        quantity: formData.quantity ? parseFloat(formData.quantity) : movement.quantity
+      };
+
       // If IN movement and vendor/cost provided, update ProductVendor
       if (movement.movement_type === 'IN' && formData.reference_id && formData.unit_cost) {
         const cost = parseFloat(formData.unit_cost);
@@ -114,7 +122,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         }
       }
 
-      await onSave(movement.id, formData);
+      await onSave(movement.id, updateData);
       onClose();
     } catch (error) {
       console.error("Error saving movement:", error);
@@ -171,11 +179,24 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     <p className="text-xs text-blue-600 font-semibold uppercase">Μονάδα Μέτρησης</p>
                     <p className="text-sm text-blue-700">{product?.unit_of_measure || 'N/A'}</p>
                   </div>
-                  <div className="col-span-2 pt-2 border-t border-blue-300">
-                    <p className="text-xs text-blue-600 font-semibold uppercase">Ποσότητα Κίνησης</p>
-                    <p className="text-lg text-blue-900 font-bold">{movement?.quantity || 0} {product?.unit_of_measure || ''}</p>
                   </div>
-                </div>
+
+                  <div>
+                    <Label htmlFor="quantity">Ποσότητα *</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={formData.quantity}
+                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                      placeholder="0.00"
+                      required
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      Ποσότητα σε {product?.unit_of_measure || 'μονάδες'}
+                    </p>
+                  </div>
 
                 <div>
                   <Label>Προμηθευτής</Label>
@@ -258,7 +279,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                         placeholder="0.00"
                       />
                       <p className="text-xs text-slate-500 mt-1">
-                        Το συνολικό κόστος για {movement?.quantity || 0} {product?.unit_of_measure || 'μονάδες'} πριν την έκπτωση
+                        Το συνολικό κόστος για {formData.quantity || 0} {product?.unit_of_measure || 'μονάδες'} πριν την έκπτωση
                       </p>
                     </div>
                     <div>
