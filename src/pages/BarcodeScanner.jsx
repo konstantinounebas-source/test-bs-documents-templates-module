@@ -1119,6 +1119,21 @@ export default function BarcodeScannerPage() {
               bundle_quantity: item.bundle_quantity ? parseFloat(item.bundle_quantity) : null
             });
           }
+
+          // Update Product average cost
+          const product = products.find(p => p.id === item.product_id);
+          if (product) {
+            const totalCostPaid = (product.total_cost_paid || 0) + (quantityNum * cost);
+            const totalQuantityPurchased = (product.total_quantity_purchased || 0) + quantityNum;
+            const averageUnitCost = totalCostPaid / totalQuantityPurchased;
+
+            await base44.entities.Product.update(item.product_id, {
+              unit_cost: averageUnitCost,
+              last_unit_cost: cost,
+              total_cost_paid: totalCostPaid,
+              total_quantity_purchased: totalQuantityPurchased
+            });
+          }
         }
 
         // Create stock movement
@@ -1126,11 +1141,13 @@ export default function BarcodeScannerPage() {
           product_id: item.product_id,
           movement_type: "IN",
           quantity: quantityNum,
+          unit_cost: cost > 0 ? cost : null,
+          bundle_quantity: item.bundle_quantity ? parseFloat(item.bundle_quantity) : null,
           to_location: item.warehouse_location,
-          reference_type: "Invoice",
-          reference_id: bulkInvoiceNumber,
+          reference_type: "Vendor",
+          reference_id: bulkInvoiceVendor,
           performed_by: currentUser.email,
-          waybill_number: bulkInvoiceWaybill || null,
+          waybill_number: bulkInvoiceWaybill || bulkInvoiceNumber,
           notes: `Bulk invoice entry: ${bulkInvoiceNumber}`
         });
 
