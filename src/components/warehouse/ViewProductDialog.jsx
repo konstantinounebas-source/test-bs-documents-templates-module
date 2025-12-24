@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 import ProductVendorsManager from "./ProductVendorsManager";
 
-export default function ViewProductDialog({ open, onClose, product, categories, vendors, stockItems, onEditMovement }) {
+export default function ViewProductDialog({ open, onClose, product, categories, vendors, stockItems, onEditMovement, onUpdate }) {
   const [productVendors, setProductVendors] = useState([]);
   const [isLoadingVendors, setIsLoadingVendors] = useState(true);
 
@@ -24,7 +24,7 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
   const loadProductVendors = async () => {
     setIsLoadingVendors(true);
     try {
-      // Reload product to get latest unit_cost calculations
+      // Reload product to get latest preferred_vendor_id and unit_cost calculations
       const products = await base44.entities.Product.filter({ id: product.id });
       if (products.length > 0) {
         setCurrentProduct(products[0]);
@@ -32,6 +32,11 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
       
       const pvData = await base44.entities.ProductVendor.filter({ product_id: product.id });
       setProductVendors(pvData);
+      
+      // Also notify parent to reload data
+      if (onUpdate) {
+        await onUpdate();
+      }
     } catch (error) {
       console.error("Error loading product vendors:", error);
     }

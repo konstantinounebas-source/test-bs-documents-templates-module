@@ -356,6 +356,7 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
         vendors={vendors}
         stockItems={selectedProduct?.items || []}
         onEditMovement={onEditMovement}
+        onUpdate={onDataUpdated}
       />
       </>
       );
