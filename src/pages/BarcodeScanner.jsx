@@ -1381,7 +1381,7 @@ export default function BarcodeScannerPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">-- Επιλέξτε --</SelectItem>
-                          {getAvailableLocationsForProduct().map(locName => (
+                          {getAvailableLocationsForProduct().filter(locName => locName && locName.trim() !== '').map(locName => (
                             <SelectItem key={locName} value={locName}>
                               {locName} ({getAvailableStockAtLocation(matchedProduct.id, locName)} διαθέσιμα)
                             </SelectItem>
@@ -1400,7 +1400,7 @@ export default function BarcodeScannerPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">-- Επιλέξτε --</SelectItem>
-                          {locations.filter(loc => loc.id && loc.name !== fromLocation).map(loc => (
+                          {locations.filter(loc => loc.id && loc.name && loc.name.trim() !== '' && loc.name !== fromLocation).map(loc => (
                             <SelectItem key={loc.id} value={loc.name}>
                               {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
                             </SelectItem>
@@ -1431,7 +1431,7 @@ export default function BarcodeScannerPage() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">Χωρίς PO</SelectItem>
-                                {purchaseOrders.filter(po => po.id).map(po => {
+                                {purchaseOrders.filter(po => po.id && po.id.trim() !== '').map(po => {
                                   const poItem = po.items.find(item => item.product_id === matchedProduct.id);
                                   if (!poItem) return null;
 
@@ -1991,7 +1991,7 @@ export default function BarcodeScannerPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">-- Επιλέξτε --</SelectItem>
-                    {locations.filter(loc => loc.id).map(loc => (
+                    {locations.filter(loc => loc.id && loc.name && loc.name.trim() !== '').map(loc => (
                       <SelectItem key={loc.id} value={loc.name}>
                         {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
                       </SelectItem>
@@ -2372,7 +2372,7 @@ export default function BarcodeScannerPage() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">-- Επιλέξτε --</SelectItem>
-                                {locations.filter(loc => loc.id).map(loc => (
+                                {locations.filter(loc => loc.id && loc.name && loc.name.trim() !== '').map(loc => (
                                   <SelectItem key={loc.id} value={loc.name}>
                                     {loc.name}
                                   </SelectItem>
