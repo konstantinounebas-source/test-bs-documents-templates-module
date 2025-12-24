@@ -187,25 +187,33 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
           <p className="text-sm text-slate-500">No vendors configured for this product.</p>
         ) : (
           <div className="space-y-4">
-            {/* Average Cost Section */}
-            {product.unit_cost && product.unit_cost > 0 && (
-              <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-blue-900">Μέσος Όρος Κόστους (από IN κινήσεις)</p>
-                    <p className="text-xs text-blue-700 mt-1">
-                      Υπολογισμένος από {product.total_quantity_purchased || 0} {product.unit_of_measure} συνολικά
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-blue-900">€{product.unit_cost.toFixed(4)}</p>
-                    {product.last_unit_cost && (
-                      <p className="text-xs text-blue-700">Τελευταία τιμή: €{product.last_unit_cost.toFixed(4)}</p>
+            {/* Average Cost Section - Always Show */}
+            <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-blue-900">Μέσος Όρος Κόστους (από IN κινήσεις)</p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    {product.unit_cost && product.unit_cost > 0 ? (
+                      <>Υπολογισμένος από {product.total_quantity_purchased || 0} {product.unit_of_measure} συνολικά</>
+                    ) : (
+                      <>Δεν υπάρχουν IN κινήσεις με κόστος ακόμα</>
                     )}
-                  </div>
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-blue-900">
+                    {product.unit_cost && product.unit_cost > 0 ? (
+                      <>€{product.unit_cost.toFixed(4)}</>
+                    ) : (
+                      <span className="text-slate-400">€0.00</span>
+                    )}
+                  </p>
+                  {product.last_unit_cost && product.last_unit_cost > 0 && (
+                    <p className="text-xs text-blue-700">Τελευταία τιμή: €{product.last_unit_cost.toFixed(4)}</p>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
 
             <div className="overflow-x-auto">
               <Table>
@@ -270,39 +278,45 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                     </TableRow>
                   ))}
                   
-                  {/* Recent IN Movements */}
-                  {recentMovements.length > 0 && (
-                    <>
-                      <TableRow>
-                        <TableCell colSpan={7} className="bg-slate-50">
-                          <p className="text-xs font-semibold text-slate-600">Πρόσφατες IN Κινήσεις με Κόστος</p>
+                  {/* Recent IN Movements - Always Show Section */}
+                  <TableRow>
+                    <TableCell colSpan={7} className="bg-slate-50">
+                      <p className="text-xs font-semibold text-slate-600">
+                        Πρόσφατες IN Κινήσεις με Κόστος {recentMovements.length > 0 && `(${recentMovements.length})`}
+                      </p>
+                    </TableCell>
+                  </TableRow>
+                  {recentMovements.length > 0 ? (
+                    recentMovements.map((movement) => (
+                      <TableRow key={movement.id} className="bg-slate-50/50">
+                        <TableCell>
+                          <div className="text-sm">
+                            {getVendorName(movement.reference_id)}
+                            <p className="text-xs text-slate-500">
+                              {new Date(movement.created_date).toLocaleDateString('el-GR')}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="font-mono text-sm">
+                          {movement.waybill_number || '-'}
+                        </TableCell>
+                        <TableCell className="font-semibold">€{movement.unit_cost?.toFixed(4)}</TableCell>
+                        <TableCell className="text-sm text-slate-500">{movement.quantity} {product.unit_of_measure}</TableCell>
+                        <TableCell>-</TableCell>
+                        <TableCell>
+                          <Badge className="bg-slate-200 text-slate-700">Historical</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="text-xs text-slate-500">Read-only</span>
                         </TableCell>
                       </TableRow>
-                      {recentMovements.map((movement) => (
-                        <TableRow key={movement.id} className="bg-slate-50/50">
-                          <TableCell>
-                            <div className="text-sm">
-                              {getVendorName(movement.reference_id)}
-                              <p className="text-xs text-slate-500">
-                                {new Date(movement.created_date).toLocaleDateString('el-GR')}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="font-mono text-sm">
-                            {movement.waybill_number || '-'}
-                          </TableCell>
-                          <TableCell className="font-semibold">€{movement.unit_cost?.toFixed(4)}</TableCell>
-                          <TableCell className="text-sm text-slate-500">{movement.quantity} {product.unit_of_measure}</TableCell>
-                          <TableCell>-</TableCell>
-                          <TableCell>
-                            <Badge className="bg-slate-200 text-slate-700">Historical</Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className="text-xs text-slate-500">Read-only</span>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </>
+                    ))
+                  ) : (
+                    <TableRow className="bg-slate-50/50">
+                      <TableCell colSpan={7} className="text-center text-sm text-slate-500 py-4">
+                        Δεν υπάρχουν IN κινήσεις με κόστος για αυτό το προϊόν
+                      </TableCell>
+                    </TableRow>
                   )}
                 </TableBody>
               </Table>
