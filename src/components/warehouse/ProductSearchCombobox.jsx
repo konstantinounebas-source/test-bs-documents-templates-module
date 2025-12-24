@@ -28,6 +28,16 @@ export default function ProductSearchCombobox({
     );
   });
 
+  // Sort: vendor products first, then alphabetically
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    const aIsVendorProduct = vendorProductIds.includes(a.id);
+    const bIsVendorProduct = vendorProductIds.includes(b.id);
+    
+    if (aIsVendorProduct && !bIsVendorProduct) return -1;
+    if (!aIsVendorProduct && bIsVendorProduct) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -60,7 +70,7 @@ export default function ProductSearchCombobox({
           <CommandList>
             <CommandEmpty>No products found.</CommandEmpty>
             <CommandGroup className="max-h-[300px] overflow-auto">
-              {filteredProducts.map((product) => {
+              {sortedProducts.map((product) => {
                 const isVendorProduct = vendorProductIds.includes(product.id);
                 return (
                   <CommandItem
