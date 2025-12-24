@@ -3,15 +3,17 @@ import { base44 } from "@/api/base44Client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, AlertTriangle, MapPin, ChevronDown, ChevronRight, Star, DollarSign } from "lucide-react";
+import { Edit, AlertTriangle, MapPin, ChevronDown, ChevronRight, Star, DollarSign, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import UpdateStockDialog from "./UpdateStockDialog";
+import ViewProductDialog from "./ViewProductDialog";
 
-export default function StockOverviewTable({ products, categories, vendors, isLoading, onDataUpdated }) {
+export default function StockOverviewTable({ products, categories, vendors, isLoading, onDataUpdated, onEditMovement }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [expandedRows, setExpandedRows] = useState(new Set());
+  const [showViewDialog, setShowViewDialog] = useState(false);
 
   const getCategoryName = (categoryId) => {
     const category = categories.find(c => c.id === categoryId);
@@ -26,6 +28,11 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
   const handleUpdateStock = (product) => {
     setSelectedProduct(product);
     setShowUpdateDialog(true);
+  };
+  
+  const handleViewProduct = (product) => {
+    setSelectedProduct(product);
+    setShowViewDialog(true);
   };
 
   const toggleRow = (productId) => {
@@ -204,6 +211,14 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
                         <Button 
                           variant="ghost" 
                           size="icon" 
+                          onClick={() => handleViewProduct(product)}
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
                           onClick={() => handleUpdateStock(product)}
                           title="Update Stock"
                         >
@@ -331,6 +346,19 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
         product={selectedProduct}
         onStockUpdated={onDataUpdated}
       />
-    </>
-  );
-}
+
+      <ViewProductDialog
+        open={showViewDialog}
+        onClose={() => {
+          setShowViewDialog(false);
+          setSelectedProduct(null);
+        }}
+        product={selectedProduct}
+        categories={categories}
+        vendors={vendors}
+        stockItems={selectedProduct?.items || []}
+        onEditMovement={onEditMovement}
+      />
+      </>
+      );
+      }

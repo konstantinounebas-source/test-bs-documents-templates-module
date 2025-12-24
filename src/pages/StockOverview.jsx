@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ import { Label } from "@/components/ui/label";
 
 import StockOverviewTable from "../components/warehouse/StockOverviewTable";
 import PaginationControls from "../components/warehouse/PaginationControls";
+import EditMovementDialog from "../components/warehouse/EditMovementDialog";
 
 export default function StockOverviewPage() {
   const [products, setProducts] = useState([]);
@@ -27,6 +27,10 @@ export default function StockOverviewPage() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState("10"); // Default items per page
+  
+  // Edit movement dialog
+  const [editingMovement, setEditingMovement] = useState(null);
+  const [showEditMovementDialog, setShowEditMovementDialog] = useState(false);
 
   useEffect(() => {
     loadAllData();
@@ -104,6 +108,16 @@ export default function StockOverviewPage() {
   const handleItemsPerPageChange = (value) => {
     setItemsPerPage(value);
     setCurrentPage(1); // Reset to first page when items per page changes
+  };
+  
+  const handleEditMovement = (movement) => {
+    setEditingMovement(movement);
+    setShowEditMovementDialog(true);
+  };
+  
+  const handleSaveMovement = async (movementId, updateData) => {
+    await base44.entities.StockMovement.update(movementId, updateData);
+    await loadAllData();
   };
 
   // Calculate stats only for active products (independent of current page in table)
@@ -262,6 +276,7 @@ export default function StockOverviewPage() {
             vendors={vendors}
             isLoading={isLoading}
             onDataUpdated={loadAllData}
+            onEditMovement={handleEditMovement}
           />
 
           <PaginationControls
@@ -273,6 +288,20 @@ export default function StockOverviewPage() {
           />
         </div>
       </div>
+      
+      <EditMovementDialog
+        open={showEditMovementDialog}
+        onClose={() => {
+          setShowEditMovementDialog(false);
+          setEditingMovement(null);
+        }}
+        movement={editingMovement}
+        onSave={handleSaveMovement}
+        vendors={vendors}
+        productVendors={productVendors}
+        products={products}
+        categories={categories}
+      />
     </div>
   );
 }
