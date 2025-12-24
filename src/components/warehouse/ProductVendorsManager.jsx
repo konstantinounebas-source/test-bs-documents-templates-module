@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Star } from "lucide-react";
+import { Loader2, Star, Edit } from "lucide-react";
 
-export default function ProductVendorsManager({ product, vendors, onUpdate }) {
+export default function ProductVendorsManager({ product, vendors, onUpdate, onEditMovement }) {
   const [recentMovements, setRecentMovements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [productVendors, setProductVendors] = useState([]);
@@ -181,6 +181,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                       const vendorInfo = getVendorFromMovement(movement);
                       const isPreferred = vendorInfo && product.preferred_vendor_id === vendorInfo.vendorId;
                       const hasVendor = vendorInfo !== null;
+                      const needsVendor = !hasVendor && movement.reference_type === 'Invoice';
 
                       return (
                         <TableRow 
@@ -193,13 +194,17 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                           <TableCell>
                             <div className="text-sm font-medium flex items-center gap-2">
                               {isPreferred && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
-                              {hasVendor
-                                ? vendorInfo.vendorName
-                                : (movement.reference_type === 'Invoice' ? `Invoice: ${movement.reference_id}` : 'Manual Entry')}
+                              {hasVendor ? (
+                                vendorInfo.vendorName
+                              ) : needsVendor ? (
+                                <span className="text-slate-400">Χωρίς προμηθευτή</span>
+                              ) : (
+                                'Manual Entry'
+                              )}
                             </div>
                           </TableCell>
                           <TableCell className="font-mono text-sm">
-                            {movement.waybill_number || '-'}
+                            {movement.waybill_number || movement.reference_id || '-'}
                           </TableCell>
                           <TableCell className="font-semibold">
                             {(movement.unit_cost !== null && movement.unit_cost !== undefined && movement.unit_cost > 0) ? (
@@ -213,12 +218,30 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                           <TableCell>
                             <Badge className="bg-blue-100 text-blue-800">IN</Badge>
                           </TableCell>
-                          <TableCell className="text-right text-xs text-slate-600">
-                            {new Date(movement.created_date).toLocaleDateString('el-GR', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric'
-                            })}
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <span className="text-xs text-slate-600">
+                                {new Date(movement.created_date).toLocaleDateString('el-GR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric'
+                                })}
+                              </span>
+                              {onEditMovement && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onEditMovement(movement);
+                                  }}
+                                  title="Επεξεργασία κίνησης"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );

@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 import ProductVendorsManager from "./ProductVendorsManager";
 
-export default function ViewProductDialog({ open, onClose, product, categories, vendors, stockItems }) {
+export default function ViewProductDialog({ open, onClose, product, categories, vendors, stockItems, onEditMovement }) {
   const [productVendors, setProductVendors] = useState([]);
   const [isLoadingVendors, setIsLoadingVendors] = useState(true);
 
@@ -271,6 +271,7 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
             product={currentProduct || product} 
             vendors={vendors}
             onUpdate={loadProductVendors}
+            onEditMovement={onEditMovement}
           />
 
           {/* Barcodes / QR Codes */}
