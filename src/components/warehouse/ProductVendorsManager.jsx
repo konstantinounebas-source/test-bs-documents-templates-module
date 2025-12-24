@@ -30,13 +30,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function ProductVendorsManager({ product, vendors, onUpdate }) {
-  const [productVendors, setProductVendors] = useState([]);
   const [recentMovements, setRecentMovements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showDialog, setShowDialog] = useState(false);
-  const [editingPV, setEditingPV] = useState(null);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [pvToDelete, setPvToDelete] = useState(null);
   
   const [formData, setFormData] = useState({
     vendor_id: null, // Changed from '' to null for better Select component behavior (placeholder display)
@@ -58,26 +53,20 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
   const loadProductVendors = async () => {
     setIsLoading(true);
     try {
-      const pvData = await base44.entities.ProductVendor.filter({ product_id: product.id });
-      setProductVendors(pvData);
-      
-      // Also load recent IN movements for this product (latest 5)
+      // Load recent IN movements for this product (latest 10)
       const movements = await base44.entities.StockMovement.filter({
         product_id: product.id,
         movement_type: 'IN'
       });
       
-      // Get latest 5 movements (regardless of cost)
+      // Get latest 10 movements
       const latestMovements = movements
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
-        .slice(0, 5);
-      
-      console.log('Recent movements loaded:', latestMovements);
-      console.log('Product unit_cost:', product.unit_cost);
+        .slice(0, 10);
       
       setRecentMovements(latestMovements);
     } catch (error) {
-      console.error("Error loading product vendors:", error);
+      console.error("Error loading IN movements:", error);
     }
     setIsLoading(false);
   };
@@ -290,15 +279,12 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                   </TableRow>
                   {recentMovements.length > 0 ? (
                     recentMovements.map((movement) => (
-                      <TableRow key={movement.id} className="bg-slate-50/50">
+                      <TableRow key={movement.id}>
                         <TableCell>
-                          <div className="text-sm">
+                          <div className="text-sm font-medium">
                             {movement.reference_type === 'Vendor' && movement.reference_id 
                               ? getVendorName(movement.reference_id) 
                               : (movement.reference_type || 'Manual Entry')}
-                            <p className="text-xs text-slate-500">
-                              {new Date(movement.created_date).toLocaleDateString('el-GR')}
-                            </p>
                           </div>
                         </TableCell>
                         <TableCell className="font-mono text-sm">
@@ -312,12 +298,16 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                           )}
                         </TableCell>
                         <TableCell>-</TableCell>
-                        <TableCell className="text-sm text-slate-500">{movement.quantity} {product.unit_of_measure}</TableCell>
+                        <TableCell className="text-sm text-slate-600">{movement.quantity} {product.unit_of_measure}</TableCell>
                         <TableCell>
-                          <Badge className="bg-slate-200 text-slate-700">Historical</Badge>
+                          <Badge className="bg-blue-100 text-blue-800">IN</Badge>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <span className="text-xs text-slate-500">Read-only</span>
+                        <TableCell className="text-right text-xs text-slate-600">
+                          {new Date(movement.created_date).toLocaleDateString('el-GR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                          })}
                         </TableCell>
                       </TableRow>
                     ))
