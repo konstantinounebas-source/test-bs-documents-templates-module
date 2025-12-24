@@ -46,7 +46,23 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
   };
 
   const renderUnitCost = (product) => {
-    // Use product's average unit_cost (calculated from IN movements)
+    const pvs = product.productVendors || [];
+    
+    // If there's a preferred vendor, show that cost
+    if (product.preferred_vendor_id) {
+      const preferredPV = pvs.find(pv => pv.vendor_id === product.preferred_vendor_id && pv.is_preferred);
+      
+      if (preferredPV && preferredPV.unit_cost > 0) {
+        return (
+          <div className="flex items-center gap-1">
+            <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+            <span className="font-semibold">€{preferredPV.unit_cost.toFixed(2)}</span>
+          </div>
+        );
+      }
+    }
+    
+    // Otherwise show average cost from IN movements
     if (product.unit_cost && product.unit_cost > 0) {
       return (
         <div>
@@ -56,44 +72,26 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
       );
     }
     
-    // Fallback to vendor pricing if no movements recorded yet
-    const pvs = product.productVendors || [];
-    
-    if (pvs.length === 0) {
-      return <span className="text-slate-400">No cost data</span>;
-    }
-    
-    const preferredPV = pvs.find(pv => pv.is_preferred);
-    
-    if (preferredPV) {
-      return (
-        <div className="flex items-center gap-1">
-          <span className="font-semibold">€{preferredPV.unit_cost.toFixed(2)}</span>
-          <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-        </div>
-      );
-    }
-    
-    if (pvs.length === 1) {
-      return <span>€{pvs[0].unit_cost.toFixed(2)}</span>;
-    }
-    
-    // Multiple vendors, show range
-    const costs = pvs.map(pv => pv.unit_cost);
-    const minCost = Math.min(...costs);
-    const maxCost = Math.max(...costs);
-    
-    return (
-      <div>
-        <div className="font-semibold">€{minCost.toFixed(2)} - €{maxCost.toFixed(2)}</div>
-        <div className="text-xs text-slate-500">{pvs.length} vendors</div>
-      </div>
-    );
+    // No cost data available
+    return <span className="text-slate-400">No cost data</span>;
   };
 
   const renderTotalValue = (product) => {
-    // Use product's average unit_cost (calculated from IN movements)
-    const unitCost = product.unit_cost || 0;
+    const pvs = product.productVendors || [];
+    let unitCost = 0;
+    
+    // If preferred vendor, use that cost
+    if (product.preferred_vendor_id) {
+      const preferredPV = pvs.find(pv => pv.vendor_id === product.preferred_vendor_id && pv.is_preferred);
+      if (preferredPV && preferredPV.unit_cost > 0) {
+        unitCost = preferredPV.unit_cost;
+      }
+    }
+    
+    // Otherwise use average cost
+    if (unitCost === 0) {
+      unitCost = product.unit_cost || 0;
+    }
     
     if (unitCost === 0) {
       return <span className="text-slate-400">-</span>;
