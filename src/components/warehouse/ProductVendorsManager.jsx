@@ -58,7 +58,6 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
     setIsLoading(true);
     try {
       const pvData = await base44.entities.ProductVendor.filter({ product_id: product.id });
-      setProductVendors(pvData);
       
       // Also load recent IN movements for this product to show historical costs
       const recentMovements = await base44.entities.StockMovement.filter({
