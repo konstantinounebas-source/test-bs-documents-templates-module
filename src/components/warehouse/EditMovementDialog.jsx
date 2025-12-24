@@ -93,11 +93,16 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       
       // Prepare update data with quantity and unit_cost as numbers
       const updateData = {
-        ...formData,
+        notes: formData.notes,
+        waybill_number: formData.waybill_number,
+        reference_type: formData.reference_type || null,
+        reference_id: formData.reference_id || null,
         quantity: quantity,
         unit_cost: unitCost,
         bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null
       };
+      
+      console.log('Saving movement with data:', updateData);
 
       // If IN movement and vendor/cost provided, update ProductVendor and Product average cost
       if (movement.movement_type === 'IN' && formData.reference_id && unitCost) {
