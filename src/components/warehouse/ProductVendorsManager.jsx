@@ -95,11 +95,12 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
         }
       }
       
-      // Reload local data first
-      await loadProductVendors();
-      
-      // Then notify parent
-      if (onUpdate) await onUpdate();
+      // Notify parent to reload ALL data
+      if (onUpdate) {
+        await onUpdate();
+        // Then reload local data
+        await loadProductVendors();
+      }
     } catch (error) {
       console.error("Error selecting average price:", error);
     }
@@ -152,11 +153,12 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
         preferred_vendor_id: vendorInfo.vendorId
       });
 
-      // Reload local data first
-      await loadProductVendors();
-
-      // Then notify parent to reload
-      if (onUpdate) await onUpdate();
+      // Notify parent to reload ALL data
+      if (onUpdate) {
+        await onUpdate();
+        // Then reload local data
+        await loadProductVendors();
+      }
       } catch (error) {
       console.error("Error selecting vendor price:", error);
       }

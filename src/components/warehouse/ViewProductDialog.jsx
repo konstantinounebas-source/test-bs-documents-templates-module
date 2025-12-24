@@ -32,11 +32,6 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
       
       const pvData = await base44.entities.ProductVendor.filter({ product_id: product.id });
       setProductVendors(pvData);
-      
-      // Also notify parent to reload data
-      if (onUpdate) {
-        await onUpdate();
-      }
     } catch (error) {
       console.error("Error loading product vendors:", error);
     }
