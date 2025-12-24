@@ -49,6 +49,30 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
     const vendor = vendors.find(v => v.id === vendorId);
     return vendor?.name || 'Unknown';
   };
+  
+  const getVendorFromMovement = (movement) => {
+    // If reference_type is 'Vendor', use reference_id to find vendor
+    if (movement.reference_type === 'Vendor' && movement.reference_id) {
+      return {
+        vendorId: movement.reference_id,
+        vendorName: getVendorName(movement.reference_id)
+      };
+    }
+    
+    // If reference_type is 'Invoice', try to find vendor from waybill or reference_id
+    // For now, check if reference_id matches a vendor ID
+    if (movement.reference_id) {
+      const vendor = vendors.find(v => v.id === movement.reference_id);
+      if (vendor) {
+        return {
+          vendorId: vendor.id,
+          vendorName: vendor.name
+        };
+      }
+    }
+    
+    return null;
+  };
 
   const isPreferredVendor = (vendorId) => {
     return productVendors.some(pv => pv.vendor_id === vendorId && pv.is_preferred);
@@ -69,12 +93,13 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
   };
 
   const handleSelectVendorPrice = async (movement) => {
-    if (!movement.reference_id || movement.reference_type !== 'Vendor') return;
+    const vendorInfo = getVendorFromMovement(movement);
+    if (!vendorInfo) return;
     
     // Set the vendor as preferred
     try {
       await base44.entities.Product.update(product.id, {
-        preferred_vendor_id: movement.reference_id
+        preferred_vendor_id: vendorInfo.vendorId
       });
       if (onUpdate) onUpdate();
     } catch (error) {
@@ -153,11 +178,10 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                 <TableBody>
                   {recentMovements.length > 0 ? (
                     recentMovements.map((movement) => {
-                      const isPreferred = movement.reference_type === 'Vendor' && 
-                                         movement.reference_id && 
-                                         product.preferred_vendor_id === movement.reference_id;
-                      const hasVendor = movement.reference_type === 'Vendor' && movement.reference_id;
-                      
+                      const vendorInfo = getVendorFromMovement(movement);
+                      const isPreferred = vendorInfo && product.preferred_vendor_id === vendorInfo.vendorId;
+                      const hasVendor = vendorInfo !== null;
+
                       return (
                         <TableRow 
                           key={movement.id}
@@ -170,8 +194,8 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                             <div className="text-sm font-medium flex items-center gap-2">
                               {isPreferred && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
                               {hasVendor
-                                ? getVendorName(movement.reference_id) 
-                                : (movement.reference_type || 'Manual Entry')}
+                                ? vendorInfo.vendorName
+                                : (movement.reference_type === 'Invoice' ? `Invoice: ${movement.reference_id}` : 'Manual Entry')}
                             </div>
                           </TableCell>
                           <TableCell className="font-mono text-sm">
