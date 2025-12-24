@@ -32,14 +32,22 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
   useEffect(() => {
     if (movement) {
-      // Try to get bundle_quantity from ProductVendor if available
+      // Try to get bundle_quantity and unit_cost from ProductVendor if available
       let bundleQty = '';
+      let vendorUnitCost = movement.unit_cost || '';
+      
       if (movement.reference_id && movement.product_id) {
         const pv = productVendors.find(
           pv => pv.product_id === movement.product_id && pv.vendor_id === movement.reference_id
         );
-        if (pv && pv.bundle_quantity) {
-          bundleQty = String(pv.bundle_quantity);
+        if (pv) {
+          if (pv.bundle_quantity) {
+            bundleQty = String(pv.bundle_quantity);
+          }
+          // Auto-fill unit_cost from ProductVendor if not already set in movement
+          if (!vendorUnitCost && pv.unit_cost) {
+            vendorUnitCost = String(pv.unit_cost);
+          }
         }
       }
 
@@ -48,7 +56,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         waybill_number: movement.waybill_number || '',
         reference_type: movement.reference_type || '',
         reference_id: movement.reference_id || '',
-        unit_cost: movement.unit_cost || '',
+        unit_cost: vendorUnitCost,
         bundle_quantity: bundleQty,
         cost_input_method: 'unit',
         total_item_cost: '',
@@ -158,6 +166,9 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                   )}
                   <p className="text-sm text-blue-700">
                     <strong>Μονάδα Μέτρησης:</strong> {product?.unit_of_measure || 'N/A'}
+                  </p>
+                  <p className="text-sm text-blue-900 font-semibold">
+                    <strong>Ποσότητα:</strong> {movement?.quantity || 0} {product?.unit_of_measure || ''}
                   </p>
                 </div>
 
