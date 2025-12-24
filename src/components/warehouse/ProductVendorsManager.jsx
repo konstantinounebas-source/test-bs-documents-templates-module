@@ -31,6 +31,7 @@ import {
 
 export default function ProductVendorsManager({ product, vendors, onUpdate }) {
   const [productVendors, setProductVendors] = useState([]);
+  const [recentMovements, setRecentMovements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [editingPV, setEditingPV] = useState(null);
@@ -58,25 +59,21 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
     setIsLoading(true);
     try {
       const pvData = await base44.entities.ProductVendor.filter({ product_id: product.id });
+      setProductVendors(pvData);
       
       // Also load recent IN movements for this product to show historical costs
-      const recentMovements = await base44.entities.StockMovement.filter({
+      const movements = await base44.entities.StockMovement.filter({
         product_id: product.id,
         movement_type: 'IN'
       });
       
       // Get unique movements with costs (latest 5)
-      const movementsWithCosts = recentMovements
+      const movementsWithCosts = movements
         .filter(m => m.unit_cost && m.unit_cost > 0)
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
         .slice(0, 5);
       
-      setProductVendors([...pvData, ...movementsWithCosts.map(m => ({
-        ...m,
-        isMovement: true,
-        vendor_id: m.reference_id,
-        created_date: m.created_date
-      }))]);
+      setRecentMovements(movementsWithCosts);
     } catch (error) {
       console.error("Error loading product vendors:", error);
     }
@@ -224,7 +221,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {productVendors.filter(pv => !pv.isMovement).map((pv) => (
+                  {productVendors.map((pv) => (
                     <TableRow key={pv.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -274,18 +271,18 @@ export default function ProductVendorsManager({ product, vendors, onUpdate }) {
                   ))}
                   
                   {/* Recent IN Movements */}
-                  {productVendors.filter(pv => pv.isMovement).length > 0 && (
+                  {recentMovements.length > 0 && (
                     <>
                       <TableRow>
                         <TableCell colSpan={7} className="bg-slate-50">
                           <p className="text-xs font-semibold text-slate-600">Πρόσφατες IN Κινήσεις με Κόστος</p>
                         </TableCell>
                       </TableRow>
-                      {productVendors.filter(pv => pv.isMovement).map((movement) => (
+                      {recentMovements.map((movement) => (
                         <TableRow key={movement.id} className="bg-slate-50/50">
                           <TableCell>
                             <div className="text-sm">
-                              {getVendorName(movement.vendor_id)}
+                              {getVendorName(movement.reference_id)}
                               <p className="text-xs text-slate-500">
                                 {new Date(movement.created_date).toLocaleDateString('el-GR')}
                               </p>
