@@ -56,7 +56,7 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
         return (
           <div className="flex items-center gap-1">
             <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-            <span className="font-semibold">€{preferredPV.unit_cost.toFixed(2)}</span>
+            <span className="font-semibold">€{preferredPV.unit_cost.toFixed(4)}</span>
           </div>
         );
       }
@@ -66,7 +66,7 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
     if (product.unit_cost && product.unit_cost > 0) {
       return (
         <div>
-          <div className="font-semibold">€{product.unit_cost.toFixed(2)}</div>
+          <div className="font-semibold">€{product.unit_cost.toFixed(4)}</div>
           <div className="text-xs text-slate-500">Average</div>
         </div>
       );
