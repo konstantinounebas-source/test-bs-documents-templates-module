@@ -78,15 +78,15 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
     return productVendors.some(pv => pv.vendor_id === vendorId && pv.is_preferred);
   };
 
-  const handleSelectAveragePrice = async () => {
-    if (!product.unit_cost || product.unit_cost <= 0) return;
+  const handleSelectAveragePrice = async (e) => {
+    e.stopPropagation();
     
     // Update product's preferred_vendor_id to null (indicating average cost is selected)
     try {
       await base44.entities.Product.update(product.id, {
         preferred_vendor_id: null
       });
-      if (onUpdate) onUpdate();
+      if (onUpdate) await onUpdate();
     } catch (error) {
       console.error("Error selecting average price:", error);
     }
@@ -126,8 +126,8 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
             <div 
               className={`p-4 rounded-lg cursor-pointer transition-all ${
                 !product.preferred_vendor_id && product.unit_cost > 0
-                  ? 'bg-blue-100 border-2 border-blue-400 shadow-md' 
-                  : 'bg-blue-50 border-2 border-blue-200 hover:border-blue-300'
+                  ? 'bg-yellow-100 border-2 border-yellow-400 shadow-md' 
+                  : 'bg-blue-50 border-2 border-blue-200 hover:border-blue-300 hover:shadow'
               }`}
               onClick={handleSelectAveragePrice}
             >
@@ -186,10 +186,10 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                       return (
                         <TableRow 
                           key={movement.id}
-                          className={`${hasVendor ? 'cursor-pointer hover:bg-slate-50' : ''} ${
-                            isPreferred ? 'bg-yellow-50' : ''
+                          className={`${hasVendor ? 'cursor-pointer hover:bg-slate-100' : ''} ${
+                            isPreferred ? 'bg-yellow-100 border-l-4 border-yellow-500' : ''
                           }`}
-                          onClick={() => hasVendor && handleSelectVendorPrice(movement)}
+                          onClick={(e) => hasVendor && handleSelectVendorPrice(e, movement)}
                         >
                           <TableCell>
                             <div className="text-sm font-medium flex items-center gap-2">
