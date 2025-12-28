@@ -78,77 +78,32 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
     return productVendors.some(pv => pv.vendor_id === vendorId && pv.is_preferred);
   };
 
-  const handleSelectAveragePrice = async (e) => {
-    e.stopPropagation();
-    
-    try {
-      // Recalculate average from all IN movements
-      const allMovements = await base44.entities.StockMovement.filter({
-        product_id: product.id,
-        movement_type: 'IN'
-      });
-      
-      let totalCost = 0;
-      let totalQty = 0;
-      
-      allMovements.forEach(movement => {
-        if (movement.unit_cost && movement.unit_cost > 0 && movement.quantity > 0) {
-          totalCost += movement.quantity * movement.unit_cost;
-          totalQty += movement.quantity;
-        }
-      });
-      
-      const averageUnitCost = totalQty > 0 ? totalCost / totalQty : 0;
-      
-      // Update product with average cost and no preferred vendor
-      await base44.entities.Product.update(product.id, {
-        preferred_vendor_id: null,
-        unit_cost: averageUnitCost
-      });
-      
-      // Set all ProductVendors as not preferred
-      const allPVs = await base44.entities.ProductVendor.filter({ product_id: product.id });
-      for (const pv of allPVs) {
-        if (pv.is_preferred) {
-          await base44.entities.ProductVendor.update(pv.id, { is_preferred: false });
-        }
-      }
-      
-      // Notify parent to reload ALL data
-      if (onUpdate) {
-        await onUpdate();
-        // Then reload local data
-        await loadProductVendors();
-      }
-    } catch (error) {
-      console.error("Error selecting average price:", error);
-    }
-  };
+  // Removed - average cost is now calculated automatically, not selected via star
 
-  const handleSelectVendorPrice = async (e, movement) => {
+  const handleSelectPreferredVendor = async (e, movement) => {
     e.stopPropagation();
     const vendorInfo = getVendorFromMovement(movement);
     if (!vendorInfo) return;
-    
+
     const unitCost = movement.unit_cost;
     if (!unitCost || unitCost <= 0) {
       console.error("Movement has no valid unit cost");
       return;
     }
-    
+
     try {
-      // Update or create ProductVendor with the selected unit cost
+      // Update or create ProductVendor with the unit cost from this movement
       const existingPVs = await base44.entities.ProductVendor.filter({
         product_id: product.id,
         vendor_id: vendorInfo.vendorId
       });
-      
+
       const pvData = {
         unit_cost: unitCost,
         is_preferred: true,
         is_active: true
       };
-      
+
       if (existingPVs.length === 0) {
         await base44.entities.ProductVendor.create({
           product_id: product.id,
@@ -158,7 +113,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
       } else {
         await base44.entities.ProductVendor.update(existingPVs[0].id, pvData);
       }
-      
+
       // Set all other ProductVendors for this product as not preferred
       const allPVs = await base44.entities.ProductVendor.filter({ product_id: product.id });
       for (const pv of allPVs) {
@@ -166,8 +121,8 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
           await base44.entities.ProductVendor.update(pv.id, { is_preferred: false });
         }
       }
-      
-      // Set the vendor as preferred in Product
+
+      // Set the vendor as preferred in Product (does NOT affect unit_cost)
       await base44.entities.Product.update(product.id, {
         preferred_vendor_id: vendorInfo.vendorId
       });
@@ -178,10 +133,10 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
         // Then reload local data
         await loadProductVendors();
       }
-      } catch (error) {
-      console.error("Error selecting vendor price:", error);
-      }
-      };
+    } catch (error) {
+      console.error("Error selecting preferred vendor:", error);
+    }
+  };
 
   if (!product) return null;
 
@@ -198,44 +153,18 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Average Cost Section - Always Show */}
-            <div 
-              className={`p-4 rounded-lg transition-all ${
-                !product.preferred_vendor_id && product.unit_cost > 0
-                  ? 'bg-yellow-100 border-2 border-yellow-400 shadow-md' 
-                  : 'bg-blue-50 border-2 border-blue-200'
-              }`}
-            >
+            {/* Average Cost Display - Non-interactive */}
+            <div className="p-4 rounded-lg bg-blue-50 border-2 border-blue-200">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`h-8 w-8 ${
-                      !product.preferred_vendor_id && product.unit_cost > 0
-                        ? 'text-yellow-600 hover:text-yellow-700'
-                        : 'text-slate-400 hover:text-slate-600'
-                    }`}
-                    onClick={handleSelectAveragePrice}
-                    disabled={!product.unit_cost || product.unit_cost <= 0}
-                  >
-                    <Star className={`w-5 h-5 ${
-                      !product.preferred_vendor_id && product.unit_cost > 0 ? 'fill-yellow-500' : ''
-                    }`} />
-                  </Button>
-                  <div>
-                    <p className="text-sm font-semibold text-blue-900">Μέσος Όρος Κόστους (από IN κινήσεις)</p>
-                    <p className="text-xs text-blue-700 mt-1">
-                      {product.unit_cost && product.unit_cost > 0 ? (
-                        <>Υπολογισμένος από {product.total_quantity_purchased || 0} {product.unit_of_measure} συνολικά</>
-                      ) : (
-                        <>Δεν υπάρχουν IN κινήσεις με κόστος ακόμα</>
-                      )}
-                    </p>
-                    {!product.preferred_vendor_id && product.unit_cost > 0 && (
-                      <p className="text-xs font-bold text-green-700 mt-1">✓ Ενεργό Unit Cost του προϊόντος</p>
+                <div>
+                  <p className="text-sm font-semibold text-blue-900">Μέσος Όρος Κόστους (από IN κινήσεις)</p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    {product.unit_cost && product.unit_cost > 0 ? (
+                      <>Υπολογισμένος από {product.total_quantity_purchased || 0} {product.unit_of_measure} συνολικά</>
+                    ) : (
+                      <>Δεν υπάρχουν IN κινήσεις με κόστος ακόμα</>
                     )}
-                  </div>
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-blue-900">
@@ -272,16 +201,9 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                       const vendorInfo = getVendorFromMovement(movement);
                       const hasVendor = vendorInfo !== null;
                       const needsVendor = !hasVendor && movement.reference_type === 'Invoice';
-                      
-                      // Check if this vendor is preferred AND has matching unit cost in ProductVendor
-                      let isPreferred = false;
-                      if (vendorInfo && product.preferred_vendor_id === vendorInfo.vendorId) {
-                        const matchingPV = productVendors.find(pv => 
-                          pv.vendor_id === vendorInfo.vendorId && 
-                          pv.is_preferred
-                        );
-                        isPreferred = !!matchingPV;
-                      }
+
+                      // Check if this vendor is marked as preferred
+                      const isPreferred = vendorInfo && product.preferred_vendor_id === vendorInfo.vendorId;
 
                       return (
                         <TableRow 
@@ -298,8 +220,8 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                                     ? 'text-yellow-600 hover:text-yellow-700'
                                     : 'text-slate-400 hover:text-slate-600'
                                 }`}
-                                onClick={(e) => handleSelectVendorPrice(e, movement)}
-                                title={isPreferred ? 'Ενεργό Unit Cost του προϊόντος' : 'Επιλογή ως ενεργό'}
+                                onClick={(e) => handleSelectPreferredVendor(e, movement)}
+                                title={isPreferred ? 'Προτιμώμενος Προμηθευτής' : 'Ορισμός ως προτιμώμενος'}
                               >
                                 <Star className={`w-4 h-4 ${isPreferred ? 'fill-yellow-500' : ''}`} />
                               </Button>

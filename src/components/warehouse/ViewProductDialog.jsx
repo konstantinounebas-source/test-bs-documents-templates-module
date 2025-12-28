@@ -4,7 +4,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Package, Tag, Barcode, Clock, AlertTriangle, Download, Printer, QrCode, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Package, Tag, Barcode, Clock, AlertTriangle, Download, Printer, QrCode, Loader2, Edit2, Save, X } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 import ProductVendorsManager from "./ProductVendorsManager";
@@ -14,6 +16,8 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
   const [productVendors, setProductVendors] = useState([]);
   const [isLoadingVendors, setIsLoadingVendors] = useState(true);
   const [isRecalculating, setIsRecalculating] = useState(false);
+  const [isEditingUnitCost, setIsEditingUnitCost] = useState(false);
+  const [manualUnitCost, setManualUnitCost] = useState('');
 
   useEffect(() => {
     if (product?.id && open) {
@@ -22,6 +26,39 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
   }, [product?.id, open]);
 
   const [currentProduct, setCurrentProduct] = useState(null);
+
+  const handleEditUnitCost = () => {
+    setManualUnitCost(currentProduct?.unit_cost?.toString() || '');
+    setIsEditingUnitCost(true);
+  };
+
+  const handleSaveUnitCost = async () => {
+    const newCost = parseFloat(manualUnitCost);
+    if (isNaN(newCost) || newCost < 0) {
+      toast.error("Μη έγκυρη τιμή κόστους");
+      return;
+    }
+
+    try {
+      await base44.entities.Product.update(product.id, {
+        unit_cost: newCost
+      });
+      
+      toast.success("Το κόστος μονάδας ενημερώθηκε επιτυχώς");
+      setIsEditingUnitCost(false);
+      
+      if (onUpdate) await onUpdate();
+      await loadProductVendors();
+    } catch (error) {
+      console.error("Error updating unit cost:", error);
+      toast.error("Σφάλμα κατά την ενημέρωση του κόστους");
+    }
+  };
+
+  const handleCancelEditUnitCost = () => {
+    setIsEditingUnitCost(false);
+    setManualUnitCost('');
+  };
 
   const recalculateAverages = async () => {
     setIsRecalculating(true);
@@ -272,6 +309,77 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
                 <p className="font-medium">{preferredVendorData?.name || 'Not set'}</p>
               </div>
             </div>
+          </div>
+
+          <Separator />
+
+          {/* Unit Cost - Editable */}
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Ενεργό Κόστος Μονάδας Προϊόντος</h3>
+              {!isEditingUnitCost && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEditUnitCost}
+                >
+                  <Edit2 className="w-3 h-3 mr-2" />
+                  Επεξεργασία
+                </Button>
+              )}
+            </div>
+
+            {isEditingUnitCost ? (
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <Label htmlFor="manual_unit_cost">Κόστος ανά {product.unit_of_measure} (€)</Label>
+                  <Input
+                    id="manual_unit_cost"
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    value={manualUnitCost}
+                    onChange={(e) => setManualUnitCost(e.target.value)}
+                    placeholder="0.0000"
+                  />
+                </div>
+                <Button
+                  variant="default"
+                  size="icon"
+                  onClick={handleSaveUnitCost}
+                >
+                  <Save className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleCancelEditUnitCost}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="p-4 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-green-700">Τρέχον Unit Cost</p>
+                    <p className="text-xs text-green-600 mt-1">
+                      Μπορείτε να το αλλάξετε χειροκίνητα ή αφήνεται στον μέσο όρο
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-3xl font-bold text-green-900">
+                      {currentProduct?.unit_cost && currentProduct.unit_cost > 0 ? (
+                        <>€{currentProduct.unit_cost.toFixed(4)}</>
+                      ) : (
+                        <span className="text-slate-400">€0.0000</span>
+                      )}
+                    </p>
+                    <p className="text-xs text-green-700">ανά {product.unit_of_measure}</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <Separator />
