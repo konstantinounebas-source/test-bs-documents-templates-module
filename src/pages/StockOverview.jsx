@@ -115,8 +115,52 @@ export default function StockOverviewPage() {
     setShowEditMovementDialog(true);
   };
   
+  const recalculateProductAverages = async (productId) => {
+    // Get all IN movements for this product
+    const inMovements = await base44.entities.StockMovement.filter({
+      product_id: productId,
+      movement_type: 'IN'
+    });
+    
+    // Calculate totals from actual movements
+    let totalCost = 0;
+    let totalQty = 0;
+    let lastUnitCost = 0;
+    let lastDate = null;
+    
+    inMovements.forEach(movement => {
+      if (movement.unit_cost && movement.unit_cost > 0 && movement.quantity > 0) {
+        totalCost += movement.quantity * movement.unit_cost;
+        totalQty += movement.quantity;
+        
+        const movementDate = new Date(movement.created_date);
+        if (!lastDate || movementDate > lastDate) {
+          lastDate = movementDate;
+          lastUnitCost = movement.unit_cost;
+        }
+      }
+    });
+    
+    const averageUnitCost = totalQty > 0 ? totalCost / totalQty : 0;
+    
+    // Update product with correct values
+    await base44.entities.Product.update(productId, {
+      total_cost_paid: totalCost,
+      total_quantity_purchased: totalQty,
+      unit_cost: averageUnitCost,
+      last_unit_cost: lastUnitCost
+    });
+  };
+
   const handleSaveMovement = async (movementId, updateData) => {
     await base44.entities.StockMovement.update(movementId, updateData);
+    
+    // Get the movement to find its product_id
+    const movements = await base44.entities.StockMovement.filter({ id: movementId });
+    if (movements.length > 0) {
+      await recalculateProductAverages(movements[0].product_id);
+    }
+    
     await loadAllData();
   };
 

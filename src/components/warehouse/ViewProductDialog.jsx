@@ -4,14 +4,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Package, Tag, Barcode, Clock, AlertTriangle, Download, Printer, QrCode } from "lucide-react";
+import { Package, Tag, Barcode, Clock, AlertTriangle, Download, Printer, QrCode, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
 import ProductVendorsManager from "./ProductVendorsManager";
+import { toast } from "sonner";
 
 export default function ViewProductDialog({ open, onClose, product, categories, vendors, stockItems, onEditMovement, onUpdate }) {
   const [productVendors, setProductVendors] = useState([]);
   const [isLoadingVendors, setIsLoadingVendors] = useState(true);
+  const [isRecalculating, setIsRecalculating] = useState(false);
 
   useEffect(() => {
     if (product?.id && open) {
@@ -20,6 +22,56 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
   }, [product?.id, open]);
 
   const [currentProduct, setCurrentProduct] = useState(null);
+
+  const recalculateAverages = async () => {
+    setIsRecalculating(true);
+    try {
+      // Get all IN movements for this product
+      const inMovements = await base44.entities.StockMovement.filter({
+        product_id: product.id,
+        movement_type: 'IN'
+      });
+      
+      // Calculate totals from actual movements
+      let totalCost = 0;
+      let totalQty = 0;
+      let lastUnitCost = 0;
+      let lastDate = null;
+      
+      inMovements.forEach(movement => {
+        if (movement.unit_cost && movement.unit_cost > 0 && movement.quantity > 0) {
+          totalCost += movement.quantity * movement.unit_cost;
+          totalQty += movement.quantity;
+          
+          const movementDate = new Date(movement.created_date);
+          if (!lastDate || movementDate > lastDate) {
+            lastDate = movementDate;
+            lastUnitCost = movement.unit_cost;
+          }
+        }
+      });
+      
+      const averageUnitCost = totalQty > 0 ? totalCost / totalQty : 0;
+      
+      // Update product with correct values
+      await base44.entities.Product.update(product.id, {
+        total_cost_paid: totalCost,
+        total_quantity_purchased: totalQty,
+        unit_cost: averageUnitCost,
+        last_unit_cost: lastUnitCost
+      });
+      
+      toast.success("Οι υπολογισμοί ενημερώθηκαν επιτυχώς");
+      
+      // Reload data
+      await loadProductVendors();
+      if (onUpdate) await onUpdate();
+    } catch (error) {
+      console.error("Error recalculating averages:", error);
+      toast.error("Σφάλμα κατά τον επαναϋπολογισμό");
+    }
+    setIsRecalculating(false);
+  };
 
   const loadProductVendors = async () => {
     setIsLoadingVendors(true);
@@ -152,11 +204,30 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="w-5 h-5" />
-            {product.name}
-          </DialogTitle>
-          <DialogDescription>Product Details</DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                {product.name}
+              </DialogTitle>
+              <DialogDescription>Product Details</DialogDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={recalculateAverages}
+              disabled={isRecalculating}
+            >
+              {isRecalculating ? (
+                <>
+                  <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                  Υπολογισμός...
+                </>
+              ) : (
+                "Επαναϋπολογισμός Μέσου Όρου"
+              )}
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">
