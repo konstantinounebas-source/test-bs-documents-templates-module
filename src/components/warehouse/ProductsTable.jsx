@@ -72,37 +72,12 @@ export default function ProductsTable({
   };
 
   const renderUnitCost = (product) => {
-    const pvs = getProductVendors(product.id);
-    
-    if (pvs.length === 0) {
-      return <span className="text-slate-400 text-sm">No vendors</span>;
+    if (!product.unit_cost || product.unit_cost === 0) {
+      return <span className="text-slate-400 text-sm">No cost data</span>;
     }
-    
-    const preferredPV = pvs.find(pv => pv.is_preferred);
-    
-    if (preferredPV) {
-      return (
-        <div className="flex items-center gap-1">
-          <span className="font-semibold">€{preferredPV.unit_cost.toFixed(2)}</span>
-          <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-        </div>
-      );
-    }
-    
-    if (pvs.length === 1) {
-      return <span>€{pvs[0].unit_cost.toFixed(2)}</span>;
-    }
-    
-    // Multiple vendors, show range
-    const costs = pvs.map(pv => pv.unit_cost);
-    const minCost = Math.min(...costs);
-    const maxCost = Math.max(...costs);
     
     return (
-      <div>
-        <div className="font-semibold">€{minCost.toFixed(2)} - €{maxCost.toFixed(2)}</div>
-        <div className="text-xs text-slate-500">{pvs.length} vendors</div>
-      </div>
+      <span className="font-semibold">€{product.unit_cost.toFixed(4)}</span>
     );
   };
 
