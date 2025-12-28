@@ -10,6 +10,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
   const [recentMovements, setRecentMovements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [productVendors, setProductVendors] = useState([]);
+  const [calculatedAverage, setCalculatedAverage] = useState({ cost: 0, quantity: 0 });
 
   useEffect(() => {
     if (product?.id) {
@@ -24,13 +25,27 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
       const pvData = await base44.entities.ProductVendor.filter({ product_id: product.id });
       setProductVendors(pvData);
       
-      // Load recent IN movements for this product (latest 10)
+      // Load ALL IN movements for this product to calculate true average
       const movements = await base44.entities.StockMovement.filter({
         product_id: product.id,
         movement_type: 'IN'
       });
       
-      // Get latest 10 movements
+      // Calculate true average from all movements
+      let totalCost = 0;
+      let totalQty = 0;
+      
+      movements.forEach(movement => {
+        if (movement.unit_cost && movement.unit_cost > 0 && movement.quantity > 0) {
+          totalCost += movement.quantity * movement.unit_cost;
+          totalQty += movement.quantity;
+        }
+      });
+      
+      const averageUnitCost = totalQty > 0 ? totalCost / totalQty : 0;
+      setCalculatedAverage({ cost: averageUnitCost, quantity: totalQty });
+      
+      // Get latest 10 movements for display
       const latestMovements = movements
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
         .slice(0, 10);
@@ -159,8 +174,8 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                 <div>
                   <p className="text-sm font-semibold text-blue-900">Μέσος Όρος Κόστους (από IN κινήσεις)</p>
                   <p className="text-xs text-blue-700 mt-1">
-                    {product.unit_cost && product.unit_cost > 0 ? (
-                      <>Υπολογισμένος από {product.total_quantity_purchased || 0} {product.unit_of_measure} συνολικά</>
+                    {calculatedAverage.cost > 0 ? (
+                      <>Υπολογισμένος από {calculatedAverage.quantity} {product.unit_of_measure} συνολικά</>
                     ) : (
                       <>Δεν υπάρχουν IN κινήσεις με κόστος ακόμα</>
                     )}
@@ -168,8 +183,8 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-blue-900">
-                    {product.unit_cost && product.unit_cost > 0 ? (
-                      <>€{product.unit_cost.toFixed(4)}</>
+                    {calculatedAverage.cost > 0 ? (
+                      <>€{calculatedAverage.cost.toFixed(4)}</>
                     ) : (
                       <span className="text-slate-400">€0.00</span>
                     )}
