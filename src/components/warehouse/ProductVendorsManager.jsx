@@ -232,6 +232,9 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                         <>Δεν υπάρχουν IN κινήσεις με κόστος ακόμα</>
                       )}
                     </p>
+                    {!product.preferred_vendor_id && product.unit_cost > 0 && (
+                      <p className="text-xs font-bold text-green-700 mt-1">✓ Ενεργό Unit Cost του προϊόντος</p>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
@@ -275,8 +278,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                       if (vendorInfo && product.preferred_vendor_id === vendorInfo.vendorId) {
                         const matchingPV = productVendors.find(pv => 
                           pv.vendor_id === vendorInfo.vendorId && 
-                          pv.is_preferred &&
-                          pv.unit_cost === movement.unit_cost
+                          pv.is_preferred
                         );
                         isPreferred = !!matchingPV;
                       }
@@ -297,6 +299,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                                     : 'text-slate-400 hover:text-slate-600'
                                 }`}
                                 onClick={(e) => handleSelectVendorPrice(e, movement)}
+                                title={isPreferred ? 'Ενεργό Unit Cost του προϊόντος' : 'Επιλογή ως ενεργό'}
                               >
                                 <Star className={`w-4 h-4 ${isPreferred ? 'fill-yellow-500' : ''}`} />
                               </Button>
