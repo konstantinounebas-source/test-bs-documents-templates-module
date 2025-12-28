@@ -112,13 +112,13 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
             product_id: movement.product_id,
             vendor_id: formData.reference_id
           });
-          
+
           const pvData = {
             unit_cost: unitCost,
             is_active: true,
             bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null
           };
-          
+
           if (existingPVs.length === 0) {
             await base44.entities.ProductVendor.create({
               product_id: movement.product_id,
@@ -133,9 +133,21 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
           // Update Product average cost
           const product = products.find(p => p.id === movement.product_id);
           if (product) {
-            const totalCostPaid = (product.total_cost_paid || 0) + (quantity * unitCost);
-            const totalQuantityPurchased = (product.total_quantity_purchased || 0) + quantity;
-            const averageUnitCost = totalCostPaid / totalQuantityPurchased;
+            // Remove old movement values from totals
+            const oldQuantity = movement.quantity || 0;
+            const oldUnitCost = movement.unit_cost || 0;
+            const oldTotalCost = oldQuantity * oldUnitCost;
+
+            // Calculate new totals
+            const currentTotalCostPaid = (product.total_cost_paid || 0) - oldTotalCost;
+            const currentTotalQuantity = (product.total_quantity_purchased || 0) - oldQuantity;
+
+            // Add new movement values
+            const newTotalCost = quantity * unitCost;
+            const totalCostPaid = currentTotalCostPaid + newTotalCost;
+            const totalQuantityPurchased = currentTotalQuantity + quantity;
+
+            const averageUnitCost = totalQuantityPurchased > 0 ? totalCostPaid / totalQuantityPurchased : 0;
 
             await base44.entities.Product.update(movement.product_id, {
               unit_cost: averageUnitCost,
