@@ -60,6 +60,41 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
     setManualUnitCost('');
   };
 
+  const handleResetToAverage = async () => {
+    try {
+      // Recalculate average from all IN movements (without affecting total_cost_paid/total_quantity_purchased)
+      const allMovements = await base44.entities.StockMovement.filter({
+        product_id: product.id,
+        movement_type: 'IN'
+      });
+      
+      let totalCost = 0;
+      let totalQty = 0;
+      
+      allMovements.forEach(movement => {
+        if (movement.unit_cost && movement.unit_cost > 0 && movement.quantity > 0) {
+          totalCost += movement.quantity * movement.unit_cost;
+          totalQty += movement.quantity;
+        }
+      });
+      
+      const averageUnitCost = totalQty > 0 ? totalCost / totalQty : 0;
+      
+      // Update only unit_cost, not the tracking fields
+      await base44.entities.Product.update(product.id, {
+        unit_cost: averageUnitCost
+      });
+      
+      toast.success("Το κόστος επανήλθε στο μέσο όρο");
+      
+      if (onUpdate) await onUpdate();
+      await loadProductVendors();
+    } catch (error) {
+      console.error("Error resetting to average:", error);
+      toast.error("Σφάλμα κατά την επαναφορά");
+    }
+  };
+
   const recalculateAverages = async () => {
     setIsRecalculating(true);
     try {
@@ -318,14 +353,23 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">Ενεργό Κόστος Μονάδας Προϊόντος</h3>
               {!isEditingUnitCost && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEditUnitCost}
-                >
-                  <Edit2 className="w-3 h-3 mr-2" />
-                  Επεξεργασία
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetToAverage}
+                  >
+                    Επαναφορά στο Μέσο Όρο
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEditUnitCost}
+                  >
+                    <Edit2 className="w-3 h-3 mr-2" />
+                    Επεξεργασία
+                  </Button>
+                </div>
               )}
             </div>
 

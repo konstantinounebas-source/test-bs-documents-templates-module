@@ -202,8 +202,16 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                       const hasVendor = vendorInfo !== null;
                       const needsVendor = !hasVendor && movement.reference_type === 'Invoice';
 
-                      // Check if this vendor is marked as preferred
-                      const isPreferred = vendorInfo && product.preferred_vendor_id === vendorInfo.vendorId;
+                      // Check if this specific movement's vendor is preferred AND has matching unit_cost in ProductVendor
+                      let isPreferred = false;
+                      if (vendorInfo && product.preferred_vendor_id === vendorInfo.vendorId) {
+                        const matchingPV = productVendors.find(pv => 
+                          pv.vendor_id === vendorInfo.vendorId && 
+                          pv.is_preferred &&
+                          Math.abs(pv.unit_cost - movement.unit_cost) < 0.0001
+                        );
+                        isPreferred = !!matchingPV;
+                      }
 
                       return (
                         <TableRow 
