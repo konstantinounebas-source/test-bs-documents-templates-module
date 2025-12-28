@@ -104,7 +104,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       
       console.log('Saving movement with data:', updateData);
 
-      // If IN movement and vendor/cost provided, update ProductVendor and Product average cost
+      // If IN movement and vendor/cost provided, update ProductVendor
       if (movement.movement_type === 'IN' && formData.reference_id && unitCost) {
         if (!isNaN(unitCost) && unitCost > 0) {
           // Update ProductVendor
@@ -128,33 +128,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
             });
           } else {
             await base44.entities.ProductVendor.update(existingPVs[0].id, pvData);
-          }
-
-          // Update Product average cost
-          const product = products.find(p => p.id === movement.product_id);
-          if (product) {
-            // Remove old movement values from totals
-            const oldQuantity = movement.quantity || 0;
-            const oldUnitCost = movement.unit_cost || 0;
-            const oldTotalCost = oldQuantity * oldUnitCost;
-
-            // Calculate new totals
-            const currentTotalCostPaid = (product.total_cost_paid || 0) - oldTotalCost;
-            const currentTotalQuantity = (product.total_quantity_purchased || 0) - oldQuantity;
-
-            // Add new movement values
-            const newTotalCost = quantity * unitCost;
-            const totalCostPaid = currentTotalCostPaid + newTotalCost;
-            const totalQuantityPurchased = currentTotalQuantity + quantity;
-
-            const averageUnitCost = totalQuantityPurchased > 0 ? totalCostPaid / totalQuantityPurchased : 0;
-
-            await base44.entities.Product.update(movement.product_id, {
-              unit_cost: averageUnitCost,
-              last_unit_cost: unitCost,
-              total_cost_paid: totalCostPaid,
-              total_quantity_purchased: totalQuantityPurchased
-            });
           }
         }
       }
