@@ -81,10 +81,29 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
   const handleSelectAveragePrice = async (e) => {
     e.stopPropagation();
     
-    // Update product's preferred_vendor_id to null (indicating average cost is selected)
     try {
+      // Recalculate average from all IN movements
+      const allMovements = await base44.entities.StockMovement.filter({
+        product_id: product.id,
+        movement_type: 'IN'
+      });
+      
+      let totalCost = 0;
+      let totalQty = 0;
+      
+      allMovements.forEach(movement => {
+        if (movement.unit_cost && movement.unit_cost > 0 && movement.quantity > 0) {
+          totalCost += movement.quantity * movement.unit_cost;
+          totalQty += movement.quantity;
+        }
+      });
+      
+      const averageUnitCost = totalQty > 0 ? totalCost / totalQty : 0;
+      
+      // Update product with average cost and no preferred vendor
       await base44.entities.Product.update(product.id, {
-        preferred_vendor_id: null
+        preferred_vendor_id: null,
+        unit_cost: averageUnitCost
       });
       
       // Set all ProductVendors as not preferred
