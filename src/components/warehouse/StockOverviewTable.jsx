@@ -298,6 +298,12 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
                                       )}
                                     </div>
                                     <div className="flex items-center gap-6 text-sm">
+                                      {pv.vendor_product_code && (
+                                        <div>
+                                          <span className="text-slate-600">Vendor Code: </span>
+                                          <span className="font-mono font-semibold text-slate-900">{pv.vendor_product_code}</span>
+                                        </div>
+                                      )}
                                       <div>
                                         <span className="text-slate-600">Unit Cost: </span>
                                         <span className="font-semibold text-slate-900">€{pv.unit_cost.toFixed(2)}</span>
