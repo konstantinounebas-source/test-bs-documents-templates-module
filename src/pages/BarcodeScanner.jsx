@@ -568,6 +568,11 @@ export default function BarcodeScannerPage() {
         setScanResult({ type: 'error', message: 'Please select a company' });
         return;
       }
+
+      if (!selectedInvoiceCategory) {
+        setScanResult({ type: 'error', message: 'Please select invoice category' });
+        return;
+      }
       
       const cost = parseFloat(unitCost);
       if (unitCost !== "" && (isNaN(cost) || cost < 0)) {
@@ -1399,42 +1404,6 @@ export default function BarcodeScannerPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {/* Movement Type Selection */}
-                  <div className="space-y-2">
-                    <Label>Τύπος Κίνησης *</Label>
-                    <Select value={movementType} onValueChange={handleMovementTypeChange}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="IN">
-                          <div className="flex items-center gap-2">
-                            <TrendingUp className="w-4 h-4 text-green-600" />
-                            <span>Εισαγωγή (IN)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="OUT">
-                          <div className="flex items-center gap-2">
-                            <TrendingDown className="w-4 h-4 text-red-600" />
-                            <span>Εξαγωγή (OUT)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="TRANSFER">
-                          <div className="flex items-center gap-2">
-                            <Move className="w-4 h-4 text-blue-600" />
-                            <span>Μεταφορά (TRANSFER)</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="ADJUSTMENT">
-                          <div className="flex items-center gap-2">
-                            <Activity className="w-4 h-4 text-orange-600" />
-                            <span>Διόρθωση (ADJUSTMENT)</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   {/* Conditional Fields based on Movement Type */}
                   {(movementType === "TRANSFER" || movementType === "OUT") && (
                     <div className="space-y-2">
@@ -1455,8 +1424,44 @@ export default function BarcodeScannerPage() {
                     </div>
                   )}
 
-                  {(movementType === "TRANSFER" || movementType === "IN" || movementType === "ADJUSTMENT") && (
-                    <div className="grid grid-cols-2 gap-3">
+                  {/* Movement Type & Warehouse Location */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label>Τύπος Κίνησης *</Label>
+                      <Select value={movementType} onValueChange={handleMovementTypeChange}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="IN">
+                            <div className="flex items-center gap-2">
+                              <TrendingUp className="w-4 h-4 text-green-600" />
+                              <span>Εισαγωγή (IN)</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="OUT">
+                            <div className="flex items-center gap-2">
+                              <TrendingDown className="w-4 h-4 text-red-600" />
+                              <span>Εξαγωγή (OUT)</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="TRANSFER">
+                            <div className="flex items-center gap-2">
+                              <Move className="w-4 h-4 text-blue-600" />
+                              <span>Μεταφορά (TRANSFER)</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="ADJUSTMENT">
+                            <div className="flex items-center gap-2">
+                              <Activity className="w-4 h-4 text-orange-600" />
+                              <span>Διόρθωση (ADJUSTMENT)</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {(movementType === "TRANSFER" || movementType === "IN" || movementType === "ADJUSTMENT") && (
                       <div>
                         <Label>Θέση Αποθήκης *</Label>
                         <Select value={toLocation || 'none'} onValueChange={(val) => setToLocation(val === 'none' ? '' : val)}>
@@ -1473,23 +1478,48 @@ export default function BarcodeScannerPage() {
                           </SelectContent>
                         </Select>
                       </div>
+                    )}
+                  </div>
 
-                      {movementType === "IN" && (
-                        <div>
-                          <Label>Εταιρεία *</Label>
-                          <Select value={selectedCompany || 'none'} onValueChange={(val) => setSelectedCompany(val === 'none' ? '' : val)}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Επιλέξτε εταιρεία" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
-                              {companies.map(comp => (
-                                <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
+                  {/* Company & Invoice Category */}
+                  {movementType === "IN" && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Εταιρεία *</Label>
+                        <Select value={selectedCompany || 'none'} onValueChange={(val) => setSelectedCompany(val === 'none' ? '' : val)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Επιλέξτε εταιρεία" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
+                            {companies.map(comp => (
+                              <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Κατηγορία Τιμολόγησης *</Label>
+                        <Select value={selectedInvoiceCategory || 'none'} onValueChange={(val) => setSelectedInvoiceCategory(val === 'none' ? '' : val)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Επιλέξτε κατηγορία" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
+                            {invoiceCategories.map(ic => (
+                              <SelectItem key={ic.id} value={ic.id}>
+                                <div>
+                                  <div className="font-medium">{ic.name}</div>
+                                  {ic.description && (
+                                    <div className="text-xs text-slate-500">{ic.description}</div>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   )}
 
@@ -1579,28 +1609,45 @@ export default function BarcodeScannerPage() {
                           </div>
 
                           <div>
-                            <Label>Μέθοδος Εισαγωγής Κόστους</Label>
-                            <Select 
-                              value={costInputMethod} 
-                              onValueChange={(val) => {
-                                setCostInputMethod(val);
-                                if (val === 'unit') {
-                                  setTotalItemCost("");
-                                  setDiscount("0");
-                                } else {
-                                  setUnitCost("");
-                                }
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="unit">Ανά Μονάδα</SelectItem>
-                                <SelectItem value="total">Συνολικό Κόστος + Έκπτωση</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <Label>Pcs/Qty</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={bundleQuantity || ''}
+                              onChange={(e) => setBundleQuantity(e.target.value)}
+                              placeholder="π.χ. 100 τεμ."
+                            />
+                            {unitCost && bundleQuantity && parseFloat(bundleQuantity) > 0 && (
+                              <p className="text-xs text-slate-700 mt-1">
+                                <strong>Κόστος ανά τεμάχιο:</strong> €{(parseFloat(unitCost) / parseFloat(bundleQuantity)).toFixed(4)}
+                              </p>
+                            )}
                           </div>
+                        </div>
+
+                        <div>
+                          <Label>Μέθοδος Εισαγωγής Κόστους</Label>
+                          <Select 
+                            value={costInputMethod} 
+                            onValueChange={(val) => {
+                              setCostInputMethod(val);
+                              if (val === 'unit') {
+                                setTotalItemCost("");
+                                setDiscount("0");
+                              } else {
+                                setUnitCost("");
+                              }
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="unit">Ανά Μονάδα</SelectItem>
+                              <SelectItem value="total">Συνολικό Κόστος + Έκπτωση</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         {costInputMethod === 'unit' ? (
@@ -1660,23 +1707,6 @@ export default function BarcodeScannerPage() {
                             )}
                           </>
                         )}
-
-                        <div>
-                          <Label>Pcs/Qty</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            step="1"
-                            value={bundleQuantity || ''}
-                            onChange={(e) => setBundleQuantity(e.target.value)}
-                            placeholder="π.χ. 100 τεμ."
-                          />
-                          {unitCost && bundleQuantity && parseFloat(bundleQuantity) > 0 && (
-                            <p className="text-xs text-slate-700 mt-1">
-                              <strong>Κόστος ανά τεμάχιο:</strong> €{(parseFloat(unitCost) / parseFloat(bundleQuantity)).toFixed(4)}
-                            </p>
-                          )}
-                        </div>
                       </div>
 
                         <Separator />
@@ -1685,38 +1715,14 @@ export default function BarcodeScannerPage() {
                         <div className="space-y-3">
                           <p className="text-sm font-semibold text-slate-700">Πρόσθετα Στοιχεία</p>
 
-                          <div className="grid grid-cols-2 gap-3">
-                            <div>
-                              <Label>Κατηγορία Τιμολόγησης</Label>
-                              <Select value={selectedInvoiceCategory || 'none'} onValueChange={(val) => setSelectedInvoiceCategory(val === 'none' ? '' : val)}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Επιλέξτε κατηγορία" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
-                                  {invoiceCategories.map(ic => (
-                                    <SelectItem key={ic.id} value={ic.id}>
-                                      <div>
-                                        <div className="font-medium">{ic.name}</div>
-                                        {ic.description && (
-                                          <div className="text-xs text-slate-500">{ic.description}</div>
-                                        )}
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div>
-                              <Label htmlFor="waybill-in">Αριθμός Waybill</Label>
-                              <Input
-                                id="waybill-in"
-                                value={waybillNumber}
-                                onChange={(e) => setWaybillNumber(e.target.value)}
-                                placeholder="π.χ. WB-2025-001"
-                              />
-                            </div>
+                          <div>
+                            <Label htmlFor="waybill-in">Αριθμός Waybill</Label>
+                            <Input
+                              id="waybill-in"
+                              value={waybillNumber}
+                              onChange={(e) => setWaybillNumber(e.target.value)}
+                              placeholder="π.χ. WB-2025-001"
+                            />
                           </div>
                         </div>
                     </>
