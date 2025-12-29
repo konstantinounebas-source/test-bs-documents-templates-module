@@ -897,8 +897,15 @@ export default function BarcodeScannerPage() {
 
       // Process each selected item
       for (const item of selectedItems) {
-        // const product = products.find(p => p.id === item.product_id); // Not used
-        // if (!product) continue;
+        // Update product company if specified
+        if (item.company_id) {
+          const currentProduct = products.find(p => p.id === item.product_id);
+          if (currentProduct && item.company_id !== currentProduct.company_id) {
+            await base44.entities.Product.update(item.product_id, {
+              company_id: item.company_id
+            });
+          }
+        }
 
         // Create stock movement
         await base44.entities.StockMovement.create({
@@ -909,6 +916,10 @@ export default function BarcodeScannerPage() {
           reference_type: "PurchaseOrder",
           reference_id: po.id,
           performed_by: currentUser.email,
+          unit_cost: item.unit_cost || null,
+          bundle_quantity: item.bundle_quantity || null,
+          vendor_product_code: item.vendor_product_code || null,
+          invoice_category_id: item.invoice_category_id || null,
           notes: `Bulk receive from PO ${po.po_number}`,
           photos: uploadedPhotos.length > 0 ? uploadedPhotos : null
         });
@@ -2159,69 +2170,155 @@ export default function BarcodeScannerPage() {
                 )}
               </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <Checkbox
-                        checked={poItemsToReceive.every(item => item.selected)}
-                        onCheckedChange={(checked) => {
-                          setPOItemsToReceive(prev => prev.map(item => ({ ...item, selected: !!checked })));
-                        }}
-                      />
-                    </TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead>SKU</TableHead>
-                    <TableHead className="text-right">Ordered</TableHead>
-                    <TableHead className="text-right">Received</TableHead>
-                    <TableHead className="text-right">Remaining</TableHead>
-                    <TableHead className="text-right">Receive Now</TableHead>
-                    <TableHead className="text-right">Unit Cost (€)</TableHead>
-                    <TableHead className="text-right">Pcs/Qty</TableHead>
-                    <TableHead className="text-right">Cost/Pc (€)</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {poItemsToReceive.map((item, index) => {
-                    const product = products.find(p => p.id === item.product_id);
-                    return (
-                      <TableRow key={index}>
-                        <TableCell>
-                          <Checkbox
-                            checked={item.selected}
-                            onCheckedChange={() => togglePOItemSelection(index)}
-                          />
-                        </TableCell>
-                        <TableCell>{product?.name || 'Unknown'}</TableCell>
-                        <TableCell className="font-mono text-sm">{product?.sku || 'N/A'}</TableCell>
-                        <TableCell className="text-right">{item.quantity_ordered}</TableCell>
-                        <TableCell className="text-right">{item.quantity_received || 0}</TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {item.quantity_ordered - (item.quantity_received || 0)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            type="number"
-                            min="1"
-                            max={item.quantity_ordered - (item.quantity_received || 0)}
-                            value={item.quantity_to_receive}
-                            onChange={(e) => updatePOItemQuantity(index, e.target.value)}
-                            disabled={!item.selected}
-                            className="w-20 text-right"
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">€{item.unit_cost?.toFixed(4) || '0.0000'}</TableCell>
-                        <TableCell className="text-right">{item.bundle_quantity || '-'}</TableCell>
-                        <TableCell className="text-right">
-                          {item.unit_cost && item.bundle_quantity && parseFloat(item.bundle_quantity) > 0
-                            ? `€${(item.unit_cost / parseFloat(item.bundle_quantity)).toFixed(4)}`
-                            : '-'}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                {poItemsToReceive.map((item, index) => {
+                  const product = products.find(p => p.id === item.product_id);
+                  return (
+                    <div key={index} className="border rounded-lg p-4 bg-slate-50">
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={item.selected}
+                          onCheckedChange={() => togglePOItemSelection(index)}
+                          className="mt-1"
+                        />
+                        <div className="flex-1 space-y-3">
+                          <div>
+                            <p className="font-semibold text-slate-900">{product?.name || 'Unknown'}</p>
+                            <p className="text-sm text-slate-600 font-mono">SKU: {product?.sku || 'N/A'}</p>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <p className="text-slate-600">Παραγγέλθηκαν</p>
+                              <p className="font-semibold">{item.quantity_ordered}</p>
+                            </div>
+                            <div>
+                              <p className="text-slate-600">Παραλήφθηκαν</p>
+                              <p className="font-semibold">{item.quantity_received || 0}</p>
+                            </div>
+                            <div>
+                              <p className="text-slate-600">Υπόλοιπο</p>
+                              <p className="font-semibold text-orange-600">
+                                {item.quantity_ordered - (item.quantity_received || 0)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs">Παραλαμβάνω Τώρα</Label>
+                              <Input
+                                type="number"
+                                min="1"
+                                max={item.quantity_ordered - (item.quantity_received || 0)}
+                                value={item.quantity_to_receive}
+                                onChange={(e) => updatePOItemQuantity(index, e.target.value)}
+                                disabled={!item.selected}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Unit Cost (€)</Label>
+                              <div className="flex items-center h-10 px-3 bg-slate-100 rounded-md border">
+                                <span className="text-sm font-mono">€{item.unit_cost?.toFixed(4) || '0.0000'}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <Label className="text-xs">Pcs/Qty</Label>
+                              <div className="flex items-center h-10 px-3 bg-slate-100 rounded-md border">
+                                <span className="text-sm">{item.bundle_quantity || '-'}</span>
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs">Cost/Pc (€)</Label>
+                              <div className="flex items-center h-10 px-3 bg-slate-100 rounded-md border">
+                                <span className="text-sm font-mono">
+                                  {item.unit_cost && item.bundle_quantity && parseFloat(item.bundle_quantity) > 0
+                                    ? `€${(item.unit_cost / parseFloat(item.bundle_quantity)).toFixed(4)}`
+                                    : '-'}
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs">Σύνολο (€)</Label>
+                              <div className="flex items-center h-10 px-3 bg-blue-50 rounded-md border border-blue-200">
+                                <span className="text-sm font-semibold text-blue-900">
+                                  €{((item.unit_cost || 0) * item.quantity_to_receive).toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t">
+                            <p className="text-xs font-semibold text-slate-700 mb-2">Πρόσθετα Στοιχεία</p>
+                            <div className="grid grid-cols-3 gap-3">
+                              <div>
+                                <Label className="text-xs">Κωδ. Προμηθευτή</Label>
+                                <Input
+                                  value={item.vendor_product_code || ''}
+                                  onChange={(e) => {
+                                    setPOItemsToReceive(prev => prev.map((it, i) => 
+                                      i === index ? { ...it, vendor_product_code: e.target.value } : it
+                                    ));
+                                  }}
+                                  placeholder="Κωδικός"
+                                  disabled={!item.selected}
+                                />
+                              </div>
+                              <div>
+                                <Label className="text-xs">Εταιρεία</Label>
+                                <Select
+                                  value={item.company_id || 'none'}
+                                  onValueChange={(val) => {
+                                    setPOItemsToReceive(prev => prev.map((it, i) => 
+                                      i === index ? { ...it, company_id: val === 'none' ? '' : val } : it
+                                    ));
+                                  }}
+                                  disabled={!item.selected}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Επιλογή" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">-</SelectItem>
+                                    {companies.map(comp => (
+                                      <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-xs">Κατ. Τιμολόγησης</Label>
+                                <Select
+                                  value={item.invoice_category_id || 'none'}
+                                  onValueChange={(val) => {
+                                    setPOItemsToReceive(prev => prev.map((it, i) => 
+                                      i === index ? { ...it, invoice_category_id: val === 'none' ? '' : val } : it
+                                    ));
+                                  }}
+                                  disabled={!item.selected}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Επιλογή" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">-</SelectItem>
+                                    {invoiceCategories.map(ic => (
+                                      <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
 
               <div className="flex justify-end gap-3 pt-4">
                 <Button
