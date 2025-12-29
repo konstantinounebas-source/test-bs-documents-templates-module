@@ -10,7 +10,7 @@ import VendorSearchCombobox from "@/components/warehouse/VendorSearchCombobox";
 import CreateEditVendorDialog from "@/components/warehouse/CreateEditVendorDialog";
 import { base44 } from "@/api/base44Client";
 
-export default function EditMovementDialog({ open, onClose, movement, onSave, vendors = [], productVendors = [], products = [], categories = [] }) {
+export default function EditMovementDialog({ open, onClose, movement, onSave, vendors = [], productVendors = [], products = [], categories = [], companies = [] }) {
   const [formData, setFormData] = useState({
     notes: '',
     waybill_number: '',
@@ -187,6 +187,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   const isInMovement = movement.movement_type === 'IN';
   const product = products.find(p => p.id === movement.product_id);
   const category = product ? categories.find(c => c.id === product.category_id) : null;
+  const company = product ? companies.find(c => c.id === product.company_id) : null;
   const vendorProductIds = productVendors
     .filter(pv => pv.product_id === movement.product_id && pv.is_active)
     .map(pv => pv.vendor_id);
@@ -225,6 +226,12 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     <p className="text-xs text-blue-600 font-semibold uppercase">Μονάδα Μέτρησης</p>
                     <p className="text-sm text-blue-700">{product?.unit_of_measure || 'N/A'}</p>
                   </div>
+                  {company && (
+                    <div>
+                      <p className="text-xs text-blue-600 font-semibold uppercase">Εταιρεία</p>
+                      <p className="text-sm text-blue-700">{company.name}</p>
+                    </div>
+                  )}
                   </div>
 
                   <div>

@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import ProductVendorsManager from "./ProductVendorsManager";
 import { toast } from "sonner";
 
-export default function ViewProductDialog({ open, onClose, product, categories, vendors, stockItems, onEditMovement, onUpdate }) {
+export default function ViewProductDialog({ open, onClose, product, categories, vendors, companies = [], stockItems, onEditMovement, onUpdate }) {
   const [productVendors, setProductVendors] = useState([]);
   const [isLoadingVendors, setIsLoadingVendors] = useState(true);
   const [isRecalculating, setIsRecalculating] = useState(false);
