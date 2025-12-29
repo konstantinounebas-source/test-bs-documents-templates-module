@@ -648,12 +648,18 @@ export default function BarcodeScannerPage() {
       // Add charged_to_person for OUT movements
       if (movementType === "OUT") {
         movementData.charged_to_person = chargedToPerson;
+        // Use product's current unit_cost for OUT movements
+        movementData.unit_cost = matchedProduct.unit_cost || 0;
       }
 
       // Add vendor reference for IN movements
       if (movementType === "IN" && selectedVendor) {
         movementData.reference_type = "Vendor";
         movementData.reference_id = selectedVendor;
+        // Add unit_cost for IN movements if provided
+        if (unitCost !== "" && !isNaN(parseFloat(unitCost))) {
+          movementData.unit_cost = parseFloat(unitCost);
+        }
       }
 
       // Add PO or invoice reference for IN movements
