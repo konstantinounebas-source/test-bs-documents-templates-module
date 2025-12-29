@@ -203,6 +203,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                     <TableHead className="w-12"></TableHead>
                     <TableHead>Vendor</TableHead>
                     <TableHead>Waybill</TableHead>
+                    <TableHead>Vendor Code</TableHead>
                     <TableHead>Unit Cost</TableHead>
                     <TableHead>Lead Time</TableHead>
                     <TableHead>Quantity</TableHead>
@@ -266,6 +267,9 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                           <TableCell className="font-mono text-sm">
                             {movement.waybill_number || movement.reference_id || '-'}
                           </TableCell>
+                          <TableCell className="font-mono text-sm text-slate-600">
+                            {movement.vendor_product_code || '-'}
+                          </TableCell>
                           <TableCell className="font-semibold">
                             {(movement.unit_cost !== null && movement.unit_cost !== undefined && movement.unit_cost > 0) ? (
                               <>€{Number(movement.unit_cost).toFixed(4)}</>
@@ -308,7 +312,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-sm text-slate-500 py-4">
+                      <TableCell colSpan={8} className="text-center text-sm text-slate-500 py-4">
                         Δεν υπάρχουν IN κινήσεις για αυτό το προϊόν
                       </TableCell>
                     </TableRow>
