@@ -10,14 +10,22 @@ import { Package, Tag, Barcode, Clock, AlertTriangle, Download, Printer, QrCode,
 import { Card, CardContent } from "@/components/ui/card";
 
 import ProductVendorsManager from "./ProductVendorsManager";
+import EditMovementDialog from "./EditMovementDialog";
 import { toast } from "sonner";
 
-export default function ViewProductDialog({ open, onClose, product, categories, vendors, companies = [], stockItems, onEditMovement, onUpdate }) {
+export default function ViewProductDialog({ open, onClose, product, categories, vendors, companies = [], stockItems, onUpdate }) {
   const [productVendors, setProductVendors] = useState([]);
   const [isLoadingVendors, setIsLoadingVendors] = useState(true);
   const [isRecalculating, setIsRecalculating] = useState(false);
   const [isEditingUnitCost, setIsEditingUnitCost] = useState(false);
   const [manualUnitCost, setManualUnitCost] = useState('');
+  const [showEditMovementDialog, setShowEditMovementDialog] = useState(false);
+  const [editingMovement, setEditingMovement] = useState(null);
+  const [editMovementVendors, setEditMovementVendors] = useState([]);
+  const [editMovementProductVendors, setEditMovementProductVendors] = useState([]);
+  const [editMovementProducts, setEditMovementProducts] = useState([]);
+  const [editMovementCategories, setEditMovementCategories] = useState([]);
+  const [editMovementCompanies, setEditMovementCompanies] = useState([]);
 
   useEffect(() => {
     if (product?.id && open) {
@@ -160,6 +168,30 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
       console.error("Error loading product vendors:", error);
     }
     setIsLoadingVendors(false);
+  };
+
+  const handleEditMovement = (movement, vendors, productVendors, products, categories, companies) => {
+    setEditingMovement(movement);
+    setEditMovementVendors(vendors);
+    setEditMovementProductVendors(productVendors);
+    setEditMovementProducts(products);
+    setEditMovementCategories(categories);
+    setEditMovementCompanies(companies);
+    setShowEditMovementDialog(true);
+  };
+
+  const handleSaveMovement = async (movementId, updateData) => {
+    try {
+      await base44.entities.StockMovement.update(movementId, updateData);
+      toast.success("Η κίνηση ενημερώθηκε επιτυχώς");
+      setShowEditMovementDialog(false);
+      
+      if (onUpdate) await onUpdate();
+      await loadProductVendors();
+    } catch (error) {
+      console.error("Error updating movement:", error);
+      toast.error("Σφάλμα κατά την ενημέρωση της κίνησης");
+    }
   };
 
   if (!product) return null;
@@ -496,7 +528,7 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
             companies={companies}
             categories={categories}
             onUpdate={loadProductVendors}
-            onEditMovement={onEditMovement}
+            onEditMovement={handleEditMovement}
           />
 
           {/* Barcodes / QR Codes */}
@@ -589,6 +621,18 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
           )}
         </div>
       </DialogContent>
+
+      <EditMovementDialog
+        open={showEditMovementDialog}
+        onClose={() => setShowEditMovementDialog(false)}
+        movement={editingMovement}
+        onSave={handleSaveMovement}
+        vendors={editMovementVendors}
+        productVendors={editMovementProductVendors}
+        products={editMovementProducts}
+        categories={editMovementCategories}
+        companies={editMovementCompanies}
+      />
     </Dialog>
   );
 }
