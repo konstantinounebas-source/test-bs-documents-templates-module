@@ -493,6 +493,8 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
           <ProductVendorsManager 
             product={currentProduct || product} 
             vendors={vendors}
+            companies={companies}
+            categories={categories}
             onUpdate={loadProductVendors}
             onEditMovement={onEditMovement}
           />
