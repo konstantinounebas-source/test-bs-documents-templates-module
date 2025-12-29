@@ -558,6 +558,16 @@ export default function BarcodeScannerPage() {
         setScanResult({ type: 'error', message: 'Please select a vendor for stock IN' });
         return;
       }
+
+      if (!vendorProductCode.trim()) {
+        setScanResult({ type: 'error', message: 'Please enter vendor product code' });
+        return;
+      }
+
+      if (!selectedCompany) {
+        setScanResult({ type: 'error', message: 'Please select a company' });
+        return;
+      }
       
       const cost = parseFloat(unitCost);
       if (unitCost !== "" && (isNaN(cost) || cost < 0)) {
@@ -1446,21 +1456,40 @@ export default function BarcodeScannerPage() {
                   )}
 
                   {(movementType === "TRANSFER" || movementType === "IN" || movementType === "ADJUSTMENT") && (
-                    <div className="space-y-2">
-                      <Label>Θέση Αποθήκης *</Label>
-                      <Select value={toLocation || 'none'} onValueChange={(val) => setToLocation(val === 'none' ? '' : val)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Επιλέξτε θέση" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">-- Επιλέξτε --</SelectItem>
-                          {locations.filter(loc => loc.id && loc.name && loc.name.trim() !== '' && loc.name !== fromLocation).map(loc => (
-                            <SelectItem key={loc.id} value={loc.name}>
-                              {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Θέση Αποθήκης *</Label>
+                        <Select value={toLocation || 'none'} onValueChange={(val) => setToLocation(val === 'none' ? '' : val)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Επιλέξτε θέση" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">-- Επιλέξτε --</SelectItem>
+                            {locations.filter(loc => loc.id && loc.name && loc.name.trim() !== '' && loc.name !== fromLocation).map(loc => (
+                              <SelectItem key={loc.id} value={loc.name}>
+                                {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {movementType === "IN" && (
+                        <div>
+                          <Label>Εταιρεία *</Label>
+                          <Select value={selectedCompany || 'none'} onValueChange={(val) => setSelectedCompany(val === 'none' ? '' : val)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Επιλέξτε εταιρεία" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
+                              {companies.map(comp => (
+                                <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -1472,29 +1501,50 @@ export default function BarcodeScannerPage() {
                       <div className="space-y-3">
                         <p className="text-sm font-semibold text-slate-700">Στοιχεία Προμηθευτή</p>
 
-                        <div>
-                          <Label>Προμηθευτής *</Label>
-                          <div className="flex gap-2">
-                            <div className="flex-1">
-                              <VendorSearchCombobox
-                                vendors={vendors}
-                                vendorProductIds={productVendors
-                                  .filter(pv => pv.product_id === matchedProduct?.id && pv.is_active)
-                                  .map(pv => pv.vendor_id)}
-                                value={selectedVendor}
-                                onValueChange={setSelectedVendor}
-                              />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label>Προμηθευτής *</Label>
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <VendorSearchCombobox
+                                  vendors={vendors}
+                                  vendorProductIds={productVendors
+                                    .filter(pv => pv.product_id === matchedProduct?.id && pv.is_active)
+                                    .map(pv => pv.vendor_id)}
+                                  value={selectedVendor}
+                                  onValueChange={setSelectedVendor}
+                                />
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setShowCreateVendorDialog(true)}
+                                title="Add new vendor"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </Button>
                             </div>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              onClick={() => setShowCreateVendorDialog(true)}
-                              title="Add new vendor"
-                            >
-                              <Plus className="w-4 h-4" />
-                            </Button>
                           </div>
+
+                          <div>
+                            <Label>Κωδικός Προϊόντος Προμηθευτή *</Label>
+                            <Input
+                              value={vendorProductCode}
+                              onChange={(e) => setVendorProductCode(e.target.value)}
+                              placeholder="Κωδικός προμηθευτή"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="invoice-number">Αριθμός Τιμολογίου</Label>
+                          <Input
+                            id="invoice-number"
+                            value={invoiceNumber}
+                            onChange={(e) => setInvoiceNumber(e.target.value)}
+                            placeholder="π.χ. INV-2025-001"
+                          />
                         </div>
                       </div>
 
@@ -1637,30 +1687,6 @@ export default function BarcodeScannerPage() {
 
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <Label>Κωδικός Προϊόντος Προμηθευτή</Label>
-                              <Input
-                                value={vendorProductCode}
-                                onChange={(e) => setVendorProductCode(e.target.value)}
-                                placeholder="Κωδικός προμηθευτή"
-                              />
-                            </div>
-
-                            <div>
-                              <Label>Εταιρεία</Label>
-                              <Select value={selectedCompany || 'none'} onValueChange={(val) => setSelectedCompany(val === 'none' ? '' : val)}>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Επιλέξτε εταιρεία" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
-                                  {companies.map(comp => (
-                                    <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-
-                            <div>
                               <Label>Κατηγορία Τιμολόγησης</Label>
                               <Select value={selectedInvoiceCategory || 'none'} onValueChange={(val) => setSelectedInvoiceCategory(val === 'none' ? '' : val)}>
                                 <SelectTrigger>
@@ -1683,16 +1709,6 @@ export default function BarcodeScannerPage() {
                             </div>
 
                             <div>
-                              <Label htmlFor="invoice-number">Αριθμός Τιμολογίου</Label>
-                              <Input
-                                id="invoice-number"
-                                value={invoiceNumber}
-                                onChange={(e) => setInvoiceNumber(e.target.value)}
-                                placeholder="π.χ. INV-2025-001"
-                              />
-                            </div>
-
-                            <div className="col-span-2">
                               <Label htmlFor="waybill-in">Αριθμός Waybill</Label>
                               <Input
                                 id="waybill-in"
