@@ -1361,6 +1361,8 @@ export default function BarcodeScannerPage() {
             {matchedProduct && (
               <>
                 <Separator />
+
+                {/* Product Info - Compact */}
                 <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="flex items-start gap-3">
                     <Package className="w-6 h-6 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -1424,7 +1426,7 @@ export default function BarcodeScannerPage() {
                   </div>
 
                   <div>
-                    <Label>Quantity *</Label>
+                    <Label>Ποσότητα *</Label>
                     <Input
                       id="quantity"
                       type="text"
@@ -1488,65 +1490,10 @@ export default function BarcodeScannerPage() {
                   {movementType === "IN" && (
                     <>
                       <Separator />
-                      <div className="space-y-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                        <p className="text-sm font-semibold text-yellow-900">Vendor & Pricing Information</p>
-                        
-                        <div className="space-y-2">
-                          <Label>Από Purchase Order (προαιρετικό)</Label>
-                          <div className="flex gap-2 items-center">
-                            <Select 
-                              value={selectedPO || 'none'} 
-                              onValueChange={(val) => {
-                                setSelectedPO(val === 'none' ? '' : val);
-                                if (val !== 'none') setInvoiceNumber("");
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Επιλέξτε PO ή κανένα" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">Χωρίς PO</SelectItem>
-                                {purchaseOrders.filter(po => po.id && po.id.trim() !== '').map(po => {
-                                  const poItem = po.items.find(item => item.product_id === matchedProduct.id);
-                                  if (!poItem) return null;
 
-                                  const remaining = poItem.quantity_ordered - (poItem.quantity_received || 0);
-                                  const vendor = vendors.find(v => v.id === po.vendor_id);
-                                  
-                                  return (
-                                    <SelectItem key={po.id} value={po.id}>
-                                      PO #{po.po_number} - {vendor?.name || 'N/A'} (Υπόλοιπο: {remaining})
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
-                        {poItemInfo && (
-                          <Alert className="bg-blue-50 border-blue-200">
-                            <Info className="w-4 h-4 text-blue-600" />
-                            <AlertDescription className="text-blue-800">
-                              <strong>PO Info:</strong> Παραγγέλθηκαν {poItemInfo.quantityOrdered}, 
-                              παραλήφθηκαν {poItemInfo.quantityReceived}, 
-                              υπόλοιπο <strong>{poItemInfo.quantityRemaining}</strong> τεμάχια.
-                              Κόστος από PO: €{poItemInfo.unitCost.toFixed(4)}
-                              {poItemInfo.bundleQuantity && parseFloat(poItemInfo.bundleQuantity) > 0 && (
-                                <> ({poItemInfo.bundleQuantity} τεμάχια/bundle, Κόστος/τεμάχιο: €{(poItemInfo.unitCost / poItemInfo.bundleQuantity).toFixed(4)})</>
-                              )}
-                            </AlertDescription>
-                          </Alert>
-                        )}
-
-                        {selectedPO && matchedProduct && !poItemInfo && (
-                          <Alert className="border-red-200 bg-red-50">
-                            <AlertTriangle className="h-4 w-4 text-red-600" />
-                            <AlertDescription className="text-red-800">
-                              <strong>Warning:</strong> Product "{matchedProduct.name}" is not included in the selected Purchase Order. Please select a different PO or proceed without a PO reference.
-                            </AlertDescription>
-                          </Alert>
-                        )}
+                      {/* Vendor Information Section */}
+                      <div className="space-y-3">
+                        <p className="text-sm font-semibold text-slate-700">Στοιχεία Προμηθευτή</p>
 
                         <div>
                           <Label>Προμηθευτής *</Label>
@@ -1574,6 +1521,22 @@ export default function BarcodeScannerPage() {
                         </div>
 
                         <div>
+                          <Label>Κωδικός Προϊόντος Προμηθευτή</Label>
+                          <Input
+                            value={vendorProductCode}
+                            onChange={(e) => setVendorProductCode(e.target.value)}
+                            placeholder="Κωδικός προμηθευτή"
+                          />
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Quantity & Cost Section */}
+                      <div className="space-y-3">
+                        <p className="text-sm font-semibold text-slate-700">Ποσότητα & Κόστος</p>
+
+                        <div>
                           <Label>Μέθοδος Εισαγωγής Κόστους</Label>
                           <Select 
                             value={costInputMethod} 
@@ -1599,7 +1562,7 @@ export default function BarcodeScannerPage() {
 
                         {costInputMethod === 'unit' ? (
                           <div>
-                            <Label>Κόστος ανά μονάδα (€) (προαιρετικό)</Label>
+                            <Label>Κόστος ανά μονάδα (€) *</Label>
                             <Input
                               type="number"
                               step="0.0001"
@@ -1608,14 +1571,14 @@ export default function BarcodeScannerPage() {
                               onChange={(e) => setUnitCost(e.target.value)}
                               placeholder="0.0000"
                             />
-                            <p className="text-xs text-yellow-700 mt-1">
-                              Κόστος ανά {matchedProduct.unit_of_measure} από αυτόν τον προμηθευτή
+                            <p className="text-xs text-slate-500 mt-1">
+                              Κόστος ανά {matchedProduct.unit_of_measure}
                             </p>
                           </div>
                         ) : (
                           <>
                             <div>
-                              <Label>Συνολικό Κόστος Προϊόντος (€)</Label>
+                              <Label>Συνολικό Κόστος Προϊόντος (€) *</Label>
                               <Input
                                 type="number"
                                 step="0.01"
@@ -1624,7 +1587,7 @@ export default function BarcodeScannerPage() {
                                 onChange={(e) => setTotalItemCost(e.target.value)}
                                 placeholder="0.00"
                               />
-                              <p className="text-xs text-yellow-700 mt-1">
+                              <p className="text-xs text-slate-500 mt-1">
                                 Το συνολικό κόστος πριν την έκπτωση
                               </p>
                             </div>
@@ -1639,7 +1602,7 @@ export default function BarcodeScannerPage() {
                                 onChange={(e) => setDiscount(e.target.value)}
                                 placeholder="0"
                               />
-                              <p className="text-xs text-yellow-700 mt-1">
+                              <p className="text-xs text-slate-500 mt-1">
                                 Ποσοστό έκπτωσης επί του συνολικού κόστους
                               </p>
                             </div>
@@ -1654,7 +1617,7 @@ export default function BarcodeScannerPage() {
                         )}
 
                         <div>
-                          <Label>Pcs/Qty (προαιρετικό)</Label>
+                          <Label>Pcs/Qty</Label>
                           <Input
                             type="number"
                             min="1"
@@ -1664,14 +1627,21 @@ export default function BarcodeScannerPage() {
                             placeholder="π.χ. 100 τεμ."
                           />
                           {unitCost && bundleQuantity && parseFloat(bundleQuantity) > 0 && (
-                            <p className="text-xs text-yellow-700 mt-1">
-                              Κόστος ανά τεμάχιο: €{(parseFloat(unitCost) / parseFloat(bundleQuantity)).toFixed(4)}
+                            <p className="text-xs text-slate-700 mt-1">
+                              <strong>Κόστος ανά τεμάχιο:</strong> €{(parseFloat(unitCost) / parseFloat(bundleQuantity)).toFixed(4)}
                             </p>
                           )}
                         </div>
+                        </div>
+
+                        <Separator />
+
+                        {/* Additional Details Section */}
+                        <div className="space-y-3">
+                        <p className="text-sm font-semibold text-slate-700">Πρόσθετα Στοιχεία</p>
 
                         <div>
-                          <Label>Εταιρεία (προαιρετικό)</Label>
+                          <Label>Εταιρεία</Label>
                           <Select value={selectedCompany || 'none'} onValueChange={(val) => setSelectedCompany(val === 'none' ? '' : val)}>
                             <SelectTrigger>
                               <SelectValue placeholder="Επιλέξτε εταιρεία" />
@@ -1686,16 +1656,7 @@ export default function BarcodeScannerPage() {
                         </div>
 
                         <div>
-                          <Label>Κωδικός Προϊόντος Προμηθευτή (προαιρετικό)</Label>
-                          <Input
-                            value={vendorProductCode}
-                            onChange={(e) => setVendorProductCode(e.target.value)}
-                            placeholder="Κωδικός προμηθευτή"
-                          />
-                        </div>
-
-                        <div>
-                          <Label>Κατηγορία Τιμολόγησης (προαιρετικό)</Label>
+                          <Label>Κατηγορία Τιμολόγησης</Label>
                           <Select value={selectedInvoiceCategory || 'none'} onValueChange={(val) => setSelectedInvoiceCategory(val === 'none' ? '' : val)}>
                             <SelectTrigger>
                               <SelectValue placeholder="Επιλέξτε κατηγορία" />
@@ -1709,30 +1670,18 @@ export default function BarcodeScannerPage() {
                           </Select>
                         </div>
 
-                        <div className="relative">
-                          <div className="absolute inset-y-0 left-0 right-0 flex items-center">
-                            <div className="w-full border-t border-yellow-300"></div>
-                          </div>
-                          <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-yellow-50 px-2 text-yellow-700">Ή</span>
-                          </div>
-                        </div>
-
                         <div>
                           <Label htmlFor="invoice-number">Αριθμός Τιμολογίου</Label>
                           <Input
                             id="invoice-number"
                             value={invoiceNumber}
-                            onChange={(e) => {
-                              setInvoiceNumber(e.target.value);
-                              if (e.target.value) setSelectedPO("");
-                            }}
+                            onChange={(e) => setInvoiceNumber(e.target.value)}
                             placeholder="π.χ. INV-2025-001"
                           />
                         </div>
 
                         <div>
-                          <Label htmlFor="waybill-in">Αριθμός Waybill (προαιρετικό)</Label>
+                          <Label htmlFor="waybill-in">Αριθμός Waybill</Label>
                           <Input
                             id="waybill-in"
                             value={waybillNumber}
@@ -1740,7 +1689,7 @@ export default function BarcodeScannerPage() {
                             placeholder="π.χ. WB-2025-001"
                           />
                         </div>
-                      </div>
+                        </div>
                     </>
                   )}
 
