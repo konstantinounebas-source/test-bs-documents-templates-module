@@ -170,26 +170,14 @@ export default function StockOverviewPage() {
     await loadAllData();
   };
 
-  // Calculate stats only for active products (independent of current page in table)
-  const activeProductsWithStock = products
-    .filter(p => p.is_active)
-    .map(product => ({
-      ...product,
-      ...getStockForProduct(product.id),
-      productVendors: getProductVendorsForProduct(product.id)
-    }));
-
-  const totalValue = activeProductsWithStock.reduce((sum, p) => {
-    const preferredPV = p.productVendors.find(pv => pv.is_preferred);
-    const unitCost = preferredPV?.unit_cost ||
-                     (p.productVendors.length > 0
-                       ? p.productVendors.reduce((s, pv) => s + pv.unit_cost, 0) / p.productVendors.length
-                       : 0);
+  // Calculate stats based on filtered products
+  const totalValue = filteredProducts.reduce((sum, p) => {
+    const unitCost = p.unit_cost || 0;
     return sum + (p.available * unitCost);
   }, 0);
 
-  const lowStockCount = activeProductsWithStock.filter(p => p.available < (p.minimum_stock || 0)).length;
-  const outOfStockCount = activeProductsWithStock.filter(p => p.available === 0).length;
+  const lowStockCount = filteredProducts.filter(p => p.available < (p.minimum_stock || 0)).length;
+  const outOfStockCount = filteredProducts.filter(p => p.available === 0).length;
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
@@ -225,7 +213,7 @@ export default function StockOverviewPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-slate-600">Products Tracked</p>
-                  <p className="text-2xl font-bold text-slate-900 mt-1">{activeProductsWithStock.length}</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">{filteredProducts.length}</p>
                 </div>
                 <div className="p-2 rounded-full bg-green-500">
                   <Package className="w-4 h-4 text-white" />
