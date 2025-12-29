@@ -37,6 +37,7 @@ export default function StockMovementsPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState("10");
+  const [isFixingCosts, setIsFixingCosts] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -120,6 +121,42 @@ export default function StockMovementsPage() {
       console.error("Error updating movement:", error);
       throw error;
     }
+  };
+
+  const handleFixOutMovementCosts = async () => {
+    if (!window.confirm('Θα ενημερωθούν όλα τα OUT movements που δεν έχουν unit_cost με το τρέχον κόστος μονάδας του προϊόντος. Συνέχεια;')) {
+      return;
+    }
+
+    setIsFixingCosts(true);
+    try {
+      // Find all OUT movements without unit_cost
+      const outMovements = movements.filter(m => 
+        m.movement_type === 'OUT' && (!m.unit_cost || parseFloat(m.unit_cost) === 0)
+      );
+
+      let updated = 0;
+      for (const movement of outMovements) {
+        const product = products.find(p => p.id === movement.product_id);
+        if (product && product.unit_cost && product.unit_cost > 0) {
+          await base44.entities.StockMovement.update(movement.id, {
+            unit_cost: product.unit_cost
+          });
+          updated++;
+        }
+        // Add delay to avoid rate limiting
+        if (updated % 10 === 0) {
+          await delay(500);
+        }
+      }
+
+      alert(`Ενημερώθηκαν ${updated} από ${outMovements.length} OUT movements.`);
+      await loadData();
+    } catch (error) {
+      console.error("Error fixing OUT movement costs:", error);
+      alert('Σφάλμα κατά την ενημέρωση των κινήσεων.');
+    }
+    setIsFixingCosts(false);
   };
 
   const exportToCSV = () => {
@@ -259,6 +296,20 @@ export default function StockMovementsPage() {
             <p className="text-slate-600 mt-1">Track all inventory movements and adjustments</p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleFixOutMovementCosts}
+              disabled={isFixingCosts}
+            >
+              {isFixingCosts ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Ενημέρωση...
+                </>
+              ) : (
+                'Διόρθωση Κόστους OUT'
+              )}
+            </Button>
             <Button variant="outline" onClick={() => setShowImportDialog(true)}>
               <Upload className="w-4 h-4 mr-2" />
               Import CSV
