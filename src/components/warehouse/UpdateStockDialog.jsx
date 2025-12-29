@@ -28,10 +28,12 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
   const [relatedPOItem, setRelatedPOItem] = useState(""); // This is product_id from the PO item
   const [notes, setNotes] = useState("");
   const [vendorProductCode, setVendorProductCode] = useState("");
+  const [invoiceCategory, setInvoiceCategory] = useState("");
   const [locations, setLocations] = useState([]); // This will hold WarehouseLocation entities
   const [purchaseOrders, setPurchaseOrders] = useState([]); // All relevant POs including 'Received' status
   const [systemUsers, setSystemUsers] = useState([]);
   const [appUsers, setAppUsers] = useState([]);
+  const [invoiceCategories, setInvoiceCategories] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [validationError, setValidationError] = useState("");
@@ -52,6 +54,7 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       setRelatedPOItem("");
       setNotes("");
       setVendorProductCode("");
+      setInvoiceCategory("");
       setValidationError(""); // Clear validation errors
       setHideCompletedPOs(true); // Reset PO hide toggle to default true when dialog opens
     }
@@ -63,7 +66,7 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
     setValidationError("");
 
     try {
-      const [locationsData, poData, user, sysUsers, aUsers, movementsData] = await Promise.all([
+      const [locationsData, poData, user, sysUsers, aUsers, movementsData, invoiceCatsData] = await Promise.all([
         base44.entities.WarehouseLocation.filter({ is_active: true }),
         // Fetch all relevant POs including 'Received' to allow toggling
         base44.entities.PurchaseOrder.filter({ status: ["Confirmed", "Partially Received", "Received"] }).catch(() => []),
@@ -71,7 +74,8 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         base44.entities.User.list().catch(() => []),
         base44.entities.AppUser.list().catch(() => []),
         // Fetch movement history for the current product
-        base44.entities.StockMovement.filter({ product_id: product.id, _limit: 10, _sort: '-created_at' }).catch(() => [])
+        base44.entities.StockMovement.filter({ product_id: product.id, _limit: 10, _sort: '-created_at' }).catch(() => []),
+        base44.entities.InvoiceCategory.filter({ is_active: true }).catch(() => [])
       ]);
       
       setLocations(locationsData);
@@ -88,6 +92,7 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       setSystemUsers(sysUsers);
       setAppUsers(aUsers);
       setMovementHistory(movementsData); // Set movement history
+      setInvoiceCategories(invoiceCatsData);
     } catch (error) {
       console.error("Error loading data:", error);
       setValidationError("Failed to load necessary data. Please try again.");
@@ -160,9 +165,10 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         notes: notes || undefined,
         // For OUT movements, use the product's current unit_cost
         unit_cost: movementType === "OUT" ? (product.unit_cost || 0) : undefined,
-        // For IN movements, save vendor_product_code
-        vendor_product_code: movementType === "IN" && vendorProductCode ? vendorProductCode : undefined
-      };
+        // For IN movements, save vendor_product_code and invoice_category_id
+        vendor_product_code: movementType === "IN" && vendorProductCode ? vendorProductCode : undefined,
+        invoice_category_id: movementType === "IN" && invoiceCategory ? invoiceCategory : undefined
+        };
 
       await base44.entities.StockMovement.create(movementData);
 
@@ -531,16 +537,33 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
           </div>
 
           {movementType === "IN" && (
-            <div>
-              <Label htmlFor="vendor_product_code">Κωδικός Προϊόντος Προμηθευτή (Optional)</Label>
-              <Input
-                id="vendor_product_code"
-                type="text"
-                value={vendorProductCode}
-                onChange={(e) => setVendorProductCode(e.target.value)}
-                placeholder="Κωδικός προμηθευτή"
-              />
-            </div>
+            <>
+              <div>
+                <Label htmlFor="vendor_product_code">Κωδικός Προϊόντος Προμηθευτή (Optional)</Label>
+                <Input
+                  id="vendor_product_code"
+                  type="text"
+                  value={vendorProductCode}
+                  onChange={(e) => setVendorProductCode(e.target.value)}
+                  placeholder="Κωδικός προμηθευτή"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="invoice_category">Κατηγορία Τιμολόγησης (Optional)</Label>
+                <Select value={invoiceCategory || 'none'} onValueChange={(val) => setInvoiceCategory(val === 'none' ? '' : val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Επιλέξτε κατηγορία" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
+                    {invoiceCategories.map(ic => (
+                      <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           )}
 
           <div>

@@ -195,6 +195,7 @@ export default function ProductsTable({
         product={selectedProduct}
         categories={categories}
         vendors={vendors}
+        companies={companies}
       />
 
       <ViewProductDialog
@@ -206,6 +207,7 @@ export default function ProductsTable({
         product={selectedProduct}
         categories={categories}
         vendors={vendors}
+        companies={companies}
         stockItems={stockItems}
       />
 
