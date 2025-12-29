@@ -52,6 +52,14 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         }
       }
 
+      // For OUT movements without unit_cost, use product's current unit_cost
+      if (movement.movement_type === 'OUT' && (!vendorUnitCost || parseFloat(vendorUnitCost) === 0)) {
+        const product = products.find(p => p.id === movement.product_id);
+        if (product && product.unit_cost) {
+          vendorUnitCost = String(product.unit_cost);
+        }
+      }
+
       setFormData({
         notes: movement.notes || '',
         waybill_number: movement.waybill_number || '',
@@ -65,7 +73,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         quantity: movement.quantity ? String(movement.quantity) : ''
       });
     }
-  }, [movement, productVendors]);
+  }, [movement, productVendors, products]);
 
   // Calculate unit cost when using total cost method
   useEffect(() => {
