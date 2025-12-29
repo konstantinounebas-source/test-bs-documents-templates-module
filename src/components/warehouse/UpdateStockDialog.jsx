@@ -27,6 +27,7 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
   const [relatedPO, setRelatedPO] = useState("");
   const [relatedPOItem, setRelatedPOItem] = useState(""); // This is product_id from the PO item
   const [notes, setNotes] = useState("");
+  const [vendorProductCode, setVendorProductCode] = useState("");
   const [locations, setLocations] = useState([]); // This will hold WarehouseLocation entities
   const [purchaseOrders, setPurchaseOrders] = useState([]); // All relevant POs including 'Received' status
   const [systemUsers, setSystemUsers] = useState([]);
@@ -50,6 +51,7 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       setRelatedPO("");
       setRelatedPOItem("");
       setNotes("");
+      setVendorProductCode("");
       setValidationError(""); // Clear validation errors
       setHideCompletedPOs(true); // Reset PO hide toggle to default true when dialog opens
     }
@@ -157,7 +159,9 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         performed_by: currentUser?.email || currentUser?.id,
         notes: notes || undefined,
         // For OUT movements, use the product's current unit_cost
-        unit_cost: movementType === "OUT" ? (product.unit_cost || 0) : undefined
+        unit_cost: movementType === "OUT" ? (product.unit_cost || 0) : undefined,
+        // For IN movements, save vendor_product_code
+        vendor_product_code: movementType === "IN" && vendorProductCode ? vendorProductCode : undefined
       };
 
       await base44.entities.StockMovement.create(movementData);
@@ -525,6 +529,19 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
               placeholder="e.g., WB12345, Invoice 6789"
             />
           </div>
+
+          {movementType === "IN" && (
+            <div>
+              <Label htmlFor="vendor_product_code">Κωδικός Προϊόντος Προμηθευτή (Optional)</Label>
+              <Input
+                id="vendor_product_code"
+                type="text"
+                value={vendorProductCode}
+                onChange={(e) => setVendorProductCode(e.target.value)}
+                placeholder="Κωδικός προμηθευτή"
+              />
+            </div>
+          )}
 
           <div>
             <Label htmlFor="charged_to_person">Charged To / Performed By (Optional)</Label>
