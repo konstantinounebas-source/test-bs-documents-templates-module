@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Star, Edit } from "lucide-react";
 
-export default function ProductVendorsManager({ product, vendors, onUpdate, onEditMovement }) {
+export default function ProductVendorsManager({ product, vendors, companies = [], categories = [], onUpdate, onEditMovement }) {
   const [recentMovements, setRecentMovements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [productVendors, setProductVendors] = useState([]);
@@ -298,7 +298,7 @@ export default function ProductVendorsManager({ product, vendors, onUpdate, onEd
                                   className="h-7 w-7"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    onEditMovement(movement);
+                                    onEditMovement(movement, vendors, productVendors, [product], categories, companies);
                                   }}
                                   title="Επεξεργασία κίνησης"
                                 >
