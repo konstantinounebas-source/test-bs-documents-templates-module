@@ -10,12 +10,13 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export default function CreateEditProductDialog({ open, onClose, onProductSaved, product = null, categories, vendors }) {
+export default function CreateEditProductDialog({ open, onClose, onProductSaved, product = null, categories, vendors, companies = [] }) {
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
     description: '',
     category_id: '',
+    company_id: '',
     unit_of_measure: 'piece',
     barcode: '',
     qr_code: '',
@@ -37,6 +38,7 @@ export default function CreateEditProductDialog({ open, onClose, onProductSaved,
         sku: product.sku || '',
         description: product.description || '',
         category_id: product.category_id || '',
+        company_id: product.company_id || '',
         unit_of_measure: product.unit_of_measure || 'piece',
         barcode: product.barcode || '',
         qr_code: product.qr_code || '',
@@ -53,6 +55,7 @@ export default function CreateEditProductDialog({ open, onClose, onProductSaved,
         sku: '',
         description: '',
         category_id: '',
+        company_id: '',
         unit_of_measure: 'piece',
         barcode: '',
         qr_code: '',
@@ -196,6 +199,23 @@ export default function CreateEditProductDialog({ open, onClose, onProductSaved,
             </div>
 
             <div>
+              <Label htmlFor="company_id">Εταιρεία</Label>
+              <Select value={formData.company_id || 'none'} onValueChange={(val) => setFormData({...formData, company_id: val === 'none' ? '' : val})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Επιλέξτε εταιρεία" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
+                  {companies.filter(c => c.id && c.is_active).map(comp => (
+                    <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <Label htmlFor="unit_of_measure">Μονάδα Μέτρησης *</Label>
               <Select value={formData.unit_of_measure} onValueChange={(val) => setFormData({...formData, unit_of_measure: val})}>
                 <SelectTrigger>
@@ -211,22 +231,33 @@ export default function CreateEditProductDialog({ open, onClose, onProductSaved,
                 </SelectContent>
               </Select>
             </div>
+
+            <div>
+              <Label htmlFor="preferred_vendor_id">Προτιμώμενος Προμηθευτής</Label>
+              <Select value={formData.preferred_vendor_id || 'none'} onValueChange={(val) => setFormData({...formData, preferred_vendor_id: val === 'none' ? '' : val})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Επιλέξτε προμηθευτή" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">-- Χωρίς Προτιμώμενο --</SelectItem>
+                  {vendors.filter(v => v.id && v.is_active).map(vendor => (
+                    <SelectItem key={vendor.id} value={vendor.id}>{vendor.name} ({vendor.code})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>
-            <Label htmlFor="preferred_vendor_id">Προτιμώμενος Προμηθευτής</Label>
-            <Select value={formData.preferred_vendor_id || 'none'} onValueChange={(val) => setFormData({...formData, preferred_vendor_id: val === 'none' ? '' : val})}>
-              <SelectTrigger>
-                <SelectValue placeholder="Επιλέξτε προμηθευτή" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">-- Χωρίς Προτιμώμενο --</SelectItem>
-                {vendors.filter(v => v.id && v.is_active).map(vendor => (
-                  <SelectItem key={vendor.id} value={vendor.id}>{vendor.name} ({vendor.code})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-slate-500 mt-1">Ο προμηθευτής που προτιμάτε για αυτό το προϊόν</p>
+            <Label htmlFor="minimum_stock">Ελάχιστο Απόθεμα</Label>
+            <Input
+              id="minimum_stock"
+              type="number"
+              min="0"
+              value={formData.minimum_stock}
+              onChange={(e) => setFormData({...formData, minimum_stock: parseInt(e.target.value) || 0})}
+            />
+            <p className="text-xs text-slate-500 mt-1">Alert όταν το stock πέσει κάτω από αυτό το όριο</p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -250,17 +281,7 @@ export default function CreateEditProductDialog({ open, onClose, onProductSaved,
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="minimum_stock">Ελάχιστο Απόθεμα</Label>
-            <Input
-              id="minimum_stock"
-              type="number"
-              min="0"
-              value={formData.minimum_stock}
-              onChange={(e) => setFormData({...formData, minimum_stock: parseInt(e.target.value) || 0})}
-            />
-            <p className="text-xs text-slate-500 mt-1">Alert όταν το stock πέσει κάτω από αυτό το όριο</p>
-          </div>
+
 
           <div>
             <Label htmlFor="image_url">URL Εικόνας</Label>
