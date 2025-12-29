@@ -216,22 +216,18 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     <p className="text-xs text-blue-600 font-semibold uppercase">SKU</p>
                     <p className="text-sm text-blue-700 font-mono">{product?.sku || 'N/A'}</p>
                   </div>
-                  {category && (
-                    <div>
-                      <p className="text-xs text-blue-600 font-semibold uppercase">Κατηγορία</p>
-                      <p className="text-sm text-blue-700">{category.name}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-xs text-blue-600 font-semibold uppercase">Κατηγορία</p>
+                    <p className="text-sm text-blue-700">{category?.name || 'N/A'}</p>
+                  </div>
                   <div>
                     <p className="text-xs text-blue-600 font-semibold uppercase">Μονάδα Μέτρησης</p>
                     <p className="text-sm text-blue-700">{product?.unit_of_measure || 'N/A'}</p>
                   </div>
-                  {company && (
-                    <div>
-                      <p className="text-xs text-blue-600 font-semibold uppercase">Εταιρεία</p>
-                      <p className="text-sm text-blue-700">{company.name}</p>
-                    </div>
-                  )}
+                  <div>
+                    <p className="text-xs text-blue-600 font-semibold uppercase">Εταιρεία</p>
+                    <p className="text-sm text-blue-700">{company?.name || 'N/A'}</p>
+                  </div>
                   </div>
 
                   <div>
