@@ -23,6 +23,7 @@ export default function StockMovementsPage() {
   const [vendors, setVendors] = useState([]);
   const [productVendors, setProductVendors] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -89,6 +90,11 @@ export default function StockMovementsPage() {
       console.log("Loading categories...");
       const categoriesData = await base44.entities.ProductCategory.filter({ is_active: true });
       setCategories(categoriesData);
+      
+      await delay(400);
+      console.log("Loading companies...");
+      const companiesData = await base44.entities.Company.filter({ is_active: true });
+      setCompanies(companiesData);
       
       console.log("Data loaded successfully");
     } catch (error) {
@@ -491,6 +497,7 @@ export default function StockMovementsPage() {
         vendors={vendors}
         productVendors={productVendors}
         categories={categories}
+        companies={companies}
         onSave={handleSaveEdit}
       />
     </div>
