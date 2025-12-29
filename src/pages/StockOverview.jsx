@@ -26,6 +26,10 @@ export default function StockOverviewPage() {
   const [stockFilter, setStockFilter] = useState("all");
   const [showInactive, setShowInactive] = useState(false);
 
+  // Optimized data maps for O(1) lookups
+  const [stockByProductId, setStockByProductId] = useState({});
+  const [vendorsByProductId, setVendorsByProductId] = useState({});
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState("10"); // Default items per page
@@ -49,12 +53,31 @@ export default function StockOverviewPage() {
         base44.entities.Vendor.list(),
         base44.entities.Company.list()
       ]);
+      
       setProducts(productsData);
       setCategories(categoriesData);
       setStockItems(stockData);
       setProductVendors(pvData);
       setVendors(vendorsData);
       setCompanies(companiesData);
+
+      // Build optimized lookup maps - O(n) once instead of O(n²) filtering
+      const stockMap = {};
+      stockData.forEach(item => {
+        if (!stockMap[item.product_id]) stockMap[item.product_id] = [];
+        stockMap[item.product_id].push(item);
+      });
+      setStockByProductId(stockMap);
+
+      const vendorMap = {};
+      pvData.forEach(pv => {
+        if (pv.is_active) {
+          if (!vendorMap[pv.product_id]) vendorMap[pv.product_id] = [];
+          vendorMap[pv.product_id].push(pv);
+        }
+      });
+      setVendorsByProductId(vendorMap);
+
     } catch (error) {
       console.error("Error loading data:", error);
     }
@@ -62,7 +85,7 @@ export default function StockOverviewPage() {
   };
 
   const getStockForProduct = (productId) => {
-    const items = stockItems.filter(s => s.product_id === productId);
+    const items = stockByProductId[productId] || [];
     const total = items.reduce((sum, item) => sum + (item.quantity_on_hand || 0), 0);
     const reserved = items.reduce((sum, item) => sum + (item.quantity_reserved || 0), 0);
     const available = total - reserved;
@@ -70,7 +93,7 @@ export default function StockOverviewPage() {
   };
 
   const getProductVendorsForProduct = (productId) => {
-    return productVendors.filter(pv => pv.product_id === productId && pv.is_active);
+    return vendorsByProductId[productId] || [];
   };
 
   // Filter products by is_active first
