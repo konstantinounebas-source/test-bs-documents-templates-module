@@ -247,43 +247,74 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
           <form onSubmit={handleSubmit} className="space-y-4">
             {isInMovement && (
               <>
-                <div className="grid grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div>
-                    <p className="text-xs text-blue-600 font-semibold uppercase">Προϊόν</p>
-                    <p className="text-sm text-blue-900 font-medium">{product?.name || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-blue-600 font-semibold uppercase">SKU</p>
-                    <p className="text-sm text-blue-700 font-mono">{product?.sku || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-blue-600 font-semibold uppercase">Κατηγορία</p>
-                    <p className="text-sm text-blue-700">{category?.name || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-blue-600 font-semibold uppercase">Μονάδα Μέτρησης</p>
-                    <p className="text-sm text-blue-700">{product?.unit_of_measure || 'N/A'}</p>
+                {/* Product Info - Read Only */}
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-xs text-blue-600 font-semibold uppercase mb-2">Στοιχεία Προϊόντος</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-sm text-blue-900 font-medium">{product?.name || 'N/A'}</p>
+                      <p className="text-xs text-blue-700 font-mono">SKU: {product?.sku || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-blue-700">Κατηγορία: {category?.name || 'N/A'}</p>
+                      <p className="text-xs text-blue-700">Μονάδα: {product?.unit_of_measure || 'N/A'}</p>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="company_id">Εταιρεία</Label>
-                  <Select 
-                    value={formData.company_id || 'none'} 
-                    onValueChange={(val) => setFormData({ ...formData, company_id: val === 'none' ? '' : val })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Επιλέξτε εταιρεία" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
-                      {companies.filter(c => c.id && c.is_active !== false).map(comp => (
-                        <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                {/* Vendor Information */}
+                <div className="space-y-3 border-t pt-4">
+                  <p className="text-sm font-semibold text-slate-700">Στοιχεία Προμηθευτή</p>
+                  <div>
+                    <Label>Προμηθευτής *</Label>
+                    <div className="flex gap-2">
+                      <div className={`flex-1 ${validationErrors.reference_id ? 'border-2 border-red-500 rounded-md' : ''}`}>
+                        <VendorSearchCombobox
+                          vendors={localVendors}
+                          vendorProductIds={vendorProductIds}
+                          value={formData.reference_id}
+                          onValueChange={(val) => {
+                            setFormData({
+                              ...formData,
+                              reference_type: 'Vendor',
+                              reference_id: val
+                            });
+                            if (validationErrors.reference_id) {
+                              setValidationErrors({ ...validationErrors, reference_id: undefined });
+                            }
+                          }}
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setShowCreateVendorDialog(true)}
+                        title="Προσθήκη νέου προμηθευτή"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    {validationErrors.reference_id && (
+                      <p className="text-xs text-red-600 mt-1">{validationErrors.reference_id}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="vendor_product_code">Κωδικός Προϊόντος Προμηθευτή</Label>
+                    <Input
+                      id="vendor_product_code"
+                      value={formData.vendor_product_code}
+                      onChange={(e) => setFormData({ ...formData, vendor_product_code: e.target.value })}
+                      placeholder="Κωδικός προμηθευτή"
+                    />
+                  </div>
                 </div>
 
+                {/* Quantity & Cost */}
+                <div className="space-y-3 border-t pt-4">
+                  <p className="text-sm font-semibold text-slate-700">Ποσότητα & Κόστος</p>
+                  
                   <div>
                     <Label htmlFor="quantity">Ποσότητα *</Label>
                     <Input
@@ -311,212 +342,193 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     )}
                   </div>
 
-                <div>
-                  <Label>Προμηθευτής *</Label>
-                  <div className="flex gap-2">
-                    <div className={`flex-1 ${validationErrors.reference_id ? 'border-2 border-red-500 rounded-md' : ''}`}>
-                      <VendorSearchCombobox
-                        vendors={localVendors}
-                        vendorProductIds={vendorProductIds}
-                        value={formData.reference_id}
-                        onValueChange={(val) => {
-                          setFormData({
-                            ...formData,
-                            reference_type: 'Vendor',
-                            reference_id: val
-                          });
-                          if (validationErrors.reference_id) {
-                            setValidationErrors({ ...validationErrors, reference_id: undefined });
-                          }
-                        }}
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setShowCreateVendorDialog(true)}
-                      title="Προσθήκη νέου προμηθευτή"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  {validationErrors.reference_id && (
-                    <p className="text-xs text-red-600 mt-1">{validationErrors.reference_id}</p>
-                  )}
-                </div>
-
-                <div>
-                  <Label>Μέθοδος Εισαγωγής Κόστους</Label>
-                  <Select 
-                    value={formData.cost_input_method} 
-                    onValueChange={(val) => {
-                      setFormData(prev => ({
-                        ...prev,
-                        cost_input_method: val,
-                        total_item_cost: val === 'unit' ? '' : prev.total_item_cost,
-                        discount: val === 'unit' ? '0' : prev.discount,
-                        unit_cost: val === 'unit' ? prev.unit_cost : ''
-                      }));
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unit">Ανά Μονάδα</SelectItem>
-                      <SelectItem value="total">Συνολικό Κόστος + Έκπτωση</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {formData.cost_input_method === 'unit' ? (
                   <div>
-                    <Label htmlFor="unit_cost">Κόστος ανά μονάδα (€) *</Label>
-                    <Input
-                      id="unit_cost"
-                      type="number"
-                      step="0.0001"
-                      min="0"
-                      value={formData.unit_cost}
-                      onChange={(e) => {
-                        setFormData({ ...formData, unit_cost: e.target.value });
-                        if (validationErrors.unit_cost) {
-                          setValidationErrors({ ...validationErrors, unit_cost: undefined });
-                        }
+                    <Label>Μέθοδος Εισαγωγής Κόστους</Label>
+                    <Select 
+                      value={formData.cost_input_method} 
+                      onValueChange={(val) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          cost_input_method: val,
+                          total_item_cost: val === 'unit' ? '' : prev.total_item_cost,
+                          discount: val === 'unit' ? '0' : prev.discount,
+                          unit_cost: val === 'unit' ? prev.unit_cost : ''
+                        }));
                       }}
-                      placeholder="0.0000"
-                      className={validationErrors.unit_cost ? 'border-red-500 focus-visible:ring-red-500' : ''}
-                    />
-                    {validationErrors.unit_cost ? (
-                      <p className="text-xs text-red-600 mt-1">{validationErrors.unit_cost}</p>
-                    ) : (
-                      <p className="text-xs text-slate-500 mt-1">
-                        Κόστος ανά {product?.unit_of_measure || 'μονάδα'} από αυτόν τον προμηθευτή
-                      </p>
-                    )}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unit">Ανά Μονάδα</SelectItem>
+                        <SelectItem value="total">Συνολικό Κόστος + Έκπτωση</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                ) : (
-                  <>
+
+                  {formData.cost_input_method === 'unit' ? (
                     <div>
-                      <Label htmlFor="total_item_cost">Συνολικό Κόστος Προϊόντος (€) *</Label>
+                      <Label htmlFor="unit_cost">Κόστος ανά μονάδα (€) *</Label>
                       <Input
-                        id="total_item_cost"
+                        id="unit_cost"
                         type="number"
-                        step="0.01"
+                        step="0.0001"
                         min="0"
-                        value={formData.total_item_cost}
+                        value={formData.unit_cost}
                         onChange={(e) => {
-                          setFormData({ ...formData, total_item_cost: e.target.value });
-                          if (validationErrors.total_item_cost) {
-                            setValidationErrors({ ...validationErrors, total_item_cost: undefined });
+                          setFormData({ ...formData, unit_cost: e.target.value });
+                          if (validationErrors.unit_cost) {
+                            setValidationErrors({ ...validationErrors, unit_cost: undefined });
                           }
                         }}
-                        placeholder="0.00"
-                        className={validationErrors.total_item_cost ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                        placeholder="0.0000"
+                        className={validationErrors.unit_cost ? 'border-red-500 focus-visible:ring-red-500' : ''}
                       />
-                      {validationErrors.total_item_cost ? (
-                        <p className="text-xs text-red-600 mt-1">{validationErrors.total_item_cost}</p>
+                      {validationErrors.unit_cost ? (
+                        <p className="text-xs text-red-600 mt-1">{validationErrors.unit_cost}</p>
                       ) : (
                         <p className="text-xs text-slate-500 mt-1">
-                          Το συνολικό κόστος για {formData.quantity || 0} {product?.unit_of_measure || 'μονάδες'} πριν την έκπτωση
+                          Κόστος ανά {product?.unit_of_measure || 'μονάδα'}
                         </p>
                       )}
                     </div>
-                    <div>
-                      <Label htmlFor="discount">Έκπτωση (%)</Label>
-                      <Input
-                        id="discount"
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        value={formData.discount}
-                        onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
-                        placeholder="0"
-                      />
-                      <p className="text-xs text-slate-500 mt-1">
-                        Ποσοστό έκπτωσης επί του συνολικού κόστους
-                      </p>
-                    </div>
-                    {formData.unit_cost && (
-                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <p className="text-sm text-blue-900">
-                          <strong>Υπολογιζόμενο Κόστος ανά Μονάδα:</strong> €{parseFloat(formData.unit_cost).toFixed(4)}
+                  ) : (
+                    <>
+                      <div>
+                        <Label htmlFor="total_item_cost">Συνολικό Κόστος Προϊόντος (€) *</Label>
+                        <Input
+                          id="total_item_cost"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.total_item_cost}
+                          onChange={(e) => {
+                            setFormData({ ...formData, total_item_cost: e.target.value });
+                            if (validationErrors.total_item_cost) {
+                              setValidationErrors({ ...validationErrors, total_item_cost: undefined });
+                            }
+                          }}
+                          placeholder="0.00"
+                          className={validationErrors.total_item_cost ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                        />
+                        {validationErrors.total_item_cost ? (
+                          <p className="text-xs text-red-600 mt-1">{validationErrors.total_item_cost}</p>
+                        ) : (
+                          <p className="text-xs text-slate-500 mt-1">
+                            Το συνολικό κόστος για {formData.quantity || 0} {product?.unit_of_measure || 'μονάδες'} πριν την έκπτωση
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <Label htmlFor="discount">Έκπτωση (%)</Label>
+                        <Input
+                          id="discount"
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          value={formData.discount}
+                          onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                          placeholder="0"
+                        />
+                        <p className="text-xs text-slate-500 mt-1">
+                          Ποσοστό έκπτωσης επί του συνολικού κόστους
                         </p>
                       </div>
-                    )}
-                  </>
-                )}
-
-                <div>
-                  <Label htmlFor="bundle_quantity">Pcs/Qty (προαιρετικό)</Label>
-                  <Input
-                    id="bundle_quantity"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={formData.bundle_quantity}
-                    onChange={(e) => setFormData({ ...formData, bundle_quantity: e.target.value })}
-                    placeholder="π.χ. 100 τεμ."
-                  />
-                  {costPerPiece && (
-                    <p className="text-xs text-slate-700 mt-1">
-                      <strong>Κόστος ανά τεμάχιο:</strong> €{costPerPiece}
-                    </p>
+                      {formData.unit_cost && (
+                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <p className="text-sm text-blue-900">
+                            <strong>Υπολογιζόμενο Κόστος ανά Μονάδα:</strong> €{parseFloat(formData.unit_cost).toFixed(4)}
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
+
+                  <div>
+                    <Label htmlFor="bundle_quantity">Pcs/Qty</Label>
+                    <Input
+                      id="bundle_quantity"
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={formData.bundle_quantity}
+                      onChange={(e) => setFormData({ ...formData, bundle_quantity: e.target.value })}
+                      placeholder="π.χ. 100 τεμ."
+                    />
+                    {costPerPiece && (
+                      <p className="text-xs text-slate-700 mt-1">
+                        <strong>Κόστος ανά τεμάχιο:</strong> €{costPerPiece}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="vendor_product_code">Κωδικός Προϊόντος Προμηθευτή</Label>
-                  <Input
-                    id="vendor_product_code"
-                    value={formData.vendor_product_code}
-                    onChange={(e) => setFormData({ ...formData, vendor_product_code: e.target.value })}
-                    placeholder="Κωδικός προμηθευτή"
-                  />
-                </div>
+                {/* Additional Details */}
+                <div className="space-y-3 border-t pt-4">
+                  <p className="text-sm font-semibold text-slate-700">Πρόσθετα Στοιχεία</p>
+                  
+                  <div>
+                    <Label htmlFor="company_id">Εταιρεία</Label>
+                    <Select 
+                      value={formData.company_id || 'none'} 
+                      onValueChange={(val) => setFormData({ ...formData, company_id: val === 'none' ? '' : val })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Επιλέξτε εταιρεία" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
+                        {companies.filter(c => c.id && c.is_active !== false).map(comp => (
+                          <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div>
-                  <Label htmlFor="invoice_category">Κατηγορία Τιμολόγησης</Label>
-                  <Select 
-                    value={formData.invoice_category_id || 'none'} 
-                    onValueChange={(val) => setFormData({ ...formData, invoice_category_id: val === 'none' ? '' : val })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Επιλέξτε κατηγορία" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
-                      {invoiceCategories.map(ic => (
-                        <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div>
+                    <Label htmlFor="invoice_category">Κατηγορία Τιμολόγησης</Label>
+                    <Select 
+                      value={formData.invoice_category_id || 'none'} 
+                      onValueChange={(val) => setFormData({ ...formData, invoice_category_id: val === 'none' ? '' : val })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Επιλέξτε κατηγορία" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
+                        {invoiceCategories.map(ic => (
+                          <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="waybill">Αριθμός Waybill</Label>
+                    <Input
+                      id="waybill"
+                      value={formData.waybill_number}
+                      onChange={(e) => setFormData({ ...formData, waybill_number: e.target.value })}
+                      placeholder="π.χ. WB-2025-001"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="notes">Σημειώσεις</Label>
+                    <Textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="Προσθέστε σημειώσεις..."
+                      rows={4}
+                    />
+                  </div>
                 </div>
                 </>
                 )}
 
-            <div>
-              <Label htmlFor="waybill">Αριθμός Waybill</Label>
-              <Input
-                id="waybill"
-                value={formData.waybill_number}
-                onChange={(e) => setFormData({ ...formData, waybill_number: e.target.value })}
-                placeholder="π.χ. WB-2025-001"
-              />
-            </div>
 
-            <div>
-              <Label htmlFor="notes">Σημειώσεις</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Προσθέστε σημειώσεις..."
-                rows={4}
-              />
-            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
