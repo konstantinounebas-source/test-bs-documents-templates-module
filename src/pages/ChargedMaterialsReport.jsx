@@ -84,19 +84,7 @@ export default function ChargedMaterialsReportPage() {
   };
 
   const getProductUnitCost = (productId) => {
-    // Get unit cost from preferred vendor, or first active vendor, or product default
-    const activeVendors = productVendors.filter(pv => pv.product_id === productId && pv.is_active);
-    const preferredVendor = activeVendors.find(pv => pv.is_preferred);
-    
-    if (preferredVendor && preferredVendor.unit_cost) {
-      return preferredVendor.unit_cost;
-    }
-    
-    if (activeVendors.length > 0 && activeVendors[0].unit_cost) {
-      return activeVendors[0].unit_cost;
-    }
-    
-    // Fallback to product unit_cost if no vendor cost available
+    // Always use the product's Ενεργό Κόστος Μονάδας (unit_cost)
     const product = products.find(p => p.id === productId);
     return product?.unit_cost || 0;
   };
