@@ -31,7 +31,8 @@ export default function ProductsTable({
   onProductSaved,
   getStockForProduct,
   selectedProductIds = [],
-  onToggleSelection
+  onToggleSelection,
+  onUpdate
 }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -209,6 +210,7 @@ export default function ProductsTable({
         vendors={vendors}
         companies={companies}
         stockItems={stockItems}
+        onUpdate={onUpdate}
       />
 
       <AlertDialog open={showToggleDialog} onOpenChange={setShowToggleDialog}>
