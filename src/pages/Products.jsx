@@ -22,6 +22,7 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState([]);
   const [vendors, setVendors] = useState([]);
   const [stockItems, setStockItems] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [productVendors, setProductVendors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -397,6 +398,7 @@ export default function ProductsPage() {
         onProductSaved={loadData}
         categories={categories}
         vendors={vendors}
+        companies={companies}
       />
 
       <ImportProductsDialog
