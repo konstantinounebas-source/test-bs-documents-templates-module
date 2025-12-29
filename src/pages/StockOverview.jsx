@@ -18,9 +18,11 @@ export default function StockOverviewPage() {
   const [stockItems, setStockItems] = useState([]);
   const [productVendors, setProductVendors] = useState([]);
   const [vendors, setVendors] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [companyFilter, setCompanyFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
   const [showInactive, setShowInactive] = useState(false);
 
@@ -39,18 +41,20 @@ export default function StockOverviewPage() {
   const loadAllData = async () => {
     setIsLoading(true);
     try {
-      const [productsData, categoriesData, stockData, pvData, vendorsData] = await Promise.all([
+      const [productsData, categoriesData, stockData, pvData, vendorsData, companiesData] = await Promise.all([
         base44.entities.Product.list(),
         base44.entities.ProductCategory.list(),
         base44.entities.StockItem.list(),
         base44.entities.ProductVendor.list(),
-        base44.entities.Vendor.list()
+        base44.entities.Vendor.list(),
+        base44.entities.Company.list()
       ]);
       setProducts(productsData);
       setCategories(categoriesData);
       setStockItems(stockData);
       setProductVendors(pvData);
       setVendors(vendorsData);
+      setCompanies(companiesData);
     } catch (error) {
       console.error("Error loading data:", error);
     }
@@ -84,13 +88,15 @@ export default function StockOverviewPage() {
       p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory = categoryFilter === "all" || p.category_id === categoryFilter;
+    
+    const matchesCompany = companyFilter === "all" || p.company_id === companyFilter;
 
     const matchesStock = stockFilter === "all" ||
       (stockFilter === "low" && p.available < (p.minimum_stock || 0)) ||
       (stockFilter === "out" && p.available === 0) ||
       (stockFilter === "ok" && p.available >= (p.minimum_stock || 0));
 
-    return matchesSearch && matchesCategory && matchesStock;
+    return matchesSearch && matchesCategory && matchesCompany && matchesStock;
   });
 
   // Pagination logic for the table
@@ -284,6 +290,20 @@ export default function StockOverviewPage() {
               </SelectContent>
             </Select>
 
+            <Select value={companyFilter} onValueChange={setCompanyFilter}>
+              <SelectTrigger className="w-full lg:w-48">
+                <SelectValue placeholder="All Companies" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Companies</SelectItem>
+                {companies.filter(c => c.is_active).map((company) => (
+                  <SelectItem key={company.id} value={company.id}>
+                    {company.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select value={stockFilter} onValueChange={setStockFilter}>
               <SelectTrigger className="w-full lg:w-48">
                 <SelectValue placeholder="Stock Status" />
@@ -345,6 +365,7 @@ export default function StockOverviewPage() {
         productVendors={productVendors}
         products={products}
         categories={categories}
+        companies={companies}
       />
     </div>
   );
