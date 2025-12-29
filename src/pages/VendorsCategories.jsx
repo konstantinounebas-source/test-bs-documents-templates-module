@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Truck, FolderTree, MapPin, Tag, Briefcase } from "lucide-react";
+import { Plus, Search, Truck, FolderTree, MapPin, Tag, Briefcase, Building2, FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,11 +11,15 @@ import CategoriesTable from "../components/warehouse/CategoriesTable";
 import LocationsTable from "../components/warehouse/LocationsTable";
 import VendorCategoriesTable from "../components/warehouse/VendorCategoriesTable";
 import VendorServicesTable from "../components/warehouse/VendorServicesTable";
+import CompaniesTable from "../components/warehouse/CompaniesTable";
+import InvoiceCategoriesTable from "../components/warehouse/InvoiceCategoriesTable";
 import CreateEditVendorDialog from "../components/warehouse/CreateEditVendorDialog";
 import CreateEditCategoryDialog from "../components/warehouse/CreateEditCategoryDialog";
 import CreateEditLocationDialog from "../components/warehouse/CreateEditLocationDialog";
 import CreateEditVendorCategoryDialog from "../components/warehouse/CreateEditVendorCategoryDialog";
 import CreateEditVendorServiceDialog from "../components/warehouse/CreateEditVendorServiceDialog";
+import CreateEditCompanyDialog from "../components/warehouse/CreateEditCompanyDialog";
+import CreateEditInvoiceCategoryDialog from "../components/warehouse/CreateEditInvoiceCategoryDialog";
 import ImportVendorsDialog from "../components/warehouse/ImportVendorsDialog";
 import PaginationControls from "../components/warehouse/PaginationControls";
 
@@ -28,12 +32,16 @@ export default function VendorsCategoriesPage() {
   const [locations, setLocations] = useState([]);
   const [vendorCategories, setVendorCategories] = useState([]);
   const [vendorServices, setVendorServices] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [invoiceCategories, setInvoiceCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showVendorDialog, setShowVendorDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [showLocationDialog, setShowLocationDialog] = useState(false);
   const [showVendorCategoryDialog, setShowVendorCategoryDialog] = useState(false);
   const [showVendorServiceDialog, setShowVendorServiceDialog] = useState(false);
+  const [showCompanyDialog, setShowCompanyDialog] = useState(false);
+  const [showInvoiceCategoryDialog, setShowInvoiceCategoryDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("vendors");
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -57,6 +65,14 @@ export default function VendorsCategoriesPage() {
   // Pagination states for Vendor Services
   const [vendorServicesCurrentPage, setVendorServicesCurrentPage] = useState(1);
   const [vendorServicesItemsPerPage, setVendorServicesItemsPerPage] = useState("10");
+
+  // Pagination states for Companies
+  const [companiesCurrentPage, setCompaniesCurrentPage] = useState(1);
+  const [companiesItemsPerPage, setCompaniesItemsPerPage] = useState("10");
+
+  // Pagination states for Invoice Categories
+  const [invoiceCategoriesCurrentPage, setInvoiceCategoriesCurrentPage] = useState(1);
+  const [invoiceCategoriesItemsPerPage, setInvoiceCategoriesItemsPerPage] = useState("10");
 
   useEffect(() => {
     loadData();
@@ -84,6 +100,14 @@ export default function VendorsCategoriesPage() {
       await delay(300);
       const vendorServsData = await base44.entities.VendorService.list("-updated_date");
       setVendorServices(vendorServsData);
+      
+      await delay(300);
+      const companiesData = await base44.entities.Company.list("-updated_date");
+      setCompanies(companiesData);
+      
+      await delay(300);
+      const invoiceCatsData = await base44.entities.InvoiceCategory.list("-updated_date");
+      setInvoiceCategories(invoiceCatsData);
       
     } catch (error) {
       console.error("Error loading data:", error);
@@ -121,6 +145,16 @@ export default function VendorsCategoriesPage() {
     searchTerm === "" ||
     vs.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vs.code?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredCompanies = companies.filter(c =>
+    searchTerm === "" ||
+    c.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredInvoiceCategories = invoiceCategories.filter(ic =>
+    searchTerm === "" ||
+    ic.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Vendors Pagination
@@ -163,6 +197,22 @@ export default function VendorsCategoriesPage() {
         vendorServicesCurrentPage * parseInt(vendorServicesItemsPerPage)
       );
 
+  // Companies Pagination
+  const paginatedCompanies = companiesItemsPerPage === "all" 
+    ? filteredCompanies 
+    : filteredCompanies.slice(
+        (companiesCurrentPage - 1) * parseInt(companiesItemsPerPage),
+        companiesCurrentPage * parseInt(companiesItemsPerPage)
+      );
+
+  // Invoice Categories Pagination
+  const paginatedInvoiceCategories = invoiceCategoriesItemsPerPage === "all" 
+    ? filteredInvoiceCategories 
+    : filteredInvoiceCategories.slice(
+        (invoiceCategoriesCurrentPage - 1) * parseInt(invoiceCategoriesItemsPerPage),
+        invoiceCategoriesCurrentPage * parseInt(invoiceCategoriesItemsPerPage)
+      );
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -175,7 +225,7 @@ export default function VendorsCategoriesPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
           <Card className="border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -247,6 +297,34 @@ export default function VendorsCategoriesPage() {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="border-slate-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-600">Εταιρείες</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">{companies.length}</p>
+                </div>
+                <div className="p-2 rounded-full bg-cyan-500">
+                  <Building2 className="w-4 h-4 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-slate-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-600">Κατηγορίες Τιμολόγησης</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">{invoiceCategories.length}</p>
+                </div>
+                <div className="p-2 rounded-full bg-pink-500">
+                  <FileText className="w-4 h-4 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Search */}
@@ -259,6 +337,8 @@ export default function VendorsCategoriesPage() {
                 activeTab === "categories" ? "Search product categories..." : 
                 activeTab === "vendorCategories" ? "Search vendor categories..." :
                 activeTab === "vendorServices" ? "Search vendor services..." :
+                activeTab === "companies" ? "Αναζήτηση εταιρειών..." :
+                activeTab === "invoiceCategories" ? "Αναζήτηση κατηγοριών τιμολόγησης..." :
                 "Search locations..."
               }
               value={searchTerm}
@@ -277,6 +357,8 @@ export default function VendorsCategoriesPage() {
               <TabsTrigger value="vendorServices">Vendor Services</TabsTrigger>
               <TabsTrigger value="categories">Product Categories</TabsTrigger>
               <TabsTrigger value="locations">Locations</TabsTrigger>
+              <TabsTrigger value="companies">Εταιρείες</TabsTrigger>
+              <TabsTrigger value="invoiceCategories">Κατηγορίες Τιμολόγησης</TabsTrigger>
             </TabsList>
             
             <div className="flex gap-2">
@@ -333,6 +415,24 @@ export default function VendorsCategoriesPage() {
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Location
+                </Button>
+              )}
+              {activeTab === "companies" && (
+                <Button 
+                  onClick={() => setShowCompanyDialog(true)}
+                  className="bg-cyan-600 hover:bg-cyan-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Νέα Εταιρεία
+                </Button>
+              )}
+              {activeTab === "invoiceCategories" && (
+                <Button 
+                  onClick={() => setShowInvoiceCategoryDialog(true)}
+                  className="bg-pink-600 hover:bg-pink-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Νέα Κατηγορία Τιμολόγησης
                 </Button>
               )}
             </div>
@@ -440,6 +540,46 @@ export default function VendorsCategoriesPage() {
               />
             </div>
           </TabsContent>
+
+          <TabsContent value="companies" className="mt-0">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+              <CompaniesTable
+                companies={paginatedCompanies}
+                isLoading={isLoading}
+                onCompanySaved={loadData}
+              />
+              <PaginationControls
+                currentPage={companiesCurrentPage}
+                totalItems={filteredCompanies.length}
+                itemsPerPage={companiesItemsPerPage}
+                onPageChange={setCompaniesCurrentPage}
+                onItemsPerPageChange={(value) => {
+                  setCompaniesItemsPerPage(value);
+                  setCompaniesCurrentPage(1);
+                }}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="invoiceCategories" className="mt-0">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+              <InvoiceCategoriesTable
+                invoiceCategories={paginatedInvoiceCategories}
+                isLoading={isLoading}
+                onInvoiceCategorySaved={loadData}
+              />
+              <PaginationControls
+                currentPage={invoiceCategoriesCurrentPage}
+                totalItems={filteredInvoiceCategories.length}
+                itemsPerPage={invoiceCategoriesItemsPerPage}
+                onPageChange={setInvoiceCategoriesCurrentPage}
+                onItemsPerPageChange={(value) => {
+                  setInvoiceCategoriesItemsPerPage(value);
+                  setInvoiceCategoriesCurrentPage(1);
+                }}
+              />
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -478,6 +618,18 @@ export default function VendorsCategoriesPage() {
         open={showImportDialog}
         onClose={() => setShowImportDialog(false)}
         onVendorsImported={loadData}
+      />
+
+      <CreateEditCompanyDialog
+        open={showCompanyDialog}
+        onClose={() => setShowCompanyDialog(false)}
+        onCompanySaved={loadData}
+      />
+
+      <CreateEditInvoiceCategoryDialog
+        open={showInvoiceCategoryDialog}
+        onClose={() => setShowInvoiceCategoryDialog(false)}
+        onInvoiceCategorySaved={loadData}
       />
     </div>
   );
