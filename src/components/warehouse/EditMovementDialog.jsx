@@ -19,6 +19,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     unit_cost: '',
     bundle_quantity: '',
     vendor_product_code: '',
+    invoice_category_id: '',
     cost_input_method: 'unit',
     total_item_cost: '',
     discount: '0',
@@ -27,10 +28,26 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   const [isSaving, setIsSaving] = useState(false);
   const [showCreateVendorDialog, setShowCreateVendorDialog] = useState(false);
   const [localVendors, setLocalVendors] = useState(vendors);
+  const [invoiceCategories, setInvoiceCategories] = useState([]);
 
   useEffect(() => {
     setLocalVendors(vendors);
   }, [vendors]);
+
+  useEffect(() => {
+    if (open) {
+      loadInvoiceCategories();
+    }
+  }, [open]);
+
+  const loadInvoiceCategories = async () => {
+    try {
+      const invoiceCatsData = await base44.entities.InvoiceCategory.filter({ is_active: true });
+      setInvoiceCategories(invoiceCatsData);
+    } catch (error) {
+      console.error("Error loading invoice categories:", error);
+    }
+  };
 
   useEffect(() => {
     if (movement) {
@@ -74,6 +91,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         unit_cost: vendorUnitCost,
         bundle_quantity: bundleQty,
         vendor_product_code: vendorProdCode,
+        invoice_category_id: movement.invoice_category_id || '',
         cost_input_method: 'unit',
         total_item_cost: '',
         discount: '0',
@@ -115,7 +133,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         quantity: quantity,
         unit_cost: unitCost,
         bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null,
-        vendor_product_code: formData.vendor_product_code || null
+        vendor_product_code: formData.vendor_product_code || null,
+        invoice_category_id: formData.invoice_category_id || null
       };
       
       console.log('Saving movement with data:', updateData);
@@ -362,8 +381,26 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     placeholder="Κωδικός προμηθευτή"
                   />
                 </div>
-              </>
-            )}
+
+                <div>
+                  <Label htmlFor="invoice_category">Κατηγορία Τιμολόγησης</Label>
+                  <Select 
+                    value={formData.invoice_category_id || 'none'} 
+                    onValueChange={(val) => setFormData({ ...formData, invoice_category_id: val === 'none' ? '' : val })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Επιλέξτε κατηγορία" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
+                      {invoiceCategories.map(ic => (
+                        <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                </>
+                )}
 
             <div>
               <Label htmlFor="waybill">Αριθμός Waybill</Label>
