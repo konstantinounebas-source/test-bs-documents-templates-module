@@ -2341,63 +2341,88 @@ export default function BarcodeScannerPage() {
             )}
 
             {bulkInvoiceItems.length > 0 && (
-              <div className="border rounded-lg overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[200px]">Προϊόν *</TableHead>
-                      <TableHead className="w-[80px]">Qty *</TableHead>
-                      <TableHead className="w-[120px]">Μέθοδος Κόστους</TableHead>
-                      <TableHead className="w-[110px]">Unit Cost / Total (€)</TableHead>
-                      <TableHead className="w-[80px]">Έκπτωση (%)</TableHead>
-                      <TableHead className="w-[90px]">Pcs/Qty</TableHead>
-                      <TableHead className="w-[120px]">Κωδ. Προμ.</TableHead>
-                      <TableHead className="w-[150px]">Εταιρεία</TableHead>
-                      <TableHead className="w-[150px]">Κατ. Τιμολ.</TableHead>
-                      <TableHead className="w-[90px]">Cost/Pc (€)</TableHead>
-                      <TableHead className="w-[100px]">Total Cost (€)</TableHead>
-                      <TableHead className="w-[180px]">Θέση Αποθήκης *</TableHead>
-                      <TableHead className="w-[60px]"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {bulkInvoiceItems.map((item, index) => {
-                      const unitCost = parseFloat(item.unit_cost) || 0;
-                      const bundleQty = parseFloat(item.bundle_quantity) || 1;
-                      const qty = parseFloat(item.quantity) || 0;
-                      
-                      const costPerPc = unitCost > 0 && bundleQty > 0
-                        ? (unitCost / bundleQty).toFixed(4)
-                        : '-';
-                      
-                      const totalCost = item.cost_input_method === 'total' && item.total_item_cost
-                        ? (parseFloat(item.total_item_cost) * (1 - (parseFloat(item.discount) || 0) / 100)).toFixed(2)
-                        : (qty > 0 && unitCost > 0 ? (qty * unitCost).toFixed(2) : '-');
-                      
-                      return (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <ProductSearchCombobox
-                              products={products.filter(p => p.is_active)}
-                              vendorProductIds={productVendors
-                                .filter(pv => pv.vendor_id === bulkInvoiceVendor && pv.is_active)
-                                .map(pv => pv.product_id)}
-                              value={item.product_id}
-                              onValueChange={(value) => handleBulkInvoiceItemChange(index, 'product_id', value)}
-                              placeholder="Επιλογή..."
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min="1"
-                              step="1"
-                              value={item.quantity}
-                              onChange={(e) => handleBulkInvoiceItemChange(index, 'quantity', e.target.value)}
-                              placeholder="Qty"
-                            />
-                          </TableCell>
-                          <TableCell>
+              <div className="space-y-3">
+                {bulkInvoiceItems.map((item, index) => {
+                  const unitCost = parseFloat(item.unit_cost) || 0;
+                  const bundleQty = parseFloat(item.bundle_quantity) || 1;
+                  const qty = parseFloat(item.quantity) || 0;
+                  
+                  const costPerPc = unitCost > 0 && bundleQty > 0
+                    ? (unitCost / bundleQty).toFixed(4)
+                    : '-';
+                  
+                  const totalCost = item.cost_input_method === 'total' && item.total_item_cost
+                    ? (parseFloat(item.total_item_cost) * (1 - (parseFloat(item.discount) || 0) / 100)).toFixed(2)
+                    : (qty > 0 && unitCost > 0 ? (qty * unitCost).toFixed(2) : '-');
+                  
+                  return (
+                    <div key={index} className="border rounded-lg p-4 bg-slate-50 space-y-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-semibold text-slate-700">Προϊόν #{index + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveBulkInvoiceItem(index)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <X className="w-4 h-4 mr-1" />
+                          Διαγραφή
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="col-span-2">
+                          <Label className="text-xs">Προϊόν *</Label>
+                          <ProductSearchCombobox
+                            products={products.filter(p => p.is_active)}
+                            vendorProductIds={productVendors
+                              .filter(pv => pv.vendor_id === bulkInvoiceVendor && pv.is_active)
+                              .map(pv => pv.product_id)}
+                            value={item.product_id}
+                            onValueChange={(value) => handleBulkInvoiceItemChange(index, 'product_id', value)}
+                            placeholder="Επιλογή προϊόντος..."
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-xs">Ποσότητα *</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={item.quantity}
+                            onChange={(e) => handleBulkInvoiceItemChange(index, 'quantity', e.target.value)}
+                            placeholder="1"
+                          />
+                        </div>
+
+                        <div>
+                          <Label className="text-xs">Θέση Αποθήκης *</Label>
+                          <Select
+                            value={item.warehouse_location || 'none'}
+                            onValueChange={(val) => handleBulkInvoiceItemChange(index, 'warehouse_location', val === 'none' ? '' : val)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Επιλέξτε θέση" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">-- Επιλέξτε --</SelectItem>
+                              {locations.filter(loc => loc.id && loc.name && loc.name.trim() !== '').map(loc => (
+                                <SelectItem key={loc.id} value={loc.name}>
+                                  {loc.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t">
+                        <p className="text-xs font-semibold text-slate-700 mb-2">Κόστος & Τιμολόγηση</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">Μέθοδος Κόστους</Label>
                             <Select
                               value={item.cost_input_method || 'unit'}
                               onValueChange={(val) => handleBulkInvoiceItemChange(index, 'cost_input_method', val)}
@@ -2410,8 +2435,12 @@ export default function BarcodeScannerPage() {
                                 <SelectItem value="total">Συνολικό + Έκπτωση</SelectItem>
                               </SelectContent>
                             </Select>
-                          </TableCell>
-                          <TableCell>
+                          </div>
+
+                          <div>
+                            <Label className="text-xs">
+                              {item.cost_input_method === 'unit' ? 'Κόστος Μονάδας (€)' : 'Συνολικό Κόστος (€)'}
+                            </Label>
                             {item.cost_input_method === 'unit' ? (
                               <Input
                                 type="number"
@@ -2429,16 +2458,18 @@ export default function BarcodeScannerPage() {
                                   min="0"
                                   value={item.total_item_cost}
                                   onChange={(e) => handleBulkInvoiceItemChange(index, 'total_item_cost', e.target.value)}
-                                  placeholder="Συνολικό"
+                                  placeholder="0.00"
                                 />
                                 {item.unit_cost && (
-                                  <p className="text-xs text-slate-600">Unit: €{parseFloat(item.unit_cost).toFixed(4)}</p>
+                                  <p className="text-xs text-slate-600">Κόστος μονάδας: €{parseFloat(item.unit_cost).toFixed(4)}</p>
                                 )}
                               </div>
                             )}
-                          </TableCell>
-                          <TableCell>
-                            {item.cost_input_method === 'total' ? (
+                          </div>
+
+                          {item.cost_input_method === 'total' && (
+                            <div>
+                              <Label className="text-xs">Έκπτωση (%)</Label>
                               <Input
                                 type="number"
                                 step="0.1"
@@ -2448,11 +2479,11 @@ export default function BarcodeScannerPage() {
                                 onChange={(e) => handleBulkInvoiceItemChange(index, 'discount', e.target.value)}
                                 placeholder="0"
                               />
-                            ) : (
-                              <span className="text-xs text-slate-400">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
+                            </div>
+                          )}
+
+                          <div>
+                            <Label className="text-xs">Pcs/Qty</Label>
                             <Input
                               type="number"
                               min="1"
@@ -2461,21 +2492,33 @@ export default function BarcodeScannerPage() {
                               onChange={(e) => handleBulkInvoiceItemChange(index, 'bundle_quantity', e.target.value)}
                               placeholder="100"
                             />
-                          </TableCell>
-                          <TableCell>
+                            {costPerPc !== '-' && (
+                              <p className="text-xs text-slate-600 mt-1">Κόστος/τεμ: €{costPerPc}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t">
+                        <p className="text-xs font-semibold text-slate-700 mb-2">Πρόσθετα Στοιχεία</p>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div>
+                            <Label className="text-xs">Κωδ. Προμηθευτή</Label>
                             <Input
                               value={item.vendor_product_code || ''}
                               onChange={(e) => handleBulkInvoiceItemChange(index, 'vendor_product_code', e.target.value)}
-                              placeholder="Κωδ."
+                              placeholder="Κωδικός"
                             />
-                          </TableCell>
-                          <TableCell>
+                          </div>
+
+                          <div>
+                            <Label className="text-xs">Εταιρεία</Label>
                             <Select
                               value={item.company_id || 'none'}
                               onValueChange={(val) => handleBulkInvoiceItemChange(index, 'company_id', val === 'none' ? '' : val)}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Εταιρεία" />
+                                <SelectValue placeholder="Επιλογή" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">-</SelectItem>
@@ -2484,14 +2527,16 @@ export default function BarcodeScannerPage() {
                                 ))}
                               </SelectContent>
                             </Select>
-                          </TableCell>
-                          <TableCell>
+                          </div>
+
+                          <div>
+                            <Label className="text-xs">Κατ. Τιμολόγησης</Label>
                             <Select
                               value={item.invoice_category_id || 'none'}
                               onValueChange={(val) => handleBulkInvoiceItemChange(index, 'invoice_category_id', val === 'none' ? '' : val)}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Κατ." />
+                                <SelectValue placeholder="Επιλογή" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">-</SelectItem>
@@ -2500,46 +2545,17 @@ export default function BarcodeScannerPage() {
                                 ))}
                               </SelectContent>
                             </Select>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-xs">{costPerPc}</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm font-semibold">€{totalCost}</span>
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={item.warehouse_location || 'none'}
-                              onValueChange={(val) => handleBulkInvoiceItemChange(index, 'warehouse_location', val === 'none' ? '' : val)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Θέση" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">-- Επιλέξτε --</SelectItem>
-                                {locations.filter(loc => loc.id && loc.name && loc.name.trim() !== '').map(loc => (
-                                  <SelectItem key={loc.id} value={loc.name}>
-                                    {loc.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleRemoveBulkInvoiceItem(index)}
-                            >
-                              <X className="w-4 h-4 text-red-600" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t bg-blue-50 -mx-4 -mb-3 px-4 py-2 rounded-b-lg">
+                        <span className="text-xs text-slate-600">Συνολικό Κόστος:</span>
+                        <span className="text-lg font-bold text-blue-900">€{totalCost}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
