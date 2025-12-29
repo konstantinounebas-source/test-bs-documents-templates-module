@@ -30,6 +30,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   const [showCreateVendorDialog, setShowCreateVendorDialog] = useState(false);
   const [localVendors, setLocalVendors] = useState(vendors);
   const [invoiceCategories, setInvoiceCategories] = useState([]);
+  const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
     setLocalVendors(vendors);
@@ -123,6 +124,33 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation for IN movements
+    const errors = {};
+    if (isInMovement) {
+      if (!formData.quantity || parseFloat(formData.quantity) <= 0) {
+        errors.quantity = 'Η ποσότητα είναι υποχρεωτική';
+      }
+      if (!formData.reference_id) {
+        errors.reference_id = 'Ο προμηθευτής είναι υποχρεωτικός';
+      }
+      if (formData.cost_input_method === 'unit') {
+        if (!formData.unit_cost || parseFloat(formData.unit_cost) <= 0) {
+          errors.unit_cost = 'Το κόστος ανά μονάδα είναι υποχρεωτικό';
+        }
+      } else {
+        if (!formData.total_item_cost || parseFloat(formData.total_item_cost) <= 0) {
+          errors.total_item_cost = 'Το συνολικό κόστος είναι υποχρεωτικό';
+        }
+      }
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+    
+    setValidationErrors({});
     setIsSaving(true);
     try {
       const quantity = formData.quantity ? parseFloat(formData.quantity) : movement.quantity;
@@ -264,28 +292,43 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                       step="0.01"
                       min="0.01"
                       value={formData.quantity}
-                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, quantity: e.target.value });
+                        if (validationErrors.quantity) {
+                          setValidationErrors({ ...validationErrors, quantity: undefined });
+                        }
+                      }}
                       placeholder="0.00"
                       required
+                      className={validationErrors.quantity ? 'border-red-500 focus-visible:ring-red-500' : ''}
                     />
-                    <p className="text-xs text-slate-500 mt-1">
-                      Ποσότητα σε {product?.unit_of_measure || 'μονάδες'}
-                    </p>
+                    {validationErrors.quantity ? (
+                      <p className="text-xs text-red-600 mt-1">{validationErrors.quantity}</p>
+                    ) : (
+                      <p className="text-xs text-slate-500 mt-1">
+                        Ποσότητα σε {product?.unit_of_measure || 'μονάδες'}
+                      </p>
+                    )}
                   </div>
 
                 <div>
-                  <Label>Προμηθευτής</Label>
+                  <Label>Προμηθευτής *</Label>
                   <div className="flex gap-2">
-                    <div className="flex-1">
+                    <div className={`flex-1 ${validationErrors.reference_id ? 'border-2 border-red-500 rounded-md' : ''}`}>
                       <VendorSearchCombobox
                         vendors={localVendors}
                         vendorProductIds={vendorProductIds}
                         value={formData.reference_id}
-                        onValueChange={(val) => setFormData({
-                          ...formData,
-                          reference_type: 'Vendor',
-                          reference_id: val
-                        })}
+                        onValueChange={(val) => {
+                          setFormData({
+                            ...formData,
+                            reference_type: 'Vendor',
+                            reference_id: val
+                          });
+                          if (validationErrors.reference_id) {
+                            setValidationErrors({ ...validationErrors, reference_id: undefined });
+                          }
+                        }}
                       />
                     </div>
                     <Button
@@ -298,6 +341,9 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>
+                  {validationErrors.reference_id && (
+                    <p className="text-xs text-red-600 mt-1">{validationErrors.reference_id}</p>
+                  )}
                 </div>
 
                 <div>
@@ -326,36 +372,56 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
                 {formData.cost_input_method === 'unit' ? (
                   <div>
-                    <Label htmlFor="unit_cost">Κόστος ανά μονάδα (€)</Label>
+                    <Label htmlFor="unit_cost">Κόστος ανά μονάδα (€) *</Label>
                     <Input
                       id="unit_cost"
                       type="number"
                       step="0.0001"
                       min="0"
                       value={formData.unit_cost}
-                      onChange={(e) => setFormData({ ...formData, unit_cost: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, unit_cost: e.target.value });
+                        if (validationErrors.unit_cost) {
+                          setValidationErrors({ ...validationErrors, unit_cost: undefined });
+                        }
+                      }}
                       placeholder="0.0000"
+                      className={validationErrors.unit_cost ? 'border-red-500 focus-visible:ring-red-500' : ''}
                     />
-                    <p className="text-xs text-slate-500 mt-1">
-                      Κόστος ανά {product?.unit_of_measure || 'μονάδα'} από αυτόν τον προμηθευτή
-                    </p>
+                    {validationErrors.unit_cost ? (
+                      <p className="text-xs text-red-600 mt-1">{validationErrors.unit_cost}</p>
+                    ) : (
+                      <p className="text-xs text-slate-500 mt-1">
+                        Κόστος ανά {product?.unit_of_measure || 'μονάδα'} από αυτόν τον προμηθευτή
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <>
                     <div>
-                      <Label htmlFor="total_item_cost">Συνολικό Κόστος Προϊόντος (€)</Label>
+                      <Label htmlFor="total_item_cost">Συνολικό Κόστος Προϊόντος (€) *</Label>
                       <Input
                         id="total_item_cost"
                         type="number"
                         step="0.01"
                         min="0"
                         value={formData.total_item_cost}
-                        onChange={(e) => setFormData({ ...formData, total_item_cost: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, total_item_cost: e.target.value });
+                          if (validationErrors.total_item_cost) {
+                            setValidationErrors({ ...validationErrors, total_item_cost: undefined });
+                          }
+                        }}
                         placeholder="0.00"
+                        className={validationErrors.total_item_cost ? 'border-red-500 focus-visible:ring-red-500' : ''}
                       />
-                      <p className="text-xs text-slate-500 mt-1">
-                        Το συνολικό κόστος για {formData.quantity || 0} {product?.unit_of_measure || 'μονάδες'} πριν την έκπτωση
-                      </p>
+                      {validationErrors.total_item_cost ? (
+                        <p className="text-xs text-red-600 mt-1">{validationErrors.total_item_cost}</p>
+                      ) : (
+                        <p className="text-xs text-slate-500 mt-1">
+                          Το συνολικό κόστος για {formData.quantity || 0} {product?.unit_of_measure || 'μονάδες'} πριν την έκπτωση
+                        </p>
+                      )}
                     </div>
                     <div>
                       <Label htmlFor="discount">Έκπτωση (%)</Label>
