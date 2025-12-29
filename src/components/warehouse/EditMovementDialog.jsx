@@ -18,6 +18,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     reference_id: '',
     unit_cost: '',
     bundle_quantity: '',
+    vendor_product_code: '',
     cost_input_method: 'unit',
     total_item_cost: '',
     discount: '0',
@@ -33,10 +34,11 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
   useEffect(() => {
     if (movement) {
-      // Try to get bundle_quantity and unit_cost from ProductVendor if available
+      // Try to get bundle_quantity, unit_cost and vendor_product_code from ProductVendor if available
       let bundleQty = '';
       let vendorUnitCost = movement.unit_cost || '';
-      
+      let vendorProdCode = movement.vendor_product_code || '';
+
       if (movement.reference_id && movement.product_id) {
         const pv = productVendors.find(
           pv => pv.product_id === movement.product_id && pv.vendor_id === movement.reference_id
@@ -48,6 +50,10 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
           // Auto-fill unit_cost from ProductVendor if not already set in movement
           if (!vendorUnitCost && pv.unit_cost) {
             vendorUnitCost = String(pv.unit_cost);
+          }
+          // Auto-fill vendor_product_code from ProductVendor if not already set
+          if (!vendorProdCode && pv.vendor_product_code) {
+            vendorProdCode = pv.vendor_product_code;
           }
         }
       }
@@ -67,6 +73,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         reference_id: movement.reference_id || '',
         unit_cost: vendorUnitCost,
         bundle_quantity: bundleQty,
+        vendor_product_code: vendorProdCode,
         cost_input_method: 'unit',
         total_item_cost: '',
         discount: '0',
@@ -107,7 +114,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         reference_id: formData.reference_id || null,
         quantity: quantity,
         unit_cost: unitCost,
-        bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null
+        bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null,
+        vendor_product_code: formData.vendor_product_code || null
       };
       
       console.log('Saving movement with data:', updateData);
@@ -124,7 +132,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
           const pvData = {
             unit_cost: unitCost,
             is_active: true,
-            bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null
+            bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null,
+            vendor_product_code: formData.vendor_product_code || null
           };
 
           if (existingPVs.length === 0) {
@@ -342,6 +351,16 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                       <strong>Κόστος ανά τεμάχιο:</strong> €{costPerPiece}
                     </p>
                   )}
+                </div>
+
+                <div>
+                  <Label htmlFor="vendor_product_code">Κωδικός Προϊόντος Προμηθευτή</Label>
+                  <Input
+                    id="vendor_product_code"
+                    value={formData.vendor_product_code}
+                    onChange={(e) => setFormData({ ...formData, vendor_product_code: e.target.value })}
+                    placeholder="Κωδικός προμηθευτή"
+                  />
                 </div>
               </>
             )}
