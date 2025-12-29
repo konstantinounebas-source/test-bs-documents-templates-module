@@ -2237,9 +2237,9 @@ export default function BarcodeScannerPage() {
 
                           <div className="pt-2 border-t">
                             <p className="text-xs font-semibold text-slate-700 mb-2">Πρόσθετα Στοιχεία</p>
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="grid grid-cols-2 gap-3">
                               <div>
-                                <Label className="text-xs">Κωδ. Προμηθευτή</Label>
+                                <Label className="text-xs">Κωδ. Προμηθευτή *</Label>
                                 <Input
                                   value={item.vendor_product_code || ''}
                                   onChange={(e) => {
@@ -2252,7 +2252,7 @@ export default function BarcodeScannerPage() {
                                 />
                               </div>
                               <div>
-                                <Label className="text-xs">Εταιρεία</Label>
+                                <Label className="text-xs">Εταιρεία *</Label>
                                 <Select
                                   value={item.company_id || 'none'}
                                   onValueChange={(val) => {
@@ -2273,8 +2273,8 @@ export default function BarcodeScannerPage() {
                                   </SelectContent>
                                 </Select>
                               </div>
-                              <div>
-                                <Label className="text-xs">Κατ. Τιμολόγησης</Label>
+                              <div className="col-span-2">
+                                <Label className="text-xs">Κατ. Τιμολόγησης *</Label>
                                 <Select
                                   value={item.invoice_category_id || 'none'}
                                   onValueChange={(val) => {
@@ -2290,7 +2290,14 @@ export default function BarcodeScannerPage() {
                                   <SelectContent>
                                     <SelectItem value="none">-</SelectItem>
                                     {invoiceCategories.map(ic => (
-                                      <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
+                                      <SelectItem key={ic.id} value={ic.id}>
+                                        <div>
+                                          <div className="font-medium">{ic.name}</div>
+                                          {ic.description && (
+                                            <div className="text-xs text-slate-500">{ic.description}</div>
+                                          )}
+                                        </div>
+                                      </SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
@@ -2452,8 +2459,8 @@ export default function BarcodeScannerPage() {
                         </Button>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="col-span-2">
+                      <div className="space-y-3">
+                        <div>
                           <Label className="text-xs">Προϊόν *</Label>
                           <ProductSearchCombobox
                             products={products.filter(p => p.is_active)}
@@ -2466,42 +2473,79 @@ export default function BarcodeScannerPage() {
                           />
                         </div>
 
-                        <div>
-                          <Label className="text-xs">Ποσότητα *</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            step="1"
-                            value={item.quantity}
-                            onChange={(e) => handleBulkInvoiceItemChange(index, 'quantity', e.target.value)}
-                            placeholder="1"
-                          />
-                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">Θέση Αποθήκης *</Label>
+                            <Select
+                              value={item.warehouse_location || 'none'}
+                              onValueChange={(val) => handleBulkInvoiceItemChange(index, 'warehouse_location', val === 'none' ? '' : val)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Επιλέξτε θέση" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">-- Επιλέξτε --</SelectItem>
+                                {locations.filter(loc => loc.id && loc.name && loc.name.trim() !== '').map(loc => (
+                                  <SelectItem key={loc.id} value={loc.name}>
+                                    {loc.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
 
-                        <div>
-                          <Label className="text-xs">Θέση Αποθήκης *</Label>
-                          <Select
-                            value={item.warehouse_location || 'none'}
-                            onValueChange={(val) => handleBulkInvoiceItemChange(index, 'warehouse_location', val === 'none' ? '' : val)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Επιλέξτε θέση" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">-- Επιλέξτε --</SelectItem>
-                              {locations.filter(loc => loc.id && loc.name && loc.name.trim() !== '').map(loc => (
-                                <SelectItem key={loc.id} value={loc.name}>
-                                  {loc.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <div>
+                            <Label className="text-xs">Εταιρεία *</Label>
+                            <Select
+                              value={item.company_id || 'none'}
+                              onValueChange={(val) => handleBulkInvoiceItemChange(index, 'company_id', val === 'none' ? '' : val)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Επιλογή" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">-</SelectItem>
+                                {companies.map(comp => (
+                                  <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
 
                       <div className="pt-2 border-t">
-                        <p className="text-xs font-semibold text-slate-700 mb-2">Κόστος & Τιμολόγηση</p>
+                        <p className="text-xs font-semibold text-slate-700 mb-2">Ποσότητα & Κόστος</p>
                         <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">Ποσότητα *</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={item.quantity}
+                              onChange={(e) => handleBulkInvoiceItemChange(index, 'quantity', e.target.value)}
+                              placeholder="1"
+                            />
+                          </div>
+
+                          <div>
+                            <Label className="text-xs">Pcs/Qty</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={item.bundle_quantity}
+                              onChange={(e) => handleBulkInvoiceItemChange(index, 'bundle_quantity', e.target.value)}
+                              placeholder="100"
+                            />
+                            {costPerPc !== '-' && (
+                              <p className="text-xs text-slate-600 mt-1">Κόστος/τεμ: €{costPerPc}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 mt-3">
                           <div>
                             <Label className="text-xs">Μέθοδος Κόστους</Label>
                             <Select
@@ -2562,29 +2606,14 @@ export default function BarcodeScannerPage() {
                               />
                             </div>
                           )}
-
-                          <div>
-                            <Label className="text-xs">Pcs/Qty</Label>
-                            <Input
-                              type="number"
-                              min="1"
-                              step="1"
-                              value={item.bundle_quantity}
-                              onChange={(e) => handleBulkInvoiceItemChange(index, 'bundle_quantity', e.target.value)}
-                              placeholder="100"
-                            />
-                            {costPerPc !== '-' && (
-                              <p className="text-xs text-slate-600 mt-1">Κόστος/τεμ: €{costPerPc}</p>
-                            )}
-                          </div>
                         </div>
                       </div>
 
                       <div className="pt-2 border-t">
                         <p className="text-xs font-semibold text-slate-700 mb-2">Πρόσθετα Στοιχεία</p>
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <Label className="text-xs">Κωδ. Προμηθευτή</Label>
+                            <Label className="text-xs">Κωδ. Προμηθευτή *</Label>
                             <Input
                               value={item.vendor_product_code || ''}
                               onChange={(e) => handleBulkInvoiceItemChange(index, 'vendor_product_code', e.target.value)}
@@ -2593,7 +2622,7 @@ export default function BarcodeScannerPage() {
                           </div>
 
                           <div>
-                            <Label className="text-xs">Εταιρεία</Label>
+                            <Label className="text-xs">Εταιρεία *</Label>
                             <Select
                               value={item.company_id || 'none'}
                               onValueChange={(val) => handleBulkInvoiceItemChange(index, 'company_id', val === 'none' ? '' : val)}
@@ -2610,8 +2639,8 @@ export default function BarcodeScannerPage() {
                             </Select>
                           </div>
 
-                          <div>
-                            <Label className="text-xs">Κατ. Τιμολόγησης</Label>
+                          <div className="col-span-2">
+                            <Label className="text-xs">Κατ. Τιμολόγησης *</Label>
                             <Select
                               value={item.invoice_category_id || 'none'}
                               onValueChange={(val) => handleBulkInvoiceItemChange(index, 'invoice_category_id', val === 'none' ? '' : val)}
@@ -2622,7 +2651,14 @@ export default function BarcodeScannerPage() {
                               <SelectContent>
                                 <SelectItem value="none">-</SelectItem>
                                 {invoiceCategories.map(ic => (
-                                  <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
+                                  <SelectItem key={ic.id} value={ic.id}>
+                                    <div>
+                                      <div className="font-medium">{ic.name}</div>
+                                      {ic.description && (
+                                        <div className="text-xs text-slate-500">{ic.description}</div>
+                                      )}
+                                    </div>
+                                  </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
