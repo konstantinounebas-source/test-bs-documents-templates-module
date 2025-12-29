@@ -249,7 +249,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
-                      {companies.map(comp => (
+                      {companies.filter(c => c.is_active !== false).map(comp => (
                         <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
                       ))}
                     </SelectContent>
