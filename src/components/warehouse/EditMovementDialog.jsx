@@ -20,6 +20,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     bundle_quantity: '',
     vendor_product_code: '',
     invoice_category_id: '',
+    company_id: '',
     cost_input_method: 'unit',
     total_item_cost: '',
     discount: '0',
@@ -83,6 +84,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         }
       }
 
+      const currentProduct = products.find(p => p.id === movement.product_id);
+      
       setFormData({
         notes: movement.notes || '',
         waybill_number: movement.waybill_number || '',
@@ -92,6 +95,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         bundle_quantity: bundleQty,
         vendor_product_code: vendorProdCode,
         invoice_category_id: movement.invoice_category_id || '',
+        company_id: currentProduct?.company_id || '',
         cost_input_method: 'unit',
         total_item_cost: '',
         discount: '0',
@@ -124,6 +128,14 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       const quantity = formData.quantity ? parseFloat(formData.quantity) : movement.quantity;
       const unitCost = formData.unit_cost ? parseFloat(formData.unit_cost) : null;
       
+      // Update product company_id if changed
+      const currentProduct = products.find(p => p.id === movement.product_id);
+      if (currentProduct && formData.company_id !== currentProduct.company_id) {
+        await base44.entities.Product.update(movement.product_id, {
+          company_id: formData.company_id || null
+        });
+      }
+
       // Prepare update data with quantity and unit_cost as numbers
       const updateData = {
         notes: formData.notes,
@@ -224,11 +236,25 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     <p className="text-xs text-blue-600 font-semibold uppercase">Μονάδα Μέτρησης</p>
                     <p className="text-sm text-blue-700">{product?.unit_of_measure || 'N/A'}</p>
                   </div>
-                  <div>
-                    <p className="text-xs text-blue-600 font-semibold uppercase">Εταιρεία</p>
-                    <p className="text-sm text-blue-700">{company?.name || 'N/A'}</p>
-                  </div>
-                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="company_id">Εταιρεία</Label>
+                  <Select 
+                    value={formData.company_id || 'none'} 
+                    onValueChange={(val) => setFormData({ ...formData, company_id: val === 'none' ? '' : val })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Επιλέξτε εταιρεία" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
+                      {companies.map(comp => (
+                        <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                   <div>
                     <Label htmlFor="quantity">Ποσότητα *</Label>
