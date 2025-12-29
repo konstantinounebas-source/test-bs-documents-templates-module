@@ -24,6 +24,7 @@ export default function ProductsTable({
   products, 
   categories, 
   vendors, 
+  companies = [],
   stockItems,
   productVendors,
   isLoading, 

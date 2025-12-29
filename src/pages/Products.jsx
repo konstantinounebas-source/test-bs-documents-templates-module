@@ -56,10 +56,14 @@ export default function ProductsPage() {
       await delay(300);
       const stockData = await base44.entities.StockItem.list();
       setStockItems(stockData);
+      
+      await delay(300);
+      const companiesData = await base44.entities.Company.filter({ is_active: true });
+      setCompanies(companiesData);
 
       await delay(300); // Add delay before fetching product vendors
       const pvData = await base44.entities.ProductVendor.list();
-      setProductVendors(pvData);
+      setProductVendor(pvData);
       
     } catch (error) {
       console.error("Error loading data:", error);
@@ -373,6 +377,7 @@ export default function ProductsPage() {
             products={paginatedProducts} 
             categories={categories}
             vendors={vendors}
+            companies={companies}
             stockItems={stockItems}
             productVendors={productVendors}
             isLoading={isLoading}
