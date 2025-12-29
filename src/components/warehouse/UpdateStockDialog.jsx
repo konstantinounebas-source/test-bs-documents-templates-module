@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -156,7 +155,9 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         reference_type: relatedPO ? "PurchaseOrder" : "Manual",
         reference_id: relatedPO || undefined,
         performed_by: currentUser?.email || currentUser?.id,
-        notes: notes || undefined
+        notes: notes || undefined,
+        // For OUT movements, use the product's current unit_cost
+        unit_cost: movementType === "OUT" ? (product.unit_cost || 0) : undefined
       };
 
       await base44.entities.StockMovement.create(movementData);
