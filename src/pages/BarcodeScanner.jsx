@@ -38,6 +38,8 @@ export default function BarcodeScannerPage() {
   const [vendors, setVendors] = useState([]);
   const [productVendors, setProductVendors] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [invoiceCategories, setInvoiceCategories] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [scannedBarcode, setScannedBarcode] = useState("");
   const [matchedProduct, setMatchedProduct] = useState(null);
@@ -50,6 +52,9 @@ export default function BarcodeScannerPage() {
   const [waybillNumber, setWaybillNumber] = useState("");
   const [chargedToPerson, setChargedToPerson] = useState("");
   const [selectedVendor, setSelectedVendor] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState("");
+  const [vendorProductCode, setVendorProductCode] = useState("");
+  const [selectedInvoiceCategory, setSelectedInvoiceCategory] = useState("");
   const [costInputMethod, setCostInputMethod] = useState("unit"); // 'unit' or 'total'
   const [unitCost, setUnitCost] = useState("");
   const [totalItemCost, setTotalItemCost] = useState("");
@@ -155,6 +160,16 @@ export default function BarcodeScannerPage() {
       console.log("Loading categories...");
       const categoriesData = await base44.entities.ProductCategory.filter({ is_active: true });
       setCategories(categoriesData);
+      
+      await delay(500);
+      console.log("Loading companies...");
+      const companiesData = await base44.entities.Company.filter({ is_active: true });
+      setCompanies(companiesData);
+      
+      await delay(500);
+      console.log("Loading invoice categories...");
+      const invoiceCatsData = await base44.entities.InvoiceCategory.filter({ is_active: true });
+      setInvoiceCategories(invoiceCatsData);
       
       await delay(500);
       console.log("Loading movements...");
@@ -631,6 +646,16 @@ export default function BarcodeScannerPage() {
         }
       }
 
+      // Update product company_id if changed
+      if (movementType === "IN" && selectedCompany) {
+        const currentProduct = products.find(p => p.id === matchedProduct.id);
+        if (currentProduct && selectedCompany !== currentProduct.company_id) {
+          await base44.entities.Product.update(matchedProduct.id, {
+            company_id: selectedCompany
+          });
+        }
+      }
+
       // Prepare movement data
       const movementData = {
         product_id: matchedProduct.id,
@@ -659,6 +684,16 @@ export default function BarcodeScannerPage() {
         // Add unit_cost for IN movements if provided
         if (unitCost !== "" && !isNaN(parseFloat(unitCost))) {
           movementData.unit_cost = parseFloat(unitCost);
+        }
+        // Add vendor product code and invoice category
+        if (vendorProductCode) {
+          movementData.vendor_product_code = vendorProductCode;
+        }
+        if (selectedInvoiceCategory) {
+          movementData.invoice_category_id = selectedInvoiceCategory;
+        }
+        if (bundleQuantity) {
+          movementData.bundle_quantity = parseFloat(bundleQuantity);
         }
       }
 
@@ -793,6 +828,9 @@ export default function BarcodeScannerPage() {
       setWaybillNumber("");
       setChargedToPerson("");
       setSelectedVendor("");
+      setSelectedCompany("");
+      setVendorProductCode("");
+      setSelectedInvoiceCategory("");
       setCostInputMethod("unit");
       setUnitCost("");
       setTotalItemCost("");
@@ -986,6 +1024,9 @@ export default function BarcodeScannerPage() {
     setWaybillNumber("");
     setChargedToPerson("");
     setSelectedVendor("");
+    setSelectedCompany("");
+    setVendorProductCode("");
+    setSelectedInvoiceCategory("");
     setCostInputMethod("unit");
     setUnitCost("");
     setTotalItemCost("");
@@ -1023,6 +1064,9 @@ export default function BarcodeScannerPage() {
       total_item_cost: '',
       discount: 0,
       bundle_quantity: '',
+      vendor_product_code: '',
+      invoice_category_id: '',
+      company_id: '',
       warehouse_location: ''
     }]);
   };
@@ -1127,6 +1171,16 @@ export default function BarcodeScannerPage() {
           }
         }
 
+        // Update product company if specified
+        if (item.company_id) {
+          const currentProduct = products.find(p => p.id === item.product_id);
+          if (currentProduct && item.company_id !== currentProduct.company_id) {
+            await base44.entities.Product.update(item.product_id, {
+              company_id: item.company_id
+            });
+          }
+        }
+
         // Create stock movement
         await base44.entities.StockMovement.create({
           product_id: item.product_id,
@@ -1137,6 +1191,10 @@ export default function BarcodeScannerPage() {
           reference_id: bulkInvoiceNumber,
           performed_by: currentUser.email,
           waybill_number: bulkInvoiceWaybill || null,
+          unit_cost: cost > 0 ? cost : null,
+          bundle_quantity: item.bundle_quantity ? parseFloat(item.bundle_quantity) : null,
+          vendor_product_code: item.vendor_product_code || null,
+          invoice_category_id: item.invoice_category_id || null,
           notes: `Bulk invoice entry: ${bulkInvoiceNumber}`
         });
 
@@ -1599,6 +1657,45 @@ export default function BarcodeScannerPage() {
                               Κόστος ανά τεμάχιο: €{(parseFloat(unitCost) / parseFloat(bundleQuantity)).toFixed(4)}
                             </p>
                           )}
+                        </div>
+
+                        <div>
+                          <Label>Εταιρεία (προαιρετικό)</Label>
+                          <Select value={selectedCompany || 'none'} onValueChange={(val) => setSelectedCompany(val === 'none' ? '' : val)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Επιλέξτε εταιρεία" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
+                              {companies.map(comp => (
+                                <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label>Κωδικός Προϊόντος Προμηθευτή (προαιρετικό)</Label>
+                          <Input
+                            value={vendorProductCode}
+                            onChange={(e) => setVendorProductCode(e.target.value)}
+                            placeholder="Κωδικός προμηθευτή"
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Κατηγορία Τιμολόγησης (προαιρετικό)</Label>
+                          <Select value={selectedInvoiceCategory || 'none'} onValueChange={(val) => setSelectedInvoiceCategory(val === 'none' ? '' : val)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Επιλέξτε κατηγορία" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
+                              {invoiceCategories.map(ic => (
+                                <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         <div className="relative">
@@ -2254,6 +2351,9 @@ export default function BarcodeScannerPage() {
                       <TableHead className="w-[110px]">Unit Cost / Total (€)</TableHead>
                       <TableHead className="w-[80px]">Έκπτωση (%)</TableHead>
                       <TableHead className="w-[90px]">Pcs/Qty</TableHead>
+                      <TableHead className="w-[120px]">Κωδ. Προμ.</TableHead>
+                      <TableHead className="w-[150px]">Εταιρεία</TableHead>
+                      <TableHead className="w-[150px]">Κατ. Τιμολ.</TableHead>
                       <TableHead className="w-[90px]">Cost/Pc (€)</TableHead>
                       <TableHead className="w-[100px]">Total Cost (€)</TableHead>
                       <TableHead className="w-[180px]">Θέση Αποθήκης *</TableHead>
@@ -2361,6 +2461,45 @@ export default function BarcodeScannerPage() {
                               onChange={(e) => handleBulkInvoiceItemChange(index, 'bundle_quantity', e.target.value)}
                               placeholder="100"
                             />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              value={item.vendor_product_code || ''}
+                              onChange={(e) => handleBulkInvoiceItemChange(index, 'vendor_product_code', e.target.value)}
+                              placeholder="Κωδ."
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={item.company_id || 'none'}
+                              onValueChange={(val) => handleBulkInvoiceItemChange(index, 'company_id', val === 'none' ? '' : val)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Εταιρεία" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">-</SelectItem>
+                                {companies.map(comp => (
+                                  <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={item.invoice_category_id || 'none'}
+                              onValueChange={(val) => handleBulkInvoiceItemChange(index, 'invoice_category_id', val === 'none' ? '' : val)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Κατ." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">-</SelectItem>
+                                {invoiceCategories.map(ic => (
+                                  <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                           <TableCell>
                             <span className="text-xs">{costPerPc}</span>
