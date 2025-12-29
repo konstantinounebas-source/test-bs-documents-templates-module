@@ -61,10 +61,6 @@ export default function ProductsPage() {
       const companiesData = await base44.entities.Company.filter({ is_active: true });
       setCompanies(companiesData);
 
-      await delay(300);
-      const companiesData = await base44.entities.Company.filter({ is_active: true });
-      setCompanies(companiesData);
-
       await delay(300); // Add delay before fetching product vendors
       const pvData = await base44.entities.ProductVendor.list();
       setProductVendors(pvData);
