@@ -1731,6 +1731,29 @@ export default function BarcodeScannerPage() {
                   {movementType === "OUT" && (
                     <>
                       <div>
+                        <Label>Ποσότητα *</Label>
+                        <Input
+                          id="quantity-out"
+                          type="text"
+                          inputMode="numeric"
+                          value={quantity}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (value === '' || /^\d+$/.test(value)) {
+                              setQuantity(value);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (isNaN(val) || val < 1) {
+                              setQuantity("1");
+                            }
+                          }}
+                          onFocus={(e) => e.target.select()}
+                        />
+                      </div>
+
+                      <div>
                         <Label>Χρέωση σε Άτομο *</Label>
                         <PersonSearchCombobox
                           systemUsers={systemUsers}
@@ -1750,6 +1773,31 @@ export default function BarcodeScannerPage() {
                         />
                       </div>
                     </>
+                  )}
+
+                  {(movementType === "ADJUSTMENT" || movementType === "TRANSFER") && (
+                    <div>
+                      <Label>Ποσότητα *</Label>
+                      <Input
+                        id="quantity-other"
+                        type="text"
+                        inputMode="numeric"
+                        value={quantity}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === '' || /^\d+$/.test(value)) {
+                            setQuantity(value);
+                          }
+                        }}
+                        onBlur={(e) => {
+                          const val = parseInt(e.target.value);
+                          if (isNaN(val) || val < 1) {
+                            setQuantity("1");
+                          }
+                        }}
+                        onFocus={(e) => e.target.select()}
+                      />
+                    </div>
                   )}
 
                   {/* Photo Upload Section */}

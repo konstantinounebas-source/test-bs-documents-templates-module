@@ -245,22 +245,23 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Product Info - Always shown */}
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-xs text-blue-600 font-semibold uppercase mb-2">Στοιχεία Προϊόντος</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-sm text-blue-900 font-medium">{product?.name || 'N/A'}</p>
+                  <p className="text-xs text-blue-700 font-mono">SKU: {product?.sku || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-blue-700">Κατηγορία: {category?.name || 'N/A'}</p>
+                  <p className="text-xs text-blue-700">Μονάδα: {product?.unit_of_measure || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
             {isInMovement && (
               <>
-                {/* Product Info & Location/Company - Read Only */}
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <p className="text-xs text-blue-600 font-semibold uppercase mb-2">Στοιχεία Προϊόντος</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-sm text-blue-900 font-medium">{product?.name || 'N/A'}</p>
-                      <p className="text-xs text-blue-700 font-mono">SKU: {product?.sku || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-blue-700">Κατηγορία: {category?.name || 'N/A'}</p>
-                      <p className="text-xs text-blue-700">Μονάδα: {product?.unit_of_measure || 'N/A'}</p>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Location & Company */}
                 <div className="grid grid-cols-2 gap-3 border-t pt-4">
@@ -556,9 +557,49 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                       </div>
                       </div>
                 </>
-                )}
+            )}
 
+            {/* Common fields for all movement types */}
+            {!isInMovement && (
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="quantity-common">Ποσότητα *</Label>
+                  <Input
+                    id="quantity-common"
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={formData.quantity}
+                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                    placeholder="0.00"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Ποσότητα σε {product?.unit_of_measure || 'μονάδες'}
+                  </p>
+                </div>
 
+                <div>
+                  <Label htmlFor="waybill-common">Αριθμός Waybill</Label>
+                  <Input
+                    id="waybill-common"
+                    value={formData.waybill_number}
+                    onChange={(e) => setFormData({ ...formData, waybill_number: e.target.value })}
+                    placeholder="π.χ. WB-2025-001"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="notes-common">Σημειώσεις</Label>
+                  <Textarea
+                    id="notes-common"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Προσθέστε σημειώσεις..."
+                    rows={4}
+                  />
+                </div>
+              </div>
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={onClose}>
