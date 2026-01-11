@@ -544,12 +544,12 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                           </p>
                         </div>
                       )}
-                      </>
-                      )}
-                      </div>
+                    </>
+                  )}
+                </div>
 
-                      {/* Additional Details */}
-                      <div className="space-y-3 border-t pt-4">
+                {/* Additional Details */}
+                <div className="space-y-3 border-t pt-4">
                       <p className="text-sm font-semibold text-slate-700">Πρόσθετα Στοιχεία</p>
 
                       <div>
@@ -574,31 +574,31 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                           </SelectItem>
                         ))}
                       </SelectContent>
-                      </Select>
-                      </div>
+                    </Select>
+                  </div>
 
-                      <div>
-                      <Label htmlFor="waybill">Αριθμός Waybill</Label>
-                      <Input
+                  <div>
+                    <Label htmlFor="waybill">Αριθμός Waybill</Label>
+                    <Input
                       id="waybill"
                       value={formData.waybill_number}
                       onChange={(e) => setFormData({ ...formData, waybill_number: e.target.value })}
                       placeholder="π.χ. WB-2025-001"
-                      />
-                      </div>
+                    />
+                  </div>
 
-                      <div>
-                      <Label htmlFor="notes">Σημειώσεις</Label>
-                      <Textarea
+                  <div>
+                    <Label htmlFor="notes">Σημειώσεις</Label>
+                    <Textarea
                       id="notes"
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                       placeholder="Προσθέστε σημειώσεις..."
                       rows={4}
-                      />
-                      </div>
-                      </div>
-                </>
+                    />
+                  </div>
+                </div>
+              </>
             )}
 
             {/* Common fields for all movement types */}
@@ -616,7 +616,29 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     placeholder="0.00"
                   />
                   <p className="text-xs text-slate-500 mt-1">
-                    Ποσότητα σε {product?.unit_of_measure || 'μονάδες'}
+                    Μονάδα προϊόντος: {product?.unit_of_measure || 'N/A'}
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="conversion_rate-common">Πολλαπλάσιο μεγέθους (Conversion Rate)</Label>
+                  <Input
+                    id="conversion_rate-common"
+                    type="number"
+                    min="0.0001"
+                    step="0.0001"
+                    value={formData.conversion_rate}
+                    onChange={(e) => setFormData({ ...formData, conversion_rate: e.target.value })}
+                    placeholder="1"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Πολλαπλάσιο της βασικής μονάδας ({product?.unit_of_measure || 'N/A'}). Π.χ. αν 1kg = 1000gr, βάλτε 0.001 για γραμμάρια
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-sm text-slate-700">
+                    <strong>Ποσότητα στην βασική μονάδα:</strong> {(parseFloat(formData.quantity) * parseFloat(formData.conversion_rate) || 0).toFixed(4)} {product?.unit_of_measure || 'μονάδες'}
                   </p>
                 </div>
 
