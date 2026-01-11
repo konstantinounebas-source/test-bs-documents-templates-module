@@ -113,18 +113,18 @@ export default function PreviousPurchasesSelector({
             const valueStr = String(movement.id || '').trim();
             const finalValue = valueStr && valueStr.length > 0 ? valueStr : `fallback-${Date.now()}-${Math.random()}`;
             return (
-            <SelectItem key={movement.id} value={finalValue}>
-              <div className="flex flex-col py-1">
-                <div className="font-medium">
-                  {formatDate(movement.created_date)} - {getVendorName(movement.reference_id)}
+              <SelectItem key={movement.id} value={finalValue}>
+                <div className="flex flex-col py-1">
+                  <div className="font-medium">
+                    {formatDate(movement.created_date)} - {getVendorName(movement.reference_id)}
+                  </div>
+                  <div className="text-xs text-slate-600">
+                    {movement.quantity} μον. @ €{parseFloat(movement.unit_cost).toFixed(4)}
+                    {movement.vendor_product_code && ` - Κωδ: ${movement.vendor_product_code}`}
+                    {movement.bundle_quantity && ` (${movement.bundle_quantity} pcs)`}
+                  </div>
                 </div>
-                <div className="text-xs text-slate-600">
-                  {movement.quantity} μον. @ €{parseFloat(movement.unit_cost).toFixed(4)}
-                  {movement.vendor_product_code && ` - Κωδ: ${movement.vendor_product_code}`}
-                  {movement.bundle_quantity && ` (${movement.bundle_quantity} pcs)`}
-                </div>
-              </div>
-            </SelectItem>
+              </SelectItem>
             );
           })}
         </SelectContent>
