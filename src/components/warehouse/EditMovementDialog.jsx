@@ -303,14 +303,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                   }}
                 />
 
-                {/* Location & Company */}
+                {/* Company & Invoice Category */}
                 <div className="grid grid-cols-2 gap-3 border-t pt-4">
-                  <div>
-                    <Label>Θέση Αποθήκης</Label>
-                    <div className="flex items-center h-10 px-3 bg-slate-100 rounded-md border">
-                      <span className="text-sm">{movement.to_location || 'N/A'}</span>
-                    </div>
-                  </div>
                   <div>
                     <Label>Εταιρεία *</Label>
                     <Select 
