@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Truck, FolderTree, MapPin, Tag, Briefcase, Building2, FileText } from "lucide-react";
+import { Plus, Search, Truck, FolderTree, MapPin, Tag, Briefcase, Building2, FileText, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,7 @@ import VendorCategoriesTable from "../components/warehouse/VendorCategoriesTable
 import VendorServicesTable from "../components/warehouse/VendorServicesTable";
 import CompaniesTable from "../components/warehouse/CompaniesTable";
 import InvoiceCategoriesTable from "../components/warehouse/InvoiceCategoriesTable";
+import TeamsTable from "../components/warehouse/TeamsTable";
 import CreateEditVendorDialog from "../components/warehouse/CreateEditVendorDialog";
 import CreateEditCategoryDialog from "../components/warehouse/CreateEditCategoryDialog";
 import CreateEditLocationDialog from "../components/warehouse/CreateEditLocationDialog";
@@ -20,6 +21,7 @@ import CreateEditVendorCategoryDialog from "../components/warehouse/CreateEditVe
 import CreateEditVendorServiceDialog from "../components/warehouse/CreateEditVendorServiceDialog";
 import CreateEditCompanyDialog from "../components/warehouse/CreateEditCompanyDialog";
 import CreateEditInvoiceCategoryDialog from "../components/warehouse/CreateEditInvoiceCategoryDialog";
+import CreateEditTeamDialog from "../components/warehouse/CreateEditTeamDialog";
 import ImportVendorsDialog from "../components/warehouse/ImportVendorsDialog";
 import PaginationControls from "../components/warehouse/PaginationControls";
 
@@ -34,6 +36,7 @@ export default function VendorsCategoriesPage() {
   const [vendorServices, setVendorServices] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [invoiceCategories, setInvoiceCategories] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showVendorDialog, setShowVendorDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
@@ -42,6 +45,7 @@ export default function VendorsCategoriesPage() {
   const [showVendorServiceDialog, setShowVendorServiceDialog] = useState(false);
   const [showCompanyDialog, setShowCompanyDialog] = useState(false);
   const [showInvoiceCategoryDialog, setShowInvoiceCategoryDialog] = useState(false);
+  const [showTeamDialog, setShowTeamDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("vendors");
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -73,6 +77,10 @@ export default function VendorsCategoriesPage() {
   // Pagination states for Invoice Categories
   const [invoiceCategoriesCurrentPage, setInvoiceCategoriesCurrentPage] = useState(1);
   const [invoiceCategoriesItemsPerPage, setInvoiceCategoriesItemsPerPage] = useState("10");
+
+  // Pagination states for Teams
+  const [teamsCurrentPage, setTeamsCurrentPage] = useState(1);
+  const [teamsItemsPerPage, setTeamsItemsPerPage] = useState("10");
 
   useEffect(() => {
     loadData();
@@ -108,6 +116,10 @@ export default function VendorsCategoriesPage() {
       await delay(300);
       const invoiceCatsData = await base44.entities.InvoiceCategory.list("-updated_date");
       setInvoiceCategories(invoiceCatsData);
+      
+      await delay(300);
+      const teamsData = await base44.entities.Team.list("-updated_date");
+      setTeams(teamsData);
       
     } catch (error) {
       console.error("Error loading data:", error);
@@ -155,6 +167,12 @@ export default function VendorsCategoriesPage() {
   const filteredInvoiceCategories = invoiceCategories.filter(ic =>
     searchTerm === "" ||
     ic.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredTeams = teams.filter(t =>
+    searchTerm === "" ||
+    t.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Vendors Pagination
@@ -213,6 +231,14 @@ export default function VendorsCategoriesPage() {
         invoiceCategoriesCurrentPage * parseInt(invoiceCategoriesItemsPerPage)
       );
 
+  // Teams Pagination
+  const paginatedTeams = teamsItemsPerPage === "all" 
+    ? filteredTeams 
+    : filteredTeams.slice(
+        (teamsCurrentPage - 1) * parseInt(teamsItemsPerPage),
+        teamsCurrentPage * parseInt(teamsItemsPerPage)
+      );
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -225,7 +251,7 @@ export default function VendorsCategoriesPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4">
           <Card className="border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -325,6 +351,20 @@ export default function VendorsCategoriesPage() {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="border-slate-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-600">Ομάδες</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">{teams.length}</p>
+                </div>
+                <div className="p-2 rounded-full bg-amber-500">
+                  <Users className="w-4 h-4 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Search */}
@@ -339,6 +379,7 @@ export default function VendorsCategoriesPage() {
                 activeTab === "vendorServices" ? "Search vendor services..." :
                 activeTab === "companies" ? "Αναζήτηση εταιρειών..." :
                 activeTab === "invoiceCategories" ? "Αναζήτηση κατηγοριών τιμολόγησης..." :
+                activeTab === "teams" ? "Αναζήτηση ομάδων..." :
                 "Search locations..."
               }
               value={searchTerm}
@@ -359,6 +400,7 @@ export default function VendorsCategoriesPage() {
               <TabsTrigger value="locations">Locations</TabsTrigger>
               <TabsTrigger value="companies">Εταιρείες</TabsTrigger>
               <TabsTrigger value="invoiceCategories">Κατηγορίες Τιμολόγησης</TabsTrigger>
+              <TabsTrigger value="teams">Ομάδες</TabsTrigger>
             </TabsList>
             
             <div className="flex gap-2">
@@ -433,6 +475,15 @@ export default function VendorsCategoriesPage() {
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Νέα Κατηγορία Τιμολόγησης
+                </Button>
+              )}
+              {activeTab === "teams" && (
+                <Button 
+                  onClick={() => setShowTeamDialog(true)}
+                  className="bg-amber-600 hover:bg-amber-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Νέα Ομάδα
                 </Button>
               )}
             </div>
@@ -580,6 +631,26 @@ export default function VendorsCategoriesPage() {
               />
             </div>
           </TabsContent>
+
+          <TabsContent value="teams" className="mt-0">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+              <TeamsTable
+                teams={paginatedTeams}
+                isLoading={isLoading}
+                onTeamSaved={loadData}
+              />
+              <PaginationControls
+                currentPage={teamsCurrentPage}
+                totalItems={filteredTeams.length}
+                itemsPerPage={teamsItemsPerPage}
+                onPageChange={setTeamsCurrentPage}
+                onItemsPerPageChange={(value) => {
+                  setTeamsItemsPerPage(value);
+                  setTeamsCurrentPage(1);
+                }}
+              />
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -630,6 +701,12 @@ export default function VendorsCategoriesPage() {
         open={showInvoiceCategoryDialog}
         onClose={() => setShowInvoiceCategoryDialog(false)}
         onInvoiceCategorySaved={loadData}
+      />
+
+      <CreateEditTeamDialog
+        open={showTeamDialog}
+        onClose={() => setShowTeamDialog(false)}
+        onTeamSaved={loadData}
       />
     </div>
   );
