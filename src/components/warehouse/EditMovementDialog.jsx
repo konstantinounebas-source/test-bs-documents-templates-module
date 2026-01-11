@@ -474,7 +474,9 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="conversion_rate">Ποσότητα ανά μονάδα ({product?.unit_of_measure || 'μονάδες'}) *</Label>
+                      <Label htmlFor="conversion_rate">
+                        {formData.input_unit_subtype || product?.unit_of_measure} ανά {product?.unit_of_measure} *
+                      </Label>
                       <Input
                         id="conversion_rate"
                         type="number"
@@ -487,14 +489,14 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                             setValidationErrors({ ...validationErrors, conversion_rate: undefined });
                           }
                         }}
-                        placeholder="π.χ. 100"
+                        placeholder="Συντελεστής"
                         className={validationErrors.conversion_rate ? 'border-red-500 focus-visible:ring-red-500' : ''}
                       />
                       {validationErrors.conversion_rate && (
                         <p className="text-xs text-red-600 mt-1">{validationErrors.conversion_rate}</p>
                       )}
                       <p className="text-xs text-slate-500 mt-1">
-                        (π.χ. αν 1 κουτί = 100 {product?.unit_of_measure || 'τεμ'}, εισάγετε 100)
+                        (π.χ. αν 1 {formData.input_unit_subtype || product?.unit_of_measure} = 0.001 {product?.unit_of_measure})
                       </p>
                     </div>
                     {costPerBaseUnit && unitCost > 0 && (
