@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Plus } from "lucide-react";
 import VendorSearchCombobox from "@/components/warehouse/VendorSearchCombobox";
 import CreateEditVendorDialog from "@/components/warehouse/CreateEditVendorDialog";
+import PreviousPurchasesSelector from "@/components/warehouse/PreviousPurchasesSelector";
 import { base44 } from "@/api/base44Client";
 
 export default function EditMovementDialog({ open, onClose, movement, onSave, vendors = [], productVendors = [], products = [], categories = [], companies = [] }) {
