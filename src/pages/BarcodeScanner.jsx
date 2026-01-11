@@ -61,6 +61,8 @@ export default function BarcodeScannerPage() {
   const [totalItemCost, setTotalItemCost] = useState("");
   const [discount, setDiscount] = useState("0");
   const [bundleQuantity, setBundleQuantity] = useState("");
+  const [inputUnitSubtype, setInputUnitSubtype] = useState("");
+  const [conversionRate, setConversionRate] = useState("1");
   const [notes, setNotes] = useState("");
   const [recentScans, setRecentScans] = useState([]);
   const [scanResult, setScanResult] = useState(null);
@@ -635,6 +637,11 @@ export default function BarcodeScannerPage() {
 
     setIsProcessing(true);
     try {
+      const parsedConversionRate = parseFloat(conversionRate) || 1;
+      const parsedUnitCost = parseFloat(unitCost) || 0;
+      const baseQuantity = quantityNum * parsedConversionRate;
+      const baseUnitCost = parsedUnitCost > 0 && parsedConversionRate > 0 ? parsedUnitCost / parsedConversionRate : undefined;
+
       // For IN movements, create or update ProductVendor relationship
       if (movementType === "IN" && selectedVendor && unitCost !== "") {
         const cost = parseFloat(unitCost);
@@ -651,12 +658,14 @@ export default function BarcodeScannerPage() {
             unit_cost: cost,
             is_preferred: false,
             is_active: true,
+            conversion_rate: parsedConversionRate,
             bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
           });
         } else {
           await base44.entities.ProductVendor.update(existingPVs[0].id, {
             unit_cost: cost,
             is_active: true,
+            conversion_rate: parsedConversionRate,
             bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
           });
         }
@@ -677,6 +686,9 @@ export default function BarcodeScannerPage() {
         product_id: matchedProduct.id,
         movement_type: movementType,
         quantity: quantityNum,
+        input_unit_of_measure: inputUnitSubtype || matchedProduct.unit_of_measure,
+        conversion_rate: parsedConversionRate,
+        base_quantity: baseQuantity,
         from_location: movementType === "TRANSFER" || movementType === "OUT" ? fromLocation : null,
         to_location: movementType === "TRANSFER" || movementType === "IN" || movementType === "ADJUSTMENT" ? toLocation : null,
         performed_by: currentUser.email,
@@ -689,19 +701,18 @@ export default function BarcodeScannerPage() {
       // Add charged_to_person for OUT movements
       if (movementType === "OUT") {
         movementData.charged_to_person = chargedToPerson;
-        // Use product's current unit_cost for OUT movements
         movementData.unit_cost = matchedProduct.unit_cost || 0;
+        movementData.base_unit_cost = baseUnitCost;
       }
 
       // Add vendor reference for IN movements
       if (movementType === "IN" && selectedVendor) {
         movementData.reference_type = "Vendor";
         movementData.reference_id = selectedVendor;
-        // Add unit_cost for IN movements if provided
         if (unitCost !== "" && !isNaN(parseFloat(unitCost))) {
           movementData.unit_cost = parseFloat(unitCost);
+          movementData.base_unit_cost = baseUnitCost;
         }
-        // Add vendor product code and invoice category
         if (vendorProductCode) {
           movementData.vendor_product_code = vendorProductCode;
         }
@@ -727,7 +738,7 @@ export default function BarcodeScannerPage() {
       // Create stock movement record
       await base44.entities.StockMovement.create(movementData);
 
-      // Update stock items
+      // Update stock items using base_quantity
       if (movementType === "IN" || movementType === "ADJUSTMENT") {
         const existingStock = stockItems.find(
           s => s.product_id === matchedProduct.id && s.warehouse_location === toLocation
@@ -735,13 +746,13 @@ export default function BarcodeScannerPage() {
 
         if (existingStock) {
           await base44.entities.StockItem.update(existingStock.id, {
-            quantity_on_hand: (existingStock.quantity_on_hand || 0) + quantityNum
+            quantity_on_hand: (existingStock.quantity_on_hand || 0) + baseQuantity
           });
         } else {
           await base44.entities.StockItem.create({
             product_id: matchedProduct.id,
             warehouse_location: toLocation,
-            quantity_on_hand: quantityNum,
+            quantity_on_hand: baseQuantity,
             quantity_reserved: 0
           });
         }
@@ -752,7 +763,7 @@ export default function BarcodeScannerPage() {
 
         if (existingStock) {
           await base44.entities.StockItem.update(existingStock.id, {
-            quantity_on_hand: Math.max(0, (existingStock.quantity_on_hand || 0) - quantityNum)
+            quantity_on_hand: Math.max(0, (existingStock.quantity_on_hand || 0) - baseQuantity)
           });
         }
       } else if (movementType === "TRANSFER") {
@@ -761,7 +772,7 @@ export default function BarcodeScannerPage() {
         );
         if (fromStock) {
           await base44.entities.StockItem.update(fromStock.id, {
-            quantity_on_hand: Math.max(0, (fromStock.quantity_on_hand || 0) - quantityNum)
+            quantity_on_hand: Math.max(0, (fromStock.quantity_on_hand || 0) - baseQuantity)
           });
         }
 
@@ -770,13 +781,13 @@ export default function BarcodeScannerPage() {
         );
         if (toStock) {
           await base44.entities.StockItem.update(toStock.id, {
-            quantity_on_hand: (toStock.quantity_on_hand || 0) + quantityNum
+            quantity_on_hand: (toStock.quantity_on_hand || 0) + baseQuantity
           });
         } else {
           await base44.entities.StockItem.create({
             product_id: matchedProduct.id,
             warehouse_location: toLocation,
-            quantity_on_hand: quantityNum,
+            quantity_on_hand: baseQuantity,
             quantity_reserved: 0
           });
         }
@@ -852,6 +863,8 @@ export default function BarcodeScannerPage() {
       setTotalItemCost("");
       setDiscount("0");
       setBundleQuantity("");
+      setInputUnitSubtype("");
+      setConversionRate("1");
       setNotes("");
       setPOItemInfo(null);
       setUploadedPhotos([]);
@@ -924,15 +937,24 @@ export default function BarcodeScannerPage() {
         }
 
         // Create stock movement
+        const product = products.find(p => p.id === item.product_id);
+        const itemConversionRate = parseFloat(item.conversion_rate) || 1;
+        const itemBaseQuantity = item.quantity_to_receive * itemConversionRate;
+        const itemBaseUnitCost = item.unit_cost && itemConversionRate > 0 ? item.unit_cost / itemConversionRate : undefined;
+
         await base44.entities.StockMovement.create({
           product_id: item.product_id,
           movement_type: "IN",
           quantity: item.quantity_to_receive,
+          input_unit_of_measure: item.input_unit_subtype || product?.unit_of_measure,
+          conversion_rate: itemConversionRate,
+          base_quantity: itemBaseQuantity,
           to_location: toLocation,
           reference_type: "PurchaseOrder",
           reference_id: po.id,
           performed_by: currentUser.email,
           unit_cost: item.unit_cost || null,
+          base_unit_cost: itemBaseUnitCost,
           bundle_quantity: item.bundle_quantity || null,
           vendor_product_code: item.vendor_product_code || null,
           invoice_category_id: item.invoice_category_id || null,
@@ -940,26 +962,30 @@ export default function BarcodeScannerPage() {
           photos: uploadedPhotos.length > 0 ? uploadedPhotos : null
         });
 
-        // Update stock
+        // Update stock using base_quantity
+        const itemConversionRate = parseFloat(item.conversion_rate) || 1;
+        const itemBaseQuantity = item.quantity_to_receive * itemConversionRate;
+        
         const existingStock = stockItems.find(
           s => s.product_id === item.product_id && s.warehouse_location === toLocation
         );
 
         if (existingStock) {
           await base44.entities.StockItem.update(existingStock.id, {
-            quantity_on_hand: (existingStock.quantity_on_hand || 0) + item.quantity_to_receive
+            quantity_on_hand: (existingStock.quantity_on_hand || 0) + itemBaseQuantity
           });
         } else {
           await base44.entities.StockItem.create({
             product_id: item.product_id,
             warehouse_location: toLocation,
-            quantity_on_hand: item.quantity_to_receive,
+            quantity_on_hand: itemBaseQuantity,
             quantity_reserved: 0
           });
         }
 
         // Update ProductVendor if unit cost exists
         if (item.unit_cost) {
+          const itemConversionRate = parseFloat(item.conversion_rate) || 1;
           const existingPVs = await base44.entities.ProductVendor.filter({
             product_id: item.product_id,
             vendor_id: po.vendor_id
@@ -972,6 +998,7 @@ export default function BarcodeScannerPage() {
               unit_cost: item.unit_cost,
               is_preferred: false,
               is_active: true,
+              conversion_rate: itemConversionRate,
               bundle_quantity: item.bundle_quantity
             });
           }
@@ -1059,6 +1086,8 @@ export default function BarcodeScannerPage() {
     setTotalItemCost("");
     setDiscount("0");
     setBundleQuantity("");
+    setInputUnitSubtype("");
+    setConversionRate("1");
     setPOItemInfo(null);
   };
 
@@ -1086,11 +1115,13 @@ export default function BarcodeScannerPage() {
     setBulkInvoiceItems(prev => [...prev, {
       product_id: '',
       quantity: 1,
-      cost_input_method: 'unit', // 'unit' or 'total'
+      cost_input_method: 'unit',
       unit_cost: '',
       total_item_cost: '',
       discount: 0,
       bundle_quantity: '',
+      input_unit_subtype: '',
+      conversion_rate: '1',
       vendor_product_code: '',
       invoice_category_id: '',
       company_id: '',
@@ -1116,6 +1147,8 @@ export default function BarcodeScannerPage() {
         if (pv) {
           updatedItem.unit_cost = String(pv.unit_cost || '');
           updatedItem.bundle_quantity = String(pv.bundle_quantity || '');
+          updatedItem.conversion_rate = String(pv.conversion_rate || pv.bundle_quantity || '1');
+          updatedItem.input_unit_subtype = pv.input_unit_of_measure || '';
         }
       }
       
@@ -1172,6 +1205,9 @@ export default function BarcodeScannerPage() {
       for (const item of bulkInvoiceItems) {
         const quantityNum = parseInt(item.quantity);
         const cost = parseFloat(item.unit_cost) || 0;
+        const parsedConversionRate = parseFloat(item.conversion_rate) || 1;
+        const baseQuantity = quantityNum * parsedConversionRate;
+        const baseUnitCost = cost > 0 && parsedConversionRate > 0 ? cost / parsedConversionRate : undefined;
 
         // Create or update ProductVendor if unit cost is provided
         if (cost > 0) {
@@ -1187,12 +1223,14 @@ export default function BarcodeScannerPage() {
               unit_cost: cost,
               is_preferred: false,
               is_active: true,
+              conversion_rate: parsedConversionRate,
               bundle_quantity: item.bundle_quantity ? parseFloat(item.bundle_quantity) : null
             });
           } else {
             await base44.entities.ProductVendor.update(existingPVs[0].id, {
               unit_cost: cost,
               is_active: true,
+              conversion_rate: parsedConversionRate,
               bundle_quantity: item.bundle_quantity ? parseFloat(item.bundle_quantity) : null
             });
           }
@@ -1209,36 +1247,41 @@ export default function BarcodeScannerPage() {
         }
 
         // Create stock movement
+        const product = products.find(p => p.id === item.product_id);
         await base44.entities.StockMovement.create({
           product_id: item.product_id,
           movement_type: "IN",
           quantity: quantityNum,
+          input_unit_of_measure: item.input_unit_subtype || product?.unit_of_measure,
+          conversion_rate: parsedConversionRate,
+          base_quantity: baseQuantity,
           to_location: item.warehouse_location,
           reference_type: "Invoice",
           reference_id: bulkInvoiceNumber,
           performed_by: currentUser.email,
           waybill_number: bulkInvoiceWaybill || null,
           unit_cost: cost > 0 ? cost : null,
+          base_unit_cost: baseUnitCost,
           bundle_quantity: item.bundle_quantity ? parseFloat(item.bundle_quantity) : null,
           vendor_product_code: item.vendor_product_code || null,
           invoice_category_id: item.invoice_category_id || null,
           notes: `Bulk invoice entry: ${bulkInvoiceNumber}`
         });
 
-        // Update stock
+        // Update stock using base_quantity
         const existingStock = stockItems.find(
           s => s.product_id === item.product_id && s.warehouse_location === item.warehouse_location
         );
 
         if (existingStock) {
           await base44.entities.StockItem.update(existingStock.id, {
-            quantity_on_hand: (existingStock.quantity_on_hand || 0) + quantityNum
+            quantity_on_hand: (existingStock.quantity_on_hand || 0) + baseQuantity
           });
         } else {
           await base44.entities.StockItem.create({
             product_id: item.product_id,
             warehouse_location: item.warehouse_location,
-            quantity_on_hand: quantityNum,
+            quantity_on_hand: baseQuantity,
             quantity_reserved: 0
           });
         }
@@ -1538,6 +1581,8 @@ export default function BarcodeScannerPage() {
                             setSelectedVendor(data.vendor_id || '');
                             setUnitCost(data.unit_cost ? String(data.unit_cost) : '');
                             setBundleQuantity(data.bundle_quantity ? String(data.bundle_quantity) : '');
+                            setConversionRate(data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : '1'));
+                            setInputUnitSubtype(data.input_unit_of_measure || '');
                             setVendorProductCode(data.vendor_product_code || '');
                             setSelectedInvoiceCategory(data.invoice_category_id || '');
                             setSelectedCompany(data.company_id || '');
@@ -1628,6 +1673,84 @@ export default function BarcodeScannerPage() {
                             />
                           </div>
 
+                          <div>
+                            <Label>Μονάδα Εισαγωγής (Βάση: {matchedProduct?.unit_of_measure})</Label>
+                            <Select
+                              value={inputUnitSubtype || matchedProduct.unit_of_measure}
+                              onValueChange={(val) => {
+                                setInputUnitSubtype(val);
+                                if (matchedProduct.unit_of_measure === 'kg') {
+                                  if (val === 'g') setConversionRate('0.001');
+                                  else if (val === 'kg') setConversionRate('1');
+                                  else if (val === 'ton') setConversionRate('1000');
+                                } else if (matchedProduct.unit_of_measure === 'liter') {
+                                  if (val === 'ml') setConversionRate('0.001');
+                                  else if (val === 'liter') setConversionRate('1');
+                                } else if (matchedProduct.unit_of_measure === 'meter') {
+                                  if (val === 'cm') setConversionRate('0.01');
+                                  else if (val === 'mm') setConversionRate('0.001');
+                                  else if (val === 'meter') setConversionRate('1');
+                                } else if (matchedProduct.unit_of_measure === 'piece') {
+                                  if (val === 'piece') setConversionRate('1');
+                                }
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {matchedProduct?.unit_of_measure === 'kg' && (
+                                  <>
+                                    <SelectItem value="g">Γραμμάρια (g)</SelectItem>
+                                    <SelectItem value="kg">Κιλά (kg)</SelectItem>
+                                    <SelectItem value="ton">Τόνοι (ton)</SelectItem>
+                                  </>
+                                )}
+                                {matchedProduct?.unit_of_measure === 'liter' && (
+                                  <>
+                                    <SelectItem value="ml">Χιλιοστόλιτρα (ml)</SelectItem>
+                                    <SelectItem value="liter">Λίτρα (L)</SelectItem>
+                                  </>
+                                )}
+                                {matchedProduct?.unit_of_measure === 'meter' && (
+                                  <>
+                                    <SelectItem value="mm">Χιλιοστόμετρα (mm)</SelectItem>
+                                    <SelectItem value="cm">Εκατοστόμετρα (cm)</SelectItem>
+                                    <SelectItem value="meter">Μέτρα (m)</SelectItem>
+                                  </>
+                                )}
+                                {matchedProduct?.unit_of_measure === 'piece' && (
+                                  <>
+                                    <SelectItem value="piece">Τεμάχια</SelectItem>
+                                    <SelectItem value="box">Κουτιά</SelectItem>
+                                    <SelectItem value="pallet">Παλέτες</SelectItem>
+                                  </>
+                                )}
+                                {!['kg', 'liter', 'meter', 'piece'].includes(matchedProduct?.unit_of_measure) && (
+                                  <SelectItem value={matchedProduct?.unit_of_measure}>{matchedProduct?.unit_of_measure}</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label>
+                              {inputUnitSubtype || matchedProduct?.unit_of_measure} ανά {matchedProduct?.unit_of_measure}
+                            </Label>
+                            <Input
+                              type="number"
+                              min="0.0001"
+                              step="0.0001"
+                              value={conversionRate}
+                              onChange={(e) => setConversionRate(e.target.value)}
+                              placeholder="Συντελεστής"
+                            />
+                            <p className="text-xs text-slate-500 mt-1">
+                              Ποσότητα βασικής μονάδας: {(parseFloat(quantity) * parseFloat(conversionRate) || 0).toFixed(4)} {matchedProduct?.unit_of_measure}
+                            </p>
+                          </div>
                           <div>
                             <Label>Pcs/Qty</Label>
                             <Input
@@ -2554,6 +2677,8 @@ export default function BarcodeScannerPage() {
                                   ...updatedItems[index],
                                   unit_cost: data.unit_cost ? String(data.unit_cost) : '',
                                   bundle_quantity: data.bundle_quantity ? String(data.bundle_quantity) : '',
+                                  conversion_rate: data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : '1'),
+                                  input_unit_subtype: data.input_unit_of_measure || '',
                                   vendor_product_code: data.vendor_product_code || '',
                                   invoice_category_id: data.invoice_category_id || '',
                                   company_id: data.company_id || ''
@@ -2620,6 +2745,93 @@ export default function BarcodeScannerPage() {
                               onChange={(e) => handleBulkInvoiceItemChange(index, 'quantity', e.target.value)}
                               placeholder="1"
                             />
+                          </div>
+
+                          <div>
+                            <Label className="text-xs">Μονάδα Εισαγωγής</Label>
+                            <Select
+                              value={item.input_unit_subtype || ''}
+                              onValueChange={(val) => {
+                                const product = products.find(p => p.id === item.product_id);
+                                let newConversionRate = '1';
+                                if (product?.unit_of_measure === 'kg') {
+                                  if (val === 'g') newConversionRate = '0.001';
+                                  else if (val === 'kg') newConversionRate = '1';
+                                  else if (val === 'ton') newConversionRate = '1000';
+                                } else if (product?.unit_of_measure === 'liter') {
+                                  if (val === 'ml') newConversionRate = '0.001';
+                                  else if (val === 'liter') newConversionRate = '1';
+                                } else if (product?.unit_of_measure === 'meter') {
+                                  if (val === 'cm') newConversionRate = '0.01';
+                                  else if (val === 'mm') newConversionRate = '0.001';
+                                  else if (val === 'meter') newConversionRate = '1';
+                                } else if (product?.unit_of_measure === 'piece') {
+                                  if (val === 'piece') newConversionRate = '1';
+                                }
+                                handleBulkInvoiceItemChange(index, 'input_unit_subtype', val);
+                                handleBulkInvoiceItemChange(index, 'conversion_rate', newConversionRate);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Επιλέξτε" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(() => {
+                                  const product = products.find(p => p.id === item.product_id);
+                                  if (product?.unit_of_measure === 'kg') {
+                                    return (
+                                      <>
+                                        <SelectItem value="g">g</SelectItem>
+                                        <SelectItem value="kg">kg</SelectItem>
+                                        <SelectItem value="ton">ton</SelectItem>
+                                      </>
+                                    );
+                                  } else if (product?.unit_of_measure === 'liter') {
+                                    return (
+                                      <>
+                                        <SelectItem value="ml">ml</SelectItem>
+                                        <SelectItem value="liter">L</SelectItem>
+                                      </>
+                                    );
+                                  } else if (product?.unit_of_measure === 'meter') {
+                                    return (
+                                      <>
+                                        <SelectItem value="mm">mm</SelectItem>
+                                        <SelectItem value="cm">cm</SelectItem>
+                                        <SelectItem value="meter">m</SelectItem>
+                                      </>
+                                    );
+                                  } else if (product?.unit_of_measure === 'piece') {
+                                    return (
+                                      <>
+                                        <SelectItem value="piece">Τεμάχια</SelectItem>
+                                        <SelectItem value="box">Κουτιά</SelectItem>
+                                        <SelectItem value="pallet">Παλέτες</SelectItem>
+                                      </>
+                                    );
+                                  } else {
+                                    return <SelectItem value={product?.unit_of_measure || 'piece'}>{product?.unit_of_measure || 'piece'}</SelectItem>;
+                                  }
+                                })()}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">Συντελεστής Μετατροπής</Label>
+                            <Input
+                              type="number"
+                              min="0.0001"
+                              step="0.0001"
+                              value={item.conversion_rate || '1'}
+                              onChange={(e) => handleBulkInvoiceItemChange(index, 'conversion_rate', e.target.value)}
+                              placeholder="Αυτόματα"
+                            />
+                            <p className="text-xs text-slate-500 mt-1">
+                              Βασική ποσότητα: {(parseFloat(item.quantity) * parseFloat(item.conversion_rate || 1)).toFixed(4)}
+                            </p>
                           </div>
 
                           <div>
