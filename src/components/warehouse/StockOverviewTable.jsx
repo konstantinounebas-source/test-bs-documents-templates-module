@@ -6,12 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Edit, AlertTriangle, MapPin, ChevronDown, ChevronRight, Star, DollarSign, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import UpdateStockDialog from "./UpdateStockDialog";
 import ViewProductDialog from "./ViewProductDialog";
 
-export default function StockOverviewTable({ products, categories, vendors, isLoading, onDataUpdated, onEditMovement }) {
+export default function StockOverviewTable({ products, categories, vendors, isLoading, onDataUpdated, onStockMovement }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [showViewDialog, setShowViewDialog] = useState(false);
 
@@ -26,8 +24,7 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
   };
 
   const handleUpdateStock = (product) => {
-    setSelectedProduct(product);
-    setShowUpdateDialog(true);
+    onStockMovement(product);
   };
   
   const handleViewProduct = (product) => {
@@ -341,16 +338,6 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
         </Table>
       </div>
 
-      <UpdateStockDialog
-        open={showUpdateDialog}
-        onClose={() => {
-          setShowUpdateDialog(false);
-          setSelectedProduct(null);
-        }}
-        product={selectedProduct}
-        onStockUpdated={onDataUpdated}
-      />
-
       <ViewProductDialog
         open={showViewDialog}
         onClose={() => {
@@ -361,7 +348,6 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
         categories={categories}
         vendors={vendors}
         stockItems={selectedProduct?.items || []}
-        onEditMovement={onEditMovement}
         onUpdate={onDataUpdated}
       />
       </>
