@@ -42,6 +42,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   useEffect(() => {
     if (open) {
       loadInvoiceCategories();
+      loadPurchaseOrders();
     }
   }, [open]);
 
