@@ -657,9 +657,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                           </p>
                         </div>
                       )}
-                      </>
-                      )}
-                      </div>
 
                       {/* Additional Details */}
                       <div className="space-y-3 border-t pt-4">
@@ -668,26 +665,26 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                       <div>
                       <Label htmlFor="waybill">Αριθμός Waybill</Label>
                       <Input
-                      id="waybill"
-                      value={formData.waybill_number}
-                      onChange={(e) => setFormData({ ...formData, waybill_number: e.target.value })}
-                      placeholder="π.χ. WB-2025-001"
+                        id="waybill"
+                        value={formData.waybill_number}
+                        onChange={(e) => setFormData({ ...formData, waybill_number: e.target.value })}
+                        placeholder="π.χ. WB-2025-001"
                       />
                       </div>
 
                       <div>
                       <Label htmlFor="notes">Σημειώσεις</Label>
                       <Textarea
-                      id="notes"
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      placeholder="Προσθέστε σημειώσεις..."
-                      rows={4}
+                        id="notes"
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        placeholder="Προσθέστε σημειώσεις..."
+                        rows={4}
                       />
                       </div>
                       </div>
-                </>
-            )}
+                      </>
+                      )}
 
             {/* Common fields for all movement types */}
             {!isInMovement && (
