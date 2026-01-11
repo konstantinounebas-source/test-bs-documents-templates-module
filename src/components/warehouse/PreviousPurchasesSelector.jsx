@@ -125,7 +125,8 @@ export default function PreviousPurchasesSelector({
                 </div>
               </div>
             </SelectItem>
-          ))}
+            );
+          })}
         </SelectContent>
       </Select>
       {previousPurchases.length > 0 && (
