@@ -113,7 +113,9 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         cost_input_method: 'unit',
         total_item_cost: '',
         discount: '0',
-        quantity: movement.quantity ? String(movement.quantity) : ''
+        quantity: movement.quantity ? String(movement.quantity) : '',
+        warehouse_location: movement.warehouse_location || '',
+        po_number: movement.po_number || ''
       });
     }
   }, [movement, productVendors, products]);
