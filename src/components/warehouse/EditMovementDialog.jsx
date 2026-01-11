@@ -33,6 +33,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   const [localVendors, setLocalVendors] = useState(vendors);
   const [invoiceCategories, setInvoiceCategories] = useState([]);
   const [validationErrors, setValidationErrors] = useState({});
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
 
   useEffect(() => {
     setLocalVendors(vendors);
