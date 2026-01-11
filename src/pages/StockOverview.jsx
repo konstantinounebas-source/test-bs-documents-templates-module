@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 
 import StockOverviewTable from "../components/warehouse/StockOverviewTable";
 import PaginationControls from "../components/warehouse/PaginationControls";
-import EditMovementDialog from "../components/warehouse/EditMovementDialog";
+import SimpleStockMovementDialog from "../components/warehouse/SimpleStockMovementDialog";
 
 export default function StockOverviewPage() {
   const [products, setProducts] = useState([]);
@@ -34,9 +34,9 @@ export default function StockOverviewPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState("10"); // Default items per page
   
-  // Edit movement dialog
-  const [editingMovement, setEditingMovement] = useState(null);
-  const [showEditMovementDialog, setShowEditMovementDialog] = useState(false);
+  // Stock movement dialog
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showStockMovementDialog, setShowStockMovementDialog] = useState(false);
 
   useEffect(() => {
     loadAllData();
@@ -139,58 +139,9 @@ export default function StockOverviewPage() {
     setCurrentPage(1); // Reset to first page when items per page changes
   };
   
-  const handleEditMovement = (movement) => {
-    setEditingMovement(movement);
-    setShowEditMovementDialog(true);
-  };
-  
-  const recalculateProductAverages = async (productId) => {
-    // Get all IN movements for this product
-    const inMovements = await base44.entities.StockMovement.filter({
-      product_id: productId,
-      movement_type: 'IN'
-    });
-    
-    // Calculate totals from actual movements
-    let totalCost = 0;
-    let totalQty = 0;
-    let lastUnitCost = 0;
-    let lastDate = null;
-    
-    inMovements.forEach(movement => {
-      if (movement.unit_cost && movement.unit_cost > 0 && movement.quantity > 0) {
-        totalCost += movement.quantity * movement.unit_cost;
-        totalQty += movement.quantity;
-        
-        const movementDate = new Date(movement.created_date);
-        if (!lastDate || movementDate > lastDate) {
-          lastDate = movementDate;
-          lastUnitCost = movement.unit_cost;
-        }
-      }
-    });
-    
-    const averageUnitCost = totalQty > 0 ? totalCost / totalQty : 0;
-    
-    // Update product with correct values
-    await base44.entities.Product.update(productId, {
-      total_cost_paid: totalCost,
-      total_quantity_purchased: totalQty,
-      unit_cost: averageUnitCost,
-      last_unit_cost: lastUnitCost
-    });
-  };
-
-  const handleSaveMovement = async (movementId, updateData) => {
-    await base44.entities.StockMovement.update(movementId, updateData);
-    
-    // Get the movement to find its product_id
-    const movements = await base44.entities.StockMovement.filter({ id: movementId });
-    if (movements.length > 0) {
-      await recalculateProductAverages(movements[0].product_id);
-    }
-    
-    await loadAllData();
+  const handleStockMovement = (product) => {
+    setSelectedProduct(product);
+    setShowStockMovementDialog(true);
   };
 
   // Calculate stats based on filtered products
@@ -346,12 +297,12 @@ export default function StockOverviewPage() {
         {/* Stock Table */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200">
           <StockOverviewTable
-            products={paginatedProducts} // Changed to paginatedProducts
+            products={paginatedProducts}
             categories={categories}
             vendors={vendors}
             isLoading={isLoading}
             onDataUpdated={loadAllData}
-            onEditMovement={handleEditMovement}
+            onStockMovement={handleStockMovement}
           />
 
           <PaginationControls
@@ -364,19 +315,14 @@ export default function StockOverviewPage() {
         </div>
       </div>
       
-      <EditMovementDialog
-        open={showEditMovementDialog}
+      <SimpleStockMovementDialog
+        open={showStockMovementDialog}
         onClose={() => {
-          setShowEditMovementDialog(false);
-          setEditingMovement(null);
+          setShowStockMovementDialog(false);
+          setSelectedProduct(null);
         }}
-        movement={editingMovement}
-        onSave={handleSaveMovement}
-        vendors={vendors}
-        productVendors={productVendors}
-        products={products}
-        categories={categories}
-        companies={companies}
+        product={selectedProduct}
+        onStockUpdated={loadAllData}
       />
     </div>
   );
