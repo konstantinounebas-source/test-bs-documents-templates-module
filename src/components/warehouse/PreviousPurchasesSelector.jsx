@@ -27,12 +27,10 @@ export default function PreviousPurchasesSelector({
     setIsLoading(true);
     try {
       // Φόρτωση των τελευταίων 20 IN movements για το προϊόν
-      const movements = await base44.entities.StockMovement.filter({
-        product_id: productId,
-        movement_type: "IN",
-        _sort: "-created_date",
-        _limit: 20
-      });
+      const allMovements = await base44.entities.StockMovement.list("-created_date");
+      const movements = allMovements
+        .filter(m => m.product_id === productId && m.movement_type === "IN")
+        .slice(0, 20);
 
       // Φιλτράρισμα για μοναδικούς συνδυασμούς (vendor + unit_cost + vendor_product_code)
       const uniquePurchases = [];
