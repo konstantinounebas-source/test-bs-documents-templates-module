@@ -2652,7 +2652,7 @@ export default function BarcodeScannerPage() {
 
                       <div className="pt-2 border-t">
                         <p className="text-xs font-semibold text-slate-700 mb-2">Ποσότητα & Κόστος</p>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-3 gap-3">
                           <div>
                             <Label className="text-xs">Ποσότητα *</Label>
                             <Input
@@ -2663,6 +2663,61 @@ export default function BarcodeScannerPage() {
                               onChange={(e) => handleBulkInvoiceItemChange(index, 'quantity', e.target.value)}
                               placeholder="1"
                             />
+                          </div>
+
+                          <div>
+                            <Label className="text-xs">Μονάδα Εισαγ.</Label>
+                            <Select
+                              value={item.input_unit_subtype || ''}
+                              onValueChange={(val) => handleBulkInvoiceItemChange(index, 'input_unit_subtype', val)}
+                            >
+                              <SelectTrigger className="text-xs">
+                                <SelectValue placeholder="-" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {(() => {
+                                  const product = products.find(p => p.id === item.product_id);
+                                  if (product?.unit_of_measure === 'kg') {
+                                    return (
+                                      <>
+                                        <SelectItem value={null}>-</SelectItem>
+                                        <SelectItem value="g">g</SelectItem>
+                                        <SelectItem value="kg">kg</SelectItem>
+                                        <SelectItem value="ton">ton</SelectItem>
+                                      </>
+                                    );
+                                  } else if (product?.unit_of_measure === 'liter') {
+                                    return (
+                                      <>
+                                        <SelectItem value={null}>-</SelectItem>
+                                        <SelectItem value="ml">ml</SelectItem>
+                                        <SelectItem value="liter">L</SelectItem>
+                                      </>
+                                    );
+                                  } else if (product?.unit_of_measure === 'meter') {
+                                    return (
+                                      <>
+                                        <SelectItem value={null}>-</SelectItem>
+                                        <SelectItem value="mm">mm</SelectItem>
+                                        <SelectItem value="cm">cm</SelectItem>
+                                        <SelectItem value="meter">m</SelectItem>
+                                      </>
+                                    );
+                                  } else if (product?.unit_of_measure === 'piece') {
+                                    return (
+                                      <>
+                                        <SelectItem value={null}>-</SelectItem>
+                                        <SelectItem value="piece">pcs</SelectItem>
+                                        <SelectItem value="box">box</SelectItem>
+                                        <SelectItem value="pallet">pallet</SelectItem>
+                                      </>
+                                    );
+                                  } else {
+                                    return <SelectItem value={null}>{product?.unit_of_measure || '-'}</SelectItem>;
+                                  }
+                                })()}
+                              </SelectContent>
+                            </Select>
                           </div>
 
                           <div>
