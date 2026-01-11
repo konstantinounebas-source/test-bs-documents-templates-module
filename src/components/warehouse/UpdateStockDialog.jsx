@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertTriangle, Info } from "lucide-react";
+import { Loader2, AlertTriangle, Info, Search } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -359,324 +359,225 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Perform Stock Movement - {product.name}</DialogTitle>
+          <DialogTitle>Επεξεργασία Κίνησης</DialogTitle>
           <DialogDescription>
-            Record a stock movement (in, out, or transfer) for {product.name}.
+            {product?.name} - SKU: {product?.sku}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3 py-4">
-          <Alert className="bg-blue-50 border-blue-200">
-            <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
-              This dialog allows you to record physical movements of stock. Changes made here will update
-              the "Quantity On Hand" for this product in specific locations.
-            </AlertDescription>
-          </Alert>
-
+        <form onSubmit={handleSubmit} className="space-y-4 py-2">
           {validationError && (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>{validationError}</AlertDescription>
             </Alert>
           )}
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label>Movement Type</Label>
-              <RadioGroup value={movementType} onValueChange={setMovementType} className="flex space-x-4 mt-2">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="IN" id="r1" />
-                  <Label htmlFor="r1">IN</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="OUT" id="r2" />
-                  <Label htmlFor="r2">OUT</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="TRANSFER" id="r3" />
-                  <Label htmlFor="r3">TRANSFER</Label>
-                </div>
-              </RadioGroup>
-            </div>
 
-            <div>
-              <Label htmlFor="quantity">Quantity *</Label>
+          {/* Product Info Card */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="text-sm font-semibold text-blue-900 mb-2">ΠΡΟΗΓΟΥΜΕΝΑ ΠΡΟΪΟΝΤΑ</div>
+            <div className="text-xs space-y-1">
+              <div><strong>{product?.name}</strong></div>
+              <div className="text-slate-600">SKU: {product?.sku}</div>
+              <div className="text-slate-600">Κατηγορία: {categories?.find(c => c.id === product?.category_id)?.name || 'N/A'}</div>
+            </div>
+          </div>
+
+          {/* Movement Type */}
+          <div>
+            <Label className="text-xs font-bold mb-2 block">Ενλογη από Πολλές Αγορές</Label>
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
               <Input
-                id="quantity"
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                min="1"
-                step="any"
-                required
-                className={validationError && (!quantity || parseFloat(quantity) <= 0) ? 'border-red-500' : ''}
+                placeholder="Αναζητήστε παλιό προϊόν για αναπρογραμματισμό του πύλου"
+                className="pl-10 h-9 text-xs"
               />
             </div>
           </div>
 
-          {movementType === "IN" && (
-            <>
-              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                <PreviousPurchasesSelector
-                  productId={product?.id}
-                  vendors={vendors}
-                  companies={companies}
-                  invoiceCategories={invoiceCategories}
-                  onSelect={(data) => {
-                    if (data) {
-                      setSelectedVendor(data.vendor_id || '');
-                      setUnitCost(data.unit_cost ? String(data.unit_cost) : '');
-                      setBundleQuantity(data.bundle_quantity ? String(data.bundle_quantity) : '');
-                      setConversionRate(data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : '1'));
-                      setInputUnitSubtype(data.input_unit_of_measure || '');
-                      setVendorProductCode(data.vendor_product_code || '');
-                      setInvoiceCategory(data.invoice_category_id || '');
-                    }
-                  }}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <Label htmlFor="related_po">PO (Optional)</Label>
-                    <div className="flex items-center space-x-1">
-                      <Checkbox
-                        id="hide-completed-pos"
-                        checked={hideCompletedPOs}
-                        onCheckedChange={setHideCompletedPOs}
-                      />
-                      <label htmlFor="hide-completed-pos" className="text-xs font-medium cursor-pointer">Hide Completed</label>
-                    </div>
-                  </div>
-                  <Select value={relatedPO} onValueChange={(value) => {
-                    setRelatedPO(value === "no-po" ? "" : value);
-                    setRelatedPOItem("");
-                  }}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="Select PO" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="no-po">No PO</SelectItem>
-                      {purchaseOrders
-                        .filter(po => !hideCompletedPOs || po.status !== 'Received')
-                        .map((po) => (
-                        <SelectItem key={po.id} value={po.id}>
-                          {po.po_number} - {po.status}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="to_location">Warehouse Location *</Label>
-                  <Select value={toLocation} onValueChange={setToLocation}>
-                    <SelectTrigger className={`h-9 ${validationError && !toLocation ? 'border-red-500' : ''}`}>
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {locations.map((loc) => (
-                        <SelectItem key={loc.id} value={loc.name}>
-                          {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {relatedPO && (
-                <div>
-                  <Label htmlFor="related_po_item" className="text-xs">PO Item *</Label>
-                  <Select value={relatedPOItem} onValueChange={setRelatedPOItem}>
-                    <SelectTrigger className={`h-9 ${validationError && relatedPO && !relatedPOItem ? 'border-red-500' : ''}`}>
-                      <SelectValue placeholder="Select item" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getAvailablePOItems().map((item, idx) => (
-                        <SelectItem key={item.product_id + '-' + idx} value={item.product_id}>
-                          Ordered: {item.quantity_ordered}, Received: {item.quantity_received || 0}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </>
-          )}
-
-          {movementType === "OUT" && (
+          {/* Θέση Αποθήκης και Εταιρεία */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="from_location">Warehouse Location (Source) *</Label>
-              <Select value={fromLocation} onValueChange={setFromLocation}>
-                <SelectTrigger className={validationError && !fromLocation ? 'border-red-500' : ''}>
-                  <SelectValue placeholder="Select source location" />
+              <Label className="text-xs">Θέση Αποθήκης</Label>
+              <Select value={toLocation} onValueChange={setToLocation}>
+                <SelectTrigger className={`h-9 ${validationError && !toLocation ? 'border-red-500' : ''}`}>
+                  <SelectValue placeholder="-- Χωρίς Εταιρεία --" />
                 </SelectTrigger>
                 <SelectContent>
                   {locations.map((loc) => (
                     <SelectItem key={loc.id} value={loc.name}>
-                      {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
+                      {loc.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          )}
-
-          {movementType === "TRANSFER" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="from_location">From Location *</Label>
-                <Select value={fromLocation} onValueChange={setFromLocation}>
-                  <SelectTrigger className={validationError && !fromLocation ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select source location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locations.map((loc) => (
-                      <SelectItem key={loc.id} value={loc.name}>
-                        {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="to_location">To Location *</Label>
-                <Select value={toLocation} onValueChange={setToLocation}>
-                  <SelectTrigger className={validationError && !toLocation ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select destination location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locations.map((loc) => (
-                      <SelectItem key={loc.id} value={loc.name}>
-                        {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label className="text-xs">Εταιρεία *</Label>
+              <Select value={selectedVendor || 'none'} onValueChange={(val) => setSelectedVendor(val === 'none' ? '' : val)}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Aicontrol" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
+          </div>
 
+          {/* Σταγία Προμηθευτή και Κωδικός Προϊόντος */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Σταγία Προμηθευτή</Label>
+              <Select value={relatedPO} onValueChange={(value) => {
+                setRelatedPO(value === "no-po" ? "" : value);
+                setRelatedPOItem("");
+              }}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="★ Test 2 (VEND-128)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="no-po">No PO</SelectItem>
+                  {purchaseOrders
+                    .filter(po => !hideCompletedPOs || po.status !== 'Received')
+                    .map((po) => (
+                    <SelectItem key={po.id} value={po.id}>
+                      {po.po_number} - {po.status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Κωδικός Προϊόντος</Label>
+              <Input
+                value={vendorProductCode}
+                onChange={(e) => setVendorProductCode(e.target.value)}
+                placeholder="-- Προϊόντος προμηθευτή --"
+                className="h-9 text-xs"
+              />
+            </div>
+          </div>
+
+          {/* Αρθμό Τιμολογίου */}
           <div>
-            <Label htmlFor="waybill_number">Waybill / Reference Number (Optional)</Label>
+            <Label className="text-xs">Αρθμό Τιμολογίου</Label>
             <Input
-              id="waybill_number"
               type="text"
               value={waybillNumber}
               onChange={(e) => setWaybillNumber(e.target.value)}
-              placeholder="e.g., WB12345, Invoice 6789"
+              placeholder="π.χ. INV-2025-001"
+              className="h-9 text-xs"
             />
           </div>
 
-          {movementType === "IN" && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="vendor_id" className="text-xs">Προμηθευτής</Label>
-                  <Select value={selectedVendor || 'none'} onValueChange={(val) => setSelectedVendor(val === 'none' ? '' : val)}>
-                    <SelectTrigger className="h-9">
-                      <SelectValue placeholder="Επιλέξτε" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">-- Επιλέξτε --</SelectItem>
-                      {vendors.map((vendor) => (
-                        <SelectItem key={vendor.id} value={vendor.id}>
-                          {vendor.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          {/* Ποσότητα και Κόστος */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Ποσότητα *</Label>
+              <Input
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                min="1"
+                step="any"
+                placeholder="1"
+                className={`h-9 text-xs ${validationError && (!quantity || parseFloat(quantity) <= 0) ? 'border-red-500' : ''}`}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Μονάδα Εμπορευσίας (Βάση/ liter)</Label>
+              <Select value={inputUnitSubtype || product?.unit_of_measure} onValueChange={setInputUnitSubtype}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="Τμήμα (L)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="piece">Τεμάχιο</SelectItem>
+                  <SelectItem value="meter">Μέτρο</SelectItem>
+                  <SelectItem value="kg">Κιλό</SelectItem>
+                  <SelectItem value="liter">Λίτρο</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-                <div>
-                  <Label htmlFor="unit_cost" className="text-xs">Κόστος (€)</Label>
-                  <Input
-                    id="unit_cost"
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={unitCost}
-                    onChange={(e) => setUnitCost(e.target.value)}
-                    placeholder="0.0000"
-                    className="h-9"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="vendor_product_code" className="text-xs">Κωδικός Προμηθευτή</Label>
-                  <Input
-                    id="vendor_product_code"
-                    value={vendorProductCode}
-                    onChange={(e) => setVendorProductCode(e.target.value)}
-                    placeholder="Κωδικός"
-                    className="h-9"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="bundle_quantity" className="text-xs">Pcs/Qty</Label>
-                  <Input
-                    id="bundle_quantity"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={bundleQuantity}
-                    onChange={(e) => setBundleQuantity(e.target.value)}
-                    placeholder="100"
-                    className="h-9"
-                  />
-                </div>
+          {/* Κόστος ανά Μονάδα */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Κόστος ανά piece</Label>
+              <Input
+                type="number"
+                step="0.0001"
+                min="0"
+                value={unitCost}
+                onChange={(e) => setUnitCost(e.target.value)}
+                placeholder="€14.0000"
+                className="h-9 text-xs"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Κόστος ανά piece</Label>
+              <div className="h-9 flex items-center text-xs text-slate-500">
+                Υπολογιζόμενος κόστος, βάσιμος μεταφορά.
               </div>
+            </div>
+          </div>
 
-              <div>
-                <Label htmlFor="invoice_category" className="text-xs">Κατηγορία Τιμολόγησης</Label>
-                <Select value={invoiceCategory || 'none'} onValueChange={(val) => setInvoiceCategory(val === 'none' ? '' : val)}>
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Επιλέξτε" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">-- Χωρίς --</SelectItem>
-                    {invoiceCategories.map(ic => (
-                      <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          )}
-
+          {/* Προϊόντων Στοχεία */}
           <div>
-            <Label htmlFor="charged_to_person">Charged To / Performed By (Optional)</Label>
-            <Select value={chargedToPerson} onValueChange={setChargedToPerson}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select person (optional)" />
+            <Label className="text-xs">Προϊόντων Στοχεία</Label>
+            <Select value={conversionRate} onValueChange={setConversionRate}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Α/Β Μονάδα" />
               </SelectTrigger>
               <SelectContent>
-                {allUsers.map((user) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    {user.name}
-                  </SelectItem>
+                <SelectItem value="1">1</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Κατηγορία Τιμολόγησης */}
+          <div>
+            <Label className="text-xs">Κατηγορία Τιμολόγησης *</Label>
+            <Select value={invoiceCategory || 'none'} onValueChange={(val) => setInvoiceCategory(val === 'none' ? '' : val)}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="-- Χωρίς Κατηγορία --" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
+                {invoiceCategories.map(ic => (
+                  <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-slate-500 mt-1">
-              Select who initiated this movement or is responsible for it. Defaults to current user for tracking.
-            </p>
           </div>
 
+          {/* Αρθμό Waybill */}
           <div>
-            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Label className="text-xs">Αρθμό Waybill</Label>
             <Input
-              id="notes"
               type="text"
+              placeholder="π.χ. WB-2025-001"
+              className="h-9 text-xs"
+            />
+          </div>
+
+          {/* Σημειώσεις */}
+          <div>
+            <Label className="text-xs">Σημειώσεις</Label>
+            <Input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add any relevant notes"
+              placeholder="Προσθέστε σημειώσεις..."
+              className="h-9 text-xs"
             />
           </div>
 
