@@ -20,6 +20,9 @@ export default function BOMManager({ busStopTypes, components, products, selecte
   const [companies, setCompanies] = useState([]);
   const [materialCategories, setMaterialCategories] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [selectedMaterialCategoryFilter, setSelectedMaterialCategoryFilter] = useState("all");
+  const [selectedTeamFilter, setSelectedTeamFilter] = useState("all");
+  const [selectedCompanyFilter, setSelectedCompanyFilter] = useState("all");
 
   useEffect(() => {
     if (selectedType) {
@@ -162,9 +165,34 @@ export default function BOMManager({ busStopTypes, components, products, selecte
     return team?.name || '-';
   };
 
-  const calculateTotalCost = () => {
+  const getFilteredComponents = () => {
+    return typeComponents.filter(comp => {
+      // Material Category filter
+      if (selectedMaterialCategoryFilter !== "all" && comp.material_category_id !== selectedMaterialCategoryFilter) {
+        return false;
+      }
+      
+      // Team filter
+      if (selectedTeamFilter !== "all" && comp.team_id !== selectedTeamFilter) {
+        return false;
+      }
+      
+      // Company filter
+      if (selectedCompanyFilter !== "all") {
+        const product = products.find(p => p.id === comp.product_id);
+        if (!product || product.company_id !== selectedCompanyFilter) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  };
+
+  const calculateTotalCost = (componentsToCalc = null) => {
+    const comps = componentsToCalc || typeComponents;
     let total = 0;
-    typeComponents.forEach(comp => {
+    comps.forEach(comp => {
       const product = products.find(p => p.id === comp.product_id);
       if (product && product.unit_cost) {
         const qty = parseFloat(comp.quantity_required) || 0;
@@ -174,9 +202,10 @@ export default function BOMManager({ busStopTypes, components, products, selecte
     return total;
   };
 
-  const calculateCostByTeam = () => {
+  const calculateCostByTeam = (componentsToCalc = null) => {
+    const comps = componentsToCalc || typeComponents;
     const costByTeam = {};
-    typeComponents.forEach(comp => {
+    comps.forEach(comp => {
       const product = products.find(p => p.id === comp.product_id);
       if (product && product.unit_cost && comp.team_id) {
         const qty = parseFloat(comp.quantity_required) || 0;
@@ -188,14 +217,17 @@ export default function BOMManager({ busStopTypes, components, products, selecte
     return costByTeam;
   };
 
+  // Apply filters
+  const filteredComponents = getFilteredComponents();
+
   // Pagination
-  const totalPages = Math.ceil(typeComponents.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredComponents.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const paginatedComponents = typeComponents.slice(startIndex, endIndex);
+  const paginatedComponents = filteredComponents.slice(startIndex, endIndex);
 
-  const totalCost = calculateTotalCost();
-  const costByTeam = calculateCostByTeam();
+  const totalCost = calculateTotalCost(filteredComponents);
+  const costByTeam = calculateCostByTeam(filteredComponents);
 
   return (
     <div className="space-y-6">
@@ -249,10 +281,77 @@ export default function BOMManager({ busStopTypes, components, products, selecte
             )}
           </div>
 
+          {/* Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-sm mb-2 block">Φίλτρο Κατηγορίας Υλικού</Label>
+                  <Select value={selectedMaterialCategoryFilter} onValueChange={(value) => {
+                    setSelectedMaterialCategoryFilter(value);
+                    setCurrentPage(1);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Όλες οι Κατηγορίες" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Όλες οι Κατηγορίες</SelectItem>
+                      {materialCategories.filter(mc => mc.is_active).map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm mb-2 block">Φίλτρο Ομάδας</Label>
+                  <Select value={selectedTeamFilter} onValueChange={(value) => {
+                    setSelectedTeamFilter(value);
+                    setCurrentPage(1);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Όλες οι Ομάδες" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Όλες οι Ομάδες</SelectItem>
+                      {teams.filter(t => t.is_active).map(team => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-sm mb-2 block">Φίλτρο Εταιρείας</Label>
+                  <Select value={selectedCompanyFilter} onValueChange={(value) => {
+                    setSelectedCompanyFilter(value);
+                    setCurrentPage(1);
+                  }}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Όλες οι Εταιρείες" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Όλες οι Εταιρείες</SelectItem>
+                      {companies.map(company => (
+                        <SelectItem key={company.id} value={company.id}>
+                          {company.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">
-                Bill of Materials ({typeComponents.length} components)
+                Bill of Materials ({filteredComponents.length} από {typeComponents.length} components)
               </CardTitle>
               <div className="flex items-center gap-2">
                 <Label className="text-sm">Items per page:</Label>
@@ -280,6 +379,10 @@ export default function BOMManager({ busStopTypes, components, products, selecte
               {typeComponents.length === 0 ? (
                 <p className="text-sm text-slate-500 text-center py-8">
                   No components added yet. Click "Add Component" to start building the BOM.
+                </p>
+              ) : filteredComponents.length === 0 ? (
+                <p className="text-sm text-slate-500 text-center py-8">
+                  Δεν βρέθηκαν components με τα επιλεγμένα φίλτρα.
                 </p>
               ) : (
                 <>
@@ -427,7 +530,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                   {totalPages > 1 && (
                     <div className="flex items-center justify-between pt-4">
                       <p className="text-sm text-slate-600">
-                        Showing {startIndex + 1} to {Math.min(endIndex, typeComponents.length)} of {typeComponents.length} components
+                        Showing {startIndex + 1} to {Math.min(endIndex, filteredComponents.length)} of {filteredComponents.length} components
                       </p>
                       <div className="flex items-center gap-2">
                         <Button
