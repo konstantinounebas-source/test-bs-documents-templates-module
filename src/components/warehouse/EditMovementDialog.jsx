@@ -303,6 +303,17 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                   }}
                 />
 
+                {/* Warehouse Location */}
+                <div className="border-t pt-4">
+                  <Label htmlFor="warehouse_location">Θέση Αποθήκης</Label>
+                  <Input
+                    id="warehouse_location"
+                    value={formData.warehouse_location || ''}
+                    onChange={(e) => setFormData({ ...formData, warehouse_location: e.target.value })}
+                    placeholder="π.χ. Ράφι A1"
+                  />
+                </div>
+
                 {/* Company & Invoice Category */}
                 <div className="grid grid-cols-2 gap-3 border-t pt-4">
                   <div>
