@@ -1628,14 +1628,39 @@ export default function BarcodeScannerPage() {
                           </div>
                         </div>
 
-                        <div>
-                          <Label htmlFor="invoice-number">Αριθμός Τιμολογίου</Label>
-                          <Input
-                            id="invoice-number"
-                            value={invoiceNumber}
-                            onChange={(e) => setInvoiceNumber(e.target.value)}
-                            placeholder="π.χ. INV-2025-001"
-                          />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label htmlFor="invoice-number">Αριθμός Τιμολογίου</Label>
+                            <Input
+                              id="invoice-number"
+                              value={invoiceNumber}
+                              onChange={(e) => setInvoiceNumber(e.target.value)}
+                              placeholder="π.χ. INV-2025-001"
+                            />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="po-select">Ανοικτά PO</Label>
+                            <Select value={selectedPO || 'none'} onValueChange={(val) => setSelectedPO(val === 'none' ? '' : val)}>
+                              <SelectTrigger id="po-select">
+                                <SelectValue placeholder="Επιλέξτε PO" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">-- Χωρίς PO --</SelectItem>
+                                {purchaseOrders.map(po => {
+                                  const vendor = vendors.find(v => v.id === po.vendor_id);
+                                  const totalRemaining = po.items.reduce((sum, item) => 
+                                    sum + (item.quantity_ordered - (item.quantity_received || 0)), 0
+                                  );
+                                  return (
+                                    <SelectItem key={po.id} value={po.id}>
+                                      {po.po_number} - {vendor?.name || 'N/A'} ({totalRemaining} items)
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
                       </div>
 
