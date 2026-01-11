@@ -18,6 +18,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [teams, setTeams] = useState([]);
   const [companies, setCompanies] = useState([]);
+  const [materialCategories, setMaterialCategories] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
 
   useEffect(() => {
@@ -33,12 +34,14 @@ export default function BOMManager({ busStopTypes, components, products, selecte
   const loadAdditionalData = async () => {
     setIsLoadingData(true);
     try {
-      const [teamsData, companiesData] = await Promise.all([
+      const [teamsData, companiesData, materialCatsData] = await Promise.all([
         base44.entities.Team.list(),
-        base44.entities.Company.list()
+        base44.entities.Company.list(),
+        base44.entities.MaterialCategory.list()
       ]);
       setTeams(teamsData);
       setCompanies(companiesData);
+      setMaterialCategories(materialCatsData);
     } catch (error) {
       console.error("Error loading additional data:", error);
     }
@@ -58,7 +61,8 @@ export default function BOMManager({ busStopTypes, components, products, selecte
         ...c,
         quantity_required: String(c.quantity_required),
         unit_of_measure: c.unit_of_measure || 'pcs',
-        team_id: c.team_id || ''
+        team_id: c.team_id || '',
+        material_category_id: c.material_category_id || ''
       }));
     setTypeComponents(filtered);
     setCurrentPage(1);
@@ -71,6 +75,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
       quantity_required: "1",
       unit_of_measure: 'pcs',
       team_id: '',
+      material_category_id: '',
       is_optional: false,
       notes: ''
     }]);
@@ -117,6 +122,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
           quantity_required: quantityNum,
           unit_of_measure: component.unit_of_measure || 'pcs',
           team_id: component.team_id || null,
+          material_category_id: component.material_category_id || null,
           is_optional: component.is_optional || false,
           notes: component.notes || ''
         };
@@ -283,6 +289,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                         <TableHead className="w-12">#</TableHead>
                         <TableHead>Προϊόν</TableHead>
                         <TableHead>Εταιρεία</TableHead>
+                        <TableHead>Κατηγορία Υλικού</TableHead>
                         <TableHead>Ομάδα</TableHead>
                         <TableHead className="w-28">Ποσότητα</TableHead>
                         <TableHead className="w-24">Μονάδα</TableHead>
@@ -313,6 +320,24 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                             </TableCell>
                             <TableCell className="text-sm text-slate-600">
                               {productDetails.company}
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                value={component.material_category_id || "none"}
+                                onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'material_category_id', value === "none" ? '' : value)}
+                              >
+                                <SelectTrigger className="w-52">
+                                  <SelectValue placeholder="Επιλέξτε κατηγορία" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">-</SelectItem>
+                                  {materialCategories.filter(mc => mc.is_active).map(cat => (
+                                    <SelectItem key={cat.id} value={cat.id}>
+                                      {cat.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </TableCell>
                             <TableCell>
                               <Select

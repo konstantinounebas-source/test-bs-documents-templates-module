@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Truck, FolderTree, MapPin, Tag, Briefcase, Building2, FileText, Users } from "lucide-react";
+import { Plus, Search, Truck, FolderTree, MapPin, Tag, Briefcase, Building2, FileText, Users, Layers } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,6 +14,7 @@ import VendorServicesTable from "../components/warehouse/VendorServicesTable";
 import CompaniesTable from "../components/warehouse/CompaniesTable";
 import InvoiceCategoriesTable from "../components/warehouse/InvoiceCategoriesTable";
 import TeamsTable from "../components/warehouse/TeamsTable";
+import MaterialCategoriesTable from "../components/warehouse/MaterialCategoriesTable";
 import CreateEditVendorDialog from "../components/warehouse/CreateEditVendorDialog";
 import CreateEditCategoryDialog from "../components/warehouse/CreateEditCategoryDialog";
 import CreateEditLocationDialog from "../components/warehouse/CreateEditLocationDialog";
@@ -22,6 +23,7 @@ import CreateEditVendorServiceDialog from "../components/warehouse/CreateEditVen
 import CreateEditCompanyDialog from "../components/warehouse/CreateEditCompanyDialog";
 import CreateEditInvoiceCategoryDialog from "../components/warehouse/CreateEditInvoiceCategoryDialog";
 import CreateEditTeamDialog from "../components/warehouse/CreateEditTeamDialog";
+import CreateEditMaterialCategoryDialog from "../components/warehouse/CreateEditMaterialCategoryDialog";
 import ImportVendorsDialog from "../components/warehouse/ImportVendorsDialog";
 import PaginationControls from "../components/warehouse/PaginationControls";
 
@@ -37,6 +39,7 @@ export default function VendorsCategoriesPage() {
   const [companies, setCompanies] = useState([]);
   const [invoiceCategories, setInvoiceCategories] = useState([]);
   const [teams, setTeams] = useState([]);
+  const [materialCategories, setMaterialCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showVendorDialog, setShowVendorDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
@@ -46,6 +49,7 @@ export default function VendorsCategoriesPage() {
   const [showCompanyDialog, setShowCompanyDialog] = useState(false);
   const [showInvoiceCategoryDialog, setShowInvoiceCategoryDialog] = useState(false);
   const [showTeamDialog, setShowTeamDialog] = useState(false);
+  const [showMaterialCategoryDialog, setShowMaterialCategoryDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("vendors");
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -81,6 +85,10 @@ export default function VendorsCategoriesPage() {
   // Pagination states for Teams
   const [teamsCurrentPage, setTeamsCurrentPage] = useState(1);
   const [teamsItemsPerPage, setTeamsItemsPerPage] = useState("10");
+
+  // Pagination states for Material Categories
+  const [materialCategoriesCurrentPage, setMaterialCategoriesCurrentPage] = useState(1);
+  const [materialCategoriesItemsPerPage, setMaterialCategoriesItemsPerPage] = useState("10");
 
   useEffect(() => {
     loadData();
@@ -120,6 +128,10 @@ export default function VendorsCategoriesPage() {
       await delay(300);
       const teamsData = await base44.entities.Team.list("-updated_date");
       setTeams(teamsData);
+      
+      await delay(300);
+      const materialCatsData = await base44.entities.MaterialCategory.list("-updated_date");
+      setMaterialCategories(materialCatsData);
       
     } catch (error) {
       console.error("Error loading data:", error);
@@ -173,6 +185,13 @@ export default function VendorsCategoriesPage() {
     searchTerm === "" ||
     t.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     t.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredMaterialCategories = materialCategories.filter(mc =>
+    searchTerm === "" ||
+    mc.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    mc.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    mc.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Vendors Pagination
@@ -239,6 +258,14 @@ export default function VendorsCategoriesPage() {
         teamsCurrentPage * parseInt(teamsItemsPerPage)
       );
 
+  // Material Categories Pagination
+  const paginatedMaterialCategories = materialCategoriesItemsPerPage === "all" 
+    ? filteredMaterialCategories 
+    : filteredMaterialCategories.slice(
+        (materialCategoriesCurrentPage - 1) * parseInt(materialCategoriesItemsPerPage),
+        materialCategoriesCurrentPage * parseInt(materialCategoriesItemsPerPage)
+      );
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -251,7 +278,7 @@ export default function VendorsCategoriesPage() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-9 gap-4">
           <Card className="border-slate-200">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -365,6 +392,20 @@ export default function VendorsCategoriesPage() {
               </div>
             </CardContent>
           </Card>
+
+          <Card className="border-slate-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-slate-600">Κατηγορίες Υλικών</p>
+                  <p className="text-2xl font-bold text-slate-900 mt-1">{materialCategories.length}</p>
+                </div>
+                <div className="p-2 rounded-full bg-violet-500">
+                  <Layers className="w-4 h-4 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Search */}
@@ -380,6 +421,7 @@ export default function VendorsCategoriesPage() {
                 activeTab === "companies" ? "Αναζήτηση εταιρειών..." :
                 activeTab === "invoiceCategories" ? "Αναζήτηση κατηγοριών τιμολόγησης..." :
                 activeTab === "teams" ? "Αναζήτηση ομάδων..." :
+                activeTab === "materialCategories" ? "Αναζήτηση κατηγοριών υλικών..." :
                 "Search locations..."
               }
               value={searchTerm}
@@ -401,6 +443,7 @@ export default function VendorsCategoriesPage() {
               <TabsTrigger value="companies">Εταιρείες</TabsTrigger>
               <TabsTrigger value="invoiceCategories">Κατηγορίες Τιμολόγησης</TabsTrigger>
               <TabsTrigger value="teams">Ομάδες</TabsTrigger>
+              <TabsTrigger value="materialCategories">Κατηγορίες Υλικών</TabsTrigger>
             </TabsList>
             
             <div className="flex gap-2">
@@ -484,6 +527,15 @@ export default function VendorsCategoriesPage() {
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Νέα Ομάδα
+                </Button>
+              )}
+              {activeTab === "materialCategories" && (
+                <Button 
+                  onClick={() => setShowMaterialCategoryDialog(true)}
+                  className="bg-violet-600 hover:bg-violet-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Νέα Κατηγορία Υλικού
                 </Button>
               )}
             </div>
@@ -651,6 +703,26 @@ export default function VendorsCategoriesPage() {
               />
             </div>
           </TabsContent>
+
+          <TabsContent value="materialCategories" className="mt-0">
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+              <MaterialCategoriesTable
+                materialCategories={paginatedMaterialCategories}
+                isLoading={isLoading}
+                onMaterialCategorySaved={loadData}
+              />
+              <PaginationControls
+                currentPage={materialCategoriesCurrentPage}
+                totalItems={filteredMaterialCategories.length}
+                itemsPerPage={materialCategoriesItemsPerPage}
+                onPageChange={setMaterialCategoriesCurrentPage}
+                onItemsPerPageChange={(value) => {
+                  setMaterialCategoriesItemsPerPage(value);
+                  setMaterialCategoriesCurrentPage(1);
+                }}
+              />
+            </div>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -707,6 +779,12 @@ export default function VendorsCategoriesPage() {
         open={showTeamDialog}
         onClose={() => setShowTeamDialog(false)}
         onTeamSaved={loadData}
+      />
+
+      <CreateEditMaterialCategoryDialog
+        open={showMaterialCategoryDialog}
+        onClose={() => setShowMaterialCategoryDialog(false)}
+        onMaterialCategorySaved={loadData}
       />
     </div>
   );
