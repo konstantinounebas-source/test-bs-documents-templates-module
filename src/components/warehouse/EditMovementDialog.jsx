@@ -18,7 +18,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     reference_type: '',
     reference_id: '',
     unit_cost: '',
-    bundle_quantity: '',
+    input_unit_of_measure: '',
+    conversion_rate: '',
     vendor_product_code: '',
     invoice_category_id: '',
     company_id: '',
@@ -54,24 +55,26 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
   useEffect(() => {
     if (movement) {
-      // Try to get bundle_quantity, unit_cost and vendor_product_code from ProductVendor if available
-      let bundleQty = '';
+      const currentProduct = products.find(p => p.id === movement.product_id);
+      
+      let conversionRate = '';
       let vendorUnitCost = movement.unit_cost || '';
       let vendorProdCode = movement.vendor_product_code || '';
+      let inputUnitOfMeasure = movement.input_unit_of_measure || currentProduct?.unit_of_measure || 'piece';
 
       if (movement.reference_id && movement.product_id) {
         const pv = productVendors.find(
           pv => pv.product_id === movement.product_id && pv.vendor_id === movement.reference_id
         );
         if (pv) {
-          if (pv.bundle_quantity) {
-            bundleQty = String(pv.bundle_quantity);
+          if (pv.conversion_rate) {
+            conversionRate = String(pv.conversion_rate);
+          } else if (pv.bundle_quantity) {
+            conversionRate = String(pv.bundle_quantity);
           }
-          // Auto-fill unit_cost from ProductVendor if not already set in movement
           if (!vendorUnitCost && pv.unit_cost) {
             vendorUnitCost = String(pv.unit_cost);
           }
-          // Auto-fill vendor_product_code from ProductVendor if not already set
           if (!vendorProdCode && pv.vendor_product_code) {
             vendorProdCode = pv.vendor_product_code;
           }
@@ -80,21 +83,19 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
       // For OUT movements without unit_cost, use product's current unit_cost
       if (movement.movement_type === 'OUT' && (!vendorUnitCost || parseFloat(vendorUnitCost) === 0)) {
-        const product = products.find(p => p.id === movement.product_id);
-        if (product && product.unit_cost) {
-          vendorUnitCost = String(product.unit_cost);
+        if (currentProduct && currentProduct.unit_cost) {
+          vendorUnitCost = String(currentProduct.unit_cost);
         }
       }
 
-      const currentProduct = products.find(p => p.id === movement.product_id);
-      
       setFormData({
         notes: movement.notes || '',
         waybill_number: movement.waybill_number || '',
         reference_type: movement.reference_type || '',
         reference_id: movement.reference_id || '',
         unit_cost: vendorUnitCost,
-        bundle_quantity: bundleQty,
+        input_unit_of_measure: inputUnitOfMeasure,
+        conversion_rate: conversionRate || '1',
         vendor_product_code: vendorProdCode,
         invoice_category_id: movement.invoice_category_id || '',
         company_id: currentProduct?.company_id || '',
@@ -132,6 +133,9 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       if (!formData.quantity || parseFloat(formData.quantity) <= 0) {
         errors.quantity = 'Η ποσότητα είναι υποχρεωτική';
       }
+      if (!formData.conversion_rate || parseFloat(formData.conversion_rate) <= 0) {
+        errors.conversion_rate = 'Ο συντελεστής μετατροπής είναι υποχρεωτικός';
+      }
       if (!formData.reference_id) {
         errors.reference_id = 'Ο προμηθευτής είναι υποχρεωτικός';
       }
@@ -154,9 +158,13 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     setValidationErrors({});
     setIsSaving(true);
     try {
-      const quantity = formData.quantity ? parseFloat(formData.quantity) : movement.quantity;
-      const unitCost = formData.unit_cost ? parseFloat(formData.unit_cost) : null;
-      
+      const quantity = parseFloat(formData.quantity) || 0;
+      const conversionRate = parseFloat(formData.conversion_rate) || 1;
+      const unitCost = parseFloat(formData.unit_cost) || 0;
+
+      const baseQuantity = quantity * conversionRate;
+      const baseUnitCost = unitCost / conversionRate;
+
       // Update product company_id if changed
       const currentProduct = products.find(p => p.id === movement.product_id);
       if (currentProduct && formData.company_id !== currentProduct.company_id) {
@@ -172,8 +180,11 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         reference_type: formData.reference_type || null,
         reference_id: formData.reference_id || null,
         quantity: quantity,
+        input_unit_of_measure: formData.input_unit_of_measure,
+        conversion_rate: conversionRate,
+        base_quantity: baseQuantity,
         unit_cost: unitCost,
-        bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null,
+        base_unit_cost: baseUnitCost,
         vendor_product_code: formData.vendor_product_code || null,
         invoice_category_id: formData.invoice_category_id || null
       };
@@ -183,7 +194,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       // If IN movement and vendor/cost provided, update ProductVendor
       if (movement.movement_type === 'IN' && formData.reference_id && unitCost) {
         if (!isNaN(unitCost) && unitCost > 0) {
-          // Update ProductVendor
           const existingPVs = await base44.entities.ProductVendor.filter({
             product_id: movement.product_id,
             vendor_id: formData.reference_id
@@ -192,7 +202,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
           const pvData = {
             unit_cost: unitCost,
             is_active: true,
-            bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null,
+            conversion_rate: conversionRate,
             vendor_product_code: formData.vendor_product_code || null
           };
 
@@ -234,8 +244,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     .map(pv => pv.vendor_id);
 
   const unitCost = parseFloat(formData.unit_cost) || 0;
-  const bundleQty = parseFloat(formData.bundle_quantity) || 0;
-  const costPerPiece = unitCost > 0 && bundleQty > 0 ? (unitCost / bundleQty).toFixed(4) : null;
+  const conversionRate = parseFloat(formData.conversion_rate) || 1;
+  const costPerBaseUnit = unitCost > 0 && conversionRate > 0 ? (unitCost / conversionRate).toFixed(4) : null;
 
   return (
     <>
@@ -256,7 +266,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                 </div>
                 <div>
                   <p className="text-sm text-blue-700">Κατηγορία: {category?.name || 'N/A'}</p>
-                  <p className="text-xs text-blue-700">Μονάδα: {product?.unit_of_measure || 'N/A'}</p>
+                  <p className="text-xs text-blue-700">Βασική Μονάδα: {product?.unit_of_measure || 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -275,7 +285,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                         reference_type: 'Vendor',
                         reference_id: data.vendor_id || '',
                         unit_cost: data.unit_cost ? String(data.unit_cost) : '',
-                        bundle_quantity: data.bundle_quantity ? String(data.bundle_quantity) : '',
+                        conversion_rate: data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : ''),
+                        input_unit_of_measure: data.input_unit_of_measure || '',
                         vendor_product_code: data.vendor_product_code || '',
                         invoice_category_id: data.invoice_category_id || '',
                         company_id: data.company_id || ''
@@ -395,32 +406,73 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                         required
                         className={validationErrors.quantity ? 'border-red-500 focus-visible:ring-red-500' : ''}
                       />
-                      {validationErrors.quantity ? (
+                      {validationErrors.quantity && (
                         <p className="text-xs text-red-600 mt-1">{validationErrors.quantity}</p>
-                      ) : (
-                        <p className="text-xs text-slate-500 mt-1">
-                          Ποσότητα σε {product?.unit_of_measure || 'μονάδες'}
-                        </p>
                       )}
                     </div>
 
                     <div>
-                      <Label htmlFor="bundle_quantity">Pcs/Qty</Label>
-                      <Input
-                        id="bundle_quantity"
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={formData.bundle_quantity}
-                        onChange={(e) => setFormData({ ...formData, bundle_quantity: e.target.value })}
-                        placeholder="π.χ. 100 τεμ."
-                      />
-                      {costPerPiece && (
-                        <p className="text-xs text-slate-700 mt-1">
-                          <strong>Κόστος ανά τεμάχιο:</strong> €{costPerPiece}
-                        </p>
-                      )}
+                      <Label htmlFor="input_unit_of_measure">Μονάδα Εισαγωγής</Label>
+                      <Select
+                        value={formData.input_unit_of_measure}
+                        onValueChange={(val) => setFormData({ ...formData, input_unit_of_measure: val })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Επιλέξτε" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="piece">Τεμάχιο</SelectItem>
+                          <SelectItem value="meter">Μέτρο</SelectItem>
+                          <SelectItem value="kg">Κιλό</SelectItem>
+                          <SelectItem value="liter">Λίτρο</SelectItem>
+                          <SelectItem value="box">Κουτί</SelectItem>
+                          <SelectItem value="pallet">Παλέτα</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="conversion_rate">Ποσότητα ανά μονάδα ({product?.unit_of_measure || 'μονάδες'}) *</Label>
+                      <Input
+                        id="conversion_rate"
+                        type="number"
+                        min="0.0001"
+                        step="0.0001"
+                        value={formData.conversion_rate}
+                        onChange={(e) => {
+                          setFormData({ ...formData, conversion_rate: e.target.value });
+                          if (validationErrors.conversion_rate) {
+                            setValidationErrors({ ...validationErrors, conversion_rate: undefined });
+                          }
+                        }}
+                        placeholder="π.χ. 100"
+                        className={validationErrors.conversion_rate ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                      />
+                      {validationErrors.conversion_rate && (
+                        <p className="text-xs text-red-600 mt-1">{validationErrors.conversion_rate}</p>
+                      )}
+                      <p className="text-xs text-slate-500 mt-1">
+                        (π.χ. αν 1 κουτί = 100 {product?.unit_of_measure || 'τεμ'}, εισάγετε 100)
+                      </p>
+                    </div>
+                    {costPerBaseUnit && unitCost > 0 && (
+                      <div>
+                        <Label>Κόστος ανά {product?.unit_of_measure || 'μονάδα'}</Label>
+                        <div className="flex items-center h-10 px-3 bg-slate-100 rounded-md border">
+                          <span className="text-sm font-medium">€{costPerBaseUnit}</span>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Υπολογιζόμενο κόστος βασικής μονάδας
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Ποσότητα στην βασική μονάδα: {(parseFloat(formData.quantity) * parseFloat(formData.conversion_rate) || 0).toFixed(2)} {product?.unit_of_measure || 'μονάδες'}
+                    </p>
                   </div>
 
                   <div>

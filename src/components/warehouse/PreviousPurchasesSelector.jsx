@@ -32,7 +32,7 @@ export default function PreviousPurchasesSelector({
         .filter(m => m.product_id === productId && m.movement_type === "IN")
         .slice(0, 20);
 
-      // Φιλτράρισμα για μοναδικούς συνδυασμούς (vendor + unit_cost + vendor_product_code)
+      // Φιλτράρισμα για μοναδικούς συνδυασμούς (vendor + unit_cost + vendor_product_code + input_unit + conversion_rate)
       const uniquePurchases = [];
       const seen = new Set();
 
@@ -40,7 +40,7 @@ export default function PreviousPurchasesSelector({
         // Skip if reference_id or unit_cost is missing or empty
         if (!movement.reference_id || movement.reference_id === '' || !movement.unit_cost) continue;
         
-        const key = `${movement.reference_id}_${movement.unit_cost}_${movement.vendor_product_code || ''}`;
+        const key = `${movement.reference_id}_${movement.unit_cost}_${movement.vendor_product_code || ''}_${movement.input_unit_of_measure || ''}_${movement.conversion_rate || ''}`;
         
         if (!seen.has(key)) {
           seen.add(key);
@@ -70,6 +70,8 @@ export default function PreviousPurchasesSelector({
         vendor_id: movement.reference_id,
         unit_cost: movement.unit_cost,
         bundle_quantity: movement.bundle_quantity,
+        conversion_rate: movement.conversion_rate,
+        input_unit_of_measure: movement.input_unit_of_measure,
         vendor_product_code: movement.vendor_product_code,
         invoice_category_id: movement.invoice_category_id,
         company_id: movement.company_id
@@ -119,9 +121,9 @@ export default function PreviousPurchasesSelector({
                     {formatDate(movement.created_date)} - {getVendorName(movement.reference_id)}
                   </div>
                   <div className="text-xs text-slate-600">
-                    {movement.quantity} μον. @ €{parseFloat(movement.unit_cost).toFixed(4)}
+                    {movement.quantity} {movement.input_unit_of_measure || 'μον.'} @ €{parseFloat(movement.unit_cost).toFixed(4)}
+                    {movement.conversion_rate && movement.conversion_rate !== 1 && ` (${movement.conversion_rate} ${movement.input_unit_of_measure || 'units'})`}
                     {movement.vendor_product_code && ` - Κωδ: ${movement.vendor_product_code}`}
-                    {movement.bundle_quantity && ` (${movement.bundle_quantity} pcs)`}
                   </div>
                 </div>
               </SelectItem>
