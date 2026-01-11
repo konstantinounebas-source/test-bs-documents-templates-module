@@ -358,7 +358,7 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Perform Stock Movement - {product.name}</DialogTitle>
           <DialogDescription>
@@ -366,7 +366,7 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-3 py-4">
           <Alert className="bg-blue-50 border-blue-200">
             <Info className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800">
@@ -418,100 +418,93 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
 
           {movementType === "IN" && (
             <>
-              <PreviousPurchasesSelector
-                productId={product?.id}
-                vendors={vendors}
-                companies={companies}
-                invoiceCategories={invoiceCategories}
-                onSelect={(data) => {
-                  if (data) {
-                    setSelectedVendor(data.vendor_id || '');
-                    setUnitCost(data.unit_cost ? String(data.unit_cost) : '');
-                    setBundleQuantity(data.bundle_quantity ? String(data.bundle_quantity) : '');
-                    setConversionRate(data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : '1'));
-                    setInputUnitSubtype(data.input_unit_of_measure || '');
-                    setVendorProductCode(data.vendor_product_code || '');
-                    setInvoiceCategory(data.invoice_category_id || '');
-                  }
-                }}
-              />
-
-              <div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="related_po">Linked Purchase Order (Optional)</Label>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="hide-completed-pos"
-                      checked={hideCompletedPOs}
-                      onCheckedChange={setHideCompletedPOs}
-                    />
-                    <label
-                      htmlFor="hide-completed-pos"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Hide Completed POs
-                    </label>
-                  </div>
-                </div>
-                <Select value={relatedPO} onValueChange={(value) => {
-                  setRelatedPO(value === "no-po" ? "" : value);
-                  setRelatedPOItem("");
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select PO (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="no-po">No PO</SelectItem>
-                    {purchaseOrders
-                      .filter(po => !hideCompletedPOs || po.status !== 'Received') // Filter completed POs
-                      .map((po) => (
-                      <SelectItem key={po.id} value={po.id}>
-                        {po.po_number} - {po.status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-slate-500 mt-1">
-                  Select if this receipt is for a specific purchase order.
-                </p>
+              <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <PreviousPurchasesSelector
+                  productId={product?.id}
+                  vendors={vendors}
+                  companies={companies}
+                  invoiceCategories={invoiceCategories}
+                  onSelect={(data) => {
+                    if (data) {
+                      setSelectedVendor(data.vendor_id || '');
+                      setUnitCost(data.unit_cost ? String(data.unit_cost) : '');
+                      setBundleQuantity(data.bundle_quantity ? String(data.bundle_quantity) : '');
+                      setConversionRate(data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : '1'));
+                      setInputUnitSubtype(data.input_unit_of_measure || '');
+                      setVendorProductCode(data.vendor_product_code || '');
+                      setInvoiceCategory(data.invoice_category_id || '');
+                    }
+                  }}
+                />
               </div>
-              
-              {relatedPO && (
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label htmlFor="related_po_item">PO Item (Product: {product.name}) *</Label>
-                  <Select value={relatedPOItem} onValueChange={setRelatedPOItem}>
-                    <SelectTrigger className={validationError && relatedPO && !relatedPOItem ? 'border-red-500' : ''}>
-                      <SelectValue placeholder="Select PO Item" />
+                  <div className="flex items-center justify-between mb-1">
+                    <Label htmlFor="related_po">PO (Optional)</Label>
+                    <div className="flex items-center space-x-1">
+                      <Checkbox
+                        id="hide-completed-pos"
+                        checked={hideCompletedPOs}
+                        onCheckedChange={setHideCompletedPOs}
+                      />
+                      <label htmlFor="hide-completed-pos" className="text-xs font-medium cursor-pointer">Hide Completed</label>
+                    </div>
+                  </div>
+                  <Select value={relatedPO} onValueChange={(value) => {
+                    setRelatedPO(value === "no-po" ? "" : value);
+                    setRelatedPOItem("");
+                  }}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Select PO" />
                     </SelectTrigger>
                     <SelectContent>
-                      {getAvailablePOItems().map((item, idx) => (
-                        <SelectItem key={item.product_id + '-' + idx} value={item.product_id}>
-                          {item.product_name || `Product ID: ${item.product_id}`} - Ordered: {item.quantity_ordered}, Received: {item.quantity_received || 0}
+                      <SelectItem value="no-po">No PO</SelectItem>
+                      {purchaseOrders
+                        .filter(po => !hideCompletedPOs || po.status !== 'Received')
+                        .map((po) => (
+                        <SelectItem key={po.id} value={po.id}>
+                          {po.po_number} - {po.status}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Select the specific item line in the PO this movement corresponds to.
-                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="to_location">Warehouse Location *</Label>
+                  <Select value={toLocation} onValueChange={setToLocation}>
+                    <SelectTrigger className={`h-9 ${validationError && !toLocation ? 'border-red-500' : ''}`}>
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {locations.map((loc) => (
+                        <SelectItem key={loc.id} value={loc.name}>
+                          {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {relatedPO && (
+                <div>
+                  <Label htmlFor="related_po_item" className="text-xs">PO Item *</Label>
+                  <Select value={relatedPOItem} onValueChange={setRelatedPOItem}>
+                    <SelectTrigger className={`h-9 ${validationError && relatedPO && !relatedPOItem ? 'border-red-500' : ''}`}>
+                      <SelectValue placeholder="Select item" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailablePOItems().map((item, idx) => (
+                        <SelectItem key={item.product_id + '-' + idx} value={item.product_id}>
+                          Ordered: {item.quantity_ordered}, Received: {item.quantity_received || 0}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
-
-              <div>
-                <Label htmlFor="to_location">Warehouse Location (Destination) *</Label>
-                <Select value={toLocation} onValueChange={setToLocation}>
-                  <SelectTrigger className={validationError && !toLocation ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select destination location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locations.map((loc) => (
-                      <SelectItem key={loc.id} value={loc.name}>
-                        {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </>
           )}
 
@@ -581,68 +574,72 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
 
           {movementType === "IN" && (
             <>
-              <div>
-                <Label htmlFor="vendor_id">Προμηθευτής (Optional)</Label>
-                <Select value={selectedVendor || 'none'} onValueChange={(val) => setSelectedVendor(val === 'none' ? '' : val)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Επιλέξτε προμηθευτή" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">-- Επιλέξτε --</SelectItem>
-                    {vendors.map((vendor) => (
-                      <SelectItem key={vendor.id} value={vendor.id}>
-                        {vendor.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="vendor_id" className="text-xs">Προμηθευτής</Label>
+                  <Select value={selectedVendor || 'none'} onValueChange={(val) => setSelectedVendor(val === 'none' ? '' : val)}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Επιλέξτε" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">-- Επιλέξτε --</SelectItem>
+                      {vendors.map((vendor) => (
+                        <SelectItem key={vendor.id} value={vendor.id}>
+                          {vendor.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="unit_cost" className="text-xs">Κόστος (€)</Label>
+                  <Input
+                    id="unit_cost"
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    value={unitCost}
+                    onChange={(e) => setUnitCost(e.target.value)}
+                    placeholder="0.0000"
+                    className="h-9"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="vendor_product_code" className="text-xs">Κωδικός Προμηθευτή</Label>
+                  <Input
+                    id="vendor_product_code"
+                    value={vendorProductCode}
+                    onChange={(e) => setVendorProductCode(e.target.value)}
+                    placeholder="Κωδικός"
+                    className="h-9"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="bundle_quantity" className="text-xs">Pcs/Qty</Label>
+                  <Input
+                    id="bundle_quantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={bundleQuantity}
+                    onChange={(e) => setBundleQuantity(e.target.value)}
+                    placeholder="100"
+                    className="h-9"
+                  />
+                </div>
               </div>
 
               <div>
-                <Label htmlFor="vendor_product_code">Κωδικός Προϊόντος Προμηθευτή (Optional)</Label>
-                <Input
-                  id="vendor_product_code"
-                  type="text"
-                  value={vendorProductCode}
-                  onChange={(e) => setVendorProductCode(e.target.value)}
-                  placeholder="Κωδικός προμηθευτή"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="unit_cost">Κόστος ανά Μονάδα (€) (Optional)</Label>
-                <Input
-                  id="unit_cost"
-                  type="number"
-                  step="0.0001"
-                  min="0"
-                  value={unitCost}
-                  onChange={(e) => setUnitCost(e.target.value)}
-                  placeholder="0.0000"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="bundle_quantity">Pcs/Qty (Optional)</Label>
-                <Input
-                  id="bundle_quantity"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={bundleQuantity}
-                  onChange={(e) => setBundleQuantity(e.target.value)}
-                  placeholder="π.χ. 100 τεμάχια"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="invoice_category">Κατηγορία Τιμολόγησης (Optional)</Label>
+                <Label htmlFor="invoice_category" className="text-xs">Κατηγορία Τιμολόγησης</Label>
                 <Select value={invoiceCategory || 'none'} onValueChange={(val) => setInvoiceCategory(val === 'none' ? '' : val)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Επιλέξτε κατηγορία" />
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Επιλέξτε" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
+                    <SelectItem value="none">-- Χωρίς --</SelectItem>
                     {invoiceCategories.map(ic => (
                       <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
                     ))}
@@ -683,29 +680,24 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
           </div>
 
           {/* Movement History Section */}
-          <div className="space-y-2 pt-4">
-            <h3 className="text-lg font-medium">Recent Movements for {product.name}</h3>
+          <div className="space-y-1 pt-2 border-t">
+            <p className="text-xs font-semibold text-slate-600">Recent Movements</p>
             {movementHistory.length === 0 ? (
-                <p className="text-sm text-gray-500">No recent movements found for this product.</p>
+                <p className="text-xs text-slate-500">No recent movements.</p>
             ) : (
-                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-                    {movementHistory.map((movement) => (
-                        <div key={movement.id} className="mb-2 text-sm border-b pb-2 last:mb-0 last:border-b-0">
-                            <p>
-                                <strong>{movement.movement_type}</strong>: {movement.quantity} units{' '}
-                                {movement.from_location && `from ${movement.from_location}`}{' '}
-                                {movement.to_location && `to ${movement.to_location}`}
-                            </p>
-                            <p className="text-xs text-gray-600">
-                                {new Date(movement.created_at).toLocaleString()}{' '}
-                                {movement.performed_by && `by ${movement.performed_by}`}{' '}
-                                {movement.notes && `- ${movement.notes}`}
-                            </p>
-                            {movement.reference_id && movement.reference_type === 'PurchaseOrder' && (
-                                <p className="text-xs text-blue-600 mt-1">Ref: PO {movement.reference_id}</p>
-                            )}
-                        </div>
-                    ))}
+                <ScrollArea className="h-24 w-full rounded border p-2">
+                    <div className="space-y-1">
+                      {movementHistory.map((movement) => (
+                          <div key={movement.id} className="text-xs border-b pb-1 last:border-b-0">
+                              <p className="font-medium">
+                                  {movement.movement_type}: {movement.quantity} {movement.from_location && `from ${movement.from_location}`} {movement.to_location && `to ${movement.to_location}`}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                  {new Date(movement.created_at).toLocaleString()} {movement.performed_by && `by ${movement.performed_by}`}
+                              </p>
+                          </div>
+                      ))}
+                    </div>
                 </ScrollArea>
             )}
           </div>
