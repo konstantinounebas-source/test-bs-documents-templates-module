@@ -320,13 +320,14 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
               
               <div>
                 <Label htmlFor="charged_to_person">Charged To (Optional)</Label>
-                <Select value={chargedToPerson} onValueChange={setChargedToPerson}>
+                <Select value={chargedToPerson || "none"} onValueChange={(val) => setChargedToPerson(val === "none" ? "" : val)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select person (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {allUsers.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
+                    <SelectItem value="none">-- None --</SelectItem>
+                    {allUsers.filter(user => user.id && String(user.id).trim().length > 0).map((user) => (
+                      <SelectItem key={user.id} value={String(user.id)}>
                         {user.name}
                       </SelectItem>
                     ))}
