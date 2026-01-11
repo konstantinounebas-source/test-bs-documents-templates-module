@@ -64,7 +64,7 @@ export default function PreviousPurchasesSelector({
       return;
     }
 
-    const movement = previousPurchases.find(m => m.id === movementId);
+    const movement = previousPurchases.find(m => String(m.id).trim() === movementId);
     if (movement && onSelect) {
       onSelect({
         vendor_id: movement.reference_id,
