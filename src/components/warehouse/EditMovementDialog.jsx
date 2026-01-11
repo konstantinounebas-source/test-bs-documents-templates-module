@@ -408,27 +408,26 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                       Μονάδα προϊόντος: {product?.unit_of_measure || 'N/A'}
                     </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="conversion_rate">Ποσότητα ανά μονάδα ({product?.unit_of_measure || 'μονάδες'}) *</Label>
-                      <Input
-                        id="conversion_rate"
-                        type="number"
-                        min="0.0001"
-                        step="0.0001"
-                        value={formData.conversion_rate}
-                        onChange={(e) => {
-                          setFormData({ ...formData, conversion_rate: e.target.value });
-                          if (validationErrors.conversion_rate) {
-                            setValidationErrors({ ...validationErrors, conversion_rate: undefined });
-                          }
-                        }}
-                        placeholder="π.χ. 100"
-                        className={validationErrors.conversion_rate ? 'border-red-500 focus-visible:ring-red-500' : ''}
-                      />
-                      {validationErrors.conversion_rate && (
-                        <p className="text-xs text-red-600 mt-1">{validationErrors.conversion_rate}</p>
-                      )}
+                  <div>
+                    <Label htmlFor="conversion_rate">Πολλαπλάσιο μεγέθους (Conversion Rate) *</Label>
+                    <Input
+                      id="conversion_rate"
+                      type="number"
+                      min="0.0001"
+                      step="0.0001"
+                      value={formData.conversion_rate}
+                      onChange={(e) => {
+                        setFormData({ ...formData, conversion_rate: e.target.value });
+                        if (validationErrors.conversion_rate) {
+                          setValidationErrors({ ...validationErrors, conversion_rate: undefined });
+                        }
+                      }}
+                      placeholder="1"
+                      className={validationErrors.conversion_rate ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                    />
+                    {validationErrors.conversion_rate && (
+                      <p className="text-xs text-red-600 mt-1">{validationErrors.conversion_rate}</p>
+                    )}
                     <p className="text-xs text-slate-500 mt-1">
                       Πολλαπλάσιο της βασικής μονάδας ({product?.unit_of_measure || 'N/A'}). Π.χ. αν 1kg = 1000gr, βάλτε 0.001 για γραμμάρια
                     </p>
