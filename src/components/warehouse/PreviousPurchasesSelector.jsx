@@ -105,8 +105,11 @@ export default function PreviousPurchasesSelector({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="none">-- Νέα Αγορά --</SelectItem>
-          {previousPurchases.filter(m => m.id && m.id.toString().trim() !== '').map((movement) => (
-            <SelectItem key={movement.id} value={movement.id.toString()}>
+          {previousPurchases.filter(m => {
+            const idStr = m.id?.toString().trim();
+            return idStr && idStr !== '';
+          }).map((movement) => (
+            <SelectItem key={movement.id} value={movement.id.toString().trim()}>
               <div className="flex flex-col py-1">
                 <div className="font-medium">
                   {formatDate(movement.created_date)} - {getVendorName(movement.reference_id)}
