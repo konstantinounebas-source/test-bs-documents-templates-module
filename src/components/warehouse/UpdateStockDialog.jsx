@@ -44,8 +44,6 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
   const [companies, setCompanies] = useState([]);
   const [selectedVendor, setSelectedVendor] = useState("");
   const [unitCost, setUnitCost] = useState("");
-  const [bundleQuantity, setBundleQuantity] = useState("");
-  const [inputUnitOfMeasure, setInputUnitOfMeasure] = useState("");
   const [conversionRate, setConversionRate] = useState("1");
 
   useEffect(() => {
@@ -67,8 +65,6 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       setHideCompletedPOs(true); // Reset PO hide toggle to default true when dialog opens
       setSelectedVendor("");
       setUnitCost("");
-      setBundleQuantity("");
-      setInputUnitOfMeasure("");
       setConversionRate("1");
     }
   }, [open, product]);
@@ -177,7 +173,7 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         product_id: product.id,
         movement_type: movementType,
         quantity: numericQuantity,
-        input_unit_of_measure: inputUnitOfMeasure || product.unit_of_measure,
+        input_unit_of_measure: product.unit_of_measure,
         conversion_rate: parsedConversionRate,
         base_quantity: baseQuantity,
         from_location: fromLocation || undefined,
@@ -427,9 +423,7 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
                   if (data) {
                     setSelectedVendor(data.vendor_id || '');
                     setUnitCost(data.unit_cost ? String(data.unit_cost) : '');
-                    setBundleQuantity(data.bundle_quantity ? String(data.bundle_quantity) : '');
                     setConversionRate(data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : '1'));
-                    setInputUnitOfMeasure(data.input_unit_of_measure || '');
                     setVendorProductCode(data.vendor_product_code || '');
                     setInvoiceCategory(data.invoice_category_id || '');
                   }
@@ -623,27 +617,7 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
               </div>
 
               <div>
-                <Label htmlFor="input_unit_of_measure">Μονάδα Εισαγωγής</Label>
-                <Select
-                  value={inputUnitOfMeasure || product.unit_of_measure}
-                  onValueChange={setInputUnitOfMeasure}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Επιλέξτε" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="piece">Τεμάχιο</SelectItem>
-                    <SelectItem value="meter">Μέτρο</SelectItem>
-                    <SelectItem value="kg">Κιλό</SelectItem>
-                    <SelectItem value="liter">Λίτρο</SelectItem>
-                    <SelectItem value="box">Κουτί</SelectItem>
-                    <SelectItem value="pallet">Παλέτα</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="conversion_rate">Ποσότητα ανά μονάδα ({product?.unit_of_measure || 'μονάδες'})</Label>
+                <Label htmlFor="conversion_rate">Πολλαπλάσιο μεγέθους (Conversion Rate)</Label>
                 <Input
                   id="conversion_rate"
                   type="number"
@@ -651,10 +625,10 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
                   step="0.0001"
                   value={conversionRate}
                   onChange={(e) => setConversionRate(e.target.value)}
-                  placeholder="π.χ. 100"
+                  placeholder="1"
                 />
                 <p className="text-xs text-slate-500 mt-1">
-                  Ποσότητα βασικής μονάδας: {(parseFloat(quantity) * parseFloat(conversionRate) || 0).toFixed(2)} {product?.unit_of_measure || 'μονάδες'}
+                  Μονάδα προϊόντος: {product?.unit_of_measure || 'N/A'} | Ποσότητα βασικής μονάδας: {(parseFloat(quantity) * parseFloat(conversionRate) || 0).toFixed(4)} {product?.unit_of_measure || 'μονάδες'}
                 </p>
               </div>
 

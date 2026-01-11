@@ -18,7 +18,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     reference_type: '',
     reference_id: '',
     unit_cost: '',
-    input_unit_of_measure: '',
     conversion_rate: '',
     vendor_product_code: '',
     invoice_category_id: '',
@@ -60,7 +59,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       let conversionRate = '';
       let vendorUnitCost = movement.unit_cost || '';
       let vendorProdCode = movement.vendor_product_code || '';
-      let inputUnitOfMeasure = movement.input_unit_of_measure || currentProduct?.unit_of_measure || 'piece';
 
       if (movement.reference_id && movement.product_id) {
         const pv = productVendors.find(
@@ -94,7 +92,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         reference_type: movement.reference_type || '',
         reference_id: movement.reference_id || '',
         unit_cost: vendorUnitCost,
-        input_unit_of_measure: inputUnitOfMeasure,
         conversion_rate: conversionRate || '1',
         vendor_product_code: vendorProdCode,
         invoice_category_id: movement.invoice_category_id || '',
@@ -180,7 +177,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         reference_type: formData.reference_type || null,
         reference_id: formData.reference_id || null,
         quantity: quantity,
-        input_unit_of_measure: formData.input_unit_of_measure,
+        input_unit_of_measure: product.unit_of_measure,
         conversion_rate: conversionRate,
         base_quantity: baseQuantity,
         unit_cost: unitCost,
@@ -286,7 +283,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                         reference_id: data.vendor_id || '',
                         unit_cost: data.unit_cost ? String(data.unit_cost) : '',
                         conversion_rate: data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : ''),
-                        input_unit_of_measure: data.input_unit_of_measure || '',
                         vendor_product_code: data.vendor_product_code || '',
                         invoice_category_id: data.invoice_category_id || '',
                         company_id: data.company_id || ''
@@ -387,49 +383,30 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                 <div className="space-y-3 border-t pt-4">
                   <p className="text-sm font-semibold text-slate-700">Ποσότητα & Κόστος</p>
                   
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="quantity">Ποσότητα *</Label>
-                      <Input
-                        id="quantity"
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        value={formData.quantity}
-                        onChange={(e) => {
-                          setFormData({ ...formData, quantity: e.target.value });
-                          if (validationErrors.quantity) {
-                            setValidationErrors({ ...validationErrors, quantity: undefined });
-                          }
-                        }}
-                        placeholder="0.00"
-                        required
-                        className={validationErrors.quantity ? 'border-red-500 focus-visible:ring-red-500' : ''}
-                      />
-                      {validationErrors.quantity && (
-                        <p className="text-xs text-red-600 mt-1">{validationErrors.quantity}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="input_unit_of_measure">Μονάδα Εισαγωγής</Label>
-                      <Select
-                        value={formData.input_unit_of_measure}
-                        onValueChange={(val) => setFormData({ ...formData, input_unit_of_measure: val })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Επιλέξτε" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="piece">Τεμάχιο</SelectItem>
-                          <SelectItem value="meter">Μέτρο</SelectItem>
-                          <SelectItem value="kg">Κιλό</SelectItem>
-                          <SelectItem value="liter">Λίτρο</SelectItem>
-                          <SelectItem value="box">Κουτί</SelectItem>
-                          <SelectItem value="pallet">Παλέτα</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  <div>
+                    <Label htmlFor="quantity">Ποσότητα *</Label>
+                    <Input
+                      id="quantity"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      value={formData.quantity}
+                      onChange={(e) => {
+                        setFormData({ ...formData, quantity: e.target.value });
+                        if (validationErrors.quantity) {
+                          setValidationErrors({ ...validationErrors, quantity: undefined });
+                        }
+                      }}
+                      placeholder="0.00"
+                      required
+                      className={validationErrors.quantity ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                    />
+                    {validationErrors.quantity && (
+                      <p className="text-xs text-red-600 mt-1">{validationErrors.quantity}</p>
+                    )}
+                    <p className="text-xs text-slate-500 mt-1">
+                      Μονάδα προϊόντος: {product?.unit_of_measure || 'N/A'}
+                    </p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -452,27 +429,20 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                       {validationErrors.conversion_rate && (
                         <p className="text-xs text-red-600 mt-1">{validationErrors.conversion_rate}</p>
                       )}
-                      <p className="text-xs text-slate-500 mt-1">
-                        (π.χ. αν 1 κουτί = 100 {product?.unit_of_measure || 'τεμ'}, εισάγετε 100)
-                      </p>
-                    </div>
-                    {costPerBaseUnit && unitCost > 0 && (
-                      <div>
-                        <Label>Κόστος ανά {product?.unit_of_measure || 'μονάδα'}</Label>
-                        <div className="flex items-center h-10 px-3 bg-slate-100 rounded-md border">
-                          <span className="text-sm font-medium">€{costPerBaseUnit}</span>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Υπολογιζόμενο κόστος βασικής μονάδας
-                        </p>
-                      </div>
-                    )}
+                    <p className="text-xs text-slate-500 mt-1">
+                      Πολλαπλάσιο της βασικής μονάδας ({product?.unit_of_measure || 'N/A'}). Π.χ. αν 1kg = 1000gr, βάλτε 0.001 για γραμμάρια
+                    </p>
                   </div>
 
-                  <div>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Ποσότητα στην βασική μονάδα: {(parseFloat(formData.quantity) * parseFloat(formData.conversion_rate) || 0).toFixed(2)} {product?.unit_of_measure || 'μονάδες'}
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-sm text-slate-700">
+                      <strong>Ποσότητα στην βασική μονάδα:</strong> {(parseFloat(formData.quantity) * parseFloat(formData.conversion_rate) || 0).toFixed(4)} {product?.unit_of_measure || 'μονάδες'}
                     </p>
+                    {costPerBaseUnit && unitCost > 0 && (
+                      <p className="text-sm text-slate-700 mt-1">
+                        <strong>Κόστος ανά βασική μονάδα:</strong> €{costPerBaseUnit}
+                      </p>
+                    )}
                   </div>
 
                   <div>
