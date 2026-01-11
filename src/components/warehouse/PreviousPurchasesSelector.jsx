@@ -37,7 +37,8 @@ export default function PreviousPurchasesSelector({
       const seen = new Set();
 
       for (const movement of movements) {
-        if (!movement.reference_id || !movement.unit_cost) continue;
+        // Skip if reference_id or unit_cost is missing or empty
+        if (!movement.reference_id || movement.reference_id === '' || !movement.unit_cost) continue;
         
         const key = `${movement.reference_id}_${movement.unit_cost}_${movement.vendor_product_code || ''}`;
         
