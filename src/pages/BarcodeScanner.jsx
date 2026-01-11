@@ -1586,6 +1586,10 @@ export default function BarcodeScannerPage() {
                         }}
                       />
 
+                      <div className="border-t pt-3">
+                        <Label className="text-sm font-semibold block mb-3">✦ Σταγία Προμηθευτή</Label>
+                      </div>
+
                       <Separator />
 
                       {/* Vendor Information Section */}
