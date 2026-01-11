@@ -2665,24 +2665,23 @@ export default function BarcodeScannerPage() {
                             />
                           </div>
 
-
-
-                        <div>
-                          <Label className="text-xs">Pcs/Qty</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            step="1"
-                            value={item.bundle_quantity}
-                            onChange={(e) => handleBulkInvoiceItemChange(index, 'bundle_quantity', e.target.value)}
-                            placeholder="100"
-                          />
-                          {costPerPc !== '-' && (
-                            <p className="text-xs text-slate-600 mt-1">Κόστος/τεμ: €{costPerPc}</p>
-                          )}
+                          <div>
+                            <Label className="text-xs">Pcs/Qty</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={item.bundle_quantity}
+                              onChange={(e) => handleBulkInvoiceItemChange(index, 'bundle_quantity', e.target.value)}
+                              placeholder="100"
+                            />
+                            {costPerPc !== '-' && (
+                              <p className="text-xs text-slate-600 mt-1">Κόστος/τεμ: €{costPerPc}</p>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3 mt-3">
+                        <div className="grid grid-cols-2 gap-3">
                           <div>
                             <Label className="text-xs">Μέθοδος Κόστους</Label>
                             <Select
