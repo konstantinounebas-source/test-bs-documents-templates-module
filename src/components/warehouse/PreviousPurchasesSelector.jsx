@@ -106,7 +106,7 @@ export default function PreviousPurchasesSelector({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="none">-- Νέα Αγορά --</SelectItem>
-          {previousPurchases.map((movement) => (
+          {previousPurchases.filter(m => m.id && m.id !== '').map((movement) => (
             <SelectItem key={movement.id} value={movement.id}>
               <div className="flex flex-col py-1">
                 <div className="font-medium">
