@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Loader2, ChevronLeft, ChevronRight, Calculator } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,12 +16,34 @@ export default function BOMManager({ busStopTypes, components, products, selecte
   const [isSaving, setIsSaving] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [teams, setTeams] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   useEffect(() => {
     if (selectedType) {
       setCurrentTypeId(selectedType.id);
     }
   }, [selectedType]);
+
+  useEffect(() => {
+    loadAdditionalData();
+  }, []);
+
+  const loadAdditionalData = async () => {
+    setIsLoadingData(true);
+    try {
+      const [teamsData, companiesData] = await Promise.all([
+        base44.entities.Team.list(),
+        base44.entities.Company.list()
+      ]);
+      setTeams(teamsData);
+      setCompanies(companiesData);
+    } catch (error) {
+      console.error("Error loading additional data:", error);
+    }
+    setIsLoadingData(false);
+  };
 
   useEffect(() => {
     if (currentTypeId) {
@@ -34,7 +56,9 @@ export default function BOMManager({ busStopTypes, components, products, selecte
       .filter(c => c.bus_stop_type_id === currentTypeId)
       .map(c => ({
         ...c,
-        quantity_required: String(c.quantity_required)
+        quantity_required: String(c.quantity_required),
+        unit_of_measure: c.unit_of_measure || 'pcs',
+        team_id: c.team_id || ''
       }));
     setTypeComponents(filtered);
     setCurrentPage(1);
@@ -45,6 +69,8 @@ export default function BOMManager({ busStopTypes, components, products, selecte
       id: null,
       product_id: '',
       quantity_required: "1",
+      unit_of_measure: 'pcs',
+      team_id: '',
       is_optional: false,
       notes: ''
     }]);
@@ -79,8 +105,8 @@ export default function BOMManager({ busStopTypes, components, products, selecte
       for (const component of typeComponents) {
         if (!component.product_id) continue;
         
-        const quantityNum = parseInt(component.quantity_required, 10);
-        if (isNaN(quantityNum) || quantityNum < 1) {
+        const quantityNum = parseFloat(component.quantity_required);
+        if (isNaN(quantityNum) || quantityNum <= 0) {
           console.warn(`Skipping component with invalid quantity: ${component.product_id}`);
           continue;
         }
@@ -89,6 +115,8 @@ export default function BOMManager({ busStopTypes, components, products, selecte
           bus_stop_type_id: currentTypeId,
           product_id: component.product_id,
           quantity_required: quantityNum,
+          unit_of_measure: component.unit_of_measure || 'pcs',
+          team_id: component.team_id || null,
           is_optional: component.is_optional || false,
           notes: component.notes || ''
         };
@@ -111,11 +139,57 @@ export default function BOMManager({ busStopTypes, components, products, selecte
     return product ? `${product.name} (${product.sku})` : 'Unknown Product';
   };
 
+  const getProductDetails = (productId) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return { name: 'Unknown', company: '-', cost: 0 };
+    
+    const company = companies.find(c => c.id === product.company_id);
+    return {
+      name: `${product.name} (${product.sku})`,
+      company: company?.name || '-',
+      cost: product.unit_cost || 0
+    };
+  };
+
+  const getTeamName = (teamId) => {
+    const team = teams.find(t => t.id === teamId);
+    return team?.name || '-';
+  };
+
+  const calculateTotalCost = () => {
+    let total = 0;
+    typeComponents.forEach(comp => {
+      const product = products.find(p => p.id === comp.product_id);
+      if (product && product.unit_cost) {
+        const qty = parseFloat(comp.quantity_required) || 0;
+        total += qty * product.unit_cost;
+      }
+    });
+    return total;
+  };
+
+  const calculateCostByTeam = () => {
+    const costByTeam = {};
+    typeComponents.forEach(comp => {
+      const product = products.find(p => p.id === comp.product_id);
+      if (product && product.unit_cost && comp.team_id) {
+        const qty = parseFloat(comp.quantity_required) || 0;
+        const cost = qty * product.unit_cost;
+        const teamName = getTeamName(comp.team_id);
+        costByTeam[teamName] = (costByTeam[teamName] || 0) + cost;
+      }
+    });
+    return costByTeam;
+  };
+
   // Pagination
   const totalPages = Math.ceil(typeComponents.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedComponents = typeComponents.slice(startIndex, endIndex);
+
+  const totalCost = calculateTotalCost();
+  const costByTeam = calculateCostByTeam();
 
   return (
     <div className="space-y-6">
@@ -137,6 +211,38 @@ export default function BOMManager({ busStopTypes, components, products, selecte
 
       {currentTypeId && (
         <>
+          {/* Cost Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-blue-700">Συνολικό Κόστος ανά Στάση</p>
+                    <p className="text-2xl font-bold text-blue-900 mt-1">€{totalCost.toFixed(2)}</p>
+                  </div>
+                  <div className="p-2 rounded-full bg-blue-500">
+                    <Calculator className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {Object.keys(costByTeam).length > 0 && (
+              <>
+                {Object.entries(costByTeam).slice(0, 2).map(([teamName, cost]) => (
+                  <Card key={teamName} className="border-slate-200">
+                    <CardContent className="p-4">
+                      <div>
+                        <p className="text-xs font-medium text-slate-600">Κόστος {teamName}</p>
+                        <p className="text-xl font-bold text-slate-900 mt-1">€{cost.toFixed(2)}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            )}
+          </div>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">
@@ -175,15 +281,23 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                     <TableHeader>
                       <TableRow className="bg-slate-50">
                         <TableHead className="w-12">#</TableHead>
-                        <TableHead>Product</TableHead>
-                        <TableHead className="w-32">Quantity</TableHead>
-                        <TableHead>Notes</TableHead>
-                        <TableHead className="w-24 text-right">Actions</TableHead>
+                        <TableHead>Προϊόν</TableHead>
+                        <TableHead>Εταιρεία</TableHead>
+                        <TableHead>Ομάδα</TableHead>
+                        <TableHead className="w-28">Ποσότητα</TableHead>
+                        <TableHead className="w-24">Μονάδα</TableHead>
+                        <TableHead>Κόστος</TableHead>
+                        <TableHead>Σημειώσεις</TableHead>
+                        <TableHead className="w-24 text-right">Ενέργειες</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {paginatedComponents.map((component, index) => {
                         const absoluteIndex = startIndex + index;
+                        const productDetails = getProductDetails(component.product_id);
+                        const qty = parseFloat(component.quantity_required) || 0;
+                        const lineCost = qty * productDetails.cost;
+                        
                         return (
                           <TableRow key={absoluteIndex}>
                             <TableCell className="font-medium text-slate-500">
@@ -194,18 +308,40 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                 products={products}
                                 value={component.product_id}
                                 onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
-                                placeholder="Select product"
+                                placeholder="Επιλέξτε προϊόν"
                               />
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-600">
+                              {productDetails.company}
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                value={component.team_id || "none"}
+                                onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'team_id', value === "none" ? '' : value)}
+                              >
+                                <SelectTrigger className="w-40">
+                                  <SelectValue placeholder="Επιλέξτε ομάδα" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">-</SelectItem>
+                                  {teams.filter(t => t.is_active).map(team => (
+                                    <SelectItem key={team.id} value={team.id}>
+                                      {team.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </TableCell>
                             <TableCell>
                               <Input
                                 type="number"
-                                min="1"
+                                step="0.01"
+                                min="0.01"
                                 value={component.quantity_required}
                                 onChange={(e) => handleUpdateComponent(absoluteIndex, 'quantity_required', e.target.value)}
                                 onBlur={(e) => {
-                                  const val = parseInt(e.target.value, 10);
-                                  if (isNaN(val) || val < 1) {
+                                  const val = parseFloat(e.target.value);
+                                  if (isNaN(val) || val <= 0) {
                                     handleUpdateComponent(absoluteIndex, 'quantity_required', "1");
                                   } else {
                                     handleUpdateComponent(absoluteIndex, 'quantity_required', String(val));
@@ -215,10 +351,33 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                               />
                             </TableCell>
                             <TableCell>
+                              <Select
+                                value={component.unit_of_measure || 'pcs'}
+                                onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'unit_of_measure', value)}
+                              >
+                                <SelectTrigger className="w-20">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pcs">pcs</SelectItem>
+                                  <SelectItem value="kg">kg</SelectItem>
+                                  <SelectItem value="gr">gr</SelectItem>
+                                  <SelectItem value="l">l</SelectItem>
+                                  <SelectItem value="ml">ml</SelectItem>
+                                  <SelectItem value="m">m</SelectItem>
+                                  <SelectItem value="m2">m²</SelectItem>
+                                  <SelectItem value="m3">m³</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell className="text-sm font-medium text-slate-700">
+                              {lineCost > 0 ? `€${lineCost.toFixed(2)}` : '-'}
+                            </TableCell>
+                            <TableCell>
                               <Input
                                 value={component.notes || ''}
                                 onChange={(e) => handleUpdateComponent(absoluteIndex, 'notes', e.target.value)}
-                                placeholder="Installation notes..."
+                                placeholder="Σημειώσεις..."
                                 className="w-full"
                               />
                             </TableCell>
