@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox"; // Added Checkbox import
 import { ScrollArea } from "@/components/ui/scroll-area"; // Added ScrollArea import
+import PreviousPurchasesSelector from "@/components/warehouse/PreviousPurchasesSelector";
 
 export default function UpdateStockDialog({ open, onClose, product, onStockUpdated }) {
   const [movementType, setMovementType] = useState("IN");
@@ -39,6 +40,11 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
   const [validationError, setValidationError] = useState("");
   const [hideCompletedPOs, setHideCompletedPOs] = useState(true); // New state for PO hide toggle
   const [movementHistory, setMovementHistory] = useState([]); // New state for movement history
+  const [vendors, setVendors] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [selectedVendor, setSelectedVendor] = useState("");
+  const [unitCost, setUnitCost] = useState("");
+  const [bundleQuantity, setBundleQuantity] = useState("");
 
   useEffect(() => {
     if (open && product) {
@@ -57,6 +63,9 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       setInvoiceCategory("");
       setValidationError(""); // Clear validation errors
       setHideCompletedPOs(true); // Reset PO hide toggle to default true when dialog opens
+      setSelectedVendor("");
+      setUnitCost("");
+      setBundleQuantity("");
     }
   }, [open, product]);
 
@@ -66,7 +75,7 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
     setValidationError("");
 
     try {
-      const [locationsData, poData, user, sysUsers, aUsers, movementsData, invoiceCatsData] = await Promise.all([
+      const [locationsData, poData, user, sysUsers, aUsers, movementsData, invoiceCatsData, vendorsData, companiesData] = await Promise.all([
         base44.entities.WarehouseLocation.filter({ is_active: true }),
         // Fetch all relevant POs including 'Received' to allow toggling
         base44.entities.PurchaseOrder.filter({ status: ["Confirmed", "Partially Received", "Received"] }).catch(() => []),
@@ -75,7 +84,9 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         base44.entities.AppUser.list().catch(() => []),
         // Fetch movement history for the current product
         base44.entities.StockMovement.filter({ product_id: product.id, _limit: 10, _sort: '-created_at' }).catch(() => []),
-        base44.entities.InvoiceCategory.filter({ is_active: true }).catch(() => [])
+        base44.entities.InvoiceCategory.filter({ is_active: true }).catch(() => []),
+        base44.entities.Vendor.filter({ is_active: true }).catch(() => []),
+        base44.entities.Company.filter({ is_active: true }).catch(() => [])
       ]);
       
       setLocations(locationsData);
@@ -93,6 +104,8 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       setAppUsers(aUsers);
       setMovementHistory(movementsData); // Set movement history
       setInvoiceCategories(invoiceCatsData);
+      setVendors(vendorsData);
+      setCompanies(companiesData);
     } catch (error) {
       console.error("Error loading data:", error);
       setValidationError("Failed to load necessary data. Please try again.");
@@ -164,10 +177,11 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         performed_by: currentUser?.email || currentUser?.id,
         notes: notes || undefined,
         // For OUT movements, use the product's current unit_cost
-        unit_cost: movementType === "OUT" ? (product.unit_cost || 0) : undefined,
+        unit_cost: movementType === "OUT" ? (product.unit_cost || 0) : (unitCost ? parseFloat(unitCost) : undefined),
         // For IN movements, save vendor_product_code and invoice_category_id
         vendor_product_code: movementType === "IN" && vendorProductCode ? vendorProductCode : undefined,
-        invoice_category_id: movementType === "IN" && invoiceCategory ? invoiceCategory : undefined
+        invoice_category_id: movementType === "IN" && invoiceCategory ? invoiceCategory : undefined,
+        bundle_quantity: movementType === "IN" && bundleQuantity ? parseFloat(bundleQuantity) : undefined
         };
 
       await base44.entities.StockMovement.create(movementData);
@@ -393,6 +407,23 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
 
           {movementType === "IN" && (
             <>
+              <PreviousPurchasesSelector
+                productId={product?.id}
+                vendors={vendors}
+                companies={companies}
+                invoiceCategories={invoiceCategories}
+                onSelect={(data) => {
+                  if (data) {
+                    setSelectedVendor(data.vendor_id || '');
+                    setUnitCost(data.unit_cost ? String(data.unit_cost) : '');
+                    setBundleQuantity(data.bundle_quantity ? String(data.bundle_quantity) : '');
+                    setVendorProductCode(data.vendor_product_code || '');
+                    setInvoiceCategory(data.invoice_category_id || '');
+                    // Note: company is not part of UpdateStockDialog state, handled via product update
+                  }
+                }}
+              />
+
               <div>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="related_po">Linked Purchase Order (Optional)</Label>
@@ -539,6 +570,22 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
           {movementType === "IN" && (
             <>
               <div>
+                <Label htmlFor="vendor_id">Προμηθευτής (Optional)</Label>
+                <Select value={chargedToPerson} onValueChange={setChargedToPerson}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Επιλέξτε προμηθευτή" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendors.map((vendor) => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
                 <Label htmlFor="vendor_product_code">Κωδικός Προϊόντος Προμηθευτή (Optional)</Label>
                 <Input
                   id="vendor_product_code"
@@ -546,6 +593,32 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
                   value={vendorProductCode}
                   onChange={(e) => setVendorProductCode(e.target.value)}
                   placeholder="Κωδικός προμηθευτή"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="unit_cost">Κόστος ανά Μονάδα (€) (Optional)</Label>
+                <Input
+                  id="unit_cost"
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  value={unitCost}
+                  onChange={(e) => setUnitCost(e.target.value)}
+                  placeholder="0.0000"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="bundle_quantity">Pcs/Qty (Optional)</Label>
+                <Input
+                  id="bundle_quantity"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={bundleQuantity}
+                  onChange={(e) => setBundleQuantity(e.target.value)}
+                  placeholder="π.χ. 100 τεμ."
                 />
               </div>
 
