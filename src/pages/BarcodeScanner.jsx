@@ -2563,7 +2563,9 @@ export default function BarcodeScannerPage() {
                             }}
                           />
                         )}
+                      </div>
 
+                      <div className="space-y-3">
                         <div className="grid grid-cols-2 gap-3">
                           <div>
                             <Label className="text-xs">Θέση Αποθήκης *</Label>

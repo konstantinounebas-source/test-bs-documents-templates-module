@@ -172,8 +172,8 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         to_location: toLocation || undefined,
         waybill_number: waybillNumber || undefined,
         charged_to_person: chargedToPerson || undefined,
-        reference_type: relatedPO ? "PurchaseOrder" : "Manual",
-        reference_id: relatedPO || undefined,
+        reference_type: relatedPO ? "PurchaseOrder" : (selectedVendor ? "Vendor" : "Manual"),
+        reference_id: relatedPO || selectedVendor || undefined,
         performed_by: currentUser?.email || currentUser?.id,
         notes: notes || undefined,
         // For OUT movements, use the product's current unit_cost
@@ -571,11 +571,12 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
             <>
               <div>
                 <Label htmlFor="vendor_id">Προμηθευτής (Optional)</Label>
-                <Select value={chargedToPerson} onValueChange={setChargedToPerson}>
+                <Select value={selectedVendor || 'none'} onValueChange={(val) => setSelectedVendor(val === 'none' ? '' : val)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Επιλέξτε προμηθευτή" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">-- Επιλέξτε --</SelectItem>
                     {vendors.map((vendor) => (
                       <SelectItem key={vendor.id} value={vendor.id}>
                         {vendor.name}
