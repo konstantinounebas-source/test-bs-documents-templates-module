@@ -324,7 +324,9 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     value={formData.warehouse_location || ''}
                     onChange={(e) => setFormData({ ...formData, warehouse_location: e.target.value })}
                     placeholder="π.χ. Ράφι A1"
+                    disabled
                   />
+                  <p className="text-xs text-slate-500 mt-1">Θέση κατά τη δημιουργία της κίνησης</p>
                 </div>
 
                 {/* Company & Invoice Category */}
