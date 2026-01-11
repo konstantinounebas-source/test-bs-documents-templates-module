@@ -55,6 +55,15 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     }
   };
 
+  const loadPurchaseOrders = async () => {
+    try {
+      const pos = await base44.entities.PurchaseOrder.list();
+      setPurchaseOrders(pos);
+    } catch (error) {
+      console.error("Error loading purchase orders:", error);
+    }
+  };
+
   useEffect(() => {
     if (movement) {
       const currentProduct = products.find(p => p.id === movement.product_id);
