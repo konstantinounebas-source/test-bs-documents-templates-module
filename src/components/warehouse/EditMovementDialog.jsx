@@ -262,6 +262,26 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
             {isInMovement && (
               <>
+                <PreviousPurchasesSelector
+                  productId={movement?.product_id}
+                  vendors={vendors}
+                  companies={companies}
+                  invoiceCategories={invoiceCategories}
+                  onSelect={(data) => {
+                    if (data) {
+                      setFormData(prev => ({
+                        ...prev,
+                        reference_type: 'Vendor',
+                        reference_id: data.vendor_id || '',
+                        unit_cost: data.unit_cost ? String(data.unit_cost) : '',
+                        bundle_quantity: data.bundle_quantity ? String(data.bundle_quantity) : '',
+                        vendor_product_code: data.vendor_product_code || '',
+                        invoice_category_id: data.invoice_category_id || '',
+                        company_id: data.company_id || ''
+                      }));
+                    }
+                  }}
+                />
 
                 {/* Location & Company */}
                 <div className="grid grid-cols-2 gap-3 border-t pt-4">

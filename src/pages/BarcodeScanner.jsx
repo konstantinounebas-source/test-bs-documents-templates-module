@@ -24,6 +24,7 @@ import CreateEditProductDialog from "../components/warehouse/CreateEditProductDi
 import PersonSearchCombobox from "../components/warehouse/PersonSearchCombobox";
 import VendorSearchCombobox from "../components/warehouse/VendorSearchCombobox";
 import ProductSearchCombobox from "../components/warehouse/ProductSearchCombobox";
+import PreviousPurchasesSelector from "../components/warehouse/PreviousPurchasesSelector";
 
 // Helper function to introduce a delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -1527,6 +1528,25 @@ export default function BarcodeScannerPage() {
                     <>
                       <Separator />
 
+                      <PreviousPurchasesSelector
+                        productId={matchedProduct?.id}
+                        vendors={vendors}
+                        companies={companies}
+                        invoiceCategories={invoiceCategories}
+                        onSelect={(data) => {
+                          if (data) {
+                            setSelectedVendor(data.vendor_id || '');
+                            setUnitCost(data.unit_cost ? String(data.unit_cost) : '');
+                            setBundleQuantity(data.bundle_quantity ? String(data.bundle_quantity) : '');
+                            setVendorProductCode(data.vendor_product_code || '');
+                            setSelectedInvoiceCategory(data.invoice_category_id || '');
+                            setSelectedCompany(data.company_id || '');
+                          }
+                        }}
+                      />
+
+                      <Separator />
+
                       {/* Vendor Information Section */}
                       <div className="space-y-3">
                         <p className="text-sm font-semibold text-slate-700">Στοιχεία Προμηθευτή</p>
@@ -2520,6 +2540,29 @@ export default function BarcodeScannerPage() {
                             placeholder="Επιλογή προϊόντος..."
                           />
                         </div>
+
+                        {item.product_id && (
+                          <PreviousPurchasesSelector
+                            productId={item.product_id}
+                            vendors={vendors}
+                            companies={companies}
+                            invoiceCategories={invoiceCategories}
+                            onSelect={(data) => {
+                              if (data) {
+                                const updatedItems = [...bulkInvoiceItems];
+                                updatedItems[index] = {
+                                  ...updatedItems[index],
+                                  unit_cost: data.unit_cost ? String(data.unit_cost) : '',
+                                  bundle_quantity: data.bundle_quantity ? String(data.bundle_quantity) : '',
+                                  vendor_product_code: data.vendor_product_code || '',
+                                  invoice_category_id: data.invoice_category_id || '',
+                                  company_id: data.company_id || ''
+                                };
+                                setBulkInvoiceItems(updatedItems);
+                              }
+                            }}
+                          />
+                        )}
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>
