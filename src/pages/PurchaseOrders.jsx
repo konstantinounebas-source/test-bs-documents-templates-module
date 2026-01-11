@@ -806,6 +806,7 @@ export default function PurchaseOrdersPage() {
                       <TableRow>
                         <TableHead>Product *</TableHead>
                         <TableHead className="w-24">Qty *</TableHead>
+                        <TableHead className="w-24">Unit</TableHead>
                         <TableHead className="w-24">Pcs/Qty</TableHead>
                         <TableHead className="w-32">Unit Cost (€) *</TableHead>
                         <TableHead className="w-32">Unit Cost/Pcs (€)</TableHead>
@@ -843,6 +844,59 @@ export default function PurchaseOrdersPage() {
                                 required
                                 placeholder="Qty"
                               />
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                value={item.input_unit_of_measure || ''}
+                                onValueChange={(val) => handleItemChange(index, 'input_unit_of_measure', val)}
+                              >
+                                <SelectTrigger className="text-xs">
+                                  <SelectValue placeholder="-" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(() => {
+                                    const product = products.find(p => p.id === item.product_id);
+                                    if (product?.unit_of_measure === 'kg') {
+                                      return (
+                                        <>
+                                          <SelectItem value={null}>-</SelectItem>
+                                          <SelectItem value="g">g</SelectItem>
+                                          <SelectItem value="kg">kg</SelectItem>
+                                          <SelectItem value="ton">ton</SelectItem>
+                                        </>
+                                      );
+                                    } else if (product?.unit_of_measure === 'liter') {
+                                      return (
+                                        <>
+                                          <SelectItem value={null}>-</SelectItem>
+                                          <SelectItem value="ml">ml</SelectItem>
+                                          <SelectItem value="liter">L</SelectItem>
+                                        </>
+                                      );
+                                    } else if (product?.unit_of_measure === 'meter') {
+                                      return (
+                                        <>
+                                          <SelectItem value={null}>-</SelectItem>
+                                          <SelectItem value="mm">mm</SelectItem>
+                                          <SelectItem value="cm">cm</SelectItem>
+                                          <SelectItem value="meter">m</SelectItem>
+                                        </>
+                                      );
+                                    } else if (product?.unit_of_measure === 'piece') {
+                                      return (
+                                        <>
+                                          <SelectItem value={null}>-</SelectItem>
+                                          <SelectItem value="piece">pcs</SelectItem>
+                                          <SelectItem value="box">box</SelectItem>
+                                          <SelectItem value="pallet">pallet</SelectItem>
+                                        </>
+                                      );
+                                    } else {
+                                      return <SelectItem value={null}>{product?.unit_of_measure || '-'}</SelectItem>;
+                                    }
+                                  })()}
+                                </SelectContent>
+                              </Select>
                             </TableCell>
                             <TableCell>
                               <Input
