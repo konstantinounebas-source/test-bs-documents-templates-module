@@ -16,6 +16,8 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
   const [toLocation, setToLocation] = useState("");
   const [chargedToPerson, setChargedToPerson] = useState("");
   const [notes, setNotes] = useState("");
+  const [inputUnitOfMeasure, setInputUnitOfMeasure] = useState("");
+  const [conversionRate, setConversionRate] = useState("1");
   const [locations, setLocations] = useState([]);
   const [systemUsers, setSystemUsers] = useState([]);
   const [appUsers, setAppUsers] = useState([]);
@@ -32,6 +34,8 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
       setToLocation("");
       setChargedToPerson("");
       setNotes("");
+      setInputUnitOfMeasure("");
+      setConversionRate("1");
       setValidationError("");
     }
   }, [open, product]);
@@ -95,22 +99,30 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
     setIsProcessing(true);
 
     try {
+      const parsedConversionRate = parseFloat(conversionRate) || 1;
+      const baseQuantity = numericQuantity * parsedConversionRate;
+      const baseUnitCost = product.unit_cost && parsedConversionRate > 0 ? product.unit_cost / parsedConversionRate : undefined;
+
       const movementData = {
         product_id: product.id,
         movement_type: movementType,
         quantity: numericQuantity,
+        input_unit_of_measure: inputUnitOfMeasure || product.unit_of_measure,
+        conversion_rate: parsedConversionRate,
+        base_quantity: baseQuantity,
         from_location: fromLocation || undefined,
         to_location: toLocation || undefined,
         charged_to_person: chargedToPerson || undefined,
         reference_type: "Manual",
         performed_by: currentUser?.email || currentUser?.id,
         notes: notes || undefined,
-        unit_cost: movementType === "OUT" ? (product.unit_cost || 0) : undefined
+        unit_cost: movementType === "OUT" ? (product.unit_cost || 0) : undefined,
+        base_unit_cost: baseUnitCost
       };
 
       await base44.entities.StockMovement.create(movementData);
 
-      // Update stock items
+      // Update stock items using base_quantity
       if (movementType === "IN") {
         const existingStock = await base44.entities.StockItem.filter({
           product_id: product.id,
@@ -120,14 +132,14 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
         if (existingStock.length > 0) {
           const stock = existingStock[0];
           await base44.entities.StockItem.update(stock.id, {
-            quantity_on_hand: (stock.quantity_on_hand || 0) + numericQuantity,
+            quantity_on_hand: (stock.quantity_on_hand || 0) + baseQuantity,
             last_counted_date: new Date().toISOString().split('T')[0]
           });
         } else {
           await base44.entities.StockItem.create({
             product_id: product.id,
             warehouse_location: toLocation,
-            quantity_on_hand: numericQuantity,
+            quantity_on_hand: baseQuantity,
             quantity_reserved: 0,
             last_counted_date: new Date().toISOString().split('T')[0]
           });
@@ -140,14 +152,14 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
 
         if (stock.length > 0) {
           const currentQuantity = stock[0].quantity_on_hand || 0;
-          if (currentQuantity < numericQuantity) {
-            setValidationError(`Cannot move out ${numericQuantity} units. Only ${currentQuantity} units available at ${fromLocation}.`);
+          if (currentQuantity < baseQuantity) {
+            setValidationError(`Cannot move out ${baseQuantity} units. Only ${currentQuantity} units available at ${fromLocation}.`);
             setIsProcessing(false);
             return;
           }
 
           await base44.entities.StockItem.update(stock[0].id, {
-            quantity_on_hand: currentQuantity - numericQuantity,
+            quantity_on_hand: currentQuantity - baseQuantity,
             last_counted_date: new Date().toISOString().split('T')[0]
           });
         } else {
@@ -163,14 +175,14 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
 
         if (fromStock.length > 0) {
           const currentQuantity = fromStock[0].quantity_on_hand || 0;
-          if (currentQuantity < numericQuantity) {
-            setValidationError(`Cannot transfer ${numericQuantity} units. Only ${currentQuantity} units available at ${fromLocation}.`);
+          if (currentQuantity < baseQuantity) {
+            setValidationError(`Cannot transfer ${baseQuantity} units. Only ${currentQuantity} units available at ${fromLocation}.`);
             setIsProcessing(false);
             return;
           }
 
           await base44.entities.StockItem.update(fromStock[0].id, {
-            quantity_on_hand: currentQuantity - numericQuantity,
+            quantity_on_hand: currentQuantity - baseQuantity,
             last_counted_date: new Date().toISOString().split('T')[0]
           });
         } else {
@@ -186,14 +198,14 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
 
         if (toStock.length > 0) {
           await base44.entities.StockItem.update(toStock[0].id, {
-            quantity_on_hand: (toStock[0].quantity_on_hand || 0) + numericQuantity,
+            quantity_on_hand: (toStock[0].quantity_on_hand || 0) + baseQuantity,
             last_counted_date: new Date().toISOString().split('T')[0]
           });
         } else {
           await base44.entities.StockItem.create({
             product_id: product.id,
             warehouse_location: toLocation,
-            quantity_on_hand: numericQuantity,
+            quantity_on_hand: baseQuantity,
             quantity_reserved: 0,
             last_counted_date: new Date().toISOString().split('T')[0]
           });
@@ -279,6 +291,44 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
                 required
                 className={validationError && (!quantity || parseFloat(quantity) <= 0) ? 'border-red-500' : ''}
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="input_unit_of_measure">Μονάδα Εισαγωγής</Label>
+              <Select
+                value={inputUnitOfMeasure || product.unit_of_measure}
+                onValueChange={setInputUnitOfMeasure}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Επιλέξτε" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="piece">Τεμάχιο</SelectItem>
+                  <SelectItem value="meter">Μέτρο</SelectItem>
+                  <SelectItem value="kg">Κιλό</SelectItem>
+                  <SelectItem value="liter">Λίτρο</SelectItem>
+                  <SelectItem value="box">Κουτί</SelectItem>
+                  <SelectItem value="pallet">Παλέτα</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="conversion_rate">Ποσότητα ανά μονάδα ({product?.unit_of_measure || 'μονάδες'})</Label>
+              <Input
+                id="conversion_rate"
+                type="number"
+                min="0.0001"
+                step="0.0001"
+                value={conversionRate}
+                onChange={(e) => setConversionRate(e.target.value)}
+                placeholder="π.χ. 100"
+              />
+              <p className="text-xs text-slate-500 mt-1">
+                Ποσότητα βασικής μονάδας: {(parseFloat(quantity) * parseFloat(conversionRate) || 0).toFixed(2)} {product?.unit_of_measure || 'μονάδες'}
+              </p>
             </div>
           </div>
 

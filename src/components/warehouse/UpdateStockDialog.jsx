@@ -45,6 +45,8 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
   const [selectedVendor, setSelectedVendor] = useState("");
   const [unitCost, setUnitCost] = useState("");
   const [bundleQuantity, setBundleQuantity] = useState("");
+  const [inputUnitOfMeasure, setInputUnitOfMeasure] = useState("");
+  const [conversionRate, setConversionRate] = useState("1");
 
   useEffect(() => {
     if (open && product) {
@@ -66,6 +68,8 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       setSelectedVendor("");
       setUnitCost("");
       setBundleQuantity("");
+      setInputUnitOfMeasure("");
+      setConversionRate("1");
     }
   }, [open, product]);
 
@@ -164,10 +168,18 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
     setIsProcessing(true);
 
     try {
+      const parsedConversionRate = parseFloat(conversionRate) || 1;
+      const parsedUnitCost = unitCost ? parseFloat(unitCost) : undefined;
+      const baseQuantity = numericQuantity * parsedConversionRate;
+      const baseUnitCost = parsedUnitCost && parsedConversionRate > 0 ? parsedUnitCost / parsedConversionRate : undefined;
+
       const movementData = {
         product_id: product.id,
         movement_type: movementType,
         quantity: numericQuantity,
+        input_unit_of_measure: inputUnitOfMeasure || product.unit_of_measure,
+        conversion_rate: parsedConversionRate,
+        base_quantity: baseQuantity,
         from_location: fromLocation || undefined,
         to_location: toLocation || undefined,
         waybill_number: waybillNumber || undefined,
@@ -176,9 +188,8 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         reference_id: relatedPO || selectedVendor || undefined,
         performed_by: currentUser?.email || currentUser?.id,
         notes: notes || undefined,
-        // For OUT movements, use the product's current unit_cost
-        unit_cost: movementType === "OUT" ? (product.unit_cost || 0) : (unitCost ? parseFloat(unitCost) : undefined),
-        // For IN movements, save vendor_product_code and invoice_category_id
+        unit_cost: movementType === "OUT" ? (product.unit_cost || 0) : parsedUnitCost,
+        base_unit_cost: baseUnitCost,
         vendor_product_code: movementType === "IN" && vendorProductCode ? vendorProductCode : undefined,
         invoice_category_id: movementType === "IN" && invoiceCategory ? invoiceCategory : undefined,
         bundle_quantity: movementType === "IN" && bundleQuantity ? parseFloat(bundleQuantity) : undefined
@@ -417,9 +428,10 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
                     setSelectedVendor(data.vendor_id || '');
                     setUnitCost(data.unit_cost ? String(data.unit_cost) : '');
                     setBundleQuantity(data.bundle_quantity ? String(data.bundle_quantity) : '');
+                    setConversionRate(data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : '1'));
+                    setInputUnitOfMeasure(data.input_unit_of_measure || '');
                     setVendorProductCode(data.vendor_product_code || '');
                     setInvoiceCategory(data.invoice_category_id || '');
-                    // Note: company is not part of UpdateStockDialog state, handled via product update
                   }
                 }}
               />
@@ -611,16 +623,39 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
               </div>
 
               <div>
-                <Label htmlFor="bundle_quantity">Pcs/Qty (Optional)</Label>
+                <Label htmlFor="input_unit_of_measure">Μονάδα Εισαγωγής</Label>
+                <Select
+                  value={inputUnitOfMeasure || product.unit_of_measure}
+                  onValueChange={setInputUnitOfMeasure}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Επιλέξτε" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="piece">Τεμάχιο</SelectItem>
+                    <SelectItem value="meter">Μέτρο</SelectItem>
+                    <SelectItem value="kg">Κιλό</SelectItem>
+                    <SelectItem value="liter">Λίτρο</SelectItem>
+                    <SelectItem value="box">Κουτί</SelectItem>
+                    <SelectItem value="pallet">Παλέτα</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="conversion_rate">Ποσότητα ανά μονάδα ({product?.unit_of_measure || 'μονάδες'})</Label>
                 <Input
-                  id="bundle_quantity"
+                  id="conversion_rate"
                   type="number"
-                  min="1"
-                  step="1"
-                  value={bundleQuantity}
-                  onChange={(e) => setBundleQuantity(e.target.value)}
-                  placeholder="π.χ. 100 τεμ."
+                  min="0.0001"
+                  step="0.0001"
+                  value={conversionRate}
+                  onChange={(e) => setConversionRate(e.target.value)}
+                  placeholder="π.χ. 100"
                 />
+                <p className="text-xs text-slate-500 mt-1">
+                  Ποσότητα βασικής μονάδας: {(parseFloat(quantity) * parseFloat(conversionRate) || 0).toFixed(2)} {product?.unit_of_measure || 'μονάδες'}
+                </p>
               </div>
 
               <div>
