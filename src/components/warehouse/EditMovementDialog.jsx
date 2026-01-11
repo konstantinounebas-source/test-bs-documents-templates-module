@@ -256,17 +256,25 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Product Info - Always shown */}
+            {/* Product Info Box */}
             <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-xs text-blue-600 font-semibold uppercase mb-2">Στοιχεία Προϊόντος</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-sm text-blue-900 font-medium">{product?.name || 'N/A'}</p>
-                  <p className="text-xs text-blue-700 font-mono">SKU: {product?.sku || 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-blue-700">Κατηγορία: {category?.name || 'N/A'}</p>
-                  <p className="text-xs text-blue-700">Βασική Μονάδα: {product?.unit_of_measure || 'N/A'}</p>
+              <div className="flex items-start gap-3">
+                <Package className="w-6 h-6 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-base text-blue-900">{product?.name || 'N/A'}</p>
+                    </div>
+                    <Badge className="bg-blue-600 text-white flex-shrink-0">Matched ✓</Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm text-blue-700 font-mono">
+                      <span className="font-semibold">SKU:</span> {product?.sku || 'N/A'}
+                    </p>
+                    <p className="text-sm text-blue-600">
+                      <span className="font-semibold">Βασική Μονάδα:</span> {product?.unit_of_measure || 'N/A'}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
