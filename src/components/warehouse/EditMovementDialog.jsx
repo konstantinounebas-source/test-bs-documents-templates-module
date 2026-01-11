@@ -657,6 +657,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                           </p>
                         </div>
                       )}
+                      </>
+                      )}
 
                       {/* Additional Details */}
                       <div className="space-y-3 border-t pt-4">
@@ -683,8 +685,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                       />
                       </div>
                       </div>
-                      </>
-                      )}
 
             {/* Common fields for all movement types */}
             {!isInMovement && (
