@@ -109,10 +109,8 @@ export default function PreviousPurchasesSelector({
             if (!m.id) return false;
             const idStr = String(m.id).trim();
             return idStr.length > 0;
-          }).map((movement) => {
-            const valueStr = String(movement.id).trim();
-            return (
-            <SelectItem key={movement.id} value={valueStr || 'invalid'}>
+          }).map((movement) => (
+            <SelectItem key={movement.id} value={String(movement.id).trim() || `id-${movement.id}`}>
               <div className="flex flex-col py-1">
                 <div className="font-medium">
                   {formatDate(movement.created_date)} - {getVendorName(movement.reference_id)}
@@ -124,8 +122,7 @@ export default function PreviousPurchasesSelector({
                 </div>
               </div>
             </SelectItem>
-            );
-          })}
+          ))}
         </SelectContent>
       </Select>
       {previousPurchases.length > 0 && (
