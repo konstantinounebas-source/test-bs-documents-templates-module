@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label";
 
 import StockOverviewTable from "../components/warehouse/StockOverviewTable";
 import PaginationControls from "../components/warehouse/PaginationControls";
-import SimpleStockMovementDialog from "../components/warehouse/SimpleStockMovementDialog";
 
 export default function StockOverviewPage() {
   const [products, setProducts] = useState([]);
@@ -34,9 +33,7 @@ export default function StockOverviewPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState("10"); // Default items per page
   
-  // Stock movement dialog
-  const [selectedProduct, setSelectedProduct] = useState(null);
-  const [showStockMovementDialog, setShowStockMovementDialog] = useState(false);
+
 
   useEffect(() => {
     loadAllData();
@@ -139,10 +136,7 @@ export default function StockOverviewPage() {
     setCurrentPage(1); // Reset to first page when items per page changes
   };
   
-  const handleStockMovement = (product) => {
-    setSelectedProduct(product);
-    setShowStockMovementDialog(true);
-  };
+
 
   // Calculate stats based on filtered products
   const totalValue = filteredProducts.reduce((sum, p) => {
@@ -302,7 +296,6 @@ export default function StockOverviewPage() {
             vendors={vendors}
             isLoading={isLoading}
             onDataUpdated={loadAllData}
-            onStockMovement={handleStockMovement}
           />
 
           <PaginationControls
@@ -314,16 +307,6 @@ export default function StockOverviewPage() {
           />
         </div>
       </div>
-      
-      <SimpleStockMovementDialog
-        open={showStockMovementDialog}
-        onClose={() => {
-          setShowStockMovementDialog(false);
-          setSelectedProduct(null);
-        }}
-        product={selectedProduct}
-        onStockUpdated={loadAllData}
-      />
     </div>
   );
 }

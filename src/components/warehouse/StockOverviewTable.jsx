@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import ViewProductDialog from "./ViewProductDialog";
 
-export default function StockOverviewTable({ products, categories, vendors, isLoading, onDataUpdated, onStockMovement }) {
+export default function StockOverviewTable({ products, categories, vendors, isLoading, onDataUpdated }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [showViewDialog, setShowViewDialog] = useState(false);
@@ -23,10 +23,6 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
     return vendor?.name || 'N/A';
   };
 
-  const handleUpdateStock = (product) => {
-    onStockMovement(product);
-  };
-  
   const handleViewProduct = (product) => {
     setSelectedProduct(product);
     setShowViewDialog(true);
@@ -207,17 +203,9 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
                           variant="ghost" 
                           size="icon" 
                           onClick={() => handleViewProduct(product)}
-                          title="View Details"
+                          title="View Product Details"
                         >
                           <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleUpdateStock(product)}
-                          title="Update Stock"
-                        >
-                          <Edit className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>
