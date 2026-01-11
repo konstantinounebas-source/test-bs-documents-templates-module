@@ -963,9 +963,6 @@ export default function BarcodeScannerPage() {
         });
 
         // Update stock using base_quantity
-        const itemConversionRate = parseFloat(item.conversion_rate) || 1;
-        const itemBaseQuantity = item.quantity_to_receive * itemConversionRate;
-        
         const existingStock = stockItems.find(
           s => s.product_id === item.product_id && s.warehouse_location === toLocation
         );
@@ -985,7 +982,6 @@ export default function BarcodeScannerPage() {
 
         // Update ProductVendor if unit cost exists
         if (item.unit_cost) {
-          const itemConversionRate = parseFloat(item.conversion_rate) || 1;
           const existingPVs = await base44.entities.ProductVendor.filter({
             product_id: item.product_id,
             vendor_id: po.vendor_id
