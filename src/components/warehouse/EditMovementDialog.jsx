@@ -322,6 +322,30 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label htmlFor="invoice_category">Κατηγορία Τιμολόγησης *</Label>
+                    <Select 
+                      value={formData.invoice_category_id || 'none'} 
+                      onValueChange={(val) => setFormData({ ...formData, invoice_category_id: val === 'none' ? '' : val })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Επιλέξτε κατηγορία" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
+                        {invoiceCategories.map(ic => (
+                          <SelectItem key={ic.id} value={ic.id}>
+                            <div>
+                              <div className="font-medium">{ic.name}</div>
+                              {ic.description && (
+                                <div className="text-xs text-slate-500">{ic.description}</div>
+                              )}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Vendor Information */}
