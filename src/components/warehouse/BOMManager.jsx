@@ -63,6 +63,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
       .map(c => ({
         ...c,
         quantity_required: String(c.quantity_required),
+        input_unit_of_measure: c.input_unit_of_measure || '',
         unit_of_measure: c.unit_of_measure || 'pcs',
         team_id: c.team_id || '',
         material_category_id: c.material_category_id || ''
@@ -76,6 +77,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
       id: null,
       product_id: '',
       quantity_required: "1",
+      input_unit_of_measure: '',
       unit_of_measure: 'pcs',
       team_id: '',
       material_category_id: '',
@@ -123,6 +125,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
           bus_stop_type_id: currentTypeId,
           product_id: component.product_id,
           quantity_required: quantityNum,
+          input_unit_of_measure: component.input_unit_of_measure || null,
           unit_of_measure: component.unit_of_measure || 'pcs',
           team_id: component.team_id || null,
           material_category_id: component.material_category_id || null,
@@ -395,7 +398,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                         <TableHead>Κατηγορία Υλικού</TableHead>
                         <TableHead>Ομάδα</TableHead>
                         <TableHead className="w-28">Ποσότητα</TableHead>
-                        <TableHead className="w-24">Μονάδα</TableHead>
+                        <TableHead className="w-24">Μον. Εισαγ.</TableHead>
                         <TableHead>Κόστος</TableHead>
                         <TableHead>Σημειώσεις</TableHead>
                         <TableHead className="w-24 text-right">Ενέργειες</TableHead>
@@ -480,21 +483,54 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                             </TableCell>
                             <TableCell>
                               <Select
-                                value={component.unit_of_measure || 'pcs'}
-                                onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'unit_of_measure', value)}
+                                value={component.input_unit_of_measure || ''}
+                                onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'input_unit_of_measure', value)}
                               >
                                 <SelectTrigger className="w-20">
-                                  <SelectValue />
+                                  <SelectValue placeholder="-" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="pcs">pcs</SelectItem>
-                                  <SelectItem value="kg">kg</SelectItem>
-                                  <SelectItem value="gr">gr</SelectItem>
-                                  <SelectItem value="l">l</SelectItem>
-                                  <SelectItem value="ml">ml</SelectItem>
-                                  <SelectItem value="m">m</SelectItem>
-                                  <SelectItem value="m2">m²</SelectItem>
-                                  <SelectItem value="m3">m³</SelectItem>
+                                  {(() => {
+                                    const product = products.find(p => p.id === component.product_id);
+                                    if (product?.unit_of_measure === 'kg') {
+                                      return (
+                                        <>
+                                          <SelectItem value={null}>-</SelectItem>
+                                          <SelectItem value="g">g</SelectItem>
+                                          <SelectItem value="kg">kg</SelectItem>
+                                          <SelectItem value="ton">ton</SelectItem>
+                                        </>
+                                      );
+                                    } else if (product?.unit_of_measure === 'liter') {
+                                      return (
+                                        <>
+                                          <SelectItem value={null}>-</SelectItem>
+                                          <SelectItem value="ml">ml</SelectItem>
+                                          <SelectItem value="liter">L</SelectItem>
+                                        </>
+                                      );
+                                    } else if (product?.unit_of_measure === 'meter') {
+                                      return (
+                                        <>
+                                          <SelectItem value={null}>-</SelectItem>
+                                          <SelectItem value="mm">mm</SelectItem>
+                                          <SelectItem value="cm">cm</SelectItem>
+                                          <SelectItem value="meter">m</SelectItem>
+                                        </>
+                                      );
+                                    } else if (product?.unit_of_measure === 'piece') {
+                                      return (
+                                        <>
+                                          <SelectItem value={null}>-</SelectItem>
+                                          <SelectItem value="piece">pcs</SelectItem>
+                                          <SelectItem value="box">box</SelectItem>
+                                          <SelectItem value="pallet">pallet</SelectItem>
+                                        </>
+                                      );
+                                    } else {
+                                      return <SelectItem value={null}>{product?.unit_of_measure || '-'}</SelectItem>;
+                                    }
+                                  })()}
                                 </SelectContent>
                               </Select>
                             </TableCell>

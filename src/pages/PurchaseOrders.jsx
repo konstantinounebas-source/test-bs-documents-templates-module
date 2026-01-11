@@ -373,6 +373,8 @@ export default function PurchaseOrdersPage() {
       items: po.items.map(item => ({
         ...item,
         quantity_ordered: item.quantity_ordered,
+        input_unit_of_measure: item.input_unit_of_measure || '',
+        conversion_rate: item.conversion_rate || 1,
         unit_cost: item.unit_cost,
         total_cost: item.total_cost,
         expected_receipt_date: item.expected_receipt_date || '',
@@ -397,6 +399,8 @@ export default function PurchaseOrdersPage() {
           product_id: '',
           quantity_ordered: 1,
           quantity_received: 0,
+          input_unit_of_measure: '',
+          conversion_rate: 1,
           unit_cost: 0,
           total_cost: 0,
           expected_receipt_date: prev.expected_delivery_date || '',
@@ -1032,58 +1036,108 @@ export default function PurchaseOrdersPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Product *</TableHead>
-                        <TableHead className="w-24">Qty *</TableHead>
-                        <TableHead className="w-24">Pcs/Qty</TableHead>
-                        <TableHead className="w-32">Unit Cost (€) *</TableHead>
-                        <TableHead className="w-32">Unit Cost/Pcs (€)</TableHead>
-                        <TableHead className="w-28">Total (€)</TableHead>
-                        <TableHead className="w-40">Expected Receipt</TableHead>
-                        <TableHead className="w-16"></TableHead>
+                       <TableHead>Product *</TableHead>
+                       <TableHead className="w-24">Qty *</TableHead>
+                       <TableHead className="w-24">Unit</TableHead>
+                       <TableHead className="w-24">Pcs/Qty</TableHead>
+                       <TableHead className="w-32">Unit Cost (€) *</TableHead>
+                       <TableHead className="w-32">Unit Cost/Pcs (€)</TableHead>
+                       <TableHead className="w-28">Total (€)</TableHead>
+                       <TableHead className="w-40">Expected Receipt</TableHead>
+                       <TableHead className="w-16"></TableHead>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                      </TableHeader>
+                      <TableBody>
                       {formData.items.map((item, index) => {
-                        const availableProducts = getAvailableProductsForVendor();
-                        const vendorProductIds = productVendors
-                          .filter(pv => pv.vendor_id === formData.vendor_id && pv.is_active)
-                          .map(pv => pv.product_id);
-                        
-                        return (
-                          <TableRow key={index}>
-                            <TableCell>
-                              <ProductSearchCombobox
-                                products={availableProducts}
-                                vendorProductIds={vendorProductIds}
-                                value={item.product_id}
-                                onValueChange={(value) => handleItemChange(index, 'product_id', value)}
-                                placeholder="Select product..."
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="1"
-                                max="999999"
-                                step="1"
-                                value={item.quantity_ordered}
-                                onChange={(e) => handleItemChange(index, 'quantity_ordered', e.target.value)}
-                                required
-                                placeholder="Quantity"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                min="1"
-                                max="999999"
-                                step="1"
-                                value={item.bundle_quantity || ''}
-                                onChange={(e) => handleItemChange(index, 'bundle_quantity', e.target.value)}
-                                placeholder="π.χ. 100 τεμάχια"
-                                className="text-xs"
-                              />
-                            </TableCell>
+                       const availableProducts = getAvailableProductsForVendor();
+                       const vendorProductIds = productVendors
+                         .filter(pv => pv.vendor_id === formData.vendor_id && pv.is_active)
+                         .map(pv => pv.product_id);
+
+                       return (
+                         <TableRow key={index}>
+                           <TableCell>
+                             <ProductSearchCombobox
+                               products={availableProducts}
+                               vendorProductIds={vendorProductIds}
+                               value={item.product_id}
+                               onValueChange={(value) => handleItemChange(index, 'product_id', value)}
+                               placeholder="Select product..."
+                             />
+                           </TableCell>
+                           <TableCell>
+                             <Input
+                               type="number"
+                               min="1"
+                               max="999999"
+                               step="1"
+                               value={item.quantity_ordered}
+                               onChange={(e) => handleItemChange(index, 'quantity_ordered', e.target.value)}
+                               required
+                               placeholder="Quantity"
+                             />
+                           </TableCell>
+                           <TableCell>
+                             <Select
+                               value={item.input_unit_of_measure || ''}
+                               onValueChange={(val) => handleItemChange(index, 'input_unit_of_measure', val)}
+                             >
+                               <SelectTrigger className="text-xs">
+                                 <SelectValue placeholder="-" />
+                               </SelectTrigger>
+                               <SelectContent>
+                                 {(() => {
+                                   const product = products.find(p => p.id === item.product_id);
+                                   if (product?.unit_of_measure === 'kg') {
+                                     return (
+                                       <>
+                                         <SelectItem value="g">g</SelectItem>
+                                         <SelectItem value="kg">kg</SelectItem>
+                                         <SelectItem value="ton">ton</SelectItem>
+                                       </>
+                                     );
+                                   } else if (product?.unit_of_measure === 'liter') {
+                                     return (
+                                       <>
+                                         <SelectItem value="ml">ml</SelectItem>
+                                         <SelectItem value="liter">L</SelectItem>
+                                       </>
+                                     );
+                                   } else if (product?.unit_of_measure === 'meter') {
+                                     return (
+                                       <>
+                                         <SelectItem value="mm">mm</SelectItem>
+                                         <SelectItem value="cm">cm</SelectItem>
+                                         <SelectItem value="meter">m</SelectItem>
+                                       </>
+                                     );
+                                   } else if (product?.unit_of_measure === 'piece') {
+                                     return (
+                                       <>
+                                         <SelectItem value="piece">pcs</SelectItem>
+                                         <SelectItem value="box">box</SelectItem>
+                                         <SelectItem value="pallet">pallet</SelectItem>
+                                       </>
+                                     );
+                                   } else {
+                                     return <SelectItem value={product?.unit_of_measure || ''}>{product?.unit_of_measure || '-'}</SelectItem>;
+                                   }
+                                 })()}
+                               </SelectContent>
+                             </Select>
+                           </TableCell>
+                           <TableCell>
+                             <Input
+                               type="number"
+                               min="1"
+                               max="999999"
+                               step="1"
+                               value={item.bundle_quantity || ''}
+                               onChange={(e) => handleItemChange(index, 'bundle_quantity', e.target.value)}
+                               placeholder="π.χ. 100 τεμάχια"
+                               className="text-xs"
+                             />
+                           </TableCell>
                             <TableCell>
                               <Input
                                 type="number"
