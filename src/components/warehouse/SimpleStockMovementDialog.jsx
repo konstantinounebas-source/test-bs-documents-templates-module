@@ -8,9 +8,6 @@ import { Loader2, AlertTriangle, Info } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import PreviousPurchasesSelector from "@/components/warehouse/PreviousPurchasesSelector";
-import VendorSearchCombobox from "@/components/warehouse/VendorSearchCombobox";
 
 export default function SimpleStockMovementDialog({ open, onClose, product, onStockUpdated }) {
   const [movementType, setMovementType] = useState("IN");
@@ -27,17 +24,6 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [validationError, setValidationError] = useState("");
-  const [relatedPO, setRelatedPO] = useState("");
-  const [purchaseOrders, setPurchaseOrders] = useState([]);
-  const [hideCompletedPOs, setHideCompletedPOs] = useState(true);
-  const [vendors, setVendors] = useState([]);
-  const [productVendors, setProductVendors] = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [invoiceCategories, setInvoiceCategories] = useState([]);
-  const [selectedVendor, setSelectedVendor] = useState("");
-  const [unitCost, setUnitCost] = useState("");
-  const [bundleQuantity, setBundleQuantity] = useState("");
-  const [vendorProductCode, setVendorProductCode] = useState("");
 
   useEffect(() => {
     if (open && product) {
@@ -51,12 +37,6 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
       setInputUnitSubtype("");
       setConversionRate("1");
       setValidationError("");
-      setRelatedPO("");
-      setHideCompletedPOs(true);
-      setSelectedVendor("");
-      setUnitCost("");
-      setBundleQuantity("");
-      setVendorProductCode("");
     }
   }, [open, product]);
 
@@ -66,30 +46,17 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
     setValidationError("");
 
     try {
-      const [locationsData, user, sysUsers, aUsers, poData, vendorsData, pvData, companiesData, invoiceCatsData] = await Promise.all([
+      const [locationsData, user, sysUsers, aUsers] = await Promise.all([
         base44.entities.WarehouseLocation.filter({ is_active: true }),
         base44.auth.me(),
         base44.entities.User.list().catch(() => []),
-        base44.entities.AppUser.list().catch(() => []),
-        base44.entities.PurchaseOrder.filter({ status: ["Confirmed", "Partially Received", "Received"] }).catch(() => []),
-        base44.entities.Vendor.filter({ is_active: true }).catch(() => []),
-        base44.entities.ProductVendor.list().catch(() => []),
-        base44.entities.Company.filter({ is_active: true }).catch(() => []),
-        base44.entities.InvoiceCategory.filter({ is_active: true }).catch(() => [])
+        base44.entities.AppUser.list().catch(() => [])
       ]);
       
       setLocations(locationsData);
       setCurrentUser(user);
       setSystemUsers(sysUsers);
       setAppUsers(aUsers);
-      const relevantPOs = poData.filter(po => 
-        po.items && po.items.some(item => item.product_id === product.id)
-      );
-      setPurchaseOrders(relevantPOs);
-      setVendors(vendorsData);
-      setProductVendors(pvData);
-      setCompanies(companiesData);
-      setInvoiceCategories(invoiceCatsData);
     } catch (error) {
       console.error("Error loading data:", error);
       setValidationError("Failed to load necessary data. Please try again.");
@@ -136,9 +103,6 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
       const baseQuantity = numericQuantity * parsedConversionRate;
       const baseUnitCost = product.unit_cost && parsedConversionRate > 0 ? product.unit_cost / parsedConversionRate : undefined;
 
-      const parsedUnitCost = unitCost ? parseFloat(unitCost) : undefined;
-      const baseUnitCost2 = parsedUnitCost && parsedConversionRate > 0 ? parsedUnitCost / parsedConversionRate : undefined;
-
       const movementData = {
         product_id: product.id,
         movement_type: movementType,
@@ -149,84 +113,14 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
         from_location: fromLocation || undefined,
         to_location: toLocation || undefined,
         charged_to_person: chargedToPerson || undefined,
-        reference_type: relatedPO ? "PurchaseOrder" : (selectedVendor ? "Vendor" : "Manual"),
-        reference_id: relatedPO || selectedVendor || undefined,
+        reference_type: "Manual",
         performed_by: currentUser?.email || currentUser?.id,
         notes: notes || undefined,
-        unit_cost: movementType === "OUT" ? (product.unit_cost || 0) : parsedUnitCost,
-        base_unit_cost: movementType === "OUT" ? baseUnitCost : baseUnitCost2,
-        vendor_product_code: movementType === "IN" && vendorProductCode ? vendorProductCode : undefined,
-        bundle_quantity: movementType === "IN" && bundleQuantity ? parseFloat(bundleQuantity) : undefined
+        unit_cost: movementType === "OUT" ? (product.unit_cost || 0) : undefined,
+        base_unit_cost: baseUnitCost
       };
 
       await base44.entities.StockMovement.create(movementData);
-
-      // If linked to a PO, update the quantity_received
-      if (movementType === "IN" && relatedPO) {
-        const po = purchaseOrders.find(p => p.id === relatedPO);
-        if (po) {
-          const updatedItems = po.items.map(item => {
-            if (item.product_id === product.id) {
-              const newQuantityReceived = (item.quantity_received || 0) + numericQuantity;
-              return {
-                ...item,
-                quantity_received: Math.min(newQuantityReceived, item.quantity_ordered)
-              };
-            }
-            return item;
-          });
-
-          const allItemsFullyReceived = updatedItems.every(item => 
-            item.quantity_received >= item.quantity_ordered
-          );
-          
-          const anyItemReceived = updatedItems.some(item => 
-            (item.quantity_received || 0) > 0
-          );
-
-          let newStatus = po.status;
-          if (allItemsFullyReceived) {
-            newStatus = "Received";
-          } else if (anyItemReceived) {
-            newStatus = "Partially Received";
-          } else {
-            newStatus = "Confirmed";
-          }
-          
-          await base44.entities.PurchaseOrder.update(relatedPO, {
-            items: updatedItems,
-            status: newStatus,
-            ...(allItemsFullyReceived ? { actual_delivery_date: new Date().toISOString().split('T')[0] } : {})
-          });
-        }
-      }
-
-      // Update ProductVendor if IN movement with cost
-      if (movementType === "IN" && selectedVendor && parsedUnitCost) {
-        const existingPVs = await base44.entities.ProductVendor.filter({
-          product_id: product.id,
-          vendor_id: selectedVendor
-        });
-        
-        if (existingPVs.length === 0) {
-          await base44.entities.ProductVendor.create({
-            product_id: product.id,
-            vendor_id: selectedVendor,
-            unit_cost: parsedUnitCost,
-            is_preferred: false,
-            is_active: true,
-            conversion_rate: parsedConversionRate,
-            bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
-          });
-        } else {
-          await base44.entities.ProductVendor.update(existingPVs[0].id, {
-            unit_cost: parsedUnitCost,
-            is_active: true,
-            conversion_rate: parsedConversionRate,
-            bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
-          });
-        }
-      }
 
       // Update stock items using base_quantity
       if (movementType === "IN") {
@@ -480,137 +374,21 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
           </div>
 
           {movementType === "IN" && (
-            <>
-              <PreviousPurchasesSelector
-                productId={product?.id}
-                vendors={vendors}
-                companies={companies}
-                invoiceCategories={invoiceCategories}
-                onSelect={(data) => {
-                  if (data) {
-                    setSelectedVendor(data.vendor_id || '');
-                    setUnitCost(data.unit_cost ? String(data.unit_cost) : '');
-                    setBundleQuantity(data.bundle_quantity ? String(data.bundle_quantity) : '');
-                    setConversionRate(data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : '1'));
-                    setInputUnitSubtype(data.input_unit_of_measure || '');
-                    setVendorProductCode(data.vendor_product_code || '');
-                  }
-                }}
-              />
-
-              <div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="related_po">Linked Purchase Order (Optional)</Label>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="hide-completed-pos"
-                      checked={hideCompletedPOs}
-                      onCheckedChange={setHideCompletedPOs}
-                    />
-                    <label
-                      htmlFor="hide-completed-pos"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Hide Completed POs
-                    </label>
-                  </div>
-                </div>
-                <Select value={relatedPO} onValueChange={(value) => {
-                  setRelatedPO(value === "no-po" ? "" : value);
-                  if (value !== "no-po") {
-                    const po = purchaseOrders.find(p => p.id === value);
-                    if (po) {
-                      setSelectedVendor(po.vendor_id || '');
-                      const poItem = po.items.find(item => item.product_id === product.id);
-                      if (poItem) {
-                        setUnitCost(String(poItem.unit_cost || ''));
-                        setBundleQuantity(String(poItem.bundle_quantity || ''));
-                      }
-                    }
-                  }
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select PO (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="no-po">No PO</SelectItem>
-                    {purchaseOrders
-                      .filter(po => !hideCompletedPOs || po.status !== 'Received')
-                      .map((po) => (
-                      <SelectItem key={po.id} value={po.id}>
-                        {po.po_number} - {po.status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="vendor_id">Προμηθευτής</Label>
-                <VendorSearchCombobox
-                  vendors={vendors}
-                  vendorProductIds={productVendors
-                    .filter(pv => pv.product_id === product?.id && pv.is_active)
-                    .map(pv => pv.vendor_id)}
-                  value={selectedVendor}
-                  onValueChange={setSelectedVendor}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="vendor_product_code">Κωδικός Προϊόντος Προμηθευτή</Label>
-                <Input
-                  id="vendor_product_code"
-                  value={vendorProductCode}
-                  onChange={(e) => setVendorProductCode(e.target.value)}
-                  placeholder="Κωδικός προμηθευτή"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="unit_cost">Κόστος ανά Μονάδα (€)</Label>
-                  <Input
-                    id="unit_cost"
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    value={unitCost}
-                    onChange={(e) => setUnitCost(e.target.value)}
-                    placeholder="0.0000"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="bundle_quantity">Pcs/Qty</Label>
-                  <Input
-                    id="bundle_quantity"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={bundleQuantity}
-                    onChange={(e) => setBundleQuantity(e.target.value)}
-                    placeholder="π.χ. 100"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="to_location">Warehouse Location (Destination) *</Label>
-                <Select value={toLocation} onValueChange={setToLocation}>
-                  <SelectTrigger className={validationError && !toLocation ? 'border-red-500' : ''}>
-                    <SelectValue placeholder="Select destination location" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {locations.map((loc) => (
-                      <SelectItem key={loc.id} value={loc.name}>
-                        {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
+            <div>
+              <Label htmlFor="to_location">Warehouse Location (Destination) *</Label>
+              <Select value={toLocation} onValueChange={setToLocation}>
+                <SelectTrigger className={validationError && !toLocation ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Select destination location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((loc) => (
+                    <SelectItem key={loc.id} value={loc.name}>
+                      {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
           {movementType === "OUT" && (

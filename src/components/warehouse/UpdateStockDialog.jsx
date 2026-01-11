@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, AlertTriangle, Info, Search } from "lucide-react";
+import { Loader2, AlertTriangle, Info } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -79,10 +79,10 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
     setValidationError("");
 
     try {
-       const [locationsData, poData, user, sysUsers, aUsers, movementsData, invoiceCatsData, vendorsData, companiesData] = await Promise.all([
-         base44.entities.WarehouseLocation.filter({ is_active: true }),
-         // Fetch all relevant POs including 'Received' to allow toggling
-         base44.entities.PurchaseOrder.list().catch(() => []),
+      const [locationsData, poData, user, sysUsers, aUsers, movementsData, invoiceCatsData, vendorsData, companiesData] = await Promise.all([
+        base44.entities.WarehouseLocation.filter({ is_active: true }),
+        // Fetch all relevant POs including 'Received' to allow toggling
+        base44.entities.PurchaseOrder.filter({ status: ["Confirmed", "Partially Received", "Received"] }).catch(() => []),
         base44.auth.me(),
         base44.entities.User.list().catch(() => []),
         base44.entities.AppUser.list().catch(() => []),
@@ -94,10 +94,9 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       ]);
       
       setLocations(locationsData);
-
-      // Filter POs that have this product and correct status
+      
+      // Filter POs that have this product, regardless of received status for initial load
       const relevantPOsForAllStatuses = poData.filter(po => 
-        (po.status === "Confirmed" || po.status === "Partially Received" || po.status === "Received") &&
         po.items && po.items.some(item => 
           item.product_id === product.id
         )
@@ -359,273 +358,367 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto">
-        <DialogHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <div>
-              <DialogTitle className="text-base">Καθαριστικό Λαμαρίνας</DialogTitle>
-              <p className="text-xs text-slate-600 mt-1">Καθαριστικό Λαμαρίνας in Containeri</p>
-            </div>
-            <Button variant="outline" size="sm" className="h-7 text-xs">Matched ✓</Button>
-          </div>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Perform Stock Movement - {product.name}</DialogTitle>
+          <DialogDescription>
+            Record a stock movement (in, out, or transfer) for {product.name}.
+          </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-3 py-2">
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <Alert className="bg-blue-50 border-blue-200">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-800">
+              This dialog allows you to record physical movements of stock. Changes made here will update
+              the "Quantity On Hand" for this product in specific locations.
+            </AlertDescription>
+          </Alert>
+
           {validationError && (
-            <Alert variant="destructive" className="py-2">
+            <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
-              <AlertDescription className="text-xs">{validationError}</AlertDescription>
+              <AlertDescription>{validationError}</AlertDescription>
             </Alert>
           )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label>Movement Type</Label>
+              <RadioGroup value={movementType} onValueChange={setMovementType} className="flex space-x-4 mt-2">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="IN" id="r1" />
+                  <Label htmlFor="r1">IN</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="OUT" id="r2" />
+                  <Label htmlFor="r2">OUT</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="TRANSFER" id="r3" />
+                  <Label htmlFor="r3">TRANSFER</Label>
+                </div>
+              </RadioGroup>
+            </div>
 
-          {/* Product Info Card */}
-          <div className="bg-blue-50 border border-blue-200 rounded p-2.5">
-            <div className="flex justify-between items-start">
-              <div className="text-xs space-y-0.5">
-                <div><strong>SKU: OAK-PAT-018</strong></div>
-                <div className="text-slate-600">Current Stock: 19 liter</div>
-              </div>
+            <div>
+              <Label htmlFor="quantity">Quantity *</Label>
+              <Input
+                id="quantity"
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                min="1"
+                step="any"
+                required
+                className={validationError && (!quantity || parseFloat(quantity) <= 0) ? 'border-red-500' : ''}
+              />
             </div>
           </div>
 
-          {/* Row 1: Τύπος Κίνησης & Θέση Αποθήκης */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs font-semibold">Τύπος Κίνησης *</Label>
-              <Select value={movementType} onValueChange={setMovementType}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="IN">Εισαγωγή (IN)</SelectItem>
-                  <SelectItem value="OUT">Εξαγωγή (OUT)</SelectItem>
-                  <SelectItem value="TRANSFER">Μεταφορά (TRANSFER)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs font-semibold">Θέση Αποθήκης *</Label>
-              <Select value={toLocation} onValueChange={setToLocation}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  {locations.map((loc) => (
-                    <SelectItem key={loc.id} value={loc.name} className="text-xs">
-                      {loc.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          {movementType === "IN" && (
+            <>
+              <PreviousPurchasesSelector
+                productId={product?.id}
+                vendors={vendors}
+                companies={companies}
+                invoiceCategories={invoiceCategories}
+                onSelect={(data) => {
+                  if (data) {
+                    setSelectedVendor(data.vendor_id || '');
+                    setUnitCost(data.unit_cost ? String(data.unit_cost) : '');
+                    setBundleQuantity(data.bundle_quantity ? String(data.bundle_quantity) : '');
+                    setConversionRate(data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : '1'));
+                    setInputUnitSubtype(data.input_unit_of_measure || '');
+                    setVendorProductCode(data.vendor_product_code || '');
+                    setInvoiceCategory(data.invoice_category_id || '');
+                  }
+                }}
+              />
 
-          {/* Row 2: Εταιρεία & Κατηγορία Τιμολόγησης */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs font-semibold">Εταιρεία *</Label>
-              <Select value={selectedVendor || 'none'} onValueChange={(val) => setSelectedVendor(val === 'none' ? '' : val)}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="-- Χωρίς Εταιρεία --" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
-                  {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id} className="text-xs">
-                      {company.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs font-semibold">Κατηγορία Τιμολόγησης *</Label>
-              <Select value={invoiceCategory || 'none'} onValueChange={(val) => setInvoiceCategory(val === 'none' ? '' : val)}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="-- Χωρίς Κατηγορία --" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
-                  {invoiceCategories.map(ic => (
-                    <SelectItem key={ic.id} value={ic.id} className="text-xs">{ic.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Section: Ενλογη από Πολλές Αγορές */}
-          <div className="border-t pt-2">
-            <Label className="text-xs font-semibold block mb-2">⊕ Ενλογη από Πολλές Αγορές</Label>
-            <Input
-              placeholder="Ενλέξετε παλιό αγορά..."
-              className="h-8 text-xs"
-            />
-            <p className="text-xs text-slate-500 mt-1">Ενλέξετε παλιό αγορά για αναπρογραμματισμό του πύλου</p>
-          </div>
-
-          {/* Section: Στοχεία Προμηθευτή */}
-          <div className="border-t pt-2">
-            <Label className="text-xs font-semibold block mb-2">Στοχεία Προμηθευτή</Label>
-            <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-slate-600">Προμηθευτής *</Label>
-                <div className="flex gap-1">
-                  <Select value={relatedPO} onValueChange={(value) => {
-                    setRelatedPO(value === "no-po" ? "" : value);
-                    setRelatedPOItem("");
-                  }}>
-                    <SelectTrigger className="h-8 text-xs flex-1">
-                      <SelectValue placeholder="Ενλέξετε προμηθευτή..." />
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="related_po">Linked Purchase Order (Optional)</Label>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="hide-completed-pos"
+                      checked={hideCompletedPOs}
+                      onCheckedChange={setHideCompletedPOs}
+                    />
+                    <label
+                      htmlFor="hide-completed-pos"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Hide Completed POs
+                    </label>
+                  </div>
+                </div>
+                <Select value={relatedPO} onValueChange={(value) => {
+                  setRelatedPO(value === "no-po" ? "" : value);
+                  setRelatedPOItem("");
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select PO (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="no-po">No PO</SelectItem>
+                    {purchaseOrders
+                      .filter(po => !hideCompletedPOs || po.status !== 'Received') // Filter completed POs
+                      .map((po) => (
+                      <SelectItem key={po.id} value={po.id}>
+                        {po.po_number} - {po.status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-slate-500 mt-1">
+                  Select if this receipt is for a specific purchase order.
+                </p>
+              </div>
+              
+              {relatedPO && (
+                <div>
+                  <Label htmlFor="related_po_item">PO Item (Product: {product.name}) *</Label>
+                  <Select value={relatedPOItem} onValueChange={setRelatedPOItem}>
+                    <SelectTrigger className={validationError && relatedPO && !relatedPOItem ? 'border-red-500' : ''}>
+                      <SelectValue placeholder="Select PO Item" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="no-po">No PO</SelectItem>
-                      {purchaseOrders
-                        .filter(po => !hideCompletedPOs || po.status !== 'Received')
-                        .map((po) => (
-                        <SelectItem key={po.id} value={po.id} className="text-xs">
-                          {po.po_number} - {po.status}
+                      {getAvailablePOItems().map((item, idx) => (
+                        <SelectItem key={item.product_id + '-' + idx} value={item.product_id}>
+                          {item.product_name || `Product ID: ${item.product_id}`} - Ordered: {item.quantity_ordered}, Received: {item.quantity_received || 0}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button type="button" size="icon" variant="outline" className="h-8 w-8">
-                    +
-                  </Button>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Select the specific item line in the PO this movement corresponds to.
+                  </p>
                 </div>
+              )}
+
+              <div>
+                <Label htmlFor="to_location">Warehouse Location (Destination) *</Label>
+                <Select value={toLocation} onValueChange={setToLocation}>
+                  <SelectTrigger className={validationError && !toLocation ? 'border-red-500' : ''}>
+                    <SelectValue placeholder="Select destination location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map((loc) => (
+                      <SelectItem key={loc.id} value={loc.name}>
+                        {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+
+          {movementType === "OUT" && (
+            <div>
+              <Label htmlFor="from_location">Warehouse Location (Source) *</Label>
+              <Select value={fromLocation} onValueChange={setFromLocation}>
+                <SelectTrigger className={validationError && !fromLocation ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Select source location" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((loc) => (
+                    <SelectItem key={loc.id} value={loc.name}>
+                      {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {movementType === "TRANSFER" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="from_location">From Location *</Label>
+                <Select value={fromLocation} onValueChange={setFromLocation}>
+                  <SelectTrigger className={validationError && !fromLocation ? 'border-red-500' : ''}>
+                    <SelectValue placeholder="Select source location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map((loc) => (
+                      <SelectItem key={loc.id} value={loc.name}>
+                        {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label className="text-xs text-slate-600">Κωδικός Προϊόντος Προμηθευτή *</Label>
-                <Input
-                  value={vendorProductCode}
-                  onChange={(e) => setVendorProductCode(e.target.value)}
-                  placeholder="Κωδικός προϊόντος"
-                  className="h-8 text-xs"
-                />
+                <Label htmlFor="to_location">To Location *</Label>
+                <Select value={toLocation} onValueChange={setToLocation}>
+                  <SelectTrigger className={validationError && !toLocation ? 'border-red-500' : ''}>
+                    <SelectValue placeholder="Select destination location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locations.map((loc) => (
+                      <SelectItem key={loc.id} value={loc.name}>
+                        {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Row: Αρθμός Τιμολογίου */}
           <div>
-            <Label className="text-xs font-semibold">Αρθμός Τιμολογίου</Label>
+            <Label htmlFor="waybill_number">Waybill / Reference Number (Optional)</Label>
             <Input
+              id="waybill_number"
               type="text"
               value={waybillNumber}
               onChange={(e) => setWaybillNumber(e.target.value)}
-              placeholder="π.χ. INV-2025-001"
-              className="h-8 text-xs"
+              placeholder="e.g., WB12345, Invoice 6789"
             />
           </div>
 
-          {/* Row: Ποσότητα & Κόστος */}
-          <div>
-            <Label className="text-xs font-semibold block mb-1">Ποσότητα & Κόστος</Label>
-            <div className="grid grid-cols-2 gap-3">
+          {movementType === "IN" && (
+            <>
               <div>
-                <Label className="text-xs text-slate-600">Ποσότητα *</Label>
+                <Label htmlFor="vendor_id">Προμηθευτής (Optional)</Label>
+                <Select value={selectedVendor || 'none'} onValueChange={(val) => setSelectedVendor(val === 'none' ? '' : val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Επιλέξτε προμηθευτή" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">-- Επιλέξτε --</SelectItem>
+                    {vendors.map((vendor) => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="vendor_product_code">Κωδικός Προϊόντος Προμηθευτή (Optional)</Label>
                 <Input
-                  type="number"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  min="1"
-                  step="any"
-                  placeholder="1"
-                  className={`h-8 text-xs ${validationError && (!quantity || parseFloat(quantity) <= 0) ? 'border-red-500' : ''}`}
+                  id="vendor_product_code"
+                  type="text"
+                  value={vendorProductCode}
+                  onChange={(e) => setVendorProductCode(e.target.value)}
+                  placeholder="Κωδικός προμηθευτή"
                 />
               </div>
+
               <div>
-                <Label className="text-xs text-slate-600">Pcs/Qty</Label>
+                <Label htmlFor="unit_cost">Κόστος ανά Μονάδα (€) (Optional)</Label>
                 <Input
+                  id="unit_cost"
                   type="number"
+                  step="0.0001"
+                  min="0"
+                  value={unitCost}
+                  onChange={(e) => setUnitCost(e.target.value)}
+                  placeholder="0.0000"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="bundle_quantity">Pcs/Qty (Optional)</Label>
+                <Input
+                  id="bundle_quantity"
+                  type="number"
+                  min="1"
+                  step="1"
                   value={bundleQuantity}
                   onChange={(e) => setBundleQuantity(e.target.value)}
-                  placeholder="π.χ. 100 τεμ."
-                  className="h-8 text-xs"
+                  placeholder="π.χ. 100 τεμάχια"
                 />
               </div>
-            </div>
-          </div>
 
-          {/* Row: Μέθοδος Εμπορικής Κόστους */}
+              <div>
+                <Label htmlFor="invoice_category">Κατηγορία Τιμολόγησης (Optional)</Label>
+                <Select value={invoiceCategory || 'none'} onValueChange={(val) => setInvoiceCategory(val === 'none' ? '' : val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Επιλέξτε κατηγορία" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
+                    {invoiceCategories.map(ic => (
+                      <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+
           <div>
-            <Label className="text-xs font-semibold">Μέθοδος Εμπορικής Κόστους</Label>
-            <Select value="weighted"onValueChange={() => {}}>
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue>Α/Β Μονάδα</SelectValue>
+            <Label htmlFor="charged_to_person">Charged To / Performed By (Optional)</Label>
+            <Select value={chargedToPerson} onValueChange={setChargedToPerson}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select person (optional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="weighted" className="text-xs">Α/Β Μονάδα</SelectItem>
+                {allUsers.map((user) => (
+                  <SelectItem key={user.id} value={user.id}>
+                    {user.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-slate-500 mt-1">
+              Select who initiated this movement or is responsible for it. Defaults to current user for tracking.
+            </p>
           </div>
 
-          {/* Row: Κόστος ανά μονάδα */}
           <div>
-            <Label className="text-xs font-semibold">Κόστος ανά μονάδα (€) *</Label>
+            <Label htmlFor="notes">Notes (Optional)</Label>
             <Input
-              type="number"
-              step="0.0001"
-              min="0"
-              value={unitCost}
-              onChange={(e) => setUnitCost(e.target.value)}
-              placeholder="0.0000"
-              className="h-8 text-xs"
-            />
-            <p className="text-xs text-slate-500 mt-0.5">Κόστος ανά liter</p>
-          </div>
-
-          {/* Row: Προϊόντων Στοχεία */}
-          <div>
-            <Label className="text-xs font-semibold">Προϊόντων Στοχεία</Label>
-            <Select value={conversionRate} onValueChange={setConversionRate}>
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1" className="text-xs">1</SelectItem>
-                <SelectItem value="10" className="text-xs">10</SelectItem>
-                <SelectItem value="100" className="text-xs">100</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Row: Αρθμός Waybill */}
-          <div>
-            <Label className="text-xs font-semibold">Αρθμός Waybill</Label>
-            <Input
+              id="notes"
               type="text"
-              placeholder="π.χ. WB-2025-001"
-              className="h-8 text-xs"
-            />
-          </div>
-
-          {/* Photos Upload */}
-          <div className="border-t pt-2">
-            <Label className="text-xs font-semibold block mb-2">Φωτογραφίες (προαιρετικό)</Label>
-            <Button type="button" variant="outline" className="w-full h-8 text-xs">
-              📷 Upload Photos
-            </Button>
-          </div>
-
-          {/* Notes */}
-          <div>
-            <Label className="text-xs font-semibold">Σημειώσεις (προαιρετικό)</Label>
-            <Input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Προσθέστε σημειώσεις..."
-              className="h-8 text-xs"
+              placeholder="Add any relevant notes"
             />
           </div>
 
-          {/* Footer Button */}
-          <div className="pt-4 border-t">
-            <Button type="submit" disabled={isProcessing} className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm font-semibold">
-              {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              ➜ Επεξεργασία Κίνησης Αποθήκης
-            </Button>
+          {/* Movement History Section */}
+          <div className="space-y-2 pt-4">
+            <h3 className="text-lg font-medium">Recent Movements for {product.name}</h3>
+            {movementHistory.length === 0 ? (
+                <p className="text-sm text-gray-500">No recent movements found for this product.</p>
+            ) : (
+                <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                    {movementHistory.map((movement) => (
+                        <div key={movement.id} className="mb-2 text-sm border-b pb-2 last:mb-0 last:border-b-0">
+                            <p>
+                                <strong>{movement.movement_type}</strong>: {movement.quantity} units{' '}
+                                {movement.from_location && `from ${movement.from_location}`}{' '}
+                                {movement.to_location && `to ${movement.to_location}`}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                                {new Date(movement.created_at).toLocaleString()}{' '}
+                                {movement.performed_by && `by ${movement.performed_by}`}{' '}
+                                {movement.notes && `- ${movement.notes}`}
+                            </p>
+                            {movement.reference_id && movement.reference_type === 'PurchaseOrder' && (
+                                <p className="text-xs text-blue-600 mt-1">Ref: PO {movement.reference_id}</p>
+                            )}
+                        </div>
+                    ))}
+                </ScrollArea>
+            )}
           </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isProcessing}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isProcessing}>
+              {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Record Movement
+            </Button>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
