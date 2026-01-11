@@ -1670,84 +1670,6 @@ export default function BarcodeScannerPage() {
                           </div>
 
                           <div>
-                            <Label>Μονάδα Εισαγωγής (Βάση: {matchedProduct?.unit_of_measure})</Label>
-                            <Select
-                              value={inputUnitSubtype || matchedProduct.unit_of_measure}
-                              onValueChange={(val) => {
-                                setInputUnitSubtype(val);
-                                if (matchedProduct.unit_of_measure === 'kg') {
-                                  if (val === 'g') setConversionRate('0.001');
-                                  else if (val === 'kg') setConversionRate('1');
-                                  else if (val === 'ton') setConversionRate('1000');
-                                } else if (matchedProduct.unit_of_measure === 'liter') {
-                                  if (val === 'ml') setConversionRate('0.001');
-                                  else if (val === 'liter') setConversionRate('1');
-                                } else if (matchedProduct.unit_of_measure === 'meter') {
-                                  if (val === 'cm') setConversionRate('0.01');
-                                  else if (val === 'mm') setConversionRate('0.001');
-                                  else if (val === 'meter') setConversionRate('1');
-                                } else if (matchedProduct.unit_of_measure === 'piece') {
-                                  if (val === 'piece') setConversionRate('1');
-                                }
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {matchedProduct?.unit_of_measure === 'kg' && (
-                                  <>
-                                    <SelectItem value="g">Γραμμάρια (g)</SelectItem>
-                                    <SelectItem value="kg">Κιλά (kg)</SelectItem>
-                                    <SelectItem value="ton">Τόνοι (ton)</SelectItem>
-                                  </>
-                                )}
-                                {matchedProduct?.unit_of_measure === 'liter' && (
-                                  <>
-                                    <SelectItem value="ml">Χιλιοστόλιτρα (ml)</SelectItem>
-                                    <SelectItem value="liter">Λίτρα (L)</SelectItem>
-                                  </>
-                                )}
-                                {matchedProduct?.unit_of_measure === 'meter' && (
-                                  <>
-                                    <SelectItem value="mm">Χιλιοστόμετρα (mm)</SelectItem>
-                                    <SelectItem value="cm">Εκατοστόμετρα (cm)</SelectItem>
-                                    <SelectItem value="meter">Μέτρα (m)</SelectItem>
-                                  </>
-                                )}
-                                {matchedProduct?.unit_of_measure === 'piece' && (
-                                  <>
-                                    <SelectItem value="piece">Τεμάχια</SelectItem>
-                                    <SelectItem value="box">Κουτιά</SelectItem>
-                                    <SelectItem value="pallet">Παλέτες</SelectItem>
-                                  </>
-                                )}
-                                {!['kg', 'liter', 'meter', 'piece'].includes(matchedProduct?.unit_of_measure) && (
-                                  <SelectItem value={matchedProduct?.unit_of_measure}>{matchedProduct?.unit_of_measure}</SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label>
-                              {inputUnitSubtype || matchedProduct?.unit_of_measure} ανά {matchedProduct?.unit_of_measure}
-                            </Label>
-                            <Input
-                              type="number"
-                              min="0.0001"
-                              step="0.0001"
-                              value={conversionRate}
-                              onChange={(e) => setConversionRate(e.target.value)}
-                              placeholder="Συντελεστής"
-                            />
-                            <p className="text-xs text-slate-500 mt-1">
-                              Ποσότητα βασικής μονάδας: {(parseFloat(quantity) * parseFloat(conversionRate) || 0).toFixed(4)} {matchedProduct?.unit_of_measure}
-                            </p>
-                          </div>
-                          <div>
                             <Label>Pcs/Qty</Label>
                             <Input
                               type="number"
@@ -2743,107 +2665,21 @@ export default function BarcodeScannerPage() {
                             />
                           </div>
 
-                          <div>
-                            <Label className="text-xs">Μονάδα Εισαγωγής</Label>
-                            <Select
-                              value={item.input_unit_subtype || ''}
-                              onValueChange={(val) => {
-                                const product = products.find(p => p.id === item.product_id);
-                                let newConversionRate = '1';
-                                if (product?.unit_of_measure === 'kg') {
-                                  if (val === 'g') newConversionRate = '0.001';
-                                  else if (val === 'kg') newConversionRate = '1';
-                                  else if (val === 'ton') newConversionRate = '1000';
-                                } else if (product?.unit_of_measure === 'liter') {
-                                  if (val === 'ml') newConversionRate = '0.001';
-                                  else if (val === 'liter') newConversionRate = '1';
-                                } else if (product?.unit_of_measure === 'meter') {
-                                  if (val === 'cm') newConversionRate = '0.01';
-                                  else if (val === 'mm') newConversionRate = '0.001';
-                                  else if (val === 'meter') newConversionRate = '1';
-                                } else if (product?.unit_of_measure === 'piece') {
-                                  if (val === 'piece') newConversionRate = '1';
-                                }
-                                handleBulkInvoiceItemChange(index, 'input_unit_subtype', val);
-                                handleBulkInvoiceItemChange(index, 'conversion_rate', newConversionRate);
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Επιλέξτε" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {(() => {
-                                  const product = products.find(p => p.id === item.product_id);
-                                  if (product?.unit_of_measure === 'kg') {
-                                    return (
-                                      <>
-                                        <SelectItem value="g">g</SelectItem>
-                                        <SelectItem value="kg">kg</SelectItem>
-                                        <SelectItem value="ton">ton</SelectItem>
-                                      </>
-                                    );
-                                  } else if (product?.unit_of_measure === 'liter') {
-                                    return (
-                                      <>
-                                        <SelectItem value="ml">ml</SelectItem>
-                                        <SelectItem value="liter">L</SelectItem>
-                                      </>
-                                    );
-                                  } else if (product?.unit_of_measure === 'meter') {
-                                    return (
-                                      <>
-                                        <SelectItem value="mm">mm</SelectItem>
-                                        <SelectItem value="cm">cm</SelectItem>
-                                        <SelectItem value="meter">m</SelectItem>
-                                      </>
-                                    );
-                                  } else if (product?.unit_of_measure === 'piece') {
-                                    return (
-                                      <>
-                                        <SelectItem value="piece">Τεμάχια</SelectItem>
-                                        <SelectItem value="box">Κουτιά</SelectItem>
-                                        <SelectItem value="pallet">Παλέτες</SelectItem>
-                                      </>
-                                    );
-                                  } else {
-                                    return <SelectItem value={product?.unit_of_measure || 'piece'}>{product?.unit_of_measure || 'piece'}</SelectItem>;
-                                  }
-                                })()}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label className="text-xs">Συντελεστής Μετατροπής</Label>
-                            <Input
-                              type="number"
-                              min="0.0001"
-                              step="0.0001"
-                              value={item.conversion_rate || '1'}
-                              onChange={(e) => handleBulkInvoiceItemChange(index, 'conversion_rate', e.target.value)}
-                              placeholder="Αυτόματα"
-                            />
-                            <p className="text-xs text-slate-500 mt-1">
-                              Βασική ποσότητα: {(parseFloat(item.quantity) * parseFloat(item.conversion_rate || 1)).toFixed(4)}
-                            </p>
-                          </div>
 
-                          <div>
-                            <Label className="text-xs">Pcs/Qty</Label>
-                            <Input
-                              type="number"
-                              min="1"
-                              step="1"
-                              value={item.bundle_quantity}
-                              onChange={(e) => handleBulkInvoiceItemChange(index, 'bundle_quantity', e.target.value)}
-                              placeholder="100"
-                            />
-                            {costPerPc !== '-' && (
-                              <p className="text-xs text-slate-600 mt-1">Κόστος/τεμ: €{costPerPc}</p>
-                            )}
-                          </div>
+                        <div>
+                          <Label className="text-xs">Pcs/Qty</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={item.bundle_quantity}
+                            onChange={(e) => handleBulkInvoiceItemChange(index, 'bundle_quantity', e.target.value)}
+                            placeholder="100"
+                          />
+                          {costPerPc !== '-' && (
+                            <p className="text-xs text-slate-600 mt-1">Κόστος/τεμ: €{costPerPc}</p>
+                          )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mt-3">
