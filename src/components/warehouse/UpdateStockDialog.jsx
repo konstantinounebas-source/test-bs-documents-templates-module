@@ -623,82 +623,16 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
               </div>
 
               <div>
-                <Label htmlFor="input_unit_subtype">Μονάδα Εισαγωγής (Βάση: {product?.unit_of_measure})</Label>
-                <Select
-                  value={inputUnitSubtype || product.unit_of_measure}
-                  onValueChange={(val) => {
-                    setInputUnitSubtype(val);
-                    // Auto-set conversion rate based on subtype
-                    if (product.unit_of_measure === 'kg') {
-                      if (val === 'g') setConversionRate('0.001');
-                      else if (val === 'kg') setConversionRate('1');
-                      else if (val === 'ton') setConversionRate('1000');
-                    } else if (product.unit_of_measure === 'liter') {
-                      if (val === 'ml') setConversionRate('0.001');
-                      else if (val === 'liter') setConversionRate('1');
-                    } else if (product.unit_of_measure === 'meter') {
-                      if (val === 'cm') setConversionRate('0.01');
-                      else if (val === 'mm') setConversionRate('0.001');
-                      else if (val === 'meter') setConversionRate('1');
-                    } else if (product.unit_of_measure === 'piece') {
-                      if (val === 'piece') setConversionRate('1');
-                      else if (val === 'box') setConversionRate(bundleQuantity || '1');
-                      else if (val === 'pallet') setConversionRate(bundleQuantity || '1');
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Επιλέξτε υπομονάδα" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {product?.unit_of_measure === 'kg' && (
-                      <>
-                        <SelectItem value="g">Γραμμάρια (g)</SelectItem>
-                        <SelectItem value="kg">Κιλά (kg)</SelectItem>
-                        <SelectItem value="ton">Τόνοι (ton)</SelectItem>
-                      </>
-                    )}
-                    {product?.unit_of_measure === 'liter' && (
-                      <>
-                        <SelectItem value="ml">Χιλιοστόλιτρα (ml)</SelectItem>
-                        <SelectItem value="liter">Λίτρα (L)</SelectItem>
-                      </>
-                    )}
-                    {product?.unit_of_measure === 'meter' && (
-                      <>
-                        <SelectItem value="mm">Χιλιοστόμετρα (mm)</SelectItem>
-                        <SelectItem value="cm">Εκατοστόμετρα (cm)</SelectItem>
-                        <SelectItem value="meter">Μέτρα (m)</SelectItem>
-                      </>
-                    )}
-                    {product?.unit_of_measure === 'piece' && (
-                      <>
-                        <SelectItem value="piece">Τεμάχια</SelectItem>
-                        <SelectItem value="box">Κουτιά</SelectItem>
-                        <SelectItem value="pallet">Παλέτες</SelectItem>
-                      </>
-                    )}
-                    {!['kg', 'liter', 'meter', 'piece'].includes(product?.unit_of_measure) && (
-                      <SelectItem value={product?.unit_of_measure}>{product?.unit_of_measure}</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="conversion_rate">Ποσότητα ανά μονάδα ({product?.unit_of_measure || 'μονάδες'})</Label>
+                <Label htmlFor="bundle_quantity">Pcs/Qty (Optional)</Label>
                 <Input
-                  id="conversion_rate"
+                  id="bundle_quantity"
                   type="number"
-                  min="0.0001"
-                  step="0.0001"
-                  value={conversionRate}
-                  onChange={(e) => setConversionRate(e.target.value)}
-                  placeholder="π.χ. 100"
+                  min="1"
+                  step="1"
+                  value={bundleQuantity}
+                  onChange={(e) => setBundleQuantity(e.target.value)}
+                  placeholder="π.χ. 100 τεμάχια"
                 />
-                <p className="text-xs text-slate-500 mt-1">
-                  Ποσότητα βασικής μονάδας: {(parseFloat(quantity) * parseFloat(conversionRate) || 0).toFixed(2)} {product?.unit_of_measure || 'μονάδες'}
-                </p>
               </div>
 
               <div>
