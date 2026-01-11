@@ -497,10 +497,23 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
+
                     <div>
-                      <Label htmlFor="conversion_rate">
+                      <Label htmlFor="bundle_qty">Pcs/Qty</Label>
+                      <Input
+                        id="bundle_qty"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={formData.bundle_quantity || ''}
+                        onChange={(e) => setFormData({ ...formData, bundle_quantity: e.target.value })}
+                        placeholder="π.χ. 100"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="conversion_rate">
                         {formData.input_unit_subtype || product?.unit_of_measure} ανά {product?.unit_of_measure} *
                       </Label>
                       <Input
