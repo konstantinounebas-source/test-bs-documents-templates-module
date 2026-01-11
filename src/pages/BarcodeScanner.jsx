@@ -1647,17 +1647,22 @@ export default function BarcodeScannerPage() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">-- Χωρίς PO --</SelectItem>
-                                {purchaseOrders.map(po => {
-                                  const vendor = vendors.find(v => v.id === po.vendor_id);
-                                  const totalRemaining = po.items.reduce((sum, item) => 
-                                    sum + (item.quantity_ordered - (item.quantity_received || 0)), 0
-                                  );
-                                  return (
-                                    <SelectItem key={po.id} value={po.id}>
-                                      {po.po_number} - {vendor?.name || 'N/A'} ({totalRemaining} items)
-                                    </SelectItem>
-                                  );
-                                })}
+                                {purchaseOrders
+                                  .filter(po => {
+                                    if (!matchedProduct) return true;
+                                    return po.items.some(item => item.product_id === matchedProduct.id && (item.quantity_ordered - (item.quantity_received || 0)) > 0);
+                                  })
+                                  .map(po => {
+                                    const vendor = vendors.find(v => v.id === po.vendor_id);
+                                    const totalRemaining = po.items.reduce((sum, item) => 
+                                      sum + (item.quantity_ordered - (item.quantity_received || 0)), 0
+                                    );
+                                    return (
+                                      <SelectItem key={po.id} value={po.id}>
+                                        {po.po_number} - {vendor?.name || 'N/A'} ({totalRemaining} items)
+                                      </SelectItem>
+                                    );
+                                  })}
                               </SelectContent>
                             </Select>
                           </div>
