@@ -398,14 +398,25 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="invoice-number">Αριθμός Τιμολογίου</Label>
-                    <Input
-                      id="invoice-number"
-                      value={formData.invoice_number || ''}
-                      onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
-                      placeholder="π.χ. INV-2025-001"
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="invoice-number">Αριθμός Τιμολογίου</Label>
+                      <Input
+                        id="invoice-number"
+                        value={formData.invoice_number || ''}
+                        onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
+                        placeholder="π.χ. INV-2025-001"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="po-number">Αριθμός PO</Label>
+                      <Input
+                        id="po-number"
+                        value={formData.po_number || ''}
+                        onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
+                        placeholder="π.χ. PO-2025-001"
+                      />
+                    </div>
                   </div>
                 </div>
 
