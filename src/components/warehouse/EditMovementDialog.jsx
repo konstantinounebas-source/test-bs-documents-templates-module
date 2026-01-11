@@ -18,7 +18,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     reference_type: '',
     reference_id: '',
     unit_cost: '',
-    input_unit_of_measure: '',
+    input_unit_subtype: '',
     conversion_rate: '',
     vendor_product_code: '',
     invoice_category_id: '',
@@ -60,7 +60,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       let conversionRate = '';
       let vendorUnitCost = movement.unit_cost || '';
       let vendorProdCode = movement.vendor_product_code || '';
-      let inputUnitOfMeasure = movement.input_unit_of_measure || currentProduct?.unit_of_measure || 'piece';
+      let inputUnitSubtype = movement.input_unit_of_measure || currentProduct?.unit_of_measure || 'piece';
 
       if (movement.reference_id && movement.product_id) {
         const pv = productVendors.find(
@@ -94,7 +94,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         reference_type: movement.reference_type || '',
         reference_id: movement.reference_id || '',
         unit_cost: vendorUnitCost,
-        input_unit_of_measure: inputUnitOfMeasure,
+        input_unit_subtype: inputUnitSubtype,
         conversion_rate: conversionRate || '1',
         vendor_product_code: vendorProdCode,
         invoice_category_id: movement.invoice_category_id || '',
@@ -180,7 +180,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         reference_type: formData.reference_type || null,
         reference_id: formData.reference_id || null,
         quantity: quantity,
-        input_unit_of_measure: formData.input_unit_of_measure,
+        input_unit_of_measure: formData.input_unit_subtype,
         conversion_rate: conversionRate,
         base_quantity: baseQuantity,
         unit_cost: unitCost,
@@ -286,7 +286,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                         reference_id: data.vendor_id || '',
                         unit_cost: data.unit_cost ? String(data.unit_cost) : '',
                         conversion_rate: data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : ''),
-                        input_unit_of_measure: data.input_unit_of_measure || '',
+                        input_unit_subtype: data.input_unit_of_measure || '',
                         vendor_product_code: data.vendor_product_code || '',
                         invoice_category_id: data.invoice_category_id || '',
                         company_id: data.company_id || ''
@@ -412,21 +412,62 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     </div>
 
                     <div>
-                      <Label htmlFor="input_unit_of_measure">Μονάδα Εισαγωγής</Label>
+                      <Label htmlFor="input_unit_subtype">Μονάδα Εισαγωγής (Βάση: {product?.unit_of_measure})</Label>
                       <Select
-                        value={formData.input_unit_of_measure}
-                        onValueChange={(val) => setFormData({ ...formData, input_unit_of_measure: val })}
+                        value={formData.input_unit_subtype || product?.unit_of_measure}
+                        onValueChange={(val) => {
+                          let newConversionRate = formData.conversion_rate;
+                          if (product?.unit_of_measure === 'kg') {
+                            if (val === 'g') newConversionRate = '0.001';
+                            else if (val === 'kg') newConversionRate = '1';
+                            else if (val === 'ton') newConversionRate = '1000';
+                          } else if (product?.unit_of_measure === 'liter') {
+                            if (val === 'ml') newConversionRate = '0.001';
+                            else if (val === 'liter') newConversionRate = '1';
+                          } else if (product?.unit_of_measure === 'meter') {
+                            if (val === 'cm') newConversionRate = '0.01';
+                            else if (val === 'mm') newConversionRate = '0.001';
+                            else if (val === 'meter') newConversionRate = '1';
+                          } else if (product?.unit_of_measure === 'piece') {
+                            if (val === 'piece') newConversionRate = '1';
+                          }
+                          setFormData({ ...formData, input_unit_subtype: val, conversion_rate: newConversionRate });
+                        }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Επιλέξτε" />
+                          <SelectValue placeholder="Επιλέξτε υπομονάδα" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="piece">Τεμάχιο</SelectItem>
-                          <SelectItem value="meter">Μέτρο</SelectItem>
-                          <SelectItem value="kg">Κιλό</SelectItem>
-                          <SelectItem value="liter">Λίτρο</SelectItem>
-                          <SelectItem value="box">Κουτί</SelectItem>
-                          <SelectItem value="pallet">Παλέτα</SelectItem>
+                          {product?.unit_of_measure === 'kg' && (
+                            <>
+                              <SelectItem value="g">Γραμμάρια (g)</SelectItem>
+                              <SelectItem value="kg">Κιλά (kg)</SelectItem>
+                              <SelectItem value="ton">Τόνοι (ton)</SelectItem>
+                            </>
+                          )}
+                          {product?.unit_of_measure === 'liter' && (
+                            <>
+                              <SelectItem value="ml">Χιλιοστόλιτρα (ml)</SelectItem>
+                              <SelectItem value="liter">Λίτρα (L)</SelectItem>
+                            </>
+                          )}
+                          {product?.unit_of_measure === 'meter' && (
+                            <>
+                              <SelectItem value="mm">Χιλιοστόμετρα (mm)</SelectItem>
+                              <SelectItem value="cm">Εκατοστόμετρα (cm)</SelectItem>
+                              <SelectItem value="meter">Μέτρα (m)</SelectItem>
+                            </>
+                          )}
+                          {product?.unit_of_measure === 'piece' && (
+                            <>
+                              <SelectItem value="piece">Τεμάχια</SelectItem>
+                              <SelectItem value="box">Κουτιά</SelectItem>
+                              <SelectItem value="pallet">Παλέτες</SelectItem>
+                            </>
+                          )}
+                          {!['kg', 'liter', 'meter', 'piece'].includes(product?.unit_of_measure) && (
+                            <SelectItem value={product?.unit_of_measure}>{product?.unit_of_measure}</SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
