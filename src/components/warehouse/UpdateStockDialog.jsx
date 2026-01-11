@@ -359,260 +359,273 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Επεξεργασία Κίνησης</DialogTitle>
-          <DialogDescription>
-            {product?.name} - SKU: {product?.sku}
-          </DialogDescription>
+      <DialogContent className="max-w-2xl max-h-[95vh] overflow-y-auto">
+        <DialogHeader className="pb-2">
+          <div className="flex justify-between items-start">
+            <div>
+              <DialogTitle className="text-base">Καθαριστικό Λαμαρίνας</DialogTitle>
+              <p className="text-xs text-slate-600 mt-1">Καθαριστικό Λαμαρίνας in Containeri</p>
+            </div>
+            <Button variant="outline" size="sm" className="h-7 text-xs">Matched ✓</Button>
+          </div>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+        <form onSubmit={handleSubmit} className="space-y-3 py-2">
           {validationError && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="py-2">
               <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{validationError}</AlertDescription>
+              <AlertDescription className="text-xs">{validationError}</AlertDescription>
             </Alert>
           )}
 
           {/* Product Info Card */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <div className="text-sm font-semibold text-blue-900 mb-2">ΠΡΟΗΓΟΥΜΕΝΑ ΠΡΟΪΟΝΤΑ</div>
-            <div className="text-xs space-y-1">
-              <div><strong>{product?.name}</strong></div>
-              <div className="text-slate-600">SKU: {product?.sku}</div>
-              <div className="text-slate-600">Κατηγορία: {categories?.find(c => c.id === product?.category_id)?.name || 'N/A'}</div>
+          <div className="bg-blue-50 border border-blue-200 rounded p-2.5">
+            <div className="flex justify-between items-start">
+              <div className="text-xs space-y-0.5">
+                <div><strong>SKU: OAK-PAT-018</strong></div>
+                <div className="text-slate-600">Current Stock: 19 liter</div>
+              </div>
             </div>
           </div>
 
-          {/* Movement Type */}
-          <div>
-            <Label className="text-xs font-bold mb-2 block">Ενλογη από Πολλές Αγορές</Label>
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Αναζητήστε παλιό προϊόν για αναπρογραμματισμό του πύλου"
-                className="pl-10 h-9 text-xs"
-              />
-            </div>
-          </div>
-
-          {/* Θέση Αποθήκης και Εταιρεία */}
+          {/* Row 1: Τύπος Κίνησης & Θέση Αποθήκης */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs">Θέση Αποθήκης</Label>
+              <Label className="text-xs font-semibold">Τύπος Κίνησης *</Label>
+              <Select value={movementType} onValueChange={setMovementType}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IN">Εισαγωγή (IN)</SelectItem>
+                  <SelectItem value="OUT">Εξαγωγή (OUT)</SelectItem>
+                  <SelectItem value="TRANSFER">Μεταφορά (TRANSFER)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold">Θέση Αποθήκης *</Label>
               <Select value={toLocation} onValueChange={setToLocation}>
-                <SelectTrigger className={`h-9 ${validationError && !toLocation ? 'border-red-500' : ''}`}>
-                  <SelectValue placeholder="-- Χωρίς Εταιρεία --" />
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select" />
                 </SelectTrigger>
                 <SelectContent>
                   {locations.map((loc) => (
-                    <SelectItem key={loc.id} value={loc.name}>
+                    <SelectItem key={loc.id} value={loc.name} className="text-xs">
                       {loc.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Row 2: Εταιρεία & Κατηγορία Τιμολόγησης */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs">Εταιρεία *</Label>
+              <Label className="text-xs font-semibold">Εταιρεία *</Label>
               <Select value={selectedVendor || 'none'} onValueChange={(val) => setSelectedVendor(val === 'none' ? '' : val)}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Aicontrol" />
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="-- Χωρίς Εταιρεία --" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
                   {companies.map((company) => (
-                    <SelectItem key={company.id} value={company.id}>
+                    <SelectItem key={company.id} value={company.id} className="text-xs">
                       {company.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          {/* Σταγία Προμηθευτή και Κωδικός Προϊόντος */}
-          <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs">Σταγία Προμηθευτή</Label>
-              <Select value={relatedPO} onValueChange={(value) => {
-                setRelatedPO(value === "no-po" ? "" : value);
-                setRelatedPOItem("");
-              }}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="★ Test 2 (VEND-128)" />
+              <Label className="text-xs font-semibold">Κατηγορία Τιμολόγησης *</Label>
+              <Select value={invoiceCategory || 'none'} onValueChange={(val) => setInvoiceCategory(val === 'none' ? '' : val)}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="-- Χωρίς Κατηγορία --" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="no-po">No PO</SelectItem>
-                  {purchaseOrders
-                    .filter(po => !hideCompletedPOs || po.status !== 'Received')
-                    .map((po) => (
-                    <SelectItem key={po.id} value={po.id}>
-                      {po.po_number} - {po.status}
-                    </SelectItem>
+                  <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
+                  {invoiceCategories.map(ic => (
+                    <SelectItem key={ic.id} value={ic.id} className="text-xs">{ic.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label className="text-xs">Κωδικός Προϊόντος</Label>
-              <Input
-                value={vendorProductCode}
-                onChange={(e) => setVendorProductCode(e.target.value)}
-                placeholder="-- Προϊόντος προμηθευτή --"
-                className="h-9 text-xs"
-              />
+          </div>
+
+          {/* Section: Ενλογη από Πολλές Αγορές */}
+          <div className="border-t pt-2">
+            <Label className="text-xs font-semibold block mb-2">⊕ Ενλογη από Πολλές Αγορές</Label>
+            <Input
+              placeholder="Ενλέξετε παλιό αγορά..."
+              className="h-8 text-xs"
+            />
+            <p className="text-xs text-slate-500 mt-1">Ενλέξετε παλιό αγορά για αναπρογραμματισμό του πύλου</p>
+          </div>
+
+          {/* Section: Στοχεία Προμηθευτή */}
+          <div className="border-t pt-2">
+            <Label className="text-xs font-semibold block mb-2">Στοχεία Προμηθευτή</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-slate-600">Προμηθευτής *</Label>
+                <div className="flex gap-1">
+                  <Select value={relatedPO} onValueChange={(value) => {
+                    setRelatedPO(value === "no-po" ? "" : value);
+                    setRelatedPOItem("");
+                  }}>
+                    <SelectTrigger className="h-8 text-xs flex-1">
+                      <SelectValue placeholder="Ενλέξετε προμηθευτή..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="no-po">No PO</SelectItem>
+                      {purchaseOrders
+                        .filter(po => !hideCompletedPOs || po.status !== 'Received')
+                        .map((po) => (
+                        <SelectItem key={po.id} value={po.id} className="text-xs">
+                          {po.po_number} - {po.status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" size="icon" variant="outline" className="h-8 w-8">
+                    +
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-slate-600">Κωδικός Προϊόντος Προμηθευτή *</Label>
+                <Input
+                  value={vendorProductCode}
+                  onChange={(e) => setVendorProductCode(e.target.value)}
+                  placeholder="Κωδικός προϊόντος"
+                  className="h-8 text-xs"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Αρθμό Τιμολογίου */}
+          {/* Row: Αρθμός Τιμολογίου */}
           <div>
-            <Label className="text-xs">Αρθμό Τιμολογίου</Label>
+            <Label className="text-xs font-semibold">Αρθμός Τιμολογίου</Label>
             <Input
               type="text"
               value={waybillNumber}
               onChange={(e) => setWaybillNumber(e.target.value)}
               placeholder="π.χ. INV-2025-001"
-              className="h-9 text-xs"
+              className="h-8 text-xs"
             />
           </div>
 
-          {/* Ποσότητα και Κόστος */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs">Ποσότητα *</Label>
-              <Input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                min="1"
-                step="any"
-                placeholder="1"
-                className={`h-9 text-xs ${validationError && (!quantity || parseFloat(quantity) <= 0) ? 'border-red-500' : ''}`}
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Μονάδα Εμπορευσίας (Βάση/ liter)</Label>
-              <Select value={inputUnitSubtype || product?.unit_of_measure} onValueChange={setInputUnitSubtype}>
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="Τμήμα (L)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="piece">Τεμάχιο</SelectItem>
-                  <SelectItem value="meter">Μέτρο</SelectItem>
-                  <SelectItem value="kg">Κιλό</SelectItem>
-                  <SelectItem value="liter">Λίτρο</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Κόστος ανά Μονάδα */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs">Κόστος ανά piece</Label>
-              <Input
-                type="number"
-                step="0.0001"
-                min="0"
-                value={unitCost}
-                onChange={(e) => setUnitCost(e.target.value)}
-                placeholder="€14.0000"
-                className="h-9 text-xs"
-              />
-            </div>
-            <div>
-              <Label className="text-xs">Κόστος ανά piece</Label>
-              <div className="h-9 flex items-center text-xs text-slate-500">
-                Υπολογιζόμενος κόστος, βάσιμος μεταφορά.
+          {/* Row: Ποσότητα & Κόστος */}
+          <div>
+            <Label className="text-xs font-semibold block mb-1">Ποσότητα & Κόστος</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-slate-600">Ποσότητα *</Label>
+                <Input
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  min="1"
+                  step="any"
+                  placeholder="1"
+                  className={`h-8 text-xs ${validationError && (!quantity || parseFloat(quantity) <= 0) ? 'border-red-500' : ''}`}
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-slate-600">Pcs/Qty</Label>
+                <Input
+                  type="number"
+                  value={bundleQuantity}
+                  onChange={(e) => setBundleQuantity(e.target.value)}
+                  placeholder="π.χ. 100 τεμ."
+                  className="h-8 text-xs"
+                />
               </div>
             </div>
           </div>
 
-          {/* Προϊόντων Στοχεία */}
+          {/* Row: Μέθοδος Εμπορικής Κόστους */}
           <div>
-            <Label className="text-xs">Προϊόντων Στοχεία</Label>
+            <Label className="text-xs font-semibold">Μέθοδος Εμπορικής Κόστους</Label>
+            <Select value="weighted"onValueChange={() => {}}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue>Α/Β Μονάδα</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="weighted" className="text-xs">Α/Β Μονάδα</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Row: Κόστος ανά μονάδα */}
+          <div>
+            <Label className="text-xs font-semibold">Κόστος ανά μονάδα (€) *</Label>
+            <Input
+              type="number"
+              step="0.0001"
+              min="0"
+              value={unitCost}
+              onChange={(e) => setUnitCost(e.target.value)}
+              placeholder="0.0000"
+              className="h-8 text-xs"
+            />
+            <p className="text-xs text-slate-500 mt-0.5">Κόστος ανά liter</p>
+          </div>
+
+          {/* Row: Προϊόντων Στοχεία */}
+          <div>
+            <Label className="text-xs font-semibold">Προϊόντων Στοχεία</Label>
             <Select value={conversionRate} onValueChange={setConversionRate}>
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Α/Β Μονάδα" />
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="1">1</SelectItem>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="100">100</SelectItem>
+                <SelectItem value="1" className="text-xs">1</SelectItem>
+                <SelectItem value="10" className="text-xs">10</SelectItem>
+                <SelectItem value="100" className="text-xs">100</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Κατηγορία Τιμολόγησης */}
+          {/* Row: Αρθμός Waybill */}
           <div>
-            <Label className="text-xs">Κατηγορία Τιμολόγησης *</Label>
-            <Select value={invoiceCategory || 'none'} onValueChange={(val) => setInvoiceCategory(val === 'none' ? '' : val)}>
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="-- Χωρίς Κατηγορία --" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
-                {invoiceCategories.map(ic => (
-                  <SelectItem key={ic.id} value={ic.id}>{ic.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Αρθμό Waybill */}
-          <div>
-            <Label className="text-xs">Αρθμό Waybill</Label>
+            <Label className="text-xs font-semibold">Αρθμός Waybill</Label>
             <Input
               type="text"
               placeholder="π.χ. WB-2025-001"
-              className="h-9 text-xs"
+              className="h-8 text-xs"
             />
           </div>
 
-          {/* Σημειώσεις */}
+          {/* Photos Upload */}
+          <div className="border-t pt-2">
+            <Label className="text-xs font-semibold block mb-2">Φωτογραφίες (προαιρετικό)</Label>
+            <Button type="button" variant="outline" className="w-full h-8 text-xs">
+              📷 Upload Photos
+            </Button>
+          </div>
+
+          {/* Notes */}
           <div>
-            <Label className="text-xs">Σημειώσεις</Label>
+            <Label className="text-xs font-semibold">Σημειώσεις (προαιρετικό)</Label>
             <Input
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Προσθέστε σημειώσεις..."
-              className="h-9 text-xs"
+              className="h-8 text-xs"
             />
           </div>
 
-          {/* Movement History Section */}
-          <div className="space-y-1 pt-2 border-t">
-            <p className="text-xs font-semibold text-slate-600">Recent Movements</p>
-            {movementHistory.length === 0 ? (
-                <p className="text-xs text-slate-500">No recent movements.</p>
-            ) : (
-                <ScrollArea className="h-24 w-full rounded border p-2">
-                    <div className="space-y-1">
-                      {movementHistory.map((movement) => (
-                          <div key={movement.id} className="text-xs border-b pb-1 last:border-b-0">
-                              <p className="font-medium">
-                                  {movement.movement_type}: {movement.quantity} {movement.from_location && `from ${movement.from_location}`} {movement.to_location && `to ${movement.to_location}`}
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                  {new Date(movement.created_at).toLocaleString()} {movement.performed_by && `by ${movement.performed_by}`}
-                              </p>
-                          </div>
-                      ))}
-                    </div>
-                </ScrollArea>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleClose} disabled={isProcessing}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isProcessing}>
+          {/* Footer Button */}
+          <div className="pt-4 border-t">
+            <Button type="submit" disabled={isProcessing} className="w-full bg-green-600 hover:bg-green-700 h-9 text-sm font-semibold">
               {isProcessing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Record Movement
+              ➜ Επεξεργασία Κίνησης Αποθήκης
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
