@@ -413,7 +413,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                 <div className="space-y-3 border-t pt-4">
                   <p className="text-sm font-semibold text-slate-700">Ποσότητα & Κόστος</p>
                   
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <div>
                       <Label htmlFor="quantity">Ποσότητα *</Label>
                       <Input
@@ -438,7 +438,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     </div>
 
                     <div>
-                      <Label htmlFor="input_unit_subtype">Μονάδα Εισαγωγής (Βάση: {product?.unit_of_measure})</Label>
+                      <Label htmlFor="input_unit_subtype">Μονάδα Εισαγ.</Label>
                       <Select
                         value={formData.input_unit_subtype || product?.unit_of_measure}
                         onValueChange={(val) => {
