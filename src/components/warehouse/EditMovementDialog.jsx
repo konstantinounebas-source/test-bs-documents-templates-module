@@ -436,12 +436,24 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     </div>
                     <div>
                       <Label htmlFor="po-number">Αριθμός PO</Label>
-                      <Input
-                        id="po-number"
-                        value={formData.po_number || ''}
-                        onChange={(e) => setFormData({ ...formData, po_number: e.target.value })}
-                        placeholder="π.χ. PO-2025-001"
-                      />
+                      <Select
+                        value={formData.po_number || 'none'}
+                        onValueChange={(val) => setFormData({ ...formData, po_number: val === 'none' ? '' : val })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Επιλέξτε PO" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">-- Χωρίς PO --</SelectItem>
+                          {purchaseOrders
+                            .filter(po => po.items && po.items.some(item => item.product_id === movement.product_id))
+                            .map(po => (
+                              <SelectItem key={po.id} value={po.po_number}>
+                                {po.po_number}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>
