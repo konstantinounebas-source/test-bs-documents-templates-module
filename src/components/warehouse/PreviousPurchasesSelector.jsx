@@ -106,10 +106,13 @@ export default function PreviousPurchasesSelector({
         <SelectContent>
           <SelectItem value="none">-- Νέα Αγορά --</SelectItem>
           {previousPurchases.filter(m => {
-            const idStr = m.id?.toString().trim();
-            return idStr && idStr !== '';
-          }).map((movement) => (
-            <SelectItem key={movement.id} value={movement.id.toString().trim()}>
+            if (!m.id) return false;
+            const idStr = String(m.id).trim();
+            return idStr.length > 0;
+          }).map((movement) => {
+            const valueStr = String(movement.id).trim();
+            return (
+            <SelectItem key={movement.id} value={valueStr || 'invalid'}>
               <div className="flex flex-col py-1">
                 <div className="font-medium">
                   {formatDate(movement.created_date)} - {getVendorName(movement.reference_id)}
