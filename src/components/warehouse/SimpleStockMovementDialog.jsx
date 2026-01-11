@@ -16,6 +16,7 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
   const [toLocation, setToLocation] = useState("");
   const [chargedToPerson, setChargedToPerson] = useState("");
   const [notes, setNotes] = useState("");
+  const [inputUnitOfMeasure, setInputUnitOfMeasure] = useState("");
   const [conversionRate, setConversionRate] = useState("1");
   const [locations, setLocations] = useState([]);
   const [systemUsers, setSystemUsers] = useState([]);
@@ -33,6 +34,7 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
       setToLocation("");
       setChargedToPerson("");
       setNotes("");
+      setInputUnitOfMeasure("");
       setConversionRate("1");
       setValidationError("");
     }
@@ -105,7 +107,7 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
         product_id: product.id,
         movement_type: movementType,
         quantity: numericQuantity,
-        input_unit_of_measure: product.unit_of_measure,
+        input_unit_of_measure: inputUnitOfMeasure || product.unit_of_measure,
         conversion_rate: parsedConversionRate,
         base_quantity: baseQuantity,
         from_location: fromLocation || undefined,
@@ -292,9 +294,29 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
             </div>
           </div>
 
-          <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="conversion_rate">Πολλαπλάσιο μεγέθους (Conversion Rate)</Label>
+              <Label htmlFor="input_unit_of_measure">Μονάδα Εισαγωγής</Label>
+              <Select
+                value={inputUnitOfMeasure || product.unit_of_measure}
+                onValueChange={setInputUnitOfMeasure}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Επιλέξτε" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="piece">Τεμάχιο</SelectItem>
+                  <SelectItem value="meter">Μέτρο</SelectItem>
+                  <SelectItem value="kg">Κιλό</SelectItem>
+                  <SelectItem value="liter">Λίτρο</SelectItem>
+                  <SelectItem value="box">Κουτί</SelectItem>
+                  <SelectItem value="pallet">Παλέτα</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="conversion_rate">Ποσότητα ανά μονάδα ({product?.unit_of_measure || 'μονάδες'})</Label>
               <Input
                 id="conversion_rate"
                 type="number"
@@ -302,10 +324,10 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
                 step="0.0001"
                 value={conversionRate}
                 onChange={(e) => setConversionRate(e.target.value)}
-                placeholder="1"
+                placeholder="π.χ. 100"
               />
               <p className="text-xs text-slate-500 mt-1">
-                Μονάδα προϊόντος: {product?.unit_of_measure || 'N/A'} | Ποσότητα βασικής μονάδας: {(parseFloat(quantity) * parseFloat(conversionRate) || 0).toFixed(4)} {product?.unit_of_measure || 'μονάδες'}
+                Ποσότητα βασικής μονάδας: {(parseFloat(quantity) * parseFloat(conversionRate) || 0).toFixed(2)} {product?.unit_of_measure || 'μονάδες'}
               </p>
             </div>
           </div>
