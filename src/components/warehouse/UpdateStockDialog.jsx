@@ -79,10 +79,10 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
     setValidationError("");
 
     try {
-      const [locationsData, poData, user, sysUsers, aUsers, movementsData, invoiceCatsData, vendorsData, companiesData] = await Promise.all([
-        base44.entities.WarehouseLocation.filter({ is_active: true }),
-        // Fetch all relevant POs including 'Received' to allow toggling
-        base44.entities.PurchaseOrder.filter({ status: ["Confirmed", "Partially Received", "Received"] }).catch(() => []),
+       const [locationsData, poData, user, sysUsers, aUsers, movementsData, invoiceCatsData, vendorsData, companiesData] = await Promise.all([
+         base44.entities.WarehouseLocation.filter({ is_active: true }),
+         // Fetch all relevant POs including 'Received' to allow toggling
+         base44.entities.PurchaseOrder.list().catch(() => []),
         base44.auth.me(),
         base44.entities.User.list().catch(() => []),
         base44.entities.AppUser.list().catch(() => []),
@@ -94,9 +94,10 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       ]);
       
       setLocations(locationsData);
-      
-      // Filter POs that have this product, regardless of received status for initial load
+
+      // Filter POs that have this product and correct status
       const relevantPOsForAllStatuses = poData.filter(po => 
+        (po.status === "Confirmed" || po.status === "Partially Received" || po.status === "Received") &&
         po.items && po.items.some(item => 
           item.product_id === product.id
         )
