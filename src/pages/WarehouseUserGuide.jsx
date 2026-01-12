@@ -139,10 +139,10 @@ export default function WarehouseUserGuidePage() {
                  </div>
 
                 <Tip 
-                  icon={Lightbulb} 
-                  title="Pro Tips" 
-                  description="• Χρησιμοποιήστε consistent naming conventions για SKUs (π.χ. CAT-PROD-001) • Βάλτε photo URLs για οπτική αναγνώριση • Ενημερώνετε το Minimum Stock βάσει ιστορικής κατανάλωσης • Κρατήστε μόνο ένα Preferred Vendor ανά προϊόν για ξεκάθαρο costing"
-                />
+                   icon={Lightbulb} 
+                   title="Pro Tips" 
+                   description="• Χρησιμοποιήστε consistent naming conventions για SKUs (π.χ. CAT-PROD-001) • Βάλτε photo URLs για οπτική αναγνώριση • Ενημερώνετε το Minimum Stock βάσει ιστορικής κατανάλωσης • Κρατήστε μόνο ένα Preferred Vendor ανά προϊόν για ξεκάθαρο costing • Χρησιμοποιήστε horizontal scroll για να δείτε όλες τις στήλες κόστους"
+                 />
               </CardContent>
             </Card>
           </TabsContent>
