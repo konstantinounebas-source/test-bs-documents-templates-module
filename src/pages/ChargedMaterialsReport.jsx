@@ -131,8 +131,9 @@ export default function ChargedMaterialsReportPage() {
       const product = getProduct(movement.product_id);
       if (!product) return;
       
+      const baseQty = movement.base_quantity || movement.quantity;
       const unitCost = getProductUnitCost(movement.product_id);
-      const cost = unitCost * movement.quantity;
+      const cost = unitCost * baseQty;
       
       if (!aggregated[person].products[movement.product_id]) {
         aggregated[person].products[movement.product_id] = {
@@ -142,9 +143,9 @@ export default function ChargedMaterialsReportPage() {
         };
       }
       
-      aggregated[person].products[movement.product_id].quantity += movement.quantity;
+      aggregated[person].products[movement.product_id].quantity += baseQty;
       aggregated[person].products[movement.product_id].cost += cost;
-      aggregated[person].totalItems += movement.quantity;
+      aggregated[person].totalItems += baseQty;
       aggregated[person].totalCost += cost;
     });
     
@@ -173,8 +174,9 @@ export default function ChargedMaterialsReportPage() {
       }
       
       const person = movement.charged_to_person;
+      const baseQty = movement.base_quantity || movement.quantity;
       const unitCost = getProductUnitCost(productId);
-      const cost = unitCost * movement.quantity;
+      const cost = unitCost * baseQty;
       
       if (!aggregated[productId].persons[person]) {
         aggregated[productId].persons[person] = {
@@ -184,9 +186,9 @@ export default function ChargedMaterialsReportPage() {
         };
       }
       
-      aggregated[productId].persons[person].quantity += movement.quantity;
+      aggregated[productId].persons[person].quantity += baseQty;
       aggregated[productId].persons[person].cost += cost;
-      aggregated[productId].totalQuantity += movement.quantity;
+      aggregated[productId].totalQuantity += baseQty;
       aggregated[productId].totalCost += cost;
     });
     
@@ -315,12 +317,12 @@ export default function ChargedMaterialsReportPage() {
     groupBy === "person" ? {
       totalPersons: personAggregates.length,
       totalMovements: filteredMovements.length,
-      totalItemsCharged: filteredMovements.reduce((sum, m) => sum + (m.quantity || 0), 0),
+      totalItemsCharged: filteredMovements.reduce((sum, m) => sum + (m.base_quantity || m.quantity || 0), 0),
       totalCost: personAggregates.reduce((sum, p) => sum + (p.totalCost || 0), 0)
     } : {
       totalMaterials: materialAggregates.length,
       totalMovements: filteredMovements.length,
-      totalItemsCharged: filteredMovements.reduce((sum, m) => sum + (m.quantity || 0), 0),
+      totalItemsCharged: filteredMovements.reduce((sum, m) => sum + (m.base_quantity || m.quantity || 0), 0),
       totalCost: materialAggregates.reduce((sum, m) => sum + (m.totalCost || 0), 0)
     }
   ) : {

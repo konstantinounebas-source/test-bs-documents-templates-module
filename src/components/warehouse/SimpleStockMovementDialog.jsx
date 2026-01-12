@@ -18,6 +18,7 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
   const [notes, setNotes] = useState("");
   const [inputUnitSubtype, setInputUnitSubtype] = useState("");
   const [conversionRate, setConversionRate] = useState("1");
+  const [bundleQuantity, setBundleQuantity] = useState("");
   const [locations, setLocations] = useState([]);
   const [systemUsers, setSystemUsers] = useState([]);
   const [appUsers, setAppUsers] = useState([]);
@@ -36,6 +37,7 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
       setNotes("");
       setInputUnitSubtype("");
       setConversionRate("1");
+      setBundleQuantity("");
       setValidationError("");
     }
   }, [open, product]);
@@ -100,8 +102,13 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
 
     try {
       const parsedConversionRate = parseFloat(conversionRate) || 1;
-      const baseQuantity = numericQuantity * parsedConversionRate;
-      const baseUnitCost = product.unit_cost && parsedConversionRate > 0 ? product.unit_cost / parsedConversionRate : undefined;
+      const parsedBundleQty = bundleQuantity ? parseFloat(bundleQuantity) : null;
+      const baseQuantity = parsedBundleQty 
+        ? numericQuantity * parsedConversionRate * parsedBundleQty
+        : numericQuantity * parsedConversionRate;
+      const baseUnitCost = product.unit_cost && parsedConversionRate > 0 
+        ? (parsedBundleQty ? product.unit_cost / parsedConversionRate / parsedBundleQty : product.unit_cost / parsedConversionRate)
+        : undefined;
 
       const movementData = {
         product_id: product.id,
@@ -110,6 +117,7 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
         input_unit_of_measure: inputUnitSubtype || product.unit_of_measure,
         conversion_rate: parsedConversionRate,
         base_quantity: baseQuantity,
+        bundle_quantity: parsedBundleQty,
         from_location: fromLocation || undefined,
         to_location: toLocation || undefined,
         charged_to_person: chargedToPerson || undefined,
@@ -357,20 +365,31 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
             </div>
 
             <div>
-              <Label htmlFor="conversion_rate">Συντελεστής Μετατροπής</Label>
+              <Label htmlFor="bundle_quantity">Pcs/Qty (προαιρετικό)</Label>
               <Input
-                id="conversion_rate"
+                id="bundle_quantity"
                 type="number"
-                min="0.0001"
-                step="0.0001"
-                value={conversionRate}
-                onChange={(e) => setConversionRate(e.target.value)}
-                placeholder="Αυτόματα"
+                min="1"
+                step="1"
+                value={bundleQuantity}
+                onChange={(e) => setBundleQuantity(e.target.value)}
+                placeholder="π.χ. 100"
               />
               <p className="text-xs text-slate-500 mt-1">
-                Ποσότητα βασικής μονάδας: {(parseFloat(quantity) * parseFloat(conversionRate) || 0).toFixed(4)} {product?.unit_of_measure || 'μονάδες'}
+                Τεμάχια ανά μονάδα εισαγωγής
               </p>
             </div>
+          </div>
+
+          <div className="col-span-2">
+            <p className="text-xs text-slate-500">
+              Ποσότητα βασικής μονάδας ({product?.unit_of_measure}): {(() => {
+                const qty = parseFloat(quantity) || 0;
+                const convRate = parseFloat(conversionRate) || 1;
+                const bundleQty = parseFloat(bundleQuantity) || null;
+                return bundleQty ? (qty * convRate * bundleQty).toFixed(2) : (qty * convRate).toFixed(2);
+              })()}
+            </p>
           </div>
 
           {movementType === "IN" && (
