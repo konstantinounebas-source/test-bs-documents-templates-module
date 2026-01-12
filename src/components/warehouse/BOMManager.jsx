@@ -429,7 +429,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                       value={component.material_category_id || "none"}
                                       onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'material_category_id', value === "none" ? '' : value)}
                                     >
-                                      <SelectTrigger className="h-8 text-xs w-32">
+                                      <SelectTrigger className="h-8 text-xs w-44">
                                         <SelectValue placeholder="-" />
                                       </SelectTrigger>
                                       <SelectContent>
@@ -445,7 +445,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                       value={component.team_id || "none"}
                                       onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'team_id', value === "none" ? '' : value)}
                                     >
-                                      <SelectTrigger className="h-8 text-xs w-32">
+                                      <SelectTrigger className="h-8 text-xs w-40">
                                         <SelectValue placeholder="-" />
                                       </SelectTrigger>
                                       <SelectContent>
@@ -465,7 +465,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                               </TableCell>
                             </TableRow>
                             <TableRow className="border-b">
-                              <TableCell className="py-2">
+                              <TableCell className="py-2 w-24">
                                 <Input
                                   type="number"
                                   step="0.01"
@@ -480,10 +480,10 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                       handleUpdateComponent(absoluteIndex, 'quantity_required', String(val));
                                     }
                                   }}
-                                  className="h-8"
+                                  className="h-8 w-20"
                                 />
                               </TableCell>
-                              <TableCell className="py-2">
+                              <TableCell className="py-2 w-24">
                                 <Select
                                   value={component.input_unit_of_measure || ''}
                                   onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'input_unit_of_measure', value)}
@@ -536,7 +536,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                   </SelectContent>
                                 </Select>
                               </TableCell>
-                              <TableCell className="py-2 text-sm font-medium text-slate-700">
+                              <TableCell className="py-2 w-20 text-sm font-medium text-slate-700">
                                 {lineCost > 0 ? `€${lineCost.toFixed(2)}` : '-'}
                               </TableCell>
                               <TableCell className="py-2">
@@ -544,10 +544,10 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                   value={component.notes || ''}
                                   onChange={(e) => handleUpdateComponent(absoluteIndex, 'notes', e.target.value)}
                                   placeholder="Σημειώσεις..."
-                                  className="h-8 text-xs"
+                                  className="h-8 text-sm"
                                 />
                               </TableCell>
-                              <TableCell className="py-2 text-right">
+                              <TableCell className="py-2 text-right w-16">
                                 <Button
                                   type="button"
                                   variant="ghost"
