@@ -404,7 +404,8 @@ export default function PurchaseOrdersPage() {
           unit_cost: 0,
           total_cost: 0,
           expected_receipt_date: prev.expected_delivery_date || '',
-          bundle_quantity: null
+          bundle_quantity: null,
+          vendor_product_code: ''
         }
       ]
     }));
@@ -445,6 +446,7 @@ export default function PurchaseOrdersPage() {
       );
       if (pv) {
         newItems[index].unit_cost = pv.unit_cost;
+        newItems[index].vendor_product_code = pv.vendor_product_code;
       }
     }
 
@@ -800,11 +802,12 @@ export default function PurchaseOrdersPage() {
               )}
 
               {formData.items.length > 0 && (
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Product *</TableHead>
+                        <TableHead className="min-w-[250px]">Product *</TableHead>
+                        <TableHead className="w-[150px]">Previous Purchase</TableHead>
                         <TableHead className="w-24">Qty *</TableHead>
                         <TableHead className="w-24">Unit</TableHead>
                         <TableHead className="w-24">Pcs/Qty</TableHead>
@@ -822,6 +825,28 @@ export default function PurchaseOrdersPage() {
                           .filter(pv => pv.vendor_id === formData.vendor_id && pv.is_active)
                           .map(pv => pv.product_id);
                         
+                        // Get previous purchases for this product
+                        const previousPurchases = item.product_id ? 
+                          movements
+                            .filter(m => 
+                              m.movement_type === 'IN' && 
+                              m.product_id === item.product_id &&
+                              m.reference_type === 'Vendor' &&
+                              m.reference_id === formData.vendor_id
+                            )
+                            .slice(0, 5)
+                            .map(m => ({
+                              unit_cost: m.unit_cost,
+                              vendor_product_code: m.vendor_product_code,
+                              invoice_category_id: m.invoice_category_id,
+                              notes: m.notes
+                            }))
+                            .filter((v, i, a) => a.findIndex(t => 
+                              t.unit_cost === v.unit_cost && 
+                              t.vendor_product_code === v.vendor_product_code
+                            ) === i)
+                          : [];
+                        
                         return (
                           <TableRow key={index}>
                             <TableCell>
@@ -834,6 +859,34 @@ export default function PurchaseOrdersPage() {
                               />
                             </TableCell>
                             <TableCell>
+                              {previousPurchases.length > 0 ? (
+                                <Select
+                                  value=""
+                                  onValueChange={(val) => {
+                                    if (val !== 'new') {
+                                      const purchase = previousPurchases[parseInt(val)];
+                                      handleItemChange(index, 'unit_cost', purchase.unit_cost);
+                                      handleItemChange(index, 'vendor_product_code', purchase.vendor_product_code);
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className="text-xs">
+                                    <SelectValue placeholder="New / Previous" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="new">New Purchase</SelectItem>
+                                    {previousPurchases.map((p, i) => (
+                                      <SelectItem key={i} value={i.toString()}>
+                                        €{p.unit_cost?.toFixed(2)} {p.vendor_product_code ? `(${p.vendor_product_code})` : ''}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <span className="text-xs text-slate-400">New</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
                               <Input
                                 type="number"
                                 min="1"
@@ -843,6 +896,7 @@ export default function PurchaseOrdersPage() {
                                 onChange={(e) => handleItemChange(index, 'quantity_ordered', e.target.value)}
                                 required
                                 placeholder="Qty"
+                                className="w-full"
                               />
                             </TableCell>
                             <TableCell>
@@ -1086,11 +1140,12 @@ export default function PurchaseOrdersPage() {
               )}
 
               {formData.items.length > 0 && (
-                <div className="border rounded-lg overflow-hidden">
+                <div className="border rounded-lg overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                       <TableHead>Product *</TableHead>
+                       <TableHead className="min-w-[250px]">Product *</TableHead>
+                       <TableHead className="w-[150px]">Previous Purchase</TableHead>
                        <TableHead className="w-24">Qty *</TableHead>
                        <TableHead className="w-24">Unit</TableHead>
                        <TableHead className="w-24">Pcs/Qty</TableHead>
@@ -1108,6 +1163,28 @@ export default function PurchaseOrdersPage() {
                          .filter(pv => pv.vendor_id === formData.vendor_id && pv.is_active)
                          .map(pv => pv.product_id);
 
+                       // Get previous purchases for this product
+                       const previousPurchases = item.product_id ? 
+                         movements
+                           .filter(m => 
+                             m.movement_type === 'IN' && 
+                             m.product_id === item.product_id &&
+                             m.reference_type === 'Vendor' &&
+                             m.reference_id === formData.vendor_id
+                           )
+                           .slice(0, 5)
+                           .map(m => ({
+                             unit_cost: m.unit_cost,
+                             vendor_product_code: m.vendor_product_code,
+                             invoice_category_id: m.invoice_category_id,
+                             notes: m.notes
+                           }))
+                           .filter((v, i, a) => a.findIndex(t => 
+                             t.unit_cost === v.unit_cost && 
+                             t.vendor_product_code === v.vendor_product_code
+                           ) === i)
+                         : [];
+
                        return (
                          <TableRow key={index}>
                            <TableCell>
@@ -1120,6 +1197,34 @@ export default function PurchaseOrdersPage() {
                              />
                            </TableCell>
                            <TableCell>
+                             {previousPurchases.length > 0 ? (
+                               <Select
+                                 value=""
+                                 onValueChange={(val) => {
+                                   if (val !== 'new') {
+                                     const purchase = previousPurchases[parseInt(val)];
+                                     handleItemChange(index, 'unit_cost', purchase.unit_cost);
+                                     handleItemChange(index, 'vendor_product_code', purchase.vendor_product_code);
+                                   }
+                                 }}
+                               >
+                                 <SelectTrigger className="text-xs">
+                                   <SelectValue placeholder="New / Previous" />
+                                 </SelectTrigger>
+                                 <SelectContent>
+                                   <SelectItem value="new">New Purchase</SelectItem>
+                                   {previousPurchases.map((p, i) => (
+                                     <SelectItem key={i} value={i.toString()}>
+                                       €{p.unit_cost?.toFixed(2)} {p.vendor_product_code ? `(${p.vendor_product_code})` : ''}
+                                     </SelectItem>
+                                   ))}
+                                 </SelectContent>
+                               </Select>
+                             ) : (
+                               <span className="text-xs text-slate-400">New</span>
+                             )}
+                           </TableCell>
+                           <TableCell>
                              <Input
                                type="number"
                                min="1"
@@ -1129,6 +1234,7 @@ export default function PurchaseOrdersPage() {
                                onChange={(e) => handleItemChange(index, 'quantity_ordered', e.target.value)}
                                required
                                placeholder="Quantity"
+                               className="w-full"
                              />
                            </TableCell>
                            <TableCell>

@@ -4,6 +4,7 @@ import Approvals from './pages/Approvals';
 import AuditLogs from './pages/AuditLogs';
 import BSOrder from './pages/BSOrder';
 import BSOrderFieldsDataDefinitions from './pages/BSOrderFieldsDataDefinitions';
+import BarcodeScanner from './pages/BarcodeScanner';
 import BusStopDelivery from './pages/BusStopDelivery';
 import BusStopOrdersUserGuide from './pages/BusStopOrdersUserGuide';
 import BusStopTypesBOM from './pages/BusStopTypesBOM';
@@ -41,7 +42,6 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import BarcodeScanner from './pages/BarcodeScanner';
 import __Layout from './Layout.jsx';
 
 
@@ -52,6 +52,7 @@ export const PAGES = {
     "AuditLogs": AuditLogs,
     "BSOrder": BSOrder,
     "BSOrderFieldsDataDefinitions": BSOrderFieldsDataDefinitions,
+    "BarcodeScanner": BarcodeScanner,
     "BusStopDelivery": BusStopDelivery,
     "BusStopOrdersUserGuide": BusStopOrdersUserGuide,
     "BusStopTypesBOM": BusStopTypesBOM,
@@ -89,7 +90,6 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "BarcodeScanner": BarcodeScanner,
 }
 
 export const pagesConfig = {
