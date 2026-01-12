@@ -567,9 +567,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                   </div>
 
                   <div>
-                    <Label htmlFor="conversion_rate">
-                        {formData.input_unit_subtype || product?.unit_of_measure} ανά {product?.unit_of_measure} *
-                      </Label>
+                    <Label htmlFor="conversion_rate">Συντελεστής Μετατροπής *</Label>
                       <Input
                         id="conversion_rate"
                         type="number"
