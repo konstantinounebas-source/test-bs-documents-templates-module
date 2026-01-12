@@ -566,30 +566,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="conversion_rate">Συντελεστής Μετατροπής *</Label>
-                      <Input
-                        id="conversion_rate"
-                        type="number"
-                        min="0.0001"
-                        step="0.0001"
-                        value={formData.conversion_rate}
-                        onChange={(e) => {
-                          setFormData({ ...formData, conversion_rate: e.target.value });
-                          if (validationErrors.conversion_rate) {
-                            setValidationErrors({ ...validationErrors, conversion_rate: undefined });
-                          }
-                        }}
-                        placeholder="Συντελεστής"
-                        className={validationErrors.conversion_rate ? 'border-red-500 focus-visible:ring-red-500' : ''}
-                      />
-                      {validationErrors.conversion_rate && (
-                        <p className="text-xs text-red-600 mt-1">{validationErrors.conversion_rate}</p>
-                      )}
-                      <p className="text-xs text-slate-500 mt-1">
-                        (π.χ. αν 1 {formData.input_unit_subtype || product?.unit_of_measure} = 0.001 {product?.unit_of_measure})
-                      </p>
-                    </div>
                     {costPerBaseUnit && unitCost > 0 && (
                       <div>
                         <Label>Κόστος ανά {product?.unit_of_measure || 'μονάδα'}</Label>
