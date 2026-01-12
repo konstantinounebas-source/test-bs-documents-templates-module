@@ -176,7 +176,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       const conversionRate = parseFloat(formData.conversion_rate) || 1;
       const unitCost = parseFloat(formData.unit_cost) || 0;
 
-      const baseQuantity = quantity * conversionRate;
+      const bundleQty = parseFloat(formData.bundle_quantity) || 1;
+      const baseQuantity = quantity * conversionRate * bundleQty;
       const baseUnitCost = unitCost / conversionRate;
 
       // Update product company_id if changed
@@ -606,7 +607,12 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
                   <div>
                     <p className="text-xs text-slate-500 mt-1">
-                      Ποσότητα στην βασική μονάδα: {(parseFloat(formData.quantity) * parseFloat(formData.conversion_rate) || 0).toFixed(2)} {product?.unit_of_measure || 'μονάδες'}
+                      Ποσότητα στην βασική μονάδα: {(() => {
+                        const qty = parseFloat(formData.quantity) || 0;
+                        const convRate = parseFloat(formData.conversion_rate) || 1;
+                        const bundleQty = parseFloat(formData.bundle_quantity) || 1;
+                        return (qty * convRate * bundleQty).toFixed(2);
+                      })()} {product?.unit_of_measure || 'μονάδες'}
                     </p>
                   </div>
 
