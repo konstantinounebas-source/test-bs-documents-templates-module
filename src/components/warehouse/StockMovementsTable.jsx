@@ -51,6 +51,24 @@ export default function StockMovementsTable({ movements, products, users, isLoad
     return product || { name: 'Unknown', sku: 'N/A', unit_of_measure: '' };
   };
 
+  const calculateDisplayQuantity = (movement) => {
+    // If base_quantity exists and is valid, use it
+    if (movement.base_quantity && movement.base_quantity > 0) {
+      return movement.base_quantity;
+    }
+    
+    // Otherwise, calculate it from quantity, conversion_rate, and bundle_quantity
+    const quantity = parseFloat(movement.quantity) || 0;
+    const conversionRate = parseFloat(movement.conversion_rate) || 1;
+    const bundleQuantity = parseFloat(movement.bundle_quantity) || null;
+    
+    if (bundleQuantity) {
+      return quantity * conversionRate * bundleQuantity;
+    }
+    
+    return quantity * conversionRate;
+  };
+
   const getUserName = (identifier) => {
     if (!identifier) return 'System';
     
@@ -151,7 +169,7 @@ export default function StockMovementsTable({ movements, products, users, isLoad
                       movement.movement_type === 'OUT' ? 'text-red-600' :
                       'text-slate-900'
                     }>
-                      {movement.base_quantity || movement.quantity} {product.unit_of_measure}
+                      {calculateDisplayQuantity(movement)} {product.unit_of_measure}
                     </span>
                   </TableCell>
                   <TableCell className="text-right font-semibold">

@@ -192,7 +192,7 @@ export default function StockMovementsPage() {
         movement.movement_type,
         product?.name || 'Unknown',
         product?.sku || 'N/A',
-        `${movement.base_quantity || movement.quantity} ${product?.unit_of_measure || ''}`,
+        `${calculateDisplayQuantity(movement)} ${product?.unit_of_measure || ''}`,
         movement.from_location || '-',
         movement.to_location || '-',
         chargedTo?.full_name || movement.charged_to_person || '-',
@@ -286,10 +286,20 @@ export default function StockMovementsPage() {
     setCurrentPage(1); // Reset to first page when items per page changes
   };
 
+  const calculateDisplayQuantity = (movement) => {
+    if (movement.base_quantity && movement.base_quantity > 0) {
+      return movement.base_quantity;
+    }
+    const quantity = parseFloat(movement.quantity) || 0;
+    const conversionRate = parseFloat(movement.conversion_rate) || 1;
+    const bundleQuantity = parseFloat(movement.bundle_quantity) || null;
+    return bundleQuantity ? quantity * conversionRate * bundleQuantity : quantity * conversionRate;
+  };
+
   const stats = {
     total: movements.length,
-    in: movements.filter(m => m.movement_type === 'IN').reduce((sum, m) => sum + (m.base_quantity || m.quantity), 0),
-    out: movements.filter(m => m.movement_type === 'OUT').reduce((sum, m) => sum + (m.base_quantity || m.quantity), 0),
+    in: movements.filter(m => m.movement_type === 'IN').reduce((sum, m) => sum + calculateDisplayQuantity(m), 0),
+    out: movements.filter(m => m.movement_type === 'OUT').reduce((sum, m) => sum + calculateDisplayQuantity(m), 0),
     adjustments: movements.filter(m => m.movement_type === 'ADJUSTMENT').length
   };
 
