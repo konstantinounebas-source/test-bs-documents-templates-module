@@ -414,15 +414,17 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                               <TableCell className="font-medium text-slate-500 py-2" rowSpan={2}>
                                 {absoluteIndex + 1}
                               </TableCell>
-                              <TableCell className="py-2" colSpan={6}>
-                                <div className="flex items-center gap-2">
-                                  <ProductCombobox
-                                    products={products}
-                                    value={component.product_id}
-                                    onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
-                                    placeholder="Επιλέξτε προϊόν"
-                                  />
-                                  <div className="flex items-center gap-1.5">
+                              <TableCell className="py-2" colSpan={3}>
+                                <div className="flex items-center gap-2 w-full">
+                                  <div className="flex-1 max-w-sm">
+                                    <ProductCombobox
+                                      products={products}
+                                      value={component.product_id}
+                                      onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
+                                      placeholder="Επιλέξτε προϊόν"
+                                    />
+                                  </div>
+                                  <div className="flex items-center gap-1.5 flex-shrink-0">
                                     <Badge variant="outline" className="text-xs whitespace-nowrap">
                                       {materialCategories.find(mc => mc.id === component.material_category_id)?.name || '-'}
                                     </Badge>
@@ -435,8 +437,6 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                   </div>
                                 </div>
                               </TableCell>
-                            </TableRow>
-                            <TableRow className="border-b">
                               <TableCell className="py-2">
                                 <div className="flex items-center gap-1.5">
                                   <Select
@@ -473,6 +473,8 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                   </Select>
                                 </div>
                               </TableCell>
+                            </TableRow>
+                            <TableRow className="border-b">
                               <TableCell className="py-2">
                                 <Input
                                   type="number"
