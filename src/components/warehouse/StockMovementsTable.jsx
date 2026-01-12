@@ -52,8 +52,17 @@ export default function StockMovementsTable({ movements, products, users, isLoad
   };
 
   const calculateDisplayQuantity = (movement) => {
+    // Debug logging
+    console.log('Movement:', movement.id, {
+      quantity: movement.quantity,
+      base_quantity: movement.base_quantity,
+      conversion_rate: movement.conversion_rate,
+      bundle_quantity: movement.bundle_quantity
+    });
+
     // If base_quantity exists and is valid, use it
     if (movement.base_quantity && movement.base_quantity > 0) {
+      console.log('Using base_quantity:', movement.base_quantity);
       return movement.base_quantity;
     }
     
@@ -62,11 +71,16 @@ export default function StockMovementsTable({ movements, products, users, isLoad
     const conversionRate = parseFloat(movement.conversion_rate) || 1;
     const bundleQuantity = parseFloat(movement.bundle_quantity) || null;
     
+    let calculated;
     if (bundleQuantity) {
-      return quantity * conversionRate * bundleQuantity;
+      calculated = quantity * conversionRate * bundleQuantity;
+      console.log('Calculated with bundle:', calculated, '=', quantity, '*', conversionRate, '*', bundleQuantity);
+    } else {
+      calculated = quantity * conversionRate;
+      console.log('Calculated without bundle:', calculated, '=', quantity, '*', conversionRate);
     }
     
-    return quantity * conversionRate;
+    return calculated;
   };
 
   const getUserName = (identifier) => {
