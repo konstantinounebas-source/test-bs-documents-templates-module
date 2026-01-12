@@ -806,15 +806,15 @@ export default function PurchaseOrdersPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="min-w-[250px]">Product *</TableHead>
-                        <TableHead className="w-[150px]">Previous Purchase</TableHead>
-                        <TableHead className="w-24">Qty *</TableHead>
-                        <TableHead className="w-24">Unit</TableHead>
-                        <TableHead className="w-24">Pcs/Qty</TableHead>
-                        <TableHead className="w-32">Unit Cost (€) *</TableHead>
-                        <TableHead className="w-32">Unit Cost/Pcs (€)</TableHead>
-                        <TableHead className="w-28">Total (€)</TableHead>
-                        <TableHead className="w-40">Expected Receipt</TableHead>
+                        <TableHead className="min-w-[280px]">Product *</TableHead>
+                        <TableHead className="min-w-[160px]">Previous Purchase</TableHead>
+                        <TableHead className="min-w-[100px]">Qty *</TableHead>
+                        <TableHead className="min-w-[90px]">Unit</TableHead>
+                        <TableHead className="min-w-[100px]">Pcs/Qty</TableHead>
+                        <TableHead className="min-w-[120px]">Unit Cost (€) *</TableHead>
+                        <TableHead className="min-w-[120px]">Unit Cost/Pcs (€)</TableHead>
+                        <TableHead className="min-w-[100px]">Total (€)</TableHead>
+                        <TableHead className="min-w-[150px]">Expected Receipt</TableHead>
                         <TableHead className="w-16"></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1144,15 +1144,15 @@ export default function PurchaseOrdersPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                       <TableHead className="min-w-[250px]">Product *</TableHead>
-                       <TableHead className="w-[150px]">Previous Purchase</TableHead>
-                       <TableHead className="w-24">Qty *</TableHead>
-                       <TableHead className="w-24">Unit</TableHead>
-                       <TableHead className="w-24">Pcs/Qty</TableHead>
-                       <TableHead className="w-32">Unit Cost (€) *</TableHead>
-                       <TableHead className="w-32">Unit Cost/Pcs (€)</TableHead>
-                       <TableHead className="w-28">Total (€)</TableHead>
-                       <TableHead className="w-40">Expected Receipt</TableHead>
+                       <TableHead className="min-w-[280px]">Product *</TableHead>
+                       <TableHead className="min-w-[160px]">Previous Purchase</TableHead>
+                       <TableHead className="min-w-[100px]">Qty *</TableHead>
+                       <TableHead className="min-w-[90px]">Unit</TableHead>
+                       <TableHead className="min-w-[100px]">Pcs/Qty</TableHead>
+                       <TableHead className="min-w-[120px]">Unit Cost (€) *</TableHead>
+                       <TableHead className="min-w-[120px]">Unit Cost/Pcs (€)</TableHead>
+                       <TableHead className="min-w-[100px]">Total (€)</TableHead>
+                       <TableHead className="min-w-[150px]">Expected Receipt</TableHead>
                        <TableHead className="w-16"></TableHead>
                       </TableRow>
                       </TableHeader>
