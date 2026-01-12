@@ -414,7 +414,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                               <TableCell className="font-medium text-slate-500 py-2" rowSpan={2}>
                                 {absoluteIndex + 1}
                               </TableCell>
-                              <TableCell className="py-2" colSpan={3}>
+                              <TableCell className="py-2" colSpan={6}>
                                 <div className="flex items-center gap-2 w-full">
                                   <div className="flex-1 max-w-sm">
                                     <ProductCombobox
@@ -425,52 +425,42 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                     />
                                   </div>
                                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                                    <Badge variant="outline" className="text-xs whitespace-nowrap">
-                                      {materialCategories.find(mc => mc.id === component.material_category_id)?.name || '-'}
-                                    </Badge>
-                                    <Badge variant="outline" className="text-xs whitespace-nowrap">
-                                      {teams.find(t => t.id === component.team_id)?.name || '-'}
-                                    </Badge>
+                                    <Select
+                                      value={component.material_category_id || "none"}
+                                      onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'material_category_id', value === "none" ? '' : value)}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs w-32">
+                                        <SelectValue placeholder="-" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">-</SelectItem>
+                                        {materialCategories.filter(mc => mc.is_active).map(cat => (
+                                          <SelectItem key={cat.id} value={cat.id}>
+                                            {cat.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <Select
+                                      value={component.team_id || "none"}
+                                      onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'team_id', value === "none" ? '' : value)}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs w-32">
+                                        <SelectValue placeholder="-" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">-</SelectItem>
+                                        {teams.filter(t => t.is_active).map(team => (
+                                          <SelectItem key={team.id} value={team.id}>
+                                            {team.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
                                     <span className="text-xs text-slate-500 whitespace-nowrap">
                                       {productDetails.company}
                                     </span>
                                   </div>
-                                </div>
-                              </TableCell>
-                              <TableCell className="py-2">
-                                <div className="flex items-center gap-1.5">
-                                  <Select
-                                    value={component.material_category_id || "none"}
-                                    onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'material_category_id', value === "none" ? '' : value)}
-                                  >
-                                    <SelectTrigger className="h-8 text-xs">
-                                      <SelectValue placeholder="-" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="none">-</SelectItem>
-                                      {materialCategories.filter(mc => mc.is_active).map(cat => (
-                                        <SelectItem key={cat.id} value={cat.id}>
-                                          {cat.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <Select
-                                    value={component.team_id || "none"}
-                                    onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'team_id', value === "none" ? '' : value)}
-                                  >
-                                    <SelectTrigger className="h-8 text-xs">
-                                      <SelectValue placeholder="-" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="none">-</SelectItem>
-                                      {teams.filter(t => t.is_active).map(team => (
-                                        <SelectItem key={team.id} value={team.id}>
-                                          {team.name}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
                                 </div>
                               </TableCell>
                             </TableRow>
