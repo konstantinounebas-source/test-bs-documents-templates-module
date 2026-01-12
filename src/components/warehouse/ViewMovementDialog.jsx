@@ -40,7 +40,7 @@ const formatLocalDateTime = (dateString) => {
   }
 };
 
-export default function ViewMovementDialog({ open, onClose, movement, product, users }) {
+export default function ViewMovementDialog({ open, onClose, movement, product, users, vendors = [] }) {
   if (!movement) return null;
 
   const getUserName = (identifier) => {
@@ -48,6 +48,19 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
     const user = users.find(u => u.id === identifier || u.email === identifier);
     return user?.full_name || user?.email || identifier;
   };
+
+  const getVendorName = (vendorId) => {
+    if (!vendorId) return null;
+    const vendor = vendors.find(v => v.id === vendorId);
+    return vendor?.name || null;
+  };
+
+  // Determine vendor from movement
+  const vendorName = movement.vendor_id 
+    ? getVendorName(movement.vendor_id)
+    : (movement.reference_type === 'Vendor' && movement.reference_id)
+      ? getVendorName(movement.reference_id)
+      : null;
 
   const movementTypeColors = {
     IN: 'bg-green-100 text-green-800',
@@ -150,6 +163,42 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
           </div>
 
           <Separator />
+
+          {/* Vendor Info */}
+          {vendorName && (
+            <>
+              <div>
+                <Label className="text-slate-500">Vendor</Label>
+                <p className="mt-1 font-medium">{vendorName}</p>
+              </div>
+              <Separator />
+            </>
+          )}
+
+          {/* Cost Info for IN movements */}
+          {movement.movement_type === 'IN' && (movement.unit_cost || movement.base_unit_cost) && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                {movement.unit_cost && (
+                  <div>
+                    <Label className="text-slate-500">Unit Cost (Input)</Label>
+                    <p className="mt-1 font-semibold text-green-700">
+                      €{Number(movement.unit_cost).toFixed(4)} / {movement.input_unit_of_measure || product?.unit_of_measure}
+                    </p>
+                  </div>
+                )}
+                {movement.base_unit_cost && (
+                  <div>
+                    <Label className="text-slate-500">Base Unit Cost</Label>
+                    <p className="mt-1 font-semibold text-blue-700">
+                      €{Number(movement.base_unit_cost).toFixed(4)} / {product?.unit_of_measure}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <Separator />
+            </>
+          )}
 
           {/* Additional Info */}
           {movement.waybill_number && (
