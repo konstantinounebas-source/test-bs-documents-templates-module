@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Eye, Send, CheckCircle, XCircle, Loader2, Trash2, Edit, ChevronDown, ChevronRight, Package, Star } from "lucide-react";
+import { Plus, Search, Eye, Send, CheckCircle, XCircle, Loader2, Trash2, Edit, ChevronDown, ChevronRight, Package, Star, Printer, FileDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -614,6 +614,60 @@ export default function PurchaseOrdersPage() {
   const getUserName = (email) => {
     const user = users.find(u => u.email === email);
     return user?.full_name || email;
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExport = () => {
+    if (!selectedPO) return;
+
+    const vendor = vendors.find(v => v.id === selectedPO.vendor_id);
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Header information
+    csvContent += "Purchase Order Details\n";
+    csvContent += `PO Number:,${selectedPO.po_number}\n`;
+    csvContent += `Vendor:,${vendor?.name || 'Unknown'}\n`;
+    csvContent += `Status:,${selectedPO.status}\n`;
+    csvContent += `Order Date:,${format(new Date(selectedPO.order_date), 'dd/MM/yyyy')}\n`;
+    csvContent += `Expected Delivery:,${selectedPO.expected_delivery_date ? format(new Date(selectedPO.expected_delivery_date), 'dd/MM/yyyy') : '-'}\n\n`;
+    
+    // Items header
+    csvContent += "Product,SKU,Qty Ordered,Qty Received,Status,Expected Receipt,Unit Cost,Total\n";
+    
+    // Items data
+    selectedPO.items?.forEach((item) => {
+      const isFullyReceived = item.quantity_received >= item.quantity_ordered;
+      const isPartiallyReceived = item.quantity_received > 0 && item.quantity_received < item.quantity_ordered;
+      const isPending = item.quantity_received === 0;
+      
+      let status = 'Pending';
+      if (isFullyReceived) status = 'Received';
+      if (isPartiallyReceived) status = `Partial (${Math.round(((item.quantity_received || 0) / item.quantity_ordered) * 100)}%)`;
+      
+      csvContent += `"${getProductName(item.product_id)}",${getProductSKU(item.product_id)},${item.quantity_ordered},${item.quantity_received || 0},${status},${item.expected_receipt_date ? format(new Date(item.expected_receipt_date), 'dd/MM/yyyy') : '-'},€${(item.unit_cost || 0).toFixed(2)},€${(item.total_cost || 0).toFixed(2)}\n`;
+    });
+    
+    // Totals
+    csvContent += `\n`;
+    csvContent += `Subtotal:,,,,,,€${(selectedPO.subtotal || 0).toFixed(2)}\n`;
+    csvContent += `VAT (19%):,,,,,,€${(selectedPO.vat_amount || 0).toFixed(2)}\n`;
+    csvContent += `Total:,,,,,,€${(selectedPO.total_amount || 0).toFixed(2)}\n`;
+    
+    if (selectedPO.notes) {
+      csvContent += `\nNotes:,${selectedPO.notes}\n`;
+    }
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `PO_${selectedPO.po_number}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -1607,7 +1661,17 @@ export default function PurchaseOrdersPage() {
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex justify-between">
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handlePrint}>
+                <Printer className="w-4 h-4 mr-2" />
+                Print
+              </Button>
+              <Button variant="outline" onClick={handleExport}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+            </div>
             <Button variant="outline" onClick={() => setShowViewDialog(false)}>
               Close
             </Button>
