@@ -390,17 +390,6 @@ export default function BOMManager({ busStopTypes, components, products, selecte
               ) : (
                 <>
                   <Table>
-                    <TableHeader>
-                      <TableRow className="bg-slate-50">
-                        <TableHead className="w-12">#</TableHead>
-                        <TableHead>Προϊόν</TableHead>
-                        <TableHead className="w-32">Ποσότητα</TableHead>
-                        <TableHead className="w-24">Μον. Εισαγ.</TableHead>
-                        <TableHead className="w-24">Κόστος</TableHead>
-                        <TableHead>Σημειώσεις</TableHead>
-                        <TableHead className="w-20 text-right">Ενέργειες</TableHead>
-                      </TableRow>
-                    </TableHeader>
                     <TableBody>
                       {paginatedComponents.map((component, index) => {
                         const absoluteIndex = startIndex + index;
@@ -411,12 +400,13 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                         return (
                           <React.Fragment key={absoluteIndex}>
                             <TableRow className="border-b-0">
-                              <TableCell className="font-medium text-slate-500 py-2" rowSpan={2}>
+                              <TableCell className="text-sm text-slate-400 py-2 align-top pt-7" rowSpan={2}>
                                 {absoluteIndex + 1}
                               </TableCell>
                               <TableCell className="py-2" colSpan={6}>
-                                <div className="flex items-center gap-2 w-full">
+                                <div className="flex items-start gap-3 w-full">
                                   <div className="flex-1 max-w-sm">
+                                    <label className="text-xs text-slate-500 mb-1 block">Προϊόν</label>
                                     <ProductCombobox
                                       products={products}
                                       value={component.product_id}
@@ -424,48 +414,58 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                       placeholder="Επιλέξτε προϊόν"
                                     />
                                   </div>
-                                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                                    <Select
-                                      value={component.material_category_id || "none"}
-                                      onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'material_category_id', value === "none" ? '' : value)}
-                                    >
-                                      <SelectTrigger className="h-8 text-xs w-44">
-                                        <SelectValue placeholder="-" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="none">-</SelectItem>
-                                        {materialCategories.filter(mc => mc.is_active).map(cat => (
-                                          <SelectItem key={cat.id} value={cat.id}>
-                                            {cat.name}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                    <Select
-                                      value={component.team_id || "none"}
-                                      onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'team_id', value === "none" ? '' : value)}
-                                    >
-                                      <SelectTrigger className="h-8 text-xs w-40">
-                                        <SelectValue placeholder="-" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="none">-</SelectItem>
-                                        {teams.filter(t => t.is_active).map(team => (
-                                          <SelectItem key={team.id} value={team.id}>
-                                            {team.name}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                    <span className="text-xs text-slate-500 whitespace-nowrap">
-                                      {productDetails.company}
-                                    </span>
+                                  <div className="flex items-start gap-2 flex-shrink-0">
+                                    <div>
+                                      <label className="text-xs text-slate-500 mb-1 block">Κατηγορία</label>
+                                      <Select
+                                        value={component.material_category_id || "none"}
+                                        onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'material_category_id', value === "none" ? '' : value)}
+                                      >
+                                        <SelectTrigger className="h-8 text-xs w-44">
+                                          <SelectValue placeholder="-" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="none">-</SelectItem>
+                                          {materialCategories.filter(mc => mc.is_active).map(cat => (
+                                            <SelectItem key={cat.id} value={cat.id}>
+                                              {cat.name}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div>
+                                      <label className="text-xs text-slate-500 mb-1 block">Ομάδα</label>
+                                      <Select
+                                        value={component.team_id || "none"}
+                                        onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'team_id', value === "none" ? '' : value)}
+                                      >
+                                        <SelectTrigger className="h-8 text-xs w-40">
+                                          <SelectValue placeholder="-" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="none">-</SelectItem>
+                                          {teams.filter(t => t.is_active).map(team => (
+                                            <SelectItem key={team.id} value={team.id}>
+                                              {team.name}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                    <div>
+                                      <label className="text-xs text-slate-500 mb-1 block">Εταιρεία</label>
+                                      <span className="text-xs text-slate-600 font-normal whitespace-nowrap block h-8 flex items-center">
+                                        {productDetails.company}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                               </TableCell>
                             </TableRow>
-                            <TableRow className="border-b">
+                            <TableRow className="border-b bg-slate-50/50">
                               <TableCell className="py-2 w-24">
+                                <label className="text-xs text-slate-500 mb-1 block">Ποσότητα</label>
                                 <Input
                                   type="number"
                                   step="0.01"
@@ -484,6 +484,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                 />
                               </TableCell>
                               <TableCell className="py-2 w-24">
+                                <label className="text-xs text-slate-500 mb-1 block">Μον. Εισαγ.</label>
                                 <Select
                                   value={component.input_unit_of_measure || ''}
                                   onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'input_unit_of_measure', value)}
@@ -536,10 +537,14 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                   </SelectContent>
                                 </Select>
                               </TableCell>
-                              <TableCell className="py-2 w-20 text-sm font-medium text-slate-700">
-                                {lineCost > 0 ? `€${lineCost.toFixed(2)}` : '-'}
+                              <TableCell className="py-2 w-20">
+                                <label className="text-xs text-slate-500 mb-1 block">Κόστος</label>
+                                <span className="text-sm text-slate-700">
+                                  {lineCost > 0 ? `€${lineCost.toFixed(2)}` : '-'}
+                                </span>
                               </TableCell>
                               <TableCell className="py-2">
+                                <label className="text-xs text-slate-500 mb-1 block">Σημειώσεις</label>
                                 <Input
                                   value={component.notes || ''}
                                   onChange={(e) => handleUpdateComponent(absoluteIndex, 'notes', e.target.value)}
@@ -547,7 +552,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                   className="h-8 text-sm"
                                 />
                               </TableCell>
-                              <TableCell className="py-2 text-right w-16">
+                              <TableCell className="py-2 text-right w-16 align-top pt-7">
                                 <Button
                                   type="button"
                                   variant="ghost"
