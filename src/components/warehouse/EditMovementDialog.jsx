@@ -107,6 +107,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         unit_cost: vendorUnitCost,
         input_unit_subtype: inputUnitSubtype,
         conversion_rate: conversionRate || '1',
+        bundle_quantity: movement.bundle_quantity ? String(movement.bundle_quantity) : '',
         vendor_product_code: vendorProdCode,
         invoice_category_id: movement.invoice_category_id || '',
         company_id: currentProduct?.company_id || '',
