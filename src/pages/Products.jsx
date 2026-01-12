@@ -41,28 +41,21 @@ export default function ProductsPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Load data sequentially with delays
-      const productsData = await base44.entities.Product.list("-updated_date");
+      // Load all data in parallel for better performance
+      const [productsData, categoriesData, vendorsData, stockData, companiesData, pvData] = await Promise.all([
+        base44.entities.Product.list("-updated_date"),
+        base44.entities.ProductCategory.list(),
+        base44.entities.Vendor.list(),
+        base44.entities.StockItem.list(),
+        base44.entities.Company.filter({ is_active: true }),
+        base44.entities.ProductVendor.list()
+      ]);
+      
       setProducts(productsData);
-      
-      await delay(300);
-      const categoriesData = await base44.entities.ProductCategory.list();
       setCategories(categoriesData);
-      
-      await delay(300);
-      const vendorsData = await base44.entities.Vendor.list();
       setVendors(vendorsData);
-      
-      await delay(300);
-      const stockData = await base44.entities.StockItem.list();
       setStockItems(stockData);
-      
-      await delay(300);
-      const companiesData = await base44.entities.Company.filter({ is_active: true });
       setCompanies(companiesData);
-
-      await delay(300); // Add delay before fetching product vendors
-      const pvData = await base44.entities.ProductVendor.list();
       setProductVendors(pvData);
       
     } catch (error) {
