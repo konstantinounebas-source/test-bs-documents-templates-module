@@ -21,21 +21,45 @@ export default function ProductVendorsManager({ product, vendors, companies = []
   const loadProductVendors = async () => {
     setIsLoading(true);
     try {
-      // Load ProductVendors for preferred vendor info
+      // Load ProductVendors to match movements with vendors
       const pvData = await base44.entities.ProductVendor.filter({ product_id: product.id });
       setProductVendors(pvData);
       
-      // Load ALL IN movements for this product to calculate true average
+      // Load ALL IN movements for this product
       const movements = await base44.entities.StockMovement.filter({
         product_id: product.id,
         movement_type: 'IN'
       });
       
-      // Calculate true average from all movements
+      // Enrich movements with vendor info from ProductVendor matching
+      const enrichedMovements = movements.map(movement => {
+        // Try to find matching ProductVendor by unit_cost and vendor_product_code
+        let matchingPV = null;
+        
+        if (movement.vendor_product_code) {
+          matchingPV = pvData.find(pv => 
+            pv.vendor_product_code === movement.vendor_product_code
+          );
+        }
+        
+        // Fallback: match by unit_cost if not found by code
+        if (!matchingPV && movement.unit_cost) {
+          matchingPV = pvData.find(pv => 
+            Math.abs((pv.unit_cost || 0) - movement.unit_cost) < 0.001
+          );
+        }
+        
+        return {
+          ...movement,
+          enriched_vendor_id: matchingPV?.vendor_id || null
+        };
+      });
+      
+      // Calculate true average from base quantities and base unit costs
       let totalCost = 0;
       let totalQty = 0;
       
-      movements.forEach(movement => {
+      enrichedMovements.forEach(movement => {
         const baseQty = movement.base_quantity || movement.quantity;
         const baseUnitCost = movement.base_unit_cost || movement.unit_cost;
         
@@ -49,11 +73,10 @@ export default function ProductVendorsManager({ product, vendors, companies = []
       setCalculatedAverage({ cost: averageUnitCost, quantity: totalQty });
       
       // Get latest 10 movements for display
-      const latestMovements = movements
+      const latestMovements = enrichedMovements
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
         .slice(0, 10);
       
-      console.log('Loaded movements:', latestMovements);
       setRecentMovements(latestMovements);
     } catch (error) {
       console.error("Error loading IN movements:", error);
@@ -69,7 +92,15 @@ export default function ProductVendorsManager({ product, vendors, companies = []
   };
   
   const getVendorFromMovement = (movement) => {
-    // 1. Check reference_type === 'Vendor'
+    // 1. Use enriched vendor_id from ProductVendor matching
+    if (movement.enriched_vendor_id) {
+      return {
+        vendorId: movement.enriched_vendor_id,
+        vendorName: getVendorName(movement.enriched_vendor_id)
+      };
+    }
+    
+    // 2. Check reference_type === 'Vendor'
     if (movement.reference_type === 'Vendor' && movement.reference_id) {
       return {
         vendorId: movement.reference_id,
@@ -77,7 +108,7 @@ export default function ProductVendorsManager({ product, vendors, companies = []
       };
     }
     
-    // 2. Check if movement has vendor_id field directly
+    // 3. Check if movement has vendor_id field directly
     if (movement.vendor_id) {
       return {
         vendorId: movement.vendor_id,
@@ -85,7 +116,7 @@ export default function ProductVendorsManager({ product, vendors, companies = []
       };
     }
     
-    // 3. Try to match reference_id with vendor
+    // 4. Try to match reference_id with vendor
     if (movement.reference_id) {
       const vendor = vendors.find(v => v.id === movement.reference_id);
       if (vendor) {
@@ -352,7 +383,7 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center text-sm text-slate-500 py-4">
+                      <TableCell colSpan={9} className="text-center text-sm text-slate-500 py-4">
                         Δεν υπάρχουν IN κινήσεις για αυτό το προϊόν
                       </TableCell>
                     </TableRow>
