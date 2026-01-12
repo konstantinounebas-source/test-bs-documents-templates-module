@@ -261,8 +261,8 @@ export default function ProductVendorsManager({ product, vendors, companies = []
               </div>
             </div>
 
-            <div className="border rounded-lg overflow-hidden">
-              <Table>
+            <div className="border rounded-lg overflow-hidden overflow-x-auto">
+              <Table className="w-full">
                 <TableHeader>
                   <TableRow className="bg-slate-50">
                     <TableHead className="w-12"></TableHead>
