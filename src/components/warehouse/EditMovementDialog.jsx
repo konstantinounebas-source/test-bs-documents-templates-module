@@ -449,8 +449,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                 {/* Vendor Information */}
                 <div className="space-y-3 border-t pt-4">
                   <p className="text-sm font-semibold text-slate-700">Στοιχεία Προμηθευτή</p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="col-span-2">
                       <Label>Προμηθευτής *</Label>
                       <div className="flex gap-2">
                         <div className={`flex-1 ${validationErrors.reference_id ? 'border-2 border-red-500 rounded-md' : ''}`}>
