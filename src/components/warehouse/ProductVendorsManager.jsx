@@ -36,9 +36,12 @@ export default function ProductVendorsManager({ product, vendors, companies = []
       let totalQty = 0;
       
       movements.forEach(movement => {
-        if (movement.unit_cost && movement.unit_cost > 0 && movement.quantity > 0) {
-          totalCost += movement.quantity * movement.unit_cost;
-          totalQty += movement.quantity;
+        const baseQty = movement.base_quantity || movement.quantity;
+        const baseUnitCost = movement.base_unit_cost || movement.unit_cost;
+        
+        if (baseUnitCost && baseUnitCost > 0 && baseQty > 0) {
+          totalCost += baseQty * baseUnitCost;
+          totalQty += baseQty;
         }
       });
       
@@ -204,9 +207,9 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                     <TableHead>Vendor</TableHead>
                     <TableHead>Waybill</TableHead>
                     <TableHead>Vendor Code</TableHead>
-                    <TableHead>Unit Cost</TableHead>
-                    <TableHead>Lead Time</TableHead>
-                    <TableHead>Quantity</TableHead>
+                    <TableHead>Κόστος/μονάδα</TableHead>
+                    <TableHead>Raw Qty</TableHead>
+                    <TableHead>Base Qty</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Date</TableHead>
                   </TableRow>
@@ -257,10 +260,8 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                             <div className="text-sm font-medium">
                               {hasVendor ? (
                                 vendorInfo.vendorName
-                              ) : needsVendor ? (
-                                <span className="text-slate-400">Χωρίς προμηθευτή</span>
                               ) : (
-                                'Manual Entry'
+                                <span className="text-slate-400">Χειροκίνητη Καταχώρηση</span>
                               )}
                             </div>
                           </TableCell>
@@ -270,15 +271,34 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                           <TableCell className="font-mono text-sm text-slate-600">
                             {movement.vendor_product_code || '-'}
                           </TableCell>
-                          <TableCell className="font-semibold">
-                            {(movement.unit_cost !== null && movement.unit_cost !== undefined && movement.unit_cost > 0) ? (
-                              <>€{Number(movement.unit_cost).toFixed(4)}</>
+                          <TableCell>
+                            {movement.base_unit_cost ? (
+                              <div>
+                                <p className="font-semibold text-green-700">€{Number(movement.base_unit_cost).toFixed(4)}</p>
+                                <p className="text-xs text-slate-500">/{product.unit_of_measure}</p>
+                              </div>
+                            ) : movement.unit_cost ? (
+                              <div>
+                                <p className="font-semibold">€{Number(movement.unit_cost).toFixed(4)}</p>
+                                <p className="text-xs text-slate-500">/{movement.input_unit_of_measure || product.unit_of_measure}</p>
+                              </div>
                             ) : (
                               <span className="text-slate-400">N/A</span>
                             )}
                           </TableCell>
-                          <TableCell>-</TableCell>
-                          <TableCell className="text-sm text-slate-600">{movement.quantity} {product.unit_of_measure}</TableCell>
+                          <TableCell className="text-sm">
+                            {movement.quantity} {movement.input_unit_of_measure || product.unit_of_measure}
+                          </TableCell>
+                          <TableCell>
+                            {movement.base_quantity ? (
+                              <div>
+                                <p className="font-semibold text-blue-700">{Number(movement.base_quantity).toFixed(2)}</p>
+                                <p className="text-xs text-slate-500">{product.unit_of_measure}</p>
+                              </div>
+                            ) : (
+                              <p className="text-sm text-slate-600">{movement.quantity} {product.unit_of_measure}</p>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <Badge className="bg-blue-100 text-blue-800">IN</Badge>
                           </TableCell>
