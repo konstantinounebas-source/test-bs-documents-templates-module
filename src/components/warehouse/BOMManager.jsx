@@ -410,157 +410,155 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                         
                         return (
                           <React.Fragment key={absoluteIndex}>
-                            <TableRow>
-                              <TableCell className="font-medium text-slate-500" rowSpan={2}>
+                            <TableRow className="border-b-0">
+                              <TableCell className="font-medium text-slate-500 py-2" rowSpan={2}>
                                 {absoluteIndex + 1}
                               </TableCell>
-                              <TableCell colSpan={6}>
-                                <div className="flex items-center gap-3">
-                                  <div className="flex-1">
-                                    <ProductCombobox
-                                      products={products}
-                                      value={component.product_id}
-                                      onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
-                                      placeholder="Επιλέξτε προϊόν"
-                                    />
-                                  </div>
-                                  <div className="flex-shrink-0 text-sm text-slate-600">
+                              <TableCell className="py-2" colSpan={6}>
+                                <div className="flex items-center gap-2">
+                                  <ProductCombobox
+                                    products={products}
+                                    value={component.product_id}
+                                    onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
+                                    placeholder="Επιλέξτε προϊόν"
+                                  />
+                                  <span className="text-xs text-slate-500 whitespace-nowrap">
                                     {productDetails.company}
-                                  </div>
+                                  </span>
                                 </div>
                               </TableCell>
                             </TableRow>
-                            <TableRow>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Select
-                                  value={component.material_category_id || "none"}
-                                  onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'material_category_id', value === "none" ? '' : value)}
-                                >
-                                  <SelectTrigger className="w-44">
-                                    <SelectValue placeholder="Κατηγορία" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">-</SelectItem>
-                                    {materialCategories.filter(mc => mc.is_active).map(cat => (
-                                      <SelectItem key={cat.id} value={cat.id}>
-                                        {cat.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <Select
-                                  value={component.team_id || "none"}
-                                  onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'team_id', value === "none" ? '' : value)}
-                                >
-                                  <SelectTrigger className="w-32">
-                                    <SelectValue placeholder="Ομάδα" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="none">-</SelectItem>
-                                    {teams.filter(t => t.is_active).map(team => (
-                                      <SelectItem key={team.id} value={team.id}>
-                                        {team.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0.01"
-                                value={component.quantity_required}
-                                onChange={(e) => handleUpdateComponent(absoluteIndex, 'quantity_required', e.target.value)}
-                                onBlur={(e) => {
-                                  const val = parseFloat(e.target.value);
-                                  if (isNaN(val) || val <= 0) {
-                                    handleUpdateComponent(absoluteIndex, 'quantity_required', "1");
-                                  } else {
-                                    handleUpdateComponent(absoluteIndex, 'quantity_required', String(val));
-                                  }
-                                }}
-                                className="w-24"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={component.input_unit_of_measure || ''}
-                                onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'input_unit_of_measure', value)}
-                              >
-                                <SelectTrigger className="w-20">
-                                  <SelectValue placeholder="-" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {(() => {
-                                    const product = products.find(p => p.id === component.product_id);
-                                    if (product?.unit_of_measure === 'kg') {
-                                      return (
-                                        <>
-                                          <SelectItem value={null}>-</SelectItem>
-                                          <SelectItem value="g">g</SelectItem>
-                                          <SelectItem value="kg">kg</SelectItem>
-                                          <SelectItem value="ton">ton</SelectItem>
-                                        </>
-                                      );
-                                    } else if (product?.unit_of_measure === 'liter') {
-                                      return (
-                                        <>
-                                          <SelectItem value={null}>-</SelectItem>
-                                          <SelectItem value="ml">ml</SelectItem>
-                                          <SelectItem value="liter">L</SelectItem>
-                                        </>
-                                      );
-                                    } else if (product?.unit_of_measure === 'meter') {
-                                      return (
-                                        <>
-                                          <SelectItem value={null}>-</SelectItem>
-                                          <SelectItem value="mm">mm</SelectItem>
-                                          <SelectItem value="cm">cm</SelectItem>
-                                          <SelectItem value="meter">m</SelectItem>
-                                        </>
-                                      );
-                                    } else if (product?.unit_of_measure === 'piece') {
-                                      return (
-                                        <>
-                                          <SelectItem value={null}>-</SelectItem>
-                                          <SelectItem value="piece">pcs</SelectItem>
-                                          <SelectItem value="box">box</SelectItem>
-                                          <SelectItem value="pallet">pallet</SelectItem>
-                                        </>
-                                      );
+                            <TableRow className="border-b">
+                              <TableCell className="py-2">
+                                <div className="flex items-center gap-1.5">
+                                  <Select
+                                    value={component.material_category_id || "none"}
+                                    onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'material_category_id', value === "none" ? '' : value)}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs">
+                                      <SelectValue placeholder="-" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">-</SelectItem>
+                                      {materialCategories.filter(mc => mc.is_active).map(cat => (
+                                        <SelectItem key={cat.id} value={cat.id}>
+                                          {cat.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <Select
+                                    value={component.team_id || "none"}
+                                    onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'team_id', value === "none" ? '' : value)}
+                                  >
+                                    <SelectTrigger className="h-8 text-xs">
+                                      <SelectValue placeholder="-" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="none">-</SelectItem>
+                                      {teams.filter(t => t.is_active).map(team => (
+                                        <SelectItem key={team.id} value={team.id}>
+                                          {team.name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-2">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0.01"
+                                  value={component.quantity_required}
+                                  onChange={(e) => handleUpdateComponent(absoluteIndex, 'quantity_required', e.target.value)}
+                                  onBlur={(e) => {
+                                    const val = parseFloat(e.target.value);
+                                    if (isNaN(val) || val <= 0) {
+                                      handleUpdateComponent(absoluteIndex, 'quantity_required', "1");
                                     } else {
-                                      return <SelectItem value={null}>{product?.unit_of_measure || '-'}</SelectItem>;
+                                      handleUpdateComponent(absoluteIndex, 'quantity_required', String(val));
                                     }
-                                  })()}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell className="text-sm font-medium text-slate-700">
-                              {lineCost > 0 ? `€${lineCost.toFixed(2)}` : '-'}
-                            </TableCell>
-                            <TableCell>
-                              <Input
-                                value={component.notes || ''}
-                                onChange={(e) => handleUpdateComponent(absoluteIndex, 'notes', e.target.value)}
-                                placeholder="Σημειώσεις..."
-                                className="w-full"
-                              />
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleRemoveComponent(absoluteIndex)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
+                                  }}
+                                  className="h-8"
+                                />
+                              </TableCell>
+                              <TableCell className="py-2">
+                                <Select
+                                  value={component.input_unit_of_measure || ''}
+                                  onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'input_unit_of_measure', value)}
+                                >
+                                  <SelectTrigger className="h-8 text-xs">
+                                    <SelectValue placeholder="-" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {(() => {
+                                      const product = products.find(p => p.id === component.product_id);
+                                      if (product?.unit_of_measure === 'kg') {
+                                        return (
+                                          <>
+                                            <SelectItem value={null}>-</SelectItem>
+                                            <SelectItem value="g">g</SelectItem>
+                                            <SelectItem value="kg">kg</SelectItem>
+                                            <SelectItem value="ton">ton</SelectItem>
+                                          </>
+                                        );
+                                      } else if (product?.unit_of_measure === 'liter') {
+                                        return (
+                                          <>
+                                            <SelectItem value={null}>-</SelectItem>
+                                            <SelectItem value="ml">ml</SelectItem>
+                                            <SelectItem value="liter">L</SelectItem>
+                                          </>
+                                        );
+                                      } else if (product?.unit_of_measure === 'meter') {
+                                        return (
+                                          <>
+                                            <SelectItem value={null}>-</SelectItem>
+                                            <SelectItem value="mm">mm</SelectItem>
+                                            <SelectItem value="cm">cm</SelectItem>
+                                            <SelectItem value="meter">m</SelectItem>
+                                          </>
+                                        );
+                                      } else if (product?.unit_of_measure === 'piece') {
+                                        return (
+                                          <>
+                                            <SelectItem value={null}>-</SelectItem>
+                                            <SelectItem value="piece">pcs</SelectItem>
+                                            <SelectItem value="box">box</SelectItem>
+                                            <SelectItem value="pallet">pallet</SelectItem>
+                                          </>
+                                        );
+                                      } else {
+                                        return <SelectItem value={null}>{product?.unit_of_measure || '-'}</SelectItem>;
+                                      }
+                                    })()}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell className="py-2 text-sm font-medium text-slate-700">
+                                {lineCost > 0 ? `€${lineCost.toFixed(2)}` : '-'}
+                              </TableCell>
+                              <TableCell className="py-2">
+                                <Input
+                                  value={component.notes || ''}
+                                  onChange={(e) => handleUpdateComponent(absoluteIndex, 'notes', e.target.value)}
+                                  placeholder="Σημειώσεις..."
+                                  className="h-8 text-xs"
+                                />
+                              </TableCell>
+                              <TableCell className="py-2 text-right">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleRemoveComponent(absoluteIndex)}
+                                  className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
                           </React.Fragment>
                         );
                       })}
