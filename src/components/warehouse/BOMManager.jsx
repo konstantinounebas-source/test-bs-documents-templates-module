@@ -394,11 +394,11 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                       <TableRow className="bg-slate-50">
                         <TableHead className="w-12">#</TableHead>
                         <TableHead>Προϊόν</TableHead>
-                        <TableHead className="w-28">Ποσότητα</TableHead>
+                        <TableHead className="w-32">Ποσότητα</TableHead>
                         <TableHead className="w-24">Μον. Εισαγ.</TableHead>
-                        <TableHead>Κόστος</TableHead>
+                        <TableHead className="w-24">Κόστος</TableHead>
                         <TableHead>Σημειώσεις</TableHead>
-                        <TableHead className="w-24 text-right">Ενέργειες</TableHead>
+                        <TableHead className="w-20 text-right">Ενέργειες</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
