@@ -418,7 +418,7 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center text-sm text-slate-500 py-4">
+                      <TableCell colSpan={10} className="text-center text-sm text-slate-500 py-4">
                         Δεν υπάρχουν IN κινήσεις για αυτό το προϊόν
                       </TableCell>
                     </TableRow>
