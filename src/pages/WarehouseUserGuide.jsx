@@ -127,15 +127,16 @@ export default function WarehouseUserGuidePage() {
                 </div>
 
                 <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <h4 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
-                    <Target className="w-5 h-5"/>Product Vendors - Διαχείριση Προμηθευτών
-                  </h4>
-                  <div className="text-sm text-green-800 space-y-2">
-                    <p><strong>Πολλαπλοί προμηθευτές:</strong> Κάθε προϊόν μπορεί να έχει πολλούς προμηθευτές με διαφορετικές τιμές.</p>
-                    <p><strong>Preferred Vendor:</strong> Ο κύριος προμηθευτής εμφανίζεται πρώτος και χρησιμοποιείται για cost calculations.</p>
-                    <p><strong>Auto-fill τιμές:</strong> Όταν δημιουργείτε Purchase Order, οι τιμές συμπληρώνονται αυτόματα από τον Preferred Vendor.</p>
-                  </div>
-                </div>
+                   <h4 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+                     <Target className="w-5 h-5"/>Product Vendors - Διαχείριση Προμηθευτών
+                   </h4>
+                   <div className="text-sm text-green-800 space-y-2">
+                     <p><strong>Πολλαπλοί προμηθευτές:</strong> Κάθε προϊόν μπορεί να έχει πολλούς προμηθευτές με διαφορετικές τιμές.</p>
+                     <p><strong>Preferred Vendor:</strong> Ο κύριος προμηθευτής εμφανίζεται πρώτος και χρησιμοποιείται για cost calculations.</p>
+                     <p><strong>Στήλες Κόστους:</strong> Δείτε το "Κόστος/μονάδα" (με το input_unit_of_measure) και "Κόστος/Raw Qty" (κόστος ανά item).</p>
+                     <p><strong>Auto-fill τιμές:</strong> Όταν δημιουργείτε Purchase Order, οι τιμές συμπληρώνονται αυτόματα από τον Preferred Vendor.</p>
+                   </div>
+                 </div>
 
                 <Tip 
                   icon={Lightbulb} 
