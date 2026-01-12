@@ -88,6 +88,14 @@ export default function ProductVendorsManager({ product, vendors, companies = []
       const averageUnitCost = totalQty > 0 ? totalCost / totalQty : 0;
       setCalculatedAverage({ cost: averageUnitCost, quantity: totalQty });
       
+      // Update product.unit_cost to match the calculated average
+      if (averageUnitCost > 0 && Math.abs(product.unit_cost - averageUnitCost) > 0.0001) {
+        await base44.entities.Product.update(product.id, {
+          unit_cost: averageUnitCost
+        });
+        if (onUpdate) await onUpdate();
+      }
+      
       // Get latest 10 movements for display
       const latestMovements = enrichedMovements
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
