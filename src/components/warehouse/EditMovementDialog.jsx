@@ -237,6 +237,32 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         }
       }
 
+      // Calculate the difference in base quantity
+      const oldBaseQuantity = movement.base_quantity || (movement.quantity * (movement.conversion_rate || 1) * (movement.bundle_quantity || 1));
+      const quantityDifference = baseQuantity - oldBaseQuantity;
+
+      // Update StockItems if there's a quantity change for IN/OUT movements
+      if (quantityDifference !== 0 && (movement.movement_type === 'IN' || movement.movement_type === 'OUT')) {
+        const locationToUpdate = movement.movement_type === 'IN' ? movement.to_location : movement.from_location;
+        
+        if (locationToUpdate) {
+          const stockItems = await base44.entities.StockItem.filter({
+            product_id: movement.product_id,
+            warehouse_location: locationToUpdate
+          });
+
+          if (stockItems.length > 0) {
+            const stockItem = stockItems[0];
+            const newQuantity = (stockItem.quantity_on_hand || 0) + (movement.movement_type === 'IN' ? quantityDifference : -quantityDifference);
+            
+            await base44.entities.StockItem.update(stockItem.id, {
+              quantity_on_hand: Math.max(0, newQuantity),
+              last_counted_date: new Date().toISOString().split('T')[0]
+            });
+          }
+        }
+      }
+
       await onSave(movement.id, updateData);
       onClose();
     } catch (error) {
