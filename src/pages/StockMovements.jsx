@@ -494,6 +494,7 @@ export default function StockMovementsPage() {
         movement={selectedMovement}
         product={selectedMovement ? products.find(p => p.id === selectedMovement.product_id) : null}
         users={users}
+        vendors={vendors}
       />
 
       <EditMovementDialog
