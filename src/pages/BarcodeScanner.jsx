@@ -638,9 +638,14 @@ export default function BarcodeScannerPage() {
     setIsProcessing(true);
     try {
       const parsedConversionRate = parseFloat(conversionRate) || 1;
+      const parsedBundleQty = bundleQuantity ? parseFloat(bundleQuantity) : null;
       const parsedUnitCost = parseFloat(unitCost) || 0;
-      const baseQuantity = quantityNum * parsedConversionRate;
-      const baseUnitCost = parsedUnitCost > 0 && parsedConversionRate > 0 ? parsedUnitCost / parsedConversionRate : undefined;
+      const baseQuantity = parsedBundleQty 
+        ? quantityNum * parsedConversionRate * parsedBundleQty 
+        : quantityNum * parsedConversionRate;
+      const baseUnitCost = parsedUnitCost > 0 && parsedConversionRate > 0 
+        ? (parsedBundleQty ? parsedUnitCost / parsedConversionRate / parsedBundleQty : parsedUnitCost / parsedConversionRate)
+        : undefined;
 
       // For IN movements, create or update ProductVendor relationship
       if (movementType === "IN" && selectedVendor && unitCost !== "") {
@@ -689,6 +694,7 @@ export default function BarcodeScannerPage() {
         input_unit_of_measure: inputUnitSubtype || matchedProduct.unit_of_measure,
         conversion_rate: parsedConversionRate,
         base_quantity: baseQuantity,
+        bundle_quantity: parsedBundleQty,
         from_location: movementType === "TRANSFER" || movementType === "OUT" ? fromLocation : null,
         to_location: movementType === "TRANSFER" || movementType === "IN" || movementType === "ADJUSTMENT" ? toLocation : null,
         performed_by: currentUser.email,
@@ -1872,27 +1878,116 @@ export default function BarcodeScannerPage() {
 
                   {movementType === "OUT" && (
                     <>
-                      <div>
-                        <Label>Ποσότητα *</Label>
-                        <Input
-                          id="quantity-out"
-                          type="text"
-                          inputMode="numeric"
-                          value={quantity}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === '' || /^\d+$/.test(value)) {
-                              setQuantity(value);
-                            }
-                          }}
-                          onBlur={(e) => {
-                            const val = parseInt(e.target.value);
-                            if (isNaN(val) || val < 1) {
-                              setQuantity("1");
-                            }
-                          }}
-                          onFocus={(e) => e.target.select()}
-                        />
+                      <div className="space-y-3">
+                        <p className="text-sm font-semibold text-slate-700">Ποσότητα & Μονάδες</p>
+                        
+                        <div className="grid grid-cols-3 gap-3">
+                          <div>
+                            <Label>Ποσότητα *</Label>
+                            <Input
+                              id="quantity-out"
+                              type="text"
+                              inputMode="numeric"
+                              value={quantity}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value === '' || /^\d+$/.test(value)) {
+                                  setQuantity(value);
+                                }
+                              }}
+                              onBlur={(e) => {
+                                const val = parseInt(e.target.value);
+                                if (isNaN(val) || val < 1) {
+                                  setQuantity("1");
+                                }
+                              }}
+                              onFocus={(e) => e.target.select()}
+                            />
+                          </div>
+
+                          <div>
+                            <Label>Μονάδα Εισαγ.</Label>
+                            <Select
+                              value={inputUnitSubtype || matchedProduct?.unit_of_measure}
+                              onValueChange={(val) => {
+                                let newConversionRate = '1';
+                                if (matchedProduct?.unit_of_measure === 'kg') {
+                                  if (val === 'g') newConversionRate = '0.001';
+                                  else if (val === 'kg') newConversionRate = '1';
+                                  else if (val === 'ton') newConversionRate = '1000';
+                                } else if (matchedProduct?.unit_of_measure === 'liter') {
+                                  if (val === 'ml') newConversionRate = '0.001';
+                                  else if (val === 'liter') newConversionRate = '1';
+                                } else if (matchedProduct?.unit_of_measure === 'meter') {
+                                  if (val === 'cm') newConversionRate = '0.01';
+                                  else if (val === 'mm') newConversionRate = '0.001';
+                                  else if (val === 'meter') newConversionRate = '1';
+                                } else if (matchedProduct?.unit_of_measure === 'piece') {
+                                  if (val === 'piece') newConversionRate = '1';
+                                }
+                                setInputUnitSubtype(val);
+                                setConversionRate(newConversionRate);
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Επιλέξτε" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {matchedProduct?.unit_of_measure === 'kg' && (
+                                  <>
+                                    <SelectItem value="g">g</SelectItem>
+                                    <SelectItem value="kg">kg</SelectItem>
+                                    <SelectItem value="ton">ton</SelectItem>
+                                  </>
+                                )}
+                                {matchedProduct?.unit_of_measure === 'liter' && (
+                                  <>
+                                    <SelectItem value="ml">ml</SelectItem>
+                                    <SelectItem value="liter">L</SelectItem>
+                                  </>
+                                )}
+                                {matchedProduct?.unit_of_measure === 'meter' && (
+                                  <>
+                                    <SelectItem value="mm">mm</SelectItem>
+                                    <SelectItem value="cm">cm</SelectItem>
+                                    <SelectItem value="meter">m</SelectItem>
+                                  </>
+                                )}
+                                {matchedProduct?.unit_of_measure === 'piece' && (
+                                  <>
+                                    <SelectItem value="piece">pcs</SelectItem>
+                                    <SelectItem value="box">box</SelectItem>
+                                    <SelectItem value="pallet">pallet</SelectItem>
+                                  </>
+                                )}
+                                {!['kg', 'liter', 'meter', 'piece'].includes(matchedProduct?.unit_of_measure) && (
+                                  <SelectItem value={matchedProduct?.unit_of_measure}>{matchedProduct?.unit_of_measure}</SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <Label>Pcs/Qty</Label>
+                            <Input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={bundleQuantity || ''}
+                              onChange={(e) => setBundleQuantity(e.target.value)}
+                              placeholder="π.χ. 100"
+                            />
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-500">
+                          Ποσότητα στη βασική μονάδα ({matchedProduct?.unit_of_measure}): {(() => {
+                            const qty = parseFloat(quantity) || 0;
+                            const convRate = parseFloat(conversionRate) || 1;
+                            const bundleQty = parseFloat(bundleQuantity) || null;
+                            return bundleQty ? (qty * convRate * bundleQty).toFixed(2) : (qty * convRate).toFixed(2);
+                          })()}
+                        </p>
                       </div>
 
                       <div>
@@ -1918,27 +2013,116 @@ export default function BarcodeScannerPage() {
                   )}
 
                   {(movementType === "ADJUSTMENT" || movementType === "TRANSFER") && (
-                    <div>
-                      <Label>Ποσότητα *</Label>
-                      <Input
-                        id="quantity-other"
-                        type="text"
-                        inputMode="numeric"
-                        value={quantity}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          if (value === '' || /^\d+$/.test(value)) {
-                            setQuantity(value);
-                          }
-                        }}
-                        onBlur={(e) => {
-                          const val = parseInt(e.target.value);
-                          if (isNaN(val) || val < 1) {
-                            setQuantity("1");
-                          }
-                        }}
-                        onFocus={(e) => e.target.select()}
-                      />
+                    <div className="space-y-3">
+                      <p className="text-sm font-semibold text-slate-700">Ποσότητα & Μονάδες</p>
+                      
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <Label>Ποσότητα *</Label>
+                          <Input
+                            id="quantity-other"
+                            type="text"
+                            inputMode="numeric"
+                            value={quantity}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (value === '' || /^\d+$/.test(value)) {
+                                setQuantity(value);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              const val = parseInt(e.target.value);
+                              if (isNaN(val) || val < 1) {
+                                setQuantity("1");
+                              }
+                            }}
+                            onFocus={(e) => e.target.select()}
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Μονάδα Εισαγ.</Label>
+                          <Select
+                            value={inputUnitSubtype || matchedProduct?.unit_of_measure}
+                            onValueChange={(val) => {
+                              let newConversionRate = '1';
+                              if (matchedProduct?.unit_of_measure === 'kg') {
+                                if (val === 'g') newConversionRate = '0.001';
+                                else if (val === 'kg') newConversionRate = '1';
+                                else if (val === 'ton') newConversionRate = '1000';
+                              } else if (matchedProduct?.unit_of_measure === 'liter') {
+                                if (val === 'ml') newConversionRate = '0.001';
+                                else if (val === 'liter') newConversionRate = '1';
+                              } else if (matchedProduct?.unit_of_measure === 'meter') {
+                                if (val === 'cm') newConversionRate = '0.01';
+                                else if (val === 'mm') newConversionRate = '0.001';
+                                else if (val === 'meter') newConversionRate = '1';
+                              } else if (matchedProduct?.unit_of_measure === 'piece') {
+                                if (val === 'piece') newConversionRate = '1';
+                              }
+                              setInputUnitSubtype(val);
+                              setConversionRate(newConversionRate);
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Επιλέξτε" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {matchedProduct?.unit_of_measure === 'kg' && (
+                                <>
+                                  <SelectItem value="g">g</SelectItem>
+                                  <SelectItem value="kg">kg</SelectItem>
+                                  <SelectItem value="ton">ton</SelectItem>
+                                </>
+                              )}
+                              {matchedProduct?.unit_of_measure === 'liter' && (
+                                <>
+                                  <SelectItem value="ml">ml</SelectItem>
+                                  <SelectItem value="liter">L</SelectItem>
+                                </>
+                              )}
+                              {matchedProduct?.unit_of_measure === 'meter' && (
+                                <>
+                                  <SelectItem value="mm">mm</SelectItem>
+                                  <SelectItem value="cm">cm</SelectItem>
+                                  <SelectItem value="meter">m</SelectItem>
+                                </>
+                              )}
+                              {matchedProduct?.unit_of_measure === 'piece' && (
+                                <>
+                                  <SelectItem value="piece">pcs</SelectItem>
+                                  <SelectItem value="box">box</SelectItem>
+                                  <SelectItem value="pallet">pallet</SelectItem>
+                                </>
+                              )}
+                              {!['kg', 'liter', 'meter', 'piece'].includes(matchedProduct?.unit_of_measure) && (
+                                <SelectItem value={matchedProduct?.unit_of_measure}>{matchedProduct?.unit_of_measure}</SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label>Pcs/Qty</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={bundleQuantity || ''}
+                            onChange={(e) => setBundleQuantity(e.target.value)}
+                            placeholder="π.χ. 100"
+                          />
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-slate-500">
+                        Ποσότητα στη βασική μονάδα ({matchedProduct?.unit_of_measure}): {(() => {
+                          const qty = parseFloat(quantity) || 0;
+                          const convRate = parseFloat(conversionRate) || 1;
+                          const bundleQty = parseFloat(bundleQuantity) || null;
+                          return bundleQty ? (qty * convRate * bundleQty).toFixed(2) : (qty * convRate).toFixed(2);
+                        })()}
+                      </p>
                     </div>
                   )}
 

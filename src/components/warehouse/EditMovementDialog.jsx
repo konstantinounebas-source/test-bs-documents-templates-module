@@ -235,7 +235,9 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       // Calculate base quantity: quantity * conversion_rate * bundle_quantity (if exists)
       const baseQuantity = bundleQty ? quantity * conversionRate * bundleQty : quantity * conversionRate;
       // Calculate base unit cost: if bundle exists, divide by both conversion and bundle
-      const baseUnitCost = bundleQty ? unitCost / conversionRate / bundleQty : unitCost / conversionRate;
+      const baseUnitCost = isInMovement && unitCost > 0 && conversionRate > 0
+        ? (bundleQty ? unitCost / conversionRate / bundleQty : unitCost / conversionRate)
+        : undefined;
 
       // Update product company_id if changed
       const currentProduct = products.find(p => p.id === movement.product_id);
@@ -252,15 +254,19 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         reference_type: formData.reference_type || null,
         reference_id: formData.reference_id || null,
         quantity: quantity,
-        input_unit_of_measure: formData.input_unit_subtype,
+        input_unit_of_measure: formData.input_unit_subtype || movement.input_unit_of_measure,
         conversion_rate: conversionRate,
         base_quantity: baseQuantity,
-        unit_cost: unitCost,
-        base_unit_cost: baseUnitCost,
-        bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null,
+        bundle_quantity: bundleQty,
         vendor_product_code: formData.vendor_product_code || null,
         invoice_category_id: formData.invoice_category_id || null
       };
+
+      // Only add unit_cost and base_unit_cost for IN movements
+      if (isInMovement) {
+        updateData.unit_cost = unitCost;
+        updateData.base_unit_cost = baseUnitCost;
+      }
       
       console.log('Saving movement with data:', updateData);
 
