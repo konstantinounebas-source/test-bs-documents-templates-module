@@ -344,7 +344,7 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                                   </div>
                                   {movement.unit_cost && movement.input_unit_of_measure && movement.input_unit_of_measure !== product.unit_of_measure && (
                                     <div className="pt-1 border-t border-slate-200">
-                                      <p className="text-xs font-medium text-slate-600">€{Number(movement.unit_cost).toFixed(2)}</p>
+                                      <p className="text-xs font-medium text-slate-600">€{Number(movement.unit_cost).toFixed(4)}</p>
                                       <p className="text-xs text-slate-400">/{movement.input_unit_of_measure}</p>
                                     </div>
                                   )}
@@ -360,9 +360,19 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                             </div>
                           </TableCell>
                           <TableCell>
+                            {movement.unit_cost ? (
+                              <div>
+                                <p className="font-medium">€{Number(movement.unit_cost).toFixed(4)}</p>
+                                <p className="text-xs text-slate-500">/item</p>
+                              </div>
+                            ) : (
+                              <span className="text-slate-400">N/A</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
                             <div>
                               <p className="font-medium">{movement.quantity}</p>
-                              <p className="text-xs text-slate-500">{movement.input_unit_of_measure || product.unit_of_measure}</p>
+                              <p className="text-xs text-slate-500">items</p>
                             </div>
                           </TableCell>
                           <TableCell>
