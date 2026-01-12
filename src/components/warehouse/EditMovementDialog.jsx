@@ -797,20 +797,111 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                       {/* Common fields for all movement types */}
                       {!isInMovement && (
               <div className="space-y-3">
-                <div>
-                  <Label htmlFor="quantity-common">Ποσότητα *</Label>
-                  <Input
-                    id="quantity-common"
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    value={formData.quantity}
-                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                    placeholder="0.00"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Ποσότητα σε {product?.unit_of_measure || 'μονάδες'}
-                  </p>
+                <div className="space-y-3 border-t pt-4">
+                  <p className="text-sm font-semibold text-slate-700">Ποσότητα & Μονάδες</p>
+                  
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <Label htmlFor="quantity-common">Ποσότητα *</Label>
+                      <Input
+                        id="quantity-common"
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        value={formData.quantity}
+                        onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                        placeholder="0.00"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="input_unit_subtype_out">Μονάδα Εισαγ.</Label>
+                      <Select
+                        value={formData.input_unit_subtype || product?.unit_of_measure}
+                        onValueChange={(val) => {
+                          let newConversionRate = formData.conversion_rate;
+                          if (product?.unit_of_measure === 'kg') {
+                            if (val === 'g') newConversionRate = '0.001';
+                            else if (val === 'kg') newConversionRate = '1';
+                            else if (val === 'ton') newConversionRate = '1000';
+                          } else if (product?.unit_of_measure === 'liter') {
+                            if (val === 'ml') newConversionRate = '0.001';
+                            else if (val === 'liter') newConversionRate = '1';
+                          } else if (product?.unit_of_measure === 'meter') {
+                            if (val === 'cm') newConversionRate = '0.01';
+                            else if (val === 'mm') newConversionRate = '0.001';
+                            else if (val === 'meter') newConversionRate = '1';
+                          } else if (product?.unit_of_measure === 'piece') {
+                            if (val === 'piece') newConversionRate = '1';
+                          }
+                          setFormData({ ...formData, input_unit_subtype: val, conversion_rate: newConversionRate });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Επιλέξτε υπομονάδα" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {product?.unit_of_measure === 'kg' && (
+                            <>
+                              <SelectItem value="g">Γραμμάρια (g)</SelectItem>
+                              <SelectItem value="kg">Κιλά (kg)</SelectItem>
+                              <SelectItem value="ton">Τόνοι (ton)</SelectItem>
+                            </>
+                          )}
+                          {product?.unit_of_measure === 'liter' && (
+                            <>
+                              <SelectItem value="ml">Χιλιοστόλιτρα (ml)</SelectItem>
+                              <SelectItem value="liter">Λίτρα (L)</SelectItem>
+                            </>
+                          )}
+                          {product?.unit_of_measure === 'meter' && (
+                            <>
+                              <SelectItem value="mm">Χιλιοστόμετρα (mm)</SelectItem>
+                              <SelectItem value="cm">Εκατοστόμετρα (cm)</SelectItem>
+                              <SelectItem value="meter">Μέτρα (m)</SelectItem>
+                            </>
+                          )}
+                          {product?.unit_of_measure === 'piece' && (
+                            <>
+                              <SelectItem value="piece">Τεμάχια</SelectItem>
+                              <SelectItem value="box">Κουτιά</SelectItem>
+                              <SelectItem value="pallet">Παλέτες</SelectItem>
+                            </>
+                          )}
+                          {!['kg', 'liter', 'meter', 'piece'].includes(product?.unit_of_measure) && (
+                            <SelectItem value={product?.unit_of_measure}>{product?.unit_of_measure}</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="bundle_qty_out">Pcs/Qty</Label>
+                      <Input
+                        id="bundle_qty_out"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={formData.bundle_quantity || ''}
+                        onChange={(e) => setFormData({ ...formData, bundle_quantity: e.target.value })}
+                        placeholder="π.χ. 100"
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Τεμάχια ανά μονάδα εισαγωγής
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-500">
+                      Ποσότητα στην βασική μονάδα ({product?.unit_of_measure}): {(() => {
+                        const qty = parseFloat(formData.quantity) || 0;
+                        const convRate = parseFloat(formData.conversion_rate) || 1;
+                        const bundleQty = parseFloat(formData.bundle_quantity) || null;
+                        return bundleQty ? (qty * convRate * bundleQty).toFixed(2) : (qty * convRate).toFixed(2);
+                      })()}
+                    </p>
+                  </div>
                 </div>
 
                 <div>
