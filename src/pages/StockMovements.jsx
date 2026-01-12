@@ -192,7 +192,7 @@ export default function StockMovementsPage() {
         movement.movement_type,
         product?.name || 'Unknown',
         product?.sku || 'N/A',
-        `${movement.quantity} ${product?.unit_of_measure || ''}`,
+        `${movement.base_quantity || movement.quantity} ${product?.unit_of_measure || ''}`,
         movement.from_location || '-',
         movement.to_location || '-',
         chargedTo?.full_name || movement.charged_to_person || '-',
@@ -288,8 +288,8 @@ export default function StockMovementsPage() {
 
   const stats = {
     total: movements.length,
-    in: movements.filter(m => m.movement_type === 'IN').reduce((sum, m) => sum + m.quantity, 0),
-    out: movements.filter(m => m.movement_type === 'OUT').reduce((sum, m) => sum + m.quantity, 0),
+    in: movements.filter(m => m.movement_type === 'IN').reduce((sum, m) => sum + (m.base_quantity || m.quantity), 0),
+    out: movements.filter(m => m.movement_type === 'OUT').reduce((sum, m) => sum + (m.base_quantity || m.quantity), 0),
     adjustments: movements.filter(m => m.movement_type === 'ADJUSTMENT').length
   };
 

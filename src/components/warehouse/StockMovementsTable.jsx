@@ -151,7 +151,7 @@ export default function StockMovementsTable({ movements, products, users, isLoad
                       movement.movement_type === 'OUT' ? 'text-red-600' :
                       'text-slate-900'
                     }>
-                      {movement.quantity} {product.unit_of_measure}
+                      {movement.base_quantity || movement.quantity} {product.unit_of_measure}
                     </span>
                   </TableCell>
                   <TableCell className="text-right font-semibold">
