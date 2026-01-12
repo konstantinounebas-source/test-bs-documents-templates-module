@@ -422,9 +422,17 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                     onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
                                     placeholder="Επιλέξτε προϊόν"
                                   />
-                                  <span className="text-xs text-slate-500 whitespace-nowrap">
-                                    {productDetails.company}
-                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <Badge variant="outline" className="text-xs whitespace-nowrap">
+                                      {materialCategories.find(mc => mc.id === component.material_category_id)?.name || '-'}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs whitespace-nowrap">
+                                      {teams.find(t => t.id === component.team_id)?.name || '-'}
+                                    </Badge>
+                                    <span className="text-xs text-slate-500 whitespace-nowrap">
+                                      {productDetails.company}
+                                    </span>
+                                  </div>
                                 </div>
                               </TableCell>
                             </TableRow>
