@@ -198,6 +198,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         base_quantity: baseQuantity,
         unit_cost: unitCost,
         base_unit_cost: baseUnitCost,
+        bundle_quantity: formData.bundle_quantity ? parseFloat(formData.bundle_quantity) : null,
         vendor_product_code: formData.vendor_product_code || null,
         invoice_category_id: formData.invoice_category_id || null
       };
