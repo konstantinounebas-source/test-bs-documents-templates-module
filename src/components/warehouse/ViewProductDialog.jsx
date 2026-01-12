@@ -438,9 +438,9 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
               <div className="p-4 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-200 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-green-700">Τρέχον Unit Cost</p>
+                    <p className="text-sm text-green-700">Τρέχον Unit Cost (Βασική Μονάδα)</p>
                     <p className="text-xs text-green-600 mt-1">
-                      Μπορείτε να το αλλάξετε χειροκίνητα ή αφήνεται στον μέσο όρο
+                      Το κόστος ανά βασική μονάδα ({product.unit_of_measure})
                     </p>
                   </div>
                   <div className="text-right">

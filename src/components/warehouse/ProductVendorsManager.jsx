@@ -69,7 +69,7 @@ export default function ProductVendorsManager({ product, vendors, companies = []
   };
   
   const getVendorFromMovement = (movement) => {
-    // If reference_type is 'Vendor', use reference_id to find vendor
+    // 1. Check reference_type === 'Vendor'
     if (movement.reference_type === 'Vendor' && movement.reference_id) {
       return {
         vendorId: movement.reference_id,
@@ -77,8 +77,15 @@ export default function ProductVendorsManager({ product, vendors, companies = []
       };
     }
     
-    // If reference_type is 'Invoice', try to find vendor from waybill or reference_id
-    // For now, check if reference_id matches a vendor ID
+    // 2. Check if movement has vendor_id field directly
+    if (movement.vendor_id) {
+      return {
+        vendorId: movement.vendor_id,
+        vendorName: getVendorName(movement.vendor_id)
+      };
+    }
+    
+    // 3. Try to match reference_id with vendor
     if (movement.reference_id) {
       const vendor = vendors.find(v => v.id === movement.reference_id);
       if (vendor) {
@@ -272,22 +279,35 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                             {movement.vendor_product_code || '-'}
                           </TableCell>
                           <TableCell>
-                            {movement.base_unit_cost ? (
-                              <div>
-                                <p className="font-semibold text-green-700">€{Number(movement.base_unit_cost).toFixed(4)}</p>
-                                <p className="text-xs text-slate-500">/{product.unit_of_measure}</p>
-                              </div>
-                            ) : movement.unit_cost ? (
-                              <div>
-                                <p className="font-semibold">€{Number(movement.unit_cost).toFixed(4)}</p>
-                                <p className="text-xs text-slate-500">/{movement.input_unit_of_measure || product.unit_of_measure}</p>
-                              </div>
-                            ) : (
-                              <span className="text-slate-400">N/A</span>
-                            )}
+                            <div className="space-y-1">
+                              {movement.base_unit_cost ? (
+                                <>
+                                  <div>
+                                    <p className="font-semibold text-green-700">€{Number(movement.base_unit_cost).toFixed(4)}</p>
+                                    <p className="text-xs text-slate-500">/{product.unit_of_measure}</p>
+                                  </div>
+                                  {movement.unit_cost && movement.input_unit_of_measure && movement.input_unit_of_measure !== product.unit_of_measure && (
+                                    <div className="pt-1 border-t border-slate-200">
+                                      <p className="text-xs font-medium text-slate-600">€{Number(movement.unit_cost).toFixed(2)}</p>
+                                      <p className="text-xs text-slate-400">/{movement.input_unit_of_measure}</p>
+                                    </div>
+                                  )}
+                                </>
+                              ) : movement.unit_cost ? (
+                                <div>
+                                  <p className="font-semibold">€{Number(movement.unit_cost).toFixed(4)}</p>
+                                  <p className="text-xs text-slate-500">/{movement.input_unit_of_measure || product.unit_of_measure}</p>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400">N/A</span>
+                              )}
+                            </div>
                           </TableCell>
-                          <TableCell className="text-sm">
-                            {movement.quantity} {movement.input_unit_of_measure || product.unit_of_measure}
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{movement.quantity}</p>
+                              <p className="text-xs text-slate-500">{movement.input_unit_of_measure || product.unit_of_measure}</p>
+                            </div>
                           </TableCell>
                           <TableCell>
                             {movement.base_quantity ? (
