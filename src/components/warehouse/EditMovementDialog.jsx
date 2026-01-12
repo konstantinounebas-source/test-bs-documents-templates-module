@@ -176,9 +176,11 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       const conversionRate = parseFloat(formData.conversion_rate) || 1;
       const unitCost = parseFloat(formData.unit_cost) || 0;
 
-      const bundleQty = parseFloat(formData.bundle_quantity) || 1;
-      const baseQuantity = quantity * conversionRate * bundleQty;
-      const baseUnitCost = unitCost / conversionRate;
+      const bundleQty = parseFloat(formData.bundle_quantity) || null;
+      // Calculate base quantity: quantity * conversion_rate * bundle_quantity (if exists)
+      const baseQuantity = bundleQty ? quantity * conversionRate * bundleQty : quantity * conversionRate;
+      // Calculate base unit cost: if bundle exists, divide by both conversion and bundle
+      const baseUnitCost = bundleQty ? unitCost / conversionRate / bundleQty : unitCost / conversionRate;
 
       // Update product company_id if changed
       const currentProduct = products.find(p => p.id === movement.product_id);
@@ -563,6 +565,9 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                         onChange={(e) => setFormData({ ...formData, bundle_quantity: e.target.value })}
                         placeholder="π.χ. 100"
                       />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Τεμάχια ανά μονάδα εισαγωγής
+                      </p>
                     </div>
                   </div>
 
@@ -579,15 +584,24 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     )}
                   </div>
 
-                  <div>
-                    <p className="text-xs text-slate-500 mt-1">
+                  <div className="space-y-1">
+                    <p className="text-xs text-slate-500">
                       Ποσότητα στην βασική μονάδα: {(() => {
                         const qty = parseFloat(formData.quantity) || 0;
                         const convRate = parseFloat(formData.conversion_rate) || 1;
-                        const bundleQty = parseFloat(formData.bundle_quantity) || 1;
-                        return (qty * convRate * bundleQty).toFixed(2);
+                        const bundleQty = parseFloat(formData.bundle_quantity) || null;
+                        return bundleQty ? (qty * convRate * bundleQty).toFixed(2) : (qty * convRate).toFixed(2);
                       })()} {product?.unit_of_measure || 'μονάδες'}
                     </p>
+                    {formData.bundle_quantity && unitCost > 0 && (
+                      <p className="text-xs text-green-600 font-medium">
+                        Κόστος ανά τεμάχιο: €{(() => {
+                          const convRate = parseFloat(formData.conversion_rate) || 1;
+                          const bundleQty = parseFloat(formData.bundle_quantity) || 1;
+                          return (unitCost / convRate / bundleQty).toFixed(4);
+                        })()}
+                      </p>
+                    )}
                   </div>
 
                   <div>
