@@ -237,9 +237,22 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         }
       }
 
-      // Calculate the difference in base quantity
-      const oldBaseQuantity = movement.base_quantity || (movement.quantity * (movement.conversion_rate || 1) * (movement.bundle_quantity || 1));
+      // Calculate the old base quantity from original movement
+      const oldQuantity = parseFloat(movement.quantity) || 0;
+      const oldConvRate = parseFloat(movement.conversion_rate) || 1;
+      const oldBundleQty = parseFloat(movement.bundle_quantity) || null;
+      const oldBaseQuantity = movement.base_quantity || (oldBundleQty ? oldQuantity * oldConvRate * oldBundleQty : oldQuantity * oldConvRate);
+      
       const quantityDifference = baseQuantity - oldBaseQuantity;
+
+      console.log('Edit Movement - Quantity Update:', {
+        oldQuantity,
+        oldConvRate,
+        oldBundleQty,
+        oldBaseQuantity,
+        newBaseQuantity: baseQuantity,
+        quantityDifference
+      });
 
       // Update StockItems if there's a quantity change for IN/OUT movements
       if (quantityDifference !== 0 && (movement.movement_type === 'IN' || movement.movement_type === 'OUT')) {
@@ -253,7 +266,15 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
           if (stockItems.length > 0) {
             const stockItem = stockItems[0];
-            const newQuantity = (stockItem.quantity_on_hand || 0) + (movement.movement_type === 'IN' ? quantityDifference : -quantityDifference);
+            const currentQuantity = stockItem.quantity_on_hand || 0;
+            const newQuantity = currentQuantity + (movement.movement_type === 'IN' ? quantityDifference : -quantityDifference);
+            
+            console.log('Updating StockItem:', {
+              currentQuantity,
+              quantityDifference,
+              newQuantity,
+              movementType: movement.movement_type
+            });
             
             await base44.entities.StockItem.update(stockItem.id, {
               quantity_on_hand: Math.max(0, newQuantity),
