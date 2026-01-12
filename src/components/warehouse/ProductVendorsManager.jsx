@@ -31,27 +31,43 @@ export default function ProductVendorsManager({ product, vendors, companies = []
         movement_type: 'IN'
       });
       
-      // Enrich movements with vendor info from ProductVendor matching
+      // Enrich movements with vendor info
       const enrichedMovements = movements.map(movement => {
-        // Try to find matching ProductVendor by unit_cost and vendor_product_code
-        let matchingPV = null;
+        let vendorId = null;
         
-        if (movement.vendor_product_code) {
-          matchingPV = pvData.find(pv => 
-            pv.vendor_product_code === movement.vendor_product_code
-          );
+        // 1. Check if movement has reference_type === 'Vendor'
+        if (movement.reference_type === 'Vendor' && movement.reference_id) {
+          vendorId = movement.reference_id;
         }
         
-        // Fallback: match by unit_cost if not found by code
-        if (!matchingPV && movement.unit_cost) {
-          matchingPV = pvData.find(pv => 
-            Math.abs((pv.unit_cost || 0) - movement.unit_cost) < 0.001
-          );
+        // 2. Check if movement has vendor_id field directly
+        if (!vendorId && movement.vendor_id) {
+          vendorId = movement.vendor_id;
+        }
+        
+        // 3. Try to match via ProductVendor records
+        if (!vendorId) {
+          let matchingPV = null;
+          
+          if (movement.vendor_product_code) {
+            matchingPV = pvData.find(pv => 
+              pv.vendor_product_code === movement.vendor_product_code
+            );
+          }
+          
+          // Fallback: match by unit_cost if not found by code
+          if (!matchingPV && movement.unit_cost) {
+            matchingPV = pvData.find(pv => 
+              Math.abs((pv.unit_cost || 0) - movement.unit_cost) < 0.001
+            );
+          }
+          
+          vendorId = matchingPV?.vendor_id || null;
         }
         
         return {
           ...movement,
-          enriched_vendor_id: matchingPV?.vendor_id || null
+          enriched_vendor_id: vendorId
         };
       });
       
