@@ -394,9 +394,6 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                       <TableRow className="bg-slate-50">
                         <TableHead className="w-12">#</TableHead>
                         <TableHead>Προϊόν</TableHead>
-                        <TableHead>Εταιρεία</TableHead>
-                        <TableHead>Κατηγορία Υλικού</TableHead>
-                        <TableHead>Ομάδα</TableHead>
                         <TableHead className="w-28">Ποσότητα</TableHead>
                         <TableHead className="w-24">Μον. Εισαγ.</TableHead>
                         <TableHead>Κόστος</TableHead>
@@ -413,55 +410,61 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                         
                         return (
                           <TableRow key={absoluteIndex}>
-                            <TableCell className="font-medium text-slate-500">
+                            <TableCell className="font-medium text-slate-500" rowSpan={2}>
                               {absoluteIndex + 1}
                             </TableCell>
-                            <TableCell>
-                              <ProductCombobox
-                                products={products}
-                                value={component.product_id}
-                                onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
-                                placeholder="Επιλέξτε προϊόν"
-                              />
+                            <TableCell colSpan={6}>
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1">
+                                  <ProductCombobox
+                                    products={products}
+                                    value={component.product_id}
+                                    onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
+                                    placeholder="Επιλέξτε προϊόν"
+                                  />
+                                </div>
+                                <div className="flex-shrink-0 text-sm text-slate-600">
+                                  {productDetails.company}
+                                </div>
+                              </div>
                             </TableCell>
-                            <TableCell className="text-sm text-slate-600">
-                              {productDetails.company}
-                            </TableCell>
+                          </TableRow>
+                          <TableRow key={`${absoluteIndex}-details`}>
                             <TableCell>
-                              <Select
-                                value={component.material_category_id || "none"}
-                                onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'material_category_id', value === "none" ? '' : value)}
-                              >
-                                <SelectTrigger className="w-52">
-                                  <SelectValue placeholder="Επιλέξτε κατηγορία" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">-</SelectItem>
-                                  {materialCategories.filter(mc => mc.is_active).map(cat => (
-                                    <SelectItem key={cat.id} value={cat.id}>
-                                      {cat.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </TableCell>
-                            <TableCell>
-                              <Select
-                                value={component.team_id || "none"}
-                                onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'team_id', value === "none" ? '' : value)}
-                              >
-                                <SelectTrigger className="w-40">
-                                  <SelectValue placeholder="Επιλέξτε ομάδα" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="none">-</SelectItem>
-                                  {teams.filter(t => t.is_active).map(team => (
-                                    <SelectItem key={team.id} value={team.id}>
-                                      {team.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                              <div className="flex items-center gap-2">
+                                <Select
+                                  value={component.material_category_id || "none"}
+                                  onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'material_category_id', value === "none" ? '' : value)}
+                                >
+                                  <SelectTrigger className="w-44">
+                                    <SelectValue placeholder="Κατηγορία" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">-</SelectItem>
+                                    {materialCategories.filter(mc => mc.is_active).map(cat => (
+                                      <SelectItem key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <Select
+                                  value={component.team_id || "none"}
+                                  onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'team_id', value === "none" ? '' : value)}
+                                >
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue placeholder="Ομάδα" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">-</SelectItem>
+                                    {teams.filter(t => t.is_active).map(team => (
+                                      <SelectItem key={team.id} value={team.id}>
+                                        {team.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             </TableCell>
                             <TableCell>
                               <Input
