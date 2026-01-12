@@ -825,27 +825,37 @@ export default function PurchaseOrdersPage() {
                           .filter(pv => pv.vendor_id === formData.vendor_id && pv.is_active)
                           .map(pv => pv.product_id);
                         
-                        // Get previous purchases for this product
-                        const previousPurchases = item.product_id ? 
+                        // Get previous purchases for this product from the same vendor
+                        const previousPurchases = item.product_id && formData.vendor_id ? 
                           movements
                             .filter(m => 
                               m.movement_type === 'IN' && 
                               m.product_id === item.product_id &&
-                              m.reference_type === 'Vendor' &&
-                              m.reference_id === formData.vendor_id
+                              m.reference_id === formData.vendor_id &&
+                              m.unit_cost
                             )
+                            .slice(0, 20)
+                            .reduce((acc, m) => {
+                              const key = `${m.unit_cost}_${m.vendor_product_code || ''}`;
+                              if (!acc.some(p => `${p.unit_cost}_${p.vendor_product_code || ''}` === key)) {
+                                acc.push({
+                                  id: m.id,
+                                  unit_cost: m.unit_cost,
+                                  vendor_product_code: m.vendor_product_code,
+                                  created_date: m.created_date,
+                                  quantity: m.quantity,
+                                  input_unit_of_measure: m.input_unit_of_measure
+                                });
+                              }
+                              return acc;
+                            }, [])
                             .slice(0, 5)
-                            .map(m => ({
-                              unit_cost: m.unit_cost,
-                              vendor_product_code: m.vendor_product_code,
-                              invoice_category_id: m.invoice_category_id,
-                              notes: m.notes
-                            }))
-                            .filter((v, i, a) => a.findIndex(t => 
-                              t.unit_cost === v.unit_cost && 
-                              t.vendor_product_code === v.vendor_product_code
-                            ) === i)
                           : [];
+                        
+                        const formatDate = (dateString) => {
+                          const date = new Date(dateString);
+                          return date.toLocaleDateString('el-GR', { day: 'numeric', month: 'short' });
+                        };
                         
                         return (
                           <TableRow key={index}>
@@ -864,26 +874,35 @@ export default function PurchaseOrdersPage() {
                                   value=""
                                   onValueChange={(val) => {
                                     if (val !== 'new') {
-                                      const purchase = previousPurchases[parseInt(val)];
-                                      handleItemChange(index, 'unit_cost', purchase.unit_cost);
-                                      handleItemChange(index, 'vendor_product_code', purchase.vendor_product_code);
+                                      const purchase = previousPurchases.find(p => p.id === val);
+                                      if (purchase) {
+                                        handleItemChange(index, 'unit_cost', purchase.unit_cost);
+                                        handleItemChange(index, 'vendor_product_code', purchase.vendor_product_code || '');
+                                      }
                                     }
                                   }}
                                 >
-                                  <SelectTrigger className="text-xs">
-                                    <SelectValue placeholder="New / Previous" />
+                                  <SelectTrigger className="text-xs h-auto min-h-[36px] py-1">
+                                    <SelectValue placeholder="Νέα / Παλιά Αγορά" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="new">New Purchase</SelectItem>
-                                    {previousPurchases.map((p, i) => (
-                                      <SelectItem key={i} value={i.toString()}>
-                                        €{p.unit_cost?.toFixed(2)} {p.vendor_product_code ? `(${p.vendor_product_code})` : ''}
+                                    <SelectItem value="new">-- Νέα Αγορά --</SelectItem>
+                                    {previousPurchases.map((p) => (
+                                      <SelectItem key={p.id} value={p.id}>
+                                        <div className="flex flex-col py-1 min-w-0">
+                                          <div className="font-medium text-xs">
+                                            {formatDate(p.created_date)} - €{p.unit_cost?.toFixed(4)}
+                                          </div>
+                                          <div className="text-xs text-slate-600 truncate">
+                                            {p.vendor_product_code && `Κωδ: ${p.vendor_product_code}`}
+                                          </div>
+                                        </div>
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
                               ) : (
-                                <span className="text-xs text-slate-400">New</span>
+                                <span className="text-xs text-slate-400">Νέα</span>
                               )}
                             </TableCell>
                             <TableCell>
@@ -1163,27 +1182,37 @@ export default function PurchaseOrdersPage() {
                          .filter(pv => pv.vendor_id === formData.vendor_id && pv.is_active)
                          .map(pv => pv.product_id);
 
-                       // Get previous purchases for this product
-                       const previousPurchases = item.product_id ? 
+                       // Get previous purchases for this product from the same vendor
+                       const previousPurchases = item.product_id && formData.vendor_id ? 
                          movements
                            .filter(m => 
                              m.movement_type === 'IN' && 
                              m.product_id === item.product_id &&
-                             m.reference_type === 'Vendor' &&
-                             m.reference_id === formData.vendor_id
+                             m.reference_id === formData.vendor_id &&
+                             m.unit_cost
                            )
+                           .slice(0, 20)
+                           .reduce((acc, m) => {
+                             const key = `${m.unit_cost}_${m.vendor_product_code || ''}`;
+                             if (!acc.some(p => `${p.unit_cost}_${p.vendor_product_code || ''}` === key)) {
+                               acc.push({
+                                 id: m.id,
+                                 unit_cost: m.unit_cost,
+                                 vendor_product_code: m.vendor_product_code,
+                                 created_date: m.created_date,
+                                 quantity: m.quantity,
+                                 input_unit_of_measure: m.input_unit_of_measure
+                               });
+                             }
+                             return acc;
+                           }, [])
                            .slice(0, 5)
-                           .map(m => ({
-                             unit_cost: m.unit_cost,
-                             vendor_product_code: m.vendor_product_code,
-                             invoice_category_id: m.invoice_category_id,
-                             notes: m.notes
-                           }))
-                           .filter((v, i, a) => a.findIndex(t => 
-                             t.unit_cost === v.unit_cost && 
-                             t.vendor_product_code === v.vendor_product_code
-                           ) === i)
                          : [];
+                       
+                       const formatDate = (dateString) => {
+                         const date = new Date(dateString);
+                         return date.toLocaleDateString('el-GR', { day: 'numeric', month: 'short' });
+                       };
 
                        return (
                          <TableRow key={index}>
@@ -1202,26 +1231,35 @@ export default function PurchaseOrdersPage() {
                                  value=""
                                  onValueChange={(val) => {
                                    if (val !== 'new') {
-                                     const purchase = previousPurchases[parseInt(val)];
-                                     handleItemChange(index, 'unit_cost', purchase.unit_cost);
-                                     handleItemChange(index, 'vendor_product_code', purchase.vendor_product_code);
+                                     const purchase = previousPurchases.find(p => p.id === val);
+                                     if (purchase) {
+                                       handleItemChange(index, 'unit_cost', purchase.unit_cost);
+                                       handleItemChange(index, 'vendor_product_code', purchase.vendor_product_code || '');
+                                     }
                                    }
                                  }}
                                >
-                                 <SelectTrigger className="text-xs">
-                                   <SelectValue placeholder="New / Previous" />
+                                 <SelectTrigger className="text-xs h-auto min-h-[36px] py-1">
+                                   <SelectValue placeholder="Νέα / Παλιά Αγορά" />
                                  </SelectTrigger>
                                  <SelectContent>
-                                   <SelectItem value="new">New Purchase</SelectItem>
-                                   {previousPurchases.map((p, i) => (
-                                     <SelectItem key={i} value={i.toString()}>
-                                       €{p.unit_cost?.toFixed(2)} {p.vendor_product_code ? `(${p.vendor_product_code})` : ''}
+                                   <SelectItem value="new">-- Νέα Αγορά --</SelectItem>
+                                   {previousPurchases.map((p) => (
+                                     <SelectItem key={p.id} value={p.id}>
+                                       <div className="flex flex-col py-1 min-w-0">
+                                         <div className="font-medium text-xs">
+                                           {formatDate(p.created_date)} - €{p.unit_cost?.toFixed(4)}
+                                         </div>
+                                         <div className="text-xs text-slate-600 truncate">
+                                           {p.vendor_product_code && `Κωδ: ${p.vendor_product_code}`}
+                                         </div>
+                                       </div>
                                      </SelectItem>
                                    ))}
                                  </SelectContent>
                                </Select>
                              ) : (
-                               <span className="text-xs text-slate-400">New</span>
+                               <span className="text-xs text-slate-400">Νέα</span>
                              )}
                            </TableCell>
                            <TableCell>
