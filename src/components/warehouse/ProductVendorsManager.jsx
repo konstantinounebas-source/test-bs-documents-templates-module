@@ -270,6 +270,7 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                     <TableHead>Waybill</TableHead>
                     <TableHead>Vendor Code</TableHead>
                     <TableHead>Κόστος/μονάδα</TableHead>
+                    <TableHead>Κόστος/Raw Qty</TableHead>
                     <TableHead>Raw Qty</TableHead>
                     <TableHead>Base Qty</TableHead>
                     <TableHead>Status</TableHead>
