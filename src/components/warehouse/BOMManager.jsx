@@ -409,27 +409,28 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                         const lineCost = qty * productDetails.cost;
                         
                         return (
-                          <TableRow key={absoluteIndex}>
-                            <TableCell className="font-medium text-slate-500" rowSpan={2}>
-                              {absoluteIndex + 1}
-                            </TableCell>
-                            <TableCell colSpan={6}>
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1">
-                                  <ProductCombobox
-                                    products={products}
-                                    value={component.product_id}
-                                    onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
-                                    placeholder="Επιλέξτε προϊόν"
-                                  />
+                          <React.Fragment key={absoluteIndex}>
+                            <TableRow>
+                              <TableCell className="font-medium text-slate-500" rowSpan={2}>
+                                {absoluteIndex + 1}
+                              </TableCell>
+                              <TableCell colSpan={6}>
+                                <div className="flex items-center gap-3">
+                                  <div className="flex-1">
+                                    <ProductCombobox
+                                      products={products}
+                                      value={component.product_id}
+                                      onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
+                                      placeholder="Επιλέξτε προϊόν"
+                                    />
+                                  </div>
+                                  <div className="flex-shrink-0 text-sm text-slate-600">
+                                    {productDetails.company}
+                                  </div>
                                 </div>
-                                <div className="flex-shrink-0 text-sm text-slate-600">
-                                  {productDetails.company}
-                                </div>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                          <TableRow key={`${absoluteIndex}-details`}>
+                              </TableCell>
+                            </TableRow>
+                            <TableRow>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <Select
@@ -560,6 +561,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                               </Button>
                             </TableCell>
                           </TableRow>
+                          </React.Fragment>
                         );
                       })}
                     </TableBody>
