@@ -91,11 +91,32 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-slate-500">Quantity</Label>
+              <Label className="text-slate-500">Quantity (Input)</Label>
               <p className="text-lg font-semibold mt-1">
-                {movement.quantity} {product?.unit_of_measure || ''}
+                {movement.quantity} {movement.input_unit_of_measure || product?.unit_of_measure || ''}
               </p>
             </div>
+            {movement.base_quantity && movement.base_quantity !== movement.quantity && (
+              <div>
+                <Label className="text-slate-500">Base Quantity</Label>
+                <p className="text-lg font-semibold mt-1 text-blue-600">
+                  {movement.base_quantity} {product?.unit_of_measure || ''}
+                </p>
+              </div>
+            )}
+            {!movement.base_quantity && movement.conversion_rate && movement.conversion_rate !== 1 && (
+              <div>
+                <Label className="text-slate-500">Base Quantity</Label>
+                <p className="text-lg font-semibold mt-1 text-blue-600">
+                  {(() => {
+                    const qty = parseFloat(movement.quantity) || 0;
+                    const convRate = parseFloat(movement.conversion_rate) || 1;
+                    const bundleQty = parseFloat(movement.bundle_quantity) || null;
+                    return bundleQty ? (qty * convRate * bundleQty).toFixed(2) : (qty * convRate).toFixed(2);
+                  })()} {product?.unit_of_measure || ''}
+                </p>
+              </div>
+            )}
           </div>
 
           <Separator />
