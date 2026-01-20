@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Download, Package, Upload, X, QrCode, FileSpreadsheet } from "lucide-react";
+import { Plus, Search, Download, Package, Upload, X, QrCode, FileSpreadsheet, Calculator } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 import ExcelJS from 'exceljs';
 
 import ProductsTable from "../components/warehouse/ProductsTable";
@@ -33,6 +34,7 @@ export default function ProductsPage() {
   const [itemsPerPage, setItemsPerPage] = useState("10");
   const [selectedProductIds, setSelectedProductIds] = useState([]);
   const [showExportQRDialog, setShowExportQRDialog] = useState(false);
+  const [isRecalculating, setIsRecalculating] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -133,6 +135,70 @@ export default function ProductsPage() {
 
   const getSelectedProducts = () => {
     return products.filter(p => selectedProductIds.includes(p.id));
+  };
+
+  const handleRecalculateAverageCost = async () => {
+    if (selectedProductIds.length === 0) {
+      toast.error('Παρακαλώ επιλέξτε προϊόντα');
+      return;
+    }
+
+    setIsRecalculating(true);
+    try {
+      // Load all IN movements
+      const movements = await base44.entities.StockMovement.filter({
+        movement_type: 'IN'
+      });
+
+      let updatedCount = 0;
+
+      for (const productId of selectedProductIds) {
+        // Get all IN movements for this product
+        const productMovements = movements.filter(m => m.product_id === productId);
+
+        if (productMovements.length === 0) continue;
+
+        // Calculate true average from base quantities and base unit costs
+        let totalCost = 0;
+        let totalQty = 0;
+
+        productMovements.forEach(movement => {
+          const baseQty = movement.base_quantity || movement.quantity;
+          const baseUnitCost = movement.base_unit_cost || movement.unit_cost;
+
+          if (baseUnitCost && baseUnitCost > 0 && baseQty > 0) {
+            totalCost += baseQty * baseUnitCost;
+            totalQty += baseQty;
+          }
+        });
+
+        const averageUnitCost = totalQty > 0 ? totalCost / totalQty : 0;
+
+        // Update product with calculated average
+        if (averageUnitCost > 0) {
+          await base44.entities.Product.update(productId, {
+            unit_cost: averageUnitCost,
+            total_quantity_purchased: totalQty,
+            total_cost_paid: totalCost
+          });
+          updatedCount++;
+        }
+
+        // Small delay to avoid rate limiting
+        await delay(200);
+      }
+
+      // Reload data
+      await loadData();
+      
+      toast.success(`Επαναυπολογίστηκε ο μέσος όρος για ${updatedCount} προϊόντα`);
+      setSelectedProductIds([]);
+
+    } catch (error) {
+      console.error("Error recalculating average cost:", error);
+      toast.error('Αποτυχία επαναυπολογισμού. Παρακαλώ δοκιμάστε ξανά.');
+    }
+    setIsRecalculating(false);
   };
 
   const handleExportExcel = async () => {
@@ -351,6 +417,21 @@ export default function ProductsPage() {
                 <Badge className="bg-purple-100 text-purple-800 py-1.5 px-3">
                   {selectedProductIds.length} προϊόντα επιλεγμένα
                 </Badge>
+                <Button 
+                  onClick={handleRecalculateAverageCost}
+                  disabled={isRecalculating}
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700 h-7"
+                >
+                  {isRecalculating ? (
+                    <>Επεξεργασία...</>
+                  ) : (
+                    <>
+                      <Calculator className="w-3 h-3 mr-1" />
+                      Επαναυπολογισμός Μ.Ο.
+                    </>
+                  )}
+                </Button>
                 <Button 
                   variant="ghost" 
                   size="sm" 
