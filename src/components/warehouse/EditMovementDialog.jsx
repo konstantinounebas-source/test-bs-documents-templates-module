@@ -285,6 +285,10 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       if (isInMovement) {
         updateData.unit_cost = unitCost;
         updateData.base_unit_cost = baseUnitCost;
+        // For IN movements, total_value is based on quantity * unit_cost (not base_quantity)
+        if (unitCost > 0) {
+          updateData.total_value = quantity * unitCost;
+        }
       } else {
         // For OUT movements, calculate total_value based on base_quantity and product unit_cost
         if (product && product.unit_cost) {
