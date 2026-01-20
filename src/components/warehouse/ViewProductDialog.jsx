@@ -70,7 +70,7 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
 
   const handleResetToAverage = async () => {
     try {
-      // Recalculate average from all IN movements (without affecting total_cost_paid/total_quantity_purchased)
+      // Recalculate average from all IN movements using BASE quantities and costs
       const allMovements = await base44.entities.StockMovement.filter({
         product_id: product.id,
         movement_type: 'IN'
@@ -80,9 +80,12 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
       let totalQty = 0;
       
       allMovements.forEach(movement => {
-        if (movement.unit_cost && movement.unit_cost > 0 && movement.quantity > 0) {
-          totalCost += movement.quantity * movement.unit_cost;
-          totalQty += movement.quantity;
+        const baseQty = movement.base_quantity || movement.quantity;
+        const baseUnitCost = movement.base_unit_cost || movement.unit_cost;
+        
+        if (baseUnitCost && baseUnitCost > 0 && baseQty > 0) {
+          totalCost += baseQty * baseUnitCost;
+          totalQty += baseQty;
         }
       });
       
