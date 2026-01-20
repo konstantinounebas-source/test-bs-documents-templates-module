@@ -372,7 +372,7 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                           <TableCell>
                             <div>
                               <p className="font-medium">{movement.quantity}</p>
-                              <p className="text-xs text-slate-500">items</p>
+                              <p className="text-xs text-slate-500">{movement.input_unit_of_measure || 'items'}</p>
                             </div>
                           </TableCell>
                           <TableCell>
