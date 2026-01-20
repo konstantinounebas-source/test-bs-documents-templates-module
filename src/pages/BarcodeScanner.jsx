@@ -1707,7 +1707,15 @@ export default function BarcodeScannerPage() {
 
                           <div>
                             <Label>Μονάδα Εισαγ.</Label>
-                            <Select value={inputUnitSubtype || ''} onValueChange={setInputUnitSubtype}>
+                            <Select 
+                              value={inputUnitSubtype || ''} 
+                              onValueChange={(val) => {
+                                setInputUnitSubtype(val);
+                                if (val === 'piece') {
+                                  setBundleQuantity('1');
+                                }
+                              }}
+                            >
                               <SelectTrigger>
                                 <SelectValue placeholder="-" />
                               </SelectTrigger>
@@ -1923,7 +1931,10 @@ export default function BarcodeScannerPage() {
                                   else if (val === 'mm') newConversionRate = '0.001';
                                   else if (val === 'meter') newConversionRate = '1';
                                 } else if (matchedProduct?.unit_of_measure === 'piece') {
-                                  if (val === 'piece') newConversionRate = '1';
+                                  if (val === 'piece') {
+                                    newConversionRate = '1';
+                                    setBundleQuantity('1');
+                                  }
                                 }
                                 setInputUnitSubtype(val);
                                 setConversionRate(newConversionRate);
@@ -2058,7 +2069,10 @@ export default function BarcodeScannerPage() {
                                 else if (val === 'mm') newConversionRate = '0.001';
                                 else if (val === 'meter') newConversionRate = '1';
                               } else if (matchedProduct?.unit_of_measure === 'piece') {
-                                if (val === 'piece') newConversionRate = '1';
+                                if (val === 'piece') {
+                                  newConversionRate = '1';
+                                  setBundleQuantity('1');
+                                }
                               }
                               setInputUnitSubtype(val);
                               setConversionRate(newConversionRate);
