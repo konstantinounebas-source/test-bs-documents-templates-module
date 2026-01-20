@@ -655,8 +655,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                             else if (val === 'mm') newConversionRate = '0.001';
                             else if (val === 'meter') newConversionRate = '1';
                           } else if (product?.unit_of_measure === 'piece') {
-                            if (val === 'piece') {
-                              setFormData({ ...formData, input_unit_subtype: val, conversion_rate: '1', bundle_quantity: '1' });
+                            if (val === 'piece' || val === 'box' || val === 'pallet') {
+                              setFormData({ ...formData, input_unit_subtype: val, conversion_rate: '1' });
                               return;
                             }
                           }
@@ -920,8 +920,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                             else if (val === 'mm') newConversionRate = '0.001';
                             else if (val === 'meter') newConversionRate = '1';
                           } else if (product?.unit_of_measure === 'piece') {
-                            if (val === 'piece') {
-                              setFormData({ ...formData, input_unit_subtype: val, conversion_rate: '1', bundle_quantity: '1' });
+                            if (val === 'piece' || val === 'box' || val === 'pallet') {
+                              setFormData({ ...formData, input_unit_subtype: val, conversion_rate: '1' });
                               return;
                             }
                           }
