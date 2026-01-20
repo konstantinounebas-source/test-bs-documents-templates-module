@@ -177,9 +177,13 @@ export default function StockMovementsTable({ movements, products, users, isLoad
                       <span className="text-blue-600">
                         €{parseFloat(movement.total_value).toFixed(2)}
                       </span>
-                    ) : movement.unit_cost && parseFloat(movement.unit_cost) > 0 ? (
+                    ) : movement.base_unit_cost && parseFloat(movement.base_unit_cost) > 0 ? (
                       <span className="text-blue-600">
-                        €{(parseFloat(movement.unit_cost) * calculateDisplayQuantity(movement)).toFixed(2)}
+                        €{(parseFloat(movement.base_unit_cost) * calculateDisplayQuantity(movement)).toFixed(2)}
+                      </span>
+                    ) : movement.unit_cost && parseFloat(movement.unit_cost) > 0 && parseFloat(movement.quantity) > 0 ? (
+                      <span className="text-blue-600">
+                        €{(parseFloat(movement.unit_cost) * parseFloat(movement.quantity)).toFixed(2)}
                       </span>
                     ) : (
                       <span className="text-slate-400">-</span>
