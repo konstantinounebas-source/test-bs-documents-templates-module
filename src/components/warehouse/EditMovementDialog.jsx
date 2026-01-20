@@ -718,17 +718,17 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     </div>
                   </div>
 
-                    {costPerBaseUnit && unitCost > 0 && (
-                      <div>
-                        <Label>Κόστος ανά {product?.unit_of_measure || 'μονάδα'}</Label>
-                        <div className="flex items-center h-10 px-3 bg-slate-100 rounded-md border">
-                          <span className="text-sm font-medium">€{costPerBaseUnit}</span>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Υπολογιζόμενο κόστος βασικής μονάδας
-                        </p>
+                  {costPerBaseUnit && unitCost > 0 && (
+                    <div>
+                      <Label>Κόστος ανά {product?.unit_of_measure || 'μονάδα'}</Label>
+                      <div className="flex items-center h-10 px-3 bg-slate-100 rounded-md border">
+                        <span className="text-sm font-medium">€{costPerBaseUnit}</span>
                       </div>
-                    )}
+                      <p className="text-xs text-slate-500 mt-1">
+                        Υπολογιζόμενο κόστος βασικής μονάδας
+                      </p>
+                    </div>
+                  )}
                   </div>
 
                   <div className="space-y-1">
@@ -851,14 +851,14 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                           </p>
                         </div>
                       )}
-                      </>
-                      )}
+                    </>
+                    )}
 
-                      {/* Additional Details */}
-                      <div className="space-y-3 border-t pt-4">
-                      <p className="text-sm font-semibold text-slate-700">Πρόσθετα Στοιχεία</p>
+                  {/* Additional Details */}
+                  <div className="space-y-3 border-t pt-4">
+                    <p className="text-sm font-semibold text-slate-700">Πρόσθετα Στοιχεία</p>
 
-                      <div>
+                    <div>
                       <Label htmlFor="waybill">Αριθμός Waybill</Label>
                       <Input
                         id="waybill"
@@ -866,9 +866,9 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                         onChange={(e) => setFormData({ ...formData, waybill_number: e.target.value })}
                         placeholder="π.χ. WB-2025-001"
                       />
-                      </div>
+                    </div>
 
-                      <div>
+                    <div>
                       <Label htmlFor="notes">Σημειώσεις</Label>
                       <Textarea
                         id="notes"
@@ -877,13 +877,11 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                         placeholder="Προσθέστε σημειώσεις..."
                         rows={4}
                       />
-                      </div>
-                      </div>
-                      </>
-                      )}
-
-                      {/* Common fields for all movement types */}
-                      {!isInMovement && (
+                    </div>
+                  </div>
+                </>
+              {/* Common fields for all movement types */}
+              {!isInMovement && (
               <div className="space-y-3">
                 <div className="space-y-3 border-t pt-4">
                   <p className="text-sm font-semibold text-slate-700">Ποσότητα & Μονάδες</p>
