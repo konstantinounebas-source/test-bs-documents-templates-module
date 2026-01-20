@@ -189,20 +189,32 @@ export default function BarcodeScannerPage() {
               m.product_id === item.product_id &&
               m.movement_type === 'IN'
             )
-            .reduce((sum, m) => sum + m.quantity, 0);
+            .reduce((sum, m) => sum + (m.quantity || 0), 0);
           return { ...item, quantity_received: receivedQty };
         });
 
-        let newStatus = 'Confirmed';
-        const totalOrdered = updatedItems.reduce((sum, item) => sum + (item.quantity_ordered || 0), 0);
-        const totalReceived = updatedItems.reduce((sum, item) => sum + (item.quantity_received || 0), 0);
-
-        if (totalOrdered > 0) {
-          if (totalReceived >= totalOrdered) {
-            newStatus = 'Received';
-          } else if (totalReceived > 0) {
-            newStatus = 'Partially Received';
+        // Calculate status based on all items individually
+        let allItemsReceived = true;
+        let anyItemReceived = false;
+        
+        for (const item of updatedItems) {
+          const ordered = item.quantity_ordered || 0;
+          const received = item.quantity_received || 0;
+          
+          if (received > 0) {
+            anyItemReceived = true;
           }
+          
+          if (received < ordered) {
+            allItemsReceived = false;
+          }
+        }
+
+        let newStatus = 'Confirmed';
+        if (allItemsReceived && updatedItems.length > 0) {
+          newStatus = 'Received';
+        } else if (anyItemReceived) {
+          newStatus = 'Partially Received';
         }
 
         return { ...po, items: updatedItems, status: newStatus };
