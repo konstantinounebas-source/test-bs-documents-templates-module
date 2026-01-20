@@ -371,22 +371,31 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                             </div>
                           </TableCell>
                           <TableCell>
-                            {movement.base_quantity && movement.base_quantity !== movement.quantity ? (
-                              <div>
-                                <p className="font-semibold text-blue-700">{Number(movement.base_quantity).toFixed(2)}</p>
-                                <p className="text-xs text-slate-500">{product.unit_of_measure}</p>
-                              </div>
-                            ) : movement.conversion_rate && movement.conversion_rate !== 1 ? (
-                              <div>
-                                <p className="font-semibold text-blue-700">{Number(movement.quantity * movement.conversion_rate).toFixed(2)}</p>
-                                <p className="text-xs text-slate-500">{product.unit_of_measure}</p>
-                              </div>
-                            ) : (
-                              <div>
-                                <p className="font-medium text-slate-600">{movement.quantity}</p>
-                                <p className="text-xs text-slate-500">{product.unit_of_measure}</p>
-                              </div>
-                            )}
+                            {(() => {
+                              const qty = movement.quantity || 0;
+                              const convRate = movement.conversion_rate || 1;
+                              const bundleQty = movement.bundle_quantity || 1;
+                              
+                              // If base_quantity exists, use it directly
+                              if (movement.base_quantity) {
+                                return (
+                                  <div>
+                                    <p className="font-semibold text-blue-700">{Number(movement.base_quantity).toFixed(2)}</p>
+                                    <p className="text-xs text-slate-500">{product.unit_of_measure}</p>
+                                  </div>
+                                );
+                              }
+                              
+                              // Otherwise calculate: quantity * conversion_rate * bundle_quantity
+                              const calculatedBase = qty * convRate * bundleQty;
+                              
+                              return (
+                                <div>
+                                  <p className="font-semibold text-blue-700">{Number(calculatedBase).toFixed(2)}</p>
+                                  <p className="text-xs text-slate-500">{product.unit_of_measure}</p>
+                                </div>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell>
                             <Badge className="bg-blue-100 text-blue-800">IN</Badge>
