@@ -367,17 +367,25 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                           <TableCell>
                             <div>
                               <p className="font-medium">{movement.quantity}</p>
-                              <p className="text-xs text-slate-500">{movement.input_unit_of_measure || 'items'}</p>
+                              <p className="text-xs text-slate-500">{movement.input_unit_of_measure || product.unit_of_measure}</p>
                             </div>
                           </TableCell>
                           <TableCell>
-                            {movement.base_quantity ? (
+                            {movement.base_quantity && movement.base_quantity !== movement.quantity ? (
                               <div>
                                 <p className="font-semibold text-blue-700">{Number(movement.base_quantity).toFixed(2)}</p>
                                 <p className="text-xs text-slate-500">{product.unit_of_measure}</p>
                               </div>
+                            ) : movement.conversion_rate && movement.conversion_rate !== 1 ? (
+                              <div>
+                                <p className="font-semibold text-blue-700">{Number(movement.quantity * movement.conversion_rate).toFixed(2)}</p>
+                                <p className="text-xs text-slate-500">{product.unit_of_measure}</p>
+                              </div>
                             ) : (
-                              <p className="text-sm text-slate-600">{movement.quantity} {product.unit_of_measure}</p>
+                              <div>
+                                <p className="font-medium text-slate-600">{movement.quantity}</p>
+                                <p className="text-xs text-slate-500">{product.unit_of_measure}</p>
+                              </div>
                             )}
                           </TableCell>
                           <TableCell>
