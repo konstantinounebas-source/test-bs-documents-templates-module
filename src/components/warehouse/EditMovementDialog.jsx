@@ -880,6 +880,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     </div>
                   </div>
                 </>
+              )}
+
               {/* Common fields for all movement types */}
               {!isInMovement && (
               <div className="space-y-3">
