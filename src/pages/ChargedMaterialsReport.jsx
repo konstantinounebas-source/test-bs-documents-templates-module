@@ -100,11 +100,13 @@ export default function ChargedMaterialsReportPage() {
 
   const filteredMovements = movements.filter(m => {
     const product = getProduct(m.product_id);
-    const matchesSearch = !searchTerm || 
-      getUserName(m.charged_to_person).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product?.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product?.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.trim().toLowerCase();
+    
+    const matchesSearch = !searchLower || 
+      (getUserName(m.charged_to_person) || '').toLowerCase().includes(searchLower) ||
+      (product?.name || '').toLowerCase().includes(searchLower) ||
+      (product?.sku || '').toLowerCase().includes(searchLower) ||
+      (product?.description || '').toLowerCase().includes(searchLower);
     
     const matchesPerson = personFilter === "all" || m.charged_to_person === personFilter;
     const matchesProduct = productFilter === "all" || m.product_id === productFilter;
