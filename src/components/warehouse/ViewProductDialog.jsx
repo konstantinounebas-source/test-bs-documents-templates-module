@@ -112,21 +112,25 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
         movement_type: 'IN'
       });
       
-      // Calculate totals from actual movements
+      // Calculate totals from actual movements using BASE quantities and BASE unit costs
       let totalCost = 0;
       let totalQty = 0;
-      let lastUnitCost = 0;
+      let lastBaseUnitCost = 0;
       let lastDate = null;
       
       inMovements.forEach(movement => {
-        if (movement.unit_cost && movement.unit_cost > 0 && movement.quantity > 0) {
-          totalCost += movement.quantity * movement.unit_cost;
-          totalQty += movement.quantity;
+        // Use base_quantity and base_unit_cost for accurate calculations
+        const baseQty = movement.base_quantity || movement.quantity;
+        const baseUnitCost = movement.base_unit_cost || movement.unit_cost;
+        
+        if (baseUnitCost && baseUnitCost > 0 && baseQty > 0) {
+          totalCost += baseQty * baseUnitCost;
+          totalQty += baseQty;
           
           const movementDate = new Date(movement.created_date);
           if (!lastDate || movementDate > lastDate) {
             lastDate = movementDate;
-            lastUnitCost = movement.unit_cost;
+            lastBaseUnitCost = baseUnitCost;
           }
         }
       });
@@ -138,7 +142,7 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
         total_cost_paid: totalCost,
         total_quantity_purchased: totalQty,
         unit_cost: averageUnitCost,
-        last_unit_cost: lastUnitCost
+        last_unit_cost: lastBaseUnitCost
       });
       
       toast.success("Οι υπολογισμοί ενημερώθηκαν επιτυχώς");
