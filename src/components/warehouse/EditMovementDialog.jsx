@@ -50,7 +50,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       allMovements.forEach(mov => {
         const baseQty = mov.base_quantity || 
           (mov.quantity * (mov.conversion_rate || 1) * (mov.bundle_quantity || 1));
-        
+
         if (mov.movement_type === 'IN' && mov.to_location) {
           locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
         } else if (mov.movement_type === 'OUT' && mov.from_location) {
@@ -61,6 +61,12 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
           }
           if (mov.to_location) {
             locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
+          }
+        } else if (mov.movement_type === 'ADJUSTMENT') {
+          // ADJUSTMENT can be positive or negative
+          const location = mov.to_location || mov.from_location;
+          if (location) {
+            locationStocks[location] = (locationStocks[location] || 0) + baseQty;
           }
         }
       });
