@@ -264,10 +264,10 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                     <TableHead>Vendor</TableHead>
                     <TableHead>Waybill</TableHead>
                     <TableHead>Vendor Code</TableHead>
-                    <TableHead>Κόστος/μονάδα</TableHead>
-                    <TableHead>Κόστος/Raw Qty</TableHead>
-                    <TableHead>Raw Qty</TableHead>
-                    <TableHead>Base Qty</TableHead>
+                    <TableHead>Κόστος (Βασική Μονάδα)</TableHead>
+                    <TableHead>Κόστος (Μονάδα Εισαγωγής)</TableHead>
+                    <TableHead>Ποσότητα (Μονάδα Εισαγωγής)</TableHead>
+                    <TableHead>Ποσότητα (Βασική Μονάδα)</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Date</TableHead>
                   </TableRow>
@@ -358,7 +358,7 @@ export default function ProductVendorsManager({ product, vendors, companies = []
                             {movement.unit_cost ? (
                               <div>
                                 <p className="font-medium">€{Number(movement.unit_cost).toFixed(4)}</p>
-                                <p className="text-xs text-slate-500">/item</p>
+                                <p className="text-xs text-slate-500">/{movement.input_unit_of_measure || 'item'}</p>
                               </div>
                             ) : (
                               <span className="text-slate-400">N/A</span>
