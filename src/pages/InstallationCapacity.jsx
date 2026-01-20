@@ -544,7 +544,9 @@ export default function InstallationCapacityPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {capacityResults.componentAnalysis.map((comp, idx) => (
+                    {capacityResults.componentAnalysis
+                      .filter(comp => !exportOnlyBottlenecks || comp.available_stock < comp.total_requested)
+                      .map((comp, idx) => (
                       <TableRow 
                         key={idx}
                         className={comp.is_bottleneck ? 'bg-red-50' : ''}
