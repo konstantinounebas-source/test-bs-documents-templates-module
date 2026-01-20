@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { BarChart3, Calculator, AlertTriangle, CheckCircle, Package, GripVertical, X, Plus, FileSpreadsheet } from "lucide-react";
+import { BarChart3, Calculator, AlertTriangle, CheckCircle, Package, GripVertical, X, Plus, FileSpreadsheet, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -20,6 +20,7 @@ export default function InstallationCapacityPage() {
   const [capacityResults, setCapacityResults] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [exportOnlyBottlenecks, setExportOnlyBottlenecks] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   useEffect(() => {
     loadData();
@@ -225,6 +226,81 @@ export default function InstallationCapacityPage() {
       componentAnalysis,
       productRequirements
     });
+  };
+
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const getSortedComponentAnalysis = () => {
+    if (!capacityResults) return [];
+    
+    let sorted = [...capacityResults.componentAnalysis];
+    
+    if (sortConfig.key) {
+      sorted.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch (sortConfig.key) {
+          case 'product':
+            aValue = a.product_name?.toLowerCase() || '';
+            bValue = b.product_name?.toLowerCase() || '';
+            break;
+          case 'sku':
+            aValue = a.product_sku?.toLowerCase() || '';
+            bValue = b.product_sku?.toLowerCase() || '';
+            break;
+          case 'available':
+            aValue = a.available_stock || 0;
+            bValue = b.available_stock || 0;
+            break;
+          case 'requested':
+            aValue = a.total_requested || 0;
+            bValue = b.total_requested || 0;
+            break;
+          case 'consume':
+            aValue = a.total_consumed || 0;
+            bValue = b.total_consumed || 0;
+            break;
+          default:
+            return 0;
+        }
+        
+        if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    
+    return sorted;
+  };
+
+  const SortableHeader = ({ column, label }) => {
+    const isActive = sortConfig.key === column;
+    const direction = sortConfig.direction;
+    
+    return (
+      <TableHead 
+        className="cursor-pointer hover:bg-slate-100 transition-colors select-none"
+        onClick={() => handleSort(column)}
+      >
+        <div className="flex items-center gap-2">
+          <span>{label}</span>
+          {isActive ? (
+            direction === 'asc' ? (
+              <ArrowUp className="w-4 h-4 text-blue-600" />
+            ) : (
+              <ArrowDown className="w-4 h-4 text-blue-600" />
+            )
+          ) : (
+            <ArrowUpDown className="w-4 h-4 text-slate-400" />
+          )}
+        </div>
+      </TableHead>
+    );
   };
 
   const selectedTypesData = selectedTypes
@@ -535,16 +611,16 @@ export default function InstallationCapacityPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50">
-                      <TableHead>Product</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Available Stock</TableHead>
-                      <TableHead>Total Requested</TableHead>
-                      <TableHead>Will Consume</TableHead>
+                      <SortableHeader column="product" label="Product" />
+                      <SortableHeader column="sku" label="SKU" />
+                      <SortableHeader column="available" label="Available Stock" />
+                      <SortableHeader column="requested" label="Total Requested" />
+                      <SortableHeader column="consume" label="Will Consume" />
                       <TableHead>Used By</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {capacityResults.componentAnalysis
+                    {getSortedComponentAnalysis()
                       .filter(comp => !exportOnlyBottlenecks || comp.available_stock < comp.total_requested)
                       .map((comp, idx) => (
                       <TableRow 
