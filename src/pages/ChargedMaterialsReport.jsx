@@ -99,9 +99,12 @@ export default function ChargedMaterialsReportPage() {
   const uniqueLocations = [...new Set(stockItems.map(s => s.warehouse_location))].filter(Boolean);
 
   const filteredMovements = movements.filter(m => {
+    const product = getProduct(m.product_id);
     const matchesSearch = !searchTerm || 
       getUserName(m.charged_to_person).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getProduct(m.product_id)?.name.toLowerCase().includes(searchTerm.toLowerCase());
+      product?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product?.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product?.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesPerson = personFilter === "all" || m.charged_to_person === personFilter;
     const matchesProduct = productFilter === "all" || m.product_id === productFilter;
