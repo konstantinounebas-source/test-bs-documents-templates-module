@@ -88,13 +88,8 @@ export default function ProductVendorsManager({ product, vendors, companies = []
       const averageUnitCost = totalQty > 0 ? totalCost / totalQty : 0;
       setCalculatedAverage({ cost: averageUnitCost, quantity: totalQty });
       
-      // Update product.unit_cost to match the calculated average
-      if (averageUnitCost > 0 && Math.abs(product.unit_cost - averageUnitCost) > 0.0001) {
-        await base44.entities.Product.update(product.id, {
-          unit_cost: averageUnitCost
-        });
-        if (onUpdate) await onUpdate();
-      }
+      // DO NOT auto-update product.unit_cost - user may have manually set a different cost
+      // Average is shown for reference only
       
       // Get latest 10 movements for display
       const latestMovements = enrichedMovements
