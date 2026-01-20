@@ -154,6 +154,12 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         }
       }
 
+      // Extract PO ID if movement is linked to a PurchaseOrder
+      let poId = '';
+      if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
+        poId = movement.reference_id;
+      }
+
       setFormData({
         notes: movement.notes || '',
         waybill_number: movement.waybill_number || '',
@@ -171,6 +177,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         discount: '0',
         quantity: movement.quantity ? String(movement.quantity) : '',
         warehouse_location: movement.warehouse_location || '',
+        po_id: poId,
         po_number: movement.po_number || ''
       });
     }
@@ -247,12 +254,24 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         });
       }
 
+      // Determine reference_type and reference_id based on PO or Vendor selection
+      let referenceType = null;
+      let referenceId = null;
+
+      if (formData.po_id) {
+        referenceType = 'PurchaseOrder';
+        referenceId = formData.po_id;
+      } else if (formData.reference_id) {
+        referenceType = 'Vendor';
+        referenceId = formData.reference_id;
+      }
+
       // Prepare update data with quantity and unit_cost as numbers
       const updateData = {
         notes: formData.notes,
         waybill_number: formData.waybill_number,
-        reference_type: formData.reference_type || null,
-        reference_id: formData.reference_id || null,
+        reference_type: referenceType,
+        reference_id: referenceId,
         quantity: quantity,
         input_unit_of_measure: formData.input_unit_subtype || movement.input_unit_of_measure,
         conversion_rate: conversionRate,
@@ -302,6 +321,66 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       
       // Recalculate stock for this product from all movements
       await recalculateStockForProduct(movement.product_id);
+
+      // If PO was selected, update PO status
+      if (formData.po_id) {
+        try {
+          const poList = await base44.entities.PurchaseOrder.filter({ id: formData.po_id });
+          if (poList && poList.length > 0) {
+            const poData = poList[0];
+            
+            // Get all movements for this PO
+            const poMovements = await base44.entities.StockMovement.filter({
+              reference_type: 'PurchaseOrder',
+              reference_id: formData.po_id,
+              movement_type: 'IN'
+            });
+
+            // Calculate received quantities per product
+            const receivedByProduct = {};
+            poMovements.forEach(m => {
+              if (!receivedByProduct[m.product_id]) {
+                receivedByProduct[m.product_id] = 0;
+              }
+              receivedByProduct[m.product_id] += m.quantity || 0;
+            });
+
+            // Check if all items are received
+            let allItemsReceived = true;
+            let anyItemReceived = false;
+
+            if (poData.items && poData.items.length > 0) {
+              for (const item of poData.items) {
+                const ordered = item.quantity_ordered || 0;
+                const received = receivedByProduct[item.product_id] || 0;
+
+                if (received > 0) {
+                  anyItemReceived = true;
+                }
+                if (received < ordered) {
+                  allItemsReceived = false;
+                }
+              }
+            }
+
+            // Update PO status
+            let newStatus = 'Confirmed';
+            if (allItemsReceived && poData.items && poData.items.length > 0) {
+              newStatus = 'Received';
+            } else if (anyItemReceived) {
+              newStatus = 'Partially Received';
+            }
+
+            if (poData.status !== newStatus) {
+              await base44.entities.PurchaseOrder.update(formData.po_id, {
+                status: newStatus
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error updating PO status:', error);
+        }
+      }
       
       onClose();
     } catch (error) {
@@ -509,8 +588,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     <div>
                       <Label htmlFor="po-number">Αριθμός PO</Label>
                       <Select
-                        value={formData.po_number || 'none'}
-                        onValueChange={(val) => setFormData({ ...formData, po_number: val === 'none' ? '' : val })}
+                        value={formData.po_id || 'none'}
+                        onValueChange={(val) => setFormData({ ...formData, po_id: val === 'none' ? '' : val })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Επιλέξτε PO" />
@@ -520,7 +599,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                           {purchaseOrders
                             .filter(po => po.items && po.items.some(item => item.product_id === movement.product_id))
                             .map(po => (
-                              <SelectItem key={po.id} value={po.po_number}>
+                              <SelectItem key={po.id} value={po.id}>
                                 {po.po_number}
                               </SelectItem>
                             ))}
