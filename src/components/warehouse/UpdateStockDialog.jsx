@@ -115,10 +115,8 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
 
   const recalculateStockForProduct = async (productId) => {
     try {
-      const [allMovements, stockItemsForProduct] = await Promise.all([
-        base44.entities.StockMovement.filter({ product_id: productId }),
-        base44.entities.StockItem.filter({ product_id: productId })
-      ]);
+      const allMovements = await base44.entities.StockMovement.filter({ product_id: productId });
+      const stockItemsForProduct = await base44.entities.StockItem.filter({ product_id: productId });
       
       const locationStocks = {};
       
@@ -145,39 +143,31 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         }
       });
       
-      const stockOperations = [];
-      
       for (const location in locationStocks) {
         const existingStock = stockItemsForProduct.find(si => si.warehouse_location === location);
         const correctQuantity = Math.max(0, locationStocks[location]);
         
         if (existingStock) {
-          stockOperations.push(
-            base44.entities.StockItem.update(existingStock.id, {
-              quantity_on_hand: correctQuantity,
-              last_counted_date: new Date().toISOString().split('T')[0]
-            })
-          );
+          await base44.entities.StockItem.update(existingStock.id, {
+            quantity_on_hand: correctQuantity,
+            last_counted_date: new Date().toISOString().split('T')[0]
+          });
         } else if (correctQuantity > 0) {
-          stockOperations.push(
-            base44.entities.StockItem.create({
-              product_id: productId,
-              warehouse_location: location,
-              quantity_on_hand: correctQuantity,
-              quantity_reserved: 0,
-              last_counted_date: new Date().toISOString().split('T')[0]
-            })
-          );
+          await base44.entities.StockItem.create({
+            product_id: productId,
+            warehouse_location: location,
+            quantity_on_hand: correctQuantity,
+            quantity_reserved: 0,
+            last_counted_date: new Date().toISOString().split('T')[0]
+          });
         }
       }
 
       for (const item of stockItemsForProduct) {
         if (!locationStocks[item.warehouse_location] || locationStocks[item.warehouse_location] <= 0) {
-          stockOperations.push(base44.entities.StockItem.delete(item.id));
+          await base44.entities.StockItem.delete(item.id);
         }
       }
-
-      await Promise.all(stockOperations);
     } catch (error) {
       console.error('Error recalculating stock:', error);
     }
@@ -265,10 +255,7 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         invoice_category_id: movementType === "IN" && invoiceCategory ? invoiceCategory : undefined
       };
 
-      const parallelOperations = [
-        base44.entities.StockMovement.create(movementData),
-        recalculateStockForProduct(product.id)
-      ];
+      await base44.entities.StockMovement.create(movementData);
 
       // If linked to a PO, update the quantity_received and PO status
       if (movementType === "IN" && relatedPO && relatedPOItem) {
@@ -302,18 +289,16 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
             newStatus = "Confirmed";
           }
           
-          parallelOperations.push(
-            base44.entities.PurchaseOrder.update(relatedPO, {
-              items: updatedItems,
-              status: newStatus,
-              ...(allItemsFullyReceived ? { actual_delivery_date: new Date().toISOString().split('T')[0] } : {})
-            })
-          );
+          await base44.entities.PurchaseOrder.update(relatedPO, {
+            items: updatedItems,
+            status: newStatus,
+            ...(allItemsFullyReceived ? { actual_delivery_date: new Date().toISOString().split('T')[0] } : {})
+          });
         }
       }
 
-      // Execute all operations in parallel
-      await Promise.all(parallelOperations);
+      // Recalculate stock from all movements
+      await recalculateStockForProduct(product.id);
 
       onStockUpdated();
       onClose();

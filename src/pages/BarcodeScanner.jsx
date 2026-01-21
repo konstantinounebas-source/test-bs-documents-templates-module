@@ -754,61 +754,50 @@ export default function BarcodeScannerPage() {
         }
       }
 
-      // Execute all operations in parallel for maximum speed
-      const parallelOperations = [];
-
-      // 1. Create stock movement
-      parallelOperations.push(base44.entities.StockMovement.create(movementData));
-
-      // 2. Update ProductVendor if IN movement
+      // For IN movements, create or update ProductVendor relationship
       if (movementType === "IN" && selectedVendor && unitCost !== "") {
         const cost = parseFloat(unitCost);
-        parallelOperations.push(
-          (async () => {
-            const existingPVs = await base44.entities.ProductVendor.filter({
-              product_id: matchedProduct.id,
-              vendor_id: selectedVendor
-            });
-            
-            if (existingPVs.length === 0) {
-              return base44.entities.ProductVendor.create({
-                product_id: matchedProduct.id,
-                vendor_id: selectedVendor,
-                unit_cost: cost,
-                is_preferred: false,
-                is_active: true,
-                conversion_rate: parsedConversionRate,
-                bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
-              });
-            } else {
-              return base44.entities.ProductVendor.update(existingPVs[0].id, {
-                unit_cost: cost,
-                is_active: true,
-                conversion_rate: parsedConversionRate,
-                bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
-              });
-            }
-          })()
-        );
-      }
-
-      // 3. Update product company if changed
-      if (movementType === "IN" && selectedCompany) {
-        const currentProduct = products.find(p => p.id === matchedProduct.id);
-        if (currentProduct && selectedCompany !== currentProduct.company_id) {
-          parallelOperations.push(
-            base44.entities.Product.update(matchedProduct.id, {
-              company_id: selectedCompany
-            })
-          );
+        
+        const existingPVs = await base44.entities.ProductVendor.filter({
+          product_id: matchedProduct.id,
+          vendor_id: selectedVendor
+        });
+        
+        if (existingPVs.length === 0) {
+          await base44.entities.ProductVendor.create({
+            product_id: matchedProduct.id,
+            vendor_id: selectedVendor,
+            unit_cost: cost,
+            is_preferred: false,
+            is_active: true,
+            conversion_rate: parsedConversionRate,
+            bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
+          });
+        } else {
+          await base44.entities.ProductVendor.update(existingPVs[0].id, {
+            unit_cost: cost,
+            is_active: true,
+            conversion_rate: parsedConversionRate,
+            bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
+          });
         }
       }
 
-      // Execute all operations in parallel and recalculate stock
-      await Promise.all([
-        ...parallelOperations,
-        recalculateStockForProduct(matchedProduct.id)
-      ]);
+      // Update product company_id if changed
+      if (movementType === "IN" && selectedCompany) {
+        const currentProduct = products.find(p => p.id === matchedProduct.id);
+        if (currentProduct && selectedCompany !== currentProduct.company_id) {
+          await base44.entities.Product.update(matchedProduct.id, {
+            company_id: selectedCompany
+          });
+        }
+      }
+
+      // Create stock movement record
+      await base44.entities.StockMovement.create(movementData);
+
+      // Recalculate stock from all movements
+      await recalculateStockForProduct(matchedProduct.id);
       
       // Get charged person name for display
       let chargedPersonName = '';
@@ -883,8 +872,8 @@ export default function BarcodeScannerPage() {
       setPOItemInfo(null);
       setUploadedPhotos([]);
 
-      // Load data in background without blocking
-      loadData();
+      // Reload all data after all updates to reflect changes in stock and POs
+      await loadData();
       
     } catch (error) {
       console.error("Error processing stock movement:", error);
@@ -1023,20 +1012,18 @@ export default function BarcodeScannerPage() {
         Promise.all(selectedItems.map(item => recalculateStockForProduct(item.product_id)))
       ]);
 
-      // Close dialog immediately and load data in background
-      setShowPOSelectionDialog(false);
-      setSelectedPOForBulkReceive(null);
-      setPOItemsToReceive([]);
-      setToLocation("");
-      setUploadedPhotos([]);
-      
+      await loadData();
+
       setScanResult({ 
         type: 'success', 
         message: `✓ Successfully received ${selectedItems.length} items from PO ${po.po_number}` 
       });
 
-      // Load data in background without blocking UI
-      loadData();
+      setShowPOSelectionDialog(false);
+      setSelectedPOForBulkReceive(null);
+      setPOItemsToReceive([]);
+      setToLocation("");
+      setUploadedPhotos([]);
 
     } catch (error) {
       console.error("Error processing bulk receive:", error);
@@ -1219,98 +1206,94 @@ export default function BarcodeScannerPage() {
 
     setIsProcessing(true);
     try {
-      // Prepare all operations in parallel for maximum speed
-      const parallelOperations = [];
-      const productsToRecalculate = new Set();
-
       for (const item of bulkInvoiceItems) {
         const quantityNum = parseInt(item.quantity);
         const cost = parseFloat(item.unit_cost) || 0;
         const parsedConversionRate = parseFloat(item.conversion_rate) || 1;
-        const parsedBundleQty = item.bundle_quantity ? parseFloat(item.bundle_quantity) : null;
-        const baseQuantity = parsedBundleQty 
-          ? quantityNum * parsedConversionRate * parsedBundleQty
-          : quantityNum * parsedConversionRate;
-        const baseUnitCost = cost > 0 && parsedConversionRate > 0 
-          ? (parsedBundleQty ? cost / parsedConversionRate / parsedBundleQty : cost / parsedConversionRate)
-          : undefined;
+        const baseQuantity = quantityNum * parsedConversionRate;
+        const baseUnitCost = cost > 0 && parsedConversionRate > 0 ? cost / parsedConversionRate : undefined;
 
-        // 1. ProductVendor create/update
+        // Create or update ProductVendor if unit cost is provided
         if (cost > 0) {
-          parallelOperations.push(
-            (async () => {
-              const existingPVs = await base44.entities.ProductVendor.filter({
-                product_id: item.product_id,
-                vendor_id: bulkInvoiceVendor
-              });
-              
-              if (existingPVs.length === 0) {
-                return base44.entities.ProductVendor.create({
-                  product_id: item.product_id,
-                  vendor_id: bulkInvoiceVendor,
-                  unit_cost: cost,
-                  is_preferred: false,
-                  is_active: true,
-                  conversion_rate: parsedConversionRate,
-                  bundle_quantity: parsedBundleQty
-                });
-              } else {
-                return base44.entities.ProductVendor.update(existingPVs[0].id, {
-                  unit_cost: cost,
-                  is_active: true,
-                  conversion_rate: parsedConversionRate,
-                  bundle_quantity: parsedBundleQty
-                });
-              }
-            })()
-          );
-        }
-
-        // 2. Product company update
-        if (item.company_id) {
-          const currentProduct = products.find(p => p.id === item.product_id);
-          if (currentProduct && item.company_id !== currentProduct.company_id) {
-            parallelOperations.push(
-              base44.entities.Product.update(item.product_id, {
-                company_id: item.company_id
-              })
-            );
+          const existingPVs = await base44.entities.ProductVendor.filter({
+            product_id: item.product_id,
+            vendor_id: bulkInvoiceVendor
+          });
+          
+          if (existingPVs.length === 0) {
+            await base44.entities.ProductVendor.create({
+              product_id: item.product_id,
+              vendor_id: bulkInvoiceVendor,
+              unit_cost: cost,
+              is_preferred: false,
+              is_active: true,
+              conversion_rate: parsedConversionRate,
+              bundle_quantity: item.bundle_quantity ? parseFloat(item.bundle_quantity) : null
+            });
+          } else {
+            await base44.entities.ProductVendor.update(existingPVs[0].id, {
+              unit_cost: cost,
+              is_active: true,
+              conversion_rate: parsedConversionRate,
+              bundle_quantity: item.bundle_quantity ? parseFloat(item.bundle_quantity) : null
+            });
           }
         }
 
-        // 3. Stock movement creation
+        // Update product company if specified
+        if (item.company_id) {
+          const currentProduct = products.find(p => p.id === item.product_id);
+          if (currentProduct && item.company_id !== currentProduct.company_id) {
+            await base44.entities.Product.update(item.product_id, {
+              company_id: item.company_id
+            });
+          }
+        }
+
+        // Create stock movement
         const product = products.find(p => p.id === item.product_id);
-        parallelOperations.push(
-          base44.entities.StockMovement.create({
-            product_id: item.product_id,
-            movement_type: "IN",
-            quantity: quantityNum,
-            input_unit_of_measure: item.input_unit_subtype || product?.unit_of_measure,
-            conversion_rate: parsedConversionRate,
-            base_quantity: baseQuantity,
-            to_location: item.warehouse_location,
-            reference_type: "Invoice",
-            reference_id: bulkInvoiceNumber,
-            performed_by: currentUser.email,
-            waybill_number: bulkInvoiceWaybill || null,
-            unit_cost: cost > 0 ? cost : null,
-            base_unit_cost: baseUnitCost,
-            bundle_quantity: parsedBundleQty,
-            vendor_product_code: item.vendor_product_code || null,
-            invoice_category_id: item.invoice_category_id || null,
-            notes: `Bulk invoice entry: ${bulkInvoiceNumber}`
-          })
+        await base44.entities.StockMovement.create({
+          product_id: item.product_id,
+          movement_type: "IN",
+          quantity: quantityNum,
+          input_unit_of_measure: item.input_unit_subtype || product?.unit_of_measure,
+          conversion_rate: parsedConversionRate,
+          base_quantity: baseQuantity,
+          to_location: item.warehouse_location,
+          reference_type: "Invoice",
+          reference_id: bulkInvoiceNumber,
+          performed_by: currentUser.email,
+          waybill_number: bulkInvoiceWaybill || null,
+          unit_cost: cost > 0 ? cost : null,
+          base_unit_cost: baseUnitCost,
+          bundle_quantity: item.bundle_quantity ? parseFloat(item.bundle_quantity) : null,
+          vendor_product_code: item.vendor_product_code || null,
+          invoice_category_id: item.invoice_category_id || null,
+          notes: `Bulk invoice entry: ${bulkInvoiceNumber}`
+        });
+
+        // Update stock using base_quantity
+        const existingStock = stockItems.find(
+          s => s.product_id === item.product_id && s.warehouse_location === item.warehouse_location
         );
 
-        // Track products that need recalculation
-        productsToRecalculate.add(item.product_id);
+        if (existingStock) {
+          await base44.entities.StockItem.update(existingStock.id, {
+            quantity_on_hand: (existingStock.quantity_on_hand || 0) + baseQuantity
+          });
+        } else {
+          await base44.entities.StockItem.create({
+            product_id: item.product_id,
+            warehouse_location: item.warehouse_location,
+            quantity_on_hand: baseQuantity,
+            quantity_reserved: 0
+          });
+        }
+
+        await delay(200);
       }
 
-      // Execute all operations in parallel and recalculate stock
-      await Promise.all([
-        Promise.all(parallelOperations),
-        ...Array.from(productsToRecalculate).map(productId => recalculateStockForProduct(productId))
-      ]);
+      await loadData();
 
       setScanResult({ 
         type: 'success', 
@@ -1322,9 +1305,6 @@ export default function BarcodeScannerPage() {
       setBulkInvoiceNumber("");
       setBulkInvoiceWaybill("");
       setBulkInvoiceItems([]);
-
-      // Load data in background
-      loadData();
 
     } catch (error) {
       console.error("Error processing bulk invoice:", error);
