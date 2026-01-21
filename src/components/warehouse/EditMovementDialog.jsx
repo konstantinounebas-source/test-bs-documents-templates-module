@@ -162,15 +162,18 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
       // Extract PO ID if movement is linked to a PurchaseOrder
       let poId = '';
+      let vendorId = '';
       if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
         poId = movement.reference_id;
+      } else if (movement.reference_type === 'Vendor' && movement.reference_id) {
+        vendorId = movement.reference_id;
       }
 
       setFormData({
         notes: movement.notes || '',
         waybill_number: movement.waybill_number || '',
         reference_type: movement.reference_type || '',
-        reference_id: movement.reference_id || '',
+        reference_id: vendorId,
         unit_cost: vendorUnitCost,
         input_unit_subtype: inputUnitSubtype,
         conversion_rate: conversionRate || '1',
@@ -304,97 +307,109 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       
       console.log('Saving movement with data:', updateData);
 
+      // Execute all save operations in parallel for speed
+      const saveOperations = [onSave(movement.id, updateData)];
+
       // If IN movement and vendor/cost provided, update ProductVendor
       if (movement.movement_type === 'IN' && formData.reference_id && unitCost) {
         if (!isNaN(unitCost) && unitCost > 0) {
-          const existingPVs = await base44.entities.ProductVendor.filter({
-            product_id: movement.product_id,
-            vendor_id: formData.reference_id
-          });
+          saveOperations.push(
+            (async () => {
+              const existingPVs = await base44.entities.ProductVendor.filter({
+                product_id: movement.product_id,
+                vendor_id: formData.reference_id
+              });
 
-          const pvData = {
-            unit_cost: unitCost,
-            is_active: true,
-            conversion_rate: conversionRate,
-            vendor_product_code: formData.vendor_product_code || null
-          };
+              const pvData = {
+                unit_cost: unitCost,
+                is_active: true,
+                conversion_rate: conversionRate,
+                vendor_product_code: formData.vendor_product_code || null
+              };
 
-          if (existingPVs.length === 0) {
-            await base44.entities.ProductVendor.create({
-              product_id: movement.product_id,
-              vendor_id: formData.reference_id,
-              is_preferred: false,
-              ...pvData
-            });
-          } else {
-            await base44.entities.ProductVendor.update(existingPVs[0].id, pvData);
-          }
+              if (existingPVs.length === 0) {
+                await base44.entities.ProductVendor.create({
+                  product_id: movement.product_id,
+                  vendor_id: formData.reference_id,
+                  is_preferred: false,
+                  ...pvData
+                });
+              } else {
+                await base44.entities.ProductVendor.update(existingPVs[0].id, pvData);
+              }
+            })()
+          );
         }
       }
 
-      await onSave(movement.id, updateData);
+      // Wait for all parallel operations to complete
+      await Promise.all(saveOperations);
       
       // Recalculate stock for this product from all movements
       await recalculateStockForProduct(movement.product_id);
 
       // If PO was selected, update PO status
       if (formData.po_id) {
-        try {
-          const poList = await base44.entities.PurchaseOrder.filter({ id: formData.po_id });
-          if (poList && poList.length > 0) {
-            const poData = poList[0];
+        // Run PO update in parallel with closing (don't wait)
+        (async () => {
+          try {
+            const [poList, poMovements] = await Promise.all([
+              base44.entities.PurchaseOrder.filter({ id: formData.po_id }),
+              base44.entities.StockMovement.filter({
+                reference_type: 'PurchaseOrder',
+                reference_id: formData.po_id,
+                movement_type: 'IN'
+              })
+            ]);
             
-            // Get all movements for this PO
-            const poMovements = await base44.entities.StockMovement.filter({
-              reference_type: 'PurchaseOrder',
-              reference_id: formData.po_id,
-              movement_type: 'IN'
-            });
+            if (poList && poList.length > 0) {
+              const poData = poList[0];
 
-            // Calculate received quantities per product
-            const receivedByProduct = {};
-            poMovements.forEach(m => {
-              if (!receivedByProduct[m.product_id]) {
-                receivedByProduct[m.product_id] = 0;
-              }
-              receivedByProduct[m.product_id] += m.quantity || 0;
-            });
-
-            // Check if all items are received
-            let allItemsReceived = true;
-            let anyItemReceived = false;
-
-            if (poData.items && poData.items.length > 0) {
-              for (const item of poData.items) {
-                const ordered = item.quantity_ordered || 0;
-                const received = receivedByProduct[item.product_id] || 0;
-
-                if (received > 0) {
-                  anyItemReceived = true;
+              // Calculate received quantities per product
+              const receivedByProduct = {};
+              poMovements.forEach(m => {
+                if (!receivedByProduct[m.product_id]) {
+                  receivedByProduct[m.product_id] = 0;
                 }
-                if (received < ordered) {
-                  allItemsReceived = false;
-                }
-              }
-            }
-
-            // Update PO status
-            let newStatus = 'Confirmed';
-            if (allItemsReceived && poData.items && poData.items.length > 0) {
-              newStatus = 'Received';
-            } else if (anyItemReceived) {
-              newStatus = 'Partially Received';
-            }
-
-            if (poData.status !== newStatus) {
-              await base44.entities.PurchaseOrder.update(formData.po_id, {
-                status: newStatus
+                receivedByProduct[m.product_id] += m.quantity || 0;
               });
+
+              // Check if all items are received
+              let allItemsReceived = true;
+              let anyItemReceived = false;
+
+              if (poData.items && poData.items.length > 0) {
+                for (const item of poData.items) {
+                  const ordered = item.quantity_ordered || 0;
+                  const received = receivedByProduct[item.product_id] || 0;
+
+                  if (received > 0) {
+                    anyItemReceived = true;
+                  }
+                  if (received < ordered) {
+                    allItemsReceived = false;
+                  }
+                }
+              }
+
+              // Update PO status
+              let newStatus = 'Confirmed';
+              if (allItemsReceived && poData.items && poData.items.length > 0) {
+                newStatus = 'Received';
+              } else if (anyItemReceived) {
+                newStatus = 'Partially Received';
+              }
+
+              if (poData.status !== newStatus) {
+                await base44.entities.PurchaseOrder.update(formData.po_id, {
+                  status: newStatus
+                });
+              }
             }
+          } catch (error) {
+            console.error('Error updating PO status:', error);
           }
-        } catch (error) {
-          console.error('Error updating PO status:', error);
-        }
+        })();
       }
       
       onClose();
