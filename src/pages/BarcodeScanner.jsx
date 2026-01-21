@@ -804,11 +804,11 @@ export default function BarcodeScannerPage() {
         }
       }
 
-      // Execute all operations in parallel
-      await Promise.all(parallelOperations);
-
-      // Recalculate stock
-      await recalculateStockForProduct(matchedProduct.id);
+      // Execute all operations in parallel and recalculate stock
+      await Promise.all([
+        ...parallelOperations,
+        recalculateStockForProduct(matchedProduct.id)
+      ]);
       
       // Get charged person name for display
       let chargedPersonName = '';
