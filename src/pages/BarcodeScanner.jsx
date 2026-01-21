@@ -1004,26 +1004,28 @@ export default function BarcodeScannerPage() {
         }
       }
 
-      // Execute all operations in parallel
-      await Promise.all(parallelOperations);
+      // Execute all operations and load data in parallel for speed
+      await Promise.all([
+        // All create/update operations
+        Promise.all(parallelOperations),
+        // Recalculate stock for all products
+        Promise.all(selectedItems.map(item => recalculateStockForProduct(item.product_id)))
+      ]);
 
-      // Recalculate stock for all products in parallel
-      await Promise.all(
-        selectedItems.map(item => recalculateStockForProduct(item.product_id))
-      );
-
-      await loadData();
-
-      setScanResult({ 
-        type: 'success', 
-        message: `✓ Successfully received ${selectedItems.length} items from PO ${po.po_number}` 
-      });
-
+      // Close dialog immediately and load data in background
       setShowPOSelectionDialog(false);
       setSelectedPOForBulkReceive(null);
       setPOItemsToReceive([]);
       setToLocation("");
       setUploadedPhotos([]);
+      
+      setScanResult({ 
+        type: 'success', 
+        message: `✓ Successfully received ${selectedItems.length} items from PO ${po.po_number}` 
+      });
+
+      // Load data in background without blocking UI
+      loadData();
 
     } catch (error) {
       console.error("Error processing bulk receive:", error);
