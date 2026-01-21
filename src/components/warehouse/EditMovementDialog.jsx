@@ -126,7 +126,9 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   };
 
   useEffect(() => {
-    if (movement) {
+    const initializeForm = async () => {
+      if (!movement) return;
+      
       const currentProduct = products.find(p => p.id === movement.product_id);
       
       let conversionRate = '';
@@ -134,9 +136,28 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       let vendorProdCode = movement.vendor_product_code || '';
       let inputUnitSubtype = movement.input_unit_of_measure || currentProduct?.unit_of_measure || 'piece';
 
-      if (movement.reference_id && movement.product_id) {
+      // Extract PO ID and vendor ID
+      let poId = '';
+      let vendorId = '';
+      
+      if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
+        poId = movement.reference_id;
+        // Get vendor from PO
+        try {
+          const pos = await base44.entities.PurchaseOrder.filter({ id: movement.reference_id });
+          if (pos && pos.length > 0) {
+            vendorId = pos[0].vendor_id;
+          }
+        } catch (error) {
+          console.error('Error loading PO for vendor:', error);
+        }
+      } else if (movement.reference_type === 'Vendor' && movement.reference_id) {
+        vendorId = movement.reference_id;
+      }
+
+      if (vendorId && movement.product_id) {
         const pv = productVendors.find(
-          pv => pv.product_id === movement.product_id && pv.vendor_id === movement.reference_id
+          pv => pv.product_id === movement.product_id && pv.vendor_id === vendorId
         );
         if (pv) {
           if (pv.conversion_rate) {
@@ -160,15 +181,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         }
       }
 
-      // Extract PO ID if movement is linked to a PurchaseOrder
-      let poId = '';
-      let vendorId = '';
-      if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
-        poId = movement.reference_id;
-      } else if (movement.reference_type === 'Vendor' && movement.reference_id) {
-        vendorId = movement.reference_id;
-      }
-
       setFormData({
         notes: movement.notes || '',
         waybill_number: movement.waybill_number || '',
@@ -189,7 +201,9 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         po_id: poId,
         po_number: movement.po_number || ''
       });
-    }
+    };
+    
+    initializeForm();
   }, [movement, productVendors, products]);
 
   // Calculate unit cost when using total cost method
