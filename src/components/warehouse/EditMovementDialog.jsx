@@ -127,7 +127,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
   useEffect(() => {
     const initializeForm = async () => {
-      if (!movement) return;
+      if (!movement || !open) return;
       
       const currentProduct = products.find(p => p.id === movement.product_id);
       
@@ -142,7 +142,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       
       if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
         poId = movement.reference_id;
-        // Get vendor from PO
+        // Get vendor from PO - fetch fresh to ensure we have the data
         try {
           const pos = await base44.entities.PurchaseOrder.filter({ id: movement.reference_id });
           if (pos && pos.length > 0) {
@@ -204,7 +204,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     };
     
     initializeForm();
-  }, [movement, productVendors, products]);
+  }, [movement, productVendors, products, open]);
 
   // Calculate unit cost when using total cost method
   useEffect(() => {
