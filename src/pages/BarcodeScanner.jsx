@@ -115,68 +115,48 @@ export default function BarcodeScannerPage() {
 
   const loadData = useCallback(async () => {
     try {
-      // Load data sequentially with LARGER delays to avoid rate limiting
-      console.log("Loading products...");
-      const productsData = await base44.entities.Product.filter({ is_active: true });
+      // Load all data in parallel for much faster loading
+      const [
+        productsData,
+        stockData,
+        locationsData,
+        allPoData,
+        user,
+        sysUsers,
+        aUsers,
+        vendorsData,
+        pvData,
+        categoriesData,
+        companiesData,
+        invoiceCatsData,
+        movementsData
+      ] = await Promise.all([
+        base44.entities.Product.filter({ is_active: true }),
+        base44.entities.StockItem.list(),
+        base44.entities.WarehouseLocation.filter({ is_active: true }),
+        base44.entities.PurchaseOrder.list().catch(() => []),
+        base44.auth.me(),
+        base44.entities.User.list().catch(() => []),
+        base44.entities.AppUser.list().catch(() => []),
+        base44.entities.Vendor.filter({ is_active: true }),
+        base44.entities.ProductVendor.list().catch(() => []),
+        base44.entities.ProductCategory.filter({ is_active: true }),
+        base44.entities.Company.filter({ is_active: true }),
+        base44.entities.InvoiceCategory.filter({ is_active: true }),
+        base44.entities.StockMovement.list("-created_date")
+      ]);
+      
       setProducts(productsData);
-      
-      await delay(500);
-      console.log("Loading stock items...");
-      const stockData = await base44.entities.StockItem.list();
       setStockItems(stockData);
-      
-      await delay(500);
-      console.log("Loading locations...");
-      const locationsData = await base44.entities.WarehouseLocation.filter({ is_active: true });
       setLocations(locationsData);
-      
-      await delay(500);
-      console.log("Loading purchase orders...");
-      const allPoData = await base44.entities.PurchaseOrder.list().catch(() => []);
-      
-      await delay(500);
-      console.log("Loading current user...");
-      const user = await base44.auth.me();
       setCurrentUser(user);
-      
-      await delay(500);
-      console.log("Loading system users...");
-      const sysUsers = await base44.entities.User.list().catch(() => []);
       setSystemUsers(sysUsers);
-      
-      await delay(500);
-      console.log("Loading app users...");
-      const aUsers = await base44.entities.AppUser.list().catch(() => []);
       setAppUsers(aUsers);
-      
-      await delay(500);
-      console.log("Loading vendors...");
-      const vendorsData = await base44.entities.Vendor.filter({ is_active: true });
       setVendors(vendorsData);
-      
-      await delay(500);
-      console.log("Loading product vendors...");
-      const pvData = await base44.entities.ProductVendor.list().catch(() => []);
       setProductVendors(pvData);
-      
-      await delay(500);
-      console.log("Loading categories...");
-      const categoriesData = await base44.entities.ProductCategory.filter({ is_active: true });
       setCategories(categoriesData);
-      
-      await delay(500);
-      console.log("Loading companies...");
-      const companiesData = await base44.entities.Company.filter({ is_active: true });
       setCompanies(companiesData);
-      
-      await delay(500);
-      console.log("Loading invoice categories...");
-      const invoiceCatsData = await base44.entities.InvoiceCategory.filter({ is_active: true });
       setInvoiceCategories(invoiceCatsData);
-      
-      await delay(500);
-      console.log("Loading movements...");
-      const movementsData = await base44.entities.StockMovement.list("-created_date");
       setMovements(movementsData);
 
       // Process POs to include calculated received quantities based on movements

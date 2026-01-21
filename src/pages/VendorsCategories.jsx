@@ -97,40 +97,37 @@ export default function VendorsCategoriesPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Load data sequentially with delays to avoid rate limiting
-      const vendorsData = await base44.entities.Vendor.list("-updated_date");
+      // Load all data in parallel for much faster loading
+      const [
+        vendorsData,
+        categoriesData,
+        locationsData,
+        vendorCatsData,
+        vendorServsData,
+        companiesData,
+        invoiceCatsData,
+        teamsData,
+        materialCatsData
+      ] = await Promise.all([
+        base44.entities.Vendor.list("-updated_date"),
+        base44.entities.ProductCategory.list("-updated_date"),
+        base44.entities.WarehouseLocation.list("-updated_date"),
+        base44.entities.VendorCategory.list("-updated_date"),
+        base44.entities.VendorService.list("-updated_date"),
+        base44.entities.Company.list("-updated_date"),
+        base44.entities.InvoiceCategory.list("-updated_date"),
+        base44.entities.Team.list("-updated_date"),
+        base44.entities.MaterialCategory.list("-updated_date")
+      ]);
+      
       setVendors(vendorsData);
-      
-      await delay(300);
-      const categoriesData = await base44.entities.ProductCategory.list("-updated_date");
       setCategories(categoriesData);
-      
-      await delay(300);
-      const locationsData = await base44.entities.WarehouseLocation.list("-updated_date");
       setLocations(locationsData);
-      
-      await delay(300);
-      const vendorCatsData = await base44.entities.VendorCategory.list("-updated_date");
       setVendorCategories(vendorCatsData);
-      
-      await delay(300);
-      const vendorServsData = await base44.entities.VendorService.list("-updated_date");
       setVendorServices(vendorServsData);
-      
-      await delay(300);
-      const companiesData = await base44.entities.Company.list("-updated_date");
       setCompanies(companiesData);
-      
-      await delay(300);
-      const invoiceCatsData = await base44.entities.InvoiceCategory.list("-updated_date");
       setInvoiceCategories(invoiceCatsData);
-      
-      await delay(300);
-      const teamsData = await base44.entities.Team.list("-updated_date");
       setTeams(teamsData);
-      
-      await delay(300);
-      const materialCatsData = await base44.entities.MaterialCategory.list("-updated_date");
       setMaterialCategories(materialCatsData);
       
     } catch (error) {
