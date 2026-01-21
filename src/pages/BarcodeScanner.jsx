@@ -928,21 +928,12 @@ export default function BarcodeScannerPage() {
     setIsProcessing(true);
     try {
       const po = selectedPOForBulkReceive;
-      // const vendor = vendors.find(v => v.id === po.vendor_id); // Not used
+
+      // Create all operations in parallel for maximum speed
+      const parallelOperations = [];
 
       // Process each selected item
       for (const item of selectedItems) {
-        // Update product company if specified
-        if (item.company_id) {
-          const currentProduct = products.find(p => p.id === item.product_id);
-          if (currentProduct && item.company_id !== currentProduct.company_id) {
-            await base44.entities.Product.update(item.product_id, {
-              company_id: item.company_id
-            });
-          }
-        }
-
-        // Create stock movement
         const product = products.find(p => p.id === item.product_id);
         const itemConversionRate = parseFloat(item.conversion_rate) || 1;
         const itemBundleQty = parseFloat(item.bundle_quantity) || null;
@@ -953,52 +944,73 @@ export default function BarcodeScannerPage() {
           ? (itemBundleQty ? item.unit_cost / itemConversionRate / itemBundleQty : item.unit_cost / itemConversionRate)
           : undefined;
 
-        await base44.entities.StockMovement.create({
-          product_id: item.product_id,
-          movement_type: "IN",
-          quantity: item.quantity_to_receive,
-          input_unit_of_measure: item.input_unit_subtype || product?.unit_of_measure,
-          conversion_rate: itemConversionRate,
-          base_quantity: itemBaseQuantity,
-          to_location: toLocation,
-          reference_type: "PurchaseOrder",
-          reference_id: po.id,
-          performed_by: currentUser.email,
-          unit_cost: item.unit_cost || null,
-          base_unit_cost: itemBaseUnitCost,
-          bundle_quantity: item.bundle_quantity || null,
-          vendor_product_code: item.vendor_product_code || null,
-          invoice_category_id: item.invoice_category_id || null,
-          notes: `Bulk receive from PO ${po.po_number}`,
-          photos: uploadedPhotos.length > 0 ? uploadedPhotos : null
-        });
-
-        // Recalculate stock from all movements
-        await recalculateStockForProduct(item.product_id);
-
-        // Update ProductVendor if unit cost exists
-        if (item.unit_cost) {
-          const existingPVs = await base44.entities.ProductVendor.filter({
-            product_id: item.product_id,
-            vendor_id: po.vendor_id
-          });
-          
-          if (existingPVs.length === 0) {
-            await base44.entities.ProductVendor.create({
-              product_id: item.product_id,
-              vendor_id: po.vendor_id,
-              unit_cost: item.unit_cost,
-              is_preferred: false,
-              is_active: true,
-              conversion_rate: itemConversionRate,
-              bundle_quantity: item.bundle_quantity
-            });
+        // Add product company update if needed
+        if (item.company_id) {
+          const currentProduct = products.find(p => p.id === item.product_id);
+          if (currentProduct && item.company_id !== currentProduct.company_id) {
+            parallelOperations.push(
+              base44.entities.Product.update(item.product_id, {
+                company_id: item.company_id
+              })
+            );
           }
         }
 
-        // Small delay between items to avoid rate limiting
-        await delay(200);
+        // Add stock movement creation
+        parallelOperations.push(
+          base44.entities.StockMovement.create({
+            product_id: item.product_id,
+            movement_type: "IN",
+            quantity: item.quantity_to_receive,
+            input_unit_of_measure: item.input_unit_subtype || product?.unit_of_measure,
+            conversion_rate: itemConversionRate,
+            base_quantity: itemBaseQuantity,
+            to_location: toLocation,
+            reference_type: "PurchaseOrder",
+            reference_id: po.id,
+            performed_by: currentUser.email,
+            unit_cost: item.unit_cost || null,
+            base_unit_cost: itemBaseUnitCost,
+            bundle_quantity: item.bundle_quantity || null,
+            vendor_product_code: item.vendor_product_code || null,
+            invoice_category_id: item.invoice_category_id || null,
+            notes: `Bulk receive from PO ${po.po_number}`,
+            photos: uploadedPhotos.length > 0 ? uploadedPhotos : null
+          })
+        );
+
+        // Add ProductVendor update if needed
+        if (item.unit_cost) {
+          parallelOperations.push(
+            (async () => {
+              const existingPVs = await base44.entities.ProductVendor.filter({
+                product_id: item.product_id,
+                vendor_id: po.vendor_id
+              });
+              
+              if (existingPVs.length === 0) {
+                return base44.entities.ProductVendor.create({
+                  product_id: item.product_id,
+                  vendor_id: po.vendor_id,
+                  unit_cost: item.unit_cost,
+                  is_preferred: false,
+                  is_active: true,
+                  conversion_rate: itemConversionRate,
+                  bundle_quantity: item.bundle_quantity
+                });
+              }
+            })()
+          );
+        }
       }
+
+      // Execute all operations in parallel
+      await Promise.all(parallelOperations);
+
+      // Recalculate stock for all products in parallel
+      await Promise.all(
+        selectedItems.map(item => recalculateStockForProduct(item.product_id))
+      );
 
       await loadData();
 
