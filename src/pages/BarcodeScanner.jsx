@@ -882,6 +882,9 @@ export default function BarcodeScannerPage() {
       setNotes("");
       setPOItemInfo(null);
       setUploadedPhotos([]);
+
+      // Load data in background without blocking
+      loadData();
       
     } catch (error) {
       console.error("Error processing stock movement:", error);
