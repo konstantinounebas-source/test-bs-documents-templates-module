@@ -261,14 +261,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         ? (bundleQty ? unitCost / conversionRate / bundleQty : unitCost / conversionRate)
         : undefined;
 
-      // Update product company_id if changed
-      const currentProduct = products.find(p => p.id === movement.product_id);
-      if (currentProduct && formData.company_id !== currentProduct.company_id) {
-        await base44.entities.Product.update(movement.product_id, {
-          company_id: formData.company_id || null
-        });
-      }
-
       // Determine reference_type and reference_id based on PO or Vendor selection
       let referenceType = null;
       let referenceId = null;
@@ -313,13 +305,26 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       
       console.log('Saving movement with data:', updateData);
 
-      // Execute all save operations in parallel for speed
-      const saveOperations = [onSave(movement.id, updateData)];
+      // Execute all operations in parallel for maximum speed
+      const parallelOperations = [];
+      
+      // 1. Save movement
+      parallelOperations.push(onSave(movement.id, updateData));
+      
+      // 2. Update product company_id if changed
+      const currentProduct = products.find(p => p.id === movement.product_id);
+      if (currentProduct && formData.company_id !== currentProduct.company_id) {
+        parallelOperations.push(
+          base44.entities.Product.update(movement.product_id, {
+            company_id: formData.company_id || null
+          })
+        );
+      }
 
-      // If IN movement and vendor/cost provided, update ProductVendor
+      // 3. Update ProductVendor if IN movement
       if (movement.movement_type === 'IN' && formData.reference_id && unitCost) {
         if (!isNaN(unitCost) && unitCost > 0) {
-          saveOperations.push(
+          parallelOperations.push(
             (async () => {
               const existingPVs = await base44.entities.ProductVendor.filter({
                 product_id: movement.product_id,
@@ -334,31 +339,24 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
               };
 
               if (existingPVs.length === 0) {
-                await base44.entities.ProductVendor.create({
+                return base44.entities.ProductVendor.create({
                   product_id: movement.product_id,
                   vendor_id: formData.reference_id,
                   is_preferred: false,
                   ...pvData
                 });
               } else {
-                await base44.entities.ProductVendor.update(existingPVs[0].id, pvData);
+                return base44.entities.ProductVendor.update(existingPVs[0].id, pvData);
               }
             })()
           );
         }
       }
 
-      // Wait for all parallel operations to complete
-      await Promise.all(saveOperations);
-      
-      // Recalculate stock for this product from all movements
-      await recalculateStockForProduct(movement.product_id);
-
-      // If PO was selected, update PO status
+      // 4. Update PO status if PO was selected
       if (formData.po_id) {
-        // Run PO update in parallel with closing (don't wait)
-        (async () => {
-          try {
+        parallelOperations.push(
+          (async () => {
             const [poList, poMovements] = await Promise.all([
               base44.entities.PurchaseOrder.filter({ id: formData.po_id }),
               base44.entities.StockMovement.filter({
@@ -371,7 +369,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
             if (poList && poList.length > 0) {
               const poData = poList[0];
 
-              // Calculate received quantities per product
               const receivedByProduct = {};
               poMovements.forEach(m => {
                 if (!receivedByProduct[m.product_id]) {
@@ -380,7 +377,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                 receivedByProduct[m.product_id] += m.quantity || 0;
               });
 
-              // Check if all items are received
               let allItemsReceived = true;
               let anyItemReceived = false;
 
@@ -398,7 +394,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                 }
               }
 
-              // Update PO status
               let newStatus = 'Confirmed';
               if (allItemsReceived && poData.items && poData.items.length > 0) {
                 newStatus = 'Received';
@@ -407,16 +402,20 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
               }
 
               if (poData.status !== newStatus) {
-                await base44.entities.PurchaseOrder.update(formData.po_id, {
+                return base44.entities.PurchaseOrder.update(formData.po_id, {
                   status: newStatus
                 });
               }
             }
-          } catch (error) {
-            console.error('Error updating PO status:', error);
-          }
-        })();
+          })()
+        );
       }
+
+      // Execute all operations in parallel
+      await Promise.all(parallelOperations);
+      
+      // Recalculate stock after all updates
+      await recalculateStockForProduct(movement.product_id);
       
       onClose();
     } catch (error) {
