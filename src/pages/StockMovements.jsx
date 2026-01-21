@@ -47,27 +47,32 @@ export default function StockMovementsPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Load data sequentially with delays to avoid rate limiting
-      console.log("Loading movements...");
-      const movementsData = await base44.entities.StockMovement.list("-created_date");
-      setMovements(movementsData);
-      
-      await delay(400);
-      console.log("Loading products...");
-      const productsData = await base44.entities.Product.list();
-      setProducts(productsData);
-      
-      await delay(400);
-      console.log("Loading locations...");
-      const locationsData = await base44.entities.WarehouseLocation.list();
-      setLocations(locationsData);
-      
-      await delay(400);
-      console.log("Loading users...");
-      const [systemUsers, appUsers] = await Promise.all([
+      // Load all data in parallel - much faster
+      const [
+        movementsData,
+        productsData,
+        locationsData,
+        systemUsers,
+        appUsers,
+        vendorsData,
+        pvData,
+        categoriesData,
+        companiesData
+      ] = await Promise.all([
+        base44.entities.StockMovement.list("-created_date", 500),
+        base44.entities.Product.list(),
+        base44.entities.WarehouseLocation.list(),
         base44.entities.User.list().catch(() => []),
-        (async () => { await delay(200); return base44.entities.AppUser.list().catch(() => []); })()
+        base44.entities.AppUser.list().catch(() => []),
+        base44.entities.Vendor.filter({ is_active: true }),
+        base44.entities.ProductVendor.list().catch(() => []),
+        base44.entities.ProductCategory.filter({ is_active: true }),
+        base44.entities.Company.filter({ is_active: true })
       ]);
+      
+      setMovements(movementsData);
+      setProducts(productsData);
+      setLocations(locationsData);
       
       // Combine system and app users
       const allUsers = [
@@ -76,27 +81,11 @@ export default function StockMovementsPage() {
       ];
       setUsers(allUsers);
       
-      await delay(400);
-      console.log("Loading vendors...");
-      const vendorsData = await base44.entities.Vendor.filter({ is_active: true });
       setVendors(vendorsData);
-      
-      await delay(400);
-      console.log("Loading product vendors...");
-      const pvData = await base44.entities.ProductVendor.list().catch(() => []);
       setProductVendors(pvData);
-      
-      await delay(400);
-      console.log("Loading categories...");
-      const categoriesData = await base44.entities.ProductCategory.filter({ is_active: true });
       setCategories(categoriesData);
-      
-      await delay(400);
-      console.log("Loading companies...");
-      const companiesData = await base44.entities.Company.filter({ is_active: true });
       setCompanies(companiesData);
       
-      console.log("Data loaded successfully");
     } catch (error) {
       console.error("Error loading data:", error);
     }
