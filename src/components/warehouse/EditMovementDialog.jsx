@@ -101,35 +101,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   }, [vendors]);
 
   useEffect(() => {
-    const loadDataAndInitialize = async () => {
-      if (open && movement) {
-        await Promise.all([loadInvoiceCategories(), loadPurchaseOrders()]);
-      }
-    };
-    loadDataAndInitialize();
-  }, [open, movement]);
-
-  const loadInvoiceCategories = async () => {
-    try {
-      const invoiceCatsData = await base44.entities.InvoiceCategory.filter({ is_active: true });
-      setInvoiceCategories(invoiceCatsData);
-    } catch (error) {
-      console.error("Error loading invoice categories:", error);
-    }
-  };
-
-  const loadPurchaseOrders = async () => {
-    try {
-      const pos = await base44.entities.PurchaseOrder.list();
-      setPurchaseOrders(pos);
-    } catch (error) {
-      console.error("Error loading purchase orders:", error);
-    }
-  };
-
-  useEffect(() => {
     const initializeForm = async () => {
-      if (!movement) return;
+      if (!open || !movement) return;
       
       const currentProduct = products.find(p => p.id === movement.product_id);
       
@@ -138,6 +111,21 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       let vendorProdCode = movement.vendor_product_code || '';
       let inputUnitSubtype = movement.input_unit_of_measure || currentProduct?.unit_of_measure || 'piece';
 
+      // Load POs and invoice categories first
+      let loadedPOs = [];
+      let loadedInvoiceCategories = [];
+      
+      try {
+        [loadedPOs, loadedInvoiceCategories] = await Promise.all([
+          base44.entities.PurchaseOrder.list(),
+          base44.entities.InvoiceCategory.filter({ is_active: true })
+        ]);
+        setPurchaseOrders(loadedPOs);
+        setInvoiceCategories(loadedInvoiceCategories);
+      } catch (error) {
+        console.error('Error loading POs and invoice categories:', error);
+      }
+
       // Extract PO ID and vendor ID
       let poId = '';
       let vendorId = '';
@@ -145,13 +133,9 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
         poId = movement.reference_id;
         // Get vendor from PO
-        try {
-          const pos = await base44.entities.PurchaseOrder.filter({ id: movement.reference_id });
-          if (pos && pos.length > 0) {
-            vendorId = pos[0].vendor_id;
-          }
-        } catch (error) {
-          console.error('Error loading PO for vendor:', error);
+        const po = loadedPOs.find(p => p.id === movement.reference_id);
+        if (po) {
+          vendorId = po.vendor_id;
         }
       } else if (movement.reference_type === 'Vendor' && movement.reference_id) {
         vendorId = movement.reference_id;
@@ -206,7 +190,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     };
     
     initializeForm();
-  }, [movement, productVendors, products]);
+  }, [open, movement, productVendors, products]);
 
   // Calculate unit cost when using total cost method
   useEffect(() => {
@@ -643,11 +627,14 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                         <SelectContent>
                           <SelectItem value="none">-- Χωρίς PO --</SelectItem>
                           {purchaseOrders
-                            .filter(po => 
-                              po.status !== 'Received' &&
-                              po.items && 
-                              po.items.some(item => item.product_id === movement.product_id)
-                            )
+                            .filter(po => {
+                              // Always show the currently selected PO
+                              if (po.id === formData.po_id) return true;
+                              // Filter out fully received POs that are not the current one
+                              if (po.status === 'Received') return false;
+                              // Show POs that have this product
+                              return po.items && po.items.some(item => item.product_id === movement.product_id);
+                            })
                             .map(po => (
                               <SelectItem key={po.id} value={po.id}>
                                 {po.po_number} ({po.status})
