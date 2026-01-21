@@ -315,6 +315,66 @@ export default function BarcodeScannerPage() {
     }
   }, [costInputMethod, quantity, totalItemCost, discount, movementType, selectedPO]);
 
+  const recalculateStockForProduct = async (productId) => {
+    try {
+      const allMovements = await base44.entities.StockMovement.filter({ product_id: productId });
+      const stockItemsForProduct = await base44.entities.StockItem.filter({ product_id: productId });
+      
+      const locationStocks = {};
+      
+      allMovements.forEach(mov => {
+        const baseQty = mov.base_quantity || 
+          (mov.quantity * (mov.conversion_rate || 1) * (mov.bundle_quantity || 1));
+
+        if (mov.movement_type === 'IN' && mov.to_location) {
+          locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
+        } else if (mov.movement_type === 'OUT' && mov.from_location) {
+          locationStocks[mov.from_location] = (locationStocks[mov.from_location] || 0) - baseQty;
+        } else if (mov.movement_type === 'TRANSFER') {
+          if (mov.from_location) {
+            locationStocks[mov.from_location] = (locationStocks[mov.from_location] || 0) - baseQty;
+          }
+          if (mov.to_location) {
+            locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
+          }
+        } else if (mov.movement_type === 'ADJUSTMENT') {
+          const location = mov.to_location || mov.from_location;
+          if (location) {
+            locationStocks[location] = (locationStocks[location] || 0) + baseQty;
+          }
+        }
+      });
+      
+      for (const location in locationStocks) {
+        const existingStock = stockItemsForProduct.find(si => si.warehouse_location === location);
+        const correctQuantity = Math.max(0, locationStocks[location]);
+        
+        if (existingStock) {
+          await base44.entities.StockItem.update(existingStock.id, {
+            quantity_on_hand: correctQuantity,
+            last_counted_date: new Date().toISOString().split('T')[0]
+          });
+        } else if (correctQuantity > 0) {
+          await base44.entities.StockItem.create({
+            product_id: productId,
+            warehouse_location: location,
+            quantity_on_hand: correctQuantity,
+            quantity_reserved: 0,
+            last_counted_date: new Date().toISOString().split('T')[0]
+          });
+        }
+      }
+
+      for (const item of stockItemsForProduct) {
+        if (!locationStocks[item.warehouse_location] || locationStocks[item.warehouse_location] <= 0) {
+          await base44.entities.StockItem.delete(item.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error recalculating stock:', error);
+    }
+  };
+
   const loadRecentScans = () => {
     try {
       const stored = localStorage.getItem('recentlyScannedProducts');
@@ -756,60 +816,8 @@ export default function BarcodeScannerPage() {
       // Create stock movement record
       await base44.entities.StockMovement.create(movementData);
 
-      // Update stock items using base_quantity
-      if (movementType === "IN" || movementType === "ADJUSTMENT") {
-        const existingStock = stockItems.find(
-          s => s.product_id === matchedProduct.id && s.warehouse_location === toLocation
-        );
-
-        if (existingStock) {
-          await base44.entities.StockItem.update(existingStock.id, {
-            quantity_on_hand: (existingStock.quantity_on_hand || 0) + baseQuantity
-          });
-        } else {
-          await base44.entities.StockItem.create({
-            product_id: matchedProduct.id,
-            warehouse_location: toLocation,
-            quantity_on_hand: baseQuantity,
-            quantity_reserved: 0
-          });
-        }
-      } else if (movementType === "OUT") {
-        const existingStock = stockItems.find(
-          s => s.product_id === matchedProduct.id && s.warehouse_location === fromLocation
-        );
-
-        if (existingStock) {
-          await base44.entities.StockItem.update(existingStock.id, {
-            quantity_on_hand: Math.max(0, (existingStock.quantity_on_hand || 0) - baseQuantity)
-          });
-        }
-      } else if (movementType === "TRANSFER") {
-        const fromStock = stockItems.find(
-          s => s.product_id === matchedProduct.id && s.warehouse_location === fromLocation
-        );
-        if (fromStock) {
-          await base44.entities.StockItem.update(fromStock.id, {
-            quantity_on_hand: Math.max(0, (fromStock.quantity_on_hand || 0) - baseQuantity)
-          });
-        }
-
-        const toStock = stockItems.find(
-          s => s.product_id === matchedProduct.id && s.warehouse_location === toLocation
-        );
-        if (toStock) {
-          await base44.entities.StockItem.update(toStock.id, {
-            quantity_on_hand: (toStock.quantity_on_hand || 0) + baseQuantity
-          });
-        } else {
-          await base44.entities.StockItem.create({
-            product_id: matchedProduct.id,
-            warehouse_location: toLocation,
-            quantity_on_hand: baseQuantity,
-            quantity_reserved: 0
-          });
-        }
-      }
+      // Recalculate stock from all movements
+      await recalculateStockForProduct(matchedProduct.id);
 
       // Reload all data after all updates to reflect changes in stock and POs
       await loadData();
@@ -957,8 +965,13 @@ export default function BarcodeScannerPage() {
         // Create stock movement
         const product = products.find(p => p.id === item.product_id);
         const itemConversionRate = parseFloat(item.conversion_rate) || 1;
-        const itemBaseQuantity = item.quantity_to_receive * itemConversionRate;
-        const itemBaseUnitCost = item.unit_cost && itemConversionRate > 0 ? item.unit_cost / itemConversionRate : undefined;
+        const itemBundleQty = parseFloat(item.bundle_quantity) || null;
+        const itemBaseQuantity = itemBundleQty 
+          ? item.quantity_to_receive * itemConversionRate * itemBundleQty
+          : item.quantity_to_receive * itemConversionRate;
+        const itemBaseUnitCost = item.unit_cost && itemConversionRate > 0 
+          ? (itemBundleQty ? item.unit_cost / itemConversionRate / itemBundleQty : item.unit_cost / itemConversionRate)
+          : undefined;
 
         await base44.entities.StockMovement.create({
           product_id: item.product_id,
@@ -980,23 +993,8 @@ export default function BarcodeScannerPage() {
           photos: uploadedPhotos.length > 0 ? uploadedPhotos : null
         });
 
-        // Update stock using base_quantity
-        const existingStock = stockItems.find(
-          s => s.product_id === item.product_id && s.warehouse_location === toLocation
-        );
-
-        if (existingStock) {
-          await base44.entities.StockItem.update(existingStock.id, {
-            quantity_on_hand: (existingStock.quantity_on_hand || 0) + itemBaseQuantity
-          });
-        } else {
-          await base44.entities.StockItem.create({
-            product_id: item.product_id,
-            warehouse_location: toLocation,
-            quantity_on_hand: itemBaseQuantity,
-            quantity_reserved: 0
-          });
-        }
+        // Recalculate stock from all movements
+        await recalculateStockForProduct(item.product_id);
 
         // Update ProductVendor if unit cost exists
         if (item.unit_cost) {

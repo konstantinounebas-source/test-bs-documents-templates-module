@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -18,6 +17,66 @@ export default function ImportStockMovementsDialog({ open, onClose, onMovementsI
   const [error, setError] = useState('');
   const [previewData, setPreviewData] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+
+  const recalculateStockForProduct = async (productId) => {
+    try {
+      const allMovements = await base44.entities.StockMovement.filter({ product_id: productId });
+      const stockItemsForProduct = await base44.entities.StockItem.filter({ product_id: productId });
+      
+      const locationStocks = {};
+      
+      allMovements.forEach(mov => {
+        const baseQty = mov.base_quantity || 
+          (mov.quantity * (mov.conversion_rate || 1) * (mov.bundle_quantity || 1));
+
+        if (mov.movement_type === 'IN' && mov.to_location) {
+          locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
+        } else if (mov.movement_type === 'OUT' && mov.from_location) {
+          locationStocks[mov.from_location] = (locationStocks[mov.from_location] || 0) - baseQty;
+        } else if (mov.movement_type === 'TRANSFER') {
+          if (mov.from_location) {
+            locationStocks[mov.from_location] = (locationStocks[mov.from_location] || 0) - baseQty;
+          }
+          if (mov.to_location) {
+            locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
+          }
+        } else if (mov.movement_type === 'ADJUSTMENT') {
+          const location = mov.to_location || mov.from_location;
+          if (location) {
+            locationStocks[location] = (locationStocks[location] || 0) + baseQty;
+          }
+        }
+      });
+      
+      for (const location in locationStocks) {
+        const existingStock = stockItemsForProduct.find(si => si.warehouse_location === location);
+        const correctQuantity = Math.max(0, locationStocks[location]);
+        
+        if (existingStock) {
+          await base44.entities.StockItem.update(existingStock.id, {
+            quantity_on_hand: correctQuantity,
+            last_counted_date: new Date().toISOString().split('T')[0]
+          });
+        } else if (correctQuantity > 0) {
+          await base44.entities.StockItem.create({
+            product_id: productId,
+            warehouse_location: location,
+            quantity_on_hand: correctQuantity,
+            quantity_reserved: 0,
+            last_counted_date: new Date().toISOString().split('T')[0]
+          });
+        }
+      }
+
+      for (const item of stockItemsForProduct) {
+        if (!locationStocks[item.warehouse_location] || locationStocks[item.warehouse_location] <= 0) {
+          await base44.entities.StockItem.delete(item.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error recalculating stock:', error);
+    }
+  };
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
@@ -244,82 +303,12 @@ export default function ImportStockMovementsDialog({ open, onClose, onMovementsI
           };
 
           // Create movement
-          const newMovement = await base44.entities.StockMovement.create(newMovementData);
+          await base44.entities.StockMovement.create(newMovementData);
           
-          // Update stock items
-          if (movementData.movement_type === "IN" && movementData.to_location) {
-            const existingStock = currentStock.find(
-              s => s.product_id === product.id && s.warehouse_location === movementData.to_location
-            );
+          // Recalculate stock for this product
+          await recalculateStockForProduct(product.id);
 
-            if (existingStock) {
-              const newQuantity = (existingStock.quantity_on_hand || 0) + movementData.quantity;
-              await base44.entities.StockItem.update(existingStock.id, {
-                quantity_on_hand: newQuantity
-              });
-              // Update local stock for next iteration
-              existingStock.quantity_on_hand = newQuantity;
-            } else {
-              const newStock = await base44.entities.StockItem.create({
-                product_id: product.id,
-                warehouse_location: movementData.to_location,
-                quantity_on_hand: movementData.quantity,
-                quantity_reserved: 0
-              });
-              currentStock.push(newStock); // Add new stock item to local state
-            }
-          } else if (movementData.movement_type === "OUT" && movementData.from_location) {
-            const existingStock = currentStock.find(
-              s => s.product_id === product.id && s.warehouse_location === movementData.from_location
-            );
-
-            if (existingStock) {
-              const newQuantity = Math.max(0, (existingStock.quantity_on_hand || 0) - movementData.quantity);
-              await base44.entities.StockItem.update(existingStock.id, {
-                quantity_on_hand: newQuantity
-              });
-              // Update local stock for next iteration
-              existingStock.quantity_on_hand = newQuantity;
-            }
-          } else if (movementData.movement_type === "TRANSFER") {
-            // Remove from source
-            if (movementData.from_location) {
-              const fromStock = currentStock.find(
-                s => s.product_id === product.id && s.warehouse_location === movementData.from_location
-              );
-              if (fromStock) {
-                const newQuantity = Math.max(0, (fromStock.quantity_on_hand || 0) - movementData.quantity);
-                await base44.entities.StockItem.update(fromStock.id, {
-                  quantity_on_hand: newQuantity
-                });
-                fromStock.quantity_on_hand = newQuantity; // Update local state
-              }
-            }
-
-            // Add to destination
-            if (movementData.to_location) {
-              const toStock = currentStock.find(
-                s => s.product_id === product.id && s.warehouse_location === movementData.to_location
-              );
-              if (toStock) {
-                const newQuantity = (toStock.quantity_on_hand || 0) + movementData.quantity;
-                await base44.entities.StockItem.update(toStock.id, {
-                  quantity_on_hand: newQuantity
-                });
-                toStock.quantity_on_hand = newQuantity; // Update local state
-              } else {
-                const newStock = await base44.entities.StockItem.create({
-                  product_id: product.id,
-                  warehouse_location: movementData.to_location,
-                  quantity_on_hand: movementData.quantity,
-                  quantity_reserved: 0
-                });
-                currentStock.push(newStock); // Add new stock item to local state
-              }
-            }
-          }
-
-          successfulImports.push(newMovement);
+          successfulImports.push(product.sku);
 
         } catch (movementError) {
           console.error(`Failed to import movement ${i + 1}:`, movementError);
