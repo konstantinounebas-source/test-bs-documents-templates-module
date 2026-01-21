@@ -75,18 +75,16 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
 
   const loadData = async () => {
     if (!product) return;
-    setIsProcessing(true); // Using isProcessing for initial data load too
+    setIsProcessing(true);
     setValidationError("");
 
     try {
       const [locationsData, poData, user, sysUsers, aUsers, movementsData, invoiceCatsData, vendorsData, companiesData] = await Promise.all([
         base44.entities.WarehouseLocation.filter({ is_active: true }),
-        // Fetch all relevant POs including 'Received' to allow toggling
         base44.entities.PurchaseOrder.filter({ status: ["Confirmed", "Partially Received", "Received"] }).catch(() => []),
         base44.auth.me(),
         base44.entities.User.list().catch(() => []),
         base44.entities.AppUser.list().catch(() => []),
-        // Fetch movement history for the current product
         base44.entities.StockMovement.filter({ product_id: product.id, _limit: 10, _sort: '-created_at' }).catch(() => []),
         base44.entities.InvoiceCategory.filter({ is_active: true }).catch(() => []),
         base44.entities.Vendor.filter({ is_active: true }).catch(() => []),
@@ -95,18 +93,15 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       
       setLocations(locationsData);
       
-      // Filter POs that have this product, regardless of received status for initial load
       const relevantPOsForAllStatuses = poData.filter(po => 
-        po.items && po.items.some(item => 
-          item.product_id === product.id
-        )
+        po.items && po.items.some(item => item.product_id === product.id)
       );
       setPurchaseOrders(relevantPOsForAllStatuses);
       
       setCurrentUser(user);
       setSystemUsers(sysUsers);
       setAppUsers(aUsers);
-      setMovementHistory(movementsData); // Set movement history
+      setMovementHistory(movementsData);
       setInvoiceCategories(invoiceCatsData);
       setVendors(vendorsData);
       setCompanies(companiesData);
@@ -115,6 +110,76 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       setValidationError("Failed to load necessary data. Please try again.");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const recalculateStockForProduct = async (productId) => {
+    try {
+      const [allMovements, stockItemsForProduct] = await Promise.all([
+        base44.entities.StockMovement.filter({ product_id: productId }),
+        base44.entities.StockItem.filter({ product_id: productId })
+      ]);
+      
+      const locationStocks = {};
+      
+      allMovements.forEach(mov => {
+        const baseQty = mov.base_quantity || 
+          (mov.quantity * (mov.conversion_rate || 1) * (mov.bundle_quantity || 1));
+
+        if (mov.movement_type === 'IN' && mov.to_location) {
+          locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
+        } else if (mov.movement_type === 'OUT' && mov.from_location) {
+          locationStocks[mov.from_location] = (locationStocks[mov.from_location] || 0) - baseQty;
+        } else if (mov.movement_type === 'TRANSFER') {
+          if (mov.from_location) {
+            locationStocks[mov.from_location] = (locationStocks[mov.from_location] || 0) - baseQty;
+          }
+          if (mov.to_location) {
+            locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
+          }
+        } else if (mov.movement_type === 'ADJUSTMENT') {
+          const location = mov.to_location || mov.from_location;
+          if (location) {
+            locationStocks[location] = (locationStocks[location] || 0) + baseQty;
+          }
+        }
+      });
+      
+      const stockOperations = [];
+      
+      for (const location in locationStocks) {
+        const existingStock = stockItemsForProduct.find(si => si.warehouse_location === location);
+        const correctQuantity = Math.max(0, locationStocks[location]);
+        
+        if (existingStock) {
+          stockOperations.push(
+            base44.entities.StockItem.update(existingStock.id, {
+              quantity_on_hand: correctQuantity,
+              last_counted_date: new Date().toISOString().split('T')[0]
+            })
+          );
+        } else if (correctQuantity > 0) {
+          stockOperations.push(
+            base44.entities.StockItem.create({
+              product_id: productId,
+              warehouse_location: location,
+              quantity_on_hand: correctQuantity,
+              quantity_reserved: 0,
+              last_counted_date: new Date().toISOString().split('T')[0]
+            })
+          );
+        }
+      }
+
+      for (const item of stockItemsForProduct) {
+        if (!locationStocks[item.warehouse_location] || locationStocks[item.warehouse_location] <= 0) {
+          stockOperations.push(base44.entities.StockItem.delete(item.id));
+        }
+      }
+
+      await Promise.all(stockOperations);
+    } catch (error) {
+      console.error('Error recalculating stock:', error);
     }
   };
 
