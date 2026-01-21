@@ -126,85 +126,77 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   };
 
   useEffect(() => {
-    const initializeForm = async () => {
-      if (!movement || !open) return;
-      
-      const currentProduct = products.find(p => p.id === movement.product_id);
-      
-      let conversionRate = '';
-      let vendorUnitCost = movement.unit_cost || '';
-      let vendorProdCode = movement.vendor_product_code || '';
-      let inputUnitSubtype = movement.input_unit_of_measure || currentProduct?.unit_of_measure || 'piece';
-
-      // Extract PO ID and vendor ID
-      let poId = '';
-      let vendorId = '';
-      
-      if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
-        poId = movement.reference_id;
-        // Get vendor from PO - fetch fresh to ensure we have the data
-        try {
-          const pos = await base44.entities.PurchaseOrder.filter({ id: movement.reference_id });
-          if (pos && pos.length > 0) {
-            vendorId = pos[0].vendor_id;
-          }
-        } catch (error) {
-          console.error('Error loading PO for vendor:', error);
-        }
-      } else if (movement.reference_type === 'Vendor' && movement.reference_id) {
-        vendorId = movement.reference_id;
-      }
-
-      if (vendorId && movement.product_id) {
-        const pv = productVendors.find(
-          pv => pv.product_id === movement.product_id && pv.vendor_id === vendorId
-        );
-        if (pv) {
-          if (pv.conversion_rate) {
-            conversionRate = String(pv.conversion_rate);
-          } else if (pv.bundle_quantity) {
-            conversionRate = String(pv.bundle_quantity);
-          }
-          if (!vendorUnitCost && pv.unit_cost) {
-            vendorUnitCost = String(pv.unit_cost);
-          }
-          if (!vendorProdCode && pv.vendor_product_code) {
-            vendorProdCode = pv.vendor_product_code;
-          }
-        }
-      }
-
-      // For OUT movements without unit_cost, use product's current unit_cost
-      if (movement.movement_type === 'OUT' && (!vendorUnitCost || parseFloat(vendorUnitCost) === 0)) {
-        if (currentProduct && currentProduct.unit_cost) {
-          vendorUnitCost = String(currentProduct.unit_cost);
-        }
-      }
-
-      setFormData({
-        notes: movement.notes || '',
-        waybill_number: movement.waybill_number || '',
-        reference_type: movement.reference_type || '',
-        reference_id: vendorId,
-        unit_cost: vendorUnitCost,
-        input_unit_subtype: inputUnitSubtype,
-        conversion_rate: conversionRate || '1',
-        bundle_quantity: movement.bundle_quantity ? String(movement.bundle_quantity) : '',
-        vendor_product_code: vendorProdCode,
-        invoice_category_id: movement.invoice_category_id || '',
-        company_id: currentProduct?.company_id || '',
-        cost_input_method: 'unit',
-        total_item_cost: '',
-        discount: '0',
-        quantity: movement.quantity ? String(movement.quantity) : '',
-        warehouse_location: movement.warehouse_location || '',
-        po_id: poId,
-        po_number: movement.po_number || ''
-      });
-    };
+    if (!movement || !open) return;
     
-    initializeForm();
-  }, [movement, productVendors, products, open]);
+    const currentProduct = products.find(p => p.id === movement.product_id);
+    
+    let conversionRate = '';
+    let vendorUnitCost = movement.unit_cost || '';
+    let vendorProdCode = movement.vendor_product_code || '';
+    let inputUnitSubtype = movement.input_unit_of_measure || currentProduct?.unit_of_measure || 'piece';
+
+    // Extract PO ID and vendor ID
+    let poId = '';
+    let vendorId = '';
+    
+    if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
+      poId = movement.reference_id;
+      // Get vendor from PO using the purchaseOrders state
+      const po = purchaseOrders.find(p => p.id === movement.reference_id);
+      if (po) {
+        vendorId = po.vendor_id;
+      }
+    } else if (movement.reference_type === 'Vendor' && movement.reference_id) {
+      vendorId = movement.reference_id;
+    }
+
+    if (vendorId && movement.product_id) {
+      const pv = productVendors.find(
+        pv => pv.product_id === movement.product_id && pv.vendor_id === vendorId
+      );
+      if (pv) {
+        if (pv.conversion_rate) {
+          conversionRate = String(pv.conversion_rate);
+        } else if (pv.bundle_quantity) {
+          conversionRate = String(pv.bundle_quantity);
+        }
+        if (!vendorUnitCost && pv.unit_cost) {
+          vendorUnitCost = String(pv.unit_cost);
+        }
+        if (!vendorProdCode && pv.vendor_product_code) {
+          vendorProdCode = pv.vendor_product_code;
+        }
+      }
+    }
+
+    // For OUT movements without unit_cost, use product's current unit_cost
+    if (movement.movement_type === 'OUT' && (!vendorUnitCost || parseFloat(vendorUnitCost) === 0)) {
+      if (currentProduct && currentProduct.unit_cost) {
+        vendorUnitCost = String(currentProduct.unit_cost);
+      }
+    }
+
+    setFormData({
+      notes: movement.notes || '',
+      waybill_number: movement.waybill_number || '',
+      reference_type: movement.reference_type || '',
+      reference_id: vendorId,
+      unit_cost: vendorUnitCost,
+      input_unit_subtype: inputUnitSubtype,
+      conversion_rate: conversionRate || '1',
+      bundle_quantity: movement.bundle_quantity ? String(movement.bundle_quantity) : '',
+      vendor_product_code: vendorProdCode,
+      invoice_category_id: movement.invoice_category_id || '',
+      company_id: currentProduct?.company_id || '',
+      cost_input_method: 'unit',
+      total_item_cost: '',
+      discount: '0',
+      quantity: movement.quantity ? String(movement.quantity) : '',
+      warehouse_location: movement.warehouse_location || '',
+      po_id: poId,
+      po_number: movement.po_number || ''
+    });
+  }, [movement, productVendors, products, open, purchaseOrders]);
 
   // Calculate unit cost when using total cost method
   useEffect(() => {
