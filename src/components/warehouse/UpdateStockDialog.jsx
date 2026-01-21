@@ -200,17 +200,18 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         invoice_category_id: movementType === "IN" && invoiceCategory ? invoiceCategory : undefined
       };
 
-      await base44.entities.StockMovement.create(movementData);
+      const parallelOperations = [
+        base44.entities.StockMovement.create(movementData),
+        recalculateStockForProduct(product.id)
+      ];
 
       // If linked to a PO, update the quantity_received and PO status
       if (movementType === "IN" && relatedPO && relatedPOItem) {
         const po = purchaseOrders.find(p => p.id === relatedPO);
         if (po) {
           const updatedItems = po.items.map(item => {
-            // Update the specific item in the PO that matches the product_id selected
             if (item.product_id === relatedPOItem) { 
               const newQuantityReceived = (item.quantity_received || 0) + numericQuantity;
-              // Ensure we don't exceed ordered quantity
               return {
                 ...item,
                 quantity_received: Math.min(newQuantityReceived, item.quantity_ordered)
@@ -219,124 +220,35 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
             return item;
           });
 
-          // Check if all items in the PO are fully received (considering all items, not just the current product)
           const allItemsFullyReceived = updatedItems.every(item => 
             item.quantity_received >= item.quantity_ordered
           );
           
-          // Check if any item has been received at all
           const anyItemReceived = updatedItems.some(item => 
             (item.quantity_received || 0) > 0
           );
 
-          let newStatus = po.status; // Default to current status
+          let newStatus = po.status;
           if (allItemsFullyReceived) {
             newStatus = "Received";
           } else if (anyItemReceived) {
             newStatus = "Partially Received";
           } else {
-            newStatus = "Confirmed"; // Should not happen if anyItemReceived is true for a PO with items
+            newStatus = "Confirmed";
           }
           
-          await base44.entities.PurchaseOrder.update(relatedPO, {
-            items: updatedItems,
-            status: newStatus,
-            ...(allItemsFullyReceived ? { actual_delivery_date: new Date().toISOString().split('T')[0] } : {})
-          });
+          parallelOperations.push(
+            base44.entities.PurchaseOrder.update(relatedPO, {
+              items: updatedItems,
+              status: newStatus,
+              ...(allItemsFullyReceived ? { actual_delivery_date: new Date().toISOString().split('T')[0] } : {})
+            })
+          );
         }
       }
 
-      // Update stock items
-      if (movementType === "IN") {
-        const existingStock = await base44.entities.StockItem.filter({
-          product_id: product.id,
-          warehouse_location: toLocation
-        });
-
-        if (existingStock.length > 0) {
-          const stock = existingStock[0];
-          await base44.entities.StockItem.update(stock.id, {
-            quantity_on_hand: (stock.quantity_on_hand || 0) + numericQuantity,
-            last_counted_date: new Date().toISOString().split('T')[0]
-          });
-        } else {
-          await base44.entities.StockItem.create({
-            product_id: product.id,
-            warehouse_location: toLocation,
-            quantity_on_hand: numericQuantity,
-            quantity_reserved: 0,
-            last_counted_date: new Date().toISOString().split('T')[0]
-          });
-        }
-      } else if (movementType === "OUT") {
-        const stock = await base44.entities.StockItem.filter({
-          product_id: product.id,
-          warehouse_location: fromLocation
-        });
-
-        if (stock.length > 0) {
-          const currentQuantity = stock[0].quantity_on_hand || 0;
-          if (currentQuantity < numericQuantity) {
-            setValidationError(`Cannot move out ${numericQuantity} units. Only ${currentQuantity} units available at ${fromLocation}.`);
-            setIsProcessing(false);
-            return;
-          }
-
-          await base44.entities.StockItem.update(stock[0].id, {
-            quantity_on_hand: currentQuantity - numericQuantity,
-            last_counted_date: new Date().toISOString().split('T')[0]
-          });
-        } else {
-          setValidationError(`No stock found for this product at location ${fromLocation} to move out.`);
-          setIsProcessing(false);
-          return;
-        }
-      } else if (movementType === "TRANSFER") {
-        // Decrease from source
-        const fromStock = await base44.entities.StockItem.filter({
-          product_id: product.id,
-          warehouse_location: fromLocation
-        });
-
-        if (fromStock.length > 0) {
-          const currentQuantity = fromStock[0].quantity_on_hand || 0;
-          if (currentQuantity < numericQuantity) {
-            setValidationError(`Cannot transfer ${numericQuantity} units. Only ${currentQuantity} units available at ${fromLocation}.`);
-            setIsProcessing(false);
-            return;
-          }
-
-          await base44.entities.StockItem.update(fromStock[0].id, {
-            quantity_on_hand: currentQuantity - numericQuantity,
-            last_counted_date: new Date().toISOString().split('T')[0]
-          });
-        } else {
-          setValidationError(`No stock found for this product at source location ${fromLocation} to transfer.`);
-          setIsProcessing(false);
-          return;
-        }
-
-        // Increase at destination
-        const toStock = await base44.entities.StockItem.filter({
-          product_id: product.id,
-          warehouse_location: toLocation
-        });
-
-        if (toStock.length > 0) {
-          await base44.entities.StockItem.update(toStock[0].id, {
-            quantity_on_hand: (toStock[0].quantity_on_hand || 0) + numericQuantity,
-            last_counted_date: new Date().toISOString().split('T')[0]
-          });
-        } else {
-          await base44.entities.StockItem.create({
-            product_id: product.id,
-            warehouse_location: toLocation,
-            quantity_on_hand: numericQuantity,
-            quantity_reserved: 0,
-            last_counted_date: new Date().toISOString().split('T')[0]
-          });
-        }
-      }
+      // Execute all operations in parallel
+      await Promise.all(parallelOperations);
 
       onStockUpdated();
       onClose();

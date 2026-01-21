@@ -188,10 +188,11 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
         base_unit_cost: baseUnitCost
       };
 
-      await base44.entities.StockMovement.create(movementData);
-
-      // Recalculate stock from all movements
-      await recalculateStockForProduct(product.id);
+      // Execute movement creation and stock recalculation in parallel
+      await Promise.all([
+        base44.entities.StockMovement.create(movementData),
+        recalculateStockForProduct(product.id)
+      ]);
 
       onStockUpdated();
       onClose();
