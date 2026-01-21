@@ -754,50 +754,61 @@ export default function BarcodeScannerPage() {
         }
       }
 
-      // For IN movements, create or update ProductVendor relationship
+      // Execute all operations in parallel for maximum speed
+      const parallelOperations = [];
+
+      // 1. Create stock movement
+      parallelOperations.push(base44.entities.StockMovement.create(movementData));
+
+      // 2. Update ProductVendor if IN movement
       if (movementType === "IN" && selectedVendor && unitCost !== "") {
         const cost = parseFloat(unitCost);
-        
-        const existingPVs = await base44.entities.ProductVendor.filter({
-          product_id: matchedProduct.id,
-          vendor_id: selectedVendor
-        });
-        
-        if (existingPVs.length === 0) {
-          await base44.entities.ProductVendor.create({
-            product_id: matchedProduct.id,
-            vendor_id: selectedVendor,
-            unit_cost: cost,
-            is_preferred: false,
-            is_active: true,
-            conversion_rate: parsedConversionRate,
-            bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
-          });
-        } else {
-          await base44.entities.ProductVendor.update(existingPVs[0].id, {
-            unit_cost: cost,
-            is_active: true,
-            conversion_rate: parsedConversionRate,
-            bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
-          });
-        }
+        parallelOperations.push(
+          (async () => {
+            const existingPVs = await base44.entities.ProductVendor.filter({
+              product_id: matchedProduct.id,
+              vendor_id: selectedVendor
+            });
+            
+            if (existingPVs.length === 0) {
+              return base44.entities.ProductVendor.create({
+                product_id: matchedProduct.id,
+                vendor_id: selectedVendor,
+                unit_cost: cost,
+                is_preferred: false,
+                is_active: true,
+                conversion_rate: parsedConversionRate,
+                bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
+              });
+            } else {
+              return base44.entities.ProductVendor.update(existingPVs[0].id, {
+                unit_cost: cost,
+                is_active: true,
+                conversion_rate: parsedConversionRate,
+                bundle_quantity: bundleQuantity ? parseFloat(bundleQuantity) : null
+              });
+            }
+          })()
+        );
       }
 
-      // Update product company_id if changed
+      // 3. Update product company if changed
       if (movementType === "IN" && selectedCompany) {
         const currentProduct = products.find(p => p.id === matchedProduct.id);
         if (currentProduct && selectedCompany !== currentProduct.company_id) {
-          await base44.entities.Product.update(matchedProduct.id, {
-            company_id: selectedCompany
-          });
+          parallelOperations.push(
+            base44.entities.Product.update(matchedProduct.id, {
+              company_id: selectedCompany
+            })
+          );
         }
       }
 
-      // Create stock movement record
-      await base44.entities.StockMovement.create(movementData);
-
-      // Recalculate stock from all movements
-      await recalculateStockForProduct(matchedProduct.id);
+      // Execute all operations in parallel and recalculate stock
+      await Promise.all([
+        ...parallelOperations,
+        recalculateStockForProduct(matchedProduct.id)
+      ]);
       
       // Get charged person name for display
       let chargedPersonName = '';
@@ -872,8 +883,8 @@ export default function BarcodeScannerPage() {
       setPOItemInfo(null);
       setUploadedPhotos([]);
 
-      // Reload all data after all updates to reflect changes in stock and POs
-      await loadData();
+      // Load data in background without blocking
+      loadData();
       
     } catch (error) {
       console.error("Error processing stock movement:", error);
@@ -1012,18 +1023,20 @@ export default function BarcodeScannerPage() {
         Promise.all(selectedItems.map(item => recalculateStockForProduct(item.product_id)))
       ]);
 
-      await loadData();
-
-      setScanResult({ 
-        type: 'success', 
-        message: `✓ Successfully received ${selectedItems.length} items from PO ${po.po_number}` 
-      });
-
+      // Close dialog immediately and load data in background
       setShowPOSelectionDialog(false);
       setSelectedPOForBulkReceive(null);
       setPOItemsToReceive([]);
       setToLocation("");
       setUploadedPhotos([]);
+      
+      setScanResult({ 
+        type: 'success', 
+        message: `✓ Successfully received ${selectedItems.length} items from PO ${po.po_number}` 
+      });
+
+      // Load data in background without blocking UI
+      loadData();
 
     } catch (error) {
       console.error("Error processing bulk receive:", error);

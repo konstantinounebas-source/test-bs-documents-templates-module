@@ -75,16 +75,18 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
 
   const loadData = async () => {
     if (!product) return;
-    setIsProcessing(true);
+    setIsProcessing(true); // Using isProcessing for initial data load too
     setValidationError("");
 
     try {
       const [locationsData, poData, user, sysUsers, aUsers, movementsData, invoiceCatsData, vendorsData, companiesData] = await Promise.all([
         base44.entities.WarehouseLocation.filter({ is_active: true }),
+        // Fetch all relevant POs including 'Received' to allow toggling
         base44.entities.PurchaseOrder.filter({ status: ["Confirmed", "Partially Received", "Received"] }).catch(() => []),
         base44.auth.me(),
         base44.entities.User.list().catch(() => []),
         base44.entities.AppUser.list().catch(() => []),
+        // Fetch movement history for the current product
         base44.entities.StockMovement.filter({ product_id: product.id, _limit: 10, _sort: '-created_at' }).catch(() => []),
         base44.entities.InvoiceCategory.filter({ is_active: true }).catch(() => []),
         base44.entities.Vendor.filter({ is_active: true }).catch(() => []),
@@ -93,15 +95,18 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       
       setLocations(locationsData);
       
+      // Filter POs that have this product, regardless of received status for initial load
       const relevantPOsForAllStatuses = poData.filter(po => 
-        po.items && po.items.some(item => item.product_id === product.id)
+        po.items && po.items.some(item => 
+          item.product_id === product.id
+        )
       );
       setPurchaseOrders(relevantPOsForAllStatuses);
       
       setCurrentUser(user);
       setSystemUsers(sysUsers);
       setAppUsers(aUsers);
-      setMovementHistory(movementsData);
+      setMovementHistory(movementsData); // Set movement history
       setInvoiceCategories(invoiceCatsData);
       setVendors(vendorsData);
       setCompanies(companiesData);
@@ -110,66 +115,6 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       setValidationError("Failed to load necessary data. Please try again.");
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const recalculateStockForProduct = async (productId) => {
-    try {
-      const allMovements = await base44.entities.StockMovement.filter({ product_id: productId });
-      const stockItemsForProduct = await base44.entities.StockItem.filter({ product_id: productId });
-      
-      const locationStocks = {};
-      
-      allMovements.forEach(mov => {
-        const baseQty = mov.base_quantity || 
-          (mov.quantity * (mov.conversion_rate || 1) * (mov.bundle_quantity || 1));
-
-        if (mov.movement_type === 'IN' && mov.to_location) {
-          locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
-        } else if (mov.movement_type === 'OUT' && mov.from_location) {
-          locationStocks[mov.from_location] = (locationStocks[mov.from_location] || 0) - baseQty;
-        } else if (mov.movement_type === 'TRANSFER') {
-          if (mov.from_location) {
-            locationStocks[mov.from_location] = (locationStocks[mov.from_location] || 0) - baseQty;
-          }
-          if (mov.to_location) {
-            locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
-          }
-        } else if (mov.movement_type === 'ADJUSTMENT') {
-          const location = mov.to_location || mov.from_location;
-          if (location) {
-            locationStocks[location] = (locationStocks[location] || 0) + baseQty;
-          }
-        }
-      });
-      
-      for (const location in locationStocks) {
-        const existingStock = stockItemsForProduct.find(si => si.warehouse_location === location);
-        const correctQuantity = Math.max(0, locationStocks[location]);
-        
-        if (existingStock) {
-          await base44.entities.StockItem.update(existingStock.id, {
-            quantity_on_hand: correctQuantity,
-            last_counted_date: new Date().toISOString().split('T')[0]
-          });
-        } else if (correctQuantity > 0) {
-          await base44.entities.StockItem.create({
-            product_id: productId,
-            warehouse_location: location,
-            quantity_on_hand: correctQuantity,
-            quantity_reserved: 0,
-            last_counted_date: new Date().toISOString().split('T')[0]
-          });
-        }
-      }
-
-      for (const item of stockItemsForProduct) {
-        if (!locationStocks[item.warehouse_location] || locationStocks[item.warehouse_location] <= 0) {
-          await base44.entities.StockItem.delete(item.id);
-        }
-      }
-    } catch (error) {
-      console.error('Error recalculating stock:', error);
     }
   };
 
@@ -262,8 +207,10 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         const po = purchaseOrders.find(p => p.id === relatedPO);
         if (po) {
           const updatedItems = po.items.map(item => {
+            // Update the specific item in the PO that matches the product_id selected
             if (item.product_id === relatedPOItem) { 
               const newQuantityReceived = (item.quantity_received || 0) + numericQuantity;
+              // Ensure we don't exceed ordered quantity
               return {
                 ...item,
                 quantity_received: Math.min(newQuantityReceived, item.quantity_ordered)
@@ -272,21 +219,23 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
             return item;
           });
 
+          // Check if all items in the PO are fully received (considering all items, not just the current product)
           const allItemsFullyReceived = updatedItems.every(item => 
             item.quantity_received >= item.quantity_ordered
           );
           
+          // Check if any item has been received at all
           const anyItemReceived = updatedItems.some(item => 
             (item.quantity_received || 0) > 0
           );
 
-          let newStatus = po.status;
+          let newStatus = po.status; // Default to current status
           if (allItemsFullyReceived) {
             newStatus = "Received";
           } else if (anyItemReceived) {
             newStatus = "Partially Received";
           } else {
-            newStatus = "Confirmed";
+            newStatus = "Confirmed"; // Should not happen if anyItemReceived is true for a PO with items
           }
           
           await base44.entities.PurchaseOrder.update(relatedPO, {
@@ -297,8 +246,97 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
         }
       }
 
-      // Recalculate stock from all movements
-      await recalculateStockForProduct(product.id);
+      // Update stock items
+      if (movementType === "IN") {
+        const existingStock = await base44.entities.StockItem.filter({
+          product_id: product.id,
+          warehouse_location: toLocation
+        });
+
+        if (existingStock.length > 0) {
+          const stock = existingStock[0];
+          await base44.entities.StockItem.update(stock.id, {
+            quantity_on_hand: (stock.quantity_on_hand || 0) + numericQuantity,
+            last_counted_date: new Date().toISOString().split('T')[0]
+          });
+        } else {
+          await base44.entities.StockItem.create({
+            product_id: product.id,
+            warehouse_location: toLocation,
+            quantity_on_hand: numericQuantity,
+            quantity_reserved: 0,
+            last_counted_date: new Date().toISOString().split('T')[0]
+          });
+        }
+      } else if (movementType === "OUT") {
+        const stock = await base44.entities.StockItem.filter({
+          product_id: product.id,
+          warehouse_location: fromLocation
+        });
+
+        if (stock.length > 0) {
+          const currentQuantity = stock[0].quantity_on_hand || 0;
+          if (currentQuantity < numericQuantity) {
+            setValidationError(`Cannot move out ${numericQuantity} units. Only ${currentQuantity} units available at ${fromLocation}.`);
+            setIsProcessing(false);
+            return;
+          }
+
+          await base44.entities.StockItem.update(stock[0].id, {
+            quantity_on_hand: currentQuantity - numericQuantity,
+            last_counted_date: new Date().toISOString().split('T')[0]
+          });
+        } else {
+          setValidationError(`No stock found for this product at location ${fromLocation} to move out.`);
+          setIsProcessing(false);
+          return;
+        }
+      } else if (movementType === "TRANSFER") {
+        // Decrease from source
+        const fromStock = await base44.entities.StockItem.filter({
+          product_id: product.id,
+          warehouse_location: fromLocation
+        });
+
+        if (fromStock.length > 0) {
+          const currentQuantity = fromStock[0].quantity_on_hand || 0;
+          if (currentQuantity < numericQuantity) {
+            setValidationError(`Cannot transfer ${numericQuantity} units. Only ${currentQuantity} units available at ${fromLocation}.`);
+            setIsProcessing(false);
+            return;
+          }
+
+          await base44.entities.StockItem.update(fromStock[0].id, {
+            quantity_on_hand: currentQuantity - numericQuantity,
+            last_counted_date: new Date().toISOString().split('T')[0]
+          });
+        } else {
+          setValidationError(`No stock found for this product at source location ${fromLocation} to transfer.`);
+          setIsProcessing(false);
+          return;
+        }
+
+        // Increase at destination
+        const toStock = await base44.entities.StockItem.filter({
+          product_id: product.id,
+          warehouse_location: toLocation
+        });
+
+        if (toStock.length > 0) {
+          await base44.entities.StockItem.update(toStock[0].id, {
+            quantity_on_hand: (toStock[0].quantity_on_hand || 0) + numericQuantity,
+            last_counted_date: new Date().toISOString().split('T')[0]
+          });
+        } else {
+          await base44.entities.StockItem.create({
+            product_id: product.id,
+            warehouse_location: toLocation,
+            quantity_on_hand: numericQuantity,
+            quantity_reserved: 0,
+            last_counted_date: new Date().toISOString().split('T')[0]
+          });
+        }
+      }
 
       onStockUpdated();
       onClose();
