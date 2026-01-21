@@ -101,11 +101,13 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   }, [vendors]);
 
   useEffect(() => {
-    if (open) {
-      loadInvoiceCategories();
-      loadPurchaseOrders();
-    }
-  }, [open]);
+    const loadDataAndInitialize = async () => {
+      if (open && movement) {
+        await Promise.all([loadInvoiceCategories(), loadPurchaseOrders()]);
+      }
+    };
+    loadDataAndInitialize();
+  }, [open, movement]);
 
   const loadInvoiceCategories = async () => {
     try {
@@ -641,10 +643,14 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                         <SelectContent>
                           <SelectItem value="none">-- Χωρίς PO --</SelectItem>
                           {purchaseOrders
-                            .filter(po => po.items && po.items.some(item => item.product_id === movement.product_id))
+                            .filter(po => 
+                              po.status !== 'Received' &&
+                              po.items && 
+                              po.items.some(item => item.product_id === movement.product_id)
+                            )
                             .map(po => (
                               <SelectItem key={po.id} value={po.id}>
-                                {po.po_number}
+                                {po.po_number} ({po.status})
                               </SelectItem>
                             ))}
                         </SelectContent>
