@@ -133,6 +133,20 @@ export default function OrdersManagementPage() {
       alert("Please select at least one sticker item");
       return;
     }
+
+    // Get the first selected item to find its category/template
+    const firstItemId = selectedItemIds[0];
+    const firstItem = stickerItems.find(i => i.id === firstItemId);
+    const firstTemplate = stickerTemplates.find(t => t.id === firstItem?.sticker_template_id);
+    
+    // Get default vendor from the first sticker template's category if available
+    const defaultVendor = firstTemplate?.default_vendor || "";
+
+    setOrderFormData({
+      vendor: defaultVendor,
+      order_date: new Date().toISOString().split('T')[0],
+      reason: "Initial"
+    });
     setCreateDialogOpen(true);
   };
 
