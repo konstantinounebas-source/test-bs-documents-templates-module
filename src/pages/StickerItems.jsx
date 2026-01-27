@@ -282,9 +282,7 @@ export default function StickerItemsPage() {
                   filteredItems.map((item) => (
                     <TableRow key={item.id}>
                        <TableCell className="font-medium">{getStopName(item.stop_id)}</TableCell>
-                       <TableCell className="font-mono text-sm">{item.id}</TableCell>
                        <TableCell>{getStickerTemplateName(item.sticker_template_id)}</TableCell>
-                       <TableCell>{item.print_line_2}</TableCell>
                        <TableCell>{getStatusBadge(item.status)}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{item.custody_status}</Badge>
