@@ -29,7 +29,7 @@ export default function ApplyStickerRequirementsDialog({ open, onClose, shelterT
       base44.entities.StickerTemplate.list()
     ]);
 
-    const filteredStops = allStops.filter(s => s.shelter_type_id === shelterType.id);
+    const filteredStops = allStops.filter(s => s.shelter_type_id === shelterType.shelter_type_id);
     setStops(filteredStops);
     setRequirements(reqs);
     setStickerTemplates(templates);
