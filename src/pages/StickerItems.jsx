@@ -10,7 +10,6 @@ import { Search, Edit, PackageCheck, Users, AlertCircle, CheckCircle, History } 
 import { Badge } from "@/components/ui/badge";
 import EditStickerItemDialog from "@/components/stickers/EditStickerItemDialog";
 import ReorderStickerDialog from "@/components/stickers/ReorderStickerDialog";
-import ReopenStickerDialog from "@/components/stickers/ReopenStickerDialog";
 import HandoverStickerDialog from "@/components/stickers/HandoverStickerDialog";
 import ViewStickerHistoryDialog from "@/components/stickers/ViewStickerHistoryDialog";
 
@@ -20,7 +19,6 @@ export default function StickerItemsPage() {
   const [filterCustodyStatus, setFilterCustodyStatus] = useState("all");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
-  const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
   const [handoverDialogOpen, setHandoverDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -137,26 +135,6 @@ export default function StickerItemsPage() {
       new_status: data.status,
       reorder_reason: data.reorder_reason,
       notes: data.comments,
-      user_email: user.email
-    });
-    
-    queryClient.invalidateQueries(['stickerItems']);
-  };
-
-  const handleReopen = (item) => {
-    setSelectedItem(item);
-    setReopenDialogOpen(true);
-  };
-
-  const handleReopenConfirm = async (data) => {
-    const user = await base44.auth.me();
-    
-    await base44.entities.StickerItem.update(selectedItem.id, data);
-    
-    await base44.entities.StickerMovementLog.create({
-      sticker_item_id: selectedItem.id,
-      action_type: "Status Change",
-      notes: `Reorder cancelled. ${data.comments}`,
       user_email: user.email
     });
     
@@ -343,25 +321,15 @@ export default function StickerItemsPage() {
                           >
                             <Users className="w-4 h-4 text-blue-600" />
                           </Button>
-                          {item.need_reorder ? (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleReopen(item)}
-                              title="Cancel Reorder"
-                            >
-                              <AlertCircle className="w-4 h-4 text-red-600" />
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleReorder(item)}
-                              title="Mark for Reorder"
-                            >
-                              <AlertCircle className="w-4 h-4 text-orange-600" />
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleReorder(item)}
+                            title="Mark for Reorder"
+                            disabled={item.need_reorder}
+                          >
+                            <AlertCircle className="w-4 h-4 text-orange-600" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -413,13 +381,6 @@ export default function StickerItemsPage() {
         onClose={() => setReorderDialogOpen(false)}
         stickerItem={selectedItem}
         onConfirm={handleReorderConfirm}
-      />
-
-      <ReopenStickerDialog
-        open={reopenDialogOpen}
-        onClose={() => setReopenDialogOpen(false)}
-        stickerItem={selectedItem}
-        onConfirm={handleReopenConfirm}
       />
 
       <HandoverStickerDialog
