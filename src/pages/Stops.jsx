@@ -379,6 +379,9 @@ export default function StopsPage() {
                             {checkStickersMismatch(stop) && (
                               <AlertCircle className="w-4 h-4 text-red-500" title="Stickers may not match the approved type" />
                             )}
+                            {checkNameLengthExceeded(stop) && (
+                              <AlertCircle className="w-4 h-4 text-orange-500" title={checkNameLengthExceeded(stop).join(", ")} />
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>{stop.current_planned_installation_date || "-"}</TableCell>
