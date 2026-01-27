@@ -343,15 +343,25 @@ export default function StickerItemsPage() {
                           >
                             <Users className="w-4 h-4 text-blue-600" />
                           </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleReorder(item)}
-                            title="Mark for Reorder"
-                            disabled={item.need_reorder}
-                          >
-                            <AlertCircle className="w-4 h-4 text-orange-600" />
-                          </Button>
+                          {item.need_reorder ? (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleReopen(item)}
+                              title="Cancel Reorder"
+                            >
+                              <AlertCircle className="w-4 h-4 text-red-600" />
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleReorder(item)}
+                              title="Mark for Reorder"
+                            >
+                              <AlertCircle className="w-4 h-4 text-orange-600" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
