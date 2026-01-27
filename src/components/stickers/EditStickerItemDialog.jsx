@@ -332,6 +332,16 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
             </div>
           </div>
           <DialogFooter>
+            {stickerItem?.installed && (
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={handleReopen}
+                disabled={loading}
+              >
+                Reopen
+              </Button>
+            )}
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
