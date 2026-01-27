@@ -105,9 +105,22 @@ export default function OrdersManagementPage() {
     }
   });
 
-  const isCriticalStop = (stopId) => {
+  const isCriticalStop = (stopId, itemId) => {
     const stop = stops.find(s => s.id === stopId);
-    return stop?.shelter_installed === true && stop?.all_stickers_installed === false;
+    if (stop?.shelter_installed !== true || stop?.all_stickers_installed === true) {
+      return false;
+    }
+    
+    // Check if item has exceeded estimated delivery time
+    const item = stickerItems.find(i => i.id === itemId);
+    if (item?.status === "Ordered" && item?.order_date) {
+      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+      const estimatedDays = template?.estimated_delivery_days || 0;
+      const daysElapsed = Math.floor((new Date() - new Date(item.order_date)) / (1000 * 60 * 60 * 24));
+      return daysElapsed > estimatedDays;
+    }
+    
+    return true;
   };
 
   const getStopInfo = (itemId) => {
@@ -189,9 +202,9 @@ export default function OrdersManagementPage() {
 
     lines.forEach(line => {
       const { item, stop } = getStopInfo(line.sticker_item_id);
-      if (stop) {
+      if (stop && item) {
         uniqueStops.add(stop.id);
-        if (isCriticalStop(stop.id)) {
+        if (isCriticalStop(stop.id, item.id)) {
           criticalCount++;
         }
       }
@@ -212,7 +225,7 @@ export default function OrdersManagementPage() {
     .filter(id => selectedItems[id])
     .filter(id => {
       const item = stickerItems.find(i => i.id === id);
-      return item && isCriticalStop(item.stop_id);
+      return item && isCriticalStop(item.stop_id, item.id);
     }).length;
 
   return (
@@ -278,7 +291,7 @@ export default function OrdersManagementPage() {
                   {filteredItems.map((item) => {
                     const { stop } = getStopInfo(item.id);
                     const template = getTemplateInfo(item.sticker_template_id);
-                    const critical = isCriticalStop(item.stop_id);
+                    const critical = isCriticalStop(item.stop_id, item.id);
 
                     return (
                       <TableRow key={item.id} className={critical ? "bg-red-50" : ""}>
@@ -495,10 +508,10 @@ function ViewOrderDialog({ orderId, onClose, orders, orderLines, stickerItems, s
               </TableHeader>
               <TableBody>
                 {lines.map((line) => {
-                  const item = stickerItems.find(i => i.id === line.sticker_item_id);
-                  const stop = stops.find(s => s.id === item?.stop_id);
-                  const template = stickerTemplates.find(t => t.id === item?.sticker_template_id);
-                  const critical = item && isCriticalStop(item.stop_id);
+                   const item = stickerItems.find(i => i.id === line.sticker_item_id);
+                   const stop = stops.find(s => s.id === item?.stop_id);
+                   const template = stickerTemplates.find(t => t.id === item?.sticker_template_id);
+                   const critical = item && isCriticalStop(item.stop_id, item.id);
 
                   return (
                     <TableRow key={line.id} className={critical ? "bg-red-50" : ""}>
