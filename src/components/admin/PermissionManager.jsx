@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -33,6 +32,9 @@ const ALL_PAGES = [
   { key: 'PurchaseOrders', label: 'Purchase Orders', module: 'Warehouse & Stock' },
   { key: 'BusStopTypesBOM', label: 'Bus Stop Types & BOM', module: 'Warehouse & Stock' },
   { key: 'WarehouseUserGuide', label: 'Warehouse User Guide', module: 'Warehouse & Stock' },
+
+  { key: 'Stops', label: 'Stops', module: 'Stickers & Installation' },
+  { key: 'ShelterTypes', label: 'Shelter Types', module: 'Stickers & Installation' },
 
   { key: 'DeliveryReporting', label: 'Delivery Reporting', module: 'Delivery Management' },
   { key: 'MobileFieldWork', label: 'Mobile Field Work', module: 'Delivery Management' },
