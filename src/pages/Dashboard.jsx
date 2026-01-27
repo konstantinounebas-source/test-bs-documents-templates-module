@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Package, CheckCircle, Calendar, XCircle, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "./utils";
+import { createPageUrl } from "@/utils";
 
 export default function DashboardPage() {
   const { data: stops = [], isLoading: stopsLoading } = useQuery({
