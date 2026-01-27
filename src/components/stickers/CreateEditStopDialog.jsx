@@ -13,7 +13,26 @@ import EditApprovedTypeDialog from "./EditApprovedTypeDialog";
 import EditInitialTypeDialog from "./EditInitialTypeDialog";
 
 export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved }) {
-  const handleStopSaved = () => {
+  const handleStopSaved = async () => {
+    // Reload stop data to reflect changes from dialogs
+    if (stop) {
+      const updatedStop = await base44.entities.Stop.filter({ id: stop.id });
+      if (updatedStop.length > 0) {
+        const dateValue = updatedStop[0].current_planned_installation_date
+          ? updatedStop[0].current_planned_installation_date.split("T")[0]
+          : "";
+        setFormData({
+          stop_id: updatedStop[0].stop_id || "",
+          english_name: updatedStop[0].english_name || "",
+          greek_name: updatedStop[0].greek_name || "",
+          shelter_type_initial_id: updatedStop[0].shelter_type_initial_id || "",
+          shelter_type_approved_id: updatedStop[0].shelter_type_approved_id || "",
+          current_planned_installation_date: dateValue,
+          shelter_installed: updatedStop[0].shelter_installed || false,
+          comments: updatedStop[0].comments || ""
+        });
+      }
+    }
     onStopSaved();
   };
   const [formData, setFormData] = useState({
