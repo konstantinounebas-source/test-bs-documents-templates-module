@@ -242,13 +242,6 @@ const allNavigationGroups = [
         icon: Boxes,
         description: "Manage shelter types",
         pageKey: "ShelterTypes"
-      },
-      {
-        title: "Access Control",
-        url: createPageUrl("AccessControl"),
-        icon: ShieldCheck,
-        description: "Manage user access profiles and permissions",
-        pageKey: "AccessControl"
       }
     ]
   },
