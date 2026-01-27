@@ -351,8 +351,28 @@ export default function StopsPage() {
                   sortedStops.map((stop) => (
                     <TableRow key={stop.id}>
                         <TableCell className="font-medium">{stop.stop_id}</TableCell>
-                        <TableCell>{stop.english_name}</TableCell>
-                        <TableCell>{stop.greek_name}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {stop.english_name}
+                            {stop.shelter_type_approved_id && (() => {
+                              const shelterType = shelterTypes.find(t => t.id === stop.shelter_type_approved_id);
+                              return shelterType?.english_name_max_chars && stop.english_name?.length > shelterType.english_name_max_chars ? (
+                                <AlertCircle className="w-4 h-4 text-orange-500" title={`Exceeds ${shelterType.english_name_max_chars} chars (${stop.english_name.length})`} />
+                              ) : null;
+                            })()}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {stop.greek_name}
+                            {stop.shelter_type_approved_id && (() => {
+                              const shelterType = shelterTypes.find(t => t.id === stop.shelter_type_approved_id);
+                              return shelterType?.greek_name_max_chars && stop.greek_name?.length > shelterType.greek_name_max_chars ? (
+                                <AlertCircle className="w-4 h-4 text-orange-500" title={`Exceeds ${shelterType.greek_name_max_chars} chars (${stop.greek_name.length})`} />
+                              ) : null;
+                            })()}
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
                             <Button
@@ -378,9 +398,6 @@ export default function StopsPage() {
                             {getShelterTypeName(stop.shelter_type_approved_id)}
                             {checkStickersMismatch(stop) && (
                               <AlertCircle className="w-4 h-4 text-red-500" title="Stickers may not match the approved type" />
-                            )}
-                            {checkNameLengthExceeded(stop) && (
-                              <AlertCircle className="w-4 h-4 text-orange-500" title={checkNameLengthExceeded(stop).join(", ")} />
                             )}
                           </div>
                         </TableCell>
