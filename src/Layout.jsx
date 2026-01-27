@@ -242,6 +242,13 @@ const allNavigationGroups = [
         icon: Boxes,
         description: "Manage shelter types",
         pageKey: "ShelterTypes"
+      },
+      {
+        title: "Sticker Templates",
+        url: createPageUrl("StickerTemplates"),
+        icon: Sticker,
+        description: "Manage sticker templates",
+        pageKey: "StickerTemplates"
       }
     ]
   },

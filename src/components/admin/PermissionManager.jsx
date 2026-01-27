@@ -35,6 +35,7 @@ const ALL_PAGES = [
 
   { key: 'Stops', label: 'Stops', module: 'Stickers & Installation' },
   { key: 'ShelterTypes', label: 'Shelter Types', module: 'Stickers & Installation' },
+  { key: 'StickerTemplates', label: 'Sticker Templates', module: 'Stickers & Installation' },
 
   { key: 'DeliveryReporting', label: 'Delivery Reporting', module: 'Delivery Management' },
   { key: 'MobileFieldWork', label: 'Mobile Field Work', module: 'Delivery Management' },

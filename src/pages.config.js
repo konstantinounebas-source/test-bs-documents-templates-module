@@ -44,6 +44,7 @@ import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
 import Stops from './pages/Stops';
 import ShelterTypes from './pages/ShelterTypes';
+import StickerTemplates from './pages/StickerTemplates';
 import __Layout from './Layout.jsx';
 
 
@@ -94,6 +95,7 @@ export const PAGES = {
     "WorkspaceSettings": WorkspaceSettings,
     "Stops": Stops,
     "ShelterTypes": ShelterTypes,
+    "StickerTemplates": StickerTemplates,
 }
 
 export const pagesConfig = {

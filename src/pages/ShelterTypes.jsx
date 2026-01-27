@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Pencil } from "lucide-react";
+import { Plus, Search, Pencil, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import CreateEditShelterTypeDialog from "@/components/stickers/CreateEditShelterTypeDialog";
+import ViewShelterTypeDialog from "@/components/stickers/ViewShelterTypeDialog";
 
 export default function ShelterTypesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedShelterType, setSelectedShelterType] = useState(null);
   const queryClient = useQueryClient();
 
@@ -36,6 +38,11 @@ export default function ShelterTypesPage() {
   const handleEdit = (shelterType) => {
     setSelectedShelterType(shelterType);
     setDialogOpen(true);
+  };
+
+  const handleView = (shelterType) => {
+    setSelectedShelterType(shelterType);
+    setViewDialogOpen(true);
   };
 
   const handleShelterTypeSaved = () => {
@@ -78,7 +85,7 @@ export default function ShelterTypesPage() {
                   <TableHead>Shelter Type ID</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-[80px]"></TableHead>
+                  <TableHead className="w-[120px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -99,13 +106,23 @@ export default function ShelterTypesPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(type)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleView(type)}
+                            title="View sticker requirements"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(type)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -125,6 +142,12 @@ export default function ShelterTypesPage() {
         onClose={() => setDialogOpen(false)}
         shelterType={selectedShelterType}
         onShelterTypeSaved={handleShelterTypeSaved}
+      />
+
+      <ViewShelterTypeDialog
+        open={viewDialogOpen}
+        onClose={() => setViewDialogOpen(false)}
+        shelterType={selectedShelterType}
       />
     </div>
   );
