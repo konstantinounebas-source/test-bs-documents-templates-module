@@ -118,7 +118,7 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
 
         // Either Planned Installation Date or Shelter Installed must be provided
         if (!stop.current_planned_installation_date && !stop.shelter_installed) {
-          errors.push(`Row ${rowNumber} (Stop ${stop.stop_id}): Either Planned Installation Date or Shelter Installed must be specified`);
+          errors.push(`Row ${rowNumber} (Stop ${stop.stop_id}): Planned Installation Date and Shelter Installed status are both missing - please provide at least one`);
           return;
         }
 
