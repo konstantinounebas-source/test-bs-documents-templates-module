@@ -76,17 +76,18 @@ export default function StickerTemplatesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Template ID</TableHead>
-                  <TableHead>Name / Category</TableHead>
-                  <TableHead>Default Vendor</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[80px]"></TableHead>
-                </TableRow>
+                    <TableHead>Template ID</TableHead>
+                    <TableHead>Name / Category</TableHead>
+                    <TableHead>Default Vendor</TableHead>
+                    <TableHead>Est. Delivery (days)</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-[80px]"></TableHead>
+                  </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTemplates.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={6} className="text-center text-gray-500 py-8">
                       No sticker templates found
                     </TableCell>
                   </TableRow>
@@ -96,6 +97,7 @@ export default function StickerTemplatesPage() {
                       <TableCell className="font-medium">{template.sticker_template_id}</TableCell>
                       <TableCell>{template.sticker_name_category}</TableCell>
                       <TableCell>{template.default_vendor || "-"}</TableCell>
+                      <TableCell>{template.estimated_delivery_days || "-"}</TableCell>
                       <TableCell>
                         <Badge variant={template.active ? "default" : "secondary"}>
                           {template.active ? "Active" : "Inactive"}
