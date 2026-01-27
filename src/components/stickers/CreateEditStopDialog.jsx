@@ -333,8 +333,8 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
             </Button>
           </DialogFooter>
         </form>
-      </DialogContent>
-    </Dialog>
-    </>
-  );
-}
+        </DialogContent>
+        </Dialog>
+        </>
+        );
+        }
