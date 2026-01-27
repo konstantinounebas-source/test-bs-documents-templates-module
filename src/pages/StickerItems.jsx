@@ -29,6 +29,11 @@ export default function StickerItemsPage() {
     queryFn: () => base44.entities.StickerTemplate.list()
   });
 
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list()
+  });
+
   const getStopName = (stopId) => {
     const stop = stops.find(s => s.id === stopId);
     return stop ? `${stop.stop_id} - ${stop.english_name}` : "-";
@@ -37,6 +42,12 @@ export default function StickerItemsPage() {
   const getStickerTemplateName = (templateId) => {
     const template = stickerTemplates.find(t => t.id === templateId);
     return template ? template.sticker_name_category : "-";
+  };
+
+  const getCustodianName = (custodianId) => {
+    if (!custodianId) return "-";
+    const user = users.find(u => u.id === custodianId);
+    return user ? user.full_name : "-";
   };
 
   const getStatusBadge = (status) => {
@@ -142,6 +153,7 @@ export default function StickerItemsPage() {
                   <TableHead>Print Line 3</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Custody</TableHead>
+                  <TableHead>Current Custodian</TableHead>
                   <TableHead>Installed</TableHead>
                 </TableRow>
               </TableHeader>
@@ -164,6 +176,7 @@ export default function StickerItemsPage() {
                       <TableCell>
                         <Badge variant="outline">{item.custody_status}</Badge>
                       </TableCell>
+                      <TableCell>{getCustodianName(item.current_custodian_id)}</TableCell>
                       <TableCell>
                         {item.installed ? (
                           <span className="text-green-600">✓ {item.installed_date || ""}</span>

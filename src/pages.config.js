@@ -50,6 +50,7 @@ import StopsWithStickers from './pages/StopsWithStickers';
 import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 import Receipts from './pages/Receipts';
+import StickerHandovers from './pages/StickerHandovers';
 import __Layout from './Layout.jsx';
 
 
@@ -106,6 +107,7 @@ export const PAGES = {
     "Orders": Orders,
     "OrderDetail": OrderDetail,
     "Receipts": Receipts,
+    "StickerHandovers": StickerHandovers,
 }
 
 export const pagesConfig = {

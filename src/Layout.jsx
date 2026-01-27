@@ -278,6 +278,13 @@ const allNavigationGroups = [
         icon: PackageCheck,
         description: "Receive sticker orders",
         pageKey: "Receipts"
+      },
+      {
+        title: "Handover to Technician",
+        url: createPageUrl("StickerHandovers"),
+        icon: Users,
+        description: "Hand stickers to technicians",
+        pageKey: "StickerHandovers"
       }
     ]
   },

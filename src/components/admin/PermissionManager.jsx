@@ -41,6 +41,7 @@ const ALL_PAGES = [
   { key: 'Orders', label: 'Orders', module: 'Stickers & Installation' },
   { key: 'OrderDetail', label: 'Order Detail', module: 'Stickers & Installation' },
   { key: 'Receipts', label: 'Receipts', module: 'Stickers & Installation' },
+  { key: 'StickerHandovers', label: 'Sticker Handovers', module: 'Stickers & Installation' },
 
   { key: 'DeliveryReporting', label: 'Delivery Reporting', module: 'Delivery Management' },
   { key: 'MobileFieldWork', label: 'Mobile Field Work', module: 'Delivery Management' },
