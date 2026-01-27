@@ -67,8 +67,8 @@ export default function StopsPage() {
     const stopStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status !== "Obsolete");
     if (stopStickers.length === 0) return false;
 
-    // Check if all active stickers have Installed = "Yes"
-    const allInstalled = stopStickers.every(s => s.installed === "Yes");
+    // Check if all active stickers have Installed = true or truthy value
+    const allInstalled = stopStickers.every(s => s.installed);
     return allInstalled;
   };
 
