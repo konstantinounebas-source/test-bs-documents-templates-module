@@ -292,7 +292,10 @@ export default function StickerItemsPage() {
                        <TableCell>{getStickerTemplateName(item.sticker_template_id)}</TableCell>
                        <TableCell>{getStatusBadge(item.status)}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{item.custody_status}</Badge>
+                        {(() => {
+                          const displayStatus = (item.status === "Needed" || item.status === "Ordered") ? item.status : item.custody_status;
+                          return <Badge variant="outline">{displayStatus}</Badge>;
+                        })()}
                       </TableCell>
                       <TableCell>{getCustodianName(item.current_custodian_id)}</TableCell>
                       <TableCell>
