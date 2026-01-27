@@ -268,6 +268,7 @@ export default function StickerItemsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Stop</TableHead>
+                  <TableHead>Ονομασία Στάσης</TableHead>
                   <TableHead>Ονομασία</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Custody</TableHead>
