@@ -231,6 +231,13 @@ const allNavigationGroups = [
     label: 'Stickers & Installation',
     items: [
       {
+        title: "Dashboard",
+        url: createPageUrl("Dashboard"),
+        icon: BarChart3,
+        description: "Operational overview",
+        pageKey: "Dashboard"
+      },
+      {
         title: "Stops",
         url: createPageUrl("Stops"),
         icon: MapPin,
