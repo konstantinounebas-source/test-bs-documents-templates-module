@@ -26,16 +26,39 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
 
   useEffect(() => {
     if (open && stickerItem) {
-      setFormData({
-        status: stickerItem.status || "",
-        installed: stickerItem.installed || false,
-        installed_date: stickerItem.installed_date || "",
-        custody_status: stickerItem.custody_status || "",
-        need_reorder: stickerItem.need_reorder || false,
-        reorder_reason: stickerItem.reorder_reason || "",
-        reorder_date: stickerItem.reorder_date || "",
-        comments: stickerItem.comments || ""
-      });
+      // Fetch fresh data from database
+      const loadFreshData = async () => {
+        try {
+          const freshData = await base44.entities.StickerItem.filter({ id: stickerItem.id });
+          if (freshData.length > 0) {
+            const item = freshData[0];
+            setFormData({
+              status: item.status || "",
+              installed: item.installed || false,
+              installed_date: item.installed_date || "",
+              custody_status: item.custody_status || "",
+              need_reorder: item.need_reorder || false,
+              reorder_reason: item.reorder_reason || "",
+              reorder_date: item.reorder_date || "",
+              comments: item.comments || ""
+            });
+          }
+        } catch (error) {
+          console.error("Error loading fresh sticker data:", error);
+          // Fallback to prop data if fetch fails
+          setFormData({
+            status: stickerItem.status || "",
+            installed: stickerItem.installed || false,
+            installed_date: stickerItem.installed_date || "",
+            custody_status: stickerItem.custody_status || "",
+            need_reorder: stickerItem.need_reorder || false,
+            reorder_reason: stickerItem.reorder_reason || "",
+            reorder_date: stickerItem.reorder_date || "",
+            comments: stickerItem.comments || ""
+          });
+        }
+      };
+      loadFreshData();
       loadUsers();
     }
   }, [open, stickerItem]);
