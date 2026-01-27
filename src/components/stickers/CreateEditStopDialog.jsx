@@ -57,23 +57,6 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
     setShelterTypes(types.filter(t => t.active));
   };
 
-  const formatDateToInput = (dateValue) => {
-    if (!dateValue) return "";
-    if (typeof dateValue === "string") {
-      // If it's already in YYYY-MM-DD format, return as is
-      if (dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) return dateValue;
-      // If it's ISO string with time, extract date part
-      if (dateValue.includes("T")) return dateValue.split("T")[0];
-    }
-    // If it's a Date object or timestamp
-    try {
-      const date = new Date(dateValue);
-      return date.toISOString().split("T")[0];
-    } catch {
-      return "";
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
