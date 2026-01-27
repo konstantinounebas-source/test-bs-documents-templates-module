@@ -14,6 +14,14 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  useEffect(() => {
+    if (open) {
+      setError("");
+      setSuccess("");
+      setFile(null);
+    }
+  }, [open]);
+
   const downloadTemplate = async () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Stops Template");
