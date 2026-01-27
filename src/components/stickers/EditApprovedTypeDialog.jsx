@@ -11,6 +11,7 @@ export default function EditApprovedTypeDialog({ open, onClose, stop, onTypeChan
   const [selectedTypeId, setSelectedTypeId] = useState("");
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [hasOldStickers, setHasOldStickers] = useState(false);
 
   useEffect(() => {
     if (open && stop) {
@@ -80,14 +81,15 @@ export default function EditApprovedTypeDialog({ open, onClose, stop, onTypeChan
     if (selectedTypeId === stop?.shelter_type_approved_id) return;
     
     // Check if there are old stickers
-    const hasOldStickers = await checkHasOldStickers();
+    const oldStickersExist = await checkHasOldStickers();
+    setHasOldStickers(oldStickersExist);
     
     // If no old stickers and type is being cleared, just update directly
-    if (!hasOldStickers && !selectedTypeId) {
+    if (!oldStickersExist && !selectedTypeId) {
       await handleConfirm();
-    } else if (!hasOldStickers && selectedTypeId) {
-      // If no old stickers but new type is selected, show simpler confirmation
-      setShowConfirm(true);
+    } else if (!oldStickersExist && selectedTypeId) {
+      // If no old stickers but new type is selected, just update directly
+      await handleConfirm();
     } else {
       // If there are old stickers, show confirmation
       setShowConfirm(true);
@@ -135,7 +137,10 @@ export default function EditApprovedTypeDialog({ open, onClose, stop, onTypeChan
           <AlertDialogHeader>
             <AlertDialogTitle>Αλλαγή Τύπου Καταφυγίου</AlertDialogTitle>
             <AlertDialogDescription>
-              Θέλετε να κάνετε τα παλιά αυτοκόλλητα ως 'Obsolete' {selectedTypeId ? "και να δημιουργήσετε νέα;" : ";"}
+              {hasOldStickers 
+                ? `Θέλετε να κάνετε τα παλιά αυτοκόλλητα ως 'Obsolete' ${selectedTypeId ? "και να δημιουργήσετε νέα;" : ";"}`
+                : `Θέλετε να ανανεώσετε τον τύπο καταφυγίου${selectedTypeId ? " και να δημιουργήσετε νέα αυτοκόλλητα;" : ";"}`
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex justify-end gap-3">
@@ -143,7 +148,7 @@ export default function EditApprovedTypeDialog({ open, onClose, stop, onTypeChan
               Ακύρωση
             </AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirm} disabled={loading}>
-              {loading ? "Αποθήκευση..." : "Ναι, κάντε τα Obsolete"}
+              {loading ? "Αποθήκευση..." : (hasOldStickers ? "Ναι, κάντε τα Obsolete" : "Ναι, ανανεώστε")}
             </AlertDialogAction>
           </div>
         </AlertDialogContent>
