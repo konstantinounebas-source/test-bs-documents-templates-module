@@ -304,7 +304,8 @@ export default function OrdersManagementPage() {
                   })}
                 </TableBody>
               </Table>
-            </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
