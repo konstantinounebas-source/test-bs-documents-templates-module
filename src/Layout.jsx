@@ -40,6 +40,7 @@ import {
   Smartphone, // Added Smartphone icon
   Route, // Added Route icon
   Sticker, // Added Sticker icon
+  PackageCheck, // Added PackageCheck icon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
