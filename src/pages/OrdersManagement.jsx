@@ -121,6 +121,22 @@ export default function OrdersManagementPage() {
 
   const availableItems = stickerItems.filter(item => item.status === "Needed");
 
+  // Get unique sticker categories
+  const stickerCategories = Array.from(new Set(
+    availableItems.map(item => {
+      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+      return template?.sticker_name_category;
+    }).filter(Boolean)
+  )).sort();
+
+  // Filter items by selected category
+  const filteredItems = categoryFilter === "all" 
+    ? availableItems 
+    : availableItems.filter(item => {
+        const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+        return template?.sticker_name_category === categoryFilter;
+      });
+
   const toggleItemSelection = (itemId) => {
     setSelectedItems(prev => ({
       ...prev,
