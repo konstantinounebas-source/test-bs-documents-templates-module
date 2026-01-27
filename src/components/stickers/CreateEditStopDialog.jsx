@@ -12,6 +12,9 @@ import { base44 } from "@/api/base44Client";
 import EditApprovedTypeDialog from "./EditApprovedTypeDialog";
 
 export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved }) {
+  const handleStopSaved = () => {
+    onStopSaved();
+  };
   const [formData, setFormData] = useState({
     stop_id: "",
     english_name: "",
