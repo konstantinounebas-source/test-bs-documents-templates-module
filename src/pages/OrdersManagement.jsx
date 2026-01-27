@@ -164,6 +164,7 @@ export default function OrdersManagementPage() {
       order_date: new Date().toISOString().split('T')[0],
       reason: "Initial"
     });
+    setCategoryFilter("all");
     setCreateDialogOpen(true);
   };
 
