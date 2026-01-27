@@ -235,7 +235,11 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
               id="file"
               type="file"
               accept=".xlsx,.xls"
-              onChange={(e) => setFile(e.target.files[0])}
+              onChange={(e) => {
+                setFile(e.target.files[0]);
+                setError("");
+                setSuccess("");
+              }}
               className="mt-2"
             />
           </div>
