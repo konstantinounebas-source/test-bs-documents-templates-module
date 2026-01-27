@@ -52,10 +52,10 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
       const updateData = {
         status: "Needed",
         installed: false,
-        installed_date: null,
-        custody_status: null,
-        current_custodian_id: null,
-        installed_by: null,
+        installed_date: "",
+        custody_status: "",
+        current_custodian_id: "",
+        installed_by: "",
         need_reorder: false
       };
 
