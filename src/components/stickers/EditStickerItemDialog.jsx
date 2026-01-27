@@ -45,6 +45,40 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
     setUsers(usersList);
   };
 
+  const handleReopen = async () => {
+    setLoading(true);
+    try {
+      const user = await base44.auth.me();
+      const updateData = {
+        status: "Received",
+        installed: false,
+        installed_date: "",
+        custody_status: "In Stock",
+        current_custodian_id: "",
+        need_reorder: false
+      };
+
+      await base44.entities.StickerItem.update(stickerItem.id, updateData);
+
+      await base44.entities.StickerMovementLog.create({
+        sticker_item_id: stickerItem.id,
+        action_type: "Status Change",
+        old_status: stickerItem.status,
+        new_status: "Received",
+        user_email: user.email,
+        notes: "Reopened from installed state"
+      });
+
+      await updateStopAllStickersInstalled(stickerItem.stop_id);
+      onSaved();
+      onClose();
+    } catch (error) {
+      console.error("Error reopening sticker item:", error);
+      alert("Failed to reopen sticker item");
+    }
+    setLoading(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
