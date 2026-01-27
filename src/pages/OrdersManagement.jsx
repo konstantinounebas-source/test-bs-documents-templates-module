@@ -274,7 +274,7 @@ export default function OrdersManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {availableItems.map((item) => {
+                  {filteredItems.map((item) => {
                     const { stop } = getStopInfo(item.id);
                     const template = getTemplateInfo(item.sticker_template_id);
                     const critical = isCriticalStop(item.stop_id);
