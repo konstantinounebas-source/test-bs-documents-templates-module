@@ -42,6 +42,8 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
+import Stops from './pages/Stops';
+import ShelterTypes from './pages/ShelterTypes';
 import __Layout from './Layout.jsx';
 
 
@@ -90,6 +92,8 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
+    "Stops": Stops,
+    "ShelterTypes": ShelterTypes,
 }
 
 export const pagesConfig = {
