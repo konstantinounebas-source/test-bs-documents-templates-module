@@ -245,32 +245,24 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
                 </Select>
               </div>
               <div>
-                <Label htmlFor="shelter_type_approved_id">Shelter Type Approved</Label>
-                <div className="flex gap-2">
-                  <Select
-                    value={formData.shelter_type_approved_id}
-                    onValueChange={handleApprovedTypeChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select approved type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {shelterTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.shelter_type_id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {formData.shelter_type_approved_id && (
+                <Label>Shelter Type Approved</Label>
+                <div className="flex gap-2 items-center">
+                  <div className="flex-1 px-3 py-2 border border-input rounded-md bg-gray-50">
+                    <p className="text-sm">
+                      {formData.shelter_type_approved_id 
+                        ? shelterTypes.find(t => t.id === formData.shelter_type_approved_id)?.shelter_type_id 
+                        : "Not set"}
+                    </p>
+                  </div>
+                  {stop && (
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
-                      onClick={() => setFormData({ ...formData, shelter_type_approved_id: "" })}
+                      onClick={() => setShowEditApprovedType(true)}
                       className="flex-shrink-0"
                     >
-                      <X className="w-4 h-4" />
+                      <Edit2 className="w-4 h-4" />
                     </Button>
                   )}
                 </div>
