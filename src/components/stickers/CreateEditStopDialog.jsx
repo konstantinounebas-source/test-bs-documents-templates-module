@@ -183,8 +183,28 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <>
+      <AlertDialog open={showObsoleteConfirm} onOpenChange={setShowObsoleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Αλλαγή Τύπου Καταφυγίου</AlertDialogTitle>
+            <AlertDialogDescription>
+              Θέλετε να κάνετε τα παλιά αυτοκόλλητα ως "Obsolete"; Αυτό θα διασφαλίσει ότι δεν θα χρησιμοποιηθούν τα λανθασμένα αυτοκόλλητα.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex justify-end gap-3">
+            <AlertDialogCancel onClick={() => handleObsoleteConfirm(false)}>
+              Όχι, κρατήστε τα παλιά
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleObsoleteConfirm(true)}>
+              Ναι, κάντε τα Obsolete
+            </AlertDialogAction>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{stop ? "Edit Stop" : "Create New Stop"}</DialogTitle>
         </DialogHeader>
