@@ -50,10 +50,10 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
     try {
       const user = await base44.auth.me();
       const updateData = {
-        status: "Received",
+        status: "Needed",
         installed: false,
         installed_date: null,
-        custody_status: "In Stock",
+        custody_status: null,
         current_custodian_id: null,
         installed_by: null,
         need_reorder: false
@@ -65,9 +65,9 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
         sticker_item_id: stickerItem.id,
         action_type: "Status Change",
         old_status: stickerItem.status,
-        new_status: "Received",
+        new_status: "Needed",
         old_custody_status: stickerItem.custody_status,
-        new_custody_status: "In Stock",
+        new_custody_status: null,
         user_email: user.email,
         notes: "Reopened from installed state"
       });
