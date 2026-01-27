@@ -192,10 +192,12 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
       <AlertDialog open={showObsoleteConfirm} onOpenChange={setShowObsoleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Αλλαγή Τύπου Καταφυγίου</AlertDialogTitle>
-            <AlertDialogDescription>
-              Θέλετε να κάνετε τα παλιά αυτοκόλλητα ως "Obsolete"; Αυτό θα διασφαλίσει ότι δεν θα χρησιμοποιηθούν τα λανθασμένα αυτοκόλλητα.
-            </AlertDialogDescription>
+           <AlertDialogTitle>Αλλαγή Τύπου Καταφυγίου</AlertDialogTitle>
+           <AlertDialogDescription>
+             {pendingApprovedTypeId 
+               ? "Θέλετε να κάνετε τα παλιά αυτοκόλλητα ως 'Obsolete' και να δημιουργήσετε νέα;" 
+               : "Θέλετε να κάνετε τα παλιά αυτοκόλλητα ως 'Obsolete';"}
+           </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="flex justify-end gap-3">
             <AlertDialogCancel onClick={() => handleObsoleteConfirm(false)}>
