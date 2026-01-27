@@ -112,6 +112,17 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
         return;
       }
 
+      // Check for duplicate Stop IDs in database
+      const existingStops = await base44.entities.Stop.list();
+      const existingStopIds = new Set(existingStops.map(s => s.stop_id));
+      const duplicates = stops.filter(s => existingStopIds.has(s.stop_id));
+
+      if (duplicates.length > 0) {
+        setError(`The following Stop IDs already exist: ${duplicates.map(d => d.stop_id).join(", ")}`);
+        setImporting(false);
+        return;
+      }
+
       await base44.entities.Stop.bulkCreate(stops);
 
       setSuccess(`Successfully imported ${stops.length} stops`);
