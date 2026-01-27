@@ -53,6 +53,7 @@ export default function OrdersManagementPage() {
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData) => {
+      const user = await base44.auth.me();
       const order = await base44.entities.Order.create(orderData);
       const selectedItemIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
       
@@ -68,9 +69,21 @@ export default function OrdersManagementPage() {
         });
         const totalOrdered = allOrderLines.reduce((sum, ol) => sum + (ol.ordered_quantity || 0), 0) + 1;
         
+        const item = stickerItems.find(i => i.id === itemId);
+        const oldStatus = item?.status;
+        
         await base44.entities.StickerItem.update(itemId, {
           total_ordered_quantity: totalOrdered,
           status: "Ordered"
+        });
+        
+        await base44.entities.StickerMovementLog.create({
+          sticker_item_id: itemId,
+          action_type: "Ordered",
+          old_status: oldStatus,
+          new_status: "Ordered",
+          notes: `Order #${order.id.slice(0, 8)} - Vendor: ${orderData.vendor}`,
+          user_email: user.email
         });
       }
       
