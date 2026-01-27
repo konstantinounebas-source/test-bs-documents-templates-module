@@ -154,26 +154,14 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
 
   return (
     <>
-      <AlertDialog open={showObsoleteConfirm} onOpenChange={setShowObsoleteConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-           <AlertDialogTitle>Αλλαγή Τύπου Καταφυγίου</AlertDialogTitle>
-           <AlertDialogDescription>
-             {pendingApprovedTypeId 
-               ? "Θέλετε να κάνετε τα παλιά αυτοκόλλητα ως 'Obsolete' και να δημιουργήσετε νέα;" 
-               : "Θέλετε να κάνετε τα παλιά αυτοκόλλητα ως 'Obsolete';"}
-           </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="flex justify-end gap-3">
-            <AlertDialogCancel onClick={() => handleObsoleteConfirm(false)}>
-              Όχι, κρατήστε τα παλιά
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleObsoleteConfirm(true)}>
-              Ναι, κάντε τα Obsolete
-            </AlertDialogAction>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
+      {stop && (
+        <EditApprovedTypeDialog
+          open={showEditApprovedType}
+          onClose={() => setShowEditApprovedType(false)}
+          stop={stop}
+          onTypeChanged={handleStopSaved}
+        />
+      )}
 
       <Dialog open={open} onOpenChange={onClose}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
