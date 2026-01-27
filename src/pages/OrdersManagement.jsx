@@ -17,6 +17,7 @@ import { createPageUrl } from "@/utils";
 export default function OrdersManagementPage() {
   const [selectedItems, setSelectedItems] = useState({});
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [orderFormData, setOrderFormData] = useState({
     vendor: "",
     order_date: new Date().toISOString().split('T')[0],
