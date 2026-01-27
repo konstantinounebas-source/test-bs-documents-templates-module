@@ -51,6 +51,7 @@ import Orders from './pages/Orders';
 import OrderDetail from './pages/OrderDetail';
 import Receipts from './pages/Receipts';
 import StickerHandovers from './pages/StickerHandovers';
+import Dashboard from './pages/Dashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -108,6 +109,7 @@ export const PAGES = {
     "OrderDetail": OrderDetail,
     "Receipts": Receipts,
     "StickerHandovers": StickerHandovers,
+    "Dashboard": Dashboard,
 }
 
 export const pagesConfig = {
