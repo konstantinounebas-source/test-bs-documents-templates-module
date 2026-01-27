@@ -30,9 +30,13 @@ import Products from './pages/Products';
 import ProfileSetup from './pages/ProfileSetup';
 import PurchaseOrders from './pages/PurchaseOrders';
 import RepairRoutes from './pages/RepairRoutes';
+import ShelterTypes from './pages/ShelterTypes';
 import SnaggingList from './pages/SnaggingList';
+import StickerItems from './pages/StickerItems';
+import StickerTemplates from './pages/StickerTemplates';
 import StockMovements from './pages/StockMovements';
 import StockOverview from './pages/StockOverview';
+import Stops from './pages/Stops';
 import Templates from './pages/Templates';
 import UserGuide from './pages/UserGuide';
 import Users from './pages/Users';
@@ -42,11 +46,10 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import Stops from './pages/Stops';
-import ShelterTypes from './pages/ShelterTypes';
-import StickerTemplates from './pages/StickerTemplates';
-import StickerItems from './pages/StickerItems';
 import StopsWithStickers from './pages/StopsWithStickers';
+import Orders from './pages/Orders';
+import OrderDetail from './pages/OrderDetail';
+import Receipts from './pages/Receipts';
 import __Layout from './Layout.jsx';
 
 
@@ -83,9 +86,13 @@ export const PAGES = {
     "ProfileSetup": ProfileSetup,
     "PurchaseOrders": PurchaseOrders,
     "RepairRoutes": RepairRoutes,
+    "ShelterTypes": ShelterTypes,
     "SnaggingList": SnaggingList,
+    "StickerItems": StickerItems,
+    "StickerTemplates": StickerTemplates,
     "StockMovements": StockMovements,
     "StockOverview": StockOverview,
+    "Stops": Stops,
     "Templates": Templates,
     "UserGuide": UserGuide,
     "Users": Users,
@@ -95,11 +102,10 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "Stops": Stops,
-    "ShelterTypes": ShelterTypes,
-    "StickerTemplates": StickerTemplates,
-    "StickerItems": StickerItems,
     "StopsWithStickers": StopsWithStickers,
+    "Orders": Orders,
+    "OrderDetail": OrderDetail,
+    "Receipts": Receipts,
 }
 
 export const pagesConfig = {

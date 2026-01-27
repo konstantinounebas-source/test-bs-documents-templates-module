@@ -263,6 +263,20 @@ const allNavigationGroups = [
         icon: Sticker,
         description: "View stops with their stickers",
         pageKey: "StopsWithStickers"
+      },
+      {
+        title: "Orders",
+        url: createPageUrl("Orders"),
+        icon: ShoppingCart,
+        description: "Manage sticker orders",
+        pageKey: "Orders"
+      },
+      {
+        title: "Receive Stickers",
+        url: createPageUrl("Receipts"),
+        icon: PackageCheck,
+        description: "Receive sticker orders",
+        pageKey: "Receipts"
       }
     ]
   },
