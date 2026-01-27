@@ -169,9 +169,23 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
                  <Label htmlFor="current_planned_installation_date">Planned Installation Date</Label>
                  <Input
                    id="current_planned_installation_date"
-                   type="date"
-                   value={formData.current_planned_installation_date}
-                   onChange={(e) => setFormData({ ...formData, current_planned_installation_date: e.target.value })}
+                   type="text"
+                   placeholder="dd-mm-yyyy"
+                   value={formData.current_planned_installation_date ? 
+                     new Date(formData.current_planned_installation_date).toLocaleDateString('en-GB').replace(/\//g, '-') 
+                     : ""}
+                   onChange={(e) => {
+                     const input = e.target.value;
+                     if (input === "") {
+                       setFormData({ ...formData, current_planned_installation_date: "" });
+                     } else if (input.match(/^\d{2}-\d{2}-\d{4}$/)) {
+                       const [d, m, y] = input.split('-');
+                       const isoDate = `${y}-${m}-${d}`;
+                       if (!isNaN(new Date(isoDate))) {
+                         setFormData({ ...formData, current_planned_installation_date: isoDate });
+                       }
+                     }
+                   }}
                  />
                </div>
             </div>
