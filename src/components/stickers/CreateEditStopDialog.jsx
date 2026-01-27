@@ -74,15 +74,14 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
   };
 
   const handleApprovedTypeChange = (value) => {
-    const oldApprovedTypeId = stop?.shelter_type_approved_id;
     const newApprovedTypeId = value;
 
-    // If old type exists and it's changing (either to new type or clearing with X)
-    if (oldApprovedTypeId && oldApprovedTypeId !== newApprovedTypeId) {
+    // If initial type exists and it's changing (either to new type or clearing with X)
+    if (initialApprovedTypeId && initialApprovedTypeId !== newApprovedTypeId) {
       setPendingApprovedTypeId(newApprovedTypeId);
       setShowObsoleteConfirm(true);
     } else {
-      // If no old type, just change it
+      // If no initial type, just change it
       setFormData({ ...formData, shelter_type_approved_id: value });
     }
   };
