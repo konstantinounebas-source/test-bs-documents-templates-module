@@ -95,7 +95,6 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
       };
 
       let stopId;
-      const oldApprovedTypeId = stop?.shelter_type_approved_id;
       const newApprovedTypeId = formData.shelter_type_approved_id;
 
       if (stop) {
@@ -106,8 +105,8 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
         stopId = createdStop.id;
       }
 
-      // Auto-create sticker items if shelter_type_approved_id was just set
-      if (newApprovedTypeId && (!stop || oldApprovedTypeId !== newApprovedTypeId)) {
+      // Auto-create sticker items if shelter_type_approved_id was set on new stop
+      if (newApprovedTypeId && !stop) {
         await createStickerItemsForStop(stopId, newApprovedTypeId);
       }
 
