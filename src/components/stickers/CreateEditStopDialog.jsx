@@ -209,21 +209,34 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
               </div>
               <div>
                 <Label htmlFor="shelter_type_approved_id">Shelter Type Approved</Label>
-                <Select
-                  value={formData.shelter_type_approved_id}
-                  onValueChange={(value) => setFormData({ ...formData, shelter_type_approved_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select approved type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {shelterTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>
-                        {type.shelter_type_id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select
+                    value={formData.shelter_type_approved_id}
+                    onValueChange={(value) => setFormData({ ...formData, shelter_type_approved_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select approved type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shelterTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.shelter_type_id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formData.shelter_type_approved_id && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setFormData({ ...formData, shelter_type_approved_id: "" })}
+                      className="flex-shrink-0"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
