@@ -25,8 +25,7 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
   const [initialApprovedTypeId, setInitialApprovedTypeId] = useState("");
   const [shelterTypes, setShelterTypes] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [showObsoleteConfirm, setShowObsoleteConfirm] = useState(false);
-  const [pendingApprovedTypeId, setPendingApprovedTypeId] = useState(null);
+  const [showEditApprovedType, setShowEditApprovedType] = useState(false);
 
   useEffect(() => {
     const initializeDialog = async () => {
