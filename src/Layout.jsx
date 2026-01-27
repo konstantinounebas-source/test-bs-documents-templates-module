@@ -292,6 +292,13 @@ const allNavigationGroups = [
         icon: Users,
         description: "Hand stickers to technicians",
         pageKey: "StickerHandovers"
+      },
+      {
+        title: "Movement Logs",
+        url: createPageUrl("StickerMovementLogs"),
+        icon: ScrollText,
+        description: "View all sticker movements",
+        pageKey: "StickerMovementLogs"
       }
     ]
   },

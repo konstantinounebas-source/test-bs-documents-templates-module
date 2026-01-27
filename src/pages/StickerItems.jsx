@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Edit, PackageCheck, Users, AlertCircle, CheckCircle } from "lucide-react";
+import { Search, Edit, PackageCheck, Users, AlertCircle, CheckCircle, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import EditStickerItemDialog from "@/components/stickers/EditStickerItemDialog";
 import ReorderStickerDialog from "@/components/stickers/ReorderStickerDialog";
 import HandoverStickerDialog from "@/components/stickers/HandoverStickerDialog";
+import ViewStickerHistoryDialog from "@/components/stickers/ViewStickerHistoryDialog";
 
 export default function StickerItemsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,6 +20,7 @@ export default function StickerItemsPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
   const [handoverDialogOpen, setHandoverDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
   const queryClient = useQueryClient();
@@ -69,10 +71,25 @@ export default function StickerItemsPage() {
   };
 
   const handleReceived = async (item) => {
+    const user = await base44.auth.me();
+    const oldStatus = item.status;
+    const oldCustody = item.custody_status;
+    
     await base44.entities.StickerItem.update(item.id, {
       status: "Received",
       custody_status: "In Stock"
     });
+    
+    await base44.entities.StickerMovementLog.create({
+      sticker_item_id: item.id,
+      action_type: "Received",
+      old_status: oldStatus,
+      new_status: "Received",
+      old_custody_status: oldCustody,
+      new_custody_status: "In Stock",
+      user_email: user.email
+    });
+    
     queryClient.invalidateQueries(['stickerItems']);
   };
 
@@ -82,7 +99,20 @@ export default function StickerItemsPage() {
   };
 
   const handleHandoverConfirm = async (data) => {
+    const user = await base44.auth.me();
+    const oldCustody = selectedItem.custody_status;
+    
     await base44.entities.StickerItem.update(selectedItem.id, data);
+    
+    await base44.entities.StickerMovementLog.create({
+      sticker_item_id: selectedItem.id,
+      action_type: "Handover",
+      old_custody_status: oldCustody,
+      new_custody_status: data.custody_status,
+      technician_id: data.current_custodian_id,
+      user_email: user.email
+    });
+    
     queryClient.invalidateQueries(['stickerItems']);
   };
 
@@ -92,17 +122,46 @@ export default function StickerItemsPage() {
   };
 
   const handleReorderConfirm = async (data) => {
+    const user = await base44.auth.me();
+    const oldStatus = selectedItem.status;
+    
     await base44.entities.StickerItem.update(selectedItem.id, data);
+    
+    await base44.entities.StickerMovementLog.create({
+      sticker_item_id: selectedItem.id,
+      action_type: "Reorder",
+      old_status: oldStatus,
+      new_status: data.status,
+      reorder_reason: data.reorder_reason,
+      notes: data.comments,
+      user_email: user.email
+    });
+    
     queryClient.invalidateQueries(['stickerItems']);
   };
 
   const handleInstalled = async (item) => {
+    const user = await base44.auth.me();
+    const oldStatus = item.status;
+    const oldCustody = item.custody_status;
+    
     await base44.entities.StickerItem.update(item.id, {
       status: "Installed",
       installed: true,
       installed_date: new Date().toISOString().split('T')[0],
       custody_status: "Installed"
     });
+    
+    await base44.entities.StickerMovementLog.create({
+      sticker_item_id: item.id,
+      action_type: "Installed",
+      old_status: oldStatus,
+      new_status: "Installed",
+      old_custody_status: oldCustody,
+      new_custody_status: "Installed",
+      user_email: user.email
+    });
+    
     queryClient.invalidateQueries(['stickerItems']);
   };
 
@@ -211,7 +270,7 @@ export default function StickerItemsPage() {
                   <TableHead>Custody</TableHead>
                   <TableHead>Current Custodian</TableHead>
                   <TableHead>Installed</TableHead>
-                  <TableHead className="w-[240px]">Actions</TableHead>
+                  <TableHead className="w-[280px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -282,6 +341,17 @@ export default function StickerItemsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => {
+                              setSelectedItem(item);
+                              setHistoryDialogOpen(true);
+                            }}
+                            title="View History"
+                          >
+                            <History className="w-4 h-4 text-gray-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleEdit(item)}
                             title="Edit"
                           >
@@ -317,6 +387,12 @@ export default function StickerItemsPage() {
         onClose={() => setHandoverDialogOpen(false)}
         stickerItem={selectedItem}
         onConfirm={handleHandoverConfirm}
+      />
+
+      <ViewStickerHistoryDialog
+        open={historyDialogOpen}
+        onClose={() => setHistoryDialogOpen(false)}
+        stickerItem={selectedItem}
       />
     </div>
   );
