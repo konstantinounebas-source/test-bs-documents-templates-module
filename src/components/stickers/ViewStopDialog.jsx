@@ -100,7 +100,7 @@ export default function ViewStopDialog({ open, onClose, stop }) {
                     </TableHeader>
                     <TableBody>
                       {stickerItems.map((item) => {
-                        const displayCustodyStatus = (item.status === "Needed" || item.status === "Ordered") ? item.status : item.custody_status;
+                        const displayCustodyStatus = (item.status === "Needed" || item.status === "Ordered" || item.status === "Obsolete") ? item.status : item.custody_status;
                         return (
                         <TableRow key={item.id}>
                           <TableCell>{getStickerTemplateName(item.sticker_template_id)}</TableCell>

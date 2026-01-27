@@ -293,7 +293,7 @@ export default function StickerItemsPage() {
                        <TableCell>{getStatusBadge(item.status)}</TableCell>
                       <TableCell>
                         {(() => {
-                          const displayStatus = (item.status === "Needed" || item.status === "Ordered") ? item.status : item.custody_status;
+                          const displayStatus = (item.status === "Needed" || item.status === "Ordered" || item.status === "Obsolete") ? item.status : item.custody_status;
                           return <Badge variant="outline">{displayStatus}</Badge>;
                         })()}
                       </TableCell>
