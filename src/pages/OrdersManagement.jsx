@@ -303,8 +303,8 @@ export default function OrdersManagementPage() {
                       </TableRow>
                     );
                   })}
-                </TableBody>
-              </Table>
+                  </TableBody>
+                  </Table>
               </div>
             </>
           )}
