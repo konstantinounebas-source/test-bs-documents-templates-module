@@ -39,6 +39,7 @@ import {
   List, // Added List icon
   Smartphone, // Added Smartphone icon
   Route, // Added Route icon
+  Sticker, // Added Sticker icon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -225,6 +226,26 @@ const allNavigationGroups = [
     ]
   },
   {
+    id: 'stickers-installation',
+    label: 'Stickers & Installation',
+    items: [
+      {
+        title: "Stops",
+        url: createPageUrl("Stops"),
+        icon: MapPin,
+        description: "Manage bus stops",
+        pageKey: "Stops"
+      },
+      {
+        title: "Shelter Types",
+        url: createPageUrl("ShelterTypes"),
+        icon: Boxes,
+        description: "Manage shelter types",
+        pageKey: "ShelterTypes"
+      }
+    ]
+  },
+  {
     id: 'delivery-management',
     label: 'Delivery Management',
     items: [
@@ -373,6 +394,7 @@ export default function Layout({ children }) {
     'my-workspace': true,
     'document-templates': true,
     'warehouse-stock': true,
+    'stickers-installation': true,
     'delivery-management': true,
     'system-management': true,
     'administration': true,
