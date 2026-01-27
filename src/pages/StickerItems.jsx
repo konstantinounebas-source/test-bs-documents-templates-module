@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Edit } from "lucide-react";
+import { Search, Edit, PackageCheck, Users, AlertCircle, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import EditStickerItemDialog from "@/components/stickers/EditStickerItemDialog";
 
@@ -61,6 +61,39 @@ export default function StickerItemsPage() {
   };
 
   const handleSaved = () => {
+    queryClient.invalidateQueries(['stickerItems']);
+  };
+
+  const handleReceived = async (item) => {
+    await base44.entities.StickerItem.update(item.id, {
+      status: "Received",
+      custody_status: "In Stock"
+    });
+    queryClient.invalidateQueries(['stickerItems']);
+  };
+
+  const handleHandover = async (item) => {
+    await base44.entities.StickerItem.update(item.id, {
+      custody_status: "With Technician"
+    });
+    queryClient.invalidateQueries(['stickerItems']);
+  };
+
+  const handleReorder = async (item) => {
+    await base44.entities.StickerItem.update(item.id, {
+      need_reorder: true,
+      reorder_date: new Date().toISOString().split('T')[0]
+    });
+    queryClient.invalidateQueries(['stickerItems']);
+  };
+
+  const handleInstalled = async (item) => {
+    await base44.entities.StickerItem.update(item.id, {
+      status: "Installed",
+      installed: true,
+      installed_date: new Date().toISOString().split('T')[0],
+      custody_status: "Installed"
+    });
     queryClient.invalidateQueries(['stickerItems']);
   };
 
@@ -169,7 +202,7 @@ export default function StickerItemsPage() {
                   <TableHead>Custody</TableHead>
                   <TableHead>Current Custodian</TableHead>
                   <TableHead>Installed</TableHead>
-                  <TableHead className="w-[80px]"></TableHead>
+                  <TableHead className="w-[240px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -200,13 +233,52 @@ export default function StickerItemsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(item)}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleReceived(item)}
+                            title="Mark as Received"
+                            disabled={item.status === "Received" || item.status === "Installed"}
+                          >
+                            <PackageCheck className="w-4 h-4 text-green-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleHandover(item)}
+                            title="Handover to Technician"
+                            disabled={item.custody_status === "With Technician" || item.status !== "Received"}
+                          >
+                            <Users className="w-4 h-4 text-blue-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleReorder(item)}
+                            title="Mark for Reorder"
+                            disabled={item.need_reorder}
+                          >
+                            <AlertCircle className="w-4 h-4 text-orange-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleInstalled(item)}
+                            title="Mark as Installed"
+                            disabled={item.installed}
+                          >
+                            <CheckCircle className="w-4 h-4 text-purple-600" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(item)}
+                            title="Edit"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

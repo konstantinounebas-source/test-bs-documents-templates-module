@@ -11,6 +11,7 @@ import BusStopTypesBOM from './pages/BusStopTypesBOM';
 import ChargedMaterialsReport from './pages/ChargedMaterialsReport';
 import CustomFields from './pages/CustomFields';
 import DailyTracker from './pages/DailyTracker';
+import Dashboard from './pages/Dashboard';
 import DeliveryFieldsDataDefinitions from './pages/DeliveryFieldsDataDefinitions';
 import DeliveryLogs from './pages/DeliveryLogs';
 import DeliveryReporting from './pages/DeliveryReporting';
@@ -25,18 +26,25 @@ import MobileFieldWork from './pages/MobileFieldWork';
 import MyWorkday from './pages/MyWorkday';
 import MyWorkspaceUserGuide from './pages/MyWorkspaceUserGuide';
 import OfficialOrders from './pages/OfficialOrders';
+import OrderDetail from './pages/OrderDetail';
+import OrderPrint from './pages/OrderPrint';
+import Orders from './pages/Orders';
+import OrdersManagement from './pages/OrdersManagement';
 import PlatformChangeLog from './pages/PlatformChangeLog';
 import Products from './pages/Products';
 import ProfileSetup from './pages/ProfileSetup';
 import PurchaseOrders from './pages/PurchaseOrders';
+import Receipts from './pages/Receipts';
 import RepairRoutes from './pages/RepairRoutes';
 import ShelterTypes from './pages/ShelterTypes';
 import SnaggingList from './pages/SnaggingList';
+import StickerHandovers from './pages/StickerHandovers';
 import StickerItems from './pages/StickerItems';
 import StickerTemplates from './pages/StickerTemplates';
 import StockMovements from './pages/StockMovements';
 import StockOverview from './pages/StockOverview';
 import Stops from './pages/Stops';
+import StopsWithStickers from './pages/StopsWithStickers';
 import Templates from './pages/Templates';
 import UserGuide from './pages/UserGuide';
 import Users from './pages/Users';
@@ -46,14 +54,6 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import StopsWithStickers from './pages/StopsWithStickers';
-import Orders from './pages/Orders';
-import OrderDetail from './pages/OrderDetail';
-import Receipts from './pages/Receipts';
-import StickerHandovers from './pages/StickerHandovers';
-import Dashboard from './pages/Dashboard';
-import OrdersManagement from './pages/OrdersManagement';
-import OrderPrint from './pages/OrderPrint';
 import __Layout from './Layout.jsx';
 
 
@@ -71,6 +71,7 @@ export const PAGES = {
     "ChargedMaterialsReport": ChargedMaterialsReport,
     "CustomFields": CustomFields,
     "DailyTracker": DailyTracker,
+    "Dashboard": Dashboard,
     "DeliveryFieldsDataDefinitions": DeliveryFieldsDataDefinitions,
     "DeliveryLogs": DeliveryLogs,
     "DeliveryReporting": DeliveryReporting,
@@ -85,18 +86,25 @@ export const PAGES = {
     "MyWorkday": MyWorkday,
     "MyWorkspaceUserGuide": MyWorkspaceUserGuide,
     "OfficialOrders": OfficialOrders,
+    "OrderDetail": OrderDetail,
+    "OrderPrint": OrderPrint,
+    "Orders": Orders,
+    "OrdersManagement": OrdersManagement,
     "PlatformChangeLog": PlatformChangeLog,
     "Products": Products,
     "ProfileSetup": ProfileSetup,
     "PurchaseOrders": PurchaseOrders,
+    "Receipts": Receipts,
     "RepairRoutes": RepairRoutes,
     "ShelterTypes": ShelterTypes,
     "SnaggingList": SnaggingList,
+    "StickerHandovers": StickerHandovers,
     "StickerItems": StickerItems,
     "StickerTemplates": StickerTemplates,
     "StockMovements": StockMovements,
     "StockOverview": StockOverview,
     "Stops": Stops,
+    "StopsWithStickers": StopsWithStickers,
     "Templates": Templates,
     "UserGuide": UserGuide,
     "Users": Users,
@@ -106,14 +114,6 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "StopsWithStickers": StopsWithStickers,
-    "Orders": Orders,
-    "OrderDetail": OrderDetail,
-    "Receipts": Receipts,
-    "StickerHandovers": StickerHandovers,
-    "Dashboard": Dashboard,
-    "OrdersManagement": OrdersManagement,
-    "OrderPrint": OrderPrint,
 }
 
 export const pagesConfig = {
