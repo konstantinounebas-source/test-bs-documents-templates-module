@@ -60,21 +60,70 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
     e.preventDefault();
     setLoading(true);
 
-    const dataToSave = {
-      ...formData,
-      english_count_letters: formData.english_name.length,
-      greek_count_letters: formData.greek_name.length
-    };
+    try {
+      const dataToSave = {
+        ...formData,
+        english_count_letters: formData.english_name.length,
+        greek_count_letters: formData.greek_name.length
+      };
 
-    if (stop) {
-      await base44.entities.Stop.update(stop.id, dataToSave);
-    } else {
-      await base44.entities.Stop.create(dataToSave);
+      let stopId;
+      const oldApprovedTypeId = stop?.shelter_type_approved_id;
+      const newApprovedTypeId = formData.shelter_type_approved_id;
+
+      if (stop) {
+        await base44.entities.Stop.update(stop.id, dataToSave);
+        stopId = stop.id;
+      } else {
+        const createdStop = await base44.entities.Stop.create(dataToSave);
+        stopId = createdStop.id;
+      }
+
+      // Auto-create sticker items if shelter_type_approved_id was just set
+      if (newApprovedTypeId && (!stop || oldApprovedTypeId !== newApprovedTypeId)) {
+        await createStickerItemsForStop(stopId, newApprovedTypeId);
+      }
+
+      setLoading(false);
+      onStopSaved();
+      onClose();
+    } catch (error) {
+      console.error("Error saving stop:", error);
+      setLoading(false);
+    }
+  };
+
+  const createStickerItemsForStop = async (stopId, approvedShelterTypeId) => {
+    // Get sticker requirements for this shelter type
+    const requirements = await base44.entities.ShelterTypeStickerRequirement.filter({
+      shelter_type_id: approvedShelterTypeId
+    });
+
+    if (requirements.length === 0) return;
+
+    // Get the stop data for print lines
+    const stopData = await base44.entities.Stop.filter({ id: stopId });
+    const currentStop = stopData[0];
+
+    // Create sticker items based on requirements
+    const stickerItems = [];
+    for (const req of requirements) {
+      for (let i = 0; i < req.quantity_required; i++) {
+        stickerItems.push({
+          stop_id: stopId,
+          sticker_template_id: req.sticker_template_id,
+          print_line_1: currentStop.stop_id,
+          print_line_2: currentStop.greek_name,
+          print_line_3: currentStop.english_name,
+          status: "Needed",
+          custody_status: "In Stock"
+        });
+      }
     }
 
-    setLoading(false);
-    onStopSaved();
-    onClose();
+    if (stickerItems.length > 0) {
+      await base44.entities.StickerItem.bulkCreate(stickerItems);
+    }
   };
 
   return (

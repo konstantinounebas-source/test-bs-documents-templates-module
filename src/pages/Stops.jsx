@@ -290,15 +290,6 @@ export default function StopsPage() {
                       <TableCell>{getShelterTypeName(stop.shelter_type_approved_id)}</TableCell>
                       <TableCell>{stop.current_planned_installation_date || "-"}</TableCell>
                       <TableCell>{stop.shelter_installed ? "Yes" : "No"}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(stop)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
                     </TableRow>
                   ))
                 )}
