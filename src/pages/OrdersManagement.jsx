@@ -96,6 +96,7 @@ export default function OrdersManagementPage() {
       queryClient.invalidateQueries(['stickerItems']);
       setSelectedItems({});
       setCreateDialogOpen(false);
+      setCategoryFilter("all");
       setOrderFormData({
         vendor: "",
         order_date: new Date().toISOString().split('T')[0],
