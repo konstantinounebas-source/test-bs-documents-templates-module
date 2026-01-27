@@ -50,6 +50,11 @@ export default function StickerItemsPage() {
     return stop ? stop.stop_id : "-";
   };
 
+  const getStopGreekName = (stopId) => {
+    const stop = stops.find(s => s.id === stopId);
+    return stop ? stop.greek_name : "-";
+  };
+
   const getStickerTemplateName = (templateId) => {
     const template = stickerTemplates.find(t => t.id === templateId);
     return template ? template.sticker_name_category : "-";
