@@ -45,6 +45,22 @@ export default function StopsPage() {
     return type ? type.shelter_type_id : "-";
   };
 
+  const checkNameLengthExceeded = (stop) => {
+    if (!stop.shelter_type_approved_id) return null;
+    const shelterType = shelterTypes.find(t => t.id === stop.shelter_type_approved_id);
+    if (!shelterType) return null;
+
+    const warnings = [];
+    if (shelterType.greek_name_max_chars && stop.greek_name && stop.greek_name.length > shelterType.greek_name_max_chars) {
+      warnings.push(`Greek name exceeds ${shelterType.greek_name_max_chars} chars (${stop.greek_name.length})`);
+    }
+    if (shelterType.english_name_max_chars && stop.english_name && stop.english_name.length > shelterType.english_name_max_chars) {
+      warnings.push(`English name exceeds ${shelterType.english_name_max_chars} chars (${stop.english_name.length})`);
+    }
+    
+    return warnings.length > 0 ? warnings : null;
+  };
+
   const checkStickersMismatch = (stop) => {
     if (!stop.shelter_type_approved_id) return false;
     
