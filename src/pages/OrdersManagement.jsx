@@ -107,23 +107,23 @@ export default function OrdersManagementPage() {
 
   const isCriticalStop = (stopId, itemId) => {
     const stop = stops.find(s => s.id === stopId);
-    if (stop?.shelter_installed !== true || stop?.all_stickers_installed === true) {
-      return false;
-    }
-    
-    // Check if item has exceeded estimated delivery time
     const item = stickerItems.find(i => i.id === itemId);
-    if (item?.status === "Ordered") {
-      const order = orders.find(o => orderLines.some(ol => ol.order_id === o.id && ol.sticker_item_id === itemId));
-      if (order?.order_date) {
-        const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-        const estimatedDays = template?.estimated_delivery_days || 0;
-        const daysElapsed = Math.floor((new Date() - new Date(order.order_date)) / (1000 * 60 * 60 * 24));
-        return daysElapsed > estimatedDays;
+    
+    if (!stop || !item) return false;
+    if (stop?.all_stickers_installed === true) return false;
+    
+    // For Needed stickers, check if planned installation date is too soon for delivery
+    if (item?.status === "Needed") {
+      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+      const estimatedDays = template?.estimated_delivery_days || 0;
+      
+      if (stop?.current_planned_installation_date) {
+        const daysUntilInstallation = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
+        return daysUntilInstallation < estimatedDays;
       }
     }
     
-    return true;
+    return false;
   };
 
   const getStopInfo = (itemId) => {
