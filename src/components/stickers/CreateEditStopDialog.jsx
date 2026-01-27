@@ -33,7 +33,7 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
           greek_name: stop.greek_name || "",
           shelter_type_initial_id: stop.shelter_type_initial_id || "",
           shelter_type_approved_id: stop.shelter_type_approved_id || "",
-          current_planned_installation_date: stop.current_planned_installation_date || "",
+          current_planned_installation_date: formatDateToInput(stop.current_planned_installation_date),
           shelter_installed: stop.shelter_installed || false,
           comments: stop.comments || ""
         });
