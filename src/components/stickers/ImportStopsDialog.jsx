@@ -72,6 +72,7 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
       });
 
       const stops = [];
+      const errors = [];
       worksheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return;
 
@@ -86,12 +87,28 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
           comments: row.getCell(8).value?.toString().trim() || ""
         };
 
+        // Validate required fields
+        if (!stop.stop_id || !stop.english_name || !stop.greek_name) {
+          errors.push(`Row ${rowNumber}: Missing Stop ID, English Name, or Greek Name`);
+          return;
+        }
+
         const initialTypeId = row.getCell(4).value?.toString().trim();
         const approvedTypeId = row.getCell(5).value?.toString().trim();
-        
-        if (initialTypeId && shelterTypeMap[initialTypeId]) {
-          stop.shelter_type_initial_id = shelterTypeMap[initialTypeId];
+
+        // Initial Type is mandatory
+        if (!initialTypeId) {
+          errors.push(`Row ${rowNumber} (Stop ${stop.stop_id}): Initial Type is required`);
+          return;
         }
+
+        if (!shelterTypeMap[initialTypeId]) {
+          errors.push(`Row ${rowNumber} (Stop ${stop.stop_id}): Initial Type "${initialTypeId}" does not exist`);
+          return;
+        }
+
+        stop.shelter_type_initial_id = shelterTypeMap[initialTypeId];
+
         if (approvedTypeId && shelterTypeMap[approvedTypeId]) {
           stop.shelter_type_approved_id = shelterTypeMap[approvedTypeId];
         }
@@ -99,12 +116,22 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
         const shelterInstalledValue = row.getCell(7).value?.toString().toLowerCase().trim();
         stop.shelter_installed = shelterInstalledValue === "yes" || shelterInstalledValue === "true";
 
-        if (stop.stop_id && stop.english_name && stop.greek_name && stop.current_planned_installation_date) {
-          stop.english_count_letters = stop.english_name.length;
-          stop.greek_count_letters = stop.greek_name.length;
-          stops.push(stop);
+        // Either Planned Installation Date or Shelter Installed must be provided
+        if (!stop.current_planned_installation_date && !stop.shelter_installed) {
+          errors.push(`Row ${rowNumber} (Stop ${stop.stop_id}): Either Planned Installation Date or Shelter Installed must be specified`);
+          return;
         }
+
+        stop.english_count_letters = stop.english_name.length;
+        stop.greek_count_letters = stop.greek_name.length;
+        stops.push(stop);
       });
+
+      if (errors.length > 0) {
+        setError(`Import validation failed:\n${errors.join("\n")}`);
+        setImporting(false);
+        return;
+      }
 
       if (stops.length === 0) {
         setError("No valid stops found in the file");
