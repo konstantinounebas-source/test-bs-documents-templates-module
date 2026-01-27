@@ -112,14 +112,26 @@ export default function OrdersManagementPage() {
     if (!stop || !item) return false;
     if (stop?.all_stickers_installed === true) return false;
     
-    // For Needed stickers, check if planned installation date is too soon for delivery
+    const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+    
+    // For Needed stickers, check if should be ordered based on lead time
     if (item?.status === "Needed") {
-      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-      const estimatedDays = template?.estimated_delivery_days || 0;
+      const daysBeforeInstall = template?.days_before_installation_to_receive || 0;
       
       if (stop?.current_planned_installation_date) {
         const daysUntilInstallation = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
-        return daysUntilInstallation < estimatedDays;
+        return daysUntilInstallation < daysBeforeInstall;
+      }
+    }
+    
+    // For Ordered stickers, check if should have been received by now
+    if (item?.status === "Ordered") {
+      const daysBeforeInstall = template?.days_before_installation_to_receive || 0;
+      
+      if (stop?.current_planned_installation_date) {
+        const receiveByDate = new Date(stop.current_planned_installation_date);
+        receiveByDate.setDate(receiveByDate.getDate() - daysBeforeInstall);
+        return new Date() > receiveByDate;
       }
     }
     

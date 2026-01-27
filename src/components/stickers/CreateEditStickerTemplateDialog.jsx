@@ -13,6 +13,7 @@ export default function CreateEditStickerTemplateDialog({ open, onClose, sticker
     sticker_name_category: "",
     default_vendor: "",
     estimated_delivery_days: "",
+    days_before_installation_to_receive: "",
     active: true,
     notes: ""
   });
@@ -26,6 +27,7 @@ export default function CreateEditStickerTemplateDialog({ open, onClose, sticker
           sticker_name_category: stickerTemplate.sticker_name_category || "",
           default_vendor: stickerTemplate.default_vendor || "",
           estimated_delivery_days: stickerTemplate.estimated_delivery_days || "",
+          days_before_installation_to_receive: stickerTemplate.days_before_installation_to_receive || "",
           active: stickerTemplate.active !== undefined ? stickerTemplate.active : true,
           notes: stickerTemplate.notes || ""
         });
@@ -35,6 +37,7 @@ export default function CreateEditStickerTemplateDialog({ open, onClose, sticker
           sticker_name_category: "",
           default_vendor: "",
           estimated_delivery_days: "",
+          days_before_installation_to_receive: "",
           active: true,
           notes: ""
         });
@@ -103,6 +106,17 @@ export default function CreateEditStickerTemplateDialog({ open, onClose, sticker
                 min="0"
                 value={formData.estimated_delivery_days}
                 onChange={(e) => setFormData({ ...formData, estimated_delivery_days: e.target.value ? parseInt(e.target.value) : "" })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="days_before_installation_to_receive">Days Before Installation to Receive</Label>
+              <Input
+                id="days_before_installation_to_receive"
+                type="number"
+                min="0"
+                value={formData.days_before_installation_to_receive}
+                onChange={(e) => setFormData({ ...formData, days_before_installation_to_receive: e.target.value ? parseInt(e.target.value) : "" })}
               />
             </div>
 
