@@ -40,9 +40,9 @@ export default function StickerItemsPage() {
     queryFn: () => base44.entities.StickerTemplate.list()
   });
 
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => base44.entities.User.list()
+  const { data: appUsers = [] } = useQuery({
+    queryKey: ['appUsers'],
+    queryFn: () => base44.entities.AppUser.list()
   });
 
   const getStopName = (stopId) => {
@@ -61,10 +61,10 @@ export default function StickerItemsPage() {
   };
 
   const getCustodianName = (custodianId) => {
-    if (!custodianId) return "-";
-    const user = users.find(u => u.id === custodianId);
-    return user ? user.full_name : "-";
-  };
+     if (!custodianId) return "-";
+     const user = appUsers.find(u => u.id === custodianId);
+     return user ? (user.full_name || user.name) : "-";
+   };
 
   const handleEdit = (item) => {
     setSelectedItem(item);

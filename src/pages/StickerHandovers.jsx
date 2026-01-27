@@ -20,9 +20,9 @@ export default function StickerHandoversPage() {
   const [loading, setLoading] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => base44.entities.User.list()
+  const { data: appUsers = [] } = useQuery({
+    queryKey: ['appUsers'],
+    queryFn: () => base44.entities.AppUser.list()
   });
 
   const { data: stickerItems = [] } = useQuery({
@@ -136,12 +136,12 @@ export default function StickerHandoversPage() {
                     <SelectValue placeholder="Select technician" />
                   </SelectTrigger>
                   <SelectContent>
-                    {users.map((user) => (
-                      <SelectItem key={user.id} value={user.id}>
-                        {user.full_name} ({user.email})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                     {appUsers.map((user) => (
+                       <SelectItem key={user.id} value={user.id}>
+                         {user.full_name || user.name}
+                       </SelectItem>
+                     ))}
+                   </SelectContent>
                 </Select>
               </div>
               <div>
