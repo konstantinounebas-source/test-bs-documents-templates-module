@@ -50,14 +50,12 @@ export default function StopsPage() {
     
     // Get active (non-obsolete) stickers for this stop
     const activeStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status !== "Obsolete");
+    
+    // Only show warning if there are active stickers AND initial type differs from approved
     if (activeStickers.length === 0) return false;
+    if (stop.shelter_type_initial_id === stop.shelter_type_approved_id) return false;
     
-    // Get obsolete stickers for this stop
-    const obsoleteStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status === "Obsolete");
-    
-    // Show warning only if there are both active AND obsolete stickers
-    // This means stickers were replaced/changed and may not match
-    return obsoleteStickers.length > 0;
+    return true;
   };
 
   const checkAllStickersInstalled = (stop) => {
