@@ -3,16 +3,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Pencil } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import EditStickerItemDialog from "./EditStickerItemDialog";
 
 export default function ViewStopDialog({ open, onClose, stop }) {
   const [stickerItems, setStickerItems] = useState([]);
   const [stickerTemplates, setStickerTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
     if (open && stop) {
@@ -44,15 +41,6 @@ export default function ViewStopDialog({ open, onClose, stop }) {
       Installed: "default"
     };
     return <Badge variant={variants[status] || "secondary"}>{status}</Badge>;
-  };
-
-  const handleEdit = (item) => {
-    setSelectedItem(item);
-    setEditDialogOpen(true);
-  };
-
-  const handleItemSaved = () => {
-    loadData();
   };
 
   return (
@@ -98,7 +86,6 @@ export default function ViewStopDialog({ open, onClose, stop }) {
                         <TableHead>Status</TableHead>
                         <TableHead>Custody</TableHead>
                         <TableHead>Installed</TableHead>
-                        <TableHead className="w-[80px]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -114,15 +101,6 @@ export default function ViewStopDialog({ open, onClose, stop }) {
                           </TableCell>
                           <TableCell>
                             {item.installed ? "✓" : "-"}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEdit(item)}
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -140,13 +118,6 @@ export default function ViewStopDialog({ open, onClose, stop }) {
           </Button>
         </DialogFooter>
       </DialogContent>
-
-      <EditStickerItemDialog
-        open={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
-        stickerItem={selectedItem}
-        onSaved={handleItemSaved}
-      />
     </Dialog>
   );
 }
