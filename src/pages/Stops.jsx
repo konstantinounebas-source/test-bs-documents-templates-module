@@ -295,40 +295,47 @@ export default function StopsPage() {
                 ) : (
                   sortedStops.map((stop) => (
                     <TableRow key={stop.id}>
-                      <TableCell className="font-medium">{stop.stop_id}</TableCell>
-                      <TableCell>{stop.english_name}</TableCell>
-                      <TableCell>{stop.greek_name}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleView(stop)}
-                            title="View sticker items"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(stop)}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getShelterTypeName(stop.shelter_type_initial_id)}</TableCell>
-                      <TableCell>{getShelterTypeName(stop.shelter_type_approved_id)}</TableCell>
-                      <TableCell>{stop.current_planned_installation_date || "-"}</TableCell>
-                      <TableCell>{stop.shelter_installed ? "Yes" : "No"}</TableCell>
-                      <TableCell>
-                        {stop.all_stickers_installed ? (
-                          <span className="text-green-600 font-semibold">✓ Yes</span>
-                        ) : (
-                          <span className="text-gray-400">No</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
+                        <TableCell className="font-medium">{stop.stop_id}</TableCell>
+                        <TableCell>{stop.english_name}</TableCell>
+                        <TableCell>{stop.greek_name}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleView(stop)}
+                              title="View sticker items"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleEdit(stop)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell>{getShelterTypeName(stop.shelter_type_initial_id)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getShelterTypeName(stop.shelter_type_approved_id)}
+                            {checkStickersMismatch(stop) && (
+                              <AlertCircle className="w-4 h-4 text-red-500" title="Stickers may not match the approved type" />
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>{stop.current_planned_installation_date || "-"}</TableCell>
+                        <TableCell>{stop.shelter_installed ? "Yes" : "No"}</TableCell>
+                        <TableCell>
+                          {stop.all_stickers_installed ? (
+                            <span className="text-green-600 font-semibold">✓ Yes</span>
+                          ) : (
+                            <span className="text-gray-400">No</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
                   ))
                 )}
               </TableBody>
