@@ -341,7 +341,7 @@ export default function StopsPage() {
                         <TableCell>{stop.current_planned_installation_date || "-"}</TableCell>
                         <TableCell>{stop.shelter_installed ? "Yes" : "No"}</TableCell>
                         <TableCell>
-                          {stop.all_stickers_installed ? (
+                          {checkAllStickersInstalled(stop) ? (
                             <span className="text-green-600 font-semibold">✓ Yes</span>
                           ) : (
                             <span className="text-gray-400">No</span>
