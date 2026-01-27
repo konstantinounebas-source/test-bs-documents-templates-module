@@ -47,17 +47,10 @@ export default function StopsPage() {
 
   const checkStickersMismatch = (stop) => {
     if (!stop.shelter_type_approved_id) return false;
+    if (!stop.shelter_type_initial_id) return false;
     
-    const stopStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status !== "Obsolete");
-    if (stopStickers.length === 0) return false;
-
-    // Get expected sticker requirements for approved type
-    const approvedType = shelterTypes.find(t => t.id === stop.shelter_type_approved_id);
-    if (!approvedType) return false;
-
-    // Simple check: if there are stickers for this stop and approved type is set,
-    // we'd need to verify they match - this is a basic warning if stickers exist
-    return stopStickers.length > 0;
+    // Show warning only if initial and approved types are different
+    return stop.shelter_type_initial_id !== stop.shelter_type_approved_id;
   };
 
   const handleSort = (field) => {
