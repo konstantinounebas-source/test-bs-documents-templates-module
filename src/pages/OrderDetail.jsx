@@ -119,13 +119,24 @@ export default function OrderDetailPage() {
         }
       }
 
-      // Create new lines
+      // Create new lines and update sticker items
       for (const line of orderLines) {
         if (line.sticker_item_id && line.ordered_quantity > 0) {
           await base44.entities.OrderLine.create({
             order_id: currentOrderId,
             sticker_item_id: line.sticker_item_id,
             ordered_quantity: line.ordered_quantity
+          });
+
+          // Recalculate Total Ordered Quantity for this sticker item
+          const allOrderLines = await base44.entities.OrderLine.filter({
+            sticker_item_id: line.sticker_item_id
+          });
+          const totalOrdered = allOrderLines.reduce((sum, ol) => sum + (ol.ordered_quantity || 0), 0);
+          
+          await base44.entities.StickerItem.update(line.sticker_item_id, {
+            total_ordered_quantity: totalOrdered,
+            status: "Ordered"
           });
         }
       }

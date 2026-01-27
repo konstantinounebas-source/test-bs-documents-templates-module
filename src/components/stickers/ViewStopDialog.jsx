@@ -56,7 +56,7 @@ export default function ViewStopDialog({ open, onClose, stop }) {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+            <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
               <div>
                 <p className="text-sm text-gray-600">Greek Name</p>
                 <p className="font-medium">{stop?.greek_name}</p>
@@ -64,6 +64,16 @@ export default function ViewStopDialog({ open, onClose, stop }) {
               <div>
                 <p className="text-sm text-gray-600">English Name</p>
                 <p className="font-medium">{stop?.english_name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">All Stickers Installed</p>
+                <p className="font-medium">
+                  {stop?.all_stickers_installed ? (
+                    <span className="text-green-600">✓ Yes</span>
+                  ) : (
+                    <span className="text-gray-500">No</span>
+                  )}
+                </p>
               </div>
             </div>
 

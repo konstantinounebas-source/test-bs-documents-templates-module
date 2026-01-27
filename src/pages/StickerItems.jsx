@@ -1,18 +1,23 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Search, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import EditStickerItemDialog from "@/components/stickers/EditStickerItemDialog";
 
 export default function StickerItemsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCustodyStatus, setFilterCustodyStatus] = useState("all");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  const queryClient = useQueryClient();
 
   const { data: stickerItems = [], isLoading: itemsLoading } = useQuery({
     queryKey: ['stickerItems'],
@@ -48,6 +53,15 @@ export default function StickerItemsPage() {
     if (!custodianId) return "-";
     const user = users.find(u => u.id === custodianId);
     return user ? user.full_name : "-";
+  };
+
+  const handleEdit = (item) => {
+    setSelectedItem(item);
+    setEditDialogOpen(true);
+  };
+
+  const handleSaved = () => {
+    queryClient.invalidateQueries(['stickerItems']);
   };
 
   const getStatusBadge = (status) => {
@@ -155,6 +169,7 @@ export default function StickerItemsPage() {
                   <TableHead>Custody</TableHead>
                   <TableHead>Current Custodian</TableHead>
                   <TableHead>Installed</TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -184,6 +199,15 @@ export default function StickerItemsPage() {
                           <span className="text-gray-400">-</span>
                         )}
                       </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(item)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -192,6 +216,13 @@ export default function StickerItemsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <EditStickerItemDialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        stickerItem={selectedItem}
+        onSaved={handleSaved}
+      />
     </div>
   );
 }
