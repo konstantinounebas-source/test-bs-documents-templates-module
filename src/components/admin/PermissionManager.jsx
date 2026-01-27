@@ -39,8 +39,8 @@ const ALL_PAGES = [
   { key: 'StickerTemplates', label: 'Sticker Templates', module: 'Stickers & Installation' },
   { key: 'StickerItems', label: 'Sticker Items', module: 'Stickers & Installation' },
   { key: 'StopsWithStickers', label: 'Stops & Stickers', module: 'Stickers & Installation' },
-  { key: 'Orders', label: 'Orders', module: 'Stickers & Installation' },
-  { key: 'OrderDetail', label: 'Order Detail', module: 'Stickers & Installation' },
+  { key: 'OrdersManagement', label: 'Orders Management', module: 'Stickers & Installation' },
+  { key: 'OrderPrint', label: 'Order Print', module: 'Stickers & Installation' },
   { key: 'Receipts', label: 'Receipts', module: 'Stickers & Installation' },
   { key: 'StickerHandovers', label: 'Sticker Handovers', module: 'Stickers & Installation' },
 
