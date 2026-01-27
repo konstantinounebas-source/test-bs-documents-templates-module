@@ -47,7 +47,7 @@ export default function StickerItemsPage() {
 
   const getStopName = (stopId) => {
     const stop = stops.find(s => s.id === stopId);
-    return stop ? `${stop.stop_id} - ${stop.english_name}` : "-";
+    return stop ? stop.stop_id : "-";
   };
 
   const getStickerTemplateName = (templateId) => {
