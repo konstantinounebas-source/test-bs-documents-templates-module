@@ -11,6 +11,8 @@ export default function CreateEditShelterTypeDialog({ open, onClose, shelterType
   const [formData, setFormData] = useState({
     shelter_type_id: "",
     description: "",
+    greek_name_max_chars: "",
+    english_name_max_chars: "",
     active: true
   });
   const [loading, setLoading] = useState(false);
@@ -21,12 +23,16 @@ export default function CreateEditShelterTypeDialog({ open, onClose, shelterType
         setFormData({
           shelter_type_id: shelterType.shelter_type_id || "",
           description: shelterType.description || "",
+          greek_name_max_chars: shelterType.greek_name_max_chars || "",
+          english_name_max_chars: shelterType.english_name_max_chars || "",
           active: shelterType.active !== undefined ? shelterType.active : true
         });
       } else {
         setFormData({
           shelter_type_id: "",
           description: "",
+          greek_name_max_chars: "",
+          english_name_max_chars: "",
           active: true
         });
       }
@@ -74,6 +80,28 @@ export default function CreateEditShelterTypeDialog({ open, onClose, shelterType
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 rows={3}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="greek_name_max_chars">Greek Name Max Characters</Label>
+              <Input
+                id="greek_name_max_chars"
+                type="number"
+                value={formData.greek_name_max_chars}
+                onChange={(e) => setFormData({ ...formData, greek_name_max_chars: e.target.value ? parseInt(e.target.value) : "" })}
+                placeholder="e.g. 30"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="english_name_max_chars">English Name Max Characters</Label>
+              <Input
+                id="english_name_max_chars"
+                type="number"
+                value={formData.english_name_max_chars}
+                onChange={(e) => setFormData({ ...formData, english_name_max_chars: e.target.value ? parseInt(e.target.value) : "" })}
+                placeholder="e.g. 30"
               />
             </div>
 
