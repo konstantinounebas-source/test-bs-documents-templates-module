@@ -288,6 +288,7 @@ export default function StickerItemsPage() {
                   filteredItems.map((item) => (
                     <TableRow key={item.id}>
                        <TableCell className="font-medium">{getStopName(item.stop_id)}</TableCell>
+                       <TableCell>{getStopGreekName(item.stop_id)}</TableCell>
                        <TableCell>{getStickerTemplateName(item.sticker_template_id)}</TableCell>
                        <TableCell>{getStatusBadge(item.status)}</TableCell>
                       <TableCell>
