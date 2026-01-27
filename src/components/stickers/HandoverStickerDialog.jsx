@@ -10,8 +10,8 @@ export default function HandoverStickerDialog({ open, onClose, stickerItem, onCo
   const [technicianId, setTechnicianId] = useState("");
 
   const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: () => base44.entities.User.list()
+    queryKey: ['appUsers'],
+    queryFn: () => base44.entities.AppUser.list()
   });
 
   const handleSubmit = () => {

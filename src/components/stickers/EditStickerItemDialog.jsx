@@ -64,7 +64,7 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
   }, [open, stickerItem]);
 
   const loadUsers = async () => {
-    const usersList = await base44.entities.User.list();
+    const usersList = await base44.entities.AppUser.list();
     setUsers(usersList);
   };
 

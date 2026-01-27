@@ -61,6 +61,16 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
     setLoading(true);
 
     try {
+      // Check for duplicate stop_id only when creating new stop
+      if (!stop) {
+        const existingStops = await base44.entities.Stop.filter({ stop_id: formData.stop_id });
+        if (existingStops.length > 0) {
+          alert("Stop ID already exists. Please use a unique Stop ID.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const dataToSave = {
         ...formData,
         english_count_letters: formData.english_name.length,
