@@ -5,13 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Pencil } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Search, Pencil, Download, Upload, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import CreateEditStopDialog from "@/components/stickers/CreateEditStopDialog";
+import ImportStopsDialog from "@/components/stickers/ImportStopsDialog";
+import ExcelJS from "exceljs";
 
 export default function StopsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedStop, setSelectedStop] = useState(null);
+  const [filterShelterType, setFilterShelterType] = useState("all");
+  const [filterInstalled, setFilterInstalled] = useState("all");
+  const [sortField, setSortField] = useState(null);
+  const [sortDirection, setSortDirection] = useState("asc");
   const queryClient = useQueryClient();
 
   const { data: stops = [], isLoading } = useQuery({
@@ -30,13 +38,63 @@ export default function StopsPage() {
     return type ? type.shelter_type_id : "-";
   };
 
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
+
+  const getSortIcon = (field) => {
+    if (sortField !== field) return <ArrowUpDown className="w-4 h-4 ml-1 inline" />;
+    return sortDirection === "asc" ? 
+      <ArrowUp className="w-4 h-4 ml-1 inline" /> : 
+      <ArrowDown className="w-4 h-4 ml-1 inline" />;
+  };
+
   const filteredStops = stops.filter(stop => {
     const term = searchTerm.toLowerCase();
-    return (
+    const matchesSearch = (
       stop.stop_id?.toLowerCase().includes(term) ||
       stop.english_name?.toLowerCase().includes(term) ||
       stop.greek_name?.toLowerCase().includes(term)
     );
+
+    const matchesShelterType = filterShelterType === "all" || 
+      stop.shelter_type_initial_id === filterShelterType ||
+      stop.shelter_type_approved_id === filterShelterType;
+
+    const matchesInstalled = filterInstalled === "all" ||
+      (filterInstalled === "yes" && stop.shelter_installed) ||
+      (filterInstalled === "no" && !stop.shelter_installed);
+
+    return matchesSearch && matchesShelterType && matchesInstalled;
+  });
+
+  const sortedStops = [...filteredStops].sort((a, b) => {
+    if (!sortField) return 0;
+
+    let aValue, bValue;
+
+    if (sortField === "shelter_type_initial_id" || sortField === "shelter_type_approved_id") {
+      aValue = getShelterTypeName(a[sortField]);
+      bValue = getShelterTypeName(b[sortField]);
+    } else if (sortField === "current_planned_installation_date") {
+      aValue = a[sortField] || "";
+      bValue = b[sortField] || "";
+    } else if (sortField === "shelter_installed") {
+      aValue = a[sortField] ? 1 : 0;
+      bValue = b[sortField] ? 1 : 0;
+    } else {
+      aValue = a[sortField] || "";
+      bValue = b[sortField] || "";
+    }
+
+    if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+    return 0;
   });
 
   const handleCreate = () => {
@@ -53,6 +111,44 @@ export default function StopsPage() {
     queryClient.invalidateQueries(['stops']);
   };
 
+  const handleExport = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Stops");
+
+    worksheet.columns = [
+      { header: "Stop ID", key: "stop_id", width: 15 },
+      { header: "English Name", key: "english_name", width: 30 },
+      { header: "Greek Name", key: "greek_name", width: 30 },
+      { header: "Shelter Type Initial", key: "shelter_type_initial", width: 20 },
+      { header: "Shelter Type Approved", key: "shelter_type_approved", width: 20 },
+      { header: "Planned Installation Date", key: "current_planned_installation_date", width: 25 },
+      { header: "Shelter Installed", key: "shelter_installed", width: 18 },
+      { header: "Comments", key: "comments", width: 40 }
+    ];
+
+    sortedStops.forEach(stop => {
+      worksheet.addRow({
+        stop_id: stop.stop_id,
+        english_name: stop.english_name,
+        greek_name: stop.greek_name,
+        shelter_type_initial: getShelterTypeName(stop.shelter_type_initial_id),
+        shelter_type_approved: getShelterTypeName(stop.shelter_type_approved_id),
+        current_planned_installation_date: stop.current_planned_installation_date || "",
+        shelter_installed: stop.shelter_installed ? "Yes" : "No",
+        comments: stop.comments || ""
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `stops_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return <div className="p-6">Loading...</div>;
   }
@@ -63,14 +159,24 @@ export default function StopsPage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Stops</span>
-            <Button onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Stop
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleExport}>
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+              <Button variant="outline" onClick={() => setImportDialogOpen(true)}>
+                <Upload className="w-4 h-4 mr-2" />
+                Import
+              </Button>
+              <Button onClick={handleCreate}>
+                <Plus className="w-4 h-4 mr-2" />
+                New Stop
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="mb-4">
+          <div className="mb-4 space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
@@ -79,6 +185,31 @@ export default function StopsPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Select value={filterShelterType} onValueChange={setFilterShelterType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by Shelter Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Shelter Types</SelectItem>
+                  {shelterTypes.filter(t => t.active).map(type => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.shelter_type_id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterInstalled} onValueChange={setFilterInstalled}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by Installation Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="yes">Installed</SelectItem>
+                  <SelectItem value="no">Not Installed</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -89,22 +220,42 @@ export default function StopsPage() {
                   <TableHead>Stop ID</TableHead>
                   <TableHead>English Name</TableHead>
                   <TableHead>Greek Name</TableHead>
-                  <TableHead>Initial Type</TableHead>
-                  <TableHead>Approved Type</TableHead>
-                  <TableHead>Planned Date</TableHead>
-                  <TableHead>Shelter Installed</TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleSort("shelter_type_initial_id")}
+                  >
+                    Initial Type {getSortIcon("shelter_type_initial_id")}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleSort("shelter_type_approved_id")}
+                  >
+                    Approved Type {getSortIcon("shelter_type_approved_id")}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleSort("current_planned_installation_date")}
+                  >
+                    Planned Date {getSortIcon("current_planned_installation_date")}
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-gray-50"
+                    onClick={() => handleSort("shelter_installed")}
+                  >
+                    Shelter Installed {getSortIcon("shelter_installed")}
+                  </TableHead>
                   <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredStops.length === 0 ? (
+                {sortedStops.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-gray-500 py-8">
                       No stops found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredStops.map((stop) => (
+                  sortedStops.map((stop) => (
                     <TableRow key={stop.id}>
                       <TableCell className="font-medium">{stop.stop_id}</TableCell>
                       <TableCell>{stop.english_name}</TableCell>
@@ -130,7 +281,7 @@ export default function StopsPage() {
           </div>
 
           <div className="mt-4 text-sm text-gray-600">
-            Total: {filteredStops.length} stops
+            Total: {sortedStops.length} stops
           </div>
         </CardContent>
       </Card>
@@ -140,6 +291,12 @@ export default function StopsPage() {
         onClose={() => setDialogOpen(false)}
         stop={selectedStop}
         onStopSaved={handleStopSaved}
+      />
+
+      <ImportStopsDialog
+        open={importDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+        onImportComplete={handleStopSaved}
       />
     </div>
   );
