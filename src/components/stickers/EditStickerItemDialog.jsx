@@ -71,6 +71,51 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
 
       await base44.entities.StickerItem.update(stickerItem.id, updateData);
 
+      // Log the changes
+      const changes = [];
+      if (formData.status !== stickerItem.status) {
+        changes.push(`Status: ${stickerItem.status} → ${formData.status}`);
+        await base44.entities.StickerMovementLog.create({
+          sticker_item_id: stickerItem.id,
+          action_type: "Status Change",
+          old_status: stickerItem.status,
+          new_status: formData.status,
+          user_email: user.email
+        });
+      }
+      if (formData.custody_status !== stickerItem.custody_status) {
+        changes.push(`Custody: ${stickerItem.custody_status} → ${formData.custody_status}`);
+        await base44.entities.StickerMovementLog.create({
+          sticker_item_id: stickerItem.id,
+          action_type: "Custody Change",
+          old_custody_status: stickerItem.custody_status,
+          new_custody_status: formData.custody_status,
+          user_email: user.email
+        });
+      }
+      if (formData.installed && !stickerItem.installed) {
+        await base44.entities.StickerMovementLog.create({
+          sticker_item_id: stickerItem.id,
+          action_type: "Installed",
+          old_status: stickerItem.status,
+          new_status: "Installed",
+          old_custody_status: stickerItem.custody_status,
+          new_custody_status: "Installed",
+          user_email: user.email
+        });
+      }
+      if (changes.length === 0 && (formData.comments !== stickerItem.comments || 
+          formData.reorder_reason !== stickerItem.reorder_reason ||
+          formData.reorder_date !== stickerItem.reorder_date)) {
+        await base44.entities.StickerMovementLog.create({
+          sticker_item_id: stickerItem.id,
+          action_type: "Updated",
+          notes: formData.comments,
+          reorder_reason: formData.reorder_reason,
+          user_email: user.email
+        });
+      }
+
       // Check and update Stop.all_stickers_installed
       await updateStopAllStickersInstalled(stickerItem.stop_id);
 
