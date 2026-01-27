@@ -252,6 +252,7 @@ export default function StopsPage() {
                   >
                     Shelter Installed {getSortIcon("shelter_installed")}
                   </TableHead>
+                  <TableHead>All Stickers Installed</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
