@@ -28,6 +28,7 @@ export default function EditApprovedTypeDialog({ open, onClose, stop, onTypeChan
     setLoading(true);
     try {
       const oldApprovedTypeId = stop.shelter_type_approved_id;
+      let hasOldStickers = false;
 
       // Mark old sticker items as obsolete
       if (oldApprovedTypeId) {
@@ -36,8 +37,11 @@ export default function EditApprovedTypeDialog({ open, onClose, stop, onTypeChan
           status: { $ne: "Obsolete" }
         });
 
-        for (const item of oldStickerItems) {
-          await base44.entities.StickerItem.update(item.id, { status: "Obsolete" });
+        if (oldStickerItems.length > 0) {
+          hasOldStickers = true;
+          for (const item of oldStickerItems) {
+            await base44.entities.StickerItem.update(item.id, { status: "Obsolete" });
+          }
         }
       }
 
@@ -58,6 +62,35 @@ export default function EditApprovedTypeDialog({ open, onClose, stop, onTypeChan
     } catch (error) {
       console.error("Error changing approved type:", error);
       setLoading(false);
+    }
+  };
+
+  const checkHasOldStickers = async () => {
+    if (!stop.shelter_type_approved_id) return false;
+    
+    const oldStickerItems = await base44.entities.StickerItem.filter({
+      stop_id: stop.id,
+      status: { $ne: "Obsolete" }
+    });
+    
+    return oldStickerItems.length > 0;
+  };
+
+  const handleContinueClick = async () => {
+    if (selectedTypeId === stop?.shelter_type_approved_id) return;
+    
+    // Check if there are old stickers
+    const hasOldStickers = await checkHasOldStickers();
+    
+    // If no old stickers and type is being cleared, just update directly
+    if (!hasOldStickers && !selectedTypeId) {
+      await handleConfirm();
+    } else if (!hasOldStickers && selectedTypeId) {
+      // If no old stickers but new type is selected, show simpler confirmation
+      setShowConfirm(true);
+    } else {
+      // If there are old stickers, show confirmation
+      setShowConfirm(true);
     }
   };
 
@@ -151,7 +184,7 @@ export default function EditApprovedTypeDialog({ open, onClose, stop, onTypeChan
             </Button>
             <Button 
               type="submit" 
-              onClick={() => setShowConfirm(true)}
+              onClick={handleContinueClick}
               disabled={selectedTypeId === stop?.shelter_type_approved_id}
             >
               Συνέχεια
