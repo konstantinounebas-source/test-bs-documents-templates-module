@@ -9,12 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Edit, PackageCheck, Users, AlertCircle, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import EditStickerItemDialog from "@/components/stickers/EditStickerItemDialog";
+import ReorderStickerDialog from "@/components/stickers/ReorderStickerDialog";
+import HandoverStickerDialog from "@/components/stickers/HandoverStickerDialog";
 
 export default function StickerItemsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCustodyStatus, setFilterCustodyStatus] = useState("all");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
+  const [handoverDialogOpen, setHandoverDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
   const queryClient = useQueryClient();
@@ -72,18 +76,23 @@ export default function StickerItemsPage() {
     queryClient.invalidateQueries(['stickerItems']);
   };
 
-  const handleHandover = async (item) => {
-    await base44.entities.StickerItem.update(item.id, {
-      custody_status: "With Technician"
-    });
+  const handleHandover = (item) => {
+    setSelectedItem(item);
+    setHandoverDialogOpen(true);
+  };
+
+  const handleHandoverConfirm = async (data) => {
+    await base44.entities.StickerItem.update(selectedItem.id, data);
     queryClient.invalidateQueries(['stickerItems']);
   };
 
-  const handleReorder = async (item) => {
-    await base44.entities.StickerItem.update(item.id, {
-      need_reorder: true,
-      reorder_date: new Date().toISOString().split('T')[0]
-    });
+  const handleReorder = (item) => {
+    setSelectedItem(item);
+    setReorderDialogOpen(true);
+  };
+
+  const handleReorderConfirm = async (data) => {
+    await base44.entities.StickerItem.update(selectedItem.id, data);
     queryClient.invalidateQueries(['stickerItems']);
   };
 
@@ -294,6 +303,20 @@ export default function StickerItemsPage() {
         onClose={() => setEditDialogOpen(false)}
         stickerItem={selectedItem}
         onSaved={handleSaved}
+      />
+
+      <ReorderStickerDialog
+        open={reorderDialogOpen}
+        onClose={() => setReorderDialogOpen(false)}
+        stickerItem={selectedItem}
+        onConfirm={handleReorderConfirm}
+      />
+
+      <HandoverStickerDialog
+        open={handoverDialogOpen}
+        onClose={() => setHandoverDialogOpen(false)}
+        stickerItem={selectedItem}
+        onConfirm={handleHandoverConfirm}
       />
     </div>
   );
