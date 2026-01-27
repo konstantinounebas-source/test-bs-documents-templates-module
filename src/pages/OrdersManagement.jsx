@@ -243,8 +243,25 @@ export default function OrdersManagementPage() {
           {availableItems.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No sticker items need ordering</p>
           ) : (
-            <div className="border rounded-lg">
-              <Table>
+            <>
+              <div className="mb-4">
+                <Label>Filter by Sticker Category</Label>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {stickerCategories.map(category => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="border rounded-lg">
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[50px]"></TableHead>
