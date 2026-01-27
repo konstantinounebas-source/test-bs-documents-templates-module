@@ -29,7 +29,7 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
       { header: "Comments", key: "comments", width: 40 }
     ];
 
-    worksheet.addRow({
+    const sampleRow = worksheet.addRow({
       stop_id: "STOP001",
       english_name: "Main Street Stop",
       greek_name: "Στάση Κεντρικής Οδού",
@@ -39,6 +39,9 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
       shelter_installed: "No",
       comments: "Sample stop"
     });
+    
+    // Force the date column to be text format
+    sampleRow.getCell(6).numFmt = '@';
 
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
