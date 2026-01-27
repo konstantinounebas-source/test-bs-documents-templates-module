@@ -335,5 +335,6 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
