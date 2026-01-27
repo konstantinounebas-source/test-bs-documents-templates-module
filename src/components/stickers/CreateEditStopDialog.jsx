@@ -95,8 +95,10 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
         await base44.entities.StickerItem.update(item.id, { status: "Obsolete" });
       }
 
-      // Create new sticker items for the new approved type
-      await createStickerItemsForStop(stop.id, pendingApprovedTypeId);
+      // Create new sticker items only if there's a new approved type
+      if (pendingApprovedTypeId) {
+        await createStickerItemsForStop(stop.id, pendingApprovedTypeId);
+      }
     }
 
     // Set the new approved type
