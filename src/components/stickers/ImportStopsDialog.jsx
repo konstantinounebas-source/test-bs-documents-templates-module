@@ -76,13 +76,34 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
       worksheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return;
 
+        // Helper function to convert Excel date to YYYY-MM-DD format
+        const formatExcelDate = (dateValue) => {
+          if (!dateValue) return "";
+          if (dateValue instanceof Date) {
+            return dateValue.toISOString().split('T')[0];
+          }
+          const dateStr = dateValue.toString().trim();
+          // If it's already in YYYY-MM-DD format, return as is
+          if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            return dateStr;
+          }
+          // Try to parse other date formats
+          try {
+            const date = new Date(dateStr);
+            if (!isNaN(date)) {
+              return date.toISOString().split('T')[0];
+            }
+          } catch (e) {}
+          return dateStr;
+        };
+
         const stop = {
           stop_id: row.getCell(1).value?.toString().trim(),
           english_name: row.getCell(2).value?.toString().trim(),
           greek_name: row.getCell(3).value?.toString().trim(),
           shelter_type_initial_id: "",
           shelter_type_approved_id: "",
-          current_planned_installation_date: row.getCell(6).value?.toString().trim(),
+          current_planned_installation_date: formatExcelDate(row.getCell(6).value),
           shelter_installed: false,
           comments: row.getCell(8).value?.toString().trim() || ""
         };
