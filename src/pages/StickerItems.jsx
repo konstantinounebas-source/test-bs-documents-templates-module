@@ -280,7 +280,7 @@ export default function StickerItemsPage() {
               <TableBody>
                 {filteredItems.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={8} className="text-center text-gray-500 py-8">
                       No sticker items found
                     </TableCell>
                   </TableRow>
