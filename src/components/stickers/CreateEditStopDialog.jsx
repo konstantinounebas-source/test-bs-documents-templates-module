@@ -69,6 +69,39 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
     setShelterTypes(types.filter(t => t.active));
   };
 
+  const handleApprovedTypeChange = (value) => {
+    const oldApprovedTypeId = stop?.shelter_type_approved_id;
+    const newApprovedTypeId = value;
+
+    // If changing from one type to another and old type exists, show confirmation
+    if (oldApprovedTypeId && newApprovedTypeId && oldApprovedTypeId !== newApprovedTypeId) {
+      setPendingApprovedTypeId(newApprovedTypeId);
+      setShowObsoleteConfirm(true);
+    } else {
+      // If clearing or setting for first time, just change it
+      setFormData({ ...formData, shelter_type_approved_id: value });
+    }
+  };
+
+  const handleObsoleteConfirm = async (makeObsolete) => {
+    if (makeObsolete && stop) {
+      // Mark old sticker items as obsolete
+      const oldStickerItems = await base44.entities.StickerItem.filter({
+        stop_id: stop.id,
+        status: { $ne: "Obsolete" }
+      });
+
+      for (const item of oldStickerItems) {
+        await base44.entities.StickerItem.update(item.id, { status: "Obsolete" });
+      }
+    }
+
+    // Set the new approved type
+    setFormData({ ...formData, shelter_type_approved_id: pendingApprovedTypeId });
+    setShowObsoleteConfirm(false);
+    setPendingApprovedTypeId(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
