@@ -44,7 +44,6 @@ import StickerMovementLogs from './pages/StickerMovementLogs';
 import StickerTemplates from './pages/StickerTemplates';
 import StockMovements from './pages/StockMovements';
 import StockOverview from './pages/StockOverview';
-import Stops from './pages/Stops';
 import StopsWithStickers from './pages/StopsWithStickers';
 import Templates from './pages/Templates';
 import UserGuide from './pages/UserGuide';
@@ -55,6 +54,7 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
+import Stops from './pages/Stops';
 import __Layout from './Layout.jsx';
 
 
@@ -105,7 +105,6 @@ export const PAGES = {
     "StickerTemplates": StickerTemplates,
     "StockMovements": StockMovements,
     "StockOverview": StockOverview,
-    "Stops": Stops,
     "StopsWithStickers": StopsWithStickers,
     "Templates": Templates,
     "UserGuide": UserGuide,
@@ -116,6 +115,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
+    "Stops": Stops,
 }
 
 export const pagesConfig = {
