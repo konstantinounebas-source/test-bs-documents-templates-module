@@ -257,7 +257,7 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
                 <div className="flex gap-2">
                   <Select
                     value={formData.shelter_type_approved_id}
-                    onValueChange={(value) => setFormData({ ...formData, shelter_type_approved_id: value })}
+                    onValueChange={handleApprovedTypeChange}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select approved type" />
