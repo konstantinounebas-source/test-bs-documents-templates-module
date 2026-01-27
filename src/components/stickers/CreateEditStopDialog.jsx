@@ -24,32 +24,41 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      loadShelterTypes();
-      if (stop) {
-        setFormData({
-          stop_id: stop.stop_id || "",
-          english_name: stop.english_name || "",
-          greek_name: stop.greek_name || "",
-          shelter_type_initial_id: stop.shelter_type_initial_id || "",
-          shelter_type_approved_id: stop.shelter_type_approved_id || "",
-          current_planned_installation_date: stop.current_planned_installation_date || "",
-          shelter_installed: stop.shelter_installed || false,
-          comments: stop.comments || ""
-        });
-      } else {
-        setFormData({
-          stop_id: "",
-          english_name: "",
-          greek_name: "",
-          shelter_type_initial_id: "",
-          shelter_type_approved_id: "",
-          current_planned_installation_date: "",
-          shelter_installed: false,
-          comments: ""
-        });
+    const initializeDialog = async () => {
+      if (open) {
+        await loadShelterTypes();
+        
+        if (stop) {
+          const dateValue = stop.current_planned_installation_date
+            ? stop.current_planned_installation_date.split("T")[0]
+            : "";
+          
+          setFormData({
+            stop_id: stop.stop_id || "",
+            english_name: stop.english_name || "",
+            greek_name: stop.greek_name || "",
+            shelter_type_initial_id: stop.shelter_type_initial_id || "",
+            shelter_type_approved_id: stop.shelter_type_approved_id || "",
+            current_planned_installation_date: dateValue,
+            shelter_installed: stop.shelter_installed || false,
+            comments: stop.comments || ""
+          });
+        } else {
+          setFormData({
+            stop_id: "",
+            english_name: "",
+            greek_name: "",
+            shelter_type_initial_id: "",
+            shelter_type_approved_id: "",
+            current_planned_installation_date: "",
+            shelter_installed: false,
+            comments: ""
+          });
+        }
       }
-    }
+    };
+    
+    initializeDialog();
   }, [open, stop]);
 
   const loadShelterTypes = async () => {
