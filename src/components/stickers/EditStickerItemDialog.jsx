@@ -73,6 +73,19 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
       });
 
       await updateStopAllStickersInstalled(stickerItem.stop_id);
+      
+      // Reset form data with new values
+      setFormData({
+        status: "Needed",
+        installed: false,
+        installed_date: "",
+        custody_status: "",
+        need_reorder: false,
+        reorder_reason: "",
+        reorder_date: "",
+        comments: ""
+      });
+      
       onSaved();
       onClose();
     } catch (error) {
