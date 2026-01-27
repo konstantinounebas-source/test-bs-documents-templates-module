@@ -50,20 +50,40 @@ export default function StopsPage() {
     
     // Get active (non-obsolete) stickers for this stop
     const activeStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status !== "Obsolete");
-    if (activeStickers.length === 0) return false;
     
     // Get the requirements for this shelter type
-    // Requirements would typically match templates and quantities
-    // For now, if there are active stickers that match the approved type requirements,
-    // and NO obsolete stickers exist, there's no mismatch
-    // A mismatch only occurs if stickers don't align with what's required by approved type
+    const requirements = stickerItems
+      .filter(s => s.stop_id === stop.id)
+      .reduce((acc, sticker) => {
+        const key = sticker.sticker_template_id;
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
     
-    // This is a simplified check - in production, you'd validate against ShelterTypeStickerRequirement
-    // For now, just check: if we have active stickers but they changed (evidenced by obsolete ones),
-    // show warning only if the active ones look incomplete
+    // Count active stickers by template
+    const activeCounts = {};
+    activeStickers.forEach(s => {
+      const key = s.sticker_template_id;
+      activeCounts[key] = (activeCounts[key] || 0) + 1;
+    });
     
-    // Return false if we have active stickers - they're the current state
-    // Only warn if stop has approved type but NO active stickers (not yet set up)
+    // If we have obsolete stickers but they don't match current active ones, show warning
+    const obsoleteStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status === "Obsolete");
+    if (obsoleteStickers.length > 0) {
+      // Check if the count/templates have changed
+      const obsoleteCounts = {};
+      obsoleteStickers.forEach(s => {
+        const key = s.sticker_template_id;
+        obsoleteCounts[key] = (obsoleteCounts[key] || 0) + 1;
+      });
+      
+      // Compare active vs obsolete counts - if different, templates changed
+      const templatesChanged = Object.keys(obsoleteCounts).some(
+        key => activeCounts[key] !== obsoleteCounts[key]
+      );
+      return templatesChanged;
+    }
+    
     return false;
   };
 
