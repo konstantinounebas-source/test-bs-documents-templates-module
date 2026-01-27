@@ -6,15 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Pencil, Download, Upload, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Search, Pencil, Download, Upload, ArrowUpDown, ArrowUp, ArrowDown, Eye } from "lucide-react";
 import CreateEditStopDialog from "@/components/stickers/CreateEditStopDialog";
 import ImportStopsDialog from "@/components/stickers/ImportStopsDialog";
+import ViewStopDialog from "@/components/stickers/ViewStopDialog";
 import ExcelJS from "exceljs";
 
 export default function StopsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedStop, setSelectedStop] = useState(null);
   const [filterShelterType, setFilterShelterType] = useState("all");
   const [filterInstalled, setFilterInstalled] = useState("all");
@@ -105,6 +107,11 @@ export default function StopsPage() {
   const handleEdit = (stop) => {
     setSelectedStop(stop);
     setDialogOpen(true);
+  };
+
+  const handleView = (stop) => {
+    setSelectedStop(stop);
+    setViewDialogOpen(true);
   };
 
   const handleStopSaved = () => {
@@ -220,6 +227,7 @@ export default function StopsPage() {
                   <TableHead>Stop ID</TableHead>
                   <TableHead>English Name</TableHead>
                   <TableHead>Greek Name</TableHead>
+                  <TableHead className="w-[120px]"></TableHead>
                   <TableHead 
                     className="cursor-pointer hover:bg-gray-50"
                     onClick={() => handleSort("shelter_type_initial_id")}
@@ -244,7 +252,6 @@ export default function StopsPage() {
                   >
                     Shelter Installed {getSortIcon("shelter_installed")}
                   </TableHead>
-                  <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -260,6 +267,25 @@ export default function StopsPage() {
                       <TableCell className="font-medium">{stop.stop_id}</TableCell>
                       <TableCell>{stop.english_name}</TableCell>
                       <TableCell>{stop.greek_name}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleView(stop)}
+                            title="View sticker items"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(stop)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                       <TableCell>{getShelterTypeName(stop.shelter_type_initial_id)}</TableCell>
                       <TableCell>{getShelterTypeName(stop.shelter_type_approved_id)}</TableCell>
                       <TableCell>{stop.current_planned_installation_date || "-"}</TableCell>
@@ -297,6 +323,12 @@ export default function StopsPage() {
         open={importDialogOpen}
         onClose={() => setImportDialogOpen(false)}
         onImportComplete={handleStopSaved}
+      />
+
+      <ViewStopDialog
+        open={viewDialogOpen}
+        onClose={() => setViewDialogOpen(false)}
+        stop={selectedStop}
       />
     </div>
   );

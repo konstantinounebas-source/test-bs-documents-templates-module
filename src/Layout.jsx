@@ -249,6 +249,13 @@ const allNavigationGroups = [
         icon: Sticker,
         description: "Manage sticker templates",
         pageKey: "StickerTemplates"
+      },
+      {
+        title: "Sticker Items",
+        url: createPageUrl("StickerItems"),
+        icon: Sticker,
+        description: "View all sticker items",
+        pageKey: "StickerItems"
       }
     ]
   },
