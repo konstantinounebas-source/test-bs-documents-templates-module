@@ -131,7 +131,11 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
 
       // Auto-create sticker items if shelter_type_approved_id was set on new stop
       if (newApprovedTypeId && !stop) {
-        await createStickerItemsForStop(stopId, newApprovedTypeId);
+        // Check if stickers already exist for this stop
+        const existingStickers = await base44.entities.StickerItem.filter({ stop_id: stopId });
+        if (existingStickers.length === 0) {
+          await createStickerItemsForStop(stopId, newApprovedTypeId);
+        }
       }
 
       setLoading(false);
