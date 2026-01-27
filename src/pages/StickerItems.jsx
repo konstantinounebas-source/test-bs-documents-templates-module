@@ -20,6 +20,7 @@ export default function StickerItemsPage() {
   const [filterCustodyStatus, setFilterCustodyStatus] = useState("all");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
+  const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
   const [handoverDialogOpen, setHandoverDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
