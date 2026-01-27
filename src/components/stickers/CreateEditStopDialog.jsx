@@ -157,15 +157,14 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
                 />
               </div>
               <div>
-                <Label htmlFor="current_planned_installation_date">Planned Installation Date *</Label>
-                <Input
-                  id="current_planned_installation_date"
-                  type="date"
-                  value={formData.current_planned_installation_date}
-                  onChange={(e) => setFormData({ ...formData, current_planned_installation_date: e.target.value })}
-                  required
-                />
-              </div>
+                 <Label htmlFor="current_planned_installation_date">Planned Installation Date</Label>
+                 <Input
+                   id="current_planned_installation_date"
+                   type="date"
+                   value={formData.current_planned_installation_date}
+                   onChange={(e) => setFormData({ ...formData, current_planned_installation_date: e.target.value })}
+                 />
+               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
