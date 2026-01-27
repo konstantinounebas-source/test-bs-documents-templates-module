@@ -10,6 +10,7 @@ import { Search, Edit, PackageCheck, Users, AlertCircle, CheckCircle, History } 
 import { Badge } from "@/components/ui/badge";
 import EditStickerItemDialog from "@/components/stickers/EditStickerItemDialog";
 import ReorderStickerDialog from "@/components/stickers/ReorderStickerDialog";
+import ReopenStickerDialog from "@/components/stickers/ReopenStickerDialog";
 import HandoverStickerDialog from "@/components/stickers/HandoverStickerDialog";
 import ViewStickerHistoryDialog from "@/components/stickers/ViewStickerHistoryDialog";
 
