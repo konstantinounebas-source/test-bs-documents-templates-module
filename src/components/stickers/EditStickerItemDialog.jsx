@@ -54,7 +54,7 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
         installed: false,
         installed_date: "",
         custody_status: "In Stock",
-        current_custodian_id: "",
+        current_custodian_id: null,
         need_reorder: false
       };
 
@@ -65,6 +65,8 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
         action_type: "Status Change",
         old_status: stickerItem.status,
         new_status: "Received",
+        old_custody_status: stickerItem.custody_status,
+        new_custody_status: "In Stock",
         user_email: user.email,
         notes: "Reopened from installed state"
       });
