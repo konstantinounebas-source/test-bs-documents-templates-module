@@ -263,10 +263,9 @@ export default function StickerItemsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Stop</TableHead>
-                  <TableHead>Sticker Template</TableHead>
-                  <TableHead>Print Line 1</TableHead>
+                  <TableHead>Sticker ID</TableHead>
+                  <TableHead>Ονομασία</TableHead>
                   <TableHead>Print Line 2</TableHead>
-                  <TableHead>Print Line 3</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Custody</TableHead>
                   <TableHead>Current Custodian</TableHead>
