@@ -143,6 +143,26 @@ export default function StickerItemsPage() {
     queryClient.invalidateQueries(['stickerItems']);
   };
 
+  const handleReopen = (item) => {
+    setSelectedItem(item);
+    setReopenDialogOpen(true);
+  };
+
+  const handleReopenConfirm = async (data) => {
+    const user = await base44.auth.me();
+    
+    await base44.entities.StickerItem.update(selectedItem.id, data);
+    
+    await base44.entities.StickerMovementLog.create({
+      sticker_item_id: selectedItem.id,
+      action_type: "Status Change",
+      notes: `Reorder cancelled. ${data.comments}`,
+      user_email: user.email
+    });
+    
+    queryClient.invalidateQueries(['stickerItems']);
+  };
+
   const handleInstalled = async (item) => {
     const user = await base44.auth.me();
     const oldStatus = item.status;
