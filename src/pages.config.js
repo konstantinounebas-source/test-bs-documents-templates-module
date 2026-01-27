@@ -46,6 +46,7 @@ import Stops from './pages/Stops';
 import ShelterTypes from './pages/ShelterTypes';
 import StickerTemplates from './pages/StickerTemplates';
 import StickerItems from './pages/StickerItems';
+import StopsWithStickers from './pages/StopsWithStickers';
 import __Layout from './Layout.jsx';
 
 
@@ -98,6 +99,7 @@ export const PAGES = {
     "ShelterTypes": ShelterTypes,
     "StickerTemplates": StickerTemplates,
     "StickerItems": StickerItems,
+    "StopsWithStickers": StopsWithStickers,
 }
 
 export const pagesConfig = {
