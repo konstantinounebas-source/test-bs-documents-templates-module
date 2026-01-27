@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Edit2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import EditApprovedTypeDialog from "./EditApprovedTypeDialog";
+import EditInitialTypeDialog from "./EditInitialTypeDialog";
 
 export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved }) {
   const handleStopSaved = () => {
@@ -29,6 +30,7 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
   const [shelterTypes, setShelterTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showEditApprovedType, setShowEditApprovedType] = useState(false);
+  const [showEditInitialType, setShowEditInitialType] = useState(false);
 
   useEffect(() => {
     const initializeDialog = async () => {
@@ -158,12 +160,20 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
   return (
     <>
       {stop && (
-        <EditApprovedTypeDialog
-          open={showEditApprovedType}
-          onClose={() => setShowEditApprovedType(false)}
-          stop={stop}
-          onTypeChanged={handleStopSaved}
-        />
+        <>
+          <EditInitialTypeDialog
+            open={showEditInitialType}
+            onClose={() => setShowEditInitialType(false)}
+            stop={stop}
+            onTypeChanged={handleStopSaved}
+          />
+          <EditApprovedTypeDialog
+            open={showEditApprovedType}
+            onClose={() => setShowEditApprovedType(false)}
+            stop={stop}
+            onTypeChanged={handleStopSaved}
+          />
+        </>
       )}
 
       <Dialog open={open} onOpenChange={onClose}>
@@ -218,22 +228,27 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="shelter_type_initial_id">Shelter Type Initial</Label>
-                <Select
-                  value={formData.shelter_type_initial_id}
-                  onValueChange={(value) => setFormData({ ...formData, shelter_type_initial_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select initial type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {shelterTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>
-                        {type.shelter_type_id}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Shelter Type Initial</Label>
+                <div className="flex gap-2 items-center">
+                  <div className="flex-1 px-3 py-2 border border-input rounded-md bg-gray-50">
+                    <p className="text-sm">
+                      {formData.shelter_type_initial_id 
+                        ? shelterTypes.find(t => t.id === formData.shelter_type_initial_id)?.shelter_type_id 
+                        : "Not set"}
+                    </p>
+                  </div>
+                  {stop && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowEditInitialType(true)}
+                      className="flex-shrink-0"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
               <div>
                 <Label>Shelter Type Approved</Label>
