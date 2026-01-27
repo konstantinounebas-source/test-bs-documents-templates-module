@@ -142,14 +142,14 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
           stop.shelter_type_approved_id = shelterTypeMap[approvedTypeId];
         }
 
-        // Planned Installation Date is mandatory
-        if (!stop.current_planned_installation_date) {
-          errors.push(`Row ${rowNumber} (Stop ${stop.stop_id}): Planned Installation Date is required (YYYY-MM-DD format)`);
-          return;
-        }
-
         const shelterInstalledValue = row.getCell(7).value?.toString().toLowerCase().trim();
         stop.shelter_installed = shelterInstalledValue === "yes" || shelterInstalledValue === "true";
+
+        // Either Planned Installation Date or Shelter Installed must be provided
+        if (!stop.current_planned_installation_date && !stop.shelter_installed) {
+          errors.push(`Row ${rowNumber} (Stop ${stop.stop_id}): Planned Installation Date or Shelter Installed (Yes) is required`);
+          return;
+        }
 
         stop.english_count_letters = stop.english_name.length;
         stop.greek_count_letters = stop.greek_name.length;
