@@ -52,19 +52,12 @@ export default function StopsPage() {
     const activeStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status !== "Obsolete");
     if (activeStickers.length === 0) return false;
     
-    // Get sticker requirements for approved type
-    const approvedTypeRequirements = stickerItems.filter(s => 
-      s.stop_id === stop.id && 
-      s.status !== "Obsolete"
-    );
+    // Get obsolete stickers for this stop
+    const obsoleteStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status === "Obsolete");
     
-    // Check if there's a mismatch - we need to verify stickers match the approved type
-    // This is complex, so we show warning if types don't match and there are stickers
-    if (stop.shelter_type_initial_id && stop.shelter_type_initial_id !== stop.shelter_type_approved_id) {
-      return activeStickers.length > 0;
-    }
-    
-    return false;
+    // Show warning only if there are both active AND obsolete stickers
+    // This means stickers were replaced/changed and may not match
+    return obsoleteStickers.length > 0;
   };
 
   const handleSort = (field) => {
