@@ -12,6 +12,7 @@ export default function CreateEditStickerTemplateDialog({ open, onClose, sticker
     sticker_template_id: "",
     sticker_name_category: "",
     default_vendor: "",
+    estimated_delivery_days: "",
     active: true,
     notes: ""
   });
@@ -24,6 +25,7 @@ export default function CreateEditStickerTemplateDialog({ open, onClose, sticker
           sticker_template_id: stickerTemplate.sticker_template_id || "",
           sticker_name_category: stickerTemplate.sticker_name_category || "",
           default_vendor: stickerTemplate.default_vendor || "",
+          estimated_delivery_days: stickerTemplate.estimated_delivery_days || "",
           active: stickerTemplate.active !== undefined ? stickerTemplate.active : true,
           notes: stickerTemplate.notes || ""
         });
@@ -32,6 +34,7 @@ export default function CreateEditStickerTemplateDialog({ open, onClose, sticker
           sticker_template_id: "",
           sticker_name_category: "",
           default_vendor: "",
+          estimated_delivery_days: "",
           active: true,
           notes: ""
         });
@@ -89,6 +92,17 @@ export default function CreateEditStickerTemplateDialog({ open, onClose, sticker
                 id="default_vendor"
                 value={formData.default_vendor}
                 onChange={(e) => setFormData({ ...formData, default_vendor: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="estimated_delivery_days">Estimated Delivery (days)</Label>
+              <Input
+                id="estimated_delivery_days"
+                type="number"
+                min="0"
+                value={formData.estimated_delivery_days}
+                onChange={(e) => setFormData({ ...formData, estimated_delivery_days: e.target.value ? parseInt(e.target.value) : "" })}
               />
             </div>
 
