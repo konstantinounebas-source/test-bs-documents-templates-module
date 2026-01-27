@@ -99,7 +99,9 @@ export default function ViewStopDialog({ open, onClose, stop }) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {stickerItems.map((item) => (
+                      {stickerItems.map((item) => {
+                        const displayCustodyStatus = (item.status === "Needed" || item.status === "Ordered") ? item.status : item.custody_status;
+                        return (
                         <TableRow key={item.id}>
                           <TableCell>{getStickerTemplateName(item.sticker_template_id)}</TableCell>
                           <TableCell>{item.print_line_1}</TableCell>
@@ -107,13 +109,13 @@ export default function ViewStopDialog({ open, onClose, stop }) {
                           <TableCell>{item.print_line_3}</TableCell>
                           <TableCell>{getStatusBadge(item.status)}</TableCell>
                           <TableCell>
-                            <Badge variant="outline">{item.custody_status}</Badge>
+                            <Badge variant="outline">{displayCustodyStatus}</Badge>
                           </TableCell>
                           <TableCell>
                             {item.installed ? "✓" : "-"}
                           </TableCell>
                         </TableRow>
-                      ))}
+                      );})}
                     </TableBody>
                   </Table>
                 </div>
