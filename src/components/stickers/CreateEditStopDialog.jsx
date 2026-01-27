@@ -21,6 +21,7 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
     shelter_installed: false,
     comments: ""
   });
+  const [initialApprovedTypeId, setInitialApprovedTypeId] = useState("");
   const [shelterTypes, setShelterTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showObsoleteConfirm, setShowObsoleteConfirm] = useState(false);
