@@ -118,6 +118,16 @@ export default function StopsPage() {
     queryClient.invalidateQueries(['stops']);
   };
 
+  const formatDateToDDMMYYYY = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "";
+    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const y = date.getFullYear();
+    return `${d}-${m}-${y}`;
+  };
+
   const handleExport = async () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Stops");
@@ -140,7 +150,7 @@ export default function StopsPage() {
         greek_name: stop.greek_name,
         shelter_type_initial: getShelterTypeName(stop.shelter_type_initial_id),
         shelter_type_approved: getShelterTypeName(stop.shelter_type_approved_id),
-        current_planned_installation_date: stop.current_planned_installation_date || "",
+        current_planned_installation_date: formatDateToDDMMYYYY(stop.current_planned_installation_date),
         shelter_installed: stop.shelter_installed ? "Yes" : "No",
         comments: stop.comments || ""
       });
