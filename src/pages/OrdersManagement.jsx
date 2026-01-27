@@ -113,11 +113,14 @@ export default function OrdersManagementPage() {
     
     // Check if item has exceeded estimated delivery time
     const item = stickerItems.find(i => i.id === itemId);
-    if (item?.status === "Ordered" && item?.order_date) {
-      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-      const estimatedDays = template?.estimated_delivery_days || 0;
-      const daysElapsed = Math.floor((new Date() - new Date(item.order_date)) / (1000 * 60 * 60 * 24));
-      return daysElapsed > estimatedDays;
+    if (item?.status === "Ordered") {
+      const order = orders.find(o => orderLines.some(ol => ol.order_id === o.id && ol.sticker_item_id === itemId));
+      if (order?.order_date) {
+        const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+        const estimatedDays = template?.estimated_delivery_days || 0;
+        const daysElapsed = Math.floor((new Date() - new Date(order.order_date)) / (1000 * 60 * 60 * 24));
+        return daysElapsed > estimatedDays;
+      }
     }
     
     return true;
