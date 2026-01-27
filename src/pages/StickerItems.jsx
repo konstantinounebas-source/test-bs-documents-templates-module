@@ -77,7 +77,8 @@ export default function StickerItemsPage() {
     
     await base44.entities.StickerItem.update(item.id, {
       status: "Received",
-      custody_status: "In Stock"
+      custody_status: "In Stock",
+      need_reorder: false
     });
     
     await base44.entities.StickerMovementLog.create({
