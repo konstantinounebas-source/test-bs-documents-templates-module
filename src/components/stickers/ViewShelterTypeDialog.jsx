@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Settings } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { base44 } from "@/api/base44Client";
+import ApplyStickerRequirementsDialog from "./ApplyStickerRequirementsDialog";
 
 export default function ViewShelterTypeDialog({ open, onClose, shelterType }) {
+  const [applyDialogOpen, setApplyDialogOpen] = useState(false);
   const [requirements, setRequirements] = useState([]);
   const [stickerTemplates, setStickerTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,13 +55,24 @@ export default function ViewShelterTypeDialog({ open, onClose, shelterType }) {
     setNewRequirement({ sticker_template_id: "", quantity_required: 1 });
     await loadData();
     setAdding(false);
+    
+    setApplyDialogOpen(true);
   };
 
   const handleDeleteRequirement = async (reqId) => {
-    if (!confirm("Are you sure you want to remove this sticker requirement?")) return;
+    if (!confirm("Είστε σίγουροι ότι θέλετε να αφαιρέσετε αυτό το sticker requirement;")) return;
     
     await base44.entities.ShelterTypeStickerRequirement.delete(reqId);
     await loadData();
+    
+    setApplyDialogOpen(true);
+  };
+
+  const handleApplyDialogClose = (itemsCreated) => {
+    setApplyDialogOpen(false);
+    if (itemsCreated) {
+      loadData();
+    }
   };
 
   return (
@@ -111,6 +124,17 @@ export default function ViewShelterTypeDialog({ open, onClose, shelterType }) {
                 </div>
               )}
 
+              <div className="flex items-center justify-between mb-4">
+                <Button 
+                  variant="outline"
+                  onClick={() => setApplyDialogOpen(true)}
+                  disabled={requirements.length === 0}
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  Εφαρμογή σε Στάσεις
+                </Button>
+              </div>
+
               <div className="border rounded-lg p-4 bg-gray-50">
                 <h4 className="font-medium mb-3">Add Sticker Requirement</h4>
                 <div className="grid grid-cols-3 gap-3">
@@ -161,6 +185,12 @@ export default function ViewShelterTypeDialog({ open, onClose, shelterType }) {
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <ApplyStickerRequirementsDialog
+        open={applyDialogOpen}
+        onClose={handleApplyDialogClose}
+        shelterType={shelterType}
+      />
     </Dialog>
   );
 }
