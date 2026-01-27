@@ -23,6 +23,12 @@ export default function ViewStickerHistoryDialog({ open, onClose, stickerItem })
     return user ? user.full_name : email;
   };
 
+  const getTechnicianName = (technicianId) => {
+    if (!technicianId) return null;
+    const user = users.find(u => u.id === technicianId);
+    return user ? user.full_name : null;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
@@ -76,6 +82,9 @@ export default function ViewStickerHistoryDialog({ open, onClose, stickerItem })
                       )}
                       {log.old_custody_status && log.new_custody_status && (
                         <div>Custody: {log.old_custody_status} → {log.new_custody_status}</div>
+                      )}
+                      {log.technician_id && getTechnicianName(log.technician_id) && (
+                        <div className="text-blue-600 font-medium">Technician: {getTechnicianName(log.technician_id)}</div>
                       )}
                       {log.reorder_reason && (
                         <div className="text-orange-600">Reason: {log.reorder_reason}</div>

@@ -44,6 +44,12 @@ export default function StickerMovementLogsPage() {
     return user ? user.full_name : email;
   };
 
+  const getTechnicianName = (technicianId) => {
+    if (!technicianId) return null;
+    const user = users.find(u => u.id === technicianId);
+    return user ? user.full_name : null;
+  };
+
   const filteredLogs = movementLogs.filter(log => {
     const term = searchTerm.toLowerCase();
     const stickerInfo = getStickerInfo(log.sticker_item_id).toLowerCase();
@@ -144,6 +150,9 @@ export default function StickerMovementLogsPage() {
                         )}
                         {log.old_custody_status && log.new_custody_status && (
                           <div>Custody: <span className="text-orange-600">{log.old_custody_status}</span> → <span className="text-green-600">{log.new_custody_status}</span></div>
+                        )}
+                        {log.technician_id && getTechnicianName(log.technician_id) && (
+                          <div className="text-blue-600 font-medium">Technician: {getTechnicianName(log.technician_id)}</div>
                         )}
                         {log.reorder_reason && (
                           <div className="text-red-600 font-medium">Reason: {log.reorder_reason}</div>
