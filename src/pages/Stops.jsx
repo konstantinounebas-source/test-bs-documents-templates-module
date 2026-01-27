@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Pencil, Download, Upload, ArrowUpDown, ArrowUp, ArrowDown, Eye, AlertCircle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import CreateEditStopDialog from "@/components/stickers/CreateEditStopDialog";
 import ImportStopsDialog from "@/components/stickers/ImportStopsDialog";
 import ViewStopDialog from "@/components/stickers/ViewStopDialog";
@@ -232,8 +233,9 @@ export default function StopsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <Card>
+    <TooltipProvider>
+      <div className="p-6 space-y-6">
+        <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Stops</span>
@@ -343,7 +345,14 @@ export default function StopsPage() {
                             {stop.shelter_type_approved_id && (() => {
                               const shelterType = shelterTypes.find(t => t.id === stop.shelter_type_approved_id);
                               return shelterType?.english_name_max_chars && stop.english_name?.length > shelterType.english_name_max_chars ? (
-                                <AlertCircle className="w-4 h-4 text-orange-500" title={`Exceeds ${shelterType.english_name_max_chars} chars (${stop.english_name.length})`} />
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <AlertCircle className="w-4 h-4 text-orange-500 cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Exceeds {shelterType.english_name_max_chars} chars ({stop.english_name.length})
+                                  </TooltipContent>
+                                </Tooltip>
                               ) : null;
                             })()}
                           </div>
@@ -354,7 +363,14 @@ export default function StopsPage() {
                             {stop.shelter_type_approved_id && (() => {
                               const shelterType = shelterTypes.find(t => t.id === stop.shelter_type_approved_id);
                               return shelterType?.greek_name_max_chars && stop.greek_name?.length > shelterType.greek_name_max_chars ? (
-                                <AlertCircle className="w-4 h-4 text-orange-500" title={`Exceeds ${shelterType.greek_name_max_chars} chars (${stop.greek_name.length})`} />
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <AlertCircle className="w-4 h-4 text-orange-500 cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Exceeds {shelterType.greek_name_max_chars} chars ({stop.greek_name.length})
+                                  </TooltipContent>
+                                </Tooltip>
                               ) : null;
                             })()}
                           </div>
@@ -427,6 +443,7 @@ export default function StopsPage() {
         onClose={() => setViewDialogOpen(false)}
         stop={selectedStop}
       />
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
