@@ -415,6 +415,13 @@ export default function StickerItemsPage() {
         onConfirm={handleReorderConfirm}
       />
 
+      <ReopenStickerDialog
+        open={reopenDialogOpen}
+        onClose={() => setReopenDialogOpen(false)}
+        stickerItem={selectedItem}
+        onConfirm={handleReopenConfirm}
+      />
+
       <HandoverStickerDialog
         open={handoverDialogOpen}
         onClose={() => setHandoverDialogOpen(false)}
