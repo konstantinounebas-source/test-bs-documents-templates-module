@@ -445,26 +445,38 @@ export default function BOMManager({ busStopTypes, components, products, selecte
               <CardTitle className="text-lg">
                 Bill of Materials ({filteredComponents.length} από {typeComponents.length} components)
               </CardTitle>
-              <div className="flex items-center gap-2">
-                <Label className="text-sm">Items per page:</Label>
-                <Select 
-                  value={String(itemsPerPage)} 
-                  onValueChange={(value) => {
-                    setItemsPerPage(parseInt(value));
-                    setCurrentPage(1);
-                  }}
+              <div className="flex items-center gap-4">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleExportToExcel}
+                  disabled={filteredComponents.length === 0}
+                  className="gap-2"
                 >
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="25">25</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
-                    <SelectItem value="999999">All</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Download className="w-4 h-4" />
+                  Export Excel
+                </Button>
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm">Items per page:</Label>
+                  <Select 
+                    value={String(itemsPerPage)} 
+                    onValueChange={(value) => {
+                      setItemsPerPage(parseInt(value));
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="10">10</SelectItem>
+                      <SelectItem value="25">25</SelectItem>
+                      <SelectItem value="50">50</SelectItem>
+                      <SelectItem value="100">100</SelectItem>
+                      <SelectItem value="999999">All</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
