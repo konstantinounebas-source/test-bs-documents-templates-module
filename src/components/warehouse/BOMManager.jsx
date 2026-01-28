@@ -89,6 +89,15 @@ export default function BOMManager({ busStopTypes, components, products, selecte
   const handleUpdateComponent = (index, field, value) => {
     const newComponents = [...typeComponents];
     newComponents[index][field] = value;
+    
+    // Auto-set input_unit_of_measure based on product's unit_of_measure
+    if (field === 'product_id') {
+      const product = products.find(p => p.id === value);
+      if (product) {
+        newComponents[index].input_unit_of_measure = product.unit_of_measure || '';
+      }
+    }
+    
     setTypeComponents(newComponents);
   };
 
