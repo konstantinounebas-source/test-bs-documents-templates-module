@@ -125,7 +125,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
           bus_stop_type_id: currentTypeId,
           product_id: component.product_id,
           quantity_required: quantityNum,
-          input_unit_of_measure: component.input_unit_of_measure || null,
+          input_unit_of_measure: component.input_unit_of_measure || '',
           unit_of_measure: component.unit_of_measure || 'pcs',
           team_id: component.team_id || null,
           material_category_id: component.material_category_id || null,
@@ -487,7 +487,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                 <label className="text-xs text-slate-500 mb-1 block">Μον. Εισαγ.</label>
                                 <Select
                                   value={component.input_unit_of_measure || ''}
-                                  onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'input_unit_of_measure', value)}
+                                  onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'input_unit_of_measure', value === '' ? '' : value)}
                                 >
                                   <SelectTrigger className="h-8 text-xs">
                                     <SelectValue placeholder="-" />
