@@ -506,15 +506,21 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                               </TableCell>
                               <TableCell className="py-2" colSpan={6}>
                                 <div className="flex items-start gap-3 w-full">
-                                  <div className="flex-1 max-w-sm">
-                                    <label className="text-xs text-slate-500 mb-1 block">Προϊόν</label>
-                                    <ProductCombobox
-                                      products={products}
-                                      value={component.product_id}
-                                      onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
-                                      placeholder="Επιλέξτε προϊόν"
-                                    />
-                                  </div>
+                                   <div className="w-20">
+                                     <label className="text-xs text-slate-500 mb-1 block">SKU</label>
+                                     <div className="h-8 flex items-center text-xs text-slate-600 border border-input rounded-md px-2 bg-slate-50 truncate">
+                                       {products.find(p => p.id === component.product_id)?.sku || '-'}
+                                     </div>
+                                   </div>
+                                   <div className="flex-1 max-w-xs">
+                                     <label className="text-xs text-slate-500 mb-1 block">Προϊόν</label>
+                                     <ProductCombobox
+                                       products={products}
+                                       value={component.product_id}
+                                       onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
+                                       placeholder="Επιλέξτε προϊόν"
+                                     />
+                                   </div>
                                   <div className="flex items-start gap-2 flex-shrink-0">
                                     <div>
                                       <label className="text-xs text-slate-500 mb-1 block">Κατηγορία</label>
