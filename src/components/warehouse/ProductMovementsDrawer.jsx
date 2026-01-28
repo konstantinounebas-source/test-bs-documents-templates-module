@@ -94,6 +94,7 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
                   <TableHead>User</TableHead>
                   <TableHead>Vendor</TableHead>
                   <TableHead className="text-right">Cost</TableHead>
+                  <TableHead className="w-12"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
