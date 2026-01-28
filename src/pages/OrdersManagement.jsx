@@ -656,7 +656,8 @@ export default function OrdersManagementPage() {
                     <TableHead>Stop ID</TableHead>
                     <TableHead>Ελληνικό Όνομα</TableHead>
                     <TableHead>English Name</TableHead>
-                    <TableHead>Τύπος Στεγάστρου</TableHead>
+                    <TableHead>Approved Type</TableHead>
+                    <TableHead>Sticker Type</TableHead>
                     <TableHead>Χαρακτήρες</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -671,6 +672,8 @@ export default function OrdersManagementPage() {
                     
                     const stop = stops.find(s => s.stop_id === warning.stopId);
                     const shelterType = shelterTypes.find(st => st.shelter_type_id === stop?.shelter_type_approved_id);
+                    const item = stickerItems.find(i => i.id === itemForThisStop);
+                    const template = stickerTemplates.find(t => t.id === item?.sticker_template_id);
                     
                     return (
                       <TableRow key={index} className="bg-orange-50">
@@ -709,6 +712,9 @@ export default function OrdersManagementPage() {
                       </TableCell>
                       <TableCell className="text-sm">
                         {shelterType?.description || stop?.shelter_type_approved_id || '-'}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {template?.sticker_name_category || '-'}
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
