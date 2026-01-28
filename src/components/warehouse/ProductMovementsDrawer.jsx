@@ -65,7 +65,7 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
+      <DialogContent className="max-w-4xl"  style={{ maxHeight: '80vh' }}>
         <DialogHeader>
           <DialogTitle>{productName}</DialogTitle>
           <DialogDescription>
