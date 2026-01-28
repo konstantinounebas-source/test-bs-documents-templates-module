@@ -461,7 +461,7 @@ export default function StockMovementsPage() {
             
             <PaginationControls
               currentPage={currentPage}
-              totalItems={filteredMovements.length}
+              totalItems={totalMovementsCount}
               itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
