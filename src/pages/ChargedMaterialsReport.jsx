@@ -320,6 +320,11 @@ export default function ChargedMaterialsReportPage() {
     setExpandedMaterials(newExpanded);
   };
 
+  const handleViewMovements = (product) => {
+    setSelectedProductForMovements(product);
+    setDrawerOpen(true);
+  };
+
   // Calculate stats based on active tab
   const stats = activeTab === "persons" ? (
     groupBy === "person" ? {
