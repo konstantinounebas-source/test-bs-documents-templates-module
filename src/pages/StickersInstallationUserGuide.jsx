@@ -21,7 +21,9 @@ export default function StickersInstallationUserGuide() {
         scale: 2,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        logging: false,
+        windowHeight: contentRef.current.scrollHeight
       });
       
       const imgData = canvas.toDataURL('image/png');
@@ -31,19 +33,23 @@ export default function StickersInstallationUserGuide() {
         format: 'a4'
       });
       
-      const imgWidth = 210;
+      const pageHeight = 277; // A4 height in mm minus margins
+      const imgWidth = 190; // Page width with margins
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
       let heightLeft = imgHeight;
       let position = 0;
       
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= 297;
+      // First page
+      pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
       
+      // Additional pages
       while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= 297;
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
       }
       
       pdf.save('Stickers-Installation-User-Guide.pdf');
