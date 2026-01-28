@@ -107,13 +107,14 @@ export default function BOMManager({ busStopTypes, components, products, selecte
     }
   };
 
-  const handleSaveComponent = async (component) => {
+  const handleSaveComponent = async (index) => {
+    const component = typeComponents[index];
     if (!currentTypeId || !component.product_id) return;
     
     const quantityNum = parseFloat(component.quantity_required);
     if (isNaN(quantityNum) || quantityNum <= 0) return;
     
-    const tempId = component.id || `temp_${Math.random()}`;
+    const tempId = component.id || `temp_${index}`;
     setSavingIds(prev => ({ ...prev, [tempId]: true }));
     
     try {
@@ -132,7 +133,11 @@ export default function BOMManager({ busStopTypes, components, products, selecte
       if (component.id) {
         await base44.entities.BusStopTypeComponent.update(component.id, data);
       } else {
-        await base44.entities.BusStopTypeComponent.create(data);
+        const created = await base44.entities.BusStopTypeComponent.create(data);
+        // Update local state with the new ID
+        const newComponents = [...typeComponents];
+        newComponents[index] = { ...newComponents[index], id: created.id };
+        setTypeComponents(newComponents);
       }
       
       onComponentsUpdated();
