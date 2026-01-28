@@ -136,18 +136,6 @@ export default function StopsPage() {
     return false;
   };
 
-  const checkAllStickersInstalled = (stop) => {
-    if (!stop.shelter_type_approved_id) return false;
-
-    // Get all active stickers for this stop
-    const stopStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status !== "Obsolete");
-    if (stopStickers.length === 0) return false;
-
-    // Check if all active stickers have Installed = true or truthy value
-    const allInstalled = stopStickers.every(s => s.installed);
-    return allInstalled;
-  };
-
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
