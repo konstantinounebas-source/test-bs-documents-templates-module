@@ -405,7 +405,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                         
                         return (
                           <React.Fragment key={absoluteIndex}>
-                            <TableRow className="border-b-0">
+                            <TableRow className="border-b-0" key={`row1-${absoluteIndex}`}>
                               <TableCell className="text-sm text-slate-400 py-2 align-top pt-7" rowSpan={2}>
                                 {absoluteIndex + 1}
                               </TableCell>
