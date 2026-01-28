@@ -69,83 +69,68 @@ export default function DashboardPage() {
     return stopStickers.some(item => ["Ordered", "Received", "Installed"].includes(item.status));
   });
 
-  // ΣΕΙΡΑ 1: Δημιουργία Αυτοκόλλητων (Needs Assessment)
-  const [bufferDays30, setBufferDays30] = React.useState(30); // 1 μήνας
-  
-  // 1.3 Κρίσιμες χωρίς Stickers (Planned Date < 1 μήνα)
-  const criticalWithoutStickers = stops.filter(stop => {
-    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
-    if (stopStickers.length > 0) return false; // Πρέπει να μην έχουν stickers
-    if (!stop.current_planned_installation_date) return false;
-    const daysUntil = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
-    return daysUntil < bufferDays30 && daysUntil >= 0;
-  });
-
-  // ΣΕΙΡΑ 2: Διαδικασία Παραγγελίας (Ordering Flow)
-  // 2.1 Στάσεις με Stickers αλλά χωρίς Παραγγελία
-  const stopsWithStickersNoOrder = stops.filter(stop => {
-    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
-    if (stopStickers.length === 0) return false;
-    // Όλα τα stickers πρέπει να είναι "Needed" (δεν έχουν παραγγελθεί)
-    return stopStickers.every(item => item.status === "Needed");
-  });
-
-  // 2.2 Καθυστερημένη Παραγγελία (Planned Date < Estimated Delivery)
-  const delayedOrderWarning = stickerItems.filter(item => {
-    if (item.status !== "Needed") return false;
-    const stop = stops.find(s => s.id === item.stop_id);
-    const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-    if (!stop?.current_planned_installation_date || !template?.days_before_installation_to_receive) return false;
-    
-    const plannedDate = new Date(stop.current_planned_installation_date);
-    const leadTime = template.days_before_installation_to_receive || 7;
-    const mustOrderByDate = new Date(plannedDate);
-    mustOrderByDate.setDate(mustOrderByDate.getDate() - leadTime);
-    
-    // Αν δεν έχουμε χρόνο να παραγγείλουμε
-    return new Date() > mustOrderByDate;
-  });
-
-  // ΣΕΙΡΑ 3: Παρακολούθηση Παραγγελιών (Order Tracking)
-  // 3.1 Stickers σε Παραγγελία με Warning (παραβιάζουν Days Before Installation to Receive)
+  // 5. Αυτοκόλλητα που είναι παραγγελμένα με προειδοποίηση (< 14 ημέρες)
   const orderedWithWarning = stickerItems.filter(item => {
     if (item.status !== "Ordered") return false;
     const stop = stops.find(s => s.id === item.stop_id);
+    if (!stop?.current_planned_installation_date) return false;
+    const daysBeforeInstall = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
+    return daysBeforeInstall < 14;
+  });
+
+  // 6. Ordered σε εγκατεστημένες στάσεις αλλά δεν έχουν παραληφθεί
+  const orderedOnInstalledNotReceived = stickerItems.filter(item => {
+    if (item.status !== "Ordered") return false;
+    const stop = stops.find(s => s.id === item.stop_id);
+    return stop && stop.shelter_installed;
+  });
+
+  // 7. Εγκατεστημένες στάσεις χωρίς εγκατεστημένα stickers
+  const installedWithoutStickerInstall = stickerItems.filter(item => {
+    const stop = stops.find(s => s.id === item.stop_id);
+    return stop && stop.shelter_installed && item.status !== "Installed";
+  });
+
+  // 8. Εγκατεστημένες στάσεις χωρίς παραγγελία (ΚΡΙΣΙΜΟ)
+  const installedWithoutOrder = stickerItems.filter(item => {
+    const stop = stops.find(s => s.id === item.stop_id);
+    return stop && stop.shelter_installed && item.status === "Needed";
+  });
+
+  // 9. Εγκατεστημένες στάσεις με Ordered αλλά δεν έχουν παραληφθεί
+  const orderedNotReceivedOnInstalled = stickerItems.filter(item => {
+    const stop = stops.find(s => s.id === item.stop_id);
+    return stop && stop.shelter_installed && item.status === "Ordered";
+  });
+
+  // 10. Αυτοκόλλητα υψηλού κινδύνου (Needed + < bufferDays)
+  const [bufferDays, setBufferDays] = React.useState(30);
+  const highRiskStickers = stickerItems.filter(item => {
+    if (item.status !== "Needed") return false;
+    const stop = stops.find(s => s.id === item.stop_id);
+    if (!stop?.current_planned_installation_date) return false;
+    const daysUntil = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
+    return daysUntil < bufferDays && daysUntil >= 0;
+  });
+
+  // 11. Αυτοκόλλητα που είναι παραγγελμένα και ενδέχεται να μην παραληφθούν εγκαίρως
+  const stickersAtRisk = stickerItems.filter(item => {
+    if (item.status !== "Ordered") return false;
+    
+    const stop = stops.find(s => s.id === item.stop_id);
+    if (!stop?.current_planned_installation_date) return false;
+    
     const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-    if (!stop?.current_planned_installation_date || !template?.days_before_installation_to_receive) return false;
+    if (!template) return false;
     
     const plannedDate = new Date(stop.current_planned_installation_date);
     const daysBeforeNeeded = template.days_before_installation_to_receive || 7;
     const neededByDate = new Date(plannedDate);
     neededByDate.setDate(neededByDate.getDate() - daysBeforeNeeded);
     
+    // Check if we're past the needed date and still not received
     return new Date() > neededByDate;
   });
-
-  // 3.2 Παραγγελμένα σε Εγκατεστημένες χωρίς Παραλαβή (Ordered + Installed Stop + custody_status !== "In Stock")
-  const orderedOnInstalledNotReceived = stickerItems.filter(item => {
-    if (item.status !== "Ordered") return false;
-    const stop = stops.find(s => s.id === item.stop_id);
-    if (!stop?.shelter_installed) return false;
-    // Πρέπει να μην είναι "In Stock" (δηλαδή δεν έχουν παραληφθεί)
-    return item.custody_status !== "In Stock";
-  });
-
-  // ΣΕΙΡΑ 4: Επιχειρησιακές Ασυμφωνίες (Mismatches)
-  // 4.1 Εγκατεστημένες χωρίς Εγκατεστημένα Stickers
-  const installedWithoutStickerInstall = stickerItems.filter(item => {
-    const stop = stops.find(s => s.id === item.stop_id);
-    return stop && stop.shelter_installed && item.status !== "Installed";
-  });
-
-  // 4.2 Εγκατεστημένες χωρίς Παραγγελία (ΚΡΙΣΙΜΟ)
-  const installedWithoutOrder = stickerItems.filter(item => {
-    const stop = stops.find(s => s.id === item.stop_id);
-    return stop && stop.shelter_installed && item.status === "Needed";
-  });
-
-  // 4.3 Ordered vs Received (Παραγγελμένα που δεν έχουν παραληφθεί)
-  const orderedNotReceived = stickerItems.filter(item => item.status === "Ordered");
 
   // 6. Πόσα αυτοκόλλητα έχουν παραγγελθεί πάνω από μία φορά
   const stickersOrderedMultipleTimes = stickerItems.filter(item => {
@@ -236,16 +221,16 @@ export default function DashboardPage() {
         <p className="text-gray-600">Πλήρης επισκόπηση στάσεων και αυτοκόλλητων</p>
       </div>
 
-      {/* ΣΕΙΡΑ 1: Δημιουργία Αυτοκόλλητων (Needs Assessment) */}
+      {/* Summary Cards - Row 1: Basic Statistics */}
        <div>
-         <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Δημιουργία Αυτοκόλλητων (Needs Assessment)</h2>
+         <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Βασικές Στατιστικές</h2>
          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
            <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('total')}>
              <CardContent className="pt-6">
                <div className="flex items-center justify-between">
                  <div>
                    <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                   <p className="text-sm font-medium text-gray-700 mb-1">Σύνολο Στάσεων</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Συνολικές Στάσεις</p>
                    <p className="text-3xl font-bold text-blue-600">{totalStops}</p>
                  </div>
                  <MapPin className="w-10 h-10 text-blue-600" />
@@ -257,53 +242,93 @@ export default function DashboardPage() {
                <div className="flex items-center justify-between">
                  <div>
                    <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                   <p className="text-sm font-medium text-gray-700 mb-1">Στάσεις χωρίς Stickers</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Χωρίς Δημιουργημένα Stickers</p>
                    <p className="text-3xl font-bold text-gray-600">{stopsWithoutStickers.length}</p>
                  </div>
                  <XCircle className="w-10 h-10 text-gray-600" />
                </div>
              </CardContent>
            </Card>
-           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('criticalwithout')}>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('critical')}>
              <CardContent className="pt-6">
                <div className="flex items-center justify-between">
                  <div>
                    <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                   <p className="text-sm font-medium text-gray-700 mb-1">⚠️ Κρίσιμες χωρίς Stickers</p>
-                   <p className="text-3xl font-bold text-red-600">{criticalWithoutStickers.length}</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Στέγαστρα Installed - Stickers Pending</p>
+                   <p className="text-3xl font-bold text-red-600">{criticalStops.length}</p>
                  </div>
                  <AlertTriangle className="w-10 h-10 text-red-600" />
+               </div>
+             </CardContent>
+           </Card>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('ordered')}>
+             <CardContent className="pt-6">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Στάσεις με Παραγγελθέντα Stickers</p>
+                   <p className="text-3xl font-bold text-teal-600">{stopsWithOrderedStickers.length}</p>
+                 </div>
+                 <ShoppingCart className="w-10 h-10 text-teal-600" />
                </div>
              </CardContent>
            </Card>
          </div>
        </div>
 
-       {/* ΣΕΙΡΑ 2: Διαδικασία Παραγγελίας (Ordering Flow) */}
+       {/* Summary Cards - Row 2: Installed Stops Status */}
        <div>
-         <h2 className="text-xl font-semibold text-gray-900 mb-4">2. Διαδικασία Παραγγελίας (Ordering Flow)</h2>
+         <h2 className="text-xl font-semibold text-gray-900 mb-4">2. Εγκατεστημένες Στάσεις</h2>
          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('stopsnoorder')}>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('remaining')}>
              <CardContent className="pt-6">
                <div className="flex items-center justify-between">
                  <div>
                    <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                   <p className="text-sm font-medium text-gray-700 mb-1">Με Stickers χωρίς Παραγγελία</p>
-                   <p className="text-3xl font-bold text-blue-600">{stopsWithStickersNoOrder.length}</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Υπολειπόμενα Stickers</p>
+                   <p className="text-3xl font-bold text-purple-600">
+                     {Object.values(remainingStickersByCategory).reduce((sum, count) => sum + count, 0)}
+                   </p>
                  </div>
-                 <ShoppingCart className="w-10 h-10 text-blue-600" />
+                 <Building2 className="w-10 h-10 text-purple-600" />
                </div>
              </CardContent>
            </Card>
-           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('delayedorder')}>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed')}>
              <CardContent className="pt-6">
                <div className="flex items-center justify-between">
                  <div>
                    <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                   <p className="text-sm font-medium text-gray-700 mb-1">⚠️ Καθυστερημένη Παραγγελία</p>
-                   <p className="text-3xl font-bold text-orange-600">{delayedOrderWarning.length}</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Εγκατεστημένα Stickers</p>
+                   <p className="text-3xl font-bold text-green-600">
+                     {Object.values(installedStickersByCategory).reduce((sum, count) => sum + count, 0)}
+                   </p>
                  </div>
-                 <AlertTriangle className="w-10 h-10 text-orange-600" />
+                 <CheckCircle className="w-10 h-10 text-green-600" />
+               </div>
+             </CardContent>
+           </Card>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed_no_sticker')}>
+             <CardContent className="pt-6">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">⚠️ χωρίς Τοποθέτηση</p>
+                   <p className="text-3xl font-bold text-red-600">{installedWithoutStickerInstall.length}</p>
+                 </div>
+                 <AlertTriangle className="w-10 h-10 text-red-600" />
+               </div>
+             </CardContent>
+           </Card>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed_no_order')}>
+             <CardContent className="pt-6">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">🔴 χωρίς Παραγγελία</p>
+                   <p className="text-3xl font-bold text-red-600">{installedWithoutOrder.length}</p>
+                 </div>
+                 <AlertTriangle className="w-10 h-10 text-red-600" />
                </div>
              </CardContent>
            </Card>
