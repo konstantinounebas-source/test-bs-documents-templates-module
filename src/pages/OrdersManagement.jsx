@@ -12,9 +12,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, ShoppingCart, Eye, Printer, AlertTriangle, Search } from "lucide-react";
+import { Plus, ShoppingCart, Eye, Printer, AlertTriangle, Search, FileDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import ExcelJS from 'exceljs';
 
 export default function OrdersManagementPage() {
   const [selectedItems, setSelectedItems] = useState({});
@@ -391,6 +392,100 @@ export default function OrdersManagementPage() {
     navigate(createPageUrl("OrderPrint") + `?orderId=${orderId}`);
   };
 
+  const handleExportAvailableItems = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Available Sticker Items');
+
+    worksheet.columns = [
+      { header: 'Stop ID', key: 'stop_id', width: 15 },
+      { header: 'Greek Name', key: 'greek_name', width: 30 },
+      { header: 'English Name', key: 'english_name', width: 30 },
+      { header: 'Sticker Template', key: 'sticker_template', width: 25 },
+      { header: 'Print Line 1', key: 'print_line_1', width: 20 },
+      { header: 'Print Line 2', key: 'print_line_2', width: 20 },
+      { header: 'Print Line 3', key: 'print_line_3', width: 20 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Critical', key: 'critical', width: 10 }
+    ];
+
+    filteredItems.forEach(item => {
+      const { stop } = getStopInfo(item.id);
+      const template = getTemplateInfo(item.sticker_template_id);
+      const critical = isCriticalStop(item.stop_id, item.id);
+
+      worksheet.addRow({
+        stop_id: stop?.stop_id || '-',
+        greek_name: stop?.greek_name || '-',
+        english_name: stop?.english_name || '-',
+        sticker_template: template?.sticker_name_category || '-',
+        print_line_1: item.print_line_1 || '-',
+        print_line_2: item.print_line_2 || '-',
+        print_line_3: item.print_line_3 || '-',
+        status: item.status,
+        critical: critical ? 'Yes' : 'No'
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `available_sticker_items_${new Date().toISOString().split('T')[0]}.xlsx`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleExportOrders = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Orders');
+
+    worksheet.columns = [
+      { header: 'Order ID', key: 'order_id', width: 20 },
+      { header: 'Vendor', key: 'vendor', width: 25 },
+      { header: 'Order Date', key: 'order_date', width: 15 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Items Count', key: 'items', width: 12 },
+      { header: 'Critical Stops', key: 'critical', width: 15 }
+    ];
+
+    filteredOrders.forEach(order => {
+      const stats = getOrderStats(order.id);
+      
+      worksheet.addRow({
+        order_id: `#${order.id.slice(0, 8)}`,
+        vendor: order.vendor || '-',
+        order_date: order.order_date || '-',
+        status: order.status,
+        items: stats.itemCount,
+        critical: stats.criticalStops
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `orders_${new Date().toISOString().split('T')[0]}.xlsx`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const selectedCount = Object.values(selectedItems).filter(Boolean).length;
   const criticalInSelection = Object.keys(selectedItems)
     .filter(id => selectedItems[id])
@@ -413,15 +508,21 @@ export default function OrdersManagementPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Create New Order - Select Sticker Items</CardTitle>
-            {selectedCount > 0 && (
-              <Button onClick={handleCreateOrder}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create Order ({selectedCount} items)
-                {criticalInSelection > 0 && (
-                  <Badge className="ml-2 bg-red-600">{criticalInSelection} Critical</Badge>
-                )}
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportAvailableItems}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Export
               </Button>
-            )}
+              {selectedCount > 0 && (
+                <Button onClick={handleCreateOrder}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Order ({selectedCount} items)
+                  {criticalInSelection > 0 && (
+                    <Badge className="ml-2 bg-red-600">{criticalInSelection} Critical</Badge>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -528,7 +629,13 @@ export default function OrdersManagementPage() {
       {/* SECTION 2 - Order List */}
       <Card>
         <CardHeader>
-          <CardTitle>Orders</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Orders</span>
+            <Button variant="outline" size="sm" onClick={handleExportOrders}>
+              <FileDown className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="mb-4">
