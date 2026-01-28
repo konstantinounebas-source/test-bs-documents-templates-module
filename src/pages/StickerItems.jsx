@@ -173,6 +173,63 @@ export default function StickerItemsPage() {
     queryClient.invalidateQueries(['stickerItems']);
   };
 
+  const handleExportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Sticker Items');
+
+    worksheet.columns = [
+      { header: 'Stop ID', key: 'stop_id', width: 15 },
+      { header: 'Greek Name', key: 'greek_name', width: 30 },
+      { header: 'English Name', key: 'english_name', width: 30 },
+      { header: 'Sticker Template', key: 'sticker_template', width: 25 },
+      { header: 'Print Line 1', key: 'print_line_1', width: 20 },
+      { header: 'Print Line 2', key: 'print_line_2', width: 20 },
+      { header: 'Print Line 3', key: 'print_line_3', width: 20 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Custody Status', key: 'custody_status', width: 20 },
+      { header: 'Current Custodian', key: 'custodian', width: 25 },
+      { header: 'Installed', key: 'installed', width: 10 },
+      { header: 'Installed Date', key: 'installed_date', width: 15 },
+      { header: 'Need Reorder', key: 'need_reorder', width: 15 },
+      { header: 'Reorder Reason', key: 'reorder_reason', width: 20 }
+    ];
+
+    filteredItems.forEach(item => {
+      worksheet.addRow({
+        stop_id: getStopName(item.stop_id),
+        greek_name: stops.find(s => s.id === item.stop_id)?.greek_name || '-',
+        english_name: stops.find(s => s.id === item.stop_id)?.english_name || '-',
+        sticker_template: getTemplateName(item.sticker_template_id),
+        print_line_1: item.print_line_1 || '-',
+        print_line_2: item.print_line_2 || '-',
+        print_line_3: item.print_line_3 || '-',
+        status: item.status,
+        custody_status: item.custody_status || '-',
+        custodian: getCustodianName(item.current_custodian_id),
+        installed: item.installed ? 'Yes' : 'No',
+        installed_date: item.installed_date || '-',
+        need_reorder: item.need_reorder ? 'Yes' : 'No',
+        reorder_reason: item.reorder_reason || '-'
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `sticker_items_${new Date().toISOString().split('T')[0]}.xlsx`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const getStatusBadge = (status) => {
     const variants = {
       Needed: "secondary",
