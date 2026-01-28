@@ -60,7 +60,6 @@ import BusStopTypesBOM from './pages/BusStopTypesBOM';
 import ChargedMaterialsReport from './pages/ChargedMaterialsReport';
 import CustomFields from './pages/CustomFields';
 import DailyTracker from './pages/DailyTracker';
-import Dashboard from './pages/Dashboard';
 import DeliveryFieldsDataDefinitions from './pages/DeliveryFieldsDataDefinitions';
 import DeliveryLogs from './pages/DeliveryLogs';
 import DeliveryReporting from './pages/DeliveryReporting';
@@ -75,6 +74,7 @@ import MobileFieldWork from './pages/MobileFieldWork';
 import MyWorkday from './pages/MyWorkday';
 import MyWorkspaceUserGuide from './pages/MyWorkspaceUserGuide';
 import OfficialOrders from './pages/OfficialOrders';
+import OperationalDashboard from './pages/OperationalDashboard';
 import OrderDetail from './pages/OrderDetail';
 import OrderPrint from './pages/OrderPrint';
 import Orders from './pages/Orders';
@@ -104,7 +104,7 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import OperationalDashboard from './pages/OperationalDashboard';
+import Dashboard from './pages/Dashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -122,7 +122,6 @@ export const PAGES = {
     "ChargedMaterialsReport": ChargedMaterialsReport,
     "CustomFields": CustomFields,
     "DailyTracker": DailyTracker,
-    "Dashboard": Dashboard,
     "DeliveryFieldsDataDefinitions": DeliveryFieldsDataDefinitions,
     "DeliveryLogs": DeliveryLogs,
     "DeliveryReporting": DeliveryReporting,
@@ -137,6 +136,7 @@ export const PAGES = {
     "MyWorkday": MyWorkday,
     "MyWorkspaceUserGuide": MyWorkspaceUserGuide,
     "OfficialOrders": OfficialOrders,
+    "OperationalDashboard": OperationalDashboard,
     "OrderDetail": OrderDetail,
     "OrderPrint": OrderPrint,
     "Orders": Orders,
@@ -166,7 +166,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "OperationalDashboard": OperationalDashboard,
+    "Dashboard": Dashboard,
 }
 
 export const pagesConfig = {
