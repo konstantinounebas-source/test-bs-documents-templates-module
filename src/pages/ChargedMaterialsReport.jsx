@@ -34,6 +34,8 @@ export default function ChargedMaterialsReportPage() {
   const [expandedLocations, setExpandedLocations] = useState(new Set());
   const [groupBy, setGroupBy] = useState("person"); // "person" or "material"
   const [expandedMaterials, setExpandedMaterials] = useState(new Set());
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedProductForMovements, setSelectedProductForMovements] = useState(null);
 
   // Pagination states for persons tab
   const [personsCurrentPage, setPersonsCurrentPage] = useState(1);
