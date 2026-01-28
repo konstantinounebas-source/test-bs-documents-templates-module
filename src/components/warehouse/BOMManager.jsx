@@ -235,6 +235,80 @@ export default function BOMManager({ busStopTypes, components, products, selecte
     return costByTeam;
   };
 
+  const handleExportToExcel = () => {
+    const { ExcelJS } = window;
+    const WorkbookClass = require('exceljs').Workbook;
+    const workbook = new WorkbookClass();
+    const worksheet = workbook.addWorksheet('Bill of Materials');
+
+    // Headers
+    worksheet.columns = [
+      { header: 'A/A', key: 'index', width: 5 },
+      { header: 'SKU', key: 'sku', width: 12 },
+      { header: 'Προϊόν', key: 'product_name', width: 30 },
+      { header: 'Κατηγορία', key: 'category', width: 15 },
+      { header: 'Ομάδα', key: 'team', width: 15 },
+      { header: 'Εταιρεία', key: 'company', width: 15 },
+      { header: 'Ποσότητα', key: 'quantity', width: 12 },
+      { header: 'Μονάδα', key: 'unit', width: 10 },
+      { header: 'Κόστος μονάδας', key: 'unit_cost', width: 12 },
+      { header: 'Σύνολο Κόστος', key: 'total_cost', width: 12 },
+      { header: 'Σημειώσεις', key: 'notes', width: 20 }
+    ];
+
+    // Add data rows
+    filteredComponents.forEach((comp, idx) => {
+      const product = products.find(p => p.id === comp.product_id);
+      const materialCat = materialCategories.find(mc => mc.id === comp.material_category_id);
+      const qty = parseFloat(comp.quantity_required) || 0;
+      const unitCost = product?.unit_cost || 0;
+      const totalCost = qty * unitCost;
+
+      worksheet.addRow({
+        index: idx + 1,
+        sku: product?.sku || '-',
+        product_name: product?.name || '-',
+        category: materialCat?.name || '-',
+        team: getTeamName(comp.team_id),
+        company: getProductDetails(comp.product_id).company,
+        quantity: qty,
+        unit: comp.input_unit_of_measure || product?.unit_of_measure || '-',
+        unit_cost: unitCost,
+        total_cost: totalCost,
+        notes: comp.notes || ''
+      });
+    });
+
+    // Style header row
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+    headerRow.alignment = { horizontal: 'center', vertical: 'center' };
+
+    // Format cost columns
+    worksheet.getColumn('unit_cost').numFmt = '€#,##0.00';
+    worksheet.getColumn('total_cost').numFmt = '€#,##0.00';
+
+    // Add summary row
+    const summaryRow = worksheet.addRow({});
+    summaryRow.getCell(8).value = 'ΣΥΝΟΛΟ:';
+    summaryRow.getCell(8).font = { bold: true };
+    summaryRow.getCell(10).value = `=SUM(J2:J${worksheet.rowCount - 1})`;
+    summaryRow.getCell(10).font = { bold: true };
+    summaryRow.getCell(10).numFmt = '€#,##0.00';
+
+    // Generate file
+    workbook.xlsx.writeBuffer().then(buffer => {
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `BOM-${selectedType?.name || 'Export'}-${new Date().toISOString().split('T')[0]}.xlsx`;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+  };
+
   // Apply filters
   const filteredComponents = getFilteredComponents();
 
