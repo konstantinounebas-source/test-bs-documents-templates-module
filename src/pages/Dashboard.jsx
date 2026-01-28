@@ -808,46 +808,6 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={activeDialog === 'highrisk'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Αυτοκόλλητα Υψηλού Κινδύνου ({highRiskStickers.length})</DialogTitle>
-          </DialogHeader>
-          <Button onClick={() => {
-            const data = highRiskStickers.map(item => {
-              const stop = stops.find(s => s.id === item.stop_id);
-              return {
-                'Stop ID': getStopDisplay(item),
-                'Sticker Type': getTemplateDisplay(item),
-                'Planned Date': stop?.current_planned_installation_date || '-'
-              };
-            });
-            exportToExcel(data, 'high-risk-stickers');
-          }} className="mb-4">Export to Excel</Button>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Stop ID</TableHead>
-                <TableHead>Sticker Type</TableHead>
-                <TableHead>Planned Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {highRiskStickers.map(item => {
-                const stop = stops.find(s => s.id === item.stop_id);
-                return (
-                  <TableRow key={item.id} className="bg-red-50">
-                    <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
-                    <TableCell>{getTemplateDisplay(item)}</TableCell>
-                    <TableCell>{stop?.current_planned_installation_date || '-'}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={activeDialog === 'installed_no_sticker'} onOpenChange={() => setActiveDialog(null)}>
         <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
