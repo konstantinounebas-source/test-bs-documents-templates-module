@@ -299,9 +299,16 @@ const allNavigationGroups = [
         icon: ScrollText,
         description: "View all sticker movements",
         pageKey: "StickerMovementLogs"
+      },
+      {
+        title: "Stickers & Installation User Guide",
+        url: createPageUrl("StickersInstallationUserGuide"),
+        icon: HelpCircle,
+        description: "Instructions for stickers and installation management",
+        pageKey: "StickersInstallationUserGuide"
       }
-    ]
-  },
+      ]
+      },
   {
     id: 'delivery-management',
     label: 'Delivery Management',
