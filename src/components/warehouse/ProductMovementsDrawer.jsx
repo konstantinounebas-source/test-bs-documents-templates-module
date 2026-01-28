@@ -64,16 +64,16 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-4/5 lg:w-3/4">
-        <SheetHeader>
-          <SheetTitle>{productName} - All Movements</SheetTitle>
-          <SheetDescription>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>{productName}</DialogTitle>
+          <DialogDescription>
             Complete movement history for this product
-          </SheetDescription>
-        </SheetHeader>
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="mt-6 max-h-[calc(100vh-150px)] overflow-y-auto">
+        <div className="max-h-[calc(80vh-120px)] overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
