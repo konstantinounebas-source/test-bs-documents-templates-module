@@ -136,6 +136,18 @@ export default function StopsPage() {
     return false;
   };
 
+  const checkAllStickersInstalled = (stop) => {
+    if (!stop.shelter_type_approved_id) return false;
+
+    // Get all active stickers for this stop
+    const stopStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status !== "Obsolete");
+    if (stopStickers.length === 0) return false;
+
+    // Check if all active stickers have installation_status = "Installed"
+    const allInstalled = stopStickers.every(s => s.installation_status === "Installed");
+    return allInstalled;
+  };
+
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -360,13 +372,14 @@ export default function StopsPage() {
                     Shelter Installed {getSortIcon("shelter_installed")}
                   </TableHead>
                   <TableHead>Stickers Status</TableHead>
+                  <TableHead>All Installed</TableHead>
                   <TableHead>Critical</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sortedStops.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={11} className="text-center text-gray-500 py-8">
                       No stops found
                     </TableCell>
                   </TableRow>
@@ -471,6 +484,13 @@ export default function StopsPage() {
                               <span className="text-gray-400">No stickers</span>
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          {checkAllStickersInstalled(stop) ? (
+                            <span className="text-green-600 font-semibold">✓ Yes</span>
+                          ) : (
+                            <span className="text-gray-400">No</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {isCritical && (
