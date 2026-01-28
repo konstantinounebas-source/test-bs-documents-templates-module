@@ -221,57 +221,119 @@ export default function DashboardPage() {
         <p className="text-gray-600">Πλήρης επισκόπηση στάσεων και αυτοκόλλητων</p>
       </div>
 
-      {/* Summary Cards - Row 1 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('total')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Συνολικές Στάσεις</p>
-                <p className="text-3xl font-bold text-blue-600">{totalStops}</p>
-              </div>
-              <MapPin className="w-10 h-10 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('without')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Χωρίς Δημιουργημένα Stickers</p>
-                <p className="text-3xl font-bold text-gray-600">{stopsWithoutStickers.length}</p>
-              </div>
-              <XCircle className="w-10 h-10 text-gray-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('critical')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Στέγαστρα Installed - Stickers Pending</p>
-                <p className="text-3xl font-bold text-red-600">{criticalStops.length}</p>
-              </div>
-              <AlertTriangle className="w-10 h-10 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('atrisk')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Stickers σε Κίνδυνο Καθυστέρησης</p>
-                <p className="text-3xl font-bold text-orange-600">{stickersAtRisk.length}</p>
-              </div>
-              <AlertTriangle className="w-10 h-10 text-orange-600" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Summary Cards - Row 1: Basic Statistics */}
+       <div>
+         <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Βασικές Στατιστικές</h2>
+         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('total')}>
+             <CardContent className="pt-6">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Συνολικές Στάσεις</p>
+                   <p className="text-3xl font-bold text-blue-600">{totalStops}</p>
+                 </div>
+                 <MapPin className="w-10 h-10 text-blue-600" />
+               </div>
+             </CardContent>
+           </Card>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('without')}>
+             <CardContent className="pt-6">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Χωρίς Δημιουργημένα Stickers</p>
+                   <p className="text-3xl font-bold text-gray-600">{stopsWithoutStickers.length}</p>
+                 </div>
+                 <XCircle className="w-10 h-10 text-gray-600" />
+               </div>
+             </CardContent>
+           </Card>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('critical')}>
+             <CardContent className="pt-6">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Στέγαστρα Installed - Stickers Pending</p>
+                   <p className="text-3xl font-bold text-red-600">{criticalStops.length}</p>
+                 </div>
+                 <AlertTriangle className="w-10 h-10 text-red-600" />
+               </div>
+             </CardContent>
+           </Card>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('ordered')}>
+             <CardContent className="pt-6">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Στάσεις με Παραγγελθέντα Stickers</p>
+                   <p className="text-3xl font-bold text-teal-600">{stopsWithOrderedStickers.length}</p>
+                 </div>
+                 <ShoppingCart className="w-10 h-10 text-teal-600" />
+               </div>
+             </CardContent>
+           </Card>
+         </div>
+       </div>
+
+       {/* Summary Cards - Row 2: Installed Stops Status */}
+       <div>
+         <h2 className="text-xl font-semibold text-gray-900 mb-4">2. Εγκατεστημένες Στάσεις</h2>
+         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('remaining')}>
+             <CardContent className="pt-6">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Υπολειπόμενα Stickers</p>
+                   <p className="text-3xl font-bold text-purple-600">
+                     {Object.values(remainingStickersByCategory).reduce((sum, count) => sum + count, 0)}
+                   </p>
+                 </div>
+                 <Building2 className="w-10 h-10 text-purple-600" />
+               </div>
+             </CardContent>
+           </Card>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed')}>
+             <CardContent className="pt-6">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Εγκατεστημένα Stickers</p>
+                   <p className="text-3xl font-bold text-green-600">
+                     {Object.values(installedStickersByCategory).reduce((sum, count) => sum + count, 0)}
+                   </p>
+                 </div>
+                 <CheckCircle className="w-10 h-10 text-green-600" />
+               </div>
+             </CardContent>
+           </Card>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed_no_sticker')}>
+             <CardContent className="pt-6">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">⚠️ χωρίς Τοποθέτηση</p>
+                   <p className="text-3xl font-bold text-red-600">{installedWithoutStickerInstall.length}</p>
+                 </div>
+                 <AlertTriangle className="w-10 h-10 text-red-600" />
+               </div>
+             </CardContent>
+           </Card>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed_no_order')}>
+             <CardContent className="pt-6">
+               <div className="flex items-center justify-between">
+                 <div>
+                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">🔴 χωρίς Παραγγελία</p>
+                   <p className="text-3xl font-bold text-red-600">{installedWithoutOrder.length}</p>
+                 </div>
+                 <AlertTriangle className="w-10 h-10 text-red-600" />
+               </div>
+             </CardContent>
+           </Card>
+         </div>
+       </div>
 
       {/* Buffer Days */}
       <Card className="bg-blue-50 border-blue-200">
