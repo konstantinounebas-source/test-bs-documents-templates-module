@@ -1,0 +1,133 @@
+import React, { useState, useEffect } from "react";
+import { base44 } from "@/api/base44Client";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
+import { format } from "date-fns";
+
+export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId, productName }) {
+  const [movements, setMovements] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [vendors, setVendors] = useState([]);
+
+  useEffect(() => {
+    if (isOpen && productId) {
+      loadMovements();
+    }
+  }, [isOpen, productId]);
+
+  const loadMovements = async () => {
+    setIsLoading(true);
+    try {
+      const [movementsData, usersData, vendorsData] = await Promise.all([
+        base44.entities.StockMovement.filter({ product_id: productId }, "-created_date"),
+        base44.entities.User.list().catch(() => []),
+        base44.entities.Vendor.list().catch(() => [])
+      ]);
+      
+      setMovements(movementsData);
+      setUsers(usersData);
+      setVendors(vendorsData);
+    } catch (error) {
+      console.error("Error loading movements:", error);
+    }
+    setIsLoading(false);
+  };
+
+  const getUserName = (identifier) => {
+    if (!identifier) return "-";
+    const user = users.find(u => u.id === identifier || u.email === identifier);
+    return user?.full_name || identifier;
+  };
+
+  const getVendorName = (vendorId) => {
+    if (!vendorId) return "-";
+    const vendor = vendors.find(v => v.id === vendorId);
+    return vendor?.name || "-";
+  };
+
+  const getMovementTypeBadge = (type) => {
+    const variants = {
+      "IN": "bg-green-100 text-green-800",
+      "OUT": "bg-red-100 text-red-800",
+      "ADJUSTMENT": "bg-yellow-100 text-yellow-800"
+    };
+    return variants[type] || "bg-gray-100 text-gray-800";
+  };
+
+  return (
+    <Sheet open={isOpen} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:w-4/5 lg:w-3/4">
+        <SheetHeader>
+          <SheetTitle>{productName} - All Movements</SheetTitle>
+          <SheetDescription>
+            Complete movement history for this product
+          </SheetDescription>
+        </SheetHeader>
+
+        <div className="mt-6 max-h-[calc(100vh-150px)] overflow-y-auto">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+            </div>
+          ) : movements.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">
+              No movements found for this product
+            </div>
+          ) : (
+            <Table>
+              <TableHeader className="sticky top-0 bg-white">
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-right">Quantity</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Vendor</TableHead>
+                  <TableHead className="text-right">Cost</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {movements.map((movement) => (
+                  <TableRow key={movement.id}>
+                    <TableCell className="whitespace-nowrap text-sm">
+                      {format(new Date(movement.created_date), "dd/MM/yyyy")}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getMovementTypeBadge(movement.movement_type)}>
+                        {movement.movement_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-semibold">
+                      {movement.base_quantity || movement.quantity}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {movement.warehouse_location || "-"}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {getUserName(movement.created_by)}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {getVendorName(movement.vendor_id)}
+                    </TableCell>
+                    <TableCell className="text-right text-sm font-semibold">
+                      €{(movement.total_item_cost || 0).toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
