@@ -469,7 +469,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                 </div>
                               </TableCell>
                             </TableRow>
-                            <TableRow className="border-b bg-slate-50/50">
+                            <TableRow className="border-b bg-slate-50/50" key={`row2-${absoluteIndex}`}>
                               <TableCell className="py-2 w-24">
                                 <label className="text-xs text-slate-500 mb-1 block">Ποσότητα</label>
                                 <Input
