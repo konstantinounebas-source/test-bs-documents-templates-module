@@ -107,56 +107,44 @@ export default function BOMManager({ busStopTypes, components, products, selecte
     }
   };
 
-  const handleSave = async () => {
-    if (!currentTypeId) return;
+  const handleSaveComponent = async (component) => {
+    if (!currentTypeId || !component.product_id) return;
     
-    setIsSaving(true);
+    const quantityNum = parseFloat(component.quantity_required);
+    if (isNaN(quantityNum) || quantityNum <= 0) return;
+    
+    const tempId = component.id || `temp_${Math.random()}`;
+    setSavingIds(prev => ({ ...prev, [tempId]: true }));
+    
     try {
-      const toCreate = [];
-      const toUpdate = [];
-      
-      for (const component of typeComponents) {
-        if (!component.product_id) continue;
-        
-        const quantityNum = parseFloat(component.quantity_required);
-        if (isNaN(quantityNum) || quantityNum <= 0) continue;
-        
-        const data = {
-          bus_stop_type_id: currentTypeId,
-          product_id: component.product_id,
-          quantity_required: quantityNum,
-          input_unit_of_measure: component.input_unit_of_measure || '',
-          unit_of_measure: component.unit_of_measure || 'pcs',
-          team_id: component.team_id || null,
-          material_category_id: component.material_category_id || null,
-          is_optional: component.is_optional || false,
-          notes: component.notes || ''
-        };
+      const data = {
+        bus_stop_type_id: currentTypeId,
+        product_id: component.product_id,
+        quantity_required: quantityNum,
+        input_unit_of_measure: component.input_unit_of_measure || '',
+        unit_of_measure: component.unit_of_measure || 'pcs',
+        team_id: component.team_id || null,
+        material_category_id: component.material_category_id || null,
+        is_optional: component.is_optional || false,
+        notes: component.notes || ''
+      };
 
-        if (component.id) {
-          toUpdate.push({ id: component.id, data });
-        } else {
-          toCreate.push(data);
-        }
-      }
-      
-      // Batch create new components
-      if (toCreate.length > 0) {
-        await base44.entities.BusStopTypeComponent.bulkCreate(toCreate);
-      }
-      
-      // Batch update existing components
-      if (toUpdate.length > 0) {
-        await Promise.all(toUpdate.map(({ id, data }) => 
-          base44.entities.BusStopTypeComponent.update(id, data)
-        ));
+      if (component.id) {
+        await base44.entities.BusStopTypeComponent.update(component.id, data);
+      } else {
+        await base44.entities.BusStopTypeComponent.create(data);
       }
       
       onComponentsUpdated();
     } catch (error) {
-      console.error("Error saving components:", error);
+      console.error("Error saving component:", error);
     }
-    setIsSaving(false);
+    
+    setSavingIds(prev => {
+      const newState = { ...prev };
+      delete newState[tempId];
+      return newState;
+    });
   };
 
   const getProductName = (productId) => {
