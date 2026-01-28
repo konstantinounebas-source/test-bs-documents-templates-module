@@ -629,15 +629,8 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                 <Plus className="w-4 h-4 mr-2" />
                 Add Component
               </Button>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={isSaving || typeComponents.length === 0}>
-              {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Save BOM Configuration
-            </Button>
-          </div>
+              </CardContent>
+              </Card>
         </>
       )}
     </div>
