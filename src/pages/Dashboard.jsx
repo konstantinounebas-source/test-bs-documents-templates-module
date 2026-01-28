@@ -231,12 +231,12 @@ export default function DashboardPage() {
         <CardHeader className="bg-red-50">
           <CardTitle className="flex items-center gap-2 text-red-800">
             <AlertTriangle className="w-5 h-5" />
-            Critical Stops - Shelter Installed but Stickers Missing
+            Critical Stops - Στέγαστρα Εγκατεστημένα αλλά όχι όλα τα Αυτοκόλλητα
           </CardTitle>
         </CardHeader>
         <CardContent>
           {criticalStops.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No critical stops</p>
+            <p className="text-center text-gray-500 py-8">Δεν υπάρχουν critical στάσεις</p>
           ) : (
             <div className="border rounded-lg">
               <Table>
@@ -257,7 +257,7 @@ export default function DashboardPage() {
                       <TableCell>{stop.greek_name}</TableCell>
                       <TableCell>{stop.current_planned_installation_date || "-"}</TableCell>
                       <TableCell>
-                        <Link to={createPageUrl("StopsWithStickers")}>
+                        <Link to={createPageUrl("Stops")}>
                           <Badge className="bg-blue-600 hover:bg-blue-700 cursor-pointer">View</Badge>
                         </Link>
                       </TableCell>
@@ -270,91 +270,48 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Stickers To Order - Grouped by Vendor */}
+      {/* Στάσεις χωρίς αυτοκόλλητα */}
       <Card>
-        <CardHeader className="bg-orange-50">
-          <CardTitle className="flex items-center gap-2 text-orange-800">
-            <ShoppingCart className="w-5 h-5" />
-            Stickers To Order ({stickersToOrder.length} items)
+        <CardHeader className="bg-gray-50">
+          <CardTitle className="flex items-center gap-2 text-gray-800">
+            <XCircle className="w-5 h-5" />
+            Στάσεις χωρίς Δημιουργημένα Αυτοκόλλητα ({stopsWithoutStickers.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {stickersToOrder.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No stickers need ordering</p>
-          ) : (
-            <div className="space-y-4">
-              {Object.entries(stickersToOrderByVendor).map(([vendor, items]) => (
-                <div key={vendor} className="border rounded-lg">
-                  <div className="bg-gray-50 px-4 py-2 font-semibold border-b">
-                    {vendor} ({items.length} items)
-                  </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Stop ID</TableHead>
-                        <TableHead>Sticker Template</TableHead>
-                        <TableHead>Print Line 1</TableHead>
-                        <TableHead>Print Line 2</TableHead>
-                        <TableHead>Print Line 3</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {items.map(item => (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
-                          <TableCell>{getTemplateDisplay(item)}</TableCell>
-                          <TableCell>{item.print_line_1}</TableCell>
-                          <TableCell>{item.print_line_2}</TableCell>
-                          <TableCell>{item.print_line_3}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Received Not Installed */}
-      <Card>
-        <CardHeader className="bg-blue-50">
-          <CardTitle className="flex items-center gap-2 text-blue-800">
-            <Package className="w-5 h-5" />
-            Received Not Installed ({receivedNotInstalled.length} items)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {receivedNotInstalled.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No received stickers pending installation</p>
+          {stopsWithoutStickers.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">Όλες οι στάσεις έχουν αυτοκόλλητα</p>
           ) : (
             <div className="border rounded-lg">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Stop ID</TableHead>
-                    <TableHead>Sticker Template</TableHead>
-                    <TableHead>Custody Status</TableHead>
-                    <TableHead>Comments</TableHead>
+                    <TableHead>English Name</TableHead>
+                    <TableHead>Greek Name</TableHead>
+                    <TableHead>Shelter Type</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {receivedNotInstalled.slice(0, 20).map(item => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
-                      <TableCell>{getTemplateDisplay(item)}</TableCell>
+                  {stopsWithoutStickers.slice(0, 20).map(stop => (
+                    <TableRow key={stop.id}>
+                      <TableCell className="font-medium">{stop.stop_id}</TableCell>
+                      <TableCell>{stop.english_name}</TableCell>
+                      <TableCell>{stop.greek_name}</TableCell>
+                      <TableCell>{stop.shelter_type_approved_id || "-"}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{item.custody_status}</Badge>
+                        <Link to={createPageUrl("Stops")}>
+                          <Badge className="bg-blue-600 hover:bg-blue-700 cursor-pointer">View</Badge>
+                        </Link>
                       </TableCell>
-                      <TableCell className="text-sm text-gray-600">{item.comments || "-"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
-              {receivedNotInstalled.length > 20 && (
+              {stopsWithoutStickers.length > 20 && (
                 <div className="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-t">
-                  Showing 20 of {receivedNotInstalled.length} items. <Link to={createPageUrl("StickerItems")} className="text-blue-600 hover:underline">View all</Link>
+                  Showing 20 of {stopsWithoutStickers.length} stops. <Link to={createPageUrl("Stops")} className="text-blue-600 hover:underline">View all</Link>
                 </div>
               )}
             </div>
@@ -363,79 +320,37 @@ export default function DashboardPage() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upcoming Installations */}
+        {/* Παραγγελίες με Warning */}
         <Card>
-          <CardHeader className="bg-green-50">
-            <CardTitle className="flex items-center gap-2 text-green-800">
-              <Calendar className="w-5 h-5" />
-              Upcoming Installations
+          <CardHeader className="bg-orange-50">
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <AlertTriangle className="w-5 h-5" />
+              Παραγγελίες με Warning ({ordersWithWarning.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {upcomingMonths.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">No upcoming installations scheduled</p>
-            ) : (
-              <div className="space-y-3">
-                {upcomingMonths.slice(0, 6).map(month => (
-                  <div key={month.label} className="border rounded-lg p-3">
-                    <div className="font-semibold mb-2 flex items-center justify-between">
-                      <span>{month.label}</span>
-                      <Badge>{month.stops.length} stops</Badge>
-                    </div>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      {month.stops.slice(0, 5).map(stop => (
-                        <div key={stop.id} className="flex items-center justify-between">
-                          <span>{stop.stop_id}</span>
-                          <span className="text-xs">{stop.current_planned_installation_date}</span>
-                        </div>
-                      ))}
-                      {month.stops.length > 5 && (
-                        <div className="text-xs text-blue-600">
-                          +{month.stops.length - 5} more...
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Lost Stickers */}
-        <Card>
-          <CardHeader className="bg-red-50">
-            <CardTitle className="flex items-center gap-2 text-red-800">
-              <XCircle className="w-5 h-5" />
-              Lost Stickers ({lostStickers.length} items)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {lostStickers.length === 0 ? (
-              <div className="text-center py-8">
-                <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-2" />
-                <p className="text-gray-500">No lost stickers</p>
-              </div>
+            {ordersWithWarning.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">Δεν υπάρχουν παραγγελίες με warning</p>
             ) : (
               <div className="border rounded-lg">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Stop ID</TableHead>
-                      <TableHead>Template</TableHead>
-                      <TableHead>Reason</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Vendor</TableHead>
+                      <TableHead>Order Date</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {lostStickers.map(item => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
-                        <TableCell>{getTemplateDisplay(item)}</TableCell>
+                    {ordersWithWarning.map(order => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">{order.order_id}</TableCell>
+                        <TableCell>{order.vendor}</TableCell>
+                        <TableCell>{order.order_date}</TableCell>
                         <TableCell>
-                          <Badge variant="destructive">{item.reorder_reason || "Not specified"}</Badge>
+                          <Badge variant="destructive">Warning</Badge>
                         </TableCell>
-                        <TableCell className="text-sm">{item.reorder_date || "-"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -444,48 +359,82 @@ export default function DashboardPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Αυτοκόλλητα με Πολλαπλές Παραγγελίες */}
+        <Card>
+          <CardHeader className="bg-purple-50">
+            <CardTitle className="flex items-center gap-2 text-purple-800">
+              <Repeat className="w-5 h-5" />
+              Πολλαπλές Παραγγελίες ({stickersOrderedMultipleTimes.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {stickersOrderedMultipleTimes.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">Δεν υπάρχουν αυτοκόλλητα με πολλαπλές παραγγελίες</p>
+            ) : (
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Stop ID</TableHead>
+                      <TableHead>Template</TableHead>
+                      <TableHead>Times Ordered</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stickersOrderedMultipleTimes.slice(0, 15).map(item => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
+                        <TableCell>{getTemplateDisplay(item)}</TableCell>
+                        <TableCell>
+                          <Badge className="bg-purple-100 text-purple-800">
+                            {item.total_ordered_quantity || 0}x
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{item.status}</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {stickersOrderedMultipleTimes.length > 15 && (
+                  <div className="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-t">
+                    Showing 15 of {stickersOrderedMultipleTimes.length} items
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Ordered Not Received */}
+      {/* Installed Stickers ανά Κατηγορία */}
       <Card>
-        <CardHeader className="bg-yellow-50">
-          <CardTitle className="flex items-center gap-2 text-yellow-800">
-            <Package className="w-5 h-5" />
-            Ordered Not Received ({orderedNotReceived.length} items)
+        <CardHeader className="bg-green-50">
+          <CardTitle className="flex items-center gap-2 text-green-800">
+            <CheckCircle className="w-5 h-5" />
+            Εγκατεστημένα Αυτοκόλλητα ανά Κατηγορία
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {orderedNotReceived.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No outstanding orders</p>
+          {Object.keys(installedStickersByCategory).length === 0 ? (
+            <p className="text-center text-gray-500 py-8">Δεν υπάρχουν εγκατεστημένα αυτοκόλλητα</p>
           ) : (
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Stop ID</TableHead>
-                    <TableHead>Sticker Template</TableHead>
-                    <TableHead>Total Ordered</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orderedNotReceived.slice(0, 20).map(item => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
-                      <TableCell>{getTemplateDisplay(item)}</TableCell>
-                      <TableCell>
-                        <Badge className="bg-yellow-100 text-yellow-800">
-                          {item.total_ordered_quantity || 0}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {orderedNotReceived.length > 20 && (
-                <div className="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-t">
-                  Showing 20 of {orderedNotReceived.length} items. <Link to={createPageUrl("Orders")} className="text-blue-600 hover:underline">View all orders</Link>
-                </div>
-              )}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {Object.entries(installedStickersByCategory)
+                .sort((a, b) => b[1] - a[1])
+                .map(([category, count]) => (
+                  <Card key={category}>
+                    <CardContent className="pt-6">
+                      <div className="text-center">
+                        <p className="text-sm text-gray-600 mb-1">{category}</p>
+                        <p className="text-2xl font-bold text-green-600">{count}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
           )}
         </CardContent>
