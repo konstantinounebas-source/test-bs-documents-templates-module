@@ -119,6 +119,11 @@ export default function StockMovementsPage() {
     setShowEditDialog(true);
   };
 
+  const handleViewProductMovements = (product) => {
+    setSelectedProductForDrawer(product);
+    setShowProductDrawer(true);
+  };
+
   const handleSaveEdit = async (movementId, updates) => {
     try {
       await base44.entities.StockMovement.update(movementId, updates);
