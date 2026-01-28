@@ -43,7 +43,7 @@ export default function StockMovementsPage() {
 
   useEffect(() => {
     loadData();
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, searchTerm, typeFilter, locationFilter, productFilter, timeFilter]);
 
   const loadData = async () => {
     setIsLoading(true);
