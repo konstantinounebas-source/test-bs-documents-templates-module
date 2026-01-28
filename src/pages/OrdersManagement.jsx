@@ -669,6 +669,9 @@ export default function OrdersManagementPage() {
                       return stop && stop.stop_id === warning.stopId;
                     });
                     
+                    const stop = stops.find(s => s.stop_id === warning.stopId);
+                    const shelterType = shelterTypes.find(st => st.shelter_type_id === stop?.shelter_type_approved_id);
+                    
                     return (
                       <TableRow key={index} className="bg-orange-50">
                         <TableCell>
@@ -703,6 +706,9 @@ export default function OrdersManagementPage() {
                             </div>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {shelterType?.description || stop?.shelter_type_approved_id || '-'}
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
