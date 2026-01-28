@@ -519,6 +519,17 @@ export default function StockMovementsPage() {
         companies={companies}
         onSave={handleSaveEdit}
       />
+
+      {selectedProductForDrawer && (
+        <ProductMovementsDrawer
+          isOpen={showProductDrawer}
+          onOpenChange={setShowProductDrawer}
+          productId={selectedProductForDrawer.id}
+          productName={selectedProductForDrawer.name}
+          onEditMovement={handleEdit}
+          vendors={vendors}
+        />
+      )}
     </div>
   );
 }
