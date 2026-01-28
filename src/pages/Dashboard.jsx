@@ -67,7 +67,51 @@ export default function DashboardPage() {
     return stopStickers.some(item => ["Ordered", "Received", "Installed"].includes(item.status));
   });
 
-  // 5. Αυτοκόλλητα που είναι παραγγελμένα και ενδέχεται να μην παραληφθούν εγκαίρως
+  // 5. Αυτοκόλλητα που είναι παραγγελμένα με προειδοποίηση (< 14 ημέρες)
+  const orderedWithWarning = stickerItems.filter(item => {
+    if (item.status !== "Ordered") return false;
+    const stop = stops.find(s => s.id === item.stop_id);
+    if (!stop?.current_planned_installation_date) return false;
+    const daysBeforeInstall = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
+    return daysBeforeInstall < 14;
+  });
+
+  // 6. Ordered σε εγκατεστημένες στάσεις αλλά δεν έχουν παραληφθεί
+  const orderedOnInstalledNotReceived = stickerItems.filter(item => {
+    if (item.status !== "Ordered") return false;
+    const stop = stops.find(s => s.id === item.stop_id);
+    return stop && stop.shelter_installed;
+  });
+
+  // 7. Εγκατεστημένες στάσεις χωρίς εγκατεστημένα stickers
+  const installedWithoutStickerInstall = stickerItems.filter(item => {
+    const stop = stops.find(s => s.id === item.stop_id);
+    return stop && stop.shelter_installed && item.status !== "Installed";
+  });
+
+  // 8. Εγκατεστημένες στάσεις χωρίς παραγγελία (ΚΡΙΣΙΜΟ)
+  const installedWithoutOrder = stickerItems.filter(item => {
+    const stop = stops.find(s => s.id === item.stop_id);
+    return stop && stop.shelter_installed && item.status === "Needed";
+  });
+
+  // 9. Εγκατεστημένες στάσεις με Ordered αλλά δεν έχουν παραληφθεί
+  const orderedNotReceivedOnInstalled = stickerItems.filter(item => {
+    const stop = stops.find(s => s.id === item.stop_id);
+    return stop && stop.shelter_installed && item.status === "Ordered";
+  });
+
+  // 10. Αυτοκόλλητα υψηλού κινδύνου (Needed + < bufferDays)
+  const [bufferDays, setBufferDays] = React.useState(30);
+  const highRiskStickers = stickerItems.filter(item => {
+    if (item.status !== "Needed") return false;
+    const stop = stops.find(s => s.id === item.stop_id);
+    if (!stop?.current_planned_installation_date) return false;
+    const daysUntil = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
+    return daysUntil < bufferDays && daysUntil >= 0;
+  });
+
+  // 11. Αυτοκόλλητα που είναι παραγγελμένα και ενδέχεται να μην παραληφθούν εγκαίρως
   const stickersAtRisk = stickerItems.filter(item => {
     if (item.status !== "Ordered") return false;
     
