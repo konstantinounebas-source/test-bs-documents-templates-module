@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Download, Package, User, TrendingUp, MapPin, ChevronDown, ChevronUp, Euro, Box } from "lucide-react";
+import { Search, Download, Package, User, TrendingUp, MapPin, ChevronDown, ChevronUp, Euro, Box, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import PaginationControls from "../components/warehouse/PaginationControls";
+import ProductMovementsDrawer from "../components/warehouse/ProductMovementsDrawer";
 
 export default function ChargedMaterialsReportPage() {
   const [movements, setMovements] = useState([]);
