@@ -237,9 +237,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
   };
 
   const handleExportToExcel = () => {
-    const { ExcelJS } = window;
-    const WorkbookClass = require('exceljs').Workbook;
-    const workbook = new WorkbookClass();
+    const workbook = new Workbook();
     const worksheet = workbook.addWorksheet('Bill of Materials');
 
     // Headers
