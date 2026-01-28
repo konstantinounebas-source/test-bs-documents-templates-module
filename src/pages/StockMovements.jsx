@@ -467,12 +467,13 @@ export default function StockMovementsPage() {
         <Card className="border-slate-200">
           <CardContent className="p-0">
             <StockMovementsTable 
-              movements={paginatedMovements}
-              products={products}
-              users={users}
-              isLoading={isLoading}
-              onView={handleView}
-              onEdit={handleEdit}
+             movements={paginatedMovements}
+             products={products}
+             users={users}
+             isLoading={isLoading}
+             onView={handleView}
+             onEdit={handleEdit}
+             onViewProductMovements={handleViewProductMovements}
             />
             
             <PaginationControls
