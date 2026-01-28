@@ -48,10 +48,12 @@ export default function StockMovementsPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Calculate skip based on pagination
-      const skip = (currentPage - 1) * parseInt(itemsPerPage);
+      // If filters are active, load all movements for filtering. Otherwise, use pagination
+      const hasFilters = searchTerm || typeFilter !== "all" || locationFilter !== "all" || productFilter !== "all" || timeFilter !== "all";
+      const skip = hasFilters ? 0 : (currentPage - 1) * parseInt(itemsPerPage);
+      const limit = hasFilters ? 10000 : parseInt(itemsPerPage);
       
-      // Load paginated movements + other data in parallel
+      // Load movements + other data in parallel
       const [
         movementsData,
         allMovementsCount,
@@ -64,7 +66,7 @@ export default function StockMovementsPage() {
         categoriesData,
         companiesData
       ] = await Promise.all([
-        base44.entities.StockMovement.list("-created_date", parseInt(itemsPerPage), skip),
+        base44.entities.StockMovement.list("-created_date", limit, skip),
         base44.entities.StockMovement.list().then(all => all.length),
         base44.entities.Product.list(),
         base44.entities.WarehouseLocation.list(),
