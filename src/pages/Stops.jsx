@@ -53,12 +53,12 @@ export default function StopsPage() {
   };
 
   const getStickerCounts = (stopId) => {
-    const activeItems = stickerItems.filter(item => item.stop_id === stopId && item.status !== "Obsolete");
+    const activeItems = stickerItems.filter(item => item.stop_id === stopId);
     return {
       needed: activeItems.filter(item => item.status === "Needed").length,
       ordered: activeItems.filter(item => item.status === "Ordered").length,
       received: activeItems.filter(item => item.status === "Received").length,
-      installed: activeItems.filter(item => item.installation_status === "Installed").length
+      installed: activeItems.filter(item => item.status === "Installed").length
     };
   };
 
@@ -139,12 +139,12 @@ export default function StopsPage() {
   const checkAllStickersInstalled = (stop) => {
     if (!stop.shelter_type_approved_id) return false;
 
-    // Get all active stickers for this stop
-    const stopStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status !== "Obsolete");
+    // Get all stickers for this stop
+    const stopStickers = stickerItems.filter(s => s.stop_id === stop.id);
     if (stopStickers.length === 0) return false;
 
-    // Check if all active stickers have installation_status = "Installed"
-    const allInstalled = stopStickers.every(s => s.installation_status === "Installed");
+    // Check if all stickers have status = "Installed"
+    const allInstalled = stopStickers.every(s => s.status === "Installed");
     return allInstalled;
   };
 
