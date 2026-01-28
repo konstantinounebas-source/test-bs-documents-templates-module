@@ -27,15 +27,13 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
   const loadMovements = async () => {
     setIsLoading(true);
     try {
-      const [movementsData, usersData, vendorsData] = await Promise.all([
+      const [movementsData, usersData] = await Promise.all([
         base44.entities.StockMovement.filter({ product_id: productId }, "-created_date"),
-        base44.entities.User.list().catch(() => []),
-        base44.entities.Vendor.list().catch(() => [])
+        base44.entities.User.list().catch(() => [])
       ]);
       
       setMovements(movementsData);
       setUsers(usersData);
-      setVendors(vendorsData);
     } catch (error) {
       console.error("Error loading movements:", error);
     }
