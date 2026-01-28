@@ -81,7 +81,7 @@ export default function StickersInstallationUserGuide() {
       </div>
 
       <div ref={contentRef}>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Εισαγωγή</TabsTrigger>
           <TabsTrigger value="warnings">Προειδοποιήσεις</TabsTrigger>
