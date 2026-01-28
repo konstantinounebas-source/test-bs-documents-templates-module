@@ -267,8 +267,14 @@ export default function StockMovementsPage() {
     return matchesSearch && matchesType && matchesLocation && matchesProduct && matchesTime;
   });
 
-  // Movements are already paginated from server
-  const paginatedMovements = filteredMovements;
+  // If filters are active, paginate client-side. Otherwise, movements are server-paginated
+  const hasFilters = searchTerm || typeFilter !== "all" || locationFilter !== "all" || productFilter !== "all" || timeFilter !== "all";
+  const paginatedMovements = hasFilters 
+    ? filteredMovements.slice(
+        (currentPage - 1) * parseInt(itemsPerPage),
+        currentPage * parseInt(itemsPerPage)
+      )
+    : filteredMovements;
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
