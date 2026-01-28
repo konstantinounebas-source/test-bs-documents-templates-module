@@ -60,6 +60,7 @@ import BusStopTypesBOM from './pages/BusStopTypesBOM';
 import ChargedMaterialsReport from './pages/ChargedMaterialsReport';
 import CustomFields from './pages/CustomFields';
 import DailyTracker from './pages/DailyTracker';
+import Dashboard from './pages/Dashboard';
 import DeliveryFieldsDataDefinitions from './pages/DeliveryFieldsDataDefinitions';
 import DeliveryLogs from './pages/DeliveryLogs';
 import DeliveryReporting from './pages/DeliveryReporting';
@@ -91,6 +92,7 @@ import StickerHandovers from './pages/StickerHandovers';
 import StickerItems from './pages/StickerItems';
 import StickerMovementLogs from './pages/StickerMovementLogs';
 import StickerTemplates from './pages/StickerTemplates';
+import StickersInstallationUserGuide from './pages/StickersInstallationUserGuide';
 import StockMovements from './pages/StockMovements';
 import StockOverview from './pages/StockOverview';
 import Stops from './pages/Stops';
@@ -104,8 +106,6 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import Dashboard from './pages/Dashboard';
-import StickersInstallationUserGuide from './pages/StickersInstallationUserGuide';
 import __Layout from './Layout.jsx';
 
 
@@ -123,6 +123,7 @@ export const PAGES = {
     "ChargedMaterialsReport": ChargedMaterialsReport,
     "CustomFields": CustomFields,
     "DailyTracker": DailyTracker,
+    "Dashboard": Dashboard,
     "DeliveryFieldsDataDefinitions": DeliveryFieldsDataDefinitions,
     "DeliveryLogs": DeliveryLogs,
     "DeliveryReporting": DeliveryReporting,
@@ -154,6 +155,7 @@ export const PAGES = {
     "StickerItems": StickerItems,
     "StickerMovementLogs": StickerMovementLogs,
     "StickerTemplates": StickerTemplates,
+    "StickersInstallationUserGuide": StickersInstallationUserGuide,
     "StockMovements": StockMovements,
     "StockOverview": StockOverview,
     "Stops": Stops,
@@ -167,8 +169,6 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "Dashboard": Dashboard,
-    "StickersInstallationUserGuide": StickersInstallationUserGuide,
 }
 
 export const pagesConfig = {

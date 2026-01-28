@@ -70,6 +70,21 @@ export default function StockMovementsPage() {
         base44.entities.Company.filter({ is_active: true })
       ]);
       
+      // Debug: log all IN movements for debugging
+      const inMovements = movementsData.filter(m => m.movement_type === 'IN');
+      console.log('📊 ALL IN MOVEMENTS (RAW):');
+      inMovements.forEach(m => {
+        console.log({
+          id: m.id,
+          product_id: m.product_id,
+          product_name: productsData.find(p => p.id === m.product_id)?.name,
+          sku: productsData.find(p => p.id === m.product_id)?.sku,
+          quantity: m.quantity,
+          created_date: m.created_date,
+          movement_type: m.movement_type
+        });
+      });
+      
       setMovements(movementsData);
       setProducts(productsData);
       setLocations(locationsData);
