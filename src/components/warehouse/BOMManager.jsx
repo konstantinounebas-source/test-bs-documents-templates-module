@@ -112,14 +112,14 @@ export default function BOMManager({ busStopTypes, components, products, selecte
     
     setIsSaving(true);
     try {
+      const toCreate = [];
+      const toUpdate = [];
+      
       for (const component of typeComponents) {
         if (!component.product_id) continue;
         
         const quantityNum = parseFloat(component.quantity_required);
-        if (isNaN(quantityNum) || quantityNum <= 0) {
-          console.warn(`Skipping component with invalid quantity: ${component.product_id}`);
-          continue;
-        }
+        if (isNaN(quantityNum) || quantityNum <= 0) continue;
         
         const data = {
           bus_stop_type_id: currentTypeId,
@@ -134,11 +134,24 @@ export default function BOMManager({ busStopTypes, components, products, selecte
         };
 
         if (component.id) {
-          await base44.entities.BusStopTypeComponent.update(component.id, data);
+          toUpdate.push({ id: component.id, data });
         } else {
-          await base44.entities.BusStopTypeComponent.create(data);
+          toCreate.push(data);
         }
       }
+      
+      // Batch create new components
+      if (toCreate.length > 0) {
+        await base44.entities.BusStopTypeComponent.bulkCreate(toCreate);
+      }
+      
+      // Batch update existing components
+      if (toUpdate.length > 0) {
+        await Promise.all(toUpdate.map(({ id, data }) => 
+          base44.entities.BusStopTypeComponent.update(id, data)
+        ));
+      }
+      
       onComponentsUpdated();
     } catch (error) {
       console.error("Error saving components:", error);
