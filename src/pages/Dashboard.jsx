@@ -9,6 +9,8 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function DashboardPage() {
+  const [activeDialog, setActiveDialog] = React.useState(null);
+
   const { data: stops = [], isLoading: stopsLoading } = useQuery({
     queryKey: ['stops'],
     queryFn: () => base44.entities.Stop.list()
@@ -32,6 +34,11 @@ export default function DashboardPage() {
   const { data: orderLines = [] } = useQuery({
     queryKey: ['orderLines'],
     queryFn: () => base44.entities.OrderLine.list()
+  });
+
+  const { data: shelterTypes = [] } = useQuery({
+    queryKey: ['shelterTypes'],
+    queryFn: () => base44.entities.ShelterType.list()
   });
 
   // 1. Συνολικός αριθμός στάσεων
