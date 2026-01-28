@@ -69,68 +69,83 @@ export default function DashboardPage() {
     return stopStickers.some(item => ["Ordered", "Received", "Installed"].includes(item.status));
   });
 
-  // 5. Αυτοκόλλητα που είναι παραγγελμένα με προειδοποίηση (< 14 ημέρες)
+  // ΣΕΙΡΑ 1: Δημιουργία Αυτοκόλλητων (Needs Assessment)
+  const [bufferDays30, setBufferDays30] = React.useState(30); // 1 μήνας
+  
+  // 1.3 Κρίσιμες χωρίς Stickers (Planned Date < 1 μήνα)
+  const criticalWithoutStickers = stops.filter(stop => {
+    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
+    if (stopStickers.length > 0) return false; // Πρέπει να μην έχουν stickers
+    if (!stop.current_planned_installation_date) return false;
+    const daysUntil = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
+    return daysUntil < bufferDays30 && daysUntil >= 0;
+  });
+
+  // ΣΕΙΡΑ 2: Διαδικασία Παραγγελίας (Ordering Flow)
+  // 2.1 Στάσεις με Stickers αλλά χωρίς Παραγγελία
+  const stopsWithStickersNoOrder = stops.filter(stop => {
+    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
+    if (stopStickers.length === 0) return false;
+    // Όλα τα stickers πρέπει να είναι "Needed" (δεν έχουν παραγγελθεί)
+    return stopStickers.every(item => item.status === "Needed");
+  });
+
+  // 2.2 Καθυστερημένη Παραγγελία (Planned Date < Estimated Delivery)
+  const delayedOrderWarning = stickerItems.filter(item => {
+    if (item.status !== "Needed") return false;
+    const stop = stops.find(s => s.id === item.stop_id);
+    const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+    if (!stop?.current_planned_installation_date || !template?.days_before_installation_to_receive) return false;
+    
+    const plannedDate = new Date(stop.current_planned_installation_date);
+    const leadTime = template.days_before_installation_to_receive || 7;
+    const mustOrderByDate = new Date(plannedDate);
+    mustOrderByDate.setDate(mustOrderByDate.getDate() - leadTime);
+    
+    // Αν δεν έχουμε χρόνο να παραγγείλουμε
+    return new Date() > mustOrderByDate;
+  });
+
+  // ΣΕΙΡΑ 3: Παρακολούθηση Παραγγελιών (Order Tracking)
+  // 3.1 Stickers σε Παραγγελία με Warning (παραβιάζουν Days Before Installation to Receive)
   const orderedWithWarning = stickerItems.filter(item => {
     if (item.status !== "Ordered") return false;
     const stop = stops.find(s => s.id === item.stop_id);
-    if (!stop?.current_planned_installation_date) return false;
-    const daysBeforeInstall = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
-    return daysBeforeInstall < 14;
-  });
-
-  // 6. Ordered σε εγκατεστημένες στάσεις αλλά δεν έχουν παραληφθεί
-  const orderedOnInstalledNotReceived = stickerItems.filter(item => {
-    if (item.status !== "Ordered") return false;
-    const stop = stops.find(s => s.id === item.stop_id);
-    return stop && stop.shelter_installed;
-  });
-
-  // 7. Εγκατεστημένες στάσεις χωρίς εγκατεστημένα stickers
-  const installedWithoutStickerInstall = stickerItems.filter(item => {
-    const stop = stops.find(s => s.id === item.stop_id);
-    return stop && stop.shelter_installed && item.status !== "Installed";
-  });
-
-  // 8. Εγκατεστημένες στάσεις χωρίς παραγγελία (ΚΡΙΣΙΜΟ)
-  const installedWithoutOrder = stickerItems.filter(item => {
-    const stop = stops.find(s => s.id === item.stop_id);
-    return stop && stop.shelter_installed && item.status === "Needed";
-  });
-
-  // 9. Εγκατεστημένες στάσεις με Ordered αλλά δεν έχουν παραληφθεί
-  const orderedNotReceivedOnInstalled = stickerItems.filter(item => {
-    const stop = stops.find(s => s.id === item.stop_id);
-    return stop && stop.shelter_installed && item.status === "Ordered";
-  });
-
-  // 10. Αυτοκόλλητα υψηλού κινδύνου (Needed + < bufferDays)
-  const [bufferDays, setBufferDays] = React.useState(30);
-  const highRiskStickers = stickerItems.filter(item => {
-    if (item.status !== "Needed") return false;
-    const stop = stops.find(s => s.id === item.stop_id);
-    if (!stop?.current_planned_installation_date) return false;
-    const daysUntil = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
-    return daysUntil < bufferDays && daysUntil >= 0;
-  });
-
-  // 11. Αυτοκόλλητα που είναι παραγγελμένα και ενδέχεται να μην παραληφθούν εγκαίρως
-  const stickersAtRisk = stickerItems.filter(item => {
-    if (item.status !== "Ordered") return false;
-    
-    const stop = stops.find(s => s.id === item.stop_id);
-    if (!stop?.current_planned_installation_date) return false;
-    
     const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-    if (!template) return false;
+    if (!stop?.current_planned_installation_date || !template?.days_before_installation_to_receive) return false;
     
     const plannedDate = new Date(stop.current_planned_installation_date);
     const daysBeforeNeeded = template.days_before_installation_to_receive || 7;
     const neededByDate = new Date(plannedDate);
     neededByDate.setDate(neededByDate.getDate() - daysBeforeNeeded);
     
-    // Check if we're past the needed date and still not received
     return new Date() > neededByDate;
   });
+
+  // 3.2 Παραγγελμένα σε Εγκατεστημένες χωρίς Παραλαβή (Ordered + Installed Stop + custody_status !== "In Stock")
+  const orderedOnInstalledNotReceived = stickerItems.filter(item => {
+    if (item.status !== "Ordered") return false;
+    const stop = stops.find(s => s.id === item.stop_id);
+    if (!stop?.shelter_installed) return false;
+    // Πρέπει να μην είναι "In Stock" (δηλαδή δεν έχουν παραληφθεί)
+    return item.custody_status !== "In Stock";
+  });
+
+  // ΣΕΙΡΑ 4: Επιχειρησιακές Ασυμφωνίες (Mismatches)
+  // 4.1 Εγκατεστημένες χωρίς Εγκατεστημένα Stickers
+  const installedWithoutStickerInstall = stickerItems.filter(item => {
+    const stop = stops.find(s => s.id === item.stop_id);
+    return stop && stop.shelter_installed && item.status !== "Installed";
+  });
+
+  // 4.2 Εγκατεστημένες χωρίς Παραγγελία (ΚΡΙΣΙΜΟ)
+  const installedWithoutOrder = stickerItems.filter(item => {
+    const stop = stops.find(s => s.id === item.stop_id);
+    return stop && stop.shelter_installed && item.status === "Needed";
+  });
+
+  // 4.3 Ordered vs Received (Παραγγελμένα που δεν έχουν παραληφθεί)
+  const orderedNotReceived = stickerItems.filter(item => item.status === "Ordered");
 
   // 6. Πόσα αυτοκόλλητα έχουν παραγγελθεί πάνω από μία φορά
   const stickersOrderedMultipleTimes = stickerItems.filter(item => {
