@@ -279,59 +279,31 @@ export default function DashboardPage() {
          </div>
        </div>
 
-       {/* Summary Cards - Row 2: Installed Stops Status */}
+       {/* ΣΕΙΡΑ 2: Διαδικασία Παραγγελίας (Ordering Flow) */}
        <div>
-         <h2 className="text-xl font-semibold text-gray-900 mb-4">2. Εγκατεστημένες Στάσεις</h2>
+         <h2 className="text-xl font-semibold text-gray-900 mb-4">2. Διαδικασία Παραγγελίας (Ordering Flow)</h2>
          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('remaining')}>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('stopsnoorder')}>
              <CardContent className="pt-6">
                <div className="flex items-center justify-between">
                  <div>
                    <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                   <p className="text-sm font-medium text-gray-700 mb-1">Υπολειπόμενα Stickers</p>
-                   <p className="text-3xl font-bold text-purple-600">
-                     {Object.values(remainingStickersByCategory).reduce((sum, count) => sum + count, 0)}
-                   </p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">Με Stickers χωρίς Παραγγελία</p>
+                   <p className="text-3xl font-bold text-blue-600">{stopsWithStickersNoOrder.length}</p>
                  </div>
-                 <Building2 className="w-10 h-10 text-purple-600" />
+                 <ShoppingCart className="w-10 h-10 text-blue-600" />
                </div>
              </CardContent>
            </Card>
-           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed')}>
+           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('delayedorder')}>
              <CardContent className="pt-6">
                <div className="flex items-center justify-between">
                  <div>
                    <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                   <p className="text-sm font-medium text-gray-700 mb-1">Εγκατεστημένα Stickers</p>
-                   <p className="text-3xl font-bold text-green-600">
-                     {Object.values(installedStickersByCategory).reduce((sum, count) => sum + count, 0)}
-                   </p>
+                   <p className="text-sm font-medium text-gray-700 mb-1">⚠️ Καθυστερημένη Παραγγελία</p>
+                   <p className="text-3xl font-bold text-orange-600">{delayedOrderWarning.length}</p>
                  </div>
-                 <CheckCircle className="w-10 h-10 text-green-600" />
-               </div>
-             </CardContent>
-           </Card>
-           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed_no_sticker')}>
-             <CardContent className="pt-6">
-               <div className="flex items-center justify-between">
-                 <div>
-                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                   <p className="text-sm font-medium text-gray-700 mb-1">⚠️ χωρίς Τοποθέτηση</p>
-                   <p className="text-3xl font-bold text-red-600">{installedWithoutStickerInstall.length}</p>
-                 </div>
-                 <AlertTriangle className="w-10 h-10 text-red-600" />
-               </div>
-             </CardContent>
-           </Card>
-           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed_no_order')}>
-             <CardContent className="pt-6">
-               <div className="flex items-center justify-between">
-                 <div>
-                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                   <p className="text-sm font-medium text-gray-700 mb-1">🔴 χωρίς Παραγγελία</p>
-                   <p className="text-3xl font-bold text-red-600">{installedWithoutOrder.length}</p>
-                 </div>
-                 <AlertTriangle className="w-10 h-10 text-red-600" />
+                 <AlertTriangle className="w-10 h-10 text-orange-600" />
                </div>
              </CardContent>
            </Card>
