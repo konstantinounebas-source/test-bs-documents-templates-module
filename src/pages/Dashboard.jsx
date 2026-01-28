@@ -271,60 +271,176 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Summary Cards - Row 2 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('remaining')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Υπολειπόμενα Stickers (Installed Stops)</p>
-                <p className="text-3xl font-bold text-purple-600">
-                  {Object.values(remainingStickersByCategory).reduce((sum, count) => sum + count, 0)}
-                </p>
-              </div>
-              <Building2 className="w-10 h-10 text-purple-600" />
+      {/* Buffer Days */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-4">
+            <div className="flex-1 max-w-xs">
+              <Label htmlFor="buffer" className="text-sm font-medium">Περιθώριο Ασφάλειας (ημέρες)</Label>
+              <Input id="buffer" type="number" value={bufferDays} onChange={(e) => setBufferDays(parseInt(e.target.value) || 30)} min="1" className="mt-2" />
             </div>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Εγκατεστημένα Stickers</p>
-                <p className="text-3xl font-bold text-green-600">
-                  {Object.values(installedStickersByCategory).reduce((sum, count) => sum + count, 0)}
-                </p>
+            <div className="text-xs text-gray-600">Για κρίσιμα stickers χωρίς παραγγελία</div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Summary Cards - Row 2: Order Tracking */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">3. Παρακολούθηση Παραγγελιών</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('orderedwarn')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">⚠️ Ordered με Προειδοποίηση</p>
+                  <p className="text-3xl font-bold text-orange-600">{orderedWithWarning.length}</p>
+                </div>
+                <AlertTriangle className="w-10 h-10 text-orange-600" />
               </div>
-              <CheckCircle className="w-10 h-10 text-green-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('multiple')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Stickers με Πολλαπλές Παραγγελίες</p>
-                <p className="text-3xl font-bold text-blue-500">{stickersOrderedMultipleTimes.length}</p>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('orderedinstalled')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">⚠️ Ordered σε Εγκατεστημένες</p>
+                  <p className="text-3xl font-bold text-orange-600">{orderedOnInstalledNotReceived.length}</p>
+                </div>
+                <AlertTriangle className="w-10 h-10 text-orange-600" />
               </div>
-              <Repeat className="w-10 h-10 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('ordered')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Στάσεις με Παραγγελθέντα Stickers</p>
-                <p className="text-3xl font-bold text-teal-600">{stopsWithOrderedStickers.length}</p>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('multiple')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">🔍 Πολλαπλές Παραγγελίες</p>
+                  <p className="text-3xl font-bold text-blue-500">{stickersOrderedMultipleTimes.length}</p>
+                </div>
+                <Repeat className="w-10 h-10 text-blue-500" />
               </div>
-              <ShoppingCart className="w-10 h-10 text-teal-600" />
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('highrisk')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">🔴 Υψηλού Κινδύνου</p>
+                  <p className="text-3xl font-bold text-red-600">{highRiskStickers.length}</p>
+                </div>
+                <AlertTriangle className="w-10 h-10 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Summary Cards - Row 3: Operational Mismatches */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">4. Επιχειρησιακές Ασυμφωνίες</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed_no_sticker')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">⚠️ Εγκατεστημένες χωρίς Τοποθέτηση</p>
+                  <p className="text-3xl font-bold text-red-600">{installedWithoutStickerInstall.length}</p>
+                </div>
+                <AlertTriangle className="w-10 h-10 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed_no_order')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">🔴 Εγκατεστημένες χωρίς Παραγγελία</p>
+                  <p className="text-3xl font-bold text-red-600">{installedWithoutOrder.length}</p>
+                </div>
+                <AlertTriangle className="w-10 h-10 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('ordered_not_received')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">⚠️ Παραγγελμένα χωρίς Παραλαβή</p>
+                  <p className="text-3xl font-bold text-orange-600">{orderedNotReceivedOnInstalled.length}</p>
+                </div>
+                <AlertTriangle className="w-10 h-10 text-orange-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('remaining')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Υπολειπόμενα Stickers</p>
+                  <p className="text-3xl font-bold text-purple-600">
+                    {Object.values(remainingStickersByCategory).reduce((sum, count) => sum + count, 0)}
+                  </p>
+                </div>
+                <Building2 className="w-10 h-10 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Summary Cards - Row 4: Summary */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">5. Σύνοψη</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('remaining')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Υπολειπόμενα Stickers (Installed Stops)</p>
+                  <p className="text-3xl font-bold text-purple-600">
+                    {Object.values(remainingStickersByCategory).reduce((sum, count) => sum + count, 0)}
+                  </p>
+                </div>
+                <Building2 className="w-10 h-10 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Εγκατεστημένα Stickers</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    {Object.values(installedStickersByCategory).reduce((sum, count) => sum + count, 0)}
+                  </p>
+                </div>
+                <CheckCircle className="w-10 h-10 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('ordered')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Στάσεις με Παραγγελθέντα Stickers</p>
+                  <p className="text-3xl font-bold text-teal-600">{stopsWithOrderedStickers.length}</p>
+                </div>
+                <ShoppingCart className="w-10 h-10 text-teal-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
 
