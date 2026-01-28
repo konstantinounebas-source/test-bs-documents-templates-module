@@ -127,7 +127,7 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
             </Table>
           )}
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
