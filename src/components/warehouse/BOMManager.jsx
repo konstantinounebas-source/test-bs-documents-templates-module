@@ -563,7 +563,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                   <Button
                                     type="button"
                                     size="sm"
-                                    onClick={() => handleSaveComponent(typeComponents[absoluteIndex])}
+                                    onClick={() => handleSaveComponent(absoluteIndex)}
                                     disabled={savingIds[component.id || `temp_${absoluteIndex}`] || !component.product_id}
                                     className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white"
                                   >
