@@ -813,32 +813,45 @@ export default function ChargedMaterialsReportPage() {
                         const isExpanded = expandedMaterials.has(materialData.product.id);
                         return (
                           <div key={materialData.product.id} className="border rounded-lg overflow-hidden bg-white">
-                            <div 
-                              className="flex items-center justify-between p-4 hover:bg-slate-50 cursor-pointer transition-colors"
-                              onClick={() => toggleMaterialExpanded(materialData.product.id)}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                                  <Box className="w-5 h-5 text-purple-600" />
-                                </div>
-                                <div>
-                                  <h3 className="font-bold text-base">{materialData.product.name}</h3>
-                                  <p className="text-sm text-slate-600">
-                                    SKU: <span className="font-mono">{materialData.product.sku}</span>
-                                    {' • '}
-                                    Total Quantity: <span className="font-semibold text-slate-900">{materialData.totalQuantity}</span>
-                                    {' • '}
-                                    Cost: <span className="font-semibold text-amber-600">€{materialData.totalCost.toFixed(2)}</span>
-                                  </p>
-                                </div>
-                              </div>
-                              <Button variant="ghost" size="icon">
-                                {isExpanded ? (
-                                  <ChevronUp className="w-5 h-5" />
-                                ) : (
-                                  <ChevronDown className="w-5 h-5" />
-                                )}
-                              </Button>
+                            <div className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+                             <div 
+                               className="flex items-center gap-3 flex-1 cursor-pointer"
+                               onClick={() => toggleMaterialExpanded(materialData.product.id)}
+                             >
+                               <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                 <Box className="w-5 h-5 text-purple-600" />
+                               </div>
+                               <div>
+                                 <h3 className="font-bold text-base">{materialData.product.name}</h3>
+                                 <p className="text-sm text-slate-600">
+                                   SKU: <span className="font-mono">{materialData.product.sku}</span>
+                                   {' • '}
+                                   Total Quantity: <span className="font-semibold text-slate-900">{materialData.totalQuantity}</span>
+                                   {' • '}
+                                   Cost: <span className="font-semibold text-amber-600">€{materialData.totalCost.toFixed(2)}</span>
+                                 </p>
+                               </div>
+                             </div>
+                             <div className="flex items-center gap-2">
+                               <Button
+                                 variant="ghost"
+                                 size="icon"
+                                 onClick={(e) => {
+                                   e.stopPropagation();
+                                   handleViewMovements(materialData.product);
+                                 }}
+                                 title="View all movements"
+                               >
+                                 <Eye className="w-4 h-4 text-blue-600" />
+                               </Button>
+                               <Button variant="ghost" size="icon">
+                                 {isExpanded ? (
+                                   <ChevronUp className="w-5 h-5" />
+                                 ) : (
+                                   <ChevronDown className="w-5 h-5" />
+                                 )}
+                               </Button>
+                             </div>
                             </div>
 
                             {isExpanded && (
