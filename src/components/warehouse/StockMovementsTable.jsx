@@ -158,7 +158,10 @@ export default function StockMovementsTable({ movements, products, users, isLoad
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div>
+                    <div 
+                      onClick={() => onViewProductMovements && onViewProductMovements(product)}
+                      className="cursor-pointer hover:text-blue-600 transition-colors"
+                    >
                       <p className="font-medium">{product.name}</p>
                       <p className="text-xs text-slate-500 font-mono">{product.sku}</p>
                     </div>
