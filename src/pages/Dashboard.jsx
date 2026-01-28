@@ -125,7 +125,7 @@ export default function DashboardPage() {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold mb-2">Operational Dashboard</h1>
-        <p className="text-gray-600">Real-time view of stops and sticker tracking</p>
+        <p className="text-gray-600">Πλήρης επισκόπηση στάσεων και αυτοκόλλητων</p>
       </div>
 
       {/* Summary Cards */}
@@ -134,7 +134,29 @@ export default function DashboardPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Critical Stops</p>
+                <p className="text-sm text-gray-600">Συνολικές Στάσεις</p>
+                <p className="text-3xl font-bold text-blue-600">{totalStops}</p>
+              </div>
+              <MapPin className="w-10 h-10 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Χωρίς Αυτοκόλλητα</p>
+                <p className="text-3xl font-bold text-gray-600">{stopsWithoutStickers.length}</p>
+              </div>
+              <XCircle className="w-10 h-10 text-gray-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Critical</p>
                 <p className="text-3xl font-bold text-red-600">{criticalStops.length}</p>
               </div>
               <AlertTriangle className="w-10 h-10 text-red-600" />
@@ -145,10 +167,25 @@ export default function DashboardPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">To Order</p>
-                <p className="text-3xl font-bold text-orange-600">{stickersToOrder.length}</p>
+                <p className="text-sm text-gray-600">Με Παραγγελίες</p>
+                <p className="text-3xl font-bold text-green-600">{stopsWithOrderedStickers.length}</p>
               </div>
-              <ShoppingCart className="w-10 h-10 text-orange-600" />
+              <ShoppingCart className="w-10 h-10 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Second Row of Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Παραγγελίες με Warning</p>
+                <p className="text-3xl font-bold text-orange-600">{ordersWithWarning.length}</p>
+              </div>
+              <AlertTriangle className="w-10 h-10 text-orange-600" />
             </div>
           </CardContent>
         </Card>
@@ -156,10 +193,10 @@ export default function DashboardPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Received</p>
-                <p className="text-3xl font-bold text-blue-600">{receivedNotInstalled.length}</p>
+                <p className="text-sm text-gray-600">Πολλαπλές Παραγγελίες</p>
+                <p className="text-3xl font-bold text-purple-600">{stickersOrderedMultipleTimes.length}</p>
               </div>
-              <Package className="w-10 h-10 text-blue-600" />
+              <Repeat className="w-10 h-10 text-purple-600" />
             </div>
           </CardContent>
         </Card>
@@ -167,10 +204,23 @@ export default function DashboardPage() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Lost</p>
-                <p className="text-3xl font-bold text-red-600">{lostStickers.length}</p>
+                <p className="text-sm text-gray-600">Στέγαστρα OK - Stickers ΌΧΙ</p>
+                <p className="text-3xl font-bold text-red-600">{sheltersInstalledNotAllStickers}</p>
               </div>
-              <XCircle className="w-10 h-10 text-red-600" />
+              <Building2 className="w-10 h-10 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Installed Stickers</p>
+                <p className="text-3xl font-bold text-green-600">
+                  {Object.values(installedStickersByCategory).reduce((sum, count) => sum + count, 0)}
+                </p>
+              </div>
+              <CheckCircle className="w-10 h-10 text-green-600" />
             </div>
           </CardContent>
         </Card>
