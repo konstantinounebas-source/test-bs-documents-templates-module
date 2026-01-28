@@ -59,7 +59,7 @@ export default function StockMovementsPage() {
         categoriesData,
         companiesData
       ] = await Promise.all([
-        base44.entities.StockMovement.list("-created_date", 500),
+        base44.entities.StockMovement.list("-created_date", 5000),
         base44.entities.Product.list(),
         base44.entities.WarehouseLocation.list(),
         base44.entities.User.list().catch(() => []),
