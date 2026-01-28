@@ -348,7 +348,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Summary Cards - Row 2: Order Tracking */}
+      {/* Summary Cards - Row 3: Order Tracking */}
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-4">3. Παρακολούθηση Παραγγελιών</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
