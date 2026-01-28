@@ -123,6 +123,22 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
                     <TableCell className="text-right text-sm font-semibold">
                       €{(movement.total_item_cost || 0).toFixed(2)}
                     </TableCell>
+                    <TableCell className="text-center">
+                      {onEditMovement && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            onEditMovement(movement);
+                            onOpenChange(false);
+                          }}
+                          title="Edit movement"
+                          className="h-8 w-8"
+                        >
+                          <Edit className="w-4 h-4 text-blue-600" />
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
