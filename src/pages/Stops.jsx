@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Pencil, Download, Upload, ArrowUpDown, ArrowUp, ArrowDown, Eye, AlertCircle } from "lucide-react";
+import { Plus, Search, Pencil, Download, Upload, ArrowUpDown, ArrowUp, ArrowDown, Eye, AlertCircle, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import CreateEditStopDialog from "@/components/stickers/CreateEditStopDialog";
 import ImportStopsDialog from "@/components/stickers/ImportStopsDialog";
 import ViewStopDialog from "@/components/stickers/ViewStopDialog";
@@ -40,10 +41,55 @@ export default function StopsPage() {
     queryFn: () => base44.entities.StickerItem.list()
   });
 
+  const { data: stickerTemplates = [] } = useQuery({
+    queryKey: ['stickerTemplates'],
+    queryFn: () => base44.entities.StickerTemplate.list()
+  });
+
   const getShelterTypeName = (shelterTypeId) => {
     if (!shelterTypeId) return "-";
     const type = shelterTypes.find(t => t.id === shelterTypeId);
     return type ? type.shelter_type_id : "-";
+  };
+
+  const getStickerCounts = (stopId) => {
+    const items = stickerItems.filter(item => item.stop_id === stopId);
+    return {
+      needed: items.filter(item => item.status === "Needed").length,
+      ordered: items.filter(item => item.status === "Ordered").length,
+      received: items.filter(item => item.status === "Received").length,
+      installed: items.filter(item => item.installation_status === "Installed").length
+    };
+  };
+
+  const isCriticalStop = (stopId) => {
+    const stop = stops.find(s => s.id === stopId);
+    if (!stop) return false;
+    
+    const items = stickerItems.filter(item => item.stop_id === stopId);
+    
+    return items.some(item => {
+      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+      
+      if (item?.status === "Needed") {
+        const daysBeforeInstall = template?.days_before_installation_to_receive || 0;
+        if (stop?.current_planned_installation_date) {
+          const daysUntilInstallation = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
+          return daysUntilInstallation < daysBeforeInstall;
+        }
+      }
+      
+      if (item?.status === "Ordered") {
+        const daysBeforeInstall = template?.days_before_installation_to_receive || 0;
+        if (stop?.current_planned_installation_date) {
+          const receiveByDate = new Date(stop.current_planned_installation_date);
+          receiveByDate.setDate(receiveByDate.getDate() - daysBeforeInstall);
+          return new Date() > receiveByDate;
+        }
+      }
+      
+      return false;
+    });
   };
 
 
@@ -325,19 +371,24 @@ export default function StopsPage() {
                   >
                     Shelter Installed {getSortIcon("shelter_installed")}
                   </TableHead>
-                  <TableHead>All Stickers Installed</TableHead>
+                  <TableHead>Stickers Status</TableHead>
+                  <TableHead>Critical</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sortedStops.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-gray-500 py-8">
+                    <TableCell colSpan={10} className="text-center text-gray-500 py-8">
                       No stops found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  sortedStops.map((stop) => (
-                    <TableRow key={stop.id}>
+                  sortedStops.map((stop) => {
+                    const stickerCount = getStickerCounts(stop.id);
+                    const isCritical = isCriticalStop(stop.id);
+                    
+                    return (
+                    <TableRow key={stop.id} className={isCritical ? "bg-red-50" : ""}>
                         <TableCell className="font-medium">{stop.stop_id}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
@@ -406,14 +457,48 @@ export default function StopsPage() {
                         <TableCell>{stop.current_planned_installation_date || "-"}</TableCell>
                         <TableCell>{stop.shelter_installed ? "Yes" : "No"}</TableCell>
                         <TableCell>
-                          {checkAllStickersInstalled(stop) ? (
-                            <span className="text-green-600 font-semibold">✓ Yes</span>
-                          ) : (
-                            <span className="text-gray-400">No</span>
+                          <div className="flex flex-wrap gap-1 text-xs">
+                            {stickerCount.needed > 0 && (
+                              <Badge className="bg-orange-100 text-orange-800 text-xs">
+                                Needed: {stickerCount.needed}
+                              </Badge>
+                            )}
+                            {stickerCount.ordered > 0 && (
+                              <Badge className="bg-blue-100 text-blue-800 text-xs">
+                                Ordered: {stickerCount.ordered}
+                              </Badge>
+                            )}
+                            {stickerCount.received > 0 && (
+                              <Badge className="bg-purple-100 text-purple-800 text-xs">
+                                Received: {stickerCount.received}
+                              </Badge>
+                            )}
+                            {stickerCount.installed > 0 && (
+                              <Badge className="bg-green-100 text-green-800 text-xs">
+                                Installed: {stickerCount.installed}
+                              </Badge>
+                            )}
+                            {stickerCount.needed === 0 && stickerCount.ordered === 0 && 
+                             stickerCount.received === 0 && stickerCount.installed === 0 && (
+                              <span className="text-gray-400">No stickers</span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {isCritical && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <AlertTriangle className="w-5 h-5 text-red-600 cursor-help" />
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                Critical sticker status detected
+                              </TooltipContent>
+                            </Tooltip>
                           )}
                         </TableCell>
                       </TableRow>
-                  ))
+                    );
+                  })
                 )}
               </TableBody>
             </Table>
