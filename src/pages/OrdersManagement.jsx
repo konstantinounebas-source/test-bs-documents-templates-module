@@ -27,6 +27,7 @@ export default function OrdersManagementPage() {
   const [viewOrderId, setViewOrderId] = useState(null);
   const [charLimitWarnings, setCharLimitWarnings] = useState([]);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmedItems, setConfirmedItems] = useState({});
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -263,6 +264,17 @@ export default function OrdersManagementPage() {
     const warnings = checkCharacterLimits();
     if (warnings.length > 0) {
       setCharLimitWarnings(warnings);
+      // Pre-select all items with warnings
+      const selectedItemIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
+      const initialConfirmed = {};
+      selectedItemIds.forEach(itemId => {
+        const item = stickerItems.find(i => i.id === itemId);
+        const stop = stops.find(s => s.id === item?.stop_id);
+        if (stop && warnings.some(w => w.stopId === stop.stop_id)) {
+          initialConfirmed[itemId] = true;
+        }
+      });
+      setConfirmedItems(initialConfirmed);
       setConfirmDialogOpen(true);
       return;
     }
@@ -272,6 +284,31 @@ export default function OrdersManagementPage() {
   };
 
   const proceedWithOrderCreation = () => {
+    // If there were warnings, only include confirmed items
+    if (charLimitWarnings.length > 0) {
+      const selectedItemIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
+      const warningStopIds = charLimitWarnings.map(w => w.stopId);
+      
+      // Filter out unconfirmed items that had warnings
+      const filteredSelection = {};
+      selectedItemIds.forEach(itemId => {
+        const item = stickerItems.find(i => i.id === itemId);
+        const stop = stops.find(s => s.id === item?.stop_id);
+        
+        // If this item's stop had a warning, only include if confirmed
+        if (stop && warningStopIds.includes(stop.stop_id)) {
+          if (confirmedItems[itemId]) {
+            filteredSelection[itemId] = true;
+          }
+        } else {
+          // No warning for this item, include it
+          filteredSelection[itemId] = true;
+        }
+      });
+      
+      setSelectedItems(filteredSelection);
+    }
+    
     createOrderMutation.mutate({
       vendor: orderFormData.vendor,
       order_date: orderFormData.order_date,
@@ -280,6 +317,33 @@ export default function OrdersManagementPage() {
     });
     setConfirmDialogOpen(false);
     setCharLimitWarnings([]);
+    setConfirmedItems({});
+  };
+
+  const toggleConfirmedItem = (itemId) => {
+    setConfirmedItems(prev => ({
+      ...prev,
+      [itemId]: !prev[itemId]
+    }));
+  };
+
+  const selectAllWarningItems = () => {
+    const allWarningItems = {};
+    charLimitWarnings.forEach(warning => {
+      const selectedItemIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
+      selectedItemIds.forEach(itemId => {
+        const item = stickerItems.find(i => i.id === itemId);
+        const stop = stops.find(s => s.id === item?.stop_id);
+        if (stop && stop.stop_id === warning.stopId) {
+          allWarningItems[itemId] = true;
+        }
+      });
+    });
+    setConfirmedItems(allWarningItems);
+  };
+
+  const deselectAllWarningItems = () => {
+    setConfirmedItems({});
   };
 
   const getOrderStats = (orderId) => {
@@ -573,12 +637,22 @@ export default function OrdersManagementPage() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <p className="text-sm text-gray-700">
-              Τα παρακάτω αυτοκόλλητα υπερβαίνουν το επιτρεπόμενο όριο χαρακτήρων για το στέγαστρο τους:
+              Τα παρακάτω αυτοκόλλητα υπερβαίνουν το επιτρεπόμενο όριο χαρακτήρων για το στέγαστρο τους. 
+              Επιλέξτε ποια θέλετε να συμπεριλάβετε στην παραγγελία:
             </p>
+            <div className="flex gap-2 mb-2">
+              <Button variant="outline" size="sm" onClick={selectAllWarningItems}>
+                Επιλογή Όλων
+              </Button>
+              <Button variant="outline" size="sm" onClick={deselectAllWarningItems}>
+                Αποεπιλογή Όλων
+              </Button>
+            </div>
             <div className="border rounded-lg">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]"></TableHead>
                     <TableHead>Stop ID</TableHead>
                     <TableHead>Ελληνικό Όνομα</TableHead>
                     <TableHead>English Name</TableHead>
@@ -586,9 +660,23 @@ export default function OrdersManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {charLimitWarnings.map((warning, index) => (
-                    <TableRow key={index} className="bg-orange-50">
-                      <TableCell className="font-medium">{warning.stopId}</TableCell>
+                  {charLimitWarnings.map((warning, index) => {
+                    const selectedItemIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
+                    const itemForThisStop = selectedItemIds.find(itemId => {
+                      const item = stickerItems.find(i => i.id === itemId);
+                      const stop = stops.find(s => s.id === item?.stop_id);
+                      return stop && stop.stop_id === warning.stopId;
+                    });
+                    
+                    return (
+                      <TableRow key={index} className="bg-orange-50">
+                        <TableCell>
+                          <Checkbox
+                            checked={confirmedItems[itemForThisStop] || false}
+                            onCheckedChange={() => toggleConfirmedItem(itemForThisStop)}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">{warning.stopId}</TableCell>
                       <TableCell>
                         <div>
                           <div className={warning.greekExceeds ? "text-red-600 font-semibold" : ""}>
@@ -628,17 +716,21 @@ export default function OrdersManagementPage() {
                             </Badge>
                           )}
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <p className="text-sm text-yellow-800">
                 <strong>Σημείωση:</strong> Τα ονόματα αυτά μπορεί να μην εκτυπωθούν σωστά στα αυτοκόλλητα λόγω περιορισμών του στεγάστρου. 
-                Παρακαλώ επιβεβαιώστε αν επιθυμείτε να συνεχίσετε με την παραγγελία.
+                Παρακαλώ επιβεβαιώστε ποια αυτοκόλλητα επιθυμείτε να συμπεριλάβετε στην παραγγελία.
               </p>
+            </div>
+            <div className="text-sm text-gray-600">
+              Επιλεγμένα: {Object.values(confirmedItems).filter(Boolean).length} / {charLimitWarnings.length}
             </div>
           </div>
           <DialogFooter>
@@ -651,9 +743,11 @@ export default function OrdersManagementPage() {
             <Button 
               onClick={proceedWithOrderCreation}
               className="bg-orange-600 hover:bg-orange-700"
-              disabled={createOrderMutation.isPending}
+              disabled={createOrderMutation.isPending || Object.values(confirmedItems).filter(Boolean).length === 0}
             >
-              {createOrderMutation.isPending ? "Δημιουργία..." : "Επιβεβαίωση & Δημιουργία Παραγγελίας"}
+              {createOrderMutation.isPending 
+                ? "Δημιουργία..." 
+                : `Επιβεβαίωση & Δημιουργία Παραγγελίας (${Object.values(confirmedItems).filter(Boolean).length})`}
             </Button>
           </DialogFooter>
         </DialogContent>
