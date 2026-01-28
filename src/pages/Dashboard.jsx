@@ -518,6 +518,7 @@ export default function DashboardPage() {
                   'Stop ID': stop.stop_id,
                   'English Name': stop.english_name,
                   'Greek Name': stop.greek_name,
+                  'Shelter Type': getShelterTypeDisplay(stop.shelter_type_approved_id),
                   'Sticker Type': template?.sticker_name_category || '-',
                   'Status': item.status,
                   'Planned Date': stop.current_planned_installation_date || '-'
@@ -546,6 +547,7 @@ export default function DashboardPage() {
                 <TableHead>Stop ID</TableHead>
                 <TableHead>English Name</TableHead>
                 <TableHead>Greek Name</TableHead>
+                <TableHead>Shelter Type</TableHead>
                 <TableHead>Sticker Type</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Planned Date</TableHead>
@@ -563,6 +565,7 @@ export default function DashboardPage() {
                       <TableCell className="font-medium">{stop.stop_id}</TableCell>
                       <TableCell>{stop.english_name}</TableCell>
                       <TableCell>{stop.greek_name}</TableCell>
+                      <TableCell>{getShelterTypeDisplay(stop.shelter_type_approved_id)}</TableCell>
                       <TableCell>{template?.sticker_name_category || '-'}</TableCell>
                       <TableCell><Badge variant="outline">{item.status}</Badge></TableCell>
                       <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
