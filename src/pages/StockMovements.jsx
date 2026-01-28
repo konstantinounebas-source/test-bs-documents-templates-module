@@ -36,6 +36,8 @@ export default function StockMovementsPage() {
   const [selectedMovement, setSelectedMovement] = useState(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showProductDrawer, setShowProductDrawer] = useState(false);
+  const [selectedProductForDrawer, setSelectedProductForDrawer] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState("20");
