@@ -231,13 +231,6 @@ const allNavigationGroups = [
     label: 'Stickers & Installation',
     items: [
       {
-        title: "Operational Dashboard",
-        url: createPageUrl("OperationalDashboard"),
-        icon: BarChart3,
-        description: "Operational overview and sticker tracking",
-        pageKey: "OperationalDashboard"
-      },
-      {
         title: "Dashboard",
         url: createPageUrl("Dashboard"),
         icon: BarChart3,
