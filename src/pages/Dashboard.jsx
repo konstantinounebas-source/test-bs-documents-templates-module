@@ -615,6 +615,225 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={activeDialog === 'orderedwarn'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Ordered με Προειδοποίηση ({orderedWithWarning.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = orderedWithWarning.map(item => {
+              const stop = stops.find(s => s.id === item.stop_id);
+              return {
+                'Stop ID': getStopDisplay(item),
+                'Sticker Type': getTemplateDisplay(item),
+                'Status': item.status,
+                'Planned Date': stop?.current_planned_installation_date || '-'
+              };
+            });
+            exportToExcel(data, 'ordered-warning');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>Sticker Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Planned Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orderedWithWarning.map(item => {
+                const stop = stops.find(s => s.id === item.stop_id);
+                return (
+                  <TableRow key={item.id} className="bg-orange-50">
+                    <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
+                    <TableCell>{getTemplateDisplay(item)}</TableCell>
+                    <TableCell><Badge className="bg-orange-600">{item.status}</Badge></TableCell>
+                    <TableCell>{stop?.current_planned_installation_date || '-'}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'orderedinstalled'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Ordered σε Εγκατεστημένες χωρίς Παραλαβή ({orderedOnInstalledNotReceived.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = orderedOnInstalledNotReceived.map(item => ({
+              'Stop ID': getStopDisplay(item),
+              'Sticker Type': getTemplateDisplay(item),
+              'Status': item.status
+            }));
+            exportToExcel(data, 'ordered-installed');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>Sticker Type</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orderedOnInstalledNotReceived.map(item => (
+                <TableRow key={item.id} className="bg-red-50">
+                  <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
+                  <TableCell>{getTemplateDisplay(item)}</TableCell>
+                  <TableCell><Badge className="bg-red-600">{item.status}</Badge></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'highrisk'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Αυτοκόλλητα Υψηλού Κινδύνου ({highRiskStickers.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = highRiskStickers.map(item => {
+              const stop = stops.find(s => s.id === item.stop_id);
+              return {
+                'Stop ID': getStopDisplay(item),
+                'Sticker Type': getTemplateDisplay(item),
+                'Planned Date': stop?.current_planned_installation_date || '-'
+              };
+            });
+            exportToExcel(data, 'high-risk-stickers');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>Sticker Type</TableHead>
+                <TableHead>Planned Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {highRiskStickers.map(item => {
+                const stop = stops.find(s => s.id === item.stop_id);
+                return (
+                  <TableRow key={item.id} className="bg-red-50">
+                    <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
+                    <TableCell>{getTemplateDisplay(item)}</TableCell>
+                    <TableCell>{stop?.current_planned_installation_date || '-'}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'installed_no_sticker'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Εγκατεστημένες χωρίς Τοποθέτηση Stickers ({installedWithoutStickerInstall.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = installedWithoutStickerInstall.map(item => ({
+              'Stop ID': getStopDisplay(item),
+              'Sticker Type': getTemplateDisplay(item),
+              'Status': item.status
+            }));
+            exportToExcel(data, 'installed-no-sticker');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>Sticker Type</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {installedWithoutStickerInstall.map(item => (
+                <TableRow key={item.id} className="bg-red-50">
+                  <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
+                  <TableCell>{getTemplateDisplay(item)}</TableCell>
+                  <TableCell><Badge variant="outline">{item.status}</Badge></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'installed_no_order'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>🔴 ΚΡΙΣΙΜΟ: Εγκατεστημένες χωρίς Παραγγελία ({installedWithoutOrder.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = installedWithoutOrder.map(item => ({
+              'Stop ID': getStopDisplay(item),
+              'Sticker Type': getTemplateDisplay(item),
+              'Status': item.status
+            }));
+            exportToExcel(data, 'installed-no-order');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>Sticker Type</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {installedWithoutOrder.map(item => (
+                <TableRow key={item.id} className="bg-red-100">
+                  <TableCell className="font-medium font-bold">{getStopDisplay(item)}</TableCell>
+                  <TableCell>{getTemplateDisplay(item)}</TableCell>
+                  <TableCell><Badge className="bg-red-600">{item.status}</Badge></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'ordered_not_received'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Παραγγελμένα χωρίς Παραλαβή σε Εγκατεστημένες ({orderedNotReceivedOnInstalled.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = orderedNotReceivedOnInstalled.map(item => ({
+              'Stop ID': getStopDisplay(item),
+              'Sticker Type': getTemplateDisplay(item),
+              'Status': item.status
+            }));
+            exportToExcel(data, 'ordered-not-received');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>Sticker Type</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {orderedNotReceivedOnInstalled.map(item => (
+                <TableRow key={item.id} className="bg-orange-50">
+                  <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
+                  <TableCell>{getTemplateDisplay(item)}</TableCell>
+                  <TableCell><Badge className="bg-orange-600">{item.status}</Badge></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={activeDialog === 'atrisk'} onOpenChange={() => setActiveDialog(null)}>
         <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
