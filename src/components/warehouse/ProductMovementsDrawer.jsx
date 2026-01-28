@@ -9,10 +9,11 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, Edit } from "lucide-react";
 import { format } from "date-fns";
 
-export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId, productName }) {
+export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId, productName, onEditMovement, vendors = [] }) {
   const [movements, setMovements] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState([]);
