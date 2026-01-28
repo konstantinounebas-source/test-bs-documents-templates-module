@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function DashboardPage() {
-  const [activeDialog, setActiveDialog] = React.useState(null);
+  const [activeDialog, setActiveDialog] = useState(null);
 
   const { data: stops = [], isLoading: stopsLoading } = useQuery({
     queryKey: ['stops'],
