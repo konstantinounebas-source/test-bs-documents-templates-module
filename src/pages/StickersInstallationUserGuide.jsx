@@ -380,7 +380,7 @@ export default function StickersInstallationUserGuide() {
             </CardContent>
           </Card>
         </TabsContent>
-      </Tabs>
+        </Tabs>
       </div>
     </div>
   );
