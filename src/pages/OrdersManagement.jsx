@@ -656,6 +656,7 @@ export default function OrdersManagementPage() {
                     <TableHead>Stop ID</TableHead>
                     <TableHead>Ελληνικό Όνομα</TableHead>
                     <TableHead>English Name</TableHead>
+                    <TableHead>Τύπος Στεγάστρου</TableHead>
                     <TableHead>Χαρακτήρες</TableHead>
                   </TableRow>
                 </TableHeader>

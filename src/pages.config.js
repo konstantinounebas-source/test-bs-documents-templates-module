@@ -11,6 +11,7 @@ import BusStopTypesBOM from './pages/BusStopTypesBOM';
 import ChargedMaterialsReport from './pages/ChargedMaterialsReport';
 import CustomFields from './pages/CustomFields';
 import DailyTracker from './pages/DailyTracker';
+import Dashboard from './pages/Dashboard';
 import DeliveryFieldsDataDefinitions from './pages/DeliveryFieldsDataDefinitions';
 import DeliveryLogs from './pages/DeliveryLogs';
 import DeliveryReporting from './pages/DeliveryReporting';
@@ -54,7 +55,6 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import Dashboard from './pages/Dashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -72,6 +72,7 @@ export const PAGES = {
     "ChargedMaterialsReport": ChargedMaterialsReport,
     "CustomFields": CustomFields,
     "DailyTracker": DailyTracker,
+    "Dashboard": Dashboard,
     "DeliveryFieldsDataDefinitions": DeliveryFieldsDataDefinitions,
     "DeliveryLogs": DeliveryLogs,
     "DeliveryReporting": DeliveryReporting,
@@ -115,7 +116,6 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "Dashboard": Dashboard,
 }
 
 export const pagesConfig = {
