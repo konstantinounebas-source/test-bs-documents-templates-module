@@ -553,16 +553,31 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                   className="h-8 text-sm"
                                 />
                               </TableCell>
-                              <TableCell className="py-2 text-right w-16 align-top pt-7">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleRemoveComponent(absoluteIndex)}
-                                  className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
+                              <TableCell className="py-2 text-right w-32 align-top pt-7">
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={() => handleSaveComponent(typeComponents[absoluteIndex])}
+                                    disabled={savingIds[component.id || `temp_${absoluteIndex}`] || !component.product_id}
+                                    className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                                  >
+                                    {savingIds[component.id || `temp_${absoluteIndex}`] ? (
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      'Save'
+                                    )}
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleRemoveComponent(absoluteIndex)}
+                                    className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
                           </React.Fragment>
