@@ -910,57 +910,6 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={activeDialog === 'atrisk'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Stickers σε Κίνδυνο Καθυστέρησης - Παραγγελθέντα αλλά μη Παραληφθέντα ({stickersAtRisk.length})</DialogTitle>
-          </DialogHeader>
-          <Button onClick={() => {
-            const data = stickersAtRisk.map(item => {
-              const stop = stops.find(s => s.id === item.stop_id);
-              const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-              return {
-                'Stop ID': stop?.stop_id || '-',
-                'English Name': stop?.english_name || '-',
-                'Greek Name': stop?.greek_name || '-',
-                'Sticker Type': template?.sticker_name_category || '-',
-                'Status': item.status,
-                'Planned Date': stop?.current_planned_installation_date || '-'
-              };
-            });
-            exportToExcel(data, 'stickers-at-risk');
-          }} className="mb-4">Export to Excel</Button>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Stop ID</TableHead>
-                <TableHead>English Name</TableHead>
-                <TableHead>Greek Name</TableHead>
-                <TableHead>Sticker Type</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Planned Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {stickersAtRisk.map(item => {
-                const stop = stops.find(s => s.id === item.stop_id);
-                const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-                return (
-                  <TableRow key={item.id} className="bg-orange-50">
-                    <TableCell className="font-medium">{stop?.stop_id || '-'}</TableCell>
-                    <TableCell>{stop?.english_name || '-'}</TableCell>
-                    <TableCell>{stop?.greek_name || '-'}</TableCell>
-                    <TableCell>{template?.sticker_name_category || '-'}</TableCell>
-                    <TableCell><Badge className="bg-orange-600">{item.status}</Badge></TableCell>
-                    <TableCell>{stop?.current_planned_installation_date || '-'}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </DialogContent>
-      </Dialog>
-
       <Dialog open={activeDialog === 'remaining'} onOpenChange={() => setActiveDialog(null)}>
         <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
