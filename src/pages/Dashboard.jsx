@@ -327,18 +327,7 @@ export default function DashboardPage() {
          </div>
        </div>
 
-      {/* Buffer Days */}
-      <Card className="bg-blue-50 border-blue-200">
-        <CardContent className="pt-6">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 max-w-xs">
-              <Label htmlFor="buffer" className="text-sm font-medium">Περιθώριο Ασφάλειας (ημέρες)</Label>
-              <Input id="buffer" type="number" value={bufferDays} onChange={(e) => setBufferDays(parseInt(e.target.value) || 30)} min="1" className="mt-2" />
-            </div>
-            <div className="text-xs text-gray-600">Για κρίσιμα stickers χωρίς παραγγελία</div>
-          </div>
-        </CardContent>
-      </Card>
+
 
       {/* Summary Cards - Row 3: Παρακολούθηση Παραγγελιών (Order Tracking) */}
       <div>
