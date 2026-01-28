@@ -83,44 +83,54 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
     setLoading(true);
     try {
       const user = await base44.auth.me();
-      const updateData = {
-        status: "Needed",
-        installed: false,
-        installed_date: null,
-        custody_status: null,
-        current_custodian_id: null,
-        installed_by: null,
-        need_reorder: false,
-        reorder_reason: null,
-        reorder_date: null
-      };
+      
+      // Get fresh data for the old sticker
+      const [freshItem] = await base44.entities.StickerItem.filter({ id: stickerItem.id });
+      
+      // Mark old sticker as Obsolete
+      await base44.entities.StickerItem.update(stickerItem.id, {
+        status: "Obsolete",
+        obsolete_reason: reopenReason,
+        obsolete_date: new Date().toISOString().split('T')[0]
+      });
 
-      await base44.entities.StickerItem.update(stickerItem.id, updateData);
-
+      // Log the obsolete action
       await base44.entities.StickerMovementLog.create({
         sticker_item_id: stickerItem.id,
-        action_type: "Reopen",
-        old_status: stickerItem.status,
-        new_status: "Needed",
-        old_custody_status: stickerItem.custody_status,
+        action_type: "Obsolete",
+        old_status: freshItem.status,
+        new_status: "Obsolete",
+        old_custody_status: freshItem.custody_status,
         new_custody_status: null,
         user_email: user.email,
-        notes: `Reopened: ${reopenReason}`
+        notes: `Made obsolete: ${reopenReason}`
       });
 
-      await updateStopAllStickersInstalled(stickerItem.stop_id);
-      
-      // Reset form data with new values
-      setFormData({
+      // Create new sticker item with same details but status "Needed"
+      const newStickerData = {
+        stop_id: freshItem.stop_id,
+        sticker_template_id: freshItem.sticker_template_id,
+        print_line_1: freshItem.print_line_1,
+        print_line_2: freshItem.print_line_2,
+        print_line_3: freshItem.print_line_3,
         status: "Needed",
         installed: false,
-        installed_date: "",
-        custody_status: "",
-        need_reorder: false,
-        reorder_reason: "",
-        reorder_date: "",
-        comments: ""
+        custody_status: null,
+        comments: `Replacement for obsolete sticker. Reason: ${reopenReason}`
+      };
+
+      const newSticker = await base44.entities.StickerItem.create(newStickerData);
+
+      // Log creation of new sticker
+      await base44.entities.StickerMovementLog.create({
+        sticker_item_id: newSticker.id,
+        action_type: "Created",
+        new_status: "Needed",
+        user_email: user.email,
+        notes: `Created as replacement. Old sticker ID: ${stickerItem.id}`
       });
+
+      await updateStopAllStickersInstalled(freshItem.stop_id);
       
       setReopenDialogOpen(false);
       setReopenReason("");
@@ -241,6 +251,7 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
                 <Select
                   value={formData.status}
                   onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  disabled={formData.installed}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -259,9 +270,10 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
                 <Select
                   value={formData.custody_status}
                   onValueChange={(value) => setFormData({ ...formData, custody_status: value })}
+                  disabled={formData.status === "Needed" || formData.status === "Ordered" || formData.status === "Obsolete"}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder={formData.status === "Needed" || formData.status === "Ordered" || formData.status === "Obsolete" ? "N/A" : "Select custody"} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="In Stock">In Stock</SelectItem>
@@ -283,42 +295,45 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
               </Alert>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="reorder_reason">Reorder Reason {requiresReorderInfo && "*"}</Label>
-                <Select
-                  value={formData.reorder_reason}
-                  onValueChange={(value) => setFormData({ ...formData, reorder_reason: value })}
-                  required={requiresReorderInfo}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select reason" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Lost">Lost</SelectItem>
-                    <SelectItem value="Damaged">Damaged</SelectItem>
-                    <SelectItem value="Wrong Print">Wrong Print</SelectItem>
-                    <SelectItem value="Replacement">Replacement</SelectItem>
-                  </SelectContent>
-                </Select>
+            {(requiresReorderInfo || formData.custody_status === "Lost" || formData.custody_status === "Damaged") && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="reorder_reason">Reorder Reason {requiresReorderInfo && "*"}</Label>
+                  <Select
+                    value={formData.reorder_reason}
+                    onValueChange={(value) => setFormData({ ...formData, reorder_reason: value })}
+                    required={requiresReorderInfo}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select reason" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Lost">Lost</SelectItem>
+                      <SelectItem value="Damaged">Damaged</SelectItem>
+                      <SelectItem value="Wrong Print">Wrong Print</SelectItem>
+                      <SelectItem value="Replacement">Replacement</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="reorder_date">Reorder Date {requiresReorderInfo && "*"}</Label>
+                  <Input
+                    id="reorder_date"
+                    type="date"
+                    value={formData.reorder_date}
+                    onChange={(e) => setFormData({ ...formData, reorder_date: e.target.value })}
+                    required={requiresReorderInfo}
+                  />
+                </div>
               </div>
-              <div>
-                <Label htmlFor="reorder_date">Reorder Date {requiresReorderInfo && "*"}</Label>
-                <Input
-                  id="reorder_date"
-                  type="date"
-                  value={formData.reorder_date}
-                  onChange={(e) => setFormData({ ...formData, reorder_date: e.target.value })}
-                  required={requiresReorderInfo}
-                />
-              </div>
-            </div>
+            )}
 
             <div className="flex items-center space-x-2">
               <Switch
                 id="installed"
                 checked={formData.installed}
                 onCheckedChange={(checked) => setFormData({ ...formData, installed: checked })}
+                disabled={formData.status === "Obsolete" || formData.status === "Needed"}
               />
               <Label htmlFor="installed">Mark as Installed</Label>
             </div>
@@ -331,6 +346,7 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
                   type="date"
                   value={formData.installed_date}
                   onChange={(e) => setFormData({ ...formData, installed_date: e.target.value })}
+                  disabled={formData.status === "Obsolete"}
                 />
               </div>
             )}
