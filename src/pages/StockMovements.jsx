@@ -37,19 +37,24 @@ export default function StockMovementsPage() {
   const [showEditDialog, setShowEditDialog] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState("10");
+  const [itemsPerPage, setItemsPerPage] = useState("100");
   const [isFixingCosts, setIsFixingCosts] = useState(false);
+  const [totalMovementsCount, setTotalMovementsCount] = useState(0);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [currentPage, itemsPerPage]);
 
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Load all data in parallel - much faster
+      // Calculate skip based on pagination
+      const skip = (currentPage - 1) * parseInt(itemsPerPage);
+      
+      // Load paginated movements + other data in parallel
       const [
         movementsData,
+        allMovementsCount,
         productsData,
         locationsData,
         systemUsers,
@@ -59,7 +64,8 @@ export default function StockMovementsPage() {
         categoriesData,
         companiesData
       ] = await Promise.all([
-        base44.entities.StockMovement.list("-created_date", 5000),
+        base44.entities.StockMovement.list("-created_date", parseInt(itemsPerPage), skip),
+        base44.entities.StockMovement.list().then(all => all.length),
         base44.entities.Product.list(),
         base44.entities.WarehouseLocation.list(),
         base44.entities.User.list().catch(() => []),
