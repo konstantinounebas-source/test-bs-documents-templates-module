@@ -69,6 +69,7 @@ import DocumentFieldsDataDefinitions from './pages/DocumentFieldsDataDefinitions
 import FormRunner from './pages/FormRunner';
 import Holidays from './pages/Holidays';
 import Home from './pages/Home';
+import InstallationCapacity from './pages/InstallationCapacity';
 import InteractiveForms from './pages/InteractiveForms';
 import MobileFieldWork from './pages/MobileFieldWork';
 import MyWorkday from './pages/MyWorkday';
@@ -103,7 +104,7 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import InstallationCapacity from './pages/InstallationCapacity';
+import OperationalDashboard from './pages/OperationalDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -130,6 +131,7 @@ export const PAGES = {
     "FormRunner": FormRunner,
     "Holidays": Holidays,
     "Home": Home,
+    "InstallationCapacity": InstallationCapacity,
     "InteractiveForms": InteractiveForms,
     "MobileFieldWork": MobileFieldWork,
     "MyWorkday": MyWorkday,
@@ -164,7 +166,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "InstallationCapacity": InstallationCapacity,
+    "OperationalDashboard": OperationalDashboard,
 }
 
 export const pagesConfig = {
