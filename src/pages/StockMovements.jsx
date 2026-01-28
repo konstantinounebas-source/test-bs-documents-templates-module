@@ -265,13 +265,8 @@ export default function StockMovementsPage() {
     return matchesSearch && matchesType && matchesLocation && matchesProduct && matchesTime;
   });
 
-  // Pagination logic
-  const paginatedMovements = itemsPerPage === "all" 
-    ? filteredMovements 
-    : filteredMovements.slice(
-        (currentPage - 1) * parseInt(itemsPerPage),
-        currentPage * parseInt(itemsPerPage)
-      );
+  // Movements are already paginated from server
+  const paginatedMovements = filteredMovements;
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -279,7 +274,7 @@ export default function StockMovementsPage() {
 
   const handleItemsPerPageChange = (value) => {
     setItemsPerPage(value);
-    setCurrentPage(1); // Reset to first page when items per page changes
+    setCurrentPage(1);
   };
 
   const calculateDisplayQuantity = (movement) => {
