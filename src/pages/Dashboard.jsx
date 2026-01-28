@@ -167,44 +167,48 @@ export default function DashboardPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('total')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Συνολικές Στάσεις</p>
+                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">Συνολικές Στάσεις</p>
                 <p className="text-3xl font-bold text-blue-600">{totalStops}</p>
               </div>
               <MapPin className="w-10 h-10 text-blue-600" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('without')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Χωρίς Αυτοκόλλητα</p>
+                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">Στάσεις χωρίς Αυτοκόλλητα</p>
                 <p className="text-3xl font-bold text-gray-600">{stopsWithoutStickers.length}</p>
               </div>
               <XCircle className="w-10 h-10 text-gray-600" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('critical')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Critical</p>
+                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">Critical - Στέγαστρα OK, Stickers ΌΧΙ</p>
                 <p className="text-3xl font-bold text-red-600">{criticalStops.length}</p>
               </div>
               <AlertTriangle className="w-10 h-10 text-red-600" />
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('ordered')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Με Παραγγελίες</p>
+                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">Στάσεις με Παραγγελθέντα Stickers</p>
                 <p className="text-3xl font-bold text-green-600">{stopsWithOrderedStickers.length}</p>
               </div>
               <ShoppingCart className="w-10 h-10 text-green-600" />
