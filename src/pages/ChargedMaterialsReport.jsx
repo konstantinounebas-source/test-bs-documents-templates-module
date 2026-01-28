@@ -1006,6 +1006,16 @@ export default function ChargedMaterialsReportPage() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Movements Drawer */}
+        {selectedProductForMovements && (
+          <ProductMovementsDrawer
+            isOpen={drawerOpen}
+            onOpenChange={setDrawerOpen}
+            productId={selectedProductForMovements.id}
+            productName={selectedProductForMovements.name}
+          />
+        )}
       </div>
     </div>
   );
