@@ -134,8 +134,11 @@ export default function DashboardPage() {
   };
 
   const getShelterTypeDisplay = (shelterTypeId) => {
-    const shelterType = shelterTypes.find(st => st.shelter_type_id === shelterTypeId);
-    return shelterType?.description || shelterTypeId || "-";
+    if (!shelterTypeId) return "-";
+    const shelterType = shelterTypes.find(st => 
+      st.shelter_type_id === shelterTypeId || st.id === shelterTypeId
+    );
+    return shelterType?.description || shelterTypeId;
   };
 
   const exportToExcel = async (data, filename) => {
