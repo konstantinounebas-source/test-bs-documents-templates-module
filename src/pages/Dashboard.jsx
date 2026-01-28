@@ -403,7 +403,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Summary Cards - Row 3: Operational Mismatches */}
+      {/* Summary Cards - Row 4: Operational Mismatches */}
       <div>
         <h2 className="text-xl font-semibold text-gray-900 mb-4">4. Επιχειρησιακές Ασυμφωνίες</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
