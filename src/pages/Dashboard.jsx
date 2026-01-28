@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Package, CheckCircle, Calendar, XCircle, ShoppingCart } from "lucide-react";
+import { AlertTriangle, Package, CheckCircle, MapPin, XCircle, ShoppingCart, Repeat, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
@@ -24,47 +24,88 @@ export default function DashboardPage() {
     queryFn: () => base44.entities.StickerTemplate.list()
   });
 
-  // Critical Stops: Shelter installed but stickers not all installed
-  const criticalStops = stops.filter(stop => 
-    stop.shelter_installed === true && stop.all_stickers_installed === false
+  const { data: orders = [] } = useQuery({
+    queryKey: ['orders'],
+    queryFn: () => base44.entities.Order.list()
+  });
+
+  const { data: orderLines = [] } = useQuery({
+    queryKey: ['orderLines'],
+    queryFn: () => base44.entities.OrderLine.list()
+  });
+
+  // 1. Συνολικός αριθμός στάσεων
+  const totalStops = stops.length;
+
+  // 2. Πόσες δεν έχουν δημιουργηθεί αυτοκόλλητα
+  const stopsWithoutStickers = stops.filter(stop => {
+    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
+    return stopStickers.length === 0;
+  });
+
+  // 3. Πόσες είναι critical (έχουν εγκατασταθεί τα στέγαστρα αλλά δεν έχουν εγκατασταθεί όλα τα αυτοκόλλητα)
+  const criticalStops = stops.filter(stop => {
+    if (!stop.shelter_installed) return false;
+    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
+    if (stopStickers.length === 0) return false;
+    const allInstalled = stopStickers.every(item => item.status === "Installed");
+    return !allInstalled;
+  });
+
+  // 4. Πόσες έχουν παραγγελθεί τα αυτοκόλλητα (έχουν έστω ένα sticker με status Ordered ή Received ή Installed)
+  const stopsWithOrderedStickers = stops.filter(stop => {
+    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
+    return stopStickers.some(item => ["Ordered", "Received", "Installed"].includes(item.status));
+  });
+
+  // 5. Παραγγελίες με warning (critical based on date)
+  const checkOrderCritical = (order) => {
+    const lines = orderLines.filter(line => line.order_id === order.id);
+    return lines.some(line => {
+      const stickerItem = stickerItems.find(item => item.id === line.sticker_item_id);
+      if (!stickerItem) return false;
+      const stop = stops.find(s => s.id === stickerItem.stop_id);
+      if (!stop?.current_planned_installation_date) return false;
+      
+      const template = stickerTemplates.find(t => t.id === stickerItem.sticker_template_id);
+      if (!template) return false;
+      
+      const plannedDate = new Date(stop.current_planned_installation_date);
+      const daysBeforeNeeded = template.days_before_installation_to_receive || 7;
+      const neededByDate = new Date(plannedDate);
+      neededByDate.setDate(neededByDate.getDate() - daysBeforeNeeded);
+      
+      const estimatedDeliveryDays = template.estimated_delivery_days || 10;
+      const orderDate = new Date(order.order_date);
+      const estimatedReceiptDate = new Date(orderDate);
+      estimatedReceiptDate.setDate(estimatedReceiptDate.getDate() + estimatedDeliveryDays);
+      
+      return estimatedReceiptDate > neededByDate;
+    });
+  };
+
+  const ordersWithWarning = orders.filter(order => 
+    order.status !== "Closed" && checkOrderCritical(order)
   );
 
-  // Stickers To Order: Status = Needed, grouped by vendor
-  const stickersToOrder = stickerItems.filter(item => item.status === "Needed");
-  const stickersToOrderByVendor = stickersToOrder.reduce((acc, item) => {
-    const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-    const vendor = template?.default_vendor || "No Vendor";
-    if (!acc[vendor]) acc[vendor] = [];
-    acc[vendor].push(item);
-    return acc;
-  }, {});
+  // 6. Πόσα αυτοκόλλητα έχουν παραγγελθεί πάνω από μία φορά
+  const stickersOrderedMultipleTimes = stickerItems.filter(item => {
+    return (item.total_ordered_quantity || 0) > 1;
+  });
 
-  // Ordered Not Received
-  const orderedNotReceived = stickerItems.filter(item => item.status === "Ordered");
+  // 7. Στάσεις με εγκατεστημένα στέγαστρα αλλά όχι όλα τα αυτοκόλλητα (ίδιο με critical)
+  const sheltersInstalledNotAllStickers = criticalStops.length;
 
-  // Received Not Installed
-  const receivedNotInstalled = stickerItems.filter(item => item.status === "Received");
-
-  // Lost Stickers
-  const lostStickers = stickerItems.filter(item => item.custody_status === "Lost");
-
-  // Upcoming Installations: grouped by month
-  const upcomingInstallations = stops
-    .filter(stop => stop.current_planned_installation_date)
-    .reduce((acc, stop) => {
-      const date = new Date(stop.current_planned_installation_date);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthLabel = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-      if (!acc[monthKey]) {
-        acc[monthKey] = { label: monthLabel, stops: [] };
-      }
-      acc[monthKey].stops.push(stop);
+  // 8. Αυτοκόλλητα installed ανά κατηγορία (sticker template)
+  const installedStickersByCategory = stickerItems
+    .filter(item => item.status === "Installed")
+    .reduce((acc, item) => {
+      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+      const category = template?.sticker_name_category || "Unknown";
+      if (!acc[category]) acc[category] = 0;
+      acc[category]++;
       return acc;
     }, {});
-
-  const upcomingMonths = Object.values(upcomingInstallations).sort((a, b) => 
-    a.label.localeCompare(b.label)
-  );
 
   const getStopDisplay = (item) => {
     const stop = stops.find(s => s.id === item.stop_id);
