@@ -470,6 +470,131 @@ export default function DashboardPage() {
 
 
       {/* Dialogs */}
+
+      {/* Row 1 Dialogs */}
+      <Dialog open={activeDialog === 'warning1'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>⚠️ Κρίσιμες Στάσεις χωρίς Stickers - Planned Date &lt; {bufferDays} ημέρες ({criticalStopsWarning.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = criticalStopsWarning.map(s => ({
+              'Stop ID': s.stop_id,
+              'English Name': s.english_name,
+              'Greek Name': s.greek_name,
+              'Planned Date': s.current_planned_installation_date || '-',
+              'Days Until': Math.floor((new Date(s.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24))
+            }));
+            exportToExcel(data, 'critical-stops-warning');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>English Name</TableHead>
+                <TableHead>Greek Name</TableHead>
+                <TableHead>Planned Date</TableHead>
+                <TableHead>Days Until</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {criticalStopsWarning.map(stop => (
+                <TableRow key={stop.id} className="bg-red-50">
+                  <TableCell className="font-medium">{stop.stop_id}</TableCell>
+                  <TableCell>{stop.english_name}</TableCell>
+                  <TableCell>{stop.greek_name}</TableCell>
+                  <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
+                  <TableCell><Badge className="bg-red-600">{Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24))}</Badge></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      {/* Row 2 Dialogs */}
+      <Dialog open={activeDialog === 'noorder'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Στάσεις με Stickers αλλά χωρίς Παραγγελία ({stopsWithStickersNoOrder.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = stopsWithStickersNoOrder.map(s => ({
+              'Stop ID': s.stop_id,
+              'English Name': s.english_name,
+              'Greek Name': s.greek_name,
+              'Planned Date': s.current_planned_installation_date || '-'
+            }));
+            exportToExcel(data, 'stickers-no-order');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>English Name</TableHead>
+                <TableHead>Greek Name</TableHead>
+                <TableHead>Planned Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stopsWithStickersNoOrder.map(stop => (
+                <TableRow key={stop.id} className="bg-yellow-50">
+                  <TableCell className="font-medium">{stop.stop_id}</TableCell>
+                  <TableCell>{stop.english_name}</TableCell>
+                  <TableCell>{stop.greek_name}</TableCell>
+                  <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'delayed'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>⚠️ Καθυστερημένη Παραγγελία - Planned Date &lt; Estimated Delivery ({delayedOrderingRisk.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = delayedOrderingRisk.map(item => {
+              const stop = stops.find(s => s.id === item.stop_id);
+              const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+              return {
+                'Stop ID': getStopDisplay(item),
+                'Sticker Type': getTemplateDisplay(item),
+                'Planned Date': stop?.current_planned_installation_date || '-',
+                'Est. Delivery Days': template?.estimated_delivery_days || '-'
+              };
+            });
+            exportToExcel(data, 'delayed-ordering');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>Sticker Type</TableHead>
+                <TableHead>Planned Date</TableHead>
+                <TableHead>Est. Delivery Days</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {delayedOrderingRisk.map(item => {
+                const stop = stops.find(s => s.id === item.stop_id);
+                const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+                return (
+                  <TableRow key={item.id} className="bg-orange-50">
+                    <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
+                    <TableCell>{getTemplateDisplay(item)}</TableCell>
+                    <TableCell>{stop?.current_planned_installation_date || '-'}</TableCell>
+                    <TableCell><Badge className="bg-orange-600">{template?.estimated_delivery_days || '-'}</Badge></TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={activeDialog === 'total'} onOpenChange={() => setActiveDialog(null)}>
         <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
