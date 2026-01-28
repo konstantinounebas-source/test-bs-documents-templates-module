@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import ProductCombobox from "./ProductCombobox";
+import { Workbook } from 'exceljs';
 
 export default function BOMManager({ busStopTypes, components, products, selectedType, onComponentsUpdated }) {
   const [currentTypeId, setCurrentTypeId] = useState(selectedType?.id || '');
