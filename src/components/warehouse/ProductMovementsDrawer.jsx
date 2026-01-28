@@ -17,7 +17,6 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
   const [movements, setMovements] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState([]);
-  const [vendors, setVendors] = useState([]);
 
   useEffect(() => {
     if (isOpen && productId) {
