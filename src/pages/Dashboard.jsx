@@ -354,16 +354,16 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Summary Cards - Row 3: Order Tracking */}
+      {/* Summary Cards - Row 3: Παρακολούθηση Παραγγελιών (Order Tracking) */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">3. Παρακολούθηση Παραγγελιών</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">3. Παρακολούθηση Παραγγελιών (Order Tracking)</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('orderedwarn')}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                  <p className="text-sm font-medium text-gray-700 mb-1">⚠️ Ordered με Προειδοποίηση</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">⚠️ Ordered με Warning</p>
                   <p className="text-3xl font-bold text-orange-600">{orderedWithWarning.length}</p>
                 </div>
                 <AlertTriangle className="w-10 h-10 text-orange-600" />
@@ -375,34 +375,10 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                  <p className="text-sm font-medium text-gray-700 mb-1">⚠️ Ordered σε Εγκατεστημένες</p>
+                  <p className="text-sm font-medium text-gray-700 mb-1">Ordered σε Εγκατ. (χωρίς Παραλαβή)</p>
                   <p className="text-3xl font-bold text-orange-600">{orderedOnInstalledNotReceived.length}</p>
                 </div>
                 <AlertTriangle className="w-10 h-10 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('multiple')}>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                  <p className="text-sm font-medium text-gray-700 mb-1">🔍 Πολλαπλές Παραγγελίες</p>
-                  <p className="text-3xl font-bold text-blue-500">{stickersOrderedMultipleTimes.length}</p>
-                </div>
-                <Repeat className="w-10 h-10 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('highrisk')}>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                  <p className="text-sm font-medium text-gray-700 mb-1">🔴 Υψηλού Κινδύνου</p>
-                  <p className="text-3xl font-bold text-red-600">{highRiskStickers.length}</p>
-                </div>
-                <AlertTriangle className="w-10 h-10 text-red-600" />
               </div>
             </CardContent>
           </Card>
