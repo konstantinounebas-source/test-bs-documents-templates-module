@@ -23,6 +23,8 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
   });
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
+  const [reopenDialogOpen, setReopenDialogOpen] = useState(false);
+  const [reopenReason, setReopenReason] = useState("");
 
   useEffect(() => {
     if (open && stickerItem) {
@@ -68,7 +70,16 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
     setUsers(usersList);
   };
 
-  const handleReopen = async () => {
+  const handleReopenClick = () => {
+    setReopenDialogOpen(true);
+  };
+
+  const handleReopenConfirm = async () => {
+    if (!reopenReason) {
+      alert("Please select a reason for reopening");
+      return;
+    }
+
     setLoading(true);
     try {
       const user = await base44.auth.me();
@@ -88,13 +99,13 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
 
       await base44.entities.StickerMovementLog.create({
         sticker_item_id: stickerItem.id,
-        action_type: "Status Change",
+        action_type: "Reopen",
         old_status: stickerItem.status,
         new_status: "Needed",
         old_custody_status: stickerItem.custody_status,
         new_custody_status: null,
         user_email: user.email,
-        notes: "Reopened from installed state"
+        notes: `Reopened: ${reopenReason}`
       });
 
       await updateStopAllStickersInstalled(stickerItem.stop_id);
@@ -111,6 +122,8 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
         comments: ""
       });
       
+      setReopenDialogOpen(false);
+      setReopenReason("");
       onSaved();
       onClose();
     } catch (error) {
@@ -237,6 +250,7 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
                     <SelectItem value="Ordered">Ordered</SelectItem>
                     <SelectItem value="Received">Received</SelectItem>
                     <SelectItem value="Installed">Installed</SelectItem>
+                    <SelectItem value="Obsolete">Obsolete</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -332,16 +346,14 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
             </div>
           </div>
           <DialogFooter>
-            {stickerItem?.installed && (
-              <Button 
-                type="button" 
-                variant="destructive" 
-                onClick={handleReopen}
-                disabled={loading}
-              >
-                Reopen
-              </Button>
-            )}
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={handleReopenClick}
+              disabled={loading}
+            >
+              Reopen
+            </Button>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
@@ -351,6 +363,44 @@ export default function EditStickerItemDialog({ open, onClose, stickerItem, onSa
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <Dialog open={reopenDialogOpen} onOpenChange={setReopenDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reopen Sticker Item</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="reopen_reason">Reason for Reopening *</Label>
+              <Select
+                value={reopenReason}
+                onValueChange={setReopenReason}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select reason" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Lost">Lost</SelectItem>
+                  <SelectItem value="Damaged">Damaged</SelectItem>
+                  <SelectItem value="Wrong Print">Wrong Print</SelectItem>
+                  <SelectItem value="Vandalized">Vandalized</SelectItem>
+                  <SelectItem value="Weather Damage">Weather Damage</SelectItem>
+                  <SelectItem value="Incorrect Installation">Incorrect Installation</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setReopenDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleReopenConfirm} disabled={loading || !reopenReason}>
+              {loading ? "Reopening..." : "Confirm Reopen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
