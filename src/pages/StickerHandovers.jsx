@@ -10,7 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Save, Users } from "lucide-react";
+import { Save, Users, FileDown } from "lucide-react";
+import ExcelJS from 'exceljs';
 
 export default function StickerHandoversPage() {
   const [selectedTechnician, setSelectedTechnician] = useState("");
@@ -56,6 +57,46 @@ export default function StickerHandoversPage() {
       ...prev,
       [itemId]: !prev[itemId]
     }));
+  };
+
+  const handleExportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Available Sticker Items');
+
+    worksheet.columns = [
+      { header: 'Stop ID', key: 'stop_id', width: 15 },
+      { header: 'Sticker Template', key: 'sticker_template', width: 25 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Custody Status', key: 'custody_status', width: 20 }
+    ];
+
+    availableItems.forEach(item => {
+      const stop = stops.find(s => s.id === item.stop_id);
+      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+      
+      worksheet.addRow({
+        stop_id: stop?.stop_id || '-',
+        sticker_template: template?.sticker_name_category || '-',
+        status: item.status,
+        custody_status: item.custody_status
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `available_sticker_items_${new Date().toISOString().split('T')[0]}.xlsx`;
+    link.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const handleSubmit = async (e) => {
@@ -170,7 +211,13 @@ export default function StickerHandoversPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Select Sticker Items ({Object.values(selectedItems).filter(Boolean).length} selected)</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>Select Sticker Items ({Object.values(selectedItems).filter(Boolean).length} selected)</span>
+              <Button variant="outline" size="sm" onClick={handleExportToExcel}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Export to Excel
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {availableItems.length === 0 ? (

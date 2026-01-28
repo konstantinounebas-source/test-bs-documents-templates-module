@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Save, AlertTriangle, PackageCheck } from "lucide-react";
+import { Save, AlertTriangle, PackageCheck, FileDown } from "lucide-react";
+import ExcelJS from 'exceljs';
 
 export default function ReceiptsPage() {
   const [selectedOrderForReceipt, setSelectedOrderForReceipt] = useState(null);
@@ -227,6 +228,58 @@ export default function ReceiptsPage() {
   );
 
   // Filter ordered items
+  const handleExportOrderedItems = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Pending Items');
+
+    worksheet.columns = [
+      { header: 'Stop ID', key: 'stop_id', width: 15 },
+      { header: 'Greek Name', key: 'greek_name', width: 30 },
+      { header: 'English Name', key: 'english_name', width: 30 },
+      { header: 'Sticker Type', key: 'sticker_type', width: 25 },
+      { header: 'Approved Shelter Type', key: 'shelter_type', width: 30 },
+      { header: 'Planned Date', key: 'planned_date', width: 15 },
+      { header: 'Order ID', key: 'order_id', width: 20 },
+      { header: 'Critical', key: 'critical', width: 10 }
+    ];
+
+    filteredOrderedItems.forEach(item => {
+      const stop = stops.find(s => s.id === item.stop_id);
+      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+      const shelterType = shelterTypes.find(st => st.id === stop?.shelter_type_approved_id);
+      const critical = isCriticalItem(item.stop_id, item.id);
+      const orderLine = orderLines.find(ol => ol.sticker_item_id === item.id);
+      const order = orders.find(o => o.id === orderLine?.order_id);
+
+      worksheet.addRow({
+        stop_id: stop?.stop_id || '-',
+        greek_name: stop?.greek_name || '-',
+        english_name: stop?.english_name || '-',
+        sticker_type: template?.sticker_name_category || '-',
+        shelter_type: shelterType ? `${shelterType.shelter_type_id} - ${shelterType.description}` : '-',
+        planned_date: stop?.current_planned_installation_date || '-',
+        order_id: order ? `#${order.id.slice(0, 8)}` : '-',
+        critical: critical ? 'Yes' : 'No'
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `pending_sticker_items_${new Date().toISOString().split('T')[0]}.xlsx`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const filteredOrderedItems = orderedItems.filter(item => {
     const stop = stops.find(s => s.id === item.stop_id);
     const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
@@ -348,7 +401,13 @@ export default function ReceiptsPage() {
       {/* Pending Items List */}
       <Card>
         <CardHeader>
-          <CardTitle>Pending Items to Receive</CardTitle>
+          <CardTitle className="flex items-center justify-between">
+            <span>Pending Items to Receive</span>
+            <Button variant="outline" size="sm" onClick={handleExportOrderedItems}>
+              <FileDown className="w-4 h-4 mr-2" />
+              Export to Excel
+            </Button>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

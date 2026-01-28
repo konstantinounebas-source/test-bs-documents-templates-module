@@ -5,7 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search } from "lucide-react";
+import { Search, FileDown } from "lucide-react";
+import ExcelJS from 'exceljs';
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
 export default function StickerMovementLogsPage() {
@@ -69,6 +71,57 @@ export default function StickerMovementLogsPage() {
 
   const isLoading = logsLoading || itemsLoading || stopsLoading;
 
+  const handleExportToExcel = async () => {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Sticker Movement Logs');
+
+    worksheet.columns = [
+      { header: 'Date & Time', key: 'date_time', width: 20 },
+      { header: 'Sticker Item', key: 'sticker_item', width: 30 },
+      { header: 'Action', key: 'action', width: 20 },
+      { header: 'Old Status', key: 'old_status', width: 15 },
+      { header: 'New Status', key: 'new_status', width: 15 },
+      { header: 'Old Custody', key: 'old_custody', width: 20 },
+      { header: 'New Custody', key: 'new_custody', width: 20 },
+      { header: 'Technician', key: 'technician', width: 25 },
+      { header: 'Reorder Reason', key: 'reorder_reason', width: 20 },
+      { header: 'Notes', key: 'notes', width: 40 },
+      { header: 'User', key: 'user', width: 25 }
+    ];
+
+    filteredLogs.forEach(log => {
+      worksheet.addRow({
+        date_time: format(new Date(log.created_date), 'dd/MM/yyyy HH:mm'),
+        sticker_item: getStickerInfo(log.sticker_item_id),
+        action: log.action_type,
+        old_status: log.old_status || '-',
+        new_status: log.new_status || '-',
+        old_custody: log.old_custody_status || '-',
+        new_custody: log.new_custody_status || '-',
+        technician: getTechnicianName(log.technician_id) || '-',
+        reorder_reason: log.reorder_reason || '-',
+        notes: log.notes || '-',
+        user: getUserName(log.user_email)
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `sticker_movement_logs_${new Date().toISOString().split('T')[0]}.xlsx`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return <div className="p-6">Loading...</div>;
   }
@@ -79,8 +132,14 @@ export default function StickerMovementLogsPage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Sticker Movement Logs</span>
-            <div className="text-sm font-normal text-gray-600">
-              Total: {filteredLogs.length} movements
+            <div className="flex items-center gap-4">
+              <div className="text-sm font-normal text-gray-600">
+                Total: {filteredLogs.length} movements
+              </div>
+              <Button variant="outline" size="sm" onClick={handleExportToExcel}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Export to Excel
+              </Button>
             </div>
           </CardTitle>
         </CardHeader>
