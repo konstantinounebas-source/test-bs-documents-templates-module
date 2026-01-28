@@ -299,6 +299,7 @@ export default function DashboardPage() {
               'Stop ID': s.stop_id,
               'English Name': s.english_name,
               'Greek Name': s.greek_name,
+              'Shelter Type ID': s.shelter_type_approved_id || '-',
               'Shelter Type': getShelterTypeDisplay(s.shelter_type_approved_id),
               'Planned Date': s.current_planned_installation_date || '-',
               'Shelter Installed': s.shelter_installed ? 'Yes' : 'No'
@@ -311,6 +312,7 @@ export default function DashboardPage() {
                 <TableHead>Stop ID</TableHead>
                 <TableHead>English Name</TableHead>
                 <TableHead>Greek Name</TableHead>
+                <TableHead>Shelter Type ID</TableHead>
                 <TableHead>Shelter Type</TableHead>
                 <TableHead>Planned Date</TableHead>
               </TableRow>
@@ -321,6 +323,7 @@ export default function DashboardPage() {
                   <TableCell className="font-medium">{stop.stop_id}</TableCell>
                   <TableCell>{stop.english_name}</TableCell>
                   <TableCell>{stop.greek_name}</TableCell>
+                  <TableCell className="text-xs text-gray-500">{stop.shelter_type_approved_id || '-'}</TableCell>
                   <TableCell>{getShelterTypeDisplay(stop.shelter_type_approved_id)}</TableCell>
                   <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
                 </TableRow>
@@ -340,6 +343,7 @@ export default function DashboardPage() {
               'Stop ID': s.stop_id,
               'English Name': s.english_name,
               'Greek Name': s.greek_name,
+              'Shelter Type ID': s.shelter_type_approved_id || '-',
               'Shelter Type': getShelterTypeDisplay(s.shelter_type_approved_id),
               'Planned Date': s.current_planned_installation_date || '-'
             }));
@@ -351,6 +355,7 @@ export default function DashboardPage() {
                 <TableHead>Stop ID</TableHead>
                 <TableHead>English Name</TableHead>
                 <TableHead>Greek Name</TableHead>
+                <TableHead>Shelter Type ID</TableHead>
                 <TableHead>Shelter Type</TableHead>
                 <TableHead>Planned Date</TableHead>
               </TableRow>
@@ -361,6 +366,7 @@ export default function DashboardPage() {
                   <TableCell className="font-medium">{stop.stop_id}</TableCell>
                   <TableCell>{stop.english_name}</TableCell>
                   <TableCell>{stop.greek_name}</TableCell>
+                  <TableCell className="text-xs text-gray-500">{stop.shelter_type_approved_id || '-'}</TableCell>
                   <TableCell>{getShelterTypeDisplay(stop.shelter_type_approved_id)}</TableCell>
                   <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
                 </TableRow>
@@ -380,6 +386,7 @@ export default function DashboardPage() {
               'Stop ID': s.stop_id,
               'English Name': s.english_name,
               'Greek Name': s.greek_name,
+              'Shelter Type ID': s.shelter_type_approved_id || '-',
               'Shelter Type': getShelterTypeDisplay(s.shelter_type_approved_id),
               'Planned Date': s.current_planned_installation_date || '-'
             }));
@@ -391,6 +398,7 @@ export default function DashboardPage() {
                 <TableHead>Stop ID</TableHead>
                 <TableHead>English Name</TableHead>
                 <TableHead>Greek Name</TableHead>
+                <TableHead>Shelter Type ID</TableHead>
                 <TableHead>Shelter Type</TableHead>
                 <TableHead>Planned Date</TableHead>
               </TableRow>
@@ -401,6 +409,7 @@ export default function DashboardPage() {
                   <TableCell className="font-medium">{stop.stop_id}</TableCell>
                   <TableCell>{stop.english_name}</TableCell>
                   <TableCell>{stop.greek_name}</TableCell>
+                  <TableCell className="text-xs text-gray-500">{stop.shelter_type_approved_id || '-'}</TableCell>
                   <TableCell>{getShelterTypeDisplay(stop.shelter_type_approved_id)}</TableCell>
                   <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
                 </TableRow>
@@ -420,6 +429,7 @@ export default function DashboardPage() {
               'Stop ID': s.stop_id,
               'English Name': s.english_name,
               'Greek Name': s.greek_name,
+              'Shelter Type ID': s.shelter_type_approved_id || '-',
               'Shelter Type': getShelterTypeDisplay(s.shelter_type_approved_id),
               'Planned Date': s.current_planned_installation_date || '-'
             }));
@@ -431,6 +441,7 @@ export default function DashboardPage() {
                 <TableHead>Stop ID</TableHead>
                 <TableHead>English Name</TableHead>
                 <TableHead>Greek Name</TableHead>
+                <TableHead>Shelter Type ID</TableHead>
                 <TableHead>Shelter Type</TableHead>
                 <TableHead>Planned Date</TableHead>
               </TableRow>
@@ -441,6 +452,7 @@ export default function DashboardPage() {
                   <TableCell className="font-medium">{stop.stop_id}</TableCell>
                   <TableCell>{stop.english_name}</TableCell>
                   <TableCell>{stop.greek_name}</TableCell>
+                  <TableCell className="text-xs text-gray-500">{stop.shelter_type_approved_id || '-'}</TableCell>
                   <TableCell>{getShelterTypeDisplay(stop.shelter_type_approved_id)}</TableCell>
                   <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
                 </TableRow>
