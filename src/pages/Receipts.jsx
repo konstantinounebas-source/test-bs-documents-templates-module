@@ -23,6 +23,10 @@ export default function ReceiptsPage() {
     notes: ""
   });
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [stickerTypeFilter, setStickerTypeFilter] = useState("all");
+  const [shelterTypeFilter, setShelterTypeFilter] = useState("all");
+  const [criticalFilter, setCriticalFilter] = useState("all");
   const queryClient = useQueryClient();
 
   const { data: orders = [] } = useQuery({
@@ -48,6 +52,11 @@ export default function ReceiptsPage() {
   const { data: stickerTemplates = [] } = useQuery({
     queryKey: ['stickerTemplates'],
     queryFn: () => base44.entities.StickerTemplate.list()
+  });
+
+  const { data: shelterTypes = [] } = useQuery({
+    queryKey: ['shelterTypes'],
+    queryFn: () => base44.entities.ShelterType.list()
   });
 
   const isCriticalItem = (stopId, itemId) => {
@@ -198,6 +207,50 @@ export default function ReceiptsPage() {
 
   const selectedCount = Object.values(selectedItems).filter(Boolean).length;
 
+  // Get all ordered items (pending receipt)
+  const orderedItems = stickerItems.filter(item => item.status === "Ordered");
+
+  // Get unique sticker types and shelter types for filters
+  const stickerTypes = Array.from(new Set(
+    orderedItems.map(item => {
+      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+      return template?.sticker_name_category;
+    }).filter(Boolean)
+  )).sort();
+
+  const activeShelterTypes = shelterTypes.filter(st => st.active).sort((a, b) => 
+    (a.shelter_type_id || "").localeCompare(b.shelter_type_id || "")
+  );
+
+  // Filter ordered items
+  const filteredOrderedItems = orderedItems.filter(item => {
+    const stop = stops.find(s => s.id === item.stop_id);
+    const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+    const critical = isCriticalItem(item.stop_id, item.id);
+
+    // Search filter
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = !searchTerm || 
+      stop?.stop_id?.toLowerCase().includes(searchLower) ||
+      stop?.greek_name?.toLowerCase().includes(searchLower) ||
+      stop?.english_name?.toLowerCase().includes(searchLower);
+
+    // Sticker type filter
+    const matchesStickerType = stickerTypeFilter === "all" || 
+      template?.sticker_name_category === stickerTypeFilter;
+
+    // Shelter type filter
+    const matchesShelterType = shelterTypeFilter === "all" || 
+      stop?.shelter_type_approved_id === shelterTypeFilter;
+
+    // Critical filter
+    const matchesCritical = criticalFilter === "all" || 
+      (criticalFilter === "critical" && critical) ||
+      (criticalFilter === "non-critical" && !critical);
+
+    return matchesSearch && matchesStickerType && matchesShelterType && matchesCritical;
+  });
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -285,6 +338,138 @@ export default function ReceiptsPage() {
               </Table>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Pending Items List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Pending Items to Receive</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Filters */}
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <Label>Search Stop</Label>
+                <Input
+                  placeholder="Search by Stop ID or name..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Sticker Type</Label>
+                <Select value={stickerTypeFilter} onValueChange={setStickerTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    {stickerTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Approved Shelter Type</Label>
+                <Select value={shelterTypeFilter} onValueChange={setShelterTypeFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Shelter Types</SelectItem>
+                    {activeShelterTypes.map(st => (
+                      <SelectItem key={st.id} value={st.id}>
+                        {st.shelter_type_id} - {st.description}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Select value={criticalFilter} onValueChange={setCriticalFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Items</SelectItem>
+                    <SelectItem value="critical">Critical Only</SelectItem>
+                    <SelectItem value="non-critical">Non-Critical Only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Items Table */}
+            {filteredOrderedItems.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">No pending items to receive</p>
+            ) : (
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Stop ID</TableHead>
+                      <TableHead>Greek Name</TableHead>
+                      <TableHead>English Name</TableHead>
+                      <TableHead>Sticker Type</TableHead>
+                      <TableHead>Approved Shelter Type</TableHead>
+                      <TableHead>Planned Date</TableHead>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Critical</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredOrderedItems.map((item) => {
+                      const stop = stops.find(s => s.id === item.stop_id);
+                      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+                      const shelterType = shelterTypes.find(st => st.id === stop?.shelter_type_approved_id);
+                      const critical = isCriticalItem(item.stop_id, item.id);
+                      const orderLine = orderLines.find(ol => ol.sticker_item_id === item.id);
+                      const order = orders.find(o => o.id === orderLine?.order_id);
+
+                      return (
+                        <TableRow key={item.id} className={critical ? "bg-red-50" : ""}>
+                          <TableCell className="font-medium">{stop?.stop_id || "-"}</TableCell>
+                          <TableCell>{stop?.greek_name || "-"}</TableCell>
+                          <TableCell>{stop?.english_name || "-"}</TableCell>
+                          <TableCell>{template?.sticker_name_category || "-"}</TableCell>
+                          <TableCell>
+                            {shelterType ? `${shelterType.shelter_type_id} - ${shelterType.description}` : "-"}
+                          </TableCell>
+                          <TableCell>
+                            {stop?.current_planned_installation_date || "-"}
+                          </TableCell>
+                          <TableCell>
+                            {order ? (
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="p-0 h-auto"
+                                onClick={() => handleOpenReceiptDialog(order.id)}
+                              >
+                                #{order.id.slice(0, 8)}
+                              </Button>
+                            ) : "-"}
+                          </TableCell>
+                          <TableCell>
+                            {critical && (
+                              <div className="flex items-center gap-1">
+                                <AlertTriangle className="w-5 h-5 text-red-600" />
+                                <span className="text-xs text-red-600 font-semibold">Critical</span>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
