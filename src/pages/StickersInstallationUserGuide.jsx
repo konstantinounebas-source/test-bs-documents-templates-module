@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, BookOpen, Settings, Database, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, BookOpen, Settings, Database, TrendingUp, Download, Loader2 } from "lucide-react";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 export default function StickersInstallationUserGuide() {
   const [activeTab, setActiveTab] = useState("overview");
