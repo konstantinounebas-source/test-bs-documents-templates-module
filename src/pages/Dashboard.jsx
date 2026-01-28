@@ -67,43 +67,50 @@ export default function DashboardPage() {
     return stopStickers.some(item => ["Ordered", "Received", "Installed"].includes(item.status));
   });
 
-  // 5. Παραγγελίες με warning (critical based on date)
-  const checkOrderCritical = (order) => {
-    const lines = orderLines.filter(line => line.order_id === order.id);
-    return lines.some(line => {
-      const stickerItem = stickerItems.find(item => item.id === line.sticker_item_id);
-      if (!stickerItem) return false;
-      const stop = stops.find(s => s.id === stickerItem.stop_id);
-      if (!stop?.current_planned_installation_date) return false;
-      
-      const template = stickerTemplates.find(t => t.id === stickerItem.sticker_template_id);
-      if (!template) return false;
-      
-      const plannedDate = new Date(stop.current_planned_installation_date);
-      const daysBeforeNeeded = template.days_before_installation_to_receive || 7;
-      const neededByDate = new Date(plannedDate);
-      neededByDate.setDate(neededByDate.getDate() - daysBeforeNeeded);
-      
-      const estimatedDeliveryDays = template.estimated_delivery_days || 10;
-      const orderDate = new Date(order.order_date);
-      const estimatedReceiptDate = new Date(orderDate);
-      estimatedReceiptDate.setDate(estimatedReceiptDate.getDate() + estimatedDeliveryDays);
-      
-      return estimatedReceiptDate > neededByDate;
-    });
-  };
-
-  const ordersWithWarning = orders.filter(order => 
-    order.status !== "Closed" && checkOrderCritical(order)
-  );
+  // 5. Αυτοκόλλητα που είναι παραγγελμένα και ενδέχεται να μην παραληφθούν εγκαίρως
+  const stickersAtRisk = stickerItems.filter(item => {
+    if (item.status !== "Ordered") return false;
+    
+    const stop = stops.find(s => s.id === item.stop_id);
+    if (!stop?.current_planned_installation_date) return false;
+    
+    const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+    if (!template) return false;
+    
+    const plannedDate = new Date(stop.current_planned_installation_date);
+    const daysBeforeNeeded = template.days_before_installation_to_receive || 7;
+    const neededByDate = new Date(plannedDate);
+    neededByDate.setDate(neededByDate.getDate() - daysBeforeNeeded);
+    
+    // Check if we're past the needed date and still not received
+    return new Date() > neededByDate;
+  });
 
   // 6. Πόσα αυτοκόλλητα έχουν παραγγελθεί πάνω από μία φορά
   const stickersOrderedMultipleTimes = stickerItems.filter(item => {
     return (item.total_ordered_quantity || 0) > 1;
   });
 
-  // 7. Στάσεις με εγκατεστημένα στέγαστρα αλλά όχι όλα τα αυτοκόλλητα (ίδιο με critical)
-  const sheltersInstalledNotAllStickers = criticalStops.length;
+  // 7. Στάσεις εγκατεστημένες - υπολειπόμενα αυτοκόλλητα ανά κατηγορία
+  const installedStopsWithRemainingStickers = stops.filter(stop => {
+    if (!stop.shelter_installed) return false;
+    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
+    if (stopStickers.length === 0) return false;
+    return stopStickers.some(item => item.status !== "Installed");
+  });
+
+  const remainingStickersByCategory = {};
+  installedStopsWithRemainingStickers.forEach(stop => {
+    const stopStickers = stickerItems.filter(item => 
+      item.stop_id === stop.id && item.status !== "Installed"
+    );
+    stopStickers.forEach(item => {
+      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+      const category = template?.sticker_name_category || "Unknown";
+      if (!remainingStickersByCategory[category]) remainingStickersByCategory[category] = 0;
+      remainingStickersByCategory[category]++;
+    });
+  });
 
   // 8. Αυτοκόλλητα installed ανά κατηγορία (sticker template)
   const installedStickersByCategory = stickerItems
@@ -165,7 +172,7 @@ export default function DashboardPage() {
         <p className="text-gray-600">Πλήρης επισκόπηση στάσεων και αυτοκόλλητων</p>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Row 1 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('total')}>
           <CardContent className="pt-6">
@@ -184,7 +191,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Στάσεις χωρίς Αυτοκόλλητα</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">Χωρίς Δημιουργημένα Stickers</p>
                 <p className="text-3xl font-bold text-gray-600">{stopsWithoutStickers.length}</p>
               </div>
               <XCircle className="w-10 h-10 text-gray-600" />
@@ -196,38 +203,54 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Critical - Στέγαστρα OK, Stickers ΌΧΙ</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">Στέγαστρα Installed - Stickers Pending</p>
                 <p className="text-3xl font-bold text-red-600">{criticalStops.length}</p>
               </div>
               <AlertTriangle className="w-10 h-10 text-red-600" />
             </div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('ordered')}>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('atrisk')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Στάσεις με Παραγγελθέντα Stickers</p>
-                <p className="text-3xl font-bold text-green-600">{stopsWithOrderedStickers.length}</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">Stickers σε Κίνδυνο Καθυστέρησης</p>
+                <p className="text-3xl font-bold text-orange-600">{stickersAtRisk.length}</p>
               </div>
-              <ShoppingCart className="w-10 h-10 text-green-600" />
+              <AlertTriangle className="w-10 h-10 text-orange-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Second Row of Cards */}
+      {/* Summary Cards - Row 2 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('warnings')}>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('remaining')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Παραγγελίες με Καθυστέρηση</p>
-                <p className="text-3xl font-bold text-orange-600">{ordersWithWarning.length}</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">Υπολειπόμενα Stickers (Installed Stops)</p>
+                <p className="text-3xl font-bold text-purple-600">
+                  {Object.values(remainingStickersByCategory).reduce((sum, count) => sum + count, 0)}
+                </p>
               </div>
-              <AlertTriangle className="w-10 h-10 text-orange-600" />
+              <Building2 className="w-10 h-10 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed')}>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">Εγκατεστημένα Stickers</p>
+                <p className="text-3xl font-bold text-green-600">
+                  {Object.values(installedStickersByCategory).reduce((sum, count) => sum + count, 0)}
+                </p>
+              </div>
+              <CheckCircle className="w-10 h-10 text-green-600" />
             </div>
           </CardContent>
         </Card>
@@ -237,253 +260,33 @@ export default function DashboardPage() {
               <div>
                 <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
                 <p className="text-sm font-medium text-gray-700 mb-1">Stickers με Πολλαπλές Παραγγελίες</p>
-                <p className="text-3xl font-bold text-purple-600">{stickersOrderedMultipleTimes.length}</p>
+                <p className="text-3xl font-bold text-blue-500">{stickersOrderedMultipleTimes.length}</p>
               </div>
-              <Repeat className="w-10 h-10 text-purple-600" />
+              <Repeat className="w-10 h-10 text-blue-500" />
             </div>
           </CardContent>
         </Card>
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('shelters')}>
+        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('ordered')}>
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Στέγαστρα Installed - Stickers Missing</p>
-                <p className="text-3xl font-bold text-red-600">{sheltersInstalledNotAllStickers}</p>
+                <p className="text-sm font-medium text-gray-700 mb-1">Στάσεις με Παραγγελθέντα Stickers</p>
+                <p className="text-3xl font-bold text-teal-600">{stopsWithOrderedStickers.length}</p>
               </div>
-              <Building2 className="w-10 h-10 text-red-600" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setActiveDialog('installed')}>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-gray-500 mb-1">Κλικ για λεπτομέρειες</p>
-                <p className="text-sm font-medium text-gray-700 mb-1">Εγκατεστημένα Αυτοκόλλητα</p>
-                <p className="text-3xl font-bold text-green-600">
-                  {Object.values(installedStickersByCategory).reduce((sum, count) => sum + count, 0)}
-                </p>
-              </div>
-              <CheckCircle className="w-10 h-10 text-green-600" />
+              <ShoppingCart className="w-10 h-10 text-teal-600" />
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Critical Stops */}
-      <Card>
-        <CardHeader className="bg-red-50">
-          <CardTitle className="flex items-center gap-2 text-red-800">
-            <AlertTriangle className="w-5 h-5" />
-            Critical Stops - Στέγαστρα Εγκατεστημένα αλλά όχι όλα τα Αυτοκόλλητα
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {criticalStops.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">Δεν υπάρχουν critical στάσεις</p>
-          ) : (
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Stop ID</TableHead>
-                    <TableHead>English Name</TableHead>
-                    <TableHead>Greek Name</TableHead>
-                    <TableHead>Planned Date</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {criticalStops.map(stop => (
-                    <TableRow key={stop.id}>
-                      <TableCell className="font-medium">{stop.stop_id}</TableCell>
-                      <TableCell>{stop.english_name}</TableCell>
-                      <TableCell>{stop.greek_name}</TableCell>
-                      <TableCell>{stop.current_planned_installation_date || "-"}</TableCell>
-                      <TableCell>
-                        <Link to={createPageUrl("Stops")}>
-                          <Badge className="bg-blue-600 hover:bg-blue-700 cursor-pointer">View</Badge>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Στάσεις χωρίς αυτοκόλλητα */}
-      <Card>
-        <CardHeader className="bg-gray-50">
-          <CardTitle className="flex items-center gap-2 text-gray-800">
-            <XCircle className="w-5 h-5" />
-            Στάσεις χωρίς Δημιουργημένα Αυτοκόλλητα ({stopsWithoutStickers.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {stopsWithoutStickers.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">Όλες οι στάσεις έχουν αυτοκόλλητα</p>
-          ) : (
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Stop ID</TableHead>
-                    <TableHead>English Name</TableHead>
-                    <TableHead>Greek Name</TableHead>
-                    <TableHead>Shelter Type</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {stopsWithoutStickers.slice(0, 20).map(stop => (
-                    <TableRow key={stop.id}>
-                      <TableCell className="font-medium">{stop.stop_id}</TableCell>
-                      <TableCell>{stop.english_name}</TableCell>
-                      <TableCell>{stop.greek_name}</TableCell>
-                      <TableCell>{stop.shelter_type_approved_id || "-"}</TableCell>
-                      <TableCell>
-                        <Link to={createPageUrl("Stops")}>
-                          <Badge className="bg-blue-600 hover:bg-blue-700 cursor-pointer">View</Badge>
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {stopsWithoutStickers.length > 20 && (
-                <div className="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-t">
-                  Showing 20 of {stopsWithoutStickers.length} stops. <Link to={createPageUrl("Stops")} className="text-blue-600 hover:underline">View all</Link>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Παραγγελίες με Warning */}
-        <Card>
-          <CardHeader className="bg-orange-50">
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <AlertTriangle className="w-5 h-5" />
-              Παραγγελίες με Warning ({ordersWithWarning.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {ordersWithWarning.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">Δεν υπάρχουν παραγγελίες με warning</p>
-            ) : (
-              <div className="border rounded-lg">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order ID</TableHead>
-                      <TableHead>Vendor</TableHead>
-                      <TableHead>Order Date</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ordersWithWarning.map(order => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">{order.order_id}</TableCell>
-                        <TableCell>{order.vendor}</TableCell>
-                        <TableCell>{order.order_date}</TableCell>
-                        <TableCell>
-                          <Badge variant="destructive">Warning</Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Αυτοκόλλητα με Πολλαπλές Παραγγελίες */}
-        <Card>
-          <CardHeader className="bg-purple-50">
-            <CardTitle className="flex items-center gap-2 text-purple-800">
-              <Repeat className="w-5 h-5" />
-              Πολλαπλές Παραγγελίες ({stickersOrderedMultipleTimes.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {stickersOrderedMultipleTimes.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">Δεν υπάρχουν αυτοκόλλητα με πολλαπλές παραγγελίες</p>
-            ) : (
-              <div className="border rounded-lg">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Stop ID</TableHead>
-                      <TableHead>Template</TableHead>
-                      <TableHead>Times Ordered</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {stickersOrderedMultipleTimes.slice(0, 15).map(item => (
-                      <TableRow key={item.id}>
-                        <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
-                        <TableCell>{getTemplateDisplay(item)}</TableCell>
-                        <TableCell>
-                          <Badge className="bg-purple-100 text-purple-800">
-                            {item.total_ordered_quantity || 0}x
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{item.status}</Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                {stickersOrderedMultipleTimes.length > 15 && (
-                  <div className="px-4 py-3 bg-gray-50 text-sm text-gray-600 border-t">
-                    Showing 15 of {stickersOrderedMultipleTimes.length} items
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Installed Stickers ανά Κατηγορία */}
-      <Card>
-        <CardHeader className="bg-green-50">
-          <CardTitle className="flex items-center gap-2 text-green-800">
-            <CheckCircle className="w-5 h-5" />
-            Εγκατεστημένα Αυτοκόλλητα ανά Κατηγορία
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {Object.keys(installedStickersByCategory).length === 0 ? (
-            <p className="text-center text-gray-500 py-8">Δεν υπάρχουν εγκατεστημένα αυτοκόλλητα</p>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {Object.entries(installedStickersByCategory)
-                .sort((a, b) => b[1] - a[1])
-                .map(([category, count]) => (
-                  <Card key={category}>
-                    <CardContent className="pt-6">
-                      <div className="text-center">
-                        <p className="text-sm text-gray-600 mb-1">{category}</p>
-                        <p className="text-2xl font-bold text-green-600">{count}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+
+
 
       {/* Dialogs */}
       <Dialog open={activeDialog === 'total'} onOpenChange={() => setActiveDialog(null)}>
@@ -647,41 +450,126 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={activeDialog === 'warnings'} onOpenChange={() => setActiveDialog(null)}>
+      <Dialog open={activeDialog === 'atrisk'} onOpenChange={() => setActiveDialog(null)}>
         <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Παραγγελίες με Καθυστέρηση - Ενδέχεται να μην παραληφθούν εγκαίρως ({ordersWithWarning.length})</DialogTitle>
+            <DialogTitle>Stickers σε Κίνδυνο Καθυστέρησης - Παραγγελθέντα αλλά μη Παραληφθέντα ({stickersAtRisk.length})</DialogTitle>
           </DialogHeader>
           <Button onClick={() => {
-            const data = ordersWithWarning.map(o => ({
-              'Order ID': o.order_id,
-              'Vendor': o.vendor,
-              'Order Date': o.order_date,
-              'Status': o.status,
-              'Comments': o.comments || '-'
-            }));
-            exportToExcel(data, 'orders-with-warnings');
+            const data = stickersAtRisk.map(item => {
+              const stop = stops.find(s => s.id === item.stop_id);
+              const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+              return {
+                'Stop ID': stop?.stop_id || '-',
+                'English Name': stop?.english_name || '-',
+                'Greek Name': stop?.greek_name || '-',
+                'Sticker Type': template?.sticker_name_category || '-',
+                'Status': item.status,
+                'Planned Date': stop?.current_planned_installation_date || '-'
+              };
+            });
+            exportToExcel(data, 'stickers-at-risk');
           }} className="mb-4">Export to Excel</Button>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Vendor</TableHead>
-                <TableHead>Order Date</TableHead>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>English Name</TableHead>
+                <TableHead>Greek Name</TableHead>
+                <TableHead>Sticker Type</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Comments</TableHead>
+                <TableHead>Planned Date</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {ordersWithWarning.map(order => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.order_id}</TableCell>
-                  <TableCell>{order.vendor}</TableCell>
-                  <TableCell>{order.order_date}</TableCell>
-                  <TableCell><Badge variant="destructive">Warning</Badge></TableCell>
-                  <TableCell className="text-sm">{order.comments || '-'}</TableCell>
-                </TableRow>
+              {stickersAtRisk.map(item => {
+                const stop = stops.find(s => s.id === item.stop_id);
+                const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+                return (
+                  <TableRow key={item.id} className="bg-orange-50">
+                    <TableCell className="font-medium">{stop?.stop_id || '-'}</TableCell>
+                    <TableCell>{stop?.english_name || '-'}</TableCell>
+                    <TableCell>{stop?.greek_name || '-'}</TableCell>
+                    <TableCell>{template?.sticker_name_category || '-'}</TableCell>
+                    <TableCell><Badge className="bg-orange-600">{item.status}</Badge></TableCell>
+                    <TableCell>{stop?.current_planned_installation_date || '-'}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'remaining'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Υπολειπόμενα Stickers σε Εγκατεστημένες Στάσεις - Ανά Κατηγορία</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const remainingItems = [];
+            installedStopsWithRemainingStickers.forEach(stop => {
+              const stopStickers = stickerItems.filter(item => 
+                item.stop_id === stop.id && item.status !== "Installed"
+              );
+              stopStickers.forEach(item => {
+                const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+                remainingItems.push({
+                  'Stop ID': stop.stop_id,
+                  'English Name': stop.english_name,
+                  'Greek Name': stop.greek_name,
+                  'Sticker Type': template?.sticker_name_category || '-',
+                  'Status': item.status,
+                  'Planned Date': stop.current_planned_installation_date || '-'
+                });
+              });
+            });
+            exportToExcel(remainingItems, 'remaining-stickers-installed-stops');
+          }} className="mb-4">Export to Excel</Button>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            {Object.entries(remainingStickersByCategory)
+              .sort((a, b) => b[1] - a[1])
+              .map(([category, count]) => (
+                <Card key={category}>
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-1">{category}</p>
+                      <p className="text-2xl font-bold text-purple-600">{count}</p>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>English Name</TableHead>
+                <TableHead>Greek Name</TableHead>
+                <TableHead>Sticker Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Planned Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {installedStopsWithRemainingStickers.flatMap(stop => {
+                const stopStickers = stickerItems.filter(item => 
+                  item.stop_id === stop.id && item.status !== "Installed"
+                );
+                return stopStickers.map(item => {
+                  const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+                  return (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{stop.stop_id}</TableCell>
+                      <TableCell>{stop.english_name}</TableCell>
+                      <TableCell>{stop.greek_name}</TableCell>
+                      <TableCell>{template?.sticker_name_category || '-'}</TableCell>
+                      <TableCell><Badge variant="outline">{item.status}</Badge></TableCell>
+                      <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
+                    </TableRow>
+                  );
+                });
+              })}
             </TableBody>
           </Table>
         </DialogContent>
@@ -731,45 +619,7 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={activeDialog === 'shelters'} onOpenChange={() => setActiveDialog(null)}>
-        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Στέγαστρα Installed - Stickers Missing ({sheltersInstalledNotAllStickers})</DialogTitle>
-          </DialogHeader>
-          <Button onClick={() => {
-            const data = criticalStops.map(s => ({
-              'Stop ID': s.stop_id,
-              'English Name': s.english_name,
-              'Greek Name': s.greek_name,
-              'Shelter Type': getShelterTypeDisplay(s.shelter_type_approved_id),
-              'Planned Date': s.current_planned_installation_date || '-'
-            }));
-            exportToExcel(data, 'shelters-installed-stickers-missing');
-          }} className="mb-4">Export to Excel</Button>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Stop ID</TableHead>
-                <TableHead>English Name</TableHead>
-                <TableHead>Greek Name</TableHead>
-                <TableHead>Shelter Type</TableHead>
-                <TableHead>Planned Date</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {criticalStops.map(stop => (
-                <TableRow key={stop.id}>
-                  <TableCell className="font-medium">{stop.stop_id}</TableCell>
-                  <TableCell>{stop.english_name}</TableCell>
-                  <TableCell>{stop.greek_name}</TableCell>
-                  <TableCell>{getShelterTypeDisplay(stop.shelter_type_approved_id)}</TableCell>
-                  <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </DialogContent>
-      </Dialog>
+
 
       <Dialog open={activeDialog === 'installed'} onOpenChange={() => setActiveDialog(null)}>
         <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
