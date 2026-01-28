@@ -37,7 +37,7 @@ export default function StockMovementsPage() {
   const [showEditDialog, setShowEditDialog] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState("100");
+  const [itemsPerPage, setItemsPerPage] = useState("20");
   const [isFixingCosts, setIsFixingCosts] = useState(false);
   const [totalMovementsCount, setTotalMovementsCount] = useState(0);
 
