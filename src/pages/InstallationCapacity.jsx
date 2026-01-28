@@ -24,7 +24,25 @@ export default function InstallationCapacityPage() {
 
   useEffect(() => {
     loadData();
+    // Load selected types from localStorage
+    const saved = localStorage.getItem('installationCapacity_selectedTypes');
+    if (saved) {
+      try {
+        setSelectedTypes(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load saved selection', e);
+      }
+    }
   }, []);
+
+  useEffect(() => {
+    // Save selected types to localStorage whenever they change
+    if (selectedTypes.length > 0) {
+      localStorage.setItem('installationCapacity_selectedTypes', JSON.stringify(selectedTypes));
+    } else {
+      localStorage.removeItem('installationCapacity_selectedTypes');
+    }
+  }, [selectedTypes]);
 
   const loadData = async () => {
     setIsLoading(true);
