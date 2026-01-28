@@ -24,6 +24,8 @@ export default function OrdersManagementPage() {
     reason: "Initial"
   });
   const [viewOrderId, setViewOrderId] = useState(null);
+  const [charLimitWarnings, setCharLimitWarnings] = useState([]);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -50,6 +52,21 @@ export default function OrdersManagementPage() {
   const { data: orderLines = [] } = useQuery({
     queryKey: ['orderLines'],
     queryFn: () => base44.entities.OrderLine.list()
+  });
+
+  const { data: shelterTypes = [] } = useQuery({
+    queryKey: ['shelterTypes'],
+    queryFn: () => base44.entities.ShelterType.list()
+  });
+
+  const { data: receipts = [] } = useQuery({
+    queryKey: ['receipts'],
+    queryFn: () => base44.entities.Receipt.list()
+  });
+
+  const { data: receiptLines = [] } = useQuery({
+    queryKey: ['receiptLines'],
+    queryFn: () => base44.entities.ReceiptLine.list()
   });
 
   const createOrderMutation = useMutation({
@@ -197,17 +214,71 @@ export default function OrdersManagementPage() {
     setCreateDialogOpen(true);
   };
 
+  const checkCharacterLimits = () => {
+    const selectedItemIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
+    const warnings = [];
+
+    selectedItemIds.forEach(itemId => {
+      const item = stickerItems.find(i => i.id === itemId);
+      if (!item) return;
+
+      const stop = stops.find(s => s.id === item.stop_id);
+      if (!stop) return;
+
+      const shelterType = shelterTypes.find(st => st.id === stop.shelter_type_approved_id);
+      if (!shelterType) return;
+
+      const greekMaxChars = shelterType.greek_name_max_chars || 0;
+      const englishMaxChars = shelterType.english_name_max_chars || 0;
+
+      const greekLength = (stop.greek_name || "").length;
+      const englishLength = (stop.english_name || "").length;
+
+      if (greekLength > greekMaxChars || englishLength > englishMaxChars) {
+        warnings.push({
+          stopId: stop.stop_id,
+          greekName: stop.greek_name,
+          englishName: stop.english_name,
+          greekLength,
+          englishLength,
+          greekMaxChars,
+          englishMaxChars,
+          greekExceeds: greekLength > greekMaxChars,
+          englishExceeds: englishLength > englishMaxChars
+        });
+      }
+    });
+
+    return warnings;
+  };
+
   const submitOrder = () => {
     if (!orderFormData.vendor || !orderFormData.order_date) {
       alert("Please fill in all required fields");
       return;
     }
+
+    // Check character limits
+    const warnings = checkCharacterLimits();
+    if (warnings.length > 0) {
+      setCharLimitWarnings(warnings);
+      setConfirmDialogOpen(true);
+      return;
+    }
+
+    // No warnings, proceed with order creation
+    proceedWithOrderCreation();
+  };
+
+  const proceedWithOrderCreation = () => {
     createOrderMutation.mutate({
       vendor: orderFormData.vendor,
       order_date: orderFormData.order_date,
       reason: orderFormData.reason,
       status: "Open"
     });
+    setConfirmDialogOpen(false);
+    setCharLimitWarnings([]);
   };
 
   const getOrderStats = (orderId) => {
@@ -464,6 +535,103 @@ export default function OrdersManagementPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Character Limit Warning Dialog */}
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-600">
+              <AlertTriangle className="w-5 h-5" />
+              Προειδοποίηση Ορίου Χαρακτήρων
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-gray-700">
+              Τα παρακάτω αυτοκόλλητα υπερβαίνουν το επιτρεπόμενο όριο χαρακτήρων για το στέγαστρο τους:
+            </p>
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Stop ID</TableHead>
+                    <TableHead>Ελληνικό Όνομα</TableHead>
+                    <TableHead>English Name</TableHead>
+                    <TableHead>Χαρακτήρες</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {charLimitWarnings.map((warning, index) => (
+                    <TableRow key={index} className="bg-orange-50">
+                      <TableCell className="font-medium">{warning.stopId}</TableCell>
+                      <TableCell>
+                        <div>
+                          <div className={warning.greekExceeds ? "text-red-600 font-semibold" : ""}>
+                            {warning.greekName}
+                          </div>
+                          {warning.greekExceeds && (
+                            <div className="text-xs text-red-600">
+                              {warning.greekLength}/{warning.greekMaxChars} χαρακτήρες 
+                              (υπέρβαση: {warning.greekLength - warning.greekMaxChars})
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className={warning.englishExceeds ? "text-red-600 font-semibold" : ""}>
+                            {warning.englishName}
+                          </div>
+                          {warning.englishExceeds && (
+                            <div className="text-xs text-red-600">
+                              {warning.englishLength}/{warning.englishMaxChars} chars 
+                              (excess: {warning.englishLength - warning.englishMaxChars})
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          {warning.greekExceeds && (
+                            <Badge className="bg-red-100 text-red-800 block w-fit">
+                              Ελληνικά: +{warning.greekLength - warning.greekMaxChars}
+                            </Badge>
+                          )}
+                          {warning.englishExceeds && (
+                            <Badge className="bg-red-100 text-red-800 block w-fit">
+                              English: +{warning.englishLength - warning.englishMaxChars}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-sm text-yellow-800">
+                <strong>Σημείωση:</strong> Τα ονόματα αυτά μπορεί να μην εκτυπωθούν σωστά στα αυτοκόλλητα λόγω περιορισμών του στεγάστρου. 
+                Παρακαλώ επιβεβαιώστε αν επιθυμείτε να συνεχίσετε με την παραγγελία.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setConfirmDialogOpen(false);
+              setCharLimitWarnings([]);
+            }}>
+              Ακύρωση
+            </Button>
+            <Button 
+              onClick={proceedWithOrderCreation}
+              className="bg-orange-600 hover:bg-orange-700"
+              disabled={createOrderMutation.isPending}
+            >
+              {createOrderMutation.isPending ? "Δημιουργία..." : "Επιβεβαίωση & Δημιουργία Παραγγελίας"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* View Order Dialog */}
       {viewOrderId && (
         <ViewOrderDialog
@@ -475,15 +643,20 @@ export default function OrdersManagementPage() {
           stops={stops}
           stickerTemplates={stickerTemplates}
           isCriticalStop={isCriticalStop}
+          receiptLines={receiptLines}
         />
       )}
     </div>
   );
 }
 
-function ViewOrderDialog({ orderId, onClose, orders, orderLines, stickerItems, stops, stickerTemplates, isCriticalStop }) {
+function ViewOrderDialog({ orderId, onClose, orders, orderLines, stickerItems, stops, stickerTemplates, isCriticalStop, receiptLines }) {
   const order = orders.find(o => o.id === orderId);
   const lines = orderLines.filter(l => l.order_id === orderId);
+
+  const isItemReceived = (itemId) => {
+    return receiptLines.some(rl => rl.sticker_item_id === itemId);
+  };
 
   if (!order) return null;
 
@@ -518,6 +691,7 @@ function ViewOrderDialog({ orderId, onClose, orders, orderLines, stickerItems, s
                   <TableHead>English Name</TableHead>
                   <TableHead>Sticker Name/Category</TableHead>
                   <TableHead>Quantity</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Critical</TableHead>
                 </TableRow>
               </TableHeader>
@@ -527,14 +701,22 @@ function ViewOrderDialog({ orderId, onClose, orders, orderLines, stickerItems, s
                    const stop = stops.find(s => s.id === item?.stop_id);
                    const template = stickerTemplates.find(t => t.id === item?.sticker_template_id);
                    const critical = item && isCriticalStop(item.stop_id, item.id);
+                   const received = isItemReceived(line.sticker_item_id);
 
                   return (
-                    <TableRow key={line.id} className={critical ? "bg-red-50" : ""}>
+                    <TableRow key={line.id} className={critical ? "bg-red-50" : received ? "bg-green-50" : ""}>
                       <TableCell className="font-medium">{stop?.stop_id || "-"}</TableCell>
                       <TableCell>{stop?.greek_name || "-"}</TableCell>
                       <TableCell>{stop?.english_name || "-"}</TableCell>
                       <TableCell>{template?.sticker_name_category || "-"}</TableCell>
                       <TableCell>{line.ordered_quantity}</TableCell>
+                      <TableCell>
+                        {received ? (
+                          <Badge className="bg-green-600">Παραλήφθηκε</Badge>
+                        ) : (
+                          <Badge variant="outline">Εκκρεμεί</Badge>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {critical && (
                           <AlertTriangle className="w-5 h-5 text-red-600" />
