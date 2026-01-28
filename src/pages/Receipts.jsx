@@ -113,7 +113,11 @@ export default function ReceiptsPage() {
     const lines = orderLines.filter(l => l.order_id === orderId);
     const initialSelection = {};
     lines.forEach(line => {
-      initialSelection[line.sticker_item_id] = true;
+      const item = stickerItems.find(i => i.id === line.sticker_item_id);
+      // Only select items that are still "Ordered" (not received yet)
+      if (item?.status === "Ordered") {
+        initialSelection[line.sticker_item_id] = true;
+      }
     });
     setSelectedItems(initialSelection);
     setReceiptDialogOpen(true);
@@ -525,24 +529,31 @@ export default function ReceiptsPage() {
                       const stop = stops.find(s => s.id === item?.stop_id);
                       const template = stickerTemplates.find(t => t.id === item?.sticker_template_id);
                       const critical = item && isCriticalItem(item.stop_id, item.id);
+                      const alreadyReceived = item?.status !== "Ordered";
 
                       return (
-                        <TableRow key={line.id} className={critical ? "bg-red-50" : ""}>
+                        <TableRow key={line.id} className={critical ? "bg-red-50" : alreadyReceived ? "bg-gray-100 opacity-50" : ""}>
                           <TableCell>
                             <Checkbox
                               checked={selectedItems[line.sticker_item_id] || false}
                               onCheckedChange={() => toggleItemSelection(line.sticker_item_id)}
+                              disabled={alreadyReceived}
                             />
                           </TableCell>
                           <TableCell className="font-medium">{stop?.stop_id || "-"}</TableCell>
                           <TableCell>{stop?.greek_name || "-"}</TableCell>
                           <TableCell>{stop?.english_name || "-"}</TableCell>
-                          <TableCell>{template?.sticker_name_category || "-"}</TableCell>
+                          <TableCell>
+                            {template?.sticker_name_category || "-"}
+                            {alreadyReceived && (
+                              <Badge className="ml-2 bg-green-100 text-green-800">Received</Badge>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <Badge variant="outline">{line.ordered_quantity}</Badge>
                           </TableCell>
                           <TableCell>
-                            {critical && (
+                            {critical && !alreadyReceived && (
                               <AlertTriangle className="w-5 h-5 text-red-600" />
                             )}
                           </TableCell>
