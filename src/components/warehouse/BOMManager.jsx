@@ -13,7 +13,7 @@ import ProductCombobox from "./ProductCombobox";
 export default function BOMManager({ busStopTypes, components, products, selectedType, onComponentsUpdated }) {
   const [currentTypeId, setCurrentTypeId] = useState(selectedType?.id || '');
   const [typeComponents, setTypeComponents] = useState([]);
-  const [isSaving, setIsSaving] = useState(false);
+  const [savingIds, setSavingIds] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [teams, setTeams] = useState([]);
