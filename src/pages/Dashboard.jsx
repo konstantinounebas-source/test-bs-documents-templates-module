@@ -484,6 +484,351 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialogs */}
+      <Dialog open={activeDialog === 'total'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Όλες οι Στάσεις ({totalStops})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = stops.map(s => ({
+              'Stop ID': s.stop_id,
+              'English Name': s.english_name,
+              'Greek Name': s.greek_name,
+              'Shelter Type': getShelterTypeDisplay(s.shelter_type_approved_id),
+              'Planned Date': s.current_planned_installation_date || '-',
+              'Shelter Installed': s.shelter_installed ? 'Yes' : 'No'
+            }));
+            exportToExcel(data, 'all-stops');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>English Name</TableHead>
+                <TableHead>Greek Name</TableHead>
+                <TableHead>Shelter Type</TableHead>
+                <TableHead>Planned Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stops.map(stop => (
+                <TableRow key={stop.id}>
+                  <TableCell className="font-medium">{stop.stop_id}</TableCell>
+                  <TableCell>{stop.english_name}</TableCell>
+                  <TableCell>{stop.greek_name}</TableCell>
+                  <TableCell>{getShelterTypeDisplay(stop.shelter_type_approved_id)}</TableCell>
+                  <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'without'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Στάσεις χωρίς Αυτοκόλλητα ({stopsWithoutStickers.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = stopsWithoutStickers.map(s => ({
+              'Stop ID': s.stop_id,
+              'English Name': s.english_name,
+              'Greek Name': s.greek_name,
+              'Shelter Type': getShelterTypeDisplay(s.shelter_type_approved_id),
+              'Planned Date': s.current_planned_installation_date || '-'
+            }));
+            exportToExcel(data, 'stops-without-stickers');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>English Name</TableHead>
+                <TableHead>Greek Name</TableHead>
+                <TableHead>Shelter Type</TableHead>
+                <TableHead>Planned Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stopsWithoutStickers.map(stop => (
+                <TableRow key={stop.id}>
+                  <TableCell className="font-medium">{stop.stop_id}</TableCell>
+                  <TableCell>{stop.english_name}</TableCell>
+                  <TableCell>{stop.greek_name}</TableCell>
+                  <TableCell>{getShelterTypeDisplay(stop.shelter_type_approved_id)}</TableCell>
+                  <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'critical'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Critical Στάσεις - Στέγαστρα Installed αλλά Stickers Missing ({criticalStops.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = criticalStops.map(s => ({
+              'Stop ID': s.stop_id,
+              'English Name': s.english_name,
+              'Greek Name': s.greek_name,
+              'Shelter Type': getShelterTypeDisplay(s.shelter_type_approved_id),
+              'Planned Date': s.current_planned_installation_date || '-'
+            }));
+            exportToExcel(data, 'critical-stops');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>English Name</TableHead>
+                <TableHead>Greek Name</TableHead>
+                <TableHead>Shelter Type</TableHead>
+                <TableHead>Planned Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {criticalStops.map(stop => (
+                <TableRow key={stop.id}>
+                  <TableCell className="font-medium">{stop.stop_id}</TableCell>
+                  <TableCell>{stop.english_name}</TableCell>
+                  <TableCell>{stop.greek_name}</TableCell>
+                  <TableCell>{getShelterTypeDisplay(stop.shelter_type_approved_id)}</TableCell>
+                  <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'ordered'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Στάσεις με Παραγγελθέντα Stickers ({stopsWithOrderedStickers.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = stopsWithOrderedStickers.map(s => ({
+              'Stop ID': s.stop_id,
+              'English Name': s.english_name,
+              'Greek Name': s.greek_name,
+              'Shelter Type': getShelterTypeDisplay(s.shelter_type_approved_id),
+              'Planned Date': s.current_planned_installation_date || '-'
+            }));
+            exportToExcel(data, 'stops-with-ordered-stickers');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>English Name</TableHead>
+                <TableHead>Greek Name</TableHead>
+                <TableHead>Shelter Type</TableHead>
+                <TableHead>Planned Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stopsWithOrderedStickers.map(stop => (
+                <TableRow key={stop.id}>
+                  <TableCell className="font-medium">{stop.stop_id}</TableCell>
+                  <TableCell>{stop.english_name}</TableCell>
+                  <TableCell>{stop.greek_name}</TableCell>
+                  <TableCell>{getShelterTypeDisplay(stop.shelter_type_approved_id)}</TableCell>
+                  <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'warnings'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Παραγγελίες με Καθυστέρηση - Ενδέχεται να μην παραληφθούν εγκαίρως ({ordersWithWarning.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = ordersWithWarning.map(o => ({
+              'Order ID': o.order_id,
+              'Vendor': o.vendor,
+              'Order Date': o.order_date,
+              'Status': o.status,
+              'Comments': o.comments || '-'
+            }));
+            exportToExcel(data, 'orders-with-warnings');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Order ID</TableHead>
+                <TableHead>Vendor</TableHead>
+                <TableHead>Order Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Comments</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {ordersWithWarning.map(order => (
+                <TableRow key={order.id}>
+                  <TableCell className="font-medium">{order.order_id}</TableCell>
+                  <TableCell>{order.vendor}</TableCell>
+                  <TableCell>{order.order_date}</TableCell>
+                  <TableCell><Badge variant="destructive">Warning</Badge></TableCell>
+                  <TableCell className="text-sm">{order.comments || '-'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'multiple'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Stickers με Πολλαπλές Παραγγελίες ({stickersOrderedMultipleTimes.length})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = stickersOrderedMultipleTimes.map(item => ({
+              'Stop ID': getStopDisplay(item),
+              'Template': getTemplateDisplay(item),
+              'Times Ordered': item.total_ordered_quantity || 0,
+              'Status': item.status,
+              'Print Line 1': item.print_line_1,
+              'Print Line 2': item.print_line_2,
+              'Print Line 3': item.print_line_3
+            }));
+            exportToExcel(data, 'multiple-orders');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>Template</TableHead>
+                <TableHead>Times Ordered</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Print Lines</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stickersOrderedMultipleTimes.map(item => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
+                  <TableCell>{getTemplateDisplay(item)}</TableCell>
+                  <TableCell>
+                    <Badge className="bg-purple-100 text-purple-800">{item.total_ordered_quantity || 0}x</Badge>
+                  </TableCell>
+                  <TableCell><Badge variant="outline">{item.status}</Badge></TableCell>
+                  <TableCell className="text-sm">{item.print_line_1} / {item.print_line_2} / {item.print_line_3}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'shelters'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Στέγαστρα Installed - Stickers Missing ({sheltersInstalledNotAllStickers})</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const data = criticalStops.map(s => ({
+              'Stop ID': s.stop_id,
+              'English Name': s.english_name,
+              'Greek Name': s.greek_name,
+              'Shelter Type': getShelterTypeDisplay(s.shelter_type_approved_id),
+              'Planned Date': s.current_planned_installation_date || '-'
+            }));
+            exportToExcel(data, 'shelters-installed-stickers-missing');
+          }} className="mb-4">Export to Excel</Button>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>English Name</TableHead>
+                <TableHead>Greek Name</TableHead>
+                <TableHead>Shelter Type</TableHead>
+                <TableHead>Planned Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {criticalStops.map(stop => (
+                <TableRow key={stop.id}>
+                  <TableCell className="font-medium">{stop.stop_id}</TableCell>
+                  <TableCell>{stop.english_name}</TableCell>
+                  <TableCell>{stop.greek_name}</TableCell>
+                  <TableCell>{getShelterTypeDisplay(stop.shelter_type_approved_id)}</TableCell>
+                  <TableCell>{stop.current_planned_installation_date || '-'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={activeDialog === 'installed'} onOpenChange={() => setActiveDialog(null)}>
+        <DialogContent className="max-w-5xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Εγκατεστημένα Αυτοκόλλητα ανά Κατηγορία</DialogTitle>
+          </DialogHeader>
+          <Button onClick={() => {
+            const installedItems = stickerItems.filter(item => item.status === "Installed");
+            const data = installedItems.map(item => ({
+              'Stop ID': getStopDisplay(item),
+              'Template': getTemplateDisplay(item),
+              'Print Line 1': item.print_line_1,
+              'Print Line 2': item.print_line_2,
+              'Print Line 3': item.print_line_3,
+              'Installed Date': item.installed_date || '-',
+              'Installed By': item.installed_by || '-'
+            }));
+            exportToExcel(data, 'installed-stickers');
+          }} className="mb-4">Export to Excel</Button>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            {Object.entries(installedStickersByCategory)
+              .sort((a, b) => b[1] - a[1])
+              .map(([category, count]) => (
+                <Card key={category}>
+                  <CardContent className="pt-6">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-1">{category}</p>
+                      <p className="text-2xl font-bold text-green-600">{count}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Stop ID</TableHead>
+                <TableHead>Template</TableHead>
+                <TableHead>Print Lines</TableHead>
+                <TableHead>Installed Date</TableHead>
+                <TableHead>Installed By</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stickerItems
+                .filter(item => item.status === "Installed")
+                .map(item => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{getStopDisplay(item)}</TableCell>
+                    <TableCell>{getTemplateDisplay(item)}</TableCell>
+                    <TableCell className="text-sm">{item.print_line_1} / {item.print_line_2} / {item.print_line_3}</TableCell>
+                    <TableCell>{item.installed_date || '-'}</TableCell>
+                    <TableCell>{item.installed_by || '-'}</TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
