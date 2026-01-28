@@ -381,6 +381,7 @@ export default function StickersInstallationUserGuide() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }
