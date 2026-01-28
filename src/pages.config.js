@@ -105,6 +105,7 @@ import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
 import Dashboard from './pages/Dashboard';
+import StickersInstallationUserGuide from './pages/StickersInstallationUserGuide';
 import __Layout from './Layout.jsx';
 
 
@@ -167,6 +168,7 @@ export const PAGES = {
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
     "Dashboard": Dashboard,
+    "StickersInstallationUserGuide": StickersInstallationUserGuide,
 }
 
 export const pagesConfig = {
