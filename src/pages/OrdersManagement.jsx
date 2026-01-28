@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, ShoppingCart, Eye, Printer, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -388,8 +389,34 @@ export default function OrdersManagementPage() {
                           />
                         </TableCell>
                         <TableCell className="font-medium">{stop?.stop_id || "-"}</TableCell>
-                        <TableCell>{stop?.greek_name || "-"}</TableCell>
-                        <TableCell>{stop?.english_name || "-"}</TableCell>
+                        <TableCell>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="truncate max-w-[200px] cursor-help">
+                                  {stop?.greek_name || "-"}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs">{stop?.greek_name || "-"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
+                        <TableCell>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="truncate max-w-[200px] cursor-help">
+                                  {stop?.english_name || "-"}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs">{stop?.english_name || "-"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
                         <TableCell>{template?.sticker_name_category || "-"}</TableCell>
                         <TableCell>
                           <Badge className="bg-orange-100 text-orange-800">{item.status}</Badge>
@@ -706,8 +733,34 @@ function ViewOrderDialog({ orderId, onClose, orders, orderLines, stickerItems, s
                   return (
                     <TableRow key={line.id} className={critical ? "bg-red-50" : received ? "bg-green-50" : ""}>
                       <TableCell className="font-medium">{stop?.stop_id || "-"}</TableCell>
-                      <TableCell>{stop?.greek_name || "-"}</TableCell>
-                      <TableCell>{stop?.english_name || "-"}</TableCell>
+                      <TableCell>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="truncate max-w-[200px] cursor-help">
+                                {stop?.greek_name || "-"}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">{stop?.greek_name || "-"}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                      <TableCell>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="truncate max-w-[200px] cursor-help">
+                                {stop?.english_name || "-"}
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs">{stop?.english_name || "-"}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
                       <TableCell>{template?.sticker_name_category || "-"}</TableCell>
                       <TableCell>{line.ordered_quantity}</TableCell>
                       <TableCell>
