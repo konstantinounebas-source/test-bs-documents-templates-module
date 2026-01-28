@@ -6,19 +6,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, ShoppingCart, Eye, Printer, AlertTriangle } from "lucide-react";
+import { Plus, ShoppingCart, Eye, Printer, AlertTriangle, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 export default function OrdersManagementPage() {
   const [selectedItems, setSelectedItems] = useState({});
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilters, setCategoryFilters] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatuses, setFilterStatuses] = useState([]);
   const [orderFormData, setOrderFormData] = useState({
     vendor: "",
     order_date: new Date().toISOString().split('T')[0],
@@ -115,7 +118,7 @@ export default function OrdersManagementPage() {
       queryClient.invalidateQueries(['stickerItems']);
       setSelectedItems({});
       setCreateDialogOpen(false);
-      setCategoryFilter("all");
+      setCategoryFilters([]);
       setOrderFormData({
         vendor: "",
         order_date: new Date().toISOString().split('T')[0],
@@ -177,13 +180,30 @@ export default function OrdersManagementPage() {
     }).filter(Boolean)
   )).sort();
 
-  // Filter items by selected category
-  const filteredItems = categoryFilter === "all" 
-    ? availableItems 
-    : availableItems.filter(item => {
-        const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-        return template?.sticker_name_category === categoryFilter;
-      });
+  // Filter items by selected categories and search
+  const filteredItems = availableItems.filter(item => {
+    const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+    const { stop } = getStopInfo(item.id);
+    
+    const matchesCategory = categoryFilters.length === 0 || 
+      categoryFilters.includes(template?.sticker_name_category);
+    
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = !term || (
+      stop?.stop_id?.toLowerCase().includes(term) ||
+      stop?.greek_name?.toLowerCase().includes(term) ||
+      stop?.english_name?.toLowerCase().includes(term) ||
+      template?.sticker_name_category?.toLowerCase().includes(term)
+    );
+    
+    return matchesCategory && matchesSearch;
+  });
+
+  // Filter orders
+  const filteredOrders = orders.filter(order => {
+    const matchesStatus = filterStatuses.length === 0 || filterStatuses.includes(order.status);
+    return matchesStatus;
+  });
 
   const toggleItemSelection = (itemId) => {
     setSelectedItems(prev => ({
@@ -212,7 +232,7 @@ export default function OrdersManagementPage() {
       order_date: new Date().toISOString().split('T')[0],
       reason: "Initial"
     });
-    setCategoryFilter("all");
+    setCategoryFilters([]);
     setCreateDialogOpen(true);
   };
 
@@ -409,21 +429,25 @@ export default function OrdersManagementPage() {
             <p className="text-center text-gray-500 py-8">No sticker items need ordering</p>
           ) : (
             <>
-              <div className="mb-4">
-                <Label>Filter by Sticker Category</Label>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-64">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {stickerCategories.map(category => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="mb-4 space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search by Stop ID, Name, or Sticker Type..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600 mb-1">Sticker Categories</Label>
+                  <MultiSelect
+                    options={stickerCategories.map(cat => ({ value: cat, label: cat }))}
+                    selected={categoryFilters}
+                    onChange={setCategoryFilters}
+                    placeholder="All Categories"
+                  />
+                </div>
               </div>
               <div className="border rounded-lg">
                 <Table>
@@ -507,8 +531,22 @@ export default function OrdersManagementPage() {
           <CardTitle>Orders</CardTitle>
         </CardHeader>
         <CardContent>
-          {orders.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No orders created yet</p>
+          <div className="mb-4">
+            <Label className="text-xs text-gray-600 mb-1">Filter by Status</Label>
+            <MultiSelect
+              options={[
+                { value: "Open", label: "Open" },
+                { value: "Closed", label: "Closed" },
+                { value: "Cancelled", label: "Cancelled" }
+              ]}
+              selected={filterStatuses}
+              onChange={setFilterStatuses}
+              placeholder="All Statuses"
+              className="w-64"
+            />
+          </div>
+          {filteredOrders.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No orders found</p>
           ) : (
             <div className="border rounded-lg">
               <Table>
@@ -524,7 +562,7 @@ export default function OrdersManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.map((order) => {
+                  {filteredOrders.map((order) => {
                     const stats = getOrderStats(order.id);
                     return (
                       <TableRow key={order.id}>

@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Pencil, Download, Upload, ArrowUpDown, ArrowUp, ArrowDown, Eye, AlertCircle, AlertTriangle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import CreateEditStopDialog from "@/components/stickers/CreateEditStopDialog";
 import ImportStopsDialog from "@/components/stickers/ImportStopsDialog";
 import ViewStopDialog from "@/components/stickers/ViewStopDialog";
@@ -20,8 +22,9 @@ export default function StopsPage() {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedStop, setSelectedStop] = useState(null);
-  const [filterShelterType, setFilterShelterType] = useState("all");
-  const [filterInstalled, setFilterInstalled] = useState("all");
+  const [filterShelterTypes, setFilterShelterTypes] = useState([]);
+  const [filterInstalled, setFilterInstalled] = useState([]);
+  const [filterStickerStatus, setFilterStickerStatus] = useState([]);
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
   const queryClient = useQueryClient();
@@ -172,15 +175,23 @@ export default function StopsPage() {
       stop.greek_name?.toLowerCase().includes(term)
     );
 
-    const matchesShelterType = filterShelterType === "all" || 
-      stop.shelter_type_initial_id === filterShelterType ||
-      stop.shelter_type_approved_id === filterShelterType;
+    const matchesShelterType = filterShelterTypes.length === 0 || 
+      filterShelterTypes.includes(stop.shelter_type_initial_id) ||
+      filterShelterTypes.includes(stop.shelter_type_approved_id);
 
-    const matchesInstalled = filterInstalled === "all" ||
-      (filterInstalled === "yes" && stop.shelter_installed) ||
-      (filterInstalled === "no" && !stop.shelter_installed);
+    const matchesInstalled = filterInstalled.length === 0 ||
+      (filterInstalled.includes("yes") && stop.shelter_installed) ||
+      (filterInstalled.includes("no") && !stop.shelter_installed);
 
-    return matchesSearch && matchesShelterType && matchesInstalled;
+    const stickerCount = getStickerCounts(stop.id);
+    const matchesStickerStatus = filterStickerStatus.length === 0 ||
+      (filterStickerStatus.includes("needed") && stickerCount.needed > 0) ||
+      (filterStickerStatus.includes("ordered") && stickerCount.ordered > 0) ||
+      (filterStickerStatus.includes("received") && stickerCount.received > 0) ||
+      (filterStickerStatus.includes("installed") && stickerCount.installed > 0) ||
+      (filterStickerStatus.includes("none") && stickerCount.needed === 0 && stickerCount.ordered === 0 && stickerCount.received === 0 && stickerCount.installed === 0);
+
+    return matchesSearch && matchesShelterType && matchesInstalled && matchesStickerStatus;
   });
 
   const sortedStops = [...filteredStops].sort((a, b) => {
@@ -312,30 +323,46 @@ export default function StopsPage() {
                 className="pl-10"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Select value={filterShelterType} onValueChange={setFilterShelterType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by Shelter Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Shelter Types</SelectItem>
-                  {shelterTypes.filter(t => t.active).map(type => (
-                    <SelectItem key={type.id} value={type.id}>
-                      {type.shelter_type_id}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select value={filterInstalled} onValueChange={setFilterInstalled}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by Installation Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="yes">Installed</SelectItem>
-                  <SelectItem value="no">Not Installed</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs text-gray-600 mb-1">Shelter Types</Label>
+                <MultiSelect
+                  options={shelterTypes.filter(t => t.active).map(type => ({
+                    value: type.id,
+                    label: type.shelter_type_id
+                  }))}
+                  selected={filterShelterTypes}
+                  onChange={setFilterShelterTypes}
+                  placeholder="All Shelter Types"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-600 mb-1">Installation Status</Label>
+                <MultiSelect
+                  options={[
+                    { value: "yes", label: "Installed" },
+                    { value: "no", label: "Not Installed" }
+                  ]}
+                  selected={filterInstalled}
+                  onChange={setFilterInstalled}
+                  placeholder="All Statuses"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-600 mb-1">Sticker Status</Label>
+                <MultiSelect
+                  options={[
+                    { value: "needed", label: "Has Needed" },
+                    { value: "ordered", label: "Has Ordered" },
+                    { value: "received", label: "Has Received" },
+                    { value: "installed", label: "Has Installed" },
+                    { value: "none", label: "No Stickers" }
+                  ]}
+                  selected={filterStickerStatus}
+                  onChange={setFilterStickerStatus}
+                  placeholder="All Sticker Statuses"
+                />
+              </div>
             </div>
           </div>
 

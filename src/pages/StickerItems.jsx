@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { MultiSelect } from "@/components/ui/multi-select";
+import { Label } from "@/components/ui/label";
 import { Search, Edit, PackageCheck, Users, AlertCircle, CheckCircle, History } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import EditStickerItemDialog from "@/components/stickers/EditStickerItemDialog";
@@ -15,8 +16,9 @@ import ViewStickerHistoryDialog from "@/components/stickers/ViewStickerHistoryDi
 
 export default function StickerItemsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [filterCustodyStatus, setFilterCustodyStatus] = useState("all");
+  const [filterStatuses, setFilterStatuses] = useState([]);
+  const [filterCustodyStatuses, setFilterCustodyStatuses] = useState([]);
+  const [filterTemplates, setFilterTemplates] = useState([]);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [reorderDialogOpen, setReorderDialogOpen] = useState(false);
   const [handoverDialogOpen, setHandoverDialogOpen] = useState(false);
@@ -200,10 +202,11 @@ export default function StickerItemsPage() {
       item.print_line_3?.toLowerCase().includes(term)
     );
 
-    const matchesStatus = filterStatus === "all" || item.status === filterStatus;
-    const matchesCustodyStatus = filterCustodyStatus === "all" || item.custody_status === filterCustodyStatus;
+    const matchesStatus = filterStatuses.length === 0 || filterStatuses.includes(item.status);
+    const matchesCustodyStatus = filterCustodyStatuses.length === 0 || filterCustodyStatuses.includes(item.custody_status);
+    const matchesTemplate = filterTemplates.length === 0 || filterTemplates.includes(item.sticker_template_id);
 
-    return matchesSearch && matchesStatus && matchesCustodyStatus;
+    return matchesSearch && matchesStatus && matchesCustodyStatus && matchesTemplate;
   });
 
   const isLoading = itemsLoading || stopsLoading || templatesLoading;
@@ -234,32 +237,48 @@ export default function StickerItemsPage() {
                 className="pl-10"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="Needed">Needed</SelectItem>
-                  <SelectItem value="Ordered">Ordered</SelectItem>
-                  <SelectItem value="Received">Received</SelectItem>
-                  <SelectItem value="Installed">Installed</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={filterCustodyStatus} onValueChange={setFilterCustodyStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filter by Custody Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Custody Statuses</SelectItem>
-                  <SelectItem value="In Stock">In Stock</SelectItem>
-                  <SelectItem value="With Technician">With Technician</SelectItem>
-                  <SelectItem value="Installed">Installed</SelectItem>
-                  <SelectItem value="Lost">Lost</SelectItem>
-                  <SelectItem value="Damaged">Damaged</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div>
+                <Label className="text-xs text-gray-600 mb-1">Status</Label>
+                <MultiSelect
+                  options={[
+                    { value: "Needed", label: "Needed" },
+                    { value: "Ordered", label: "Ordered" },
+                    { value: "Received", label: "Received" },
+                    { value: "Installed", label: "Installed" }
+                  ]}
+                  selected={filterStatuses}
+                  onChange={setFilterStatuses}
+                  placeholder="All Statuses"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-600 mb-1">Custody Status</Label>
+                <MultiSelect
+                  options={[
+                    { value: "In Stock", label: "In Stock" },
+                    { value: "With Technician", label: "With Technician" },
+                    { value: "Installed", label: "Installed" },
+                    { value: "Lost", label: "Lost" },
+                    { value: "Damaged", label: "Damaged" }
+                  ]}
+                  selected={filterCustodyStatuses}
+                  onChange={setFilterCustodyStatuses}
+                  placeholder="All Custody Statuses"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-gray-600 mb-1">Sticker Template</Label>
+                <MultiSelect
+                  options={stickerTemplates.map(t => ({
+                    value: t.id,
+                    label: t.sticker_name_category
+                  }))}
+                  selected={filterTemplates}
+                  onChange={setFilterTemplates}
+                  placeholder="All Templates"
+                />
+              </div>
             </div>
           </div>
 
