@@ -491,57 +491,17 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                               </TableCell>
                               <TableCell className="py-2 w-24">
                                 <label className="text-xs text-slate-500 mb-1 block">Μον. Εισαγ.</label>
-                                <Select
-                                  value={component.input_unit_of_measure || ''}
-                                  onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'input_unit_of_measure', value === '' ? '' : value)}
-                                >
-                                  <SelectTrigger className="h-8 text-xs">
-                                    <SelectValue placeholder="-" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {(() => {
-                                      const product = products.find(p => p.id === component.product_id);
-                                      if (product?.unit_of_measure === 'kg') {
-                                        return (
-                                          <>
-                                            <SelectItem value={null}>-</SelectItem>
-                                            <SelectItem value="g">g</SelectItem>
-                                            <SelectItem value="kg">kg</SelectItem>
-                                            <SelectItem value="ton">ton</SelectItem>
-                                          </>
-                                        );
-                                      } else if (product?.unit_of_measure === 'liter') {
-                                        return (
-                                          <>
-                                            <SelectItem value={null}>-</SelectItem>
-                                            <SelectItem value="ml">ml</SelectItem>
-                                            <SelectItem value="liter">L</SelectItem>
-                                          </>
-                                        );
-                                      } else if (product?.unit_of_measure === 'meter') {
-                                        return (
-                                          <>
-                                            <SelectItem value={null}>-</SelectItem>
-                                            <SelectItem value="mm">mm</SelectItem>
-                                            <SelectItem value="cm">cm</SelectItem>
-                                            <SelectItem value="meter">m</SelectItem>
-                                          </>
-                                        );
-                                      } else if (product?.unit_of_measure === 'piece') {
-                                        return (
-                                          <>
-                                            <SelectItem value={null}>-</SelectItem>
-                                            <SelectItem value="piece">pcs</SelectItem>
-                                            <SelectItem value="box">box</SelectItem>
-                                            <SelectItem value="pallet">pallet</SelectItem>
-                                          </>
-                                        );
-                                      } else {
-                                        return <SelectItem value={null}>{product?.unit_of_measure || '-'}</SelectItem>;
-                                      }
-                                    })()}
-                                  </SelectContent>
-                                </Select>
+                                {(() => {
+                                  const product = products.find(p => p.id === component.product_id);
+                                  const defaultUnit = product?.unit_of_measure || '';
+                                  const displayUnit = component.input_unit_of_measure || defaultUnit;
+
+                                  return (
+                                    <div className="h-8 flex items-center text-xs text-slate-600 border border-input rounded-md px-2 bg-slate-50">
+                                      {displayUnit || '-'}
+                                    </div>
+                                  );
+                                })()}
                               </TableCell>
                               <TableCell className="py-2 w-20">
                                 <label className="text-xs text-slate-500 mb-1 block">Κόστος</label>
