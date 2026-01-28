@@ -11,6 +11,7 @@ import ImportStockMovementsDialog from "../components/warehouse/ImportStockMovem
 import ViewMovementDialog from "../components/warehouse/ViewMovementDialog";
 import EditMovementDialog from "../components/warehouse/EditMovementDialog";
 import PaginationControls from "../components/warehouse/PaginationControls";
+import ProductMovementsDrawer from "../components/warehouse/ProductMovementsDrawer";
 
 // Helper function to add delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
