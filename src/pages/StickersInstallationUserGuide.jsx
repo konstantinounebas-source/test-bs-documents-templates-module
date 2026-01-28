@@ -56,9 +56,28 @@ export default function StickersInstallationUserGuide() {
 
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
-      <div>
-        <h1 className="text-4xl font-bold mb-2">Stickers & Installation User Guide</h1>
-        <p className="text-gray-600">Ολοκληρωμένη αναφορά για την παρακολούθηση και διαχείριση αυτοκόλλητων στάσεων</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-4xl font-bold mb-2">Stickers & Installation User Guide</h1>
+          <p className="text-gray-600">Ολοκληρωμένη αναφορά για την παρακολούθηση και διαχείριση αυτοκόλλητων στάσεων</p>
+        </div>
+        <Button 
+          onClick={handleExportPDF} 
+          disabled={isExporting}
+          className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
+        >
+          {isExporting ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Εξαγωγή...
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4" />
+              Εξαγωγή σε PDF
+            </>
+          )}
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
