@@ -53,12 +53,12 @@ export default function StopsPage() {
   };
 
   const getStickerCounts = (stopId) => {
-    const items = stickerItems.filter(item => item.stop_id === stopId);
+    const activeItems = stickerItems.filter(item => item.stop_id === stopId && item.status !== "Obsolete");
     return {
-      needed: items.filter(item => item.status === "Needed").length,
-      ordered: items.filter(item => item.status === "Ordered").length,
-      received: items.filter(item => item.status === "Received").length,
-      installed: items.filter(item => item.installation_status === "Installed").length
+      needed: activeItems.filter(item => item.status === "Needed").length,
+      ordered: activeItems.filter(item => item.status === "Ordered").length,
+      received: activeItems.filter(item => item.status === "Received").length,
+      installed: activeItems.filter(item => item.installation_status === "Installed").length
     };
   };
 
