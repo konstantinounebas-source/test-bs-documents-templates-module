@@ -334,8 +334,8 @@ export default function StickersInstallationUserGuide() {
               <div className="space-y-4">
                 <h3 className="font-bold text-lg">1️⃣ Import Phase - Εισαγωγή Δεδομένων</h3>
                 <div className="bg-gray-50 p-4 rounded border-l-4 border-blue-500 space-y-2">
-                  <p className="text-sm"><strong>CSV Import:</strong> Στάσεις (Stop) + ShelterTypeStickerRequirement</p>
-                  <p className="text-sm">→ Δημιουργούνται αυτόματα τα StickerItems με Status = "Needed"</p>
+                  <p className="text-sm"><strong>CSV Import:</strong> Στάσεις (Stop) + ShelterTypeStickerRequirement με Approved Type</p>
+                  <p className="text-sm">→ Δημιουργούνται αυτόματα τα StickerItems με Status = "Needed" <strong>ΜΟΝΟ αν έχει οριστεί Approved Type</strong></p>
                   <p className="text-sm">→ Το Dashboard δείχνει αυτές τις νέες στάσεις στη Σειρά 1</p>
                 </div>
               </div>
