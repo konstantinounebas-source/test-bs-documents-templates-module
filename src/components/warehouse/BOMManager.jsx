@@ -396,22 +396,19 @@ export default function BOMManager({ busStopTypes, components, products, selecte
 
                 <div>
                   <Label className="text-sm mb-2 block">Φίλτρο Ομάδας</Label>
-                  <Select value={selectedTeamFilter} onValueChange={(value) => {
-                    setSelectedTeamFilter(value);
-                    setCurrentPage(1);
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Όλες οι Ομάδες" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Όλες οι Ομάδες</SelectItem>
-                      {teams.filter(t => t.is_active).map(team => (
-                        <SelectItem key={team.id} value={team.id}>
-                          {team.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MultiSelect
+                    options={teams.filter(t => t.is_active).map(team => ({
+                      value: team.id,
+                      label: team.name
+                    }))}
+                    selected={selectedTeamFilter}
+                    onChange={(values) => {
+                      setSelectedTeamFilter(values);
+                      setCurrentPage(1);
+                    }}
+                    placeholder="Όλες οι Ομάδες"
+                    emptyText="Δεν βρέθηκαν ομάδες"
+                  />
                 </div>
 
                 <div>
