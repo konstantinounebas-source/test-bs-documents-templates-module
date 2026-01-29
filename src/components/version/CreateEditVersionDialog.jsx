@@ -17,6 +17,15 @@ export default function CreateEditVersionDialog({ version, onClose, latestVersio
     is_critical: false
   });
 
+  const incrementVersion = (currentVersion) => {
+    const parts = currentVersion.split('.');
+    if (parts.length === 3) {
+      const [major, minor, patch] = parts.map(Number);
+      return `${major}.${minor}.${patch + 1}`;
+    }
+    return currentVersion;
+  };
+
   useEffect(() => {
     if (version) {
       setFormData({
@@ -40,15 +49,6 @@ export default function CreateEditVersionDialog({ version, onClose, latestVersio
       });
     }
   }, [version, latestVersion]);
-
-  const incrementVersion = (currentVersion) => {
-    const parts = currentVersion.split('.');
-    if (parts.length === 3) {
-      const [major, minor, patch] = parts.map(Number);
-      return `${major}.${minor}.${patch + 1}`;
-    }
-    return currentVersion;
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
