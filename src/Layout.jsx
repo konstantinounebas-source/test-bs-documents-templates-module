@@ -637,9 +637,6 @@ export default function Layout({ children }) {
         // Load stats with delay
         await fetchStats();
 
-        // Check app version
-        await checkAppVersion(currentUser);
-
         // Check if on Welcome or ProfileSetup - these pages are always allowed
         if (location.pathname === createPageUrl("Welcome") || 
             location.pathname === createPageUrl("ProfileSetup")) {
@@ -681,6 +678,13 @@ export default function Layout({ children }) {
 
     initializeLayout();
   }, []);
+
+  // Check version separately - runs every time user changes
+  useEffect(() => {
+    if (user && !isInitializing) {
+      checkAppVersion(user);
+    }
+  }, [user, isInitializing]);
 
   const toggleGroup = (groupId) => {
     setExpandedGroups(prev => ({
