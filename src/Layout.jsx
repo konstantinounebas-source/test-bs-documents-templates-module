@@ -908,7 +908,13 @@ export default function Layout({ children }) {
         </div>
 
         {/* Version Update Dialog */}
-        <Dialog open={showVersionDialog} onOpenChange={setShowVersionDialog}>
+        <Dialog open={showVersionDialog} onOpenChange={(open) => {
+          // Only allow closing if not critical
+          if (!open && latestVersion?.is_critical) {
+            return; // Prevent closing critical updates
+          }
+          setShowVersionDialog(open);
+        }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-orange-700">
