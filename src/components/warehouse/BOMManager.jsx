@@ -22,8 +22,8 @@ export default function BOMManager({ busStopTypes, components, products, selecte
   const [companies, setCompanies] = useState([]);
   const [materialCategories, setMaterialCategories] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [selectedMaterialCategoryFilter, setSelectedMaterialCategoryFilter] = useState("all");
-  const [selectedTeamFilter, setSelectedTeamFilter] = useState("all");
+  const [selectedMaterialCategoryFilter, setSelectedMaterialCategoryFilter] = useState([]);
+  const [selectedTeamFilter, setSelectedTeamFilter] = useState([]);
   const [selectedCompanyFilter, setSelectedCompanyFilter] = useState("all");
 
   useEffect(() => {
