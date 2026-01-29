@@ -68,6 +68,21 @@ export default function VersionManagement() {
     setShowDialog(true);
   };
 
+  const getLatestVersion = () => {
+    if (versions.length === 0) return null;
+    return versions.reduce((latest, current) => {
+      if (!latest) return current;
+      const latestParts = latest.version.split('.').map(Number);
+      const currentParts = current.version.split('.').map(Number);
+      
+      for (let i = 0; i < 3; i++) {
+        if (currentParts[i] > latestParts[i]) return current;
+        if (currentParts[i] < latestParts[i]) return latest;
+      }
+      return latest;
+    });
+  };
+
   const handleDialogClose = () => {
     setShowDialog(false);
     setEditingVersion(null);
@@ -182,6 +197,7 @@ export default function VersionManagement() {
         <CreateEditVersionDialog
           version={editingVersion}
           onClose={handleDialogClose}
+          latestVersion={!editingVersion ? getLatestVersion() : null}
         />
       )}
     </div>

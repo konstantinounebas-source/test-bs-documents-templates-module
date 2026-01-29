@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 
-export default function CreateEditVersionDialog({ version, onClose }) {
+export default function CreateEditVersionDialog({ version, onClose, latestVersion }) {
   const [formData, setFormData] = useState({
     version: '',
     release_date: '',
@@ -27,8 +27,28 @@ export default function CreateEditVersionDialog({ version, onClose }) {
         is_active: version.is_active || false,
         is_critical: version.is_critical || false
       });
+    } else if (latestVersion) {
+      // Auto-increment version for new version
+      const nextVersion = incrementVersion(latestVersion.version);
+      setFormData({
+        version: nextVersion,
+        release_date: new Date().toISOString().split('T')[0],
+        release_notes: '',
+        update_url: '',
+        is_active: false,
+        is_critical: false
+      });
     }
-  }, [version]);
+  }, [version, latestVersion]);
+
+  const incrementVersion = (currentVersion) => {
+    const parts = currentVersion.split('.');
+    if (parts.length === 3) {
+      const [major, minor, patch] = parts.map(Number);
+      return `${major}.${minor}.${patch + 1}`;
+    }
+    return currentVersion;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
