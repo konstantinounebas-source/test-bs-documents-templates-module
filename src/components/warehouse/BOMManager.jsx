@@ -88,8 +88,15 @@ export default function BOMManager({ busStopTypes, components, products, selecte
     }]);
   };
 
-  const handleUpdateComponent = (index, field, value) => {
+  const handleUpdateComponent = (componentToUpdate, field, value) => {
     const newComponents = [...typeComponents];
+    const index = newComponents.findIndex(c => 
+      (c.id && c.id === componentToUpdate.id) || 
+      (!c.id && !componentToUpdate.id && c === componentToUpdate)
+    );
+    
+    if (index === -1) return;
+    
     newComponents[index][field] = value;
     
     // Auto-set input_unit_of_measure based on product's unit_of_measure
@@ -103,52 +110,53 @@ export default function BOMManager({ busStopTypes, components, products, selecte
     setTypeComponents(newComponents);
   };
 
-  const handleRemoveComponent = async (index) => {
-    const component = typeComponents[index];
-    if (component.id) {
+  const handleRemoveComponent = async (componentToRemove) => {
+    if (componentToRemove.id) {
       try {
-        await base44.entities.BusStopTypeComponent.delete(component.id);
+        await base44.entities.BusStopTypeComponent.delete(componentToRemove.id);
         onComponentsUpdated();
       } catch (error) {
         console.error("Error deleting component:", error);
       }
     } else {
-      const newComponents = typeComponents.filter((_, i) => i !== index);
+      const newComponents = typeComponents.filter(c => c !== componentToRemove);
       setTypeComponents(newComponents);
     }
   };
 
-  const handleSaveComponent = async (index) => {
-    const component = typeComponents[index];
-    if (!currentTypeId || !component.product_id) return;
+  const handleSaveComponent = async (componentToSave) => {
+    if (!currentTypeId || !componentToSave.product_id) return;
     
-    const quantityNum = parseFloat(component.quantity_required);
+    const quantityNum = parseFloat(componentToSave.quantity_required);
     if (isNaN(quantityNum) || quantityNum <= 0) return;
     
-    const tempId = component.id || `temp_${index}`;
+    const tempId = componentToSave.id || `temp_${componentToSave.product_id}_${Date.now()}`;
     setSavingIds(prev => ({ ...prev, [tempId]: true }));
     
     try {
       const data = {
         bus_stop_type_id: currentTypeId,
-        product_id: component.product_id,
+        product_id: componentToSave.product_id,
         quantity_required: quantityNum,
-        input_unit_of_measure: component.input_unit_of_measure || '',
-        unit_of_measure: component.unit_of_measure || 'pcs',
-        team_id: component.team_id || null,
-        material_category_id: component.material_category_id || null,
-        is_optional: component.is_optional || false,
-        notes: component.notes || ''
+        input_unit_of_measure: componentToSave.input_unit_of_measure || '',
+        unit_of_measure: componentToSave.unit_of_measure || 'pcs',
+        team_id: componentToSave.team_id || null,
+        material_category_id: componentToSave.material_category_id || null,
+        is_optional: componentToSave.is_optional || false,
+        notes: componentToSave.notes || ''
       };
 
-      if (component.id) {
-        await base44.entities.BusStopTypeComponent.update(component.id, data);
+      if (componentToSave.id) {
+        await base44.entities.BusStopTypeComponent.update(componentToSave.id, data);
       } else {
         const created = await base44.entities.BusStopTypeComponent.create(data);
         // Update local state with the new ID
         const newComponents = [...typeComponents];
-        newComponents[index] = { ...newComponents[index], id: created.id };
-        setTypeComponents(newComponents);
+        const index = newComponents.findIndex(c => c === componentToSave);
+        if (index !== -1) {
+          newComponents[index] = { ...newComponents[index], id: created.id };
+          setTypeComponents(newComponents);
+        }
       }
       
       onComponentsUpdated();
@@ -491,10 +499,11 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                         const productDetails = getProductDetails(component.product_id);
                         const qty = parseFloat(component.quantity_required) || 0;
                         const lineCost = qty * productDetails.cost;
+                        const tempId = component.id || `temp_${component.product_id}_${Date.now()}`;
                         
                         return (
-                          <React.Fragment key={absoluteIndex}>
-                            <TableRow className="border-b-0" key={`row1-${absoluteIndex}`}>
+                          <React.Fragment key={component.id || `new_${index}`}>
+                            <TableRow className="border-b-0" key={`row1-${component.id || index}`}>
                               <TableCell className="text-sm text-slate-400 py-2 align-top pt-7" rowSpan={2}>
                                 {absoluteIndex + 1}
                               </TableCell>
@@ -511,7 +520,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                      <ProductCombobox
                                        products={products}
                                        value={component.product_id}
-                                       onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'product_id', value)}
+                                       onValueChange={(value) => handleUpdateComponent(component, 'product_id', value)}
                                        placeholder="Επιλέξτε προϊόν"
                                      />
                                    </div>
@@ -520,7 +529,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                       <label className="text-xs text-slate-500 mb-1 block">Κατηγορία</label>
                                       <Select
                                         value={component.material_category_id || "none"}
-                                        onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'material_category_id', value === "none" ? '' : value)}
+                                        onValueChange={(value) => handleUpdateComponent(component, 'material_category_id', value === "none" ? '' : value)}
                                       >
                                         <SelectTrigger className="h-8 text-xs w-44">
                                           <SelectValue placeholder="-" />
@@ -539,7 +548,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                       <label className="text-xs text-slate-500 mb-1 block">Ομάδα</label>
                                       <Select
                                         value={component.team_id || "none"}
-                                        onValueChange={(value) => handleUpdateComponent(absoluteIndex, 'team_id', value === "none" ? '' : value)}
+                                        onValueChange={(value) => handleUpdateComponent(component, 'team_id', value === "none" ? '' : value)}
                                       >
                                         <SelectTrigger className="h-8 text-xs w-40">
                                           <SelectValue placeholder="-" />
@@ -564,7 +573,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                 </div>
                               </TableCell>
                             </TableRow>
-                            <TableRow className="border-b bg-slate-50/50" key={`row2-${absoluteIndex}`}>
+                            <TableRow className="border-b bg-slate-50/50" key={`row2-${component.id || index}`}>
                               <TableCell className="py-2 w-24">
                                 <label className="text-xs text-slate-500 mb-1 block">Ποσότητα</label>
                                 <Input
@@ -572,13 +581,13 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                   step="0.01"
                                   min="0.01"
                                   value={component.quantity_required}
-                                  onChange={(e) => handleUpdateComponent(absoluteIndex, 'quantity_required', e.target.value)}
+                                  onChange={(e) => handleUpdateComponent(component, 'quantity_required', e.target.value)}
                                   onBlur={(e) => {
                                     const val = parseFloat(e.target.value);
                                     if (isNaN(val) || val <= 0) {
-                                      handleUpdateComponent(absoluteIndex, 'quantity_required', "1");
+                                      handleUpdateComponent(component, 'quantity_required', "1");
                                     } else {
-                                      handleUpdateComponent(absoluteIndex, 'quantity_required', String(val));
+                                      handleUpdateComponent(component, 'quantity_required', String(val));
                                     }
                                   }}
                                   className="h-8 w-20"
@@ -608,7 +617,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                 <label className="text-xs text-slate-500 mb-1 block">Σημειώσεις</label>
                                 <Input
                                   value={component.notes || ''}
-                                  onChange={(e) => handleUpdateComponent(absoluteIndex, 'notes', e.target.value)}
+                                  onChange={(e) => handleUpdateComponent(component, 'notes', e.target.value)}
                                   placeholder="Σημειώσεις..."
                                   className="h-8 text-sm"
                                 />
@@ -618,11 +627,11 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                   <Button
                                     type="button"
                                     size="sm"
-                                    onClick={() => handleSaveComponent(absoluteIndex)}
-                                    disabled={savingIds[component.id || `temp_${absoluteIndex}`] || !component.product_id}
+                                    onClick={() => handleSaveComponent(component)}
+                                    disabled={savingIds[tempId] || !component.product_id}
                                     className="h-7 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white"
                                   >
-                                    {savingIds[component.id || `temp_${absoluteIndex}`] ? (
+                                    {savingIds[tempId] ? (
                                       <Loader2 className="w-3 h-3 animate-spin" />
                                     ) : (
                                       'Save'
@@ -632,7 +641,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => handleRemoveComponent(absoluteIndex)}
+                                    onClick={() => handleRemoveComponent(component)}
                                     className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-50"
                                   >
                                     <Trash2 className="w-4 h-4" />
