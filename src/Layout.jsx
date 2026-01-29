@@ -56,7 +56,7 @@ import { AlertCircle } from "lucide-react";
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // IMPORTANT: Update this version number when deploying a new version
-const CURRENT_APP_VERSION = "1.0.0";
+const CURRENT_APP_VERSION = "1.0.6";
 
 const allNavigationGroups = [
   {
