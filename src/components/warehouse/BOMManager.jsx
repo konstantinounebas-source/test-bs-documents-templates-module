@@ -379,22 +379,19 @@ export default function BOMManager({ busStopTypes, components, products, selecte
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label className="text-sm mb-2 block">Φίλτρο Κατηγορίας Υλικού</Label>
-                  <Select value={selectedMaterialCategoryFilter} onValueChange={(value) => {
-                    setSelectedMaterialCategoryFilter(value);
-                    setCurrentPage(1);
-                  }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Όλες οι Κατηγορίες" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Όλες οι Κατηγορίες</SelectItem>
-                      {materialCategories.filter(mc => mc.is_active).map(cat => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <MultiSelect
+                    options={materialCategories.filter(mc => mc.is_active).map(cat => ({
+                      value: cat.id,
+                      label: cat.name
+                    }))}
+                    selected={selectedMaterialCategoryFilter}
+                    onChange={(values) => {
+                      setSelectedMaterialCategoryFilter(values);
+                      setCurrentPage(1);
+                    }}
+                    placeholder="Όλες οι Κατηγορίες"
+                    emptyText="Δεν βρέθηκαν κατηγορίες"
+                  />
                 </div>
 
                 <div>
