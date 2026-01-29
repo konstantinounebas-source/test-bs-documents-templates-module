@@ -50,6 +50,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Toaster } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertCircle } from "lucide-react";
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -466,6 +468,8 @@ export default function Layout({ children }) {
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [showVersionDialog, setShowVersionDialog] = useState(false);
+  const [latestVersion, setLatestVersion] = useState(null);
 
   const hasAccessToPage = (pageKey, permissions, currentUser) => {
     if (!pageKey) return true;
@@ -565,6 +569,44 @@ export default function Layout({ children }) {
     }
   };
 
+  const checkAppVersion = async (currentUser) => {
+    try {
+      await delay(300);
+      const versions = await base44.entities.AppVersion.filter({ is_active: true });
+      if (versions.length > 0) {
+        const activeVersion = versions[0];
+        setLatestVersion(activeVersion);
+        
+        const userVersion = currentUser.last_app_version_seen;
+        if (!userVersion || userVersion !== activeVersion.version) {
+          setShowVersionDialog(true);
+        }
+      }
+    } catch (error) {
+      console.error("Error checking app version:", error);
+    }
+  };
+
+  const handleAcknowledgeVersion = async () => {
+    if (latestVersion && user) {
+      try {
+        await base44.auth.updateMe({ last_app_version_seen: latestVersion.version });
+        setUser({ ...user, last_app_version_seen: latestVersion.version });
+        setShowVersionDialog(false);
+      } catch (error) {
+        console.error("Error updating version:", error);
+      }
+    }
+  };
+
+  const handleUpdateNow = () => {
+    if (latestVersion?.update_url) {
+      window.location.href = latestVersion.update_url;
+    } else {
+      window.location.reload();
+    }
+  };
+
   useEffect(() => {
     const initializeLayout = async () => {
       // Don't run initialization logic multiple times
@@ -583,6 +625,9 @@ export default function Layout({ children }) {
         
         // Load stats with delay
         await fetchStats();
+        
+        // Check app version
+        await checkAppVersion(currentUser);
         
         // Check if on Welcome or ProfileSetup - these pages are always allowed
         if (location.pathname === createPageUrl("Welcome") || 
@@ -682,7 +727,22 @@ export default function Layout({ children }) {
               {user ? (
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="font-semibold text-slate-800 text-sm truncate max-w-[150px]">{user.full_name}</p>
+                    <div className="flex items-center gap-2 justify-end">
+                      <p className="font-semibold text-slate-800 text-sm truncate max-w-[150px]">{user.full_name}</p>
+                      {latestVersion && user.last_app_version_seen !== latestVersion.version && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full cursor-pointer" onClick={() => setShowVersionDialog(true)}>
+                              <AlertCircle className="w-3 h-3" />
+                              <span className="text-xs font-medium">Παλιά Έκδοση</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Κάντε κλικ για ενημέρωση</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                     <p className="text-xs text-slate-500 truncate max-w-[150px]">{user.position || user.role}</p>
                   </div>
                   <Tooltip>
@@ -833,7 +893,54 @@ export default function Layout({ children }) {
           </div>
         </main>
         <Toaster richColors position="top-right" />
-      </div>
-    </>
-  );
-}
+        </div>
+
+        {/* Version Update Dialog */}
+        <Dialog open={showVersionDialog} onOpenChange={setShowVersionDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-orange-700">
+              <AlertCircle className="w-5 h-5" />
+              Νέα Έκδοση Διαθέσιμη
+            </DialogTitle>
+            <DialogDescription className="pt-4">
+              {latestVersion && (
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">Έκδοση: {latestVersion.version}</p>
+                    {latestVersion.release_date && (
+                      <p className="text-xs text-slate-500">
+                        Ημερομηνία: {new Date(latestVersion.release_date).toLocaleDateString('el-GR')}
+                      </p>
+                    )}
+                  </div>
+                  {latestVersion.release_notes && (
+                    <div className="bg-slate-50 p-3 rounded-lg">
+                      <p className="text-xs font-medium text-slate-600 mb-1">Αλλαγές:</p>
+                      <p className="text-sm text-slate-700 whitespace-pre-line">{latestVersion.release_notes}</p>
+                    </div>
+                  )}
+                  {latestVersion.is_critical && (
+                    <div className="bg-red-50 border border-red-200 p-3 rounded-lg">
+                      <p className="text-xs font-medium text-red-700">⚠️ Κρίσιμη Ενημέρωση - Απαιτείται άμεση ενημέρωση</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            {!latestVersion?.is_critical && (
+              <Button variant="outline" onClick={handleAcknowledgeVersion}>
+                Απόκρυψη
+              </Button>
+            )}
+            <Button onClick={handleUpdateNow} className="bg-blue-600 hover:bg-blue-700">
+              Ενημέρωση Τώρα
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+        </Dialog>
+        </>
+        );
+        }
