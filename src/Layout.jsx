@@ -738,23 +738,23 @@ export default function Layout({ children }) {
               {user ? (
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <div className="flex items-center gap-2 justify-end">
-                      <p className="font-semibold text-slate-800 text-sm truncate max-w-[150px]">{user.full_name}</p>
-                      {latestVersion && user.last_app_version_seen !== latestVersion.version && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full cursor-pointer" onClick={() => setShowVersionDialog(true)}>
-                              <AlertCircle className="w-3 h-3" />
-                              <span className="text-xs font-medium">Παλιά Έκδοση</span>
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Κάντε κλικ για ενημέρωση</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-500 truncate max-w-[150px]">{user.position || user.role}</p>
+                   <div className="flex items-center gap-2 justify-end">
+                     <p className="font-semibold text-slate-800 text-sm truncate max-w-[150px]">{user.full_name}</p>
+                     {latestVersion && (!user.last_app_version_seen || user.last_app_version_seen !== latestVersion.version) && (
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full cursor-pointer" onClick={() => setShowVersionDialog(true)}>
+                             <AlertCircle className="w-3 h-3" />
+                             <span className="text-xs font-medium">Παλιά Έκδοση</span>
+                           </div>
+                         </TooltipTrigger>
+                         <TooltipContent>
+                           <p>Κάντε κλικ για ενημέρωση</p>
+                         </TooltipContent>
+                       </Tooltip>
+                     )}
+                   </div>
+                   <p className="text-xs text-slate-500 truncate max-w-[150px]">{user.position || user.role}</p>
                   </div>
                   <Tooltip>
                     <TooltipTrigger asChild>
