@@ -432,6 +432,13 @@ const allNavigationGroups = [
         pageKey: "AccessControl"
       },
       {
+        title: "Version Management",
+        url: createPageUrl("VersionManagement"),
+        icon: Settings,
+        description: "Manage app versions and updates",
+        pageKey: "VersionManagement"
+      },
+      {
         title: "Audit Logs",
         url: createPageUrl("AuditLogs"),
         icon: ScrollText,
