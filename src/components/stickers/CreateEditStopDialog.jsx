@@ -252,15 +252,15 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Shelter Type Initial</Label>
-                <div className="flex gap-2 items-center">
-                  <div className="flex-1 px-3 py-2 border border-input rounded-md bg-gray-50">
-                    <p className="text-sm">
-                      {formData.shelter_type_initial_id 
-                        ? shelterTypes.find(t => t.id === formData.shelter_type_initial_id)?.shelter_type_id 
-                        : "Not set"}
-                    </p>
-                  </div>
-                  {stop && (
+                {stop ? (
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1 px-3 py-2 border border-input rounded-md bg-gray-50">
+                      <p className="text-sm">
+                        {formData.shelter_type_initial_id 
+                          ? shelterTypes.find(t => t.id === formData.shelter_type_initial_id)?.shelter_type_id 
+                          : "Not set"}
+                      </p>
+                    </div>
                     <Button
                       type="button"
                       variant="outline"
@@ -270,20 +270,36 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <Select
+                    value={formData.shelter_type_initial_id}
+                    onValueChange={(value) => setFormData({ ...formData, shelter_type_initial_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select shelter type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shelterTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.shelter_type_id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div>
                 <Label>Shelter Type Approved</Label>
-                <div className="flex gap-2 items-center">
-                  <div className="flex-1 px-3 py-2 border border-input rounded-md bg-gray-50">
-                    <p className="text-sm">
-                      {formData.shelter_type_approved_id 
-                        ? shelterTypes.find(t => t.id === formData.shelter_type_approved_id)?.shelter_type_id 
-                        : "Not set"}
-                    </p>
-                  </div>
-                  {stop && (
+                {stop ? (
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1 px-3 py-2 border border-input rounded-md bg-gray-50">
+                      <p className="text-sm">
+                        {formData.shelter_type_approved_id 
+                          ? shelterTypes.find(t => t.id === formData.shelter_type_approved_id)?.shelter_type_id 
+                          : "Not set"}
+                      </p>
+                    </div>
                     <Button
                       type="button"
                       variant="outline"
@@ -293,8 +309,24 @@ export default function CreateEditStopDialog({ open, onClose, stop, onStopSaved 
                     >
                       <Edit2 className="w-4 h-4" />
                     </Button>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <Select
+                    value={formData.shelter_type_approved_id}
+                    onValueChange={(value) => setFormData({ ...formData, shelter_type_approved_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select shelter type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {shelterTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.shelter_type_id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             </div>
 
