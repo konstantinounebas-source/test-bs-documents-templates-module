@@ -578,14 +578,16 @@ export default function Layout({ children }) {
 
   const checkAppVersion = async (currentUser) => {
     try {
-      await delay(300);
       const versions = await base44.entities.AppVersion.filter({ is_active: true });
       if (versions.length > 0) {
         const activeVersion = versions[0];
         setLatestVersion(activeVersion);
-        
+
         const userVersion = currentUser.last_app_version_seen;
+        console.log('Active version:', activeVersion.version, 'User version:', userVersion);
+
         if (!userVersion || userVersion !== activeVersion.version) {
+          console.log('Showing version dialog - versions do not match');
           setShowVersionDialog(true);
         }
       }
@@ -595,18 +597,20 @@ export default function Layout({ children }) {
   };
 
   const handleAcknowledgeVersion = async () => {
+    // Don't update version - just close the dialog temporarily
+    setShowVersionDialog(false);
+  };
+
+  const handleUpdateNow = async () => {
+    // Update the user's last seen version before redirecting
     if (latestVersion && user) {
       try {
         await base44.auth.updateMe({ last_app_version_seen: latestVersion.version });
-        setUser({ ...user, last_app_version_seen: latestVersion.version });
-        setShowVersionDialog(false);
       } catch (error) {
         console.error("Error updating version:", error);
       }
     }
-  };
 
-  const handleUpdateNow = () => {
     if (latestVersion?.update_url) {
       window.location.href = latestVersion.update_url;
     } else {
@@ -632,10 +636,10 @@ export default function Layout({ children }) {
         
         // Load stats with delay
         await fetchStats();
-        
+
         // Check app version
         await checkAppVersion(currentUser);
-        
+
         // Check if on Welcome or ProfileSetup - these pages are always allowed
         if (location.pathname === createPageUrl("Welcome") || 
             location.pathname === createPageUrl("ProfileSetup")) {
