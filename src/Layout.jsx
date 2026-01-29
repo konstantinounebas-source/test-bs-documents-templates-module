@@ -740,6 +740,9 @@ export default function Layout({ children }) {
                   <div className="text-right">
                    <div className="flex items-center gap-2 justify-end">
                      <p className="font-semibold text-slate-800 text-sm truncate max-w-[150px]">{user.full_name}</p>
+                     {latestVersion && (
+                       <span className="text-xs text-slate-400">v{latestVersion.version}</span>
+                     )}
                      {latestVersion && (!user.last_app_version_seen || user.last_app_version_seen !== latestVersion.version) && (
                        <Tooltip>
                          <TooltipTrigger asChild>

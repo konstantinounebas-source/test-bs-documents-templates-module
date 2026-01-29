@@ -101,12 +101,12 @@ import Templates from './pages/Templates';
 import UserGuide from './pages/UserGuide';
 import Users from './pages/Users';
 import VendorsCategories from './pages/VendorsCategories';
+import VersionManagement from './pages/VersionManagement';
 import WarehouseUserGuide from './pages/WarehouseUserGuide';
 import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import VersionManagement from './pages/VersionManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -165,12 +165,12 @@ export const PAGES = {
     "UserGuide": UserGuide,
     "Users": Users,
     "VendorsCategories": VendorsCategories,
+    "VersionManagement": VersionManagement,
     "WarehouseUserGuide": WarehouseUserGuide,
     "WeeklyOverview": WeeklyOverview,
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "VersionManagement": VersionManagement,
 }
 
 export const pagesConfig = {
