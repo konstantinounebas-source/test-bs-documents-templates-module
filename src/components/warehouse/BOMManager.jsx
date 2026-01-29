@@ -359,7 +359,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
 
             {Object.keys(costByTeam).length > 0 && (
               <>
-                {Object.entries(costByTeam).slice(0, 2).map(([teamName, cost]) => (
+                {Object.entries(costByTeam).slice(0, 4).map(([teamName, cost]) => (
                   <Card key={teamName} className="border-slate-200">
                     <CardContent className="p-4">
                       <div>
