@@ -187,13 +187,13 @@ export default function BOMManager({ busStopTypes, components, products, selecte
 
   const getFilteredComponents = () => {
     return typeComponents.filter(comp => {
-      // Material Category filter
-      if (selectedMaterialCategoryFilter !== "all" && comp.material_category_id !== selectedMaterialCategoryFilter) {
+      // Material Category filter (multiple)
+      if (selectedMaterialCategoryFilter.length > 0 && !selectedMaterialCategoryFilter.includes(comp.material_category_id)) {
         return false;
       }
       
-      // Team filter
-      if (selectedTeamFilter !== "all" && comp.team_id !== selectedTeamFilter) {
+      // Team filter (multiple)
+      if (selectedTeamFilter.length > 0 && !selectedTeamFilter.includes(comp.team_id)) {
         return false;
       }
       
