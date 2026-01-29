@@ -61,6 +61,7 @@ const ALL_PAGES = [
 
   { key: 'Users', label: 'Users', module: 'System Management' },
   { key: 'AccessControl', label: 'Access Control', module: 'System Management' },
+  { key: 'VersionManagement', label: 'Version Management', module: 'System Management' },
   { key: 'AuditLogs', label: 'Audit Logs', module: 'System Management' },
   { key: 'PlatformChangeLog', label: 'Platform Change Log', module: 'System Management' },
 ];
