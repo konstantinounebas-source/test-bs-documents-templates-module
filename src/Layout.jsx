@@ -55,6 +55,9 @@ import { AlertCircle } from "lucide-react";
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+// IMPORTANT: Update this version number when deploying a new version
+const CURRENT_APP_VERSION = "1.0.0";
+
 const allNavigationGroups = [
   {
     id: 'my-workspace',
@@ -583,11 +586,11 @@ export default function Layout({ children }) {
         const activeVersion = versions[0];
         setLatestVersion(activeVersion);
 
-        const userVersion = currentUser.last_app_version_seen;
-        console.log('Active version:', activeVersion.version, 'User version:', userVersion);
+        console.log('Current code version:', CURRENT_APP_VERSION, 'Active DB version:', activeVersion.version);
 
-        if (!userVersion || userVersion !== activeVersion.version) {
-          console.log('Showing version dialog - versions do not match');
+        // Compare current running code version with active version in DB
+        if (CURRENT_APP_VERSION !== activeVersion.version) {
+          console.log('Showing version dialog - code version does not match DB version');
           setShowVersionDialog(true);
         }
       }
@@ -602,15 +605,6 @@ export default function Layout({ children }) {
   };
 
   const handleUpdateNow = async () => {
-    // Update the user's last seen version before redirecting
-    if (latestVersion && user) {
-      try {
-        await base44.auth.updateMe({ last_app_version_seen: latestVersion.version });
-      } catch (error) {
-        console.error("Error updating version:", error);
-      }
-    }
-
     if (latestVersion?.update_url) {
       window.location.href = latestVersion.update_url;
     } else {
@@ -745,9 +739,9 @@ export default function Layout({ children }) {
                    <div className="flex items-center gap-2 justify-end">
                      <p className="font-semibold text-slate-800 text-sm truncate max-w-[150px]">{user.full_name}</p>
                      {latestVersion && (
-                       <span className="text-xs text-slate-400">v{latestVersion.version}</span>
+                       <span className="text-xs text-slate-400">v{CURRENT_APP_VERSION}</span>
                      )}
-                     {latestVersion && (!user.last_app_version_seen || user.last_app_version_seen !== latestVersion.version) && (
+                     {latestVersion && CURRENT_APP_VERSION !== latestVersion.version && (
                        <Tooltip>
                          <TooltipTrigger asChild>
                            <div className="flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full cursor-pointer" onClick={() => setShowVersionDialog(true)}>
