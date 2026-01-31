@@ -53,7 +53,7 @@ import { Toaster } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertCircle } from "lucide-react";
 
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 
 // IMPORTANT: Update this version number when deploying a new version
 const CURRENT_APP_VERSION = "1.0.2";
@@ -523,7 +523,7 @@ export default function Layout({ children }) {
 
   const fetchStats = async () => {
     try {
-      await delay(500); // Add delay before fetching stats
+      // Lazy load - no blocking delay
       const templates = await base44.entities.FormTemplate.list();
       const activeTemplates = templates.filter(t => t.status === 'active').length;
       const pendingApprovals = templates.filter(t => t.approval_status === 'Pending').length;
@@ -540,22 +540,21 @@ export default function Layout({ children }) {
   const loadUserPermissions = async (currentUser) => {
     try {
       const permissions = {};
-      
+
       if (currentUser?.access_profile_id) {
-        await delay(400); // Add delay before fetching permissions
         const pagePermissions = await base44.entities.PagePermission.filter({
           access_profile_id: currentUser.access_profile_id 
         });
-        
+
         pagePermissions.forEach(permission => {
           permissions[permission.page_key] = permission.access_level;
         });
       }
-      
+
       setUserPermissions(permissions);
       const filteredNavigation = filterNavigationByPermissions(permissions, currentUser);
       setNavigationGroups(filteredNavigation);
-      
+
     } catch (error) {
       console.error("Failed to load user permissions:", error);
       const getMinimalNavigation = () => {
@@ -621,15 +620,12 @@ export default function Layout({ children }) {
         // Try to get current user
         const currentUser = await base44.auth.me();
         setUser(currentUser);
-        
-        // Load permissions with delay
+
+        // Load permissions immediately (no delay)
         await loadUserPermissions(currentUser);
-        
-        // Small delay to let permissions load
-        await delay(500);
-        
-        // Load stats with delay
-        await fetchStats();
+
+        // Load stats in background (non-blocking)
+        fetchStats();
 
         // Check if on Welcome or ProfileSetup - these pages are always allowed
         if (location.pathname === createPageUrl("Welcome") || 
@@ -637,12 +633,12 @@ export default function Layout({ children }) {
           setIsInitializing(false);
           return;
         }
-        
+
         // If user doesn't have position, redirect to Welcome (not ProfileSetup)
         if (!currentUser.position) {
           navigate(createPageUrl("Welcome"), { replace: true });
         }
-        
+
       } catch (error) {
         console.error("Layout initialization error:", error);
         // If not logged in or error, set minimal navigation including Welcome
@@ -666,7 +662,7 @@ export default function Layout({ children }) {
         };
         setNavigationGroups(getMinimalNavigation());
       }
-      
+
       setIsInitializing(false);
     };
 
