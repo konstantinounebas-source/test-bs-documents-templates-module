@@ -54,7 +54,7 @@ export default function StockMovementsPage() {
     try {
       // If filters are active or "All" selected, load all movements. Otherwise, use pagination
       const hasFilters = searchTerm || typeFilter !== "all" || locationFilter !== "all" || productFilter !== "all" || timeFilter !== "all";
-      const showAll = itemsPerPage === "All";
+      const showAll = itemsPerPage === "all";
       const skip = (hasFilters || showAll) ? 0 : (currentPage - 1) * parseInt(itemsPerPage);
       const limit = (hasFilters || showAll) ? 10000 : parseInt(itemsPerPage);
       
@@ -279,7 +279,7 @@ export default function StockMovementsPage() {
 
   // If filters are active or "All" selected, paginate client-side. Otherwise, movements are server-paginated
   const hasFilters = searchTerm || typeFilter !== "all" || locationFilter !== "all" || productFilter !== "all" || timeFilter !== "all";
-  const showAll = itemsPerPage === "All";
+  const showAll = itemsPerPage === "all";
   const paginatedMovements = (hasFilters || showAll)
     ? (showAll ? filteredMovements : filteredMovements.slice(
         (currentPage - 1) * parseInt(itemsPerPage),
@@ -481,7 +481,7 @@ export default function StockMovementsPage() {
             
             <PaginationControls
               currentPage={currentPage}
-              totalItems={itemsPerPage === "All" ? filteredMovements.length : totalMovementsCount}
+              totalItems={(hasFilters || itemsPerPage === "all") ? filteredMovements.length : totalMovementsCount}
               itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
