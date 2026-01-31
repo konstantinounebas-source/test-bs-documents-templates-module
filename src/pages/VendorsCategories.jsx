@@ -33,7 +33,6 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default function VendorsCategoriesPage() {
   const queryClient = useQueryClient();
-  const [isLoading, setIsLoading] = useState(false);
   const [showVendorDialog, setShowVendorDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [showLocationDialog, setShowLocationDialog] = useState(false);
