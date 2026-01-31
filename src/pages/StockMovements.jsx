@@ -52,10 +52,11 @@ export default function StockMovementsPage() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // If filters are active, load all movements for filtering. Otherwise, use pagination
+      // If filters are active or "All" selected, load all movements. Otherwise, use pagination
       const hasFilters = searchTerm || typeFilter !== "all" || locationFilter !== "all" || productFilter !== "all" || timeFilter !== "all";
-      const skip = hasFilters ? 0 : (currentPage - 1) * parseInt(itemsPerPage);
-      const limit = hasFilters ? 10000 : parseInt(itemsPerPage);
+      const showAll = itemsPerPage === "All";
+      const skip = (hasFilters || showAll) ? 0 : (currentPage - 1) * parseInt(itemsPerPage);
+      const limit = (hasFilters || showAll) ? 10000 : parseInt(itemsPerPage);
       
       // Load movements + other data in parallel
       const [
@@ -276,13 +277,14 @@ export default function StockMovementsPage() {
     return matchesSearch && matchesType && matchesLocation && matchesProduct && matchesTime;
   });
 
-  // If filters are active, paginate client-side. Otherwise, movements are server-paginated
+  // If filters are active or "All" selected, paginate client-side. Otherwise, movements are server-paginated
   const hasFilters = searchTerm || typeFilter !== "all" || locationFilter !== "all" || productFilter !== "all" || timeFilter !== "all";
-  const paginatedMovements = hasFilters 
-    ? filteredMovements.slice(
+  const showAll = itemsPerPage === "All";
+  const paginatedMovements = (hasFilters || showAll)
+    ? (showAll ? filteredMovements : filteredMovements.slice(
         (currentPage - 1) * parseInt(itemsPerPage),
         currentPage * parseInt(itemsPerPage)
-      )
+      ))
     : filteredMovements;
 
   const handlePageChange = (newPage) => {
@@ -479,7 +481,7 @@ export default function StockMovementsPage() {
             
             <PaginationControls
               currentPage={currentPage}
-              totalItems={totalMovementsCount}
+              totalItems={itemsPerPage === "All" ? filteredMovements.length : totalMovementsCount}
               itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
