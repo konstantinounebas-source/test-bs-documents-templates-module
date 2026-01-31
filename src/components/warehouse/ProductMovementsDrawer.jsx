@@ -17,6 +17,7 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
   const [movements, setMovements] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState([]);
+  const [currentStock, setCurrentStock] = useState(0);
 
   useEffect(() => {
     if (isOpen && productId) {
@@ -28,13 +29,18 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
     setIsLoading(true);
     try {
       // Limit to latest 100 movements for performance
-      const [movementsData, usersData] = await Promise.all([
+      const [movementsData, usersData, stockItems] = await Promise.all([
         base44.entities.StockMovement.filter({ product_id: productId }, "-created_date", 100),
-        base44.entities.User.list().catch(() => [])
+        base44.entities.User.list().catch(() => []),
+        base44.entities.StockItem.filter({ product_id: productId }).catch(() => [])
       ]);
       
       setMovements(movementsData);
       setUsers(usersData);
+      
+      // Calculate current stock
+      const totalStock = stockItems.reduce((sum, item) => sum + (item.quantity_on_hand || 0), 0);
+      setCurrentStock(totalStock);
     } catch (error) {
       console.error("Error loading movements:", error);
     }
@@ -66,7 +72,12 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl"  style={{ maxHeight: '80vh' }}>
         <DialogHeader>
-          <DialogTitle>{productName}</DialogTitle>
+          <DialogTitle className="flex items-center justify-between">
+            <span>{productName}</span>
+            <Badge variant="outline" className="text-base font-semibold">
+              Current Stock: {currentStock}
+            </Badge>
+          </DialogTitle>
           <DialogDescription>
             Complete movement history for this product
           </DialogDescription>
@@ -116,10 +127,14 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
                       {getUserName(movement.created_by)}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {getVendorName(movement.vendor_id)}
+                      {movement.reference_type === 'Vendor' && movement.reference_id 
+                        ? getVendorName(movement.reference_id)
+                        : '-'}
                     </TableCell>
                     <TableCell className="text-right text-sm font-semibold">
-                      €{(movement.total_item_cost || 0).toFixed(2)}
+                      {movement.unit_cost 
+                        ? `€${(movement.unit_cost * (movement.quantity || 0)).toFixed(2)}`
+                        : '-'}
                     </TableCell>
                     <TableCell className="text-center">
                       {onEditMovement && (
