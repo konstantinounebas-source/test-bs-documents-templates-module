@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   Dialog,
@@ -41,30 +41,16 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
     setIsLoading(false);
   };
 
-  // Memoize lookups for performance
-  const userMap = useMemo(() => {
-    return users.reduce((map, user) => {
-      map[user.id] = user.full_name;
-      map[user.email] = user.full_name;
-      return map;
-    }, {});
-  }, [users]);
-
-  const vendorMap = useMemo(() => {
-    return vendors.reduce((map, vendor) => {
-      map[vendor.id] = vendor.name;
-      return map;
-    }, {});
-  }, [vendors]);
-
   const getUserName = (identifier) => {
     if (!identifier) return "-";
-    return userMap[identifier] || identifier;
+    const user = users.find(u => u.id === identifier || u.email === identifier);
+    return user?.full_name || identifier;
   };
 
   const getVendorName = (vendorId) => {
     if (!vendorId) return "-";
-    return vendorMap[vendorId] || "-";
+    const vendor = vendors.find(v => v.id === vendorId);
+    return vendor?.name || "-";
   };
 
   const getMovementTypeBadge = (type) => {

@@ -519,20 +519,13 @@ export default function BarcodeScannerPage() {
     }
   };
 
-  // Memoize stock lookups for performance
-  const stockMap = useMemo(() => {
-    return stockItems.reduce((map, item) => {
-      const key = `${item.product_id}_${item.warehouse_location}`;
-      map[key] = item;
-      return map;
-    }, {});
-  }, [stockItems]);
-
   const getAvailableStockAtLocation = useCallback((productId, locationName) => {
-    const item = stockMap[`${productId}_${locationName}`];
+    const item = stockItems.find(
+      s => s.product_id === productId && s.warehouse_location === locationName
+    );
     if (!item) return 0;
     return (item.quantity_on_hand || 0) - (item.quantity_reserved || 0);
-  }, [stockMap]);
+  }, [stockItems]);
 
   const getAvailableLocationsForProduct = useCallback(() => {
     if (!matchedProduct) return [];

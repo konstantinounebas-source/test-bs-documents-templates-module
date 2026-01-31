@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -97,16 +97,9 @@ export default function ProductVendorsManager({ product, vendors, companies = []
 
 
 
-  // Memoize vendor lookup for performance
-  const vendorMap = useMemo(() => {
-    return vendors.reduce((map, vendor) => {
-      map[vendor.id] = vendor.name;
-      return map;
-    }, {});
-  }, [vendors]);
-
   const getVendorName = (vendorId) => {
-    return vendorMap[vendorId] || 'Unknown';
+    const vendor = vendors.find(v => v.id === vendorId);
+    return vendor?.name || 'Unknown';
   };
   
   const getVendorFromMovement = (movement) => {
