@@ -417,6 +417,75 @@ const allNavigationGroups = [
     ]
   },
   {
+    id: 'manufacturing',
+    label: 'Manufacturing Production',
+    items: [
+      {
+        title: "Reference Data",
+        url: createPageUrl("MfgReferenceData"),
+        icon: Database,
+        description: "Manage departments, operations, consumables, etc.",
+        pageKey: "MfgReferenceData"
+      },
+      {
+        title: "Standards Management",
+        url: createPageUrl("MfgStandards"),
+        icon: FileText,
+        description: "Manage standards versions and sets",
+        pageKey: "MfgStandards"
+      },
+      {
+        title: "Profile Sets",
+        url: createPageUrl("MfgProfiles"),
+        icon: Users,
+        description: "Manage profile sets and versions",
+        pageKey: "MfgProfiles"
+      },
+      {
+        title: "QC Sets",
+        url: createPageUrl("MfgQC"),
+        icon: CheckSquare,
+        description: "Manage quality control sets",
+        pageKey: "MfgQC"
+      },
+      {
+        title: "Consumables Standards",
+        url: createPageUrl("MfgConsumables"),
+        icon: Package,
+        description: "Manage consumables standards",
+        pageKey: "MfgConsumables"
+      },
+      {
+        title: "KPI & Metrics Definitions",
+        url: createPageUrl("MfgKPIDefinitions"),
+        icon: TrendingUp,
+        description: "Define KPIs and metrics formulas",
+        pageKey: "MfgKPIDefinitions"
+      },
+      {
+        title: "Daily Production Entry",
+        url: createPageUrl("MfgDailyProduction"),
+        icon: ClipboardList,
+        description: "Enter daily production data",
+        pageKey: "MfgDailyProduction"
+      },
+      {
+        title: "Planning & Targets",
+        url: createPageUrl("MfgPlanning"),
+        icon: CalendarIcon,
+        description: "Manage planning and daily targets",
+        pageKey: "MfgPlanning"
+      },
+      {
+        title: "KPI Dashboard",
+        url: createPageUrl("MfgKPIDashboard"),
+        icon: BarChart3,
+        description: "View KPIs and performance metrics",
+        pageKey: "MfgKPIDashboard"
+      }
+    ]
+  },
+  {
     id: 'system-management',
     label: 'System Management',
     items: [
@@ -472,6 +541,7 @@ export default function Layout({ children }) {
     'warehouse-stock': true,
     'stickers-installation': true,
     'delivery-management': true,
+    'manufacturing': true,
     'system-management': true,
     'administration': true,
     'bus-stop-orders-management': true,
