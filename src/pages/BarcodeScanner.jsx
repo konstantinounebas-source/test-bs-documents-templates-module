@@ -488,7 +488,21 @@ export default function BarcodeScannerPage() {
 
     if (product) {
       setMatchedProduct(product);
-      setScanResult({ type: 'success', message: `✓ Product found: ${product.name}` });
+      
+      // Determine which field matched
+      let matchedField = '';
+      if (product.sku === barcode) {
+        matchedField = 'SKU';
+      } else if (product.barcode === barcode) {
+        matchedField = 'Barcode';
+      } else if (product.qr_code === barcode) {
+        matchedField = 'QR Code';
+      }
+      
+      setScanResult({ 
+        type: 'success', 
+        message: `✓ Product found: ${product.name} (matched by ${matchedField}: "${barcode}" → SKU: ${product.sku})` 
+      });
       saveRecentScan(product.sku);
     } else {
       setMatchedProduct(null);
@@ -503,19 +517,34 @@ export default function BarcodeScannerPage() {
       return;
     }
 
+    const searchCode = scannedBarcode.trim();
     const product = products.find(
-      p => p.barcode === scannedBarcode.trim() || 
-           p.qr_code === scannedBarcode.trim() ||
-           p.sku === scannedBarcode.trim()
+      p => p.barcode === searchCode || 
+           p.qr_code === searchCode ||
+           p.sku === searchCode
     );
 
     if (product) {
       setMatchedProduct(product);
-      setScanResult({ type: 'success', message: `✓ Product found: ${product.name}` });
+      
+      // Determine which field matched
+      let matchedField = '';
+      if (product.sku === searchCode) {
+        matchedField = 'SKU';
+      } else if (product.barcode === searchCode) {
+        matchedField = 'Barcode';
+      } else if (product.qr_code === searchCode) {
+        matchedField = 'QR Code';
+      }
+      
+      setScanResult({ 
+        type: 'success', 
+        message: `✓ Product found: ${product.name} (matched by ${matchedField}: "${searchCode}" → SKU: ${product.sku})` 
+      });
       saveRecentScan(product.sku);
     } else {
       setMatchedProduct(null);
-      setScanResult({ type: 'error', message: `No product found with code: "${scannedBarcode.trim()}"` });
+      setScanResult({ type: 'error', message: `No product found with code: "${searchCode}"` });
     }
   };
 
