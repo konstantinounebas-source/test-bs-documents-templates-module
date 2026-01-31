@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import {
   Dialog,
@@ -27,8 +27,9 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
   const loadMovements = async () => {
     setIsLoading(true);
     try {
+      // Limit to latest 100 movements for performance
       const [movementsData, usersData] = await Promise.all([
-        base44.entities.StockMovement.filter({ product_id: productId }, "-created_date"),
+        base44.entities.StockMovement.filter({ product_id: productId }, "-created_date", 100),
         base44.entities.User.list().catch(() => [])
       ]);
       
@@ -40,16 +41,30 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
     setIsLoading(false);
   };
 
+  // Memoize lookups for performance
+  const userMap = useMemo(() => {
+    return users.reduce((map, user) => {
+      map[user.id] = user.full_name;
+      map[user.email] = user.full_name;
+      return map;
+    }, {});
+  }, [users]);
+
+  const vendorMap = useMemo(() => {
+    return vendors.reduce((map, vendor) => {
+      map[vendor.id] = vendor.name;
+      return map;
+    }, {});
+  }, [vendors]);
+
   const getUserName = (identifier) => {
     if (!identifier) return "-";
-    const user = users.find(u => u.id === identifier || u.email === identifier);
-    return user?.full_name || identifier;
+    return userMap[identifier] || identifier;
   };
 
   const getVendorName = (vendorId) => {
     if (!vendorId) return "-";
-    const vendor = vendors.find(v => v.id === vendorId);
-    return vendor?.name || "-";
+    return vendorMap[vendorId] || "-";
   };
 
   const getMovementTypeBadge = (type) => {

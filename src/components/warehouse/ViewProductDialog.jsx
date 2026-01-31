@@ -163,13 +163,15 @@ export default function ViewProductDialog({ open, onClose, product, categories, 
   const loadProductVendors = async () => {
     setIsLoadingVendors(true);
     try {
-      // Reload product to get latest preferred_vendor_id and unit_cost calculations
-      const products = await base44.entities.Product.filter({ id: product.id });
+      // Load only essential data in parallel
+      const [products, pvData] = await Promise.all([
+        base44.entities.Product.filter({ id: product.id }),
+        base44.entities.ProductVendor.filter({ product_id: product.id })
+      ]);
+      
       if (products.length > 0) {
         setCurrentProduct(products[0]);
       }
-      
-      const pvData = await base44.entities.ProductVendor.filter({ product_id: product.id });
       setProductVendors(pvData);
     } catch (error) {
       console.error("Error loading product vendors:", error);

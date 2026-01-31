@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,15 +21,16 @@ export default function ProductVendorsManager({ product, vendors, companies = []
   const loadProductVendors = async () => {
     setIsLoading(true);
     try {
-      // Load ProductVendors to match movements with vendors
-      const pvData = await base44.entities.ProductVendor.filter({ product_id: product.id });
-      setProductVendors(pvData);
+      // Load data in parallel - limit movements to latest 50 for performance
+      const [pvData, movements] = await Promise.all([
+        base44.entities.ProductVendor.filter({ product_id: product.id }),
+        base44.entities.StockMovement.filter({ 
+          product_id: product.id,
+          movement_type: 'IN'
+        }, '-created_date', 50) // Only latest 50 movements
+      ]);
       
-      // Load ALL IN movements for this product
-      const movements = await base44.entities.StockMovement.filter({
-        product_id: product.id,
-        movement_type: 'IN'
-      });
+      setProductVendors(pvData);
       
       // Enrich movements with vendor info
       const enrichedMovements = movements.map(movement => {
@@ -71,32 +72,23 @@ export default function ProductVendorsManager({ product, vendors, companies = []
         };
       });
       
-      // Calculate true average from base quantities and base unit costs
-      let totalCost = 0;
-      let totalQty = 0;
-      
-      enrichedMovements.forEach(movement => {
+      // Calculate average - movements already sorted by created_date desc
+      const { totalCost, totalQty } = enrichedMovements.reduce((acc, movement) => {
         const baseQty = movement.base_quantity || movement.quantity;
         const baseUnitCost = movement.base_unit_cost || movement.unit_cost;
         
         if (baseUnitCost && baseUnitCost > 0 && baseQty > 0) {
-          totalCost += baseQty * baseUnitCost;
-          totalQty += baseQty;
+          acc.totalCost += baseQty * baseUnitCost;
+          acc.totalQty += baseQty;
         }
-      });
+        return acc;
+      }, { totalCost: 0, totalQty: 0 });
       
       const averageUnitCost = totalQty > 0 ? totalCost / totalQty : 0;
       setCalculatedAverage({ cost: averageUnitCost, quantity: totalQty });
       
-      // DO NOT auto-update product.unit_cost - user may have manually set a different cost
-      // Average is shown for reference only
-      
-      // Get latest 10 movements for display
-      const latestMovements = enrichedMovements
-        .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))
-        .slice(0, 10);
-      
-      setRecentMovements(latestMovements);
+      // Latest 10 for display (already sorted)
+      setRecentMovements(enrichedMovements.slice(0, 10));
     } catch (error) {
       console.error("Error loading IN movements:", error);
     }
@@ -105,9 +97,16 @@ export default function ProductVendorsManager({ product, vendors, companies = []
 
 
 
+  // Memoize vendor lookup for performance
+  const vendorMap = useMemo(() => {
+    return vendors.reduce((map, vendor) => {
+      map[vendor.id] = vendor.name;
+      return map;
+    }, {});
+  }, [vendors]);
+
   const getVendorName = (vendorId) => {
-    const vendor = vendors.find(v => v.id === vendorId);
-    return vendor?.name || 'Unknown';
+    return vendorMap[vendorId] || 'Unknown';
   };
   
   const getVendorFromMovement = (movement) => {

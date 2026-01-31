@@ -25,10 +25,11 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [validationError, setValidationError] = useState("");
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
+  // Reset form when dialog opens
   useEffect(() => {
     if (open && product) {
-      loadData();
       setMovementType("IN");
       setQuantity("");
       setFromLocation("");
@@ -39,12 +40,15 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
       setConversionRate("1");
       setBundleQuantity("");
       setValidationError("");
+      
+      // Lazy load data only when dialog opens
+      loadData();
     }
   }, [open, product]);
 
   const loadData = async () => {
     if (!product) return;
-    setIsProcessing(true);
+    setIsLoadingData(true);
     setValidationError("");
 
     try {
@@ -63,14 +67,17 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
       console.error("Error loading data:", error);
       setValidationError("Failed to load necessary data. Please try again.");
     } finally {
-      setIsProcessing(false);
+      setIsLoadingData(false);
     }
   };
 
   const recalculateStockForProduct = async (productId) => {
     try {
-      const allMovements = await base44.entities.StockMovement.filter({ product_id: productId });
-      const stockItems = await base44.entities.StockItem.filter({ product_id: productId });
+      // Load in parallel
+      const [allMovements, stockItems] = await Promise.all([
+        base44.entities.StockMovement.filter({ product_id: productId }),
+        base44.entities.StockItem.filter({ product_id: productId })
+      ]);
       
       const locationStocks = {};
       
@@ -225,21 +232,27 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <Alert className="bg-blue-50 border-blue-200">
-            <Info className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
-              This dialog allows you to record physical movements of stock. Changes made here will update
-              the "Quantity On Hand" for this product in specific locations.
-            </AlertDescription>
-          </Alert>
-
-          {validationError && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{validationError}</AlertDescription>
+        {isLoadingData ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+            <span className="ml-2 text-slate-600">Loading...</span>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+            <Alert className="bg-blue-50 border-blue-200">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                This dialog allows you to record physical movements of stock. Changes made here will update
+                the "Quantity On Hand" for this product in specific locations.
+              </AlertDescription>
             </Alert>
-          )}
+
+            {validationError && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{validationError}</AlertDescription>
+              </Alert>
+            )}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -476,6 +489,7 @@ export default function SimpleStockMovementDialog({ open, onClose, product, onSt
             </Button>
           </DialogFooter>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );

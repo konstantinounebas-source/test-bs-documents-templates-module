@@ -297,8 +297,11 @@ export default function BarcodeScannerPage() {
 
   const recalculateStockForProduct = async (productId) => {
     try {
-      const allMovements = await base44.entities.StockMovement.filter({ product_id: productId });
-      const stockItemsForProduct = await base44.entities.StockItem.filter({ product_id: productId });
+      // Load in parallel for speed
+      const [allMovements, stockItemsForProduct] = await Promise.all([
+        base44.entities.StockMovement.filter({ product_id: productId }),
+        base44.entities.StockItem.filter({ product_id: productId })
+      ]);
       
       const locationStocks = {};
       
@@ -516,13 +519,20 @@ export default function BarcodeScannerPage() {
     }
   };
 
+  // Memoize stock lookups for performance
+  const stockMap = useMemo(() => {
+    return stockItems.reduce((map, item) => {
+      const key = `${item.product_id}_${item.warehouse_location}`;
+      map[key] = item;
+      return map;
+    }, {});
+  }, [stockItems]);
+
   const getAvailableStockAtLocation = useCallback((productId, locationName) => {
-    const item = stockItems.find(
-      s => s.product_id === productId && s.warehouse_location === locationName
-    );
+    const item = stockMap[`${productId}_${locationName}`];
     if (!item) return 0;
     return (item.quantity_on_hand || 0) - (item.quantity_reserved || 0);
-  }, [stockItems]);
+  }, [stockMap]);
 
   const getAvailableLocationsForProduct = useCallback(() => {
     if (!matchedProduct) return [];
