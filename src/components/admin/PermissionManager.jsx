@@ -59,6 +59,16 @@ const ALL_PAGES = [
   { key: 'BSOrderFieldsDataDefinitions', label: 'BS Order Fields & Data Definitions', module: 'Bus Stop Orders Management' },
   { key: 'BusStopOrdersUserGuide', label: 'Bus Stop Orders User Guide', module: 'Bus Stop Orders Management' },
 
+  { key: 'MfgReferenceData', label: 'Reference Data', module: 'Manufacturing Production' },
+  { key: 'MfgStandards', label: 'Standards Management', module: 'Manufacturing Production' },
+  { key: 'MfgProfiles', label: 'Profile Sets', module: 'Manufacturing Production' },
+  { key: 'MfgQC', label: 'QC Sets', module: 'Manufacturing Production' },
+  { key: 'MfgConsumables', label: 'Consumables Standards', module: 'Manufacturing Production' },
+  { key: 'MfgKPIDefinitions', label: 'KPI & Metrics Definitions', module: 'Manufacturing Production' },
+  { key: 'MfgDailyProduction', label: 'Daily Production Entry', module: 'Manufacturing Production' },
+  { key: 'MfgPlanning', label: 'Planning & Targets', module: 'Manufacturing Production' },
+  { key: 'MfgKPIDashboard', label: 'KPI Dashboard', module: 'Manufacturing Production' },
+
   { key: 'Users', label: 'Users', module: 'System Management' },
   { key: 'AccessControl', label: 'Access Control', module: 'System Management' },
   { key: 'VersionManagement', label: 'Version Management', module: 'System Management' },
