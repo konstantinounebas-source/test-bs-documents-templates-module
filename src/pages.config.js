@@ -107,6 +107,15 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
+import MfgReferenceData from './pages/MfgReferenceData';
+import MfgStandards from './pages/MfgStandards';
+import MfgProfiles from './pages/MfgProfiles';
+import MfgQC from './pages/MfgQC';
+import MfgConsumables from './pages/MfgConsumables';
+import MfgKPIDefinitions from './pages/MfgKPIDefinitions';
+import MfgDailyProduction from './pages/MfgDailyProduction';
+import MfgPlanning from './pages/MfgPlanning';
+import MfgKPIDashboard from './pages/MfgKPIDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -171,6 +180,15 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
+    "MfgReferenceData": MfgReferenceData,
+    "MfgStandards": MfgStandards,
+    "MfgProfiles": MfgProfiles,
+    "MfgQC": MfgQC,
+    "MfgConsumables": MfgConsumables,
+    "MfgKPIDefinitions": MfgKPIDefinitions,
+    "MfgDailyProduction": MfgDailyProduction,
+    "MfgPlanning": MfgPlanning,
+    "MfgKPIDashboard": MfgKPIDashboard,
 }
 
 export const pagesConfig = {
