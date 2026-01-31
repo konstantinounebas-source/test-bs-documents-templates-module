@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ import {
 import CreateEditProductDialog from "./CreateEditProductDialog";
 import ViewProductDialog from "./ViewProductDialog";
 
-export default function ProductsTable({ 
+const ProductsTable = memo(function ProductsTable({ 
   products, 
   categories, 
   vendors, 
@@ -255,4 +255,6 @@ export default function ProductsTable({
       </AlertDialog>
     </>
   );
-}
+});
+
+export default ProductsTable;

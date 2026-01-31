@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Search, Download, AlertTriangle, Package } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -12,73 +13,78 @@ import StockOverviewTable from "../components/warehouse/StockOverviewTable";
 import PaginationControls from "../components/warehouse/PaginationControls";
 
 export default function StockOverviewPage() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [stockItems, setStockItems] = useState([]);
-  const [productVendors, setProductVendors] = useState([]);
-  const [vendors, setVendors] = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [companyFilter, setCompanyFilter] = useState("all");
   const [stockFilter, setStockFilter] = useState("all");
   const [showInactive, setShowInactive] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState("10");
+
+  // Use React Query for data fetching with caching
+  const { data: products = [], isLoading: productsLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => base44.entities.Product.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => base44.entities.ProductCategory.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: stockItems = [] } = useQuery({
+    queryKey: ['stockItems'],
+    queryFn: () => base44.entities.StockItem.list(),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: productVendors = [] } = useQuery({
+    queryKey: ['productVendors'],
+    queryFn: () => base44.entities.ProductVendor.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: vendors = [] } = useQuery({
+    queryKey: ['vendors'],
+    queryFn: () => base44.entities.Vendor.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => base44.entities.Company.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const isLoading = productsLoading;
 
   // Optimized data maps for O(1) lookups
-  const [stockByProductId, setStockByProductId] = useState({});
-  const [vendorsByProductId, setVendorsByProductId] = useState({});
+  const stockByProductId = useMemo(() => {
+    const map = {};
+    stockItems.forEach(item => {
+      if (!map[item.product_id]) map[item.product_id] = [];
+      map[item.product_id].push(item);
+    });
+    return map;
+  }, [stockItems]);
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState("10"); // Default items per page
-  
+  const vendorsByProductId = useMemo(() => {
+    const map = {};
+    productVendors.forEach(pv => {
+      if (pv.is_active) {
+        if (!map[pv.product_id]) map[pv.product_id] = [];
+        map[pv.product_id].push(pv);
+      }
+    });
+    return map;
+  }, [productVendors]);
 
-
-  useEffect(() => {
-    loadAllData();
-  }, []);
-
-  const loadAllData = async () => {
-    setIsLoading(true);
-    try {
-      const [productsData, categoriesData, stockData, pvData, vendorsData, companiesData] = await Promise.all([
-        base44.entities.Product.list(),
-        base44.entities.ProductCategory.list(),
-        base44.entities.StockItem.list(),
-        base44.entities.ProductVendor.list(),
-        base44.entities.Vendor.list(),
-        base44.entities.Company.list()
-      ]);
-      
-      setProducts(productsData);
-      setCategories(categoriesData);
-      setStockItems(stockData);
-      setProductVendors(pvData);
-      setVendors(vendorsData);
-      setCompanies(companiesData);
-
-      // Build optimized lookup maps - O(n) once instead of O(n²) filtering
-      const stockMap = {};
-      stockData.forEach(item => {
-        if (!stockMap[item.product_id]) stockMap[item.product_id] = [];
-        stockMap[item.product_id].push(item);
-      });
-      setStockByProductId(stockMap);
-
-      const vendorMap = {};
-      pvData.forEach(pv => {
-        if (pv.is_active) {
-          if (!vendorMap[pv.product_id]) vendorMap[pv.product_id] = [];
-          vendorMap[pv.product_id].push(pv);
-        }
-      });
-      setVendorsByProductId(vendorMap);
-
-    } catch (error) {
-      console.error("Error loading data:", error);
-    }
-    setIsLoading(false);
+  const loadAllData = () => {
+    // Invalidate queries to refresh
+    queryClient.invalidateQueries({ queryKey: ['products'] });
+    queryClient.invalidateQueries({ queryKey: ['stockItems'] });
   };
 
   const getStockForProduct = (productId) => {
@@ -93,39 +99,45 @@ export default function StockOverviewPage() {
     return vendorsByProductId[productId] || [];
   };
 
-  // Filter products by is_active first
-  const activeProducts = showInactive ? products : products.filter(p => p.is_active);
-
-  const productsWithStock = activeProducts.map(product => ({
-    ...product,
-    ...getStockForProduct(product.id),
-    productVendors: getProductVendorsForProduct(product.id)
-  }));
-
-  const filteredProducts = productsWithStock.filter(p => {
-    const matchesSearch = searchTerm === "" ||
-      p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesCategory = categoryFilter === "all" || p.category_id === categoryFilter;
+  // Memoize filtered and enriched products
+  const productsWithStock = useMemo(() => {
+    const activeProducts = showInactive ? products : products.filter(p => p.is_active);
     
-    const matchesCompany = companyFilter === "all" || p.company_id === companyFilter;
+    return activeProducts.map(product => ({
+      ...product,
+      ...getStockForProduct(product.id),
+      productVendors: getProductVendorsForProduct(product.id)
+    }));
+  }, [products, showInactive, stockByProductId, vendorsByProductId]);
 
-    const matchesStock = stockFilter === "all" ||
-      (stockFilter === "low" && p.available < (p.minimum_stock || 0)) ||
-      (stockFilter === "out" && p.available === 0) ||
-      (stockFilter === "ok" && p.available >= (p.minimum_stock || 0));
+  const filteredProducts = useMemo(() => {
+    return productsWithStock.filter(p => {
+      const matchesSearch = searchTerm === "" ||
+        p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.sku?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return matchesSearch && matchesCategory && matchesCompany && matchesStock;
-  });
+      const matchesCategory = categoryFilter === "all" || p.category_id === categoryFilter;
+      
+      const matchesCompany = companyFilter === "all" || p.company_id === companyFilter;
+
+      const matchesStock = stockFilter === "all" ||
+        (stockFilter === "low" && p.available < (p.minimum_stock || 0)) ||
+        (stockFilter === "out" && p.available === 0) ||
+        (stockFilter === "ok" && p.available >= (p.minimum_stock || 0));
+
+      return matchesSearch && matchesCategory && matchesCompany && matchesStock;
+    });
+  }, [productsWithStock, searchTerm, categoryFilter, companyFilter, stockFilter]);
 
   // Pagination logic for the table
-  const paginatedProducts = itemsPerPage === "all"
-    ? filteredProducts
-    : filteredProducts.slice(
-        (currentPage - 1) * parseInt(itemsPerPage),
-        currentPage * parseInt(itemsPerPage)
-      );
+  const paginatedProducts = useMemo(() => {
+    return itemsPerPage === "all"
+      ? filteredProducts
+      : filteredProducts.slice(
+          (currentPage - 1) * parseInt(itemsPerPage),
+          currentPage * parseInt(itemsPerPage)
+        );
+  }, [filteredProducts, itemsPerPage, currentPage]);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -138,14 +150,20 @@ export default function StockOverviewPage() {
   
 
 
-  // Calculate stats based on filtered products
-  const totalValue = filteredProducts.reduce((sum, p) => {
-    const unitCost = p.unit_cost || 0;
-    return sum + (p.available * unitCost);
-  }, 0);
+  // Calculate stats based on filtered products - memoized
+  const stats = useMemo(() => {
+    const totalValue = filteredProducts.reduce((sum, p) => {
+      const unitCost = p.unit_cost || 0;
+      return sum + (p.available * unitCost);
+    }, 0);
 
-  const lowStockCount = filteredProducts.filter(p => p.available < (p.minimum_stock || 0)).length;
-  const outOfStockCount = filteredProducts.filter(p => p.available === 0).length;
+    const lowStockCount = filteredProducts.filter(p => p.available < (p.minimum_stock || 0)).length;
+    const outOfStockCount = filteredProducts.filter(p => p.available === 0).length;
+
+    return { totalValue, lowStockCount, outOfStockCount };
+  }, [filteredProducts]);
+
+  const { totalValue, lowStockCount, outOfStockCount } = stats;
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">

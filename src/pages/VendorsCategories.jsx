@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Truck, FolderTree, MapPin, Tag, Briefcase, Building2, FileText, Users, Layers } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -31,16 +32,8 @@ import PaginationControls from "../components/warehouse/PaginationControls";
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default function VendorsCategoriesPage() {
-  const [vendors, setVendors] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [locations, setLocations] = useState([]);
-  const [vendorCategories, setVendorCategories] = useState([]);
-  const [vendorServices, setVendorServices] = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [invoiceCategories, setInvoiceCategories] = useState([]);
-  const [teams, setTeams] = useState([]);
-  const [materialCategories, setMaterialCategories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
   const [showVendorDialog, setShowVendorDialog] = useState(false);
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [showLocationDialog, setShowLocationDialog] = useState(false);
@@ -90,178 +83,187 @@ export default function VendorsCategoriesPage() {
   const [materialCategoriesCurrentPage, setMaterialCategoriesCurrentPage] = useState(1);
   const [materialCategoriesItemsPerPage, setMaterialCategoriesItemsPerPage] = useState("10");
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Use React Query for all data
+  const { data: vendors = [], isLoading: vendorsLoading } = useQuery({
+    queryKey: ['vendors'],
+    queryFn: () => base44.entities.Vendor.list("-updated_date"),
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      // Load all data in parallel for much faster loading
-      const [
-        vendorsData,
-        categoriesData,
-        locationsData,
-        vendorCatsData,
-        vendorServsData,
-        companiesData,
-        invoiceCatsData,
-        teamsData,
-        materialCatsData
-      ] = await Promise.all([
-        base44.entities.Vendor.list("-updated_date"),
-        base44.entities.ProductCategory.list("-updated_date"),
-        base44.entities.WarehouseLocation.list("-updated_date"),
-        base44.entities.VendorCategory.list("-updated_date"),
-        base44.entities.VendorService.list("-updated_date"),
-        base44.entities.Company.list("-updated_date"),
-        base44.entities.InvoiceCategory.list("-updated_date"),
-        base44.entities.Team.list("-updated_date"),
-        base44.entities.MaterialCategory.list("-updated_date")
-      ]);
-      
-      setVendors(vendorsData);
-      setCategories(categoriesData);
-      setLocations(locationsData);
-      setVendorCategories(vendorCatsData);
-      setVendorServices(vendorServsData);
-      setCompanies(companiesData);
-      setInvoiceCategories(invoiceCatsData);
-      setTeams(teamsData);
-      setMaterialCategories(materialCatsData);
-      
-    } catch (error) {
-      console.error("Error loading data:", error);
-    }
-    setIsLoading(false);
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => base44.entities.ProductCategory.list("-updated_date"),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: locations = [] } = useQuery({
+    queryKey: ['locations'],
+    queryFn: () => base44.entities.WarehouseLocation.list("-updated_date"),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: vendorCategories = [] } = useQuery({
+    queryKey: ['vendorCategories'],
+    queryFn: () => base44.entities.VendorCategory.list("-updated_date"),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: vendorServices = [] } = useQuery({
+    queryKey: ['vendorServices'],
+    queryFn: () => base44.entities.VendorService.list("-updated_date"),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => base44.entities.Company.list("-updated_date"),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: invoiceCategories = [] } = useQuery({
+    queryKey: ['invoiceCategories'],
+    queryFn: () => base44.entities.InvoiceCategory.list("-updated_date"),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: teams = [] } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => base44.entities.Team.list("-updated_date"),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: materialCategories = [] } = useQuery({
+    queryKey: ['materialCategories'],
+    queryFn: () => base44.entities.MaterialCategory.list("-updated_date"),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const isLoading = vendorsLoading;
+
+  const loadData = () => {
+    // Invalidate all queries to refresh
+    queryClient.invalidateQueries();
   };
 
-  const filteredVendors = vendors.filter(v =>
+  // Memoize all filtered lists
+  const filteredVendors = useMemo(() => vendors.filter(v =>
     searchTerm === "" || 
     v.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     v.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     v.contact_person?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [vendors, searchTerm]);
 
-  const filteredCategories = categories.filter(c =>
+  const filteredCategories = useMemo(() => categories.filter(c =>
     searchTerm === "" || 
     c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.code?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [categories, searchTerm]);
 
-  const filteredLocations = locations.filter(l =>
+  const filteredLocations = useMemo(() => locations.filter(l =>
     searchTerm === "" || 
     l.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     l.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     l.warehouse?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [locations, searchTerm]);
 
-  const filteredVendorCategories = vendorCategories.filter(vc =>
+  const filteredVendorCategories = useMemo(() => vendorCategories.filter(vc =>
     searchTerm === "" ||
     vc.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vc.code?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [vendorCategories, searchTerm]);
 
-  const filteredVendorServices = vendorServices.filter(vs =>
+  const filteredVendorServices = useMemo(() => vendorServices.filter(vs =>
     searchTerm === "" ||
     vs.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vs.code?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [vendorServices, searchTerm]);
 
-  const filteredCompanies = companies.filter(c =>
+  const filteredCompanies = useMemo(() => companies.filter(c =>
     searchTerm === "" ||
     c.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [companies, searchTerm]);
 
-  const filteredInvoiceCategories = invoiceCategories.filter(ic =>
+  const filteredInvoiceCategories = useMemo(() => invoiceCategories.filter(ic =>
     searchTerm === "" ||
     ic.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [invoiceCategories, searchTerm]);
 
-  const filteredTeams = teams.filter(t =>
+  const filteredTeams = useMemo(() => teams.filter(t =>
     searchTerm === "" ||
     t.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     t.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [teams, searchTerm]);
 
-  const filteredMaterialCategories = materialCategories.filter(mc =>
+  const filteredMaterialCategories = useMemo(() => materialCategories.filter(mc =>
     searchTerm === "" ||
     mc.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     mc.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     mc.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [materialCategories, searchTerm]);
 
-  // Vendors Pagination
-  const paginatedVendors = vendorsItemsPerPage === "all" 
+  // Memoize all paginated lists
+  const paginatedVendors = useMemo(() => vendorsItemsPerPage === "all" 
     ? filteredVendors 
     : filteredVendors.slice(
         (vendorsCurrentPage - 1) * parseInt(vendorsItemsPerPage),
         vendorsCurrentPage * parseInt(vendorsItemsPerPage)
-      );
+      ), [filteredVendors, vendorsItemsPerPage, vendorsCurrentPage]);
 
-  // Categories Pagination
-  const paginatedCategories = categoriesItemsPerPage === "all" 
+  const paginatedCategories = useMemo(() => categoriesItemsPerPage === "all" 
     ? filteredCategories 
     : filteredCategories.slice(
         (categoriesCurrentPage - 1) * parseInt(categoriesItemsPerPage),
         categoriesCurrentPage * parseInt(categoriesItemsPerPage)
-      );
+      ), [filteredCategories, categoriesItemsPerPage, categoriesCurrentPage]);
 
-  // Locations Pagination
-  const paginatedLocations = locationsItemsPerPage === "all" 
+  const paginatedLocations = useMemo(() => locationsItemsPerPage === "all" 
     ? filteredLocations 
     : filteredLocations.slice(
         (locationsCurrentPage - 1) * parseInt(locationsItemsPerPage),
         locationsCurrentPage * parseInt(locationsItemsPerPage)
-      );
+      ), [filteredLocations, locationsItemsPerPage, locationsCurrentPage]);
 
-  // Vendor Categories Pagination
-  const paginatedVendorCategories = vendorCategoriesItemsPerPage === "all" 
+  const paginatedVendorCategories = useMemo(() => vendorCategoriesItemsPerPage === "all" 
     ? filteredVendorCategories 
     : filteredVendorCategories.slice(
         (vendorCategoriesCurrentPage - 1) * parseInt(vendorCategoriesItemsPerPage),
         vendorCategoriesCurrentPage * parseInt(vendorCategoriesItemsPerPage)
-      );
+      ), [filteredVendorCategories, vendorCategoriesItemsPerPage, vendorCategoriesCurrentPage]);
 
-  // Vendor Services Pagination
-  const paginatedVendorServices = vendorServicesItemsPerPage === "all" 
+  const paginatedVendorServices = useMemo(() => vendorServicesItemsPerPage === "all" 
     ? filteredVendorServices 
     : filteredVendorServices.slice(
         (vendorServicesCurrentPage - 1) * parseInt(vendorServicesItemsPerPage),
         vendorServicesCurrentPage * parseInt(vendorServicesItemsPerPage)
-      );
+      ), [filteredVendorServices, vendorServicesItemsPerPage, vendorServicesCurrentPage]);
 
-  // Companies Pagination
-  const paginatedCompanies = companiesItemsPerPage === "all" 
+  const paginatedCompanies = useMemo(() => companiesItemsPerPage === "all" 
     ? filteredCompanies 
     : filteredCompanies.slice(
         (companiesCurrentPage - 1) * parseInt(companiesItemsPerPage),
         companiesCurrentPage * parseInt(companiesItemsPerPage)
-      );
+      ), [filteredCompanies, companiesItemsPerPage, companiesCurrentPage]);
 
-  // Invoice Categories Pagination
-  const paginatedInvoiceCategories = invoiceCategoriesItemsPerPage === "all" 
+  const paginatedInvoiceCategories = useMemo(() => invoiceCategoriesItemsPerPage === "all" 
     ? filteredInvoiceCategories 
     : filteredInvoiceCategories.slice(
         (invoiceCategoriesCurrentPage - 1) * parseInt(invoiceCategoriesItemsPerPage),
         invoiceCategoriesCurrentPage * parseInt(invoiceCategoriesItemsPerPage)
-      );
+      ), [filteredInvoiceCategories, invoiceCategoriesItemsPerPage, invoiceCategoriesCurrentPage]);
 
-  // Teams Pagination
-  const paginatedTeams = teamsItemsPerPage === "all" 
+  const paginatedTeams = useMemo(() => teamsItemsPerPage === "all" 
     ? filteredTeams 
     : filteredTeams.slice(
         (teamsCurrentPage - 1) * parseInt(teamsItemsPerPage),
         teamsCurrentPage * parseInt(teamsItemsPerPage)
-      );
+      ), [filteredTeams, teamsItemsPerPage, teamsCurrentPage]);
 
-  // Material Categories Pagination
-  const paginatedMaterialCategories = materialCategoriesItemsPerPage === "all" 
+  const paginatedMaterialCategories = useMemo(() => materialCategoriesItemsPerPage === "all" 
     ? filteredMaterialCategories 
     : filteredMaterialCategories.slice(
         (materialCategoriesCurrentPage - 1) * parseInt(materialCategoriesItemsPerPage),
         materialCategoriesCurrentPage * parseInt(materialCategoriesItemsPerPage)
-      );
+      ), [filteredMaterialCategories, materialCategoriesItemsPerPage, materialCategoriesCurrentPage]);
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">

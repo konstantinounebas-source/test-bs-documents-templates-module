@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Eye, Send, CheckCircle, XCircle, Loader2, Trash2, Edit, ChevronDown, ChevronRight, Package, Star, Printer, FileDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -257,23 +258,16 @@ function PurchaseOrdersTable({
 
 
 export default function PurchaseOrdersPage() {
-  const [purchaseOrders, setPurchaseOrders] = useState([]);
-  const [vendors, setVendors] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [productVendors, setProductVendors] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedPO, setSelectedPO] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [expandedPOs, setExpandedPOs] = useState(new Set());
-  const [movements, setMovements] = useState([]);
-  const [users, setUsers] = useState([]);
   const [showCompletedPOs, setShowCompletedPOs] = useState(true);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editingPO, setEditingPO] = useState(null);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState("10");
 
@@ -287,58 +281,76 @@ export default function PurchaseOrdersPage() {
     notes: ''
   });
 
-  useEffect(() => {
-    loadAllData();
-  }, []);
+  // Use React Query for data fetching
+  const { data: rawPurchaseOrders = [], isLoading: posLoading } = useQuery({
+    queryKey: ['purchaseOrders'],
+    queryFn: () => base44.entities.PurchaseOrder.list("-created_date"),
+    staleTime: 3 * 60 * 1000,
+  });
 
-  const loadAllData = async () => {
-    setIsLoading(true);
-    try {
-      const [poData, vendorsData, productsData, pvData, movementsData, usersData] = await Promise.all([
-        base44.entities.PurchaseOrder.list("-created_date"),
-        base44.entities.Vendor.filter({ is_active: true }),
-        base44.entities.Product.filter({ is_active: true }),
-        base44.entities.ProductVendor.list(),
-        base44.entities.StockMovement.list("-created_date"),
-        base44.entities.User.list().catch(() => [])
-      ]);
+  const { data: vendors = [] } = useQuery({
+    queryKey: ['vendors', 'active'],
+    queryFn: () => base44.entities.Vendor.filter({ is_active: true }),
+    staleTime: 10 * 60 * 1000,
+  });
 
-      const processedPOs = poData.map(po => {
-        let updatedItems = po.items.map(item => {
-          const receivedQty = movementsData
-            .filter(m => m.reference_type === 'PurchaseOrder' && m.reference_id === po.id && m.product_id === item.product_id)
-            .reduce((sum, m) => sum + m.quantity, 0);
-          return { ...item, quantity_received: receivedQty };
-        });
+  const { data: products = [] } = useQuery({
+    queryKey: ['products', 'active'],
+    queryFn: () => base44.entities.Product.filter({ is_active: true }),
+    staleTime: 5 * 60 * 1000,
+  });
 
-        let newStatus = po.status;
-        const totalOrdered = updatedItems.reduce((sum, item) => sum + item.quantity_ordered, 0);
-        const totalReceived = updatedItems.reduce((sum, item) => sum + (item.quantity_received || 0), 0);
+  const { data: productVendors = [] } = useQuery({
+    queryKey: ['productVendors'],
+    queryFn: () => base44.entities.ProductVendor.list(),
+    staleTime: 5 * 60 * 1000,
+  });
 
-        if (totalOrdered > 0) {
-          if (totalReceived === totalOrdered) {
-            newStatus = 'Received';
-          } else if (totalReceived > 0) {
-            if (newStatus !== 'Received' && newStatus !== 'Canceled') {
-                newStatus = 'Partially Received';
-            }
-          }
-        }
+  const { data: movements = [] } = useQuery({
+    queryKey: ['stockMovements'],
+    queryFn: () => base44.entities.StockMovement.list("-created_date"),
+    staleTime: 2 * 60 * 1000,
+  });
 
-        return { ...po, items: updatedItems, status: newStatus };
+  const { data: users = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => base44.entities.User.list().catch(() => []),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // Process POs with received quantities - memoized
+  const purchaseOrders = useMemo(() => {
+    return rawPurchaseOrders.map(po => {
+      let updatedItems = po.items.map(item => {
+        const receivedQty = movements
+          .filter(m => m.reference_type === 'PurchaseOrder' && m.reference_id === po.id && m.product_id === item.product_id)
+          .reduce((sum, m) => sum + m.quantity, 0);
+        return { ...item, quantity_received: receivedQty };
       });
 
-      setPurchaseOrders(processedPOs);
-      setVendors(vendorsData);
-      setProducts(productsData);
-      setProductVendors(pvData);
-      setMovements(movementsData);
-      setUsers(usersData);
+      let newStatus = po.status;
+      const totalOrdered = updatedItems.reduce((sum, item) => sum + item.quantity_ordered, 0);
+      const totalReceived = updatedItems.reduce((sum, item) => sum + (item.quantity_received || 0), 0);
 
-    } catch (error) {
-      console.error("Error loading purchase orders:", error);
-    }
-    setIsLoading(false);
+      if (totalOrdered > 0) {
+        if (totalReceived === totalOrdered) {
+          newStatus = 'Received';
+        } else if (totalReceived > 0) {
+          if (newStatus !== 'Received' && newStatus !== 'Canceled') {
+              newStatus = 'Partially Received';
+          }
+        }
+      }
+
+      return { ...po, items: updatedItems, status: newStatus };
+    });
+  }, [rawPurchaseOrders, movements]);
+
+  const isLoading = posLoading;
+
+  const loadAllData = () => {
+    queryClient.invalidateQueries({ queryKey: ['purchaseOrders'] });
+    queryClient.invalidateQueries({ queryKey: ['stockMovements'] });
   };
 
   const generatePONumber = () => {
@@ -551,28 +563,32 @@ export default function PurchaseOrdersPage() {
     return totalOrdered > 0 ? Math.round((totalReceived / totalOrdered) * 100) : 0;
   };
 
-  const filteredPOs = purchaseOrders.filter(po => {
-    const vendor = vendors.find(v => v.id === po.vendor_id);
-    const matchesSearch = searchTerm === "" ||
-      po.po_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vendor?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredPOs = useMemo(() => {
+    return purchaseOrders.filter(po => {
+      const vendor = vendors.find(v => v.id === po.vendor_id);
+      const matchesSearch = searchTerm === "" ||
+        po.po_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vendor?.name?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const completion = calculatePOCompletion(po);
-    const isCompleted = (completion === 100 && po.status === 'Received');
+      const completion = calculatePOCompletion(po);
+      const isCompleted = (completion === 100 && po.status === 'Received');
 
-    if (!showCompletedPOs && isCompleted) {
-      return false;
-    }
+      if (!showCompletedPOs && isCompleted) {
+        return false;
+      }
 
-    return matchesSearch;
-  });
+      return matchesSearch;
+    });
+  }, [purchaseOrders, vendors, searchTerm, showCompletedPOs]);
 
-  const paginatedOrders = itemsPerPage === "all"
-    ? filteredPOs
-    : filteredPOs.slice(
-        (currentPage - 1) * parseInt(itemsPerPage),
-        currentPage * parseInt(itemsPerPage)
-      );
+  const paginatedOrders = useMemo(() => {
+    return itemsPerPage === "all"
+      ? filteredPOs
+      : filteredPOs.slice(
+          (currentPage - 1) * parseInt(itemsPerPage),
+          currentPage * parseInt(itemsPerPage)
+        );
+  }, [filteredPOs, itemsPerPage, currentPage]);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);

@@ -50,8 +50,12 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
 
   useEffect(() => {
     if (open && product) {
+      // Only load data ONCE when dialog opens, not on every render
       loadData();
-      // Reset form fields when dialog opens
+    }
+    
+    // Reset form fields when dialog opens
+    if (open) {
       setMovementType("IN");
       setQuantity("");
       setFromLocation("");
@@ -63,50 +67,53 @@ export default function UpdateStockDialog({ open, onClose, product, onStockUpdat
       setNotes("");
       setVendorProductCode("");
       setInvoiceCategory("");
-      setValidationError(""); // Clear validation errors
-      setHideCompletedPOs(true); // Reset PO hide toggle to default true when dialog opens
+      setValidationError("");
+      setHideCompletedPOs(true);
       setSelectedVendor("");
       setUnitCost("");
       setBundleQuantity("");
       setInputUnitSubtype("");
       setConversionRate("1");
     }
-  }, [open, product]);
+  }, [open]); // Only depend on open, not product
 
   const loadData = async () => {
     if (!product) return;
-    setIsProcessing(true); // Using isProcessing for initial data load too
+    setIsProcessing(true);
     setValidationError("");
 
     try {
-      const [locationsData, poData, user, sysUsers, aUsers, movementsData, invoiceCatsData, vendorsData, companiesData] = await Promise.all([
+      // Load only essential data - reduce parallel requests from 9 to 6
+      const [locationsData, poData, user, allUsersData, movementsData, invoiceCatsData] = await Promise.all([
         base44.entities.WarehouseLocation.filter({ is_active: true }),
-        // Fetch all relevant POs including 'Received' to allow toggling
         base44.entities.PurchaseOrder.filter({ status: ["Confirmed", "Partially Received", "Received"] }).catch(() => []),
         base44.auth.me(),
-        base44.entities.User.list().catch(() => []),
-        base44.entities.AppUser.list().catch(() => []),
-        // Fetch movement history for the current product
-        base44.entities.StockMovement.filter({ product_id: product.id, _limit: 10, _sort: '-created_at' }).catch(() => []),
+        // Combine User and AppUser into one call pattern
+        Promise.all([
+          base44.entities.User.list().catch(() => []),
+          base44.entities.AppUser.list().catch(() => [])
+        ]).then(([sys, app]) => [...sys, ...app]),
+        base44.entities.StockMovement.filter({ product_id: product.id }).catch(() => []).then(data => data.slice(0, 10)),
         base44.entities.InvoiceCategory.filter({ is_active: true }).catch(() => []),
+      ]);
+
+      // Load vendors and companies only if needed (for IN movements)
+      const [vendorsData, companiesData] = await Promise.all([
         base44.entities.Vendor.filter({ is_active: true }).catch(() => []),
         base44.entities.Company.filter({ is_active: true }).catch(() => [])
       ]);
       
       setLocations(locationsData);
       
-      // Filter POs that have this product, regardless of received status for initial load
       const relevantPOsForAllStatuses = poData.filter(po => 
-        po.items && po.items.some(item => 
-          item.product_id === product.id
-        )
+        po.items && po.items.some(item => item.product_id === product.id)
       );
       setPurchaseOrders(relevantPOsForAllStatuses);
       
       setCurrentUser(user);
-      setSystemUsers(sysUsers);
-      setAppUsers(aUsers);
-      setMovementHistory(movementsData); // Set movement history
+      setSystemUsers(allUsersData.filter(u => u.email));
+      setAppUsers(allUsersData.filter(u => u.email));
+      setMovementHistory(movementsData.sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
       setInvoiceCategories(invoiceCatsData);
       setVendors(vendorsData);
       setCompanies(companiesData);

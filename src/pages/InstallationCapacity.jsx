@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -12,38 +13,38 @@ import { Input } from "@/components/ui/input";
 import ExcelJS from 'exceljs';
 
 export default function InstallationCapacityPage() {
-  const [busStopTypes, setBusStopTypes] = useState([]);
-  const [components, setComponents] = useState([]);
-  const [stockItems, setStockItems] = useState([]);
-  const [products, setProducts] = useState([]);
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [capacityResults, setCapacityResults] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [exportOnlyBottlenecks, setExportOnlyBottlenecks] = useState(false);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Use React Query
+  const { data: allBusStopTypes = [], isLoading: typesLoading } = useQuery({
+    queryKey: ['busStopTypes'],
+    queryFn: () => base44.entities.BusStopType.list(),
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      const [typesData, componentsData, stockData, productsData] = await Promise.all([
-        base44.entities.BusStopType.list(),
-        base44.entities.BusStopTypeComponent.list(),
-        base44.entities.StockItem.list(),
-        base44.entities.Product.list()
-      ]);
-      setBusStopTypes(typesData.filter(t => t.is_active));
-      setComponents(componentsData);
-      setStockItems(stockData);
-      setProducts(productsData);
-    } catch (error) {
-      console.error("Error loading data:", error);
-    }
-    setIsLoading(false);
-  };
+  const { data: components = [] } = useQuery({
+    queryKey: ['busStopTypeComponents'],
+    queryFn: () => base44.entities.BusStopTypeComponent.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: stockItems = [] } = useQuery({
+    queryKey: ['stockItems'],
+    queryFn: () => base44.entities.StockItem.list(),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const { data: products = [] } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => base44.entities.Product.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const busStopTypes = useMemo(() => allBusStopTypes.filter(t => t.is_active), [allBusStopTypes]);
+  const isLoading = typesLoading;
 
   const handleToggleType = (typeId) => {
     setSelectedTypes(prev => {

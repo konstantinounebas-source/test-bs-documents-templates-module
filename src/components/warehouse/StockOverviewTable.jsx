@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import ViewProductDialog from "./ViewProductDialog";
 
-export default function StockOverviewTable({ products, categories, vendors, isLoading, onDataUpdated }) {
+const StockOverviewTable = memo(function StockOverviewTable({ products, categories, vendors, isLoading, onDataUpdated }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [showViewDialog, setShowViewDialog] = useState(false);
@@ -340,4 +340,6 @@ export default function StockOverviewTable({ products, categories, vendors, isLo
       />
       </>
       );
-      }
+});
+
+export default StockOverviewTable;

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Download, Package, Upload, X, QrCode, FileSpreadsheet, Calculator } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -19,13 +20,7 @@ import ExportQRCodesDialog from "../components/warehouse/ExportQRCodesDialog";
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [vendors, setVendors] = useState([]);
-  const [stockItems, setStockItems] = useState([]);
-  const [companies, setCompanies] = useState([]);
-  const [productVendors, setProductVendors] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -36,57 +31,94 @@ export default function ProductsPage() {
   const [showExportQRDialog, setShowExportQRDialog] = useState(false);
   const [isRecalculating, setIsRecalculating] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    try {
-      // Load all data in parallel for better performance
-      const [productsData, categoriesData, vendorsData, stockData, companiesData, pvData] = await Promise.all([
-        base44.entities.Product.list("-updated_date"),
-        base44.entities.ProductCategory.list(),
-        base44.entities.Vendor.list(),
-        base44.entities.StockItem.list(),
-        base44.entities.Company.filter({ is_active: true }),
-        base44.entities.ProductVendor.list()
-      ]);
-      
-      setProducts(productsData);
-      setCategories(categoriesData);
-      setVendors(vendorsData);
-      setStockItems(stockData);
-      setCompanies(companiesData);
-      setProductVendors(pvData);
-      
-    } catch (error) {
-      console.error("Error loading data:", error);
-    }
-    setIsLoading(false);
-  };
-
-  const filteredProducts = products.filter(p => {
-    if (activeFilter === "active" && !p.is_active) return false;
-    if (activeFilter === "inactive" && p.is_active) return false;
-    
-    if (searchTerm !== "" && 
-        !p.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !p.sku?.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !p.description?.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false;
-    }
-    
-    return true;
+  // Use React Query for data fetching with caching
+  const { data: products = [], isLoading: productsLoading } = useQuery({
+    queryKey: ['products'],
+    queryFn: () => base44.entities.Product.list("-updated_date"),
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => base44.entities.ProductCategory.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: vendors = [] } = useQuery({
+    queryKey: ['vendors'],
+    queryFn: () => base44.entities.Vendor.list(),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: stockItems = [] } = useQuery({
+    queryKey: ['stockItems'],
+    queryFn: () => base44.entities.StockItem.list(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  const { data: companies = [] } = useQuery({
+    queryKey: ['companies'],
+    queryFn: () => base44.entities.Company.filter({ is_active: true }),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: productVendors = [] } = useQuery({
+    queryKey: ['productVendors'],
+    queryFn: () => base44.entities.ProductVendor.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const isLoading = productsLoading;
+
+  const loadData = () => {
+    // Invalidate all queries to refresh data
+    queryClient.invalidateQueries({ queryKey: ['products'] });
+    queryClient.invalidateQueries({ queryKey: ['stockItems'] });
+    queryClient.invalidateQueries({ queryKey: ['productVendors'] });
+  };
+
+  // Memoize stock lookup map for O(1) access
+  const stockByProductId = useMemo(() => {
+    const map = {};
+    stockItems.forEach(s => {
+      if (!map[s.product_id]) map[s.product_id] = [];
+      map[s.product_id].push(s);
+    });
+    return map;
+  }, [stockItems]);
+
+  const getStockForProduct = useMemo(() => {
+    return (productId) => {
+      const items = stockByProductId[productId] || [];
+      return items.reduce((sum, item) => sum + (item.quantity_on_hand || 0) - (item.quantity_reserved || 0), 0);
+    };
+  }, [stockByProductId]);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => {
+      if (activeFilter === "active" && !p.is_active) return false;
+      if (activeFilter === "inactive" && p.is_active) return false;
+      
+      if (searchTerm !== "" && 
+          !p.name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          !p.sku?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          !p.description?.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [products, activeFilter, searchTerm]);
+
   // Pagination logic
-  const paginatedProducts = itemsPerPage === "all" 
-    ? filteredProducts 
-    : filteredProducts.slice(
-        (currentPage - 1) * parseInt(itemsPerPage),
-        currentPage * parseInt(itemsPerPage)
-      );
+  const paginatedProducts = useMemo(() => {
+    return itemsPerPage === "all" 
+      ? filteredProducts 
+      : filteredProducts.slice(
+          (currentPage - 1) * parseInt(itemsPerPage),
+          currentPage * parseInt(itemsPerPage)
+        );
+  }, [filteredProducts, itemsPerPage, currentPage]);
 
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
@@ -97,10 +129,7 @@ export default function ProductsPage() {
     setCurrentPage(1); // Reset to first page
   };
 
-  const getStockForProduct = (productId) => {
-    const items = stockItems.filter(s => s.product_id === productId);
-    return items.reduce((sum, item) => sum + (item.quantity_on_hand || 0) - (item.quantity_reserved || 0), 0);
-  };
+
 
   const handleStatClick = (filter) => {
     if (activeFilter === filter) {
