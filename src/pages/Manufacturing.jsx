@@ -64,7 +64,7 @@ export default function ManufacturingPage() {
       description: "Setup departments, operations, QC types, consumables",
       icon: Database,
       status: departments.length > 0 && operations.length > 0 ? 'complete' : 'incomplete',
-      page: "MfgReferenceData",
+      page: "MfgReferenceDataWizard",
       stats: `${departments.length} depts, ${operations.length} operations`
     },
     {
