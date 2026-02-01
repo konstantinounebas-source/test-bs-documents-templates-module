@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { base44 } from "@/api/base44Client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -33,21 +34,30 @@ export default function AddProfileLineDialog({ open, onOpenChange, setId }) {
 
     try {
       await base44.entities.Profile_Set_Lines.create({
-        profile_set_id: setId,
         ...formData,
+        profile_set_id: setId,
         profile_time_min_pc: formData.profile_time_min_pc ? parseFloat(formData.profile_time_min_pc) : null
       });
       queryClient.invalidateQueries(['Profile_Set_Lines', setId]);
       onOpenChange(false);
       setFormData({
-        item_code: "", profile_name: "", sanding_yn: false, masking_yn: false,
-        zink_yn: false, repair_yn: false, remake_yn: false, hanging_yn: false,
-        unhanging_yn: false, oven_clean_yn: false, other_yn: false,
-        profile_time_min_pc: "", notes: ""
+        item_code: "",
+        profile_name: "",
+        sanding_yn: false,
+        masking_yn: false,
+        zink_yn: false,
+        repair_yn: false,
+        remake_yn: false,
+        hanging_yn: false,
+        unhanging_yn: false,
+        oven_clean_yn: false,
+        other_yn: false,
+        profile_time_min_pc: "",
+        notes: ""
       });
     } catch (error) {
-      console.error("Failed to add line:", error);
-      alert("Failed to add line");
+      console.error("Failed to add profile line:", error);
+      alert("Failed to add profile line");
     }
 
     setIsSubmitting(false);
@@ -83,56 +93,110 @@ export default function AddProfileLineDialog({ open, onOpenChange, setId }) {
             </div>
           </div>
 
-          <div className="border rounded-lg p-4">
-            <h4 className="font-semibold mb-3">Operations Required</h4>
-            <div className="grid grid-cols-3 gap-3">
+          <div>
+            <Label className="mb-3 block">Operations Required</Label>
+            <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center space-x-2">
-                <Checkbox id="sanding" checked={formData.sanding_yn} onCheckedChange={(checked) => setFormData({ ...formData, sanding_yn: checked })} />
-                <Label htmlFor="sanding">Sanding</Label>
+                <Checkbox
+                  id="sanding"
+                  checked={formData.sanding_yn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, sanding_yn: checked })}
+                />
+                <Label htmlFor="sanding" className="font-normal cursor-pointer">Sanding</Label>
               </div>
+
               <div className="flex items-center space-x-2">
-                <Checkbox id="masking" checked={formData.masking_yn} onCheckedChange={(checked) => setFormData({ ...formData, masking_yn: checked })} />
-                <Label htmlFor="masking">Masking</Label>
+                <Checkbox
+                  id="masking"
+                  checked={formData.masking_yn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, masking_yn: checked })}
+                />
+                <Label htmlFor="masking" className="font-normal cursor-pointer">Masking</Label>
               </div>
+
               <div className="flex items-center space-x-2">
-                <Checkbox id="zink" checked={formData.zink_yn} onCheckedChange={(checked) => setFormData({ ...formData, zink_yn: checked })} />
-                <Label htmlFor="zink">Zink</Label>
+                <Checkbox
+                  id="zink"
+                  checked={formData.zink_yn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, zink_yn: checked })}
+                />
+                <Label htmlFor="zink" className="font-normal cursor-pointer">Zink</Label>
               </div>
+
               <div className="flex items-center space-x-2">
-                <Checkbox id="repair" checked={formData.repair_yn} onCheckedChange={(checked) => setFormData({ ...formData, repair_yn: checked })} />
-                <Label htmlFor="repair">Repair</Label>
+                <Checkbox
+                  id="repair"
+                  checked={formData.repair_yn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, repair_yn: checked })}
+                />
+                <Label htmlFor="repair" className="font-normal cursor-pointer">Repair</Label>
               </div>
+
               <div className="flex items-center space-x-2">
-                <Checkbox id="remake" checked={formData.remake_yn} onCheckedChange={(checked) => setFormData({ ...formData, remake_yn: checked })} />
-                <Label htmlFor="remake">Remake</Label>
+                <Checkbox
+                  id="remake"
+                  checked={formData.remake_yn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, remake_yn: checked })}
+                />
+                <Label htmlFor="remake" className="font-normal cursor-pointer">Remake</Label>
               </div>
+
               <div className="flex items-center space-x-2">
-                <Checkbox id="hanging" checked={formData.hanging_yn} onCheckedChange={(checked) => setFormData({ ...formData, hanging_yn: checked })} />
-                <Label htmlFor="hanging">Hanging</Label>
+                <Checkbox
+                  id="hanging"
+                  checked={formData.hanging_yn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, hanging_yn: checked })}
+                />
+                <Label htmlFor="hanging" className="font-normal cursor-pointer">Hanging</Label>
               </div>
+
               <div className="flex items-center space-x-2">
-                <Checkbox id="unhanging" checked={formData.unhanging_yn} onCheckedChange={(checked) => setFormData({ ...formData, unhanging_yn: checked })} />
-                <Label htmlFor="unhanging">Unhanging</Label>
+                <Checkbox
+                  id="unhanging"
+                  checked={formData.unhanging_yn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, unhanging_yn: checked })}
+                />
+                <Label htmlFor="unhanging" className="font-normal cursor-pointer">Unhanging</Label>
               </div>
+
               <div className="flex items-center space-x-2">
-                <Checkbox id="oven" checked={formData.oven_clean_yn} onCheckedChange={(checked) => setFormData({ ...formData, oven_clean_yn: checked })} />
-                <Label htmlFor="oven">Oven Clean</Label>
+                <Checkbox
+                  id="oven_clean"
+                  checked={formData.oven_clean_yn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, oven_clean_yn: checked })}
+                />
+                <Label htmlFor="oven_clean" className="font-normal cursor-pointer">Oven Clean</Label>
               </div>
+
               <div className="flex items-center space-x-2">
-                <Checkbox id="other" checked={formData.other_yn} onCheckedChange={(checked) => setFormData({ ...formData, other_yn: checked })} />
-                <Label htmlFor="other">Other</Label>
+                <Checkbox
+                  id="other"
+                  checked={formData.other_yn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, other_yn: checked })}
+                />
+                <Label htmlFor="other" className="font-normal cursor-pointer">Other</Label>
               </div>
             </div>
           </div>
 
           <div>
-            <Label htmlFor="time">Profile Time (min/pc)</Label>
+            <Label htmlFor="profile_time">Profile Time (min/pc)</Label>
             <Input
-              id="time"
+              id="profile_time"
               type="number"
               step="0.01"
               value={formData.profile_time_min_pc}
               onChange={(e) => setFormData({ ...formData, profile_time_min_pc: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notes</Label>
+            <Textarea
+              id="notes"
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              rows={2}
             />
           </div>
 

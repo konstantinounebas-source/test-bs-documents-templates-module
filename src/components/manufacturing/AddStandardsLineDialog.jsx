@@ -30,8 +30,8 @@ export default function AddStandardsLineDialog({ open, onOpenChange, setId }) {
 
     try {
       await base44.entities.Std_Set_Lines.create({
-        std_set_id: setId,
         ...formData,
+        std_set_id: setId,
         std_min_pc: parseFloat(formData.std_min_pc)
       });
       queryClient.invalidateQueries(['Std_Set_Lines', setId]);
@@ -47,7 +47,7 @@ export default function AddStandardsLineDialog({ open, onOpenChange, setId }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Add Standards Line</DialogTitle>
         </DialogHeader>
@@ -68,12 +68,12 @@ export default function AddStandardsLineDialog({ open, onOpenChange, setId }) {
           </div>
 
           <div>
-            <Label htmlFor="item_code">Item Code</Label>
+            <Label htmlFor="item_code">Item Code (Optional)</Label>
             <Input
               id="item_code"
               value={formData.item_code}
               onChange={(e) => setFormData({ ...formData, item_code: e.target.value })}
-              placeholder="Optional"
+              placeholder="Leave empty for general standard"
             />
           </div>
 

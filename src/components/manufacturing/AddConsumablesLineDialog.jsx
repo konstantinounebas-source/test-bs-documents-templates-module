@@ -32,6 +32,11 @@ export default function AddConsumablesLineDialog({ open, onOpenChange, setId, de
     queryFn: () => base44.entities.Rate_Type.list()
   });
 
+  const { data: operations = [] } = useQuery({
+    queryKey: ['Operation'],
+    queryFn: () => base44.entities.Operation.list()
+  });
+
   const { data: units = [] } = useQuery({
     queryKey: ['Unit'],
     queryFn: () => base44.entities.Unit.list()
@@ -43,17 +48,25 @@ export default function AddConsumablesLineDialog({ open, onOpenChange, setId, de
 
     try {
       await base44.entities.Consumables_Standards_Lines.create({
+        ...formData,
         consumables_standards_set_id: setId,
         department: department,
-        ...formData,
         rate_value: parseFloat(formData.rate_value)
       });
       queryClient.invalidateQueries(['Consumables_Standards_Lines', setId]);
       onOpenChange(false);
-      setFormData({ consumable: "", rate_type: "", item_code: "", operation: "", rate_value: "", unit: "", notes: "" });
+      setFormData({
+        consumable: "",
+        rate_type: "",
+        item_code: "",
+        operation: "",
+        rate_value: "",
+        unit: "",
+        notes: ""
+      });
     } catch (error) {
-      console.error("Failed to add line:", error);
-      alert("Failed to add line");
+      console.error("Failed to add consumables line:", error);
+      alert("Failed to add consumables line");
     }
 
     setIsSubmitting(false);
@@ -61,9 +74,9 @@ export default function AddConsumablesLineDialog({ open, onOpenChange, setId, de
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Consumables Standards Line</DialogTitle>
+          <DialogTitle>Add Consumables Line</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -99,7 +112,7 @@ export default function AddConsumablesLineDialog({ open, onOpenChange, setId, de
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="item_code">Item Code (optional)</Label>
+              <Label htmlFor="item_code">Item Code (Optional)</Label>
               <Input
                 id="item_code"
                 value={formData.item_code}
@@ -109,13 +122,18 @@ export default function AddConsumablesLineDialog({ open, onOpenChange, setId, de
             </div>
 
             <div>
-              <Label htmlFor="operation">Operation (optional)</Label>
-              <Input
-                id="operation"
-                value={formData.operation}
-                onChange={(e) => setFormData({ ...formData, operation: e.target.value })}
-                placeholder="If rate is operation-specific"
-              />
+              <Label htmlFor="operation">Operation (Optional)</Label>
+              <Select value={formData.operation} onValueChange={(value) => setFormData({ ...formData, operation: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select operation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>None</SelectItem>
+                  {operations.map(op => (
+                    <SelectItem key={op.id} value={op.name}>{op.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

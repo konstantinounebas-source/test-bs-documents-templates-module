@@ -24,22 +24,24 @@ export default function AddQCLineDialog({ open, onOpenChange, setId }) {
     queryFn: () => base44.entities.QC_Type.list()
   });
 
+  const qcLevels = ["L1", "L2", "L3", "L4", "L5"];
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
       await base44.entities.QC_Set_Lines.create({
-        qc_set_id: setId,
         ...formData,
+        qc_set_id: setId,
         time_add_min_pc: parseFloat(formData.time_add_min_pc)
       });
       queryClient.invalidateQueries(['QC_Set_Lines', setId]);
       onOpenChange(false);
       setFormData({ qc_type: "", qc_level: "", time_add_min_pc: "", notes: "" });
     } catch (error) {
-      console.error("Failed to add line:", error);
-      alert("Failed to add line");
+      console.error("Failed to add QC line:", error);
+      alert("Failed to add QC line");
     }
 
     setIsSubmitting(false);
@@ -47,7 +49,7 @@ export default function AddQCLineDialog({ open, onOpenChange, setId }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Add QC Line</DialogTitle>
         </DialogHeader>
@@ -69,19 +71,22 @@ export default function AddQCLineDialog({ open, onOpenChange, setId }) {
 
           <div>
             <Label htmlFor="qc_level">QC Level *</Label>
-            <Input
-              id="qc_level"
-              value={formData.qc_level}
-              onChange={(e) => setFormData({ ...formData, qc_level: e.target.value })}
-              placeholder="e.g., L1, L2, L3"
-              required
-            />
+            <Select value={formData.qc_level} onValueChange={(value) => setFormData({ ...formData, qc_level: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select level" />
+              </SelectTrigger>
+              <SelectContent>
+                {qcLevels.map(level => (
+                  <SelectItem key={level} value={level}>{level}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <Label htmlFor="time">Time Add (min/pc) *</Label>
+            <Label htmlFor="time_add">Time Add (min/pc) *</Label>
             <Input
-              id="time"
+              id="time_add"
               type="number"
               step="0.01"
               value={formData.time_add_min_pc}
