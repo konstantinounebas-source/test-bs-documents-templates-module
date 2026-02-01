@@ -435,11 +435,11 @@ const allNavigationGroups = [
         pageKey: "MfgReferenceDataWizard"
       },
       {
-        title: "Standards Management",
-        url: createPageUrl("MfgStandards"),
+        title: "Standards Setup Wizard",
+        url: createPageUrl("MfgStandardsWizard"),
         icon: FileText,
-        description: "Manage standards versions and sets",
-        pageKey: "MfgStandards"
+        description: "Guided setup for all standards sets",
+        pageKey: "MfgStandardsWizard"
       },
       {
         title: "Profile Sets",

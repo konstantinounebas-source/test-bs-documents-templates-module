@@ -62,7 +62,7 @@ const ALL_PAGES = [
 
   { key: 'Manufacturing', label: 'Manufacturing Overview', module: 'Manufacturing Production' },
   { key: 'MfgReferenceDataWizard', label: 'Reference Data Setup', module: 'Manufacturing Production' },
-  { key: 'MfgStandards', label: 'Standards Management', module: 'Manufacturing Production' },
+  { key: 'MfgStandardsWizard', label: 'Standards Setup Wizard', module: 'Manufacturing Production' },
   { key: 'MfgProfiles', label: 'Profile Sets', module: 'Manufacturing Production' },
   { key: 'MfgQC', label: 'QC Sets', module: 'Manufacturing Production' },
   { key: 'MfgConsumables', label: 'Consumables Standards', module: 'Manufacturing Production' },

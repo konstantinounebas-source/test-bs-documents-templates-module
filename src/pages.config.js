@@ -118,6 +118,7 @@ import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
 import Manufacturing from './pages/Manufacturing';
 import MfgReferenceDataWizard from './pages/MfgReferenceDataWizard';
+import MfgStandardsWizard from './pages/MfgStandardsWizard';
 import __Layout from './Layout.jsx';
 
 
@@ -193,6 +194,7 @@ export const PAGES = {
     "WorkspaceSettings": WorkspaceSettings,
     "Manufacturing": Manufacturing,
     "MfgReferenceDataWizard": MfgReferenceDataWizard,
+    "MfgStandardsWizard": MfgStandardsWizard,
 }
 
 export const pagesConfig = {
