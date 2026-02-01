@@ -16,7 +16,7 @@ import { toast } from "sonner";
 
 const STEPS = [
   { id: 0, name: "Standards Sets", entity: "Std_Set", requiresDept: true },
-  { id: 1, name: "Profile Sets", entity: "Profile_Set", requiresDept: false },
+  { id: 1, name: "Profile Sets", entity: "Profile_Set", requiresDept: true },
   { id: 2, name: "QC Sets", entity: "QC_Set", requiresDept: false },
   { id: 3, name: "Consumables Standards Sets", entity: "Consumables_Standards_Set", requiresDept: false },
   { id: 4, name: "KPI & Metrics Definitions", entity: "KPI_Def_Set", requiresDept: false }
