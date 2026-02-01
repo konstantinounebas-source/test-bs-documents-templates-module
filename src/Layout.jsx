@@ -421,11 +421,18 @@ const allNavigationGroups = [
     label: 'Manufacturing Production',
     items: [
       {
-        title: "Reference Data",
-        url: createPageUrl("MfgReferenceData"),
+        title: "Manufacturing Overview",
+        url: createPageUrl("Manufacturing"),
+        icon: Settings,
+        description: "Guided workflow for manufacturing operations",
+        pageKey: "Manufacturing"
+      },
+      {
+        title: "Reference Data Setup",
+        url: createPageUrl("MfgReferenceDataWizard"),
         icon: Database,
-        description: "Manage departments, operations, consumables, etc.",
-        pageKey: "MfgReferenceData"
+        description: "Setup departments, operations, QC types, etc.",
+        pageKey: "MfgReferenceDataWizard"
       },
       {
         title: "Standards Management",
@@ -463,18 +470,18 @@ const allNavigationGroups = [
         pageKey: "MfgKPIDefinitions"
       },
       {
-        title: "Daily Production Entry",
-        url: createPageUrl("MfgDailyProduction"),
-        icon: ClipboardList,
-        description: "Enter daily production data",
-        pageKey: "MfgDailyProduction"
-      },
-      {
         title: "Planning & Targets",
         url: createPageUrl("MfgPlanning"),
         icon: CalendarIcon,
         description: "Manage planning and daily targets",
         pageKey: "MfgPlanning"
+      },
+      {
+        title: "Daily Production Entry",
+        url: createPageUrl("MfgDailyProduction"),
+        icon: ClipboardList,
+        description: "Enter daily production data",
+        pageKey: "MfgDailyProduction"
       },
       {
         title: "KPI Dashboard",
