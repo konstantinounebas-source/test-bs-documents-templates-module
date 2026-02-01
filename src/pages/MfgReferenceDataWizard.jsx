@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ArrowRight, Save, Plus, Trash2, Edit2, Building2, Wrench, AlertTriangle, Package, Briefcase, Database } from "lucide-react";
+import { ArrowRight, Save, Plus, Trash2, Edit2, Building2, Wrench, AlertTriangle, Package, Briefcase, Database, Ruler, Tag, FileText, Target, FileCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -27,7 +27,12 @@ export default function MfgReferenceDataWizard() {
     { id: "operations", label: "Operations", entity: "Operation", icon: Wrench },
     { id: "qc_types", label: "QC Types", entity: "QC_Type", icon: AlertTriangle },
     { id: "consumables", label: "Consumables", entity: "Consumable", icon: Package },
-    { id: "work_types", label: "Work Types", entity: "Work_Type", icon: Briefcase }
+    { id: "work_types", label: "Work Types", entity: "Work_Type", icon: Briefcase },
+    { id: "units", label: "Units", entity: "Unit", icon: Ruler },
+    { id: "rate_types", label: "Rate Types", entity: "Rate_Type", icon: Tag },
+    { id: "entry_types", label: "Entry Types", entity: "Entry_Type", icon: FileText },
+    { id: "target_profiles", label: "Target Profiles", entity: "Target_Profile_Name", icon: Target },
+    { id: "operation_profiles", label: "Operation Profiles", entity: "Operation_Profile_Name", icon: FileCheck }
   ];
 
   const currentEntity = tabs.find(t => t.id === activeTab)?.entity;
@@ -154,7 +159,7 @@ export default function MfgReferenceDataWizard() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-5 w-full">
+              <TabsList className="grid grid-cols-5 w-full gap-1 h-auto flex-wrap">
                 {tabs.map(tab => {
                   const TabIcon = tab.icon;
                   const count = queryClient.getQueryData([tab.entity])?.length || 0;
