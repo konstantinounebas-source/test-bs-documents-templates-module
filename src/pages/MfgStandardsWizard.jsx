@@ -58,7 +58,10 @@ export default function MfgStandardsWizard() {
       resetForm();
       toast.success("Created successfully");
     },
-    onError: () => toast.error("Failed to create")
+    onError: (error) => {
+      console.error("Create error:", error);
+      toast.error("Failed to create: " + (error?.message || "Unknown error"));
+    }
   });
 
   const updateMutation = useMutation({
@@ -106,6 +109,8 @@ export default function MfgStandardsWizard() {
     const payload = step.requiresDept 
       ? formData 
       : { version_no: formData.version_no, status: formData.status, notes: formData.notes };
+
+    console.log("Submitting payload:", payload, "to entity:", entityName);
 
     if (editingItem) {
       updateMutation.mutate({ id: editingItem.id, data: payload });
