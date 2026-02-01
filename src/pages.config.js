@@ -71,6 +71,15 @@ import Holidays from './pages/Holidays';
 import Home from './pages/Home';
 import InstallationCapacity from './pages/InstallationCapacity';
 import InteractiveForms from './pages/InteractiveForms';
+import MfgConsumables from './pages/MfgConsumables';
+import MfgDailyProduction from './pages/MfgDailyProduction';
+import MfgKPIDashboard from './pages/MfgKPIDashboard';
+import MfgKPIDefinitions from './pages/MfgKPIDefinitions';
+import MfgPlanning from './pages/MfgPlanning';
+import MfgProfiles from './pages/MfgProfiles';
+import MfgQC from './pages/MfgQC';
+import MfgReferenceData from './pages/MfgReferenceData';
+import MfgStandards from './pages/MfgStandards';
 import MobileFieldWork from './pages/MobileFieldWork';
 import MyWorkday from './pages/MyWorkday';
 import MyWorkspaceUserGuide from './pages/MyWorkspaceUserGuide';
@@ -107,15 +116,6 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import MfgReferenceData from './pages/MfgReferenceData';
-import MfgStandards from './pages/MfgStandards';
-import MfgProfiles from './pages/MfgProfiles';
-import MfgQC from './pages/MfgQC';
-import MfgConsumables from './pages/MfgConsumables';
-import MfgKPIDefinitions from './pages/MfgKPIDefinitions';
-import MfgDailyProduction from './pages/MfgDailyProduction';
-import MfgPlanning from './pages/MfgPlanning';
-import MfgKPIDashboard from './pages/MfgKPIDashboard';
 import __Layout from './Layout.jsx';
 
 
@@ -144,6 +144,15 @@ export const PAGES = {
     "Home": Home,
     "InstallationCapacity": InstallationCapacity,
     "InteractiveForms": InteractiveForms,
+    "MfgConsumables": MfgConsumables,
+    "MfgDailyProduction": MfgDailyProduction,
+    "MfgKPIDashboard": MfgKPIDashboard,
+    "MfgKPIDefinitions": MfgKPIDefinitions,
+    "MfgPlanning": MfgPlanning,
+    "MfgProfiles": MfgProfiles,
+    "MfgQC": MfgQC,
+    "MfgReferenceData": MfgReferenceData,
+    "MfgStandards": MfgStandards,
     "MobileFieldWork": MobileFieldWork,
     "MyWorkday": MyWorkday,
     "MyWorkspaceUserGuide": MyWorkspaceUserGuide,
@@ -180,15 +189,6 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "MfgReferenceData": MfgReferenceData,
-    "MfgStandards": MfgStandards,
-    "MfgProfiles": MfgProfiles,
-    "MfgQC": MfgQC,
-    "MfgConsumables": MfgConsumables,
-    "MfgKPIDefinitions": MfgKPIDefinitions,
-    "MfgDailyProduction": MfgDailyProduction,
-    "MfgPlanning": MfgPlanning,
-    "MfgKPIDashboard": MfgKPIDashboard,
 }
 
 export const pagesConfig = {

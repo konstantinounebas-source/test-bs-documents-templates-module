@@ -1,12 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Users } from "lucide-react";
+import CreateProfileSetDialog from "../components/manufacturing/CreateProfileSetDialog";
+import ViewProfileSetDialog from "../components/manufacturing/ViewProfileSetDialog";
 
 export default function MfgProfilesPage() {
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedSet, setSelectedSet] = useState(null);
+
   const { data: profileSets = [] } = useQuery({
     queryKey: ['Profile_Set'],
     queryFn: () => base44.entities.Profile_Set.list('-created_date')
@@ -22,7 +27,7 @@ export default function MfgProfilesPage() {
                 <Users className="w-6 h-6" />
                 Profile Sets Management
               </CardTitle>
-              <Button>
+              <Button onClick={() => setShowCreateDialog(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Create New Version
               </Button>
@@ -64,7 +69,9 @@ export default function MfgProfilesPage() {
                         {new Date(set.created_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">View Details</Button>
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedSet(set)}>
+                          View Details
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -74,6 +81,9 @@ export default function MfgProfilesPage() {
           </CardContent>
         </Card>
       </div>
+
+      <CreateProfileSetDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
+      <ViewProfileSetDialog open={!!selectedSet} onOpenChange={(open) => !open && setSelectedSet(null)} set={selectedSet} />
     </div>
   );
 }

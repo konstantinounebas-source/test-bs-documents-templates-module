@@ -1,12 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Package } from "lucide-react";
+import CreateConsumablesSetDialog from "../components/manufacturing/CreateConsumablesSetDialog";
+import ViewConsumablesSetDialog from "../components/manufacturing/ViewConsumablesSetDialog";
 
 export default function MfgConsumablesPage() {
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedSet, setSelectedSet] = useState(null);
+
   const { data: consumablesSets = [] } = useQuery({
     queryKey: ['Consumables_Standards_Set'],
     queryFn: () => base44.entities.Consumables_Standards_Set.list('-created_date')
@@ -22,7 +27,7 @@ export default function MfgConsumablesPage() {
                 <Package className="w-6 h-6" />
                 Consumables Standards Management
               </CardTitle>
-              <Button>
+              <Button onClick={() => setShowCreateDialog(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Create New Version
               </Button>
@@ -66,7 +71,9 @@ export default function MfgConsumablesPage() {
                         {new Date(set.created_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">View Details</Button>
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedSet(set)}>
+                          View Details
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -76,6 +83,9 @@ export default function MfgConsumablesPage() {
           </CardContent>
         </Card>
       </div>
+
+      <CreateConsumablesSetDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
+      <ViewConsumablesSetDialog open={!!selectedSet} onOpenChange={(open) => !open && setSelectedSet(null)} set={selectedSet} />
     </div>
   );
 }
