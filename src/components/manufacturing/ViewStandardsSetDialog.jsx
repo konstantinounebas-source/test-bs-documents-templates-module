@@ -78,7 +78,7 @@ export default function ViewStandardsSetDialog({ open, onOpenChange, set }) {
                       <TableRow key={line.id}>
                         <TableCell className="font-medium">{line.operation}</TableCell>
                         <TableCell>{line.item_code || '-'}</TableCell>
-                        <TableCell>{line.std_min_pc}</TableCell>
+                        <TableCell>{line.std_min_per_pc}</TableCell>
                         <TableCell>{line.notes || '-'}</TableCell>
                         <TableCell>
                           <Button

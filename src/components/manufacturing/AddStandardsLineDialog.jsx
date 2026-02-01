@@ -15,7 +15,7 @@ export default function AddStandardsLineDialog({ open, onOpenChange, setId }) {
   const [formData, setFormData] = useState({
     operation: "",
     item_code: "",
-    std_min_pc: "",
+    std_min_per_pc: "",
     notes: ""
   });
 
@@ -32,11 +32,11 @@ export default function AddStandardsLineDialog({ open, onOpenChange, setId }) {
       await base44.entities.Std_Set_Lines.create({
         ...formData,
         std_set_id: setId,
-        std_min_pc: parseFloat(formData.std_min_pc)
+        std_min_per_pc: parseFloat(formData.std_min_per_pc)
       });
       queryClient.invalidateQueries(['Std_Set_Lines', setId]);
       onOpenChange(false);
-      setFormData({ operation: "", item_code: "", std_min_pc: "", notes: "" });
+      setFormData({ operation: "", item_code: "", std_min_per_pc: "", notes: "" });
     } catch (error) {
       console.error("Failed to add line:", error);
       alert("Failed to add line");
@@ -78,13 +78,13 @@ export default function AddStandardsLineDialog({ open, onOpenChange, setId }) {
           </div>
 
           <div>
-            <Label htmlFor="std_min_pc">Standard Minutes per Piece *</Label>
+            <Label htmlFor="std_min_per_pc">Standard Minutes per Piece *</Label>
             <Input
-              id="std_min_pc"
+              id="std_min_per_pc"
               type="number"
               step="0.01"
-              value={formData.std_min_pc}
-              onChange={(e) => setFormData({ ...formData, std_min_pc: e.target.value })}
+              value={formData.std_min_per_pc}
+              onChange={(e) => setFormData({ ...formData, std_min_per_pc: e.target.value })}
               required
             />
           </div>
@@ -103,7 +103,7 @@ export default function AddStandardsLineDialog({ open, onOpenChange, setId }) {
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !formData.operation || !formData.std_min_pc}>
+            <Button type="submit" disabled={isSubmitting || !formData.operation || !formData.std_min_per_pc}>
               {isSubmitting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Adding...</> : "Add Line"}
             </Button>
           </DialogFooter>
