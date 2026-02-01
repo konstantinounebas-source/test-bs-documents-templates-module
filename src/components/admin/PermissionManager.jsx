@@ -53,6 +53,7 @@ const ALL_PAGES = [
   { key: 'SnaggingList', label: 'Snagging List', module: 'Delivery Management' },
   { key: 'DeliveryLogs', label: 'Delivery Logs', module: 'Delivery Management' },
   { key: 'DeliveryFieldsDataDefinitions', label: 'Delivery Fields & Data Definitions', module: 'Delivery Management' },
+  { key: 'DeliveryUserGuide', label: 'User Guide', module: 'Delivery Management' },
 
   { key: 'OfficialOrders', label: 'Official Orders', module: 'Bus Stop Orders Management' },
   { key: 'BSOrder', label: 'Bus Stop Order Allocation', module: 'Bus Stop Orders Management' },
