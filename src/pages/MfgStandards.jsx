@@ -4,9 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FileText, Clock } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
+import CreateStandardsSetDialog from "../components/manufacturing/CreateStandardsSetDialog";
+import ViewStandardsSetDialog from "../components/manufacturing/ViewStandardsSetDialog";
 
 export default function MfgStandardsPage() {
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedSet, setSelectedSet] = useState(null);
+
   const { data: standardsSets = [] } = useQuery({
     queryKey: ['Std_Set'],
     queryFn: () => base44.entities.Std_Set.list('-created_date')
@@ -22,7 +27,7 @@ export default function MfgStandardsPage() {
                 <FileText className="w-6 h-6" />
                 Standards Management
               </CardTitle>
-              <Button>
+              <Button onClick={() => setShowCreateDialog(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Create New Version
               </Button>
@@ -66,7 +71,9 @@ export default function MfgStandardsPage() {
                         {new Date(set.created_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">View Details</Button>
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedSet(set)}>
+                          View Details
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -76,6 +83,9 @@ export default function MfgStandardsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <CreateStandardsSetDialog open={showCreateDialog} onOpenChange={setShowCreateDialog} />
+      <ViewStandardsSetDialog open={!!selectedSet} onOpenChange={(open) => !open && setSelectedSet(null)} set={selectedSet} />
     </div>
   );
 }
