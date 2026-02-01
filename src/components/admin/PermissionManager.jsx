@@ -67,7 +67,7 @@ const ALL_PAGES = [
   { key: 'MfgQC', label: 'QC Sets', module: 'Manufacturing Production' },
   { key: 'MfgConsumables', label: 'Consumables Standards', module: 'Manufacturing Production' },
   { key: 'MfgKPIDefinitions', label: 'KPI & Metrics Definitions', module: 'Manufacturing Production' },
-  { key: 'MfgPlanning', label: 'Planning & Targets', module: 'Manufacturing Production' },
+  { key: 'MfgPlanningWizard', label: 'Planning Wizard', module: 'Manufacturing Production' },
   { key: 'MfgDailyProduction', label: 'Daily Production Entry', module: 'Manufacturing Production' },
   { key: 'MfgKPIDashboard', label: 'KPI Dashboard', module: 'Manufacturing Production' },
 

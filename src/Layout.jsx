@@ -470,11 +470,11 @@ const allNavigationGroups = [
         pageKey: "MfgKPIDefinitions"
       },
       {
-        title: "Planning & Targets",
-        url: createPageUrl("MfgPlanning"),
+        title: "Planning Wizard",
+        url: createPageUrl("MfgPlanningWizard"),
         icon: CalendarIcon,
-        description: "Manage planning and daily targets",
-        pageKey: "MfgPlanning"
+        description: "Guided setup for targets and scheduling",
+        pageKey: "MfgPlanningWizard"
       },
       {
         title: "Daily Production Entry",

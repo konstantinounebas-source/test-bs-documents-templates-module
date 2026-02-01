@@ -82,7 +82,7 @@ export default function ManufacturingPage() {
       description: "Set daily targets and scheduled production",
       icon: CalendarDays,
       status: targetDaily.length > 0 ? 'complete' : 'incomplete',
-      page: "MfgPlanning",
+      page: "MfgPlanningWizard",
       stats: `${targetDaily.length} recent targets`
     },
     {
