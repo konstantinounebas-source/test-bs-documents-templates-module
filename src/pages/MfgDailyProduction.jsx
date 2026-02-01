@@ -1,12 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, ClipboardList } from "lucide-react";
+import CreateProductionEntryDialog from "@/components/manufacturing/CreateProductionEntryDialog";
+import ViewProductionEntryDialog from "@/components/manufacturing/ViewProductionEntryDialog";
 
 export default function MfgDailyProductionPage() {
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedBatch, setSelectedBatch] = useState(null);
+
   const { data: batches = [] } = useQuery({
     queryKey: ['Batch_Header'],
     queryFn: () => base44.entities.Batch_Header.list('-date')
@@ -22,7 +27,7 @@ export default function MfgDailyProductionPage() {
                 <ClipboardList className="w-6 h-6" />
                 Daily Production Entry
               </CardTitle>
-              <Button>
+              <Button onClick={() => setShowCreateDialog(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 New Production Entry
               </Button>
@@ -58,7 +63,13 @@ export default function MfgDailyProductionPage() {
                         {new Date(batch.created_date).toLocaleDateString()}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">View Details</Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => setSelectedBatch(batch)}
+                        >
+                          View Details
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -67,6 +78,17 @@ export default function MfgDailyProductionPage() {
             </Table>
           </CardContent>
         </Card>
+
+        <CreateProductionEntryDialog 
+          open={showCreateDialog} 
+          onOpenChange={setShowCreateDialog}
+        />
+
+        <ViewProductionEntryDialog
+          open={!!selectedBatch}
+          onOpenChange={(open) => !open && setSelectedBatch(null)}
+          batch={selectedBatch}
+        />
       </div>
     </div>
   );
