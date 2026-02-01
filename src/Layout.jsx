@@ -449,6 +449,13 @@ const allNavigationGroups = [
         pageKey: "MfgStandards"
       },
       {
+        title: "DATA - Standard Minutes Grid",
+        url: createPageUrl("MfgStandardsData"),
+        icon: Database,
+        description: "Excel-like grid for standard minutes data",
+        pageKey: "MfgStandardsData"
+      },
+      {
         title: "Profile Sets",
         url: createPageUrl("MfgProfiles"),
         icon: Users,
