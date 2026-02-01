@@ -71,15 +71,18 @@ import Holidays from './pages/Holidays';
 import Home from './pages/Home';
 import InstallationCapacity from './pages/InstallationCapacity';
 import InteractiveForms from './pages/InteractiveForms';
+import Manufacturing from './pages/Manufacturing';
 import MfgConsumables from './pages/MfgConsumables';
 import MfgDailyProduction from './pages/MfgDailyProduction';
 import MfgKPIDashboard from './pages/MfgKPIDashboard';
 import MfgKPIDefinitions from './pages/MfgKPIDefinitions';
 import MfgPlanning from './pages/MfgPlanning';
+import MfgPlanningWizard from './pages/MfgPlanningWizard';
 import MfgProfiles from './pages/MfgProfiles';
 import MfgQC from './pages/MfgQC';
-import MfgReferenceData from './pages/MfgReferenceData';
+import MfgReferenceDataWizard from './pages/MfgReferenceDataWizard';
 import MfgStandards from './pages/MfgStandards';
+import MfgStandardsWizard from './pages/MfgStandardsWizard';
 import MobileFieldWork from './pages/MobileFieldWork';
 import MyWorkday from './pages/MyWorkday';
 import MyWorkspaceUserGuide from './pages/MyWorkspaceUserGuide';
@@ -116,10 +119,6 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import Manufacturing from './pages/Manufacturing';
-import MfgReferenceDataWizard from './pages/MfgReferenceDataWizard';
-import MfgStandardsWizard from './pages/MfgStandardsWizard';
-import MfgPlanningWizard from './pages/MfgPlanningWizard';
 import __Layout from './Layout.jsx';
 
 
@@ -148,15 +147,18 @@ export const PAGES = {
     "Home": Home,
     "InstallationCapacity": InstallationCapacity,
     "InteractiveForms": InteractiveForms,
+    "Manufacturing": Manufacturing,
     "MfgConsumables": MfgConsumables,
     "MfgDailyProduction": MfgDailyProduction,
     "MfgKPIDashboard": MfgKPIDashboard,
     "MfgKPIDefinitions": MfgKPIDefinitions,
     "MfgPlanning": MfgPlanning,
+    "MfgPlanningWizard": MfgPlanningWizard,
     "MfgProfiles": MfgProfiles,
     "MfgQC": MfgQC,
-    "MfgReferenceData": MfgReferenceData,
+    "MfgReferenceDataWizard": MfgReferenceDataWizard,
     "MfgStandards": MfgStandards,
+    "MfgStandardsWizard": MfgStandardsWizard,
     "MobileFieldWork": MobileFieldWork,
     "MyWorkday": MyWorkday,
     "MyWorkspaceUserGuide": MyWorkspaceUserGuide,
@@ -193,10 +195,6 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "Manufacturing": Manufacturing,
-    "MfgReferenceDataWizard": MfgReferenceDataWizard,
-    "MfgStandardsWizard": MfgStandardsWizard,
-    "MfgPlanningWizard": MfgPlanningWizard,
 }
 
 export const pagesConfig = {
