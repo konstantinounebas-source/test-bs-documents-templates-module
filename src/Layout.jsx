@@ -442,6 +442,13 @@ const allNavigationGroups = [
         pageKey: "MfgStandardsWizard"
       },
       {
+        title: "Standards Sets",
+        url: createPageUrl("MfgStandards"),
+        icon: Database,
+        description: "Manage operation standards",
+        pageKey: "MfgStandards"
+      },
+      {
         title: "Profile Sets",
         url: createPageUrl("MfgProfiles"),
         icon: Users,
