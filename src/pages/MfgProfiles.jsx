@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Users } from "lucide-react";
-import CreateProfileSetDialog from "../components/manufacturing/CreateProfileSetDialog";
-import ViewProfileSetDialog from "../components/manufacturing/ViewProfileSetDialog";
+import CreateProfileSetDialog from "@/components/manufacturing/CreateProfileSetDialog";
+import ViewProfileSetDialog from "@/components/manufacturing/ViewProfileSetDialog";
 
 export default function MfgProfilesPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);

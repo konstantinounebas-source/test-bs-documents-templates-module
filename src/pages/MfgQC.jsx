@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, CheckSquare } from "lucide-react";
-import CreateQCSetDialog from "../components/manufacturing/CreateQCSetDialog";
-import ViewQCSetDialog from "../components/manufacturing/ViewQCSetDialog";
+import CreateQCSetDialog from "@/components/manufacturing/CreateQCSetDialog";
+import ViewQCSetDialog from "@/components/manufacturing/ViewQCSetDialog";
 
 export default function MfgQCPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);

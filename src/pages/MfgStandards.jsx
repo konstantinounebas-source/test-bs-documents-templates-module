@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, FileText } from "lucide-react";
-import CreateStandardsSetDialog from "../components/manufacturing/CreateStandardsSetDialog";
-import ViewStandardsSetDialog from "../components/manufacturing/ViewStandardsSetDialog";
+import CreateStandardsSetDialog from "@/components/manufacturing/CreateStandardsSetDialog";
+import ViewStandardsSetDialog from "@/components/manufacturing/ViewStandardsSetDialog";
 
 export default function MfgStandardsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
