@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Package } from "lucide-react";
 import CreateConsumablesSetDialog from "@/components/manufacturing/CreateConsumablesSetDialog.jsx";
-import ViewConsumablesSetDialog from "@/components/manufacturing/ViewConsumablesSetDialog.js";
+import ViewConsumablesSetDialog from "@/components/manufacturing/ViewConsumablesSetDialog.jsx";
 
 export default function MfgConsumablesPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);

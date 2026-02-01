@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, Users } from "lucide-react";
 import CreateProfileSetDialog from "@/components/manufacturing/CreateProfileSetDialog.jsx";
-import ViewProfileSetDialog from "@/components/manufacturing/ViewProfileSetDialog.js";
+import ViewProfileSetDialog from "@/components/manufacturing/ViewProfileSetDialog.jsx";
 
 export default function MfgProfilesPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);

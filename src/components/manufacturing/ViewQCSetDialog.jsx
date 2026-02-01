@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import AddQCLineDialog from "./AddQCLineDialog";
+import AddQCLineDialog from "./AddQCLineDialog.js";
 
 export default function ViewQCSetDialog({ open, onOpenChange, set }) {
   const queryClient = useQueryClient();

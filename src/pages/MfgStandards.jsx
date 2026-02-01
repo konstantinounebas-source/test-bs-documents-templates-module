@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, FileText } from "lucide-react";
 import CreateStandardsSetDialog from "@/components/manufacturing/CreateStandardsSetDialog.jsx";
-import ViewStandardsSetDialog from "@/components/manufacturing/ViewStandardsSetDialog.js";
+import ViewStandardsSetDialog from "@/components/manufacturing/ViewStandardsSetDialog.jsx";
 
 export default function MfgStandardsPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);

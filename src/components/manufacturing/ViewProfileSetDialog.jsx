@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Loader2, Check, X } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import AddProfileLineDialog from "./AddProfileLineDialog";
+import AddProfileLineDialog from "./AddProfileLineDialog.js";
 
 export default function ViewProfileSetDialog({ open, onOpenChange, set }) {
   const queryClient = useQueryClient();
