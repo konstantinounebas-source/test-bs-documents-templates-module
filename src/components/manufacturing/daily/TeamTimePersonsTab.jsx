@@ -1,0 +1,176 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Plus, Trash2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+export default function TeamTimePersonsTab({ batchId }) {
+  const queryClient = useQueryClient();
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [formData, setFormData] = useState({
+    person_name: '',
+    from_time: '',
+    to_time: '',
+    notes: ''
+  });
+
+  const { data: lines = [], isLoading } = useQuery({
+    queryKey: ['Team_Time_Persons', batchId],
+    queryFn: () => base44.entities.Team_Time_Persons.filter({ batch_header_id: batchId }),
+    enabled: !!batchId
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.Team_Time_Persons.create({
+      batch_header_id: batchId,
+      ...data
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['Team_Time_Persons']);
+      setShowAddDialog(false);
+      setFormData({ person_name: '', from_time: '', to_time: '', notes: '' });
+      toast.success('Team time added');
+    },
+    onError: () => toast.error('Failed to add team time')
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Team_Time_Persons.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['Team_Time_Persons']);
+      toast.success('Team time deleted');
+    },
+    onError: () => toast.error('Failed to delete team time')
+  });
+
+  const handleAdd = () => {
+    if (!formData.person_name || !formData.from_time || !formData.to_time) {
+      toast.error('Person name and time range are required');
+      return;
+    }
+    createMutation.mutate(formData);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Team Time - Persons</h3>
+        <Button onClick={() => setShowAddDialog(true)} variant="outline" size="sm">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Person Time
+        </Button>
+      </div>
+
+      <div className="border rounded-lg overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Person Name</TableHead>
+              <TableHead>From Time</TableHead>
+              <TableHead>To Time</TableHead>
+              <TableHead>Notes</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {lines.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-slate-500">
+                  No team time records defined.
+                </TableCell>
+              </TableRow>
+            ) : (
+              lines.map(line => (
+                <TableRow key={line.id}>
+                  <TableCell className="font-medium">{line.person_name}</TableCell>
+                  <TableCell>{line.from_time}</TableCell>
+                  <TableCell>{line.to_time}</TableCell>
+                  <TableCell>{line.notes || '-'}</TableCell>
+                  <TableCell>
+                    <Button
+                      onClick={() => deleteMutation.mutate(line.id)}
+                      variant="ghost"
+                      size="icon"
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Team Time - Person</DialogTitle>
+            <DialogDescription>Record time worked by a team member</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Person Name *</Label>
+              <Input
+                value={formData.person_name}
+                onChange={(e) => setFormData({ ...formData, person_name: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>From Time *</Label>
+                <Input
+                  type="time"
+                  value={formData.from_time}
+                  onChange={(e) => setFormData({ ...formData, from_time: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>To Time *</Label>
+                <Input
+                  type="time"
+                  value={formData.to_time}
+                  onChange={(e) => setFormData({ ...formData, to_time: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+            <Button onClick={handleAdd} disabled={createMutation.isPending}>
+              {createMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

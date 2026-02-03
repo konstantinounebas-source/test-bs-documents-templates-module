@@ -1,0 +1,198 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Plus, Trash2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+export default function TeamTimeExtraTab({ batchId }) {
+  const queryClient = useQueryClient();
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [formData, setFormData] = useState({
+    person_name: '',
+    charge_dept: '',
+    work_type: '',
+    duration_min: ''
+  });
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ['Department'],
+    queryFn: () => base44.entities.Department.list()
+  });
+
+  const { data: workTypes = [] } = useQuery({
+    queryKey: ['Work_Type'],
+    queryFn: () => base44.entities.Work_Type.list()
+  });
+
+  const { data: lines = [], isLoading } = useQuery({
+    queryKey: ['Team_Time_Extra', batchId],
+    queryFn: () => base44.entities.Team_Time_Extra.filter({ batch_header_id: batchId }),
+    enabled: !!batchId
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.Team_Time_Extra.create({
+      batch_header_id: batchId,
+      ...data
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['Team_Time_Extra']);
+      setShowAddDialog(false);
+      setFormData({ person_name: '', charge_dept: '', work_type: '', duration_min: '' });
+      toast.success('Extra time added');
+    },
+    onError: () => toast.error('Failed to add extra time')
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.Team_Time_Extra.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['Team_Time_Extra']);
+      toast.success('Extra time deleted');
+    },
+    onError: () => toast.error('Failed to delete extra time')
+  });
+
+  const handleAdd = () => {
+    if (!formData.person_name || !formData.charge_dept || !formData.work_type || !formData.duration_min) {
+      toast.error('All fields are required');
+      return;
+    }
+    createMutation.mutate({
+      ...formData,
+      duration_min: parseFloat(formData.duration_min)
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Team Time - Extra</h3>
+        <Button onClick={() => setShowAddDialog(true)} variant="outline" size="sm">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Extra Time
+        </Button>
+      </div>
+
+      <div className="border rounded-lg overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Person Name</TableHead>
+              <TableHead>Charge Dept</TableHead>
+              <TableHead>Work Type</TableHead>
+              <TableHead>Duration (min)</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {lines.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-slate-500">
+                  No extra time records defined.
+                </TableCell>
+              </TableRow>
+            ) : (
+              lines.map(line => (
+                <TableRow key={line.id}>
+                  <TableCell className="font-medium">{line.person_name}</TableCell>
+                  <TableCell>{line.charge_dept}</TableCell>
+                  <TableCell>{line.work_type}</TableCell>
+                  <TableCell>{line.duration_min}</TableCell>
+                  <TableCell>
+                    <Button
+                      onClick={() => deleteMutation.mutate(line.id)}
+                      variant="ghost"
+                      size="icon"
+                      disabled={deleteMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Team Time - Extra</DialogTitle>
+            <DialogDescription>Record extra time worked by a team member</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Person Name *</Label>
+              <Input
+                value={formData.person_name}
+                onChange={(e) => setFormData({ ...formData, person_name: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <Label>Charge Dept *</Label>
+              <Select value={formData.charge_dept} onValueChange={(v) => setFormData({ ...formData, charge_dept: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map(d => (
+                    <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Work Type *</Label>
+              <Select value={formData.work_type} onValueChange={(v) => setFormData({ ...formData, work_type: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select work type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workTypes.map(w => (
+                    <SelectItem key={w.id} value={w.name}>{w.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Duration (min) *</Label>
+              <Input
+                type="number"
+                value={formData.duration_min}
+                onChange={(e) => setFormData({ ...formData, duration_min: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+            <Button onClick={handleAdd} disabled={createMutation.isPending}>
+              {createMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
