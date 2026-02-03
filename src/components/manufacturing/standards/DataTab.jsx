@@ -17,19 +17,25 @@ export default function DataTab({ bundle, isEditable }) {
     lastLoadFilter: null
   });
 
-  // Fetch operations (with is_allowed filter for max 10)
-  const { data: allOperations = [] } = useQuery({
+  // Fetch operations from Step 1 - dynamically build columns
+  const { data: allOperations = [], isLoading: operationsLoading } = useQuery({
     queryKey: ['Operation'],
-    queryFn: () => base44.entities.Operation.list()
+    queryFn: () => base44.entities.Operation.filter({ is_active: true })
   });
 
   const operationColumns = useMemo(() => {
-    return allOperations
-      .filter(op => op.is_active && op.is_allowed)
-      .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
-      .slice(0, 10)
-      .map(op => ({ operation: op.name, label: `${op.name} (min)` }));
+    const sorted = [...allOperations]
+      .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    
+    return sorted.slice(0, 10).map(op => ({ 
+      id: op.id,
+      operation: op.name, 
+      label: `${op.name} (min)` 
+    }));
   }, [allOperations]);
+
+  const hasMoreThan10 = allOperations.length > 10;
+  const hasNoOperations = allOperations.length === 0;
 
   // Fetch lines for this bundle - CRITICAL: Use bundle.id as primary key
   const { data: lines = [], isLoading, refetch } = useQuery({
@@ -214,18 +220,45 @@ export default function DataTab({ bundle, isEditable }) {
     );
   }
 
+  if (operationsLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {/* Operations Warning/Error Messages */}
+      {hasNoOperations && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm">
+          <p className="font-semibold text-red-800">⚠️ No active Operations found</p>
+          <p className="text-red-700">Add Operations in Step 1 (Reference Data Setup) before configuring standards.</p>
+        </div>
+      )}
+
+      {hasMoreThan10 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-sm">
+          <p className="font-semibold text-orange-800">⚠️ Only first 10 active operations shown</p>
+          <p className="text-orange-700">You have {allOperations.length} active operations. Deactivate extras in Step 1 if needed.</p>
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Standard Minutes Grid (Excel-like)</h3>
         <div className="flex gap-2">
           {isEditable && (
             <>
-              <Button onClick={addRow} variant="outline" size="sm">
+              <Button onClick={addRow} variant="outline" size="sm" disabled={hasNoOperations}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Row
               </Button>
-              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} size="sm">
+              <Button 
+                onClick={() => saveMutation.mutate()} 
+                disabled={saveMutation.isPending || hasNoOperations} 
+                size="sm"
+              >
                 {saveMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                 Save
               </Button>
@@ -261,7 +294,13 @@ export default function DataTab({ bundle, isEditable }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {gridRows.length === 0 ? (
+            {hasNoOperations ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center text-slate-500">
+                  No operations available. Configure Operations in Step 1 first.
+                </TableCell>
+              </TableRow>
+            ) : gridRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={operationColumns.length + 3} className="text-center text-slate-500">
                   No data. Click "Add Row" to start.
