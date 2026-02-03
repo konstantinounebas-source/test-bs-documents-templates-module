@@ -13,15 +13,15 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import usePageAccess from '@/components/lib/usePageAccess';
+import { usePageAccess } from '@/components/lib/usePageAccess';
 
 // Import tab components
-import DataTab from '@/components/manufacturing/standards/DataTab';
-import QCTab from '@/components/manufacturing/standards/QCTab';
-import ProfilesTab from '@/components/manufacturing/standards/ProfilesTab';
-import ConsumablesTab from '@/components/manufacturing/standards/ConsumablesTab';
-import KPITab from '@/components/manufacturing/standards/KPITab';
-import MetricsTab from '@/components/manufacturing/standards/MetricsTab';
+import DataTab from '@/components/manufacturing/standards/DataTab.jsx';
+import QCTab from '@/components/manufacturing/standards/QCTab.jsx';
+import ProfilesTab from '@/components/manufacturing/standards/ProfilesTab.jsx';
+import ConsumablesTab from '@/components/manufacturing/standards/ConsumablesTab.jsx';
+import KPITab from '@/components/manufacturing/standards/KPITab.jsx';
+import MetricsTab from '@/components/manufacturing/standards/MetricsTab.jsx';
 
 export default function MfgStandardsManagementPage() {
   const { accessLevel, loading: accessLoading } = usePageAccess('MfgStandardsManagement');
