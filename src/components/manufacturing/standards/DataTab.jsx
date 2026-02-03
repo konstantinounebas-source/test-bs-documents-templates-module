@@ -281,40 +281,41 @@ export default function DataTab({ bundle, isEditable }) {
         <div><strong>Fetched Lines:</strong> {lines.length}</div>
       </div>
 
-      <div className="border rounded-lg overflow-auto max-h-[600px]">
+      <div className="border rounded-lg overflow-auto max-h-[600px] bg-white shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="sticky left-0 bg-white z-10 min-w-[150px]">Item Code</TableHead>
+            <TableRow className="bg-slate-50">
+              <TableHead className="sticky left-0 bg-slate-50 z-10 min-w-[150px] font-semibold">Item Code</TableHead>
               {operationColumns.map(col => (
-                <TableHead key={col.operation} className="min-w-[120px]">{col.label}</TableHead>
+                <TableHead key={col.operation} className="min-w-[120px] font-semibold">{col.label}</TableHead>
               ))}
-              <TableHead className="min-w-[200px]">Notes</TableHead>
-              {isEditable && <TableHead className="w-[100px]">Actions</TableHead>}
+              <TableHead className="min-w-[200px] font-semibold">Notes</TableHead>
+              {isEditable && <TableHead className="w-[100px] font-semibold">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {hasNoOperations ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-slate-500">
+                <TableCell colSpan={4} className="text-center text-slate-500 py-12">
                   No operations available. Configure Operations in Step 1 first.
                 </TableCell>
               </TableRow>
             ) : gridRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={operationColumns.length + 3} className="text-center text-slate-500">
+                <TableCell colSpan={operationColumns.length + 3} className="text-center text-slate-500 py-12">
                   No data. Click "Add Row" to start.
                 </TableCell>
               </TableRow>
             ) : (
               gridRows.map((row, index) => (
-                <TableRow key={index}>
-                  <TableCell className="sticky left-0 bg-white">
+                <TableRow key={index} className="hover:bg-slate-50">
+                  <TableCell className="sticky left-0 bg-white hover:bg-slate-50">
                     <Input
                       value={row.item_code}
                       onChange={(e) => updateCell(index, 'item_code', e.target.value)}
                       disabled={!isEditable}
                       placeholder="Item code"
+                      className="font-medium"
                     />
                   </TableCell>
                   {operationColumns.map(col => (
@@ -327,7 +328,7 @@ export default function DataTab({ bundle, isEditable }) {
                         onChange={(e) => updateCell(index, col.operation, e.target.value)}
                         disabled={!isEditable}
                         placeholder="-"
-                        className="min-w-[110px]"
+                        className="min-w-[110px] text-center font-mono"
                       />
                     </TableCell>
                   ))}

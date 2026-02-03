@@ -143,31 +143,35 @@ export default function QCInitialStockTab({ batchId, department }) {
         </Button>
       </div>
 
-      <div className="border rounded-lg overflow-auto">
+      <div className="border rounded-lg overflow-auto bg-white shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Item Code</TableHead>
-              <TableHead>QC Type</TableHead>
-              <TableHead>QC Level</TableHead>
-              <TableHead>Qty Affected</TableHead>
-              <TableHead>Actions</TableHead>
+            <TableRow className="bg-slate-50">
+              <TableHead className="font-semibold">Item Code</TableHead>
+              <TableHead className="font-semibold">QC Type</TableHead>
+              <TableHead className="font-semibold">QC Level</TableHead>
+              <TableHead className="font-semibold">Qty Affected</TableHead>
+              <TableHead className="font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredLines.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-slate-500">
-                  {searchFilter ? 'No matching QC records found' : 'No QC initial stock defined.'}
+                <TableCell colSpan={5} className="text-center text-slate-500 py-12">
+                  {searchFilter ? 'No matching QC records found' : 'No QC initial stock defined. Click "Add QC Stock" to start.'}
                 </TableCell>
               </TableRow>
             ) : (
               filteredLines.map(line => (
-                <TableRow key={line.id}>
+                <TableRow key={line.id} className="hover:bg-slate-50">
                   <TableCell className="font-medium">{line.item_code}</TableCell>
                   <TableCell>{line.qc_type}</TableCell>
-                  <TableCell>{line.qc_level}</TableCell>
-                  <TableCell>{line.qty_affected}</TableCell>
+                  <TableCell>
+                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-blue-800 text-sm font-medium">
+                      {line.qc_level}
+                    </span>
+                  </TableCell>
+                  <TableCell className="font-mono">{line.qty_affected}</TableCell>
                   <TableCell>
                     <Button
                       onClick={() => deleteMutation.mutate(line.id)}

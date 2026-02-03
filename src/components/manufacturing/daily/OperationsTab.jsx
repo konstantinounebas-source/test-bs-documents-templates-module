@@ -144,33 +144,39 @@ export default function OperationsTab({ batchId, department }) {
         </Button>
       </div>
 
-      <div className="border rounded-lg overflow-auto">
+      <div className="border rounded-lg overflow-auto bg-white shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Item Code</TableHead>
-              <TableHead>Entry Type</TableHead>
-              <TableHead>Profile</TableHead>
-              <TableHead>Operation</TableHead>
-              <TableHead>Qty</TableHead>
-              <TableHead>Actions</TableHead>
+            <TableRow className="bg-slate-50">
+              <TableHead className="font-semibold">Item Code</TableHead>
+              <TableHead className="font-semibold">Entry Type</TableHead>
+              <TableHead className="font-semibold">Profile</TableHead>
+              <TableHead className="font-semibold">Operation</TableHead>
+              <TableHead className="font-semibold">Qty</TableHead>
+              <TableHead className="font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredLines.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-slate-500">
-                  {searchFilter ? 'No matching operations found' : 'No operations defined.'}
+                <TableCell colSpan={6} className="text-center text-slate-500 py-12">
+                  {searchFilter ? 'No matching operations found' : 'No operations defined. Click "Add Operation" to start.'}
                 </TableCell>
               </TableRow>
             ) : (
               filteredLines.map(line => (
-                <TableRow key={line.id}>
+                <TableRow key={line.id} className="hover:bg-slate-50">
                   <TableCell className="font-medium">{line.item_code}</TableCell>
-                  <TableCell>{line.entry_type}</TableCell>
+                  <TableCell>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-sm font-medium ${
+                      line.entry_type === 'PROFILE' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                    }`}>
+                      {line.entry_type}
+                    </span>
+                  </TableCell>
                   <TableCell>{line.operation_profile || '-'}</TableCell>
                   <TableCell>{line.operation || '-'}</TableCell>
-                  <TableCell>{line.qty_operation || 0}</TableCell>
+                  <TableCell className="font-mono">{line.qty_operation || 0}</TableCell>
                   <TableCell>
                     <Button
                       onClick={() => deleteMutation.mutate(line.id)}
