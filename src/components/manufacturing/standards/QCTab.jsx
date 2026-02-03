@@ -26,6 +26,12 @@ export default function QCTab({ bundle, isEditable }) {
 
   const qcTypes = allQCTypes.filter(qt => qt.is_active).slice(0, 10);
 
+  // Fetch QC levels
+  const { data: qcLevels = [] } = useQuery({
+    queryKey: ['QC_Level'],
+    queryFn: () => base44.entities.QC_Level.filter({ is_active: true })
+  });
+
   // Fetch item codes from DATA tab (master list)
   const { data: itemCodes = [], isLoading: itemCodesLoading } = useBundleItemCodes(bundle?.id);
   const hasItemCodes = itemCodes.length > 0;
@@ -221,11 +227,16 @@ export default function QCTab({ bundle, isEditable }) {
 
             <div>
               <Label>QC Level *</Label>
-              <Input
-                placeholder="e.g., L1, L2, L3"
-                value={formData.qc_level}
-                onChange={(e) => setFormData({ ...formData, qc_level: e.target.value })}
-              />
+              <Select value={formData.qc_level} onValueChange={(v) => setFormData({ ...formData, qc_level: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select QC level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {qcLevels.map(ql => (
+                    <SelectItem key={ql.id} value={ql.name}>{ql.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
