@@ -168,6 +168,14 @@ export default function MfgStandardsManagementPage() {
   const handleOpenBundle = () => {
     const bundle = bundles.find(b => b.id === selectedBundleId);
     setCurrentBundle(bundle);
+    // Force reload all tab data when opening a bundle
+    queryClient.invalidateQueries({ queryKey: ['StdSetLines'] });
+    queryClient.invalidateQueries({ queryKey: ['QCSetLines'] });
+    queryClient.invalidateQueries({ queryKey: ['ProfileSetLines'] });
+    queryClient.invalidateQueries({ queryKey: ['ConsumablesStandardsLines'] });
+    queryClient.invalidateQueries({ queryKey: ['KPIDefSetLines'] });
+    queryClient.invalidateQueries({ queryKey: ['MetricsDefSetLines'] });
+    setActiveTab('data');
   };
 
   const handleCreateBundle = () => {
@@ -314,6 +322,10 @@ export default function MfgStandardsManagementPage() {
               {/* Action Buttons */}
               {isEditable && (
                 <div className="flex gap-3 justify-end mt-6">
+                  <div className="text-xs text-slate-500">
+                    <p>• Save individual tabs separately</p>
+                    <p>• All tabs will be locked after activation</p>
+                  </div>
                   <Button
                     onClick={() => activateBundleMutation.mutate()}
                     disabled={activateBundleMutation.isPending}
@@ -324,7 +336,7 @@ export default function MfgStandardsManagementPage() {
                     ) : (
                       <Check className="w-4 h-4 mr-2" />
                     )}
-                    Activate
+                    Activate All Tabs
                   </Button>
                 </div>
               )}

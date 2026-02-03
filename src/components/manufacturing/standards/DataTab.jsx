@@ -32,21 +32,17 @@ export default function DataTab({ bundle, isEditable }) {
     enabled: !!bundle
   });
 
-  // Convert lines to grid format
+  // Convert lines to grid format - reload whenever lines change
   React.useEffect(() => {
-    if (lines.length > 0) {
-      const grouped = {};
-      lines.forEach(line => {
-        if (!grouped[line.item_code]) {
-          grouped[line.item_code] = { item_code: line.item_code, notes: line.notes || '' };
-        }
-        grouped[line.item_code][line.operation] = line.std_min_per_pc;
-      });
-      setGridRows(Object.values(grouped));
-    } else {
-      setGridRows([]);
-    }
-  }, [lines]);
+    const grouped = {};
+    lines.forEach(line => {
+      if (!grouped[line.item_code]) {
+        grouped[line.item_code] = { item_code: line.item_code, notes: line.notes || '' };
+      }
+      grouped[line.item_code][line.operation] = line.std_min_per_pc;
+    });
+    setGridRows(Object.values(grouped));
+  }, [lines, bundle.id]);
 
   // Save mutation (UPSERT per cell)
   const saveMutation = useMutation({
