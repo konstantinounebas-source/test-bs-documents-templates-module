@@ -26,14 +26,24 @@ export default function DataTab({ bundle, isEditable }) {
   }, [allOperations]);
 
   // Fetch lines for this bundle
-  const { data: lines = [], isLoading } = useQuery({
-    queryKey: ['StdSetLines', bundle.id],
-    queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: bundle.id }),
-    enabled: !!bundle
+  const { data: lines = [], isLoading, refetch } = useQuery({
+    queryKey: ['StdSetLines', bundle?.id],
+    queryFn: async () => {
+      if (!bundle?.id) return [];
+      const result = await base44.entities.StdSetLines.filter({ bundle_id: bundle.id });
+      return result;
+    },
+    enabled: !!bundle?.id,
+    staleTime: 0 // Always refetch
   });
 
-  // Convert lines to grid format - reload whenever lines change
+  // Convert lines to grid format - reload whenever lines or bundle changes
   React.useEffect(() => {
+    if (!bundle?.id) {
+      setGridRows([]);
+      return;
+    }
+
     const grouped = {};
     lines.forEach(line => {
       if (!grouped[line.item_code]) {
@@ -41,8 +51,10 @@ export default function DataTab({ bundle, isEditable }) {
       }
       grouped[line.item_code][line.operation] = line.std_min_per_pc;
     });
-    setGridRows(Object.values(grouped));
-  }, [lines, bundle.id]);
+    
+    const rows = Object.values(grouped);
+    setGridRows(rows);
+  }, [lines, bundle?.id]);
 
   // Save mutation (UPSERT per cell)
   const saveMutation = useMutation({

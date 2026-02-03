@@ -165,17 +165,26 @@ export default function MfgStandardsManagementPage() {
     }
   });
 
-  const handleOpenBundle = () => {
+  const handleOpenBundle = async () => {
     const bundle = bundles.find(b => b.id === selectedBundleId);
+    if (!bundle) return;
+    
+    // Clear current bundle first
+    setCurrentBundle(null);
+    
+    // Force invalidate all queries
+    await queryClient.invalidateQueries({ queryKey: ['StdSetLines'] });
+    await queryClient.invalidateQueries({ queryKey: ['QCSetLines'] });
+    await queryClient.invalidateQueries({ queryKey: ['ProfileSetLines'] });
+    await queryClient.invalidateQueries({ queryKey: ['ConsumablesStandardsLines'] });
+    await queryClient.invalidateQueries({ queryKey: ['KPIDefSetLines'] });
+    await queryClient.invalidateQueries({ queryKey: ['MetricsDefSetLines'] });
+    
+    // Set bundle and reset to first tab
     setCurrentBundle(bundle);
-    // Force reload all tab data when opening a bundle
-    queryClient.invalidateQueries({ queryKey: ['StdSetLines'] });
-    queryClient.invalidateQueries({ queryKey: ['QCSetLines'] });
-    queryClient.invalidateQueries({ queryKey: ['ProfileSetLines'] });
-    queryClient.invalidateQueries({ queryKey: ['ConsumablesStandardsLines'] });
-    queryClient.invalidateQueries({ queryKey: ['KPIDefSetLines'] });
-    queryClient.invalidateQueries({ queryKey: ['MetricsDefSetLines'] });
     setActiveTab('data');
+    
+    toast.success(`Loaded bundle v${bundle.version_no}`);
   };
 
   const handleCreateBundle = () => {
