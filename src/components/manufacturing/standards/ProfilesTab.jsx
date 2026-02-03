@@ -155,45 +155,45 @@ export default function ProfilesTab({ bundle, isEditable }) {
         )}
       </div>
 
-      <div className="border rounded-lg overflow-auto">
+      <div className="border rounded-lg overflow-auto bg-white shadow-sm">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Item Code</TableHead>
-              <TableHead>Profile Name</TableHead>
-              <TableHead>Sanding</TableHead>
-              <TableHead>Masking</TableHead>
-              <TableHead>Zink</TableHead>
-              <TableHead>Repair</TableHead>
-              <TableHead>Remake</TableHead>
-              <TableHead>Hanging</TableHead>
-              <TableHead>Unhanging</TableHead>
-              <TableHead>Oven Clean</TableHead>
-              <TableHead>Other</TableHead>
-              {isEditable && <TableHead>Actions</TableHead>}
+            <TableRow className="bg-slate-50">
+              <TableHead className="font-semibold">Item Code</TableHead>
+              <TableHead className="font-semibold">Profile Name</TableHead>
+              <TableHead className="font-semibold text-center">Sanding</TableHead>
+              <TableHead className="font-semibold text-center">Masking</TableHead>
+              <TableHead className="font-semibold text-center">Zink</TableHead>
+              <TableHead className="font-semibold text-center">Repair</TableHead>
+              <TableHead className="font-semibold text-center">Remake</TableHead>
+              <TableHead className="font-semibold text-center">Hanging</TableHead>
+              <TableHead className="font-semibold text-center">Unhanging</TableHead>
+              <TableHead className="font-semibold text-center">Oven Clean</TableHead>
+              <TableHead className="font-semibold text-center">Other</TableHead>
+              {isEditable && <TableHead className="font-semibold">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredLines.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={12} className="text-center text-slate-500">
+                <TableCell colSpan={12} className="text-center text-slate-500 py-12">
                   {searchFilter ? 'No matching profiles found' : 'No profiles defined. Click "Add Profile" to start.'}
                 </TableCell>
               </TableRow>
             ) : (
               filteredLines.map(line => (
-                <TableRow key={line.id}>
-                  <TableCell>{line.item_code}</TableCell>
-                  <TableCell>{line.profile_name}</TableCell>
-                  <TableCell>{line.sanding_yn ? '✓' : '-'}</TableCell>
-                  <TableCell>{line.masking_yn ? '✓' : '-'}</TableCell>
-                  <TableCell>{line.zink_yn ? '✓' : '-'}</TableCell>
-                  <TableCell>{line.repair_yn ? '✓' : '-'}</TableCell>
-                  <TableCell>{line.remake_yn ? '✓' : '-'}</TableCell>
-                  <TableCell>{line.hanging_yn ? '✓' : '-'}</TableCell>
-                  <TableCell>{line.unhanging_yn ? '✓' : '-'}</TableCell>
-                  <TableCell>{line.oven_clean_yn ? '✓' : '-'}</TableCell>
-                  <TableCell>{line.other_yn ? '✓' : '-'}</TableCell>
+                <TableRow key={line.id} className="hover:bg-slate-50">
+                  <TableCell className="font-medium">{line.item_code}</TableCell>
+                  <TableCell className="font-medium">{line.profile_name}</TableCell>
+                  <TableCell className="text-center">{line.sanding_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
+                  <TableCell className="text-center">{line.masking_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
+                  <TableCell className="text-center">{line.zink_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
+                  <TableCell className="text-center">{line.repair_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
+                  <TableCell className="text-center">{line.remake_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
+                  <TableCell className="text-center">{line.hanging_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
+                  <TableCell className="text-center">{line.unhanging_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
+                  <TableCell className="text-center">{line.oven_clean_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
+                  <TableCell className="text-center">{line.other_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
                   {isEditable && (
                     <TableCell>
                       <Button
