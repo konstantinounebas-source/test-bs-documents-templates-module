@@ -435,53 +435,11 @@ const allNavigationGroups = [
         pageKey: "MfgReferenceDataWizard"
       },
       {
-        title: "Standards Setup Wizard",
-        url: createPageUrl("MfgStandardsWizard"),
+        title: "Standards Management",
+        url: createPageUrl("MfgStandardsManagement"),
         icon: FileText,
-        description: "Guided setup for all standards sets",
-        pageKey: "MfgStandardsWizard"
-      },
-      {
-        title: "Standards Sets",
-        url: createPageUrl("MfgStandards"),
-        icon: Database,
-        description: "Manage operation standards",
-        pageKey: "MfgStandards"
-      },
-      {
-        title: "DATA - Standard Minutes Grid",
-        url: createPageUrl("MfgStandardsData"),
-        icon: Database,
-        description: "Excel-like grid for standard minutes data",
-        pageKey: "MfgStandardsData"
-      },
-      {
-        title: "Profile Sets",
-        url: createPageUrl("MfgProfiles"),
-        icon: Users,
-        description: "Manage profile sets and versions",
-        pageKey: "MfgProfiles"
-      },
-      {
-        title: "QC Sets",
-        url: createPageUrl("MfgQC"),
-        icon: CheckSquare,
-        description: "Manage quality control sets",
-        pageKey: "MfgQC"
-      },
-      {
-        title: "Consumables Standards",
-        url: createPageUrl("MfgConsumables"),
-        icon: Package,
-        description: "Manage consumables standards",
-        pageKey: "MfgConsumables"
-      },
-      {
-        title: "KPI & Metrics Definitions",
-        url: createPageUrl("MfgKPIDefinitions"),
-        icon: TrendingUp,
-        description: "Define KPIs and metrics formulas",
-        pageKey: "MfgKPIDefinitions"
+        description: "Unified standards bundle management",
+        pageKey: "MfgStandardsManagement"
       },
       {
         title: "Planning Wizard",

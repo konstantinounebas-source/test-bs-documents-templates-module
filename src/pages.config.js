@@ -82,6 +82,7 @@ import MfgProfiles from './pages/MfgProfiles';
 import MfgQC from './pages/MfgQC';
 import MfgReferenceDataWizard from './pages/MfgReferenceDataWizard';
 import MfgStandards from './pages/MfgStandards';
+import MfgStandardsData from './pages/MfgStandardsData';
 import MfgStandardsWizard from './pages/MfgStandardsWizard';
 import MobileFieldWork from './pages/MobileFieldWork';
 import MyWorkday from './pages/MyWorkday';
@@ -119,7 +120,7 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import MfgStandardsData from './pages/MfgStandardsData';
+import MfgStandardsManagement from './pages/MfgStandardsManagement';
 import __Layout from './Layout.jsx';
 
 
@@ -159,6 +160,7 @@ export const PAGES = {
     "MfgQC": MfgQC,
     "MfgReferenceDataWizard": MfgReferenceDataWizard,
     "MfgStandards": MfgStandards,
+    "MfgStandardsData": MfgStandardsData,
     "MfgStandardsWizard": MfgStandardsWizard,
     "MobileFieldWork": MobileFieldWork,
     "MyWorkday": MyWorkday,
@@ -196,7 +198,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "MfgStandardsData": MfgStandardsData,
+    "MfgStandardsManagement": MfgStandardsManagement,
 }
 
 export const pagesConfig = {
