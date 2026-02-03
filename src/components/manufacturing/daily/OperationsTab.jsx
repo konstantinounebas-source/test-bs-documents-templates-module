@@ -164,31 +164,40 @@ export default function OperationsTab({ batchId, department }) {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredLines.map(line => (
-                <TableRow key={line.id} className="hover:bg-slate-50">
-                  <TableCell className="font-medium">{line.item_code}</TableCell>
-                  <TableCell>
-                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-sm font-medium ${
-                      line.entry_type === 'PROFILE' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {line.entry_type}
-                    </span>
+              <>
+                {filteredLines.map(line => (
+                  <TableRow key={line.id} className="hover:bg-slate-50">
+                    <TableCell className="font-medium">{line.item_code}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-md text-sm font-medium ${
+                        line.entry_type === 'PROFILE' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {line.entry_type}
+                      </span>
+                    </TableCell>
+                    <TableCell>{line.operation_profile || '-'}</TableCell>
+                    <TableCell>{line.operation || '-'}</TableCell>
+                    <TableCell className="font-mono">{line.qty_operation || 0}</TableCell>
+                    <TableCell>
+                      <Button
+                        onClick={() => deleteMutation.mutate(line.id)}
+                        variant="ghost"
+                        size="icon"
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="bg-purple-50 font-semibold border-t-2">
+                  <TableCell colSpan={4} className="text-right">Total Quantity:</TableCell>
+                  <TableCell className="font-mono font-bold">
+                    {filteredLines.reduce((sum, line) => sum + (parseFloat(line.qty_operation) || 0), 0).toFixed(2)}
                   </TableCell>
-                  <TableCell>{line.operation_profile || '-'}</TableCell>
-                  <TableCell>{line.operation || '-'}</TableCell>
-                  <TableCell className="font-mono">{line.qty_operation || 0}</TableCell>
-                  <TableCell>
-                    <Button
-                      onClick={() => deleteMutation.mutate(line.id)}
-                      variant="ghost"
-                      size="icon"
-                      disabled={deleteMutation.isPending}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </TableCell>
+                  <TableCell></TableCell>
                 </TableRow>
-              ))
+              </>
             )}
           </TableBody>
         </Table>

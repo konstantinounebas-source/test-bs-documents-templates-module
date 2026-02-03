@@ -162,28 +162,37 @@ export default function QCInitialStockTab({ batchId, department }) {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredLines.map(line => (
-                <TableRow key={line.id} className="hover:bg-slate-50">
-                  <TableCell className="font-medium">{line.item_code}</TableCell>
-                  <TableCell>{line.qc_type}</TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-blue-800 text-sm font-medium">
-                      {line.qc_level}
-                    </span>
+              <>
+                {filteredLines.map(line => (
+                  <TableRow key={line.id} className="hover:bg-slate-50">
+                    <TableCell className="font-medium">{line.item_code}</TableCell>
+                    <TableCell>{line.qc_type}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-blue-800 text-sm font-medium">
+                        {line.qc_level}
+                      </span>
+                    </TableCell>
+                    <TableCell className="font-mono">{line.qty_affected}</TableCell>
+                    <TableCell>
+                      <Button
+                        onClick={() => deleteMutation.mutate(line.id)}
+                        variant="ghost"
+                        size="icon"
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                <TableRow className="bg-blue-50 font-semibold border-t-2">
+                  <TableCell colSpan={3} className="text-right">Total:</TableCell>
+                  <TableCell className="font-mono font-bold">
+                    {filteredLines.reduce((sum, line) => sum + (parseFloat(line.qty_affected) || 0), 0).toFixed(2)}
                   </TableCell>
-                  <TableCell className="font-mono">{line.qty_affected}</TableCell>
-                  <TableCell>
-                    <Button
-                      onClick={() => deleteMutation.mutate(line.id)}
-                      variant="ghost"
-                      size="icon"
-                      disabled={deleteMutation.isPending}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </TableCell>
+                  <TableCell></TableCell>
                 </TableRow>
-              ))
+              </>
             )}
           </TableBody>
         </Table>
