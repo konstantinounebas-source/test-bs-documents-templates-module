@@ -1,18 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Trash2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { useBundleItemCodes } from './useBundleItemCodes';
 
 export default function ConsumablesTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [searchFilter, setSearchFilter] = useState('');
   const [formData, setFormData] = useState({
     consumable: '',
     department: '',
@@ -43,12 +45,22 @@ export default function ConsumablesTab({ bundle, isEditable }) {
   });
   const rateTypes = allRateTypes.filter(rt => rt.is_active).slice(0, 10);
 
+  // Fetch item codes from DATA tab (master list)
+  const { data: itemCodes = [] } = useBundleItemCodes(bundle?.id);
+
   // Fetch lines
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['ConsumablesStandardsLines', bundle.id],
     queryFn: () => base44.entities.ConsumablesStandardsLines.filter({ bundle_id: bundle.id }),
     enabled: !!bundle
   });
+
+  // Filtered lines
+  const filteredLines = useMemo(() => {
+    if (!searchFilter) return lines;
+    const term = searchFilter.toLowerCase();
+    return lines.filter(l => l.item_code?.toLowerCase().includes(term));
+  }, [lines, searchFilter]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -150,14 +162,14 @@ export default function ConsumablesTab({ bundle, isEditable }) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {lines.length === 0 ? (
+            {filteredLines.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={9} className="text-center text-slate-500">
-                  No consumables standards defined. Click "Add Consumable" to start.
+                  {searchFilter ? 'No matching consumables found' : 'No consumables standards defined. Click "Add Consumable" to start.'}
                 </TableCell>
               </TableRow>
             ) : (
-              lines.map(line => (
+              filteredLines.map(line => (
                 <TableRow key={line.id}>
                   <TableCell>{line.consumable}</TableCell>
                   <TableCell>{line.department}</TableCell>
@@ -233,12 +245,18 @@ export default function ConsumablesTab({ bundle, isEditable }) {
               </div>
 
               <div>
-                <Label>Item Code</Label>
-                <Input
-                  value={formData.item_code}
-                  onChange={(e) => setFormData({ ...formData, item_code: e.target.value })}
-                  placeholder="Optional"
-                />
+                <Label>Item Code (optional)</Label>
+                <Select value={formData.item_code} onValueChange={(v) => setFormData({ ...formData, item_code: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Optional - from DATA tab" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>-- None --</SelectItem>
+                    {itemCodes.map(code => (
+                      <SelectItem key={code} value={code}>{code}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
