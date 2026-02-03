@@ -56,8 +56,8 @@ export default function OperationsTab({ batchId, department }) {
   });
 
   const { data: profileNames = [] } = useQuery({
-    queryKey: ['OperationProfileName'],
-    queryFn: () => base44.entities.OperationProfileName.filter({ is_active: true })
+    queryKey: ['Operation_Profile_Name'],
+    queryFn: () => base44.entities.Operation_Profile_Name.filter({ is_active: true })
   });
 
   const { data: lines = [], isLoading } = useQuery({

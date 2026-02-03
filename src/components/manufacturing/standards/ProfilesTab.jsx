@@ -38,8 +38,8 @@ export default function ProfilesTab({ bundle, isEditable }) {
 
   // Fetch operation profile names
   const { data: profileNames = [] } = useQuery({
-    queryKey: ['OperationProfileName'],
-    queryFn: () => base44.entities.OperationProfileName.filter({ is_active: true })
+    queryKey: ['Operation_Profile_Name'],
+    queryFn: () => base44.entities.Operation_Profile_Name.filter({ is_active: true })
   });
 
   // Fetch lines
