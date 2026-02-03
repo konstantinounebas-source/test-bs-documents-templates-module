@@ -1,0 +1,288 @@
+import React, { useState } from 'react';
+import { base44 } from '@/api/base44Client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+
+export default function ConsumablesTab({ bundle, isEditable }) {
+  const queryClient = useQueryClient();
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [formData, setFormData] = useState({
+    consumable: '',
+    department: '',
+    rate_type: '',
+    item_code: '',
+    operation: '',
+    rate_value: '',
+    unit: '',
+    notes: ''
+  });
+
+  // Fetch reference data (max 10 allowed)
+  const { data: allConsumables = [] } = useQuery({
+    queryKey: ['Consumable'],
+    queryFn: () => base44.entities.Consumable.list()
+  });
+  const consumables = allConsumables.filter(c => c.is_active).slice(0, 10);
+
+  const { data: allUnits = [] } = useQuery({
+    queryKey: ['Unit'],
+    queryFn: () => base44.entities.Unit.list()
+  });
+  const units = allUnits.filter(u => u.is_active).slice(0, 10);
+
+  const { data: allRateTypes = [] } = useQuery({
+    queryKey: ['Rate_Type'],
+    queryFn: () => base44.entities.Rate_Type.list()
+  });
+  const rateTypes = allRateTypes.filter(rt => rt.is_active).slice(0, 10);
+
+  // Fetch lines
+  const { data: lines = [], isLoading } = useQuery({
+    queryKey: ['ConsumablesStandardsLines', bundle.id],
+    queryFn: () => base44.entities.ConsumablesStandardsLines.filter({ bundle_id: bundle.id }),
+    enabled: !!bundle
+  });
+
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: async (data) => {
+      await base44.entities.ConsumablesStandardsLines.create({
+        bundle_id: bundle.id,
+        ...data
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ConsumablesStandardsLines'] });
+      setShowAddDialog(false);
+      setFormData({
+        consumable: '',
+        department: '',
+        rate_type: '',
+        item_code: '',
+        operation: '',
+        rate_value: '',
+        unit: '',
+        notes: ''
+      });
+      toast.success('Consumable line added');
+    },
+    onError: (error) => {
+      toast.error('Failed to add: ' + error.message);
+    }
+  });
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => {
+      await base44.entities.ConsumablesStandardsLines.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ConsumablesStandardsLines'] });
+      toast.success('Consumable line deleted');
+    },
+    onError: (error) => {
+      toast.error('Failed to delete: ' + error.message);
+    }
+  });
+
+  const handleAdd = () => {
+    if (!formData.consumable || !formData.department || !formData.rate_type || !formData.rate_value || !formData.unit) {
+      toast.error('Please fill required fields');
+      return;
+    }
+    createMutation.mutate({
+      ...formData,
+      rate_value: parseFloat(formData.rate_value)
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold">Consumables Standards</h3>
+        {isEditable && (
+          <Button onClick={() => setShowAddDialog(true)} variant="outline" size="sm">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Consumable
+          </Button>
+        )}
+      </div>
+
+      <div className="border rounded-lg overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Consumable</TableHead>
+              <TableHead>Department</TableHead>
+              <TableHead>Rate Type</TableHead>
+              <TableHead>Item Code</TableHead>
+              <TableHead>Operation</TableHead>
+              <TableHead>Rate Value</TableHead>
+              <TableHead>Unit</TableHead>
+              <TableHead>Notes</TableHead>
+              {isEditable && <TableHead>Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {lines.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="text-center text-slate-500">
+                  No consumables standards defined. Click "Add Consumable" to start.
+                </TableCell>
+              </TableRow>
+            ) : (
+              lines.map(line => (
+                <TableRow key={line.id}>
+                  <TableCell>{line.consumable}</TableCell>
+                  <TableCell>{line.department}</TableCell>
+                  <TableCell>{line.rate_type}</TableCell>
+                  <TableCell>{line.item_code || '-'}</TableCell>
+                  <TableCell>{line.operation || '-'}</TableCell>
+                  <TableCell>{line.rate_value}</TableCell>
+                  <TableCell>{line.unit}</TableCell>
+                  <TableCell>{line.notes || '-'}</TableCell>
+                  {isEditable && (
+                    <TableCell>
+                      <Button
+                        onClick={() => deleteMutation.mutate(line.id)}
+                        variant="ghost"
+                        size="icon"
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Add Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add Consumable Standard</DialogTitle>
+            <DialogDescription>Define a consumable standard for this bundle</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4 max-h-[500px] overflow-auto">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Consumable *</Label>
+                <Select value={formData.consumable} onValueChange={(v) => setFormData({ ...formData, consumable: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {consumables.map(c => (
+                      <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Department *</Label>
+                <Input
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label>Rate Type *</Label>
+                <Select value={formData.rate_type} onValueChange={(v) => setFormData({ ...formData, rate_type: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rateTypes.map(rt => (
+                      <SelectItem key={rt.id} value={rt.name}>{rt.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Item Code</Label>
+                <Input
+                  value={formData.item_code}
+                  onChange={(e) => setFormData({ ...formData, item_code: e.target.value })}
+                  placeholder="Optional"
+                />
+              </div>
+
+              <div>
+                <Label>Operation</Label>
+                <Input
+                  value={formData.operation}
+                  onChange={(e) => setFormData({ ...formData, operation: e.target.value })}
+                  placeholder="Optional"
+                />
+              </div>
+
+              <div>
+                <Label>Rate Value *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.rate_value}
+                  onChange={(e) => setFormData({ ...formData, rate_value: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <Label>Unit *</Label>
+                <Select value={formData.unit} onValueChange={(v) => setFormData({ ...formData, unit: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {units.map(u => (
+                      <SelectItem key={u.id} value={u.name}>{u.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label>Notes</Label>
+              <Input
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+            <Button onClick={handleAdd} disabled={createMutation.isPending}>
+              {createMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
+              Add
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
