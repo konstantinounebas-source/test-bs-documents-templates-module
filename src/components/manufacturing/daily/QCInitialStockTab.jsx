@@ -54,6 +54,11 @@ export default function QCInitialStockTab({ batchId, department }) {
     queryFn: () => base44.entities.QC_Type.list()
   });
 
+  const { data: qcLevels = [] } = useQuery({
+    queryKey: ['QCLevel'],
+    queryFn: () => base44.entities.QCLevel.filter({ is_active: true })
+  });
+
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['QC_Initial_Stock', batchId],
     queryFn: () => base44.entities.QC_Initial_Stock.filter({ batch_header_id: batchId }),
@@ -224,9 +229,9 @@ export default function QCInitialStockTab({ batchId, department }) {
                     <SelectValue placeholder="Select level" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="L1">L1</SelectItem>
-                    <SelectItem value="L2">L2</SelectItem>
-                    <SelectItem value="L3">L3</SelectItem>
+                    {qcLevels.map(ql => (
+                      <SelectItem key={ql.id} value={ql.name}>{ql.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

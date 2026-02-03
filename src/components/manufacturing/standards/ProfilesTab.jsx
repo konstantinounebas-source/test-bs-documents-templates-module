@@ -36,6 +36,12 @@ export default function ProfilesTab({ bundle, isEditable }) {
   const { data: itemCodes = [], isLoading: itemCodesLoading } = useBundleItemCodes(bundle?.id);
   const hasItemCodes = itemCodes.length > 0;
 
+  // Fetch operation profile names
+  const { data: profileNames = [] } = useQuery({
+    queryKey: ['OperationProfileName'],
+    queryFn: () => base44.entities.OperationProfileName.filter({ is_active: true })
+  });
+
   // Fetch lines
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['ProfileSetLines', bundle.id],
@@ -232,10 +238,16 @@ export default function ProfilesTab({ bundle, isEditable }) {
               </div>
               <div>
                 <Label>Profile Name *</Label>
-                <Input
-                  value={formData.profile_name}
-                  onChange={(e) => setFormData({ ...formData, profile_name: e.target.value })}
-                />
+                <Select value={formData.profile_name} onValueChange={(v) => setFormData({ ...formData, profile_name: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select profile name" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {profileNames.map(pn => (
+                      <SelectItem key={pn.id} value={pn.name}>{pn.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

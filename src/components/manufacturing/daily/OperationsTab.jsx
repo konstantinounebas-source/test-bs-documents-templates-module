@@ -55,6 +55,11 @@ export default function OperationsTab({ batchId, department }) {
     queryFn: () => base44.entities.Operation.list()
   });
 
+  const { data: profileNames = [] } = useQuery({
+    queryKey: ['OperationProfileName'],
+    queryFn: () => base44.entities.OperationProfileName.filter({ is_active: true })
+  });
+
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['Operations', batchId],
     queryFn: () => base44.entities.Operations.filter({ batch_header_id: batchId }),
@@ -221,11 +226,16 @@ export default function OperationsTab({ batchId, department }) {
             {formData.entry_type === 'PROFILE' && (
               <div>
                 <Label>Operation Profile</Label>
-                <Input
-                  value={formData.operation_profile}
-                  onChange={(e) => setFormData({ ...formData, operation_profile: e.target.value })}
-                  placeholder="Profile name"
-                />
+                <Select value={formData.operation_profile} onValueChange={(v) => setFormData({ ...formData, operation_profile: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select profile name" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {profileNames.map(pn => (
+                      <SelectItem key={pn.id} value={pn.name}>{pn.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 

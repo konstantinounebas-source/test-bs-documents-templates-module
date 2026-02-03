@@ -17,12 +17,19 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
   const [formData, setFormData] = useState({
     date: '',
     department: '',
+    bundle_id: '',
     notes: ''
   });
 
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
     queryFn: () => base44.entities.Department.list()
+  });
+
+  const { data: bundles = [] } = useQuery({
+    queryKey: ['StandardsBundle', formData.department],
+    queryFn: () => base44.entities.StandardsBundle.filter({ department: formData.department }),
+    enabled: !!formData.department
   });
 
   const createMutation = useMutation({
@@ -56,14 +63,14 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
   });
 
   const resetForm = () => {
-    setFormData({ date: '', department: '', notes: '' });
+    setFormData({ date: '', department: '', bundle_id: '', notes: '' });
     setEditingBatch(null);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.date || !formData.department) {
-      toast.error('Date and department are required');
+    if (!formData.date || !formData.department || !formData.bundle_id) {
+      toast.error('Date, department and standards bundle are required');
       return;
     }
 
@@ -79,6 +86,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
     setFormData({
       date: batch.date,
       department: batch.department,
+      bundle_id: batch.bundle_id || '',
       notes: batch.notes || ''
     });
   };
@@ -112,7 +120,9 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
               <Label>Department *</Label>
               <Select
                 value={formData.department}
-                onValueChange={(value) => setFormData({ ...formData, department: value })}
+                onValueChange={(value) => {
+                  setFormData({ ...formData, department: value, bundle_id: '' });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select department" />
@@ -120,6 +130,25 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
                 <SelectContent>
                   {departments.map(d => (
                     <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Standards Bundle *</Label>
+              <Select
+                value={formData.bundle_id}
+                onValueChange={(value) => setFormData({ ...formData, bundle_id: value })}
+                disabled={!formData.department}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={formData.department ? "Select bundle version" : "Select department first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {bundles.map(b => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.version_no} {b.status === 'ACTIVE' ? '- ACTIVE' : ''}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

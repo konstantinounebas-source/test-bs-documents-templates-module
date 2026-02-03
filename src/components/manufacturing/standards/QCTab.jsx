@@ -28,8 +28,8 @@ export default function QCTab({ bundle, isEditable }) {
 
   // Fetch QC levels
   const { data: qcLevels = [] } = useQuery({
-    queryKey: ['QC_Level'],
-    queryFn: () => base44.entities.QC_Level.filter({ is_active: true })
+    queryKey: ['QCLevel'],
+    queryFn: () => base44.entities.QCLevel.filter({ is_active: true })
   });
 
   // Fetch item codes from DATA tab (master list)
