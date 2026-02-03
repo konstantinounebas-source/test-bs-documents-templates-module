@@ -192,7 +192,13 @@ export default function MfgStandardsManagementPage() {
       toast.error('Please select a department first');
       return;
     }
-    setShowCreateDialog(true);
+    
+    // If a bundle is currently open, clone it instead of creating blank
+    if (currentBundle) {
+      setShowCloneDialog(true);
+    } else {
+      setShowCreateDialog(true);
+    }
   };
 
   const isEditable = currentBundle && currentBundle.status === 'DRAFT';
