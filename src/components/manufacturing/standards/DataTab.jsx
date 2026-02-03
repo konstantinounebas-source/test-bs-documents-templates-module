@@ -10,6 +10,12 @@ import { toast } from 'sonner';
 export default function DataTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
   const [gridRows, setGridRows] = useState([]);
+  const [debugInfo, setDebugInfo] = useState({
+    saveWrites: 0,
+    loadReads: 0,
+    lastSaveSample: null,
+    lastLoadFilter: null
+  });
 
   // Fetch operations (with is_allowed filter for max 10)
   const { data: allOperations = [] } = useQuery({
@@ -25,12 +31,28 @@ export default function DataTab({ bundle, isEditable }) {
       .map(op => ({ operation: op.name, label: `${op.name} (min)` }));
   }, [allOperations]);
 
-  // Fetch lines for this bundle
+  // Fetch lines for this bundle - CRITICAL: Use bundle.id as primary key
   const { data: lines = [], isLoading, refetch } = useQuery({
     queryKey: ['StdSetLines', bundle?.id],
     queryFn: async () => {
       if (!bundle?.id) return [];
+      
+      console.log('🔍 LOAD QUERY:', { 
+        table: 'StdSetLines', 
+        filter: { bundle_id: bundle.id },
+        bundleVersion: bundle.version_no 
+      });
+      
       const result = await base44.entities.StdSetLines.filter({ bundle_id: bundle.id });
+      
+      console.log('✅ LOADED ROWS:', result.length, result.slice(0, 2));
+      
+      setDebugInfo(prev => ({
+        ...prev,
+        loadReads: result.length,
+        lastLoadFilter: { table: 'StdSetLines', bundle_id: bundle.id, department: bundle.department }
+      }));
+      
       return result;
     },
     enabled: !!bundle?.id,
@@ -134,15 +156,36 @@ export default function DataTab({ bundle, isEditable }) {
         }
       });
 
+      console.log('💾 SAVE OPERATION:', {
+        bundleId: bundle.id,
+        bundleVersion: bundle.version_no,
+        department: bundle.department,
+        creates: creates.length,
+        updates: updates.length,
+        deletes: deletes.length,
+        sampleCreate: creates[0]
+      });
+
       await Promise.all([
         ...deletes.map(id => base44.entities.StdSetLines.delete(id)),
         ...updates.map(u => base44.entities.StdSetLines.update(u.id, u.data)),
         ...creates.map(c => base44.entities.StdSetLines.create(c))
       ]);
+
+      const totalWrites = creates.length + updates.length + deletes.length;
+      
+      setDebugInfo(prev => ({
+        ...prev,
+        saveWrites: totalWrites,
+        lastSaveSample: creates[0] || updates[0]?.data || null
+      }));
+
+      return totalWrites;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['StdSetLines'] });
-      toast.success('Data saved successfully');
+    onSuccess: (totalWrites) => {
+      queryClient.invalidateQueries({ queryKey: ['StdSetLines', bundle.id] });
+      refetch();
+      toast.success(`Data saved: ${totalWrites} operations`);
     },
     onError: (error) => {
       toast.error('Failed to save: ' + error.message);
@@ -189,6 +232,20 @@ export default function DataTab({ bundle, isEditable }) {
             </>
           )}
         </div>
+      </div>
+
+      {/* DEBUG PANEL */}
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs space-y-1">
+        <div className="font-semibold text-yellow-800">🔍 DEBUG INFO:</div>
+        <div><strong>Bundle ID:</strong> {bundle?.id || 'N/A'}</div>
+        <div><strong>Bundle Version:</strong> {bundle?.version_no || 'N/A'}</div>
+        <div><strong>Department:</strong> {bundle?.department || 'N/A'}</div>
+        <div><strong>Save Writes:</strong> {debugInfo.saveWrites}</div>
+        <div><strong>Load Reads:</strong> {debugInfo.loadReads}</div>
+        <div><strong>Last Save Sample:</strong> {debugInfo.lastSaveSample ? JSON.stringify(debugInfo.lastSaveSample) : 'N/A'}</div>
+        <div><strong>Last Load Filter:</strong> {debugInfo.lastLoadFilter ? JSON.stringify(debugInfo.lastLoadFilter) : 'N/A'}</div>
+        <div><strong>Current Grid Rows:</strong> {gridRows.length}</div>
+        <div><strong>Fetched Lines:</strong> {lines.length}</div>
       </div>
 
       <div className="border rounded-lg overflow-auto max-h-[600px]">
