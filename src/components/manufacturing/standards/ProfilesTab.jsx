@@ -99,10 +99,35 @@ export default function ProfilesTab({ bundle, isEditable }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
+      {!hasItemCodes && !itemCodesLoading && (
+        <Alert variant="destructive">
+          <AlertCircle className="w-4 h-4" />
+          <AlertDescription>
+            Add Item Codes in DATA tab first before defining profiles.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="flex justify-between items-center gap-4">
         <h3 className="text-lg font-semibold">Operation Profiles</h3>
+        <div className="flex gap-2 items-center flex-1 max-w-md">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Filter by item code..."
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+        </div>
         {isEditable && (
-          <Button onClick={() => setShowAddDialog(true)} variant="outline" size="sm">
+          <Button 
+            onClick={() => setShowAddDialog(true)} 
+            variant="outline" 
+            size="sm"
+            disabled={!hasItemCodes}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Profile
           </Button>
