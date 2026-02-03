@@ -149,9 +149,27 @@ export default function MfgDailyProduction() {
     }
   };
 
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setFormData(item);
+  const handleEdit = async (item) => {
+    if (currentStep === 0) {
+      // Editing a batch header - load all associated data
+      setEditingItem(item);
+      setFormData(item);
+      setCurrentBatchId(item.id);
+      
+      // Invalidate all related queries to reload data for this batch
+      queryClient.invalidateQueries(['Batch_Lines']);
+      queryClient.invalidateQueries(['QC_Initial_Stock']);
+      queryClient.invalidateQueries(['Operations']);
+      queryClient.invalidateQueries(['Team_Time_Persons']);
+      queryClient.invalidateQueries(['Team_Time_Extra']);
+      queryClient.invalidateQueries(['Help_In']);
+      queryClient.invalidateQueries(['Consumables_Actual']);
+      
+      toast.success('Batch loaded - navigate through tabs to view/edit all data');
+    } else {
+      setEditingItem(item);
+      setFormData(item);
+    }
   };
 
   const handleDelete = (id) => {
