@@ -346,43 +346,43 @@ export default function MfgPlanningWizard() {
                       No {step.name.toLowerCase()} found. Create your first record.
                     </div>
                   ) : (
-                    <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            {currentStep === 0 && <TableHead>Dept</TableHead>}
-                            <TableHead>Item</TableHead>
-                            <TableHead>Qty</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {items.map(item => (
-                            <TableRow key={item.id}>
-                              <TableCell>{item.date}</TableCell>
-                              {currentStep === 0 && <TableCell>{item.department}</TableCell>}
-                              <TableCell className="font-medium">{item.item_code}</TableCell>
-                              <TableCell>{currentStep === 0 ? item.target_qty : item.scheduled_qty}</TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>
-                                    <Edit2 className="w-4 h-4" />
-                                  </Button>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="sm"
-                                    onClick={() => handleDelete(item.id)}
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                    <div className="border rounded-lg overflow-hidden max-h-[500px] overflow-y-auto bg-white shadow-sm">
+                     <Table>
+                       <TableHeader>
+                         <TableRow className="bg-slate-50">
+                           <TableHead className="font-semibold">Date</TableHead>
+                           {currentStep === 0 && <TableHead className="font-semibold">Dept</TableHead>}
+                           <TableHead className="font-semibold">Item</TableHead>
+                           <TableHead className="font-semibold">Qty</TableHead>
+                           <TableHead className="text-right font-semibold">Actions</TableHead>
+                         </TableRow>
+                       </TableHeader>
+                       <TableBody>
+                         {items.map(item => (
+                           <TableRow key={item.id} className="hover:bg-slate-50">
+                             <TableCell className="font-medium">{item.date}</TableCell>
+                             {currentStep === 0 && <TableCell><span className="inline-flex items-center px-2 py-1 rounded-md bg-indigo-100 text-indigo-800 text-xs font-medium">{item.department}</span></TableCell>}
+                             <TableCell className="font-medium">{item.item_code}</TableCell>
+                             <TableCell className="font-mono">{currentStep === 0 ? item.target_qty : item.scheduled_qty}</TableCell>
+                             <TableCell className="text-right">
+                               <div className="flex justify-end gap-2">
+                                 <Button variant="ghost" size="sm" onClick={() => handleEdit(item)}>
+                                   <Edit2 className="w-4 h-4" />
+                                 </Button>
+                                 <Button 
+                                   variant="ghost" 
+                                   size="sm"
+                                   onClick={() => handleDelete(item.id)}
+                                   className="text-red-600 hover:text-red-700"
+                                 >
+                                   <Trash2 className="w-4 h-4" />
+                                 </Button>
+                               </div>
+                             </TableCell>
+                           </TableRow>
+                         ))}
+                       </TableBody>
+                     </Table>
                     </div>
                   )}
                 </CardContent>
