@@ -39,7 +39,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
     staleTime: 0
   });
 
-  // Fetch all bundles (all statuses)
+  // Fetch all bundles (all statuses) for selected department
   const { data: allBundles = [] } = useQuery({
     queryKey: ['StandardsBundle', selectedDepartment],
     queryFn: async () => {
@@ -48,6 +48,13 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
       return all.filter(b => b.department === selectedDepartment);
     },
     enabled: !!selectedDepartment,
+    staleTime: 0
+  });
+
+  // Fetch ALL bundles globally for table lookup (to show bundle info even if department filter changes)
+  const { data: allBundlesGlobal = [] } = useQuery({
+    queryKey: ['StandardsBundle-Global'],
+    queryFn: () => base44.entities.StandardsBundle.list(),
     staleTime: 0
   });
 
