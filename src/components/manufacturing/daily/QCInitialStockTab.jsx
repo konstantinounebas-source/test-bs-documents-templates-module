@@ -119,11 +119,33 @@ export default function QCInitialStockTab({ batchId, department }) {
     });
   }, [batchId, lines.length, scheduledData, queryClient]);
 
+  // Add QC per-piece to each line
+  const linesWithQCPerPiece = useMemo(() => {
+    return lines.map(line => {
+      const trimmedItemCode = (line.item_code || '').trim();
+      const qcRule = qcSetLines.find(
+        ql => (ql.item_code || '').trim().toLowerCase() === trimmedItemCode.toLowerCase() &&
+             ql.qc_type === line.qc_type &&
+             ql.qc_level === line.qc_level
+      );
+      
+      let qcPerPiece = 0;
+      if (qcRule && qcRule.calculated_extra_time) {
+        qcPerPiece = parseFloat(qcRule.calculated_extra_time);
+      }
+      
+      return {
+        ...line,
+        qcPerPiece: qcPerPiece.toFixed(2)
+      };
+    });
+  }, [lines, qcSetLines]);
+
   const filteredLines = useMemo(() => {
-    if (!searchFilter) return lines;
+    if (!searchFilter) return linesWithQCPerPiece;
     const term = searchFilter.toLowerCase();
-    return lines.filter(l => l.item_code?.toLowerCase().includes(term));
-  }, [lines, searchFilter]);
+    return linesWithQCPerPiece.filter(l => l.item_code?.toLowerCase().includes(term));
+  }, [linesWithQCPerPiece, searchFilter]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.QC_Initial_Stock.create({
