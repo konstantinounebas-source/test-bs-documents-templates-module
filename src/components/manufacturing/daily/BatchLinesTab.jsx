@@ -18,16 +18,12 @@ function useBatchItemCodes(batchId, department) {
     queryFn: async () => {
       if (!batchId || !department) return [];
       
-      // Get active bundle for this department
-      const bundles = await base44.entities.StandardsBundle.filter({ 
-        department: department,
-        status: 'ACTIVE'
-      });
+      // Get batch header to get its bundle_id
+      const batch = await base44.entities.Batch_Header.filter({ id: batchId });
+      if (!batch || batch.length === 0) return [];
       
-      if (bundles.length === 0) return [];
-      
-      const activeBundle = bundles[0];
-      const lines = await base44.entities.StdSetLines.filter({ bundle_id: activeBundle.id });
+      const bundleId = batch[0].bundle_id;
+      const lines = await base44.entities.StdSetLines.filter({ bundle_id: bundleId });
       
       const uniqueItemCodes = [...new Set(lines.map(l => l.item_code))].filter(Boolean);
       return uniqueItemCodes.sort();
