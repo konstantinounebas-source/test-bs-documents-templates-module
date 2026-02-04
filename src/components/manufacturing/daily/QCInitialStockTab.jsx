@@ -83,6 +83,14 @@ export default function QCInitialStockTab({ batchId, department }) {
     staleTime: 0
   });
 
+  // Fetch QC rules from bundle for calculated extra time
+  const { data: qcSetLines = [] } = useQuery({
+    queryKey: ['QCSetLines', batchHeader?.bundle_id],
+    queryFn: () => base44.entities.QCSetLines.filter({ bundle_id: batchHeader.bundle_id }),
+    enabled: !!batchHeader?.bundle_id,
+    staleTime: 0
+  });
+
   // Auto-fill QC initial stock from scheduled data (only on initial load)
   useMemo(() => {
     if (!batchId || lines.length > 0 || scheduledData.length === 0) return;
