@@ -171,57 +171,69 @@ export default function QCActionsTab({ batchId, department }) {
     return lines.map(line => {
       const trimmedItemCode = (line.item_code || '').trim();
       
-      // Find QC Rule - match on item_code, qc_type, qc_level, and operation if available
-      const qcRule = qcSetLines.find(
-        ql => (ql.item_code || '').trim().toLowerCase() === trimmedItemCode.toLowerCase() && 
-             ql.qc_type === line.qc_type && 
-             ql.qc_level === line.qc_level &&
-             (!line.operation || ql.operation === line.operation)
+      // First, try to get qc_per_piece_min from ScheduledData
+      const scheduledItem = scheduledData.find(
+        sd => (sd.item_code || '').trim().toLowerCase() === trimmedItemCode.toLowerCase() && 
+             sd.qc_type === line.qc_type && 
+             sd.qc_level === line.qc_level
       );
 
       let qcPerPiece = 0;
       
-      if (qcRule) {
-        // Get base operation time from StdSetLines (DATA tab)
-        const baseOpTime = stdSetLines.find(
-          std => (std.item_code || '').trim().toLowerCase() === trimmedItemCode.toLowerCase() &&
-                 (!line.operation || std.operation === line.operation)
-        )?.std_min_per_pc || 0;
+      if (scheduledItem && scheduledItem.qc_per_piece_min) {
+        // Use calculated value from ScheduledData
+        qcPerPiece = parseFloat(scheduledItem.qc_per_piece_min);
+      } else {
+        // Fallback to QC rule calculation
+        const qcRule = qcSetLines.find(
+          ql => (ql.item_code || '').trim().toLowerCase() === trimmedItemCode.toLowerCase() && 
+               ql.qc_type === line.qc_type && 
+               ql.qc_level === line.qc_level &&
+               (!line.operation || ql.operation === line.operation)
+        );
 
-        // Calculate QC per-piece based on rule mode
-        if (qcRule.mode === 'Percent' && qcRule.qc_value) {
-          // QC Per-piece = base_operation_time * (qc_value / 100)
-          qcPerPiece = parseFloat(baseOpTime) * (parseFloat(qcRule.qc_value) / 100);
-        } else if (qcRule.mode === 'Minutes' && qcRule.qc_value) {
-          // QC Per-piece = qc_value (direct minutes)
-          qcPerPiece = parseFloat(qcRule.qc_value);
-        } else if (qcRule.time_minutes) {
-          // Fallback to time_minutes field
-          qcPerPiece = parseFloat(qcRule.time_minutes);
-        }
+        if (qcRule) {
+          // Get base operation time from StdSetLines (DATA tab)
+          const baseOpTime = stdSetLines.find(
+            std => (std.item_code || '').trim().toLowerCase() === trimmedItemCode.toLowerCase() &&
+                   (!line.operation || std.operation === line.operation)
+          )?.std_min_per_pc || 0;
 
-        // Debug logging
-        if (qcPerPiece === 0 && (line.qc_type || line.qc_level)) {
-          console.warn('⚠️ QC Per-piece = 0 for:', {
+          // Calculate QC per-piece based on rule mode
+          if (qcRule.mode === 'Percent' && qcRule.qc_value) {
+            // QC Per-piece = base_operation_time * (qc_value / 100)
+            qcPerPiece = parseFloat(baseOpTime) * (parseFloat(qcRule.qc_value) / 100);
+          } else if (qcRule.mode === 'Minutes' && qcRule.qc_value) {
+            // QC Per-piece = qc_value (direct minutes)
+            qcPerPiece = parseFloat(qcRule.qc_value);
+          } else if (qcRule.time_minutes) {
+            // Fallback to time_minutes field
+            qcPerPiece = parseFloat(qcRule.time_minutes);
+          }
+
+          // Debug logging
+          if (qcPerPiece === 0 && (line.qc_type || line.qc_level)) {
+            console.warn('⚠️ QC Per-piece = 0 for:', {
+              item_code: line.item_code,
+              qc_type: line.qc_type,
+              qc_level: line.qc_level,
+              operation: line.operation,
+              bundle_id: batchHeader?.bundle_id,
+              qcRuleFound: !!qcRule,
+              qcRuleMode: qcRule?.mode,
+              qcRuleValue: qcRule?.qc_value,
+              baseOperationTime: stdSetLines.find(std => (std.item_code || '').trim().toLowerCase() === trimmedItemCode.toLowerCase())?.std_min_per_pc
+            });
+          }
+        } else {
+          console.warn('⚠️ No QC Rule found for:', {
             item_code: line.item_code,
             qc_type: line.qc_type,
             qc_level: line.qc_level,
             operation: line.operation,
-            bundle_id: batchHeader?.bundle_id,
-            qcRuleFound: !!qcRule,
-            qcRuleMode: qcRule?.mode,
-            qcRuleValue: qcRule?.qc_value,
-            baseOperationTime: stdSetLines.find(std => (std.item_code || '').trim().toLowerCase() === trimmedItemCode.toLowerCase())?.std_min_per_pc
+            bundle_id: batchHeader?.bundle_id
           });
         }
-      } else {
-        console.warn('⚠️ No QC Rule found for:', {
-          item_code: line.item_code,
-          qc_type: line.qc_type,
-          qc_level: line.qc_level,
-          operation: line.operation,
-          bundle_id: batchHeader?.bundle_id
-        });
       }
 
       const qcQty = parseFloat(line.qty_affected) || 0;
@@ -235,7 +247,7 @@ export default function QCActionsTab({ batchId, department }) {
         qcTotalHours
       };
     });
-  }, [lines, qcSetLines, stdSetLines, batchHeader?.bundle_id]);
+  }, [lines, qcSetLines, stdSetLines, batchHeader?.bundle_id, scheduledData]);
 
   const totals = useMemo(() => {
     const totalMinutes = linesWithQCTime.reduce((sum, line) => sum + parseFloat(line.qcTotal || 0), 0);
