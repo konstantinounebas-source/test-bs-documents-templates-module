@@ -15,7 +15,10 @@ import DailyProductionCalendarSelector from './DailyProductionCalendarSelector';
 
 export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSelect, onBatchCreated }) {
   const queryClient = useQueryClient();
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
   const [editingBatch, setEditingBatch] = useState(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [formData, setFormData] = useState({
     date: '',
     department: '',
@@ -28,11 +31,40 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
     queryFn: () => base44.entities.Department.list()
   });
 
-  const { data: bundles = [] } = useQuery({
-    queryKey: ['StandardsBundle', formData.department],
-    queryFn: () => base44.entities.StandardsBundle.filter({ department: formData.department }),
-    enabled: !!formData.department
+  // Fetch scheduled day headers for bundle resolution
+  const { data: scheduledDayHeaders = [] } = useQuery({
+    queryKey: ['ScheduledDayHeader', selectedDepartment],
+    queryFn: () => base44.entities.ScheduledDayHeader.filter({ department_id: selectedDepartment }),
+    enabled: !!selectedDepartment,
+    staleTime: 0
   });
+
+  // Fetch all bundles (all statuses)
+  const { data: allBundles = [] } = useQuery({
+    queryKey: ['StandardsBundle', selectedDepartment],
+    queryFn: async () => {
+      if (!selectedDepartment) return [];
+      const all = await base44.entities.StandardsBundle.list();
+      return all.filter(b => b.department === selectedDepartment);
+    },
+    enabled: !!selectedDepartment,
+    staleTime: 0
+  });
+
+  // Determine which bundle to use (from scheduled day or active bundle)
+  const defaultBundleId = useMemo(() => {
+    if (!selectedDate || !selectedDepartment) return '';
+
+    // Check if there's a scheduled day for this date
+    const scheduledDay = scheduledDayHeaders.find(h => h.date === selectedDate);
+    if (scheduledDay && scheduledDay.source_bundle_id) {
+      return scheduledDay.source_bundle_id;
+    }
+
+    // Fallback to active bundle
+    const activeBundle = allBundles.find(b => b.status === 'ACTIVE');
+    return activeBundle ? activeBundle.id : '';
+  }, [selectedDate, selectedDepartment, scheduledDayHeaders, allBundles]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Batch_Header.create(data),
