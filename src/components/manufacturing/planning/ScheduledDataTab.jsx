@@ -53,10 +53,14 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     notes: ''
   });
 
-  // Fetch all bundles for department
+  // Fetch all bundles for department (ALL statuses, not just ACTIVE)
   const { data: allBundles = [] } = useQuery({
     queryKey: ['StandardsBundle', selectedDepartment],
-    queryFn: () => base44.entities.StandardsBundle.filter({ department: selectedDepartment }),
+    queryFn: async () => {
+      if (!selectedDepartment) return [];
+      const all = await base44.entities.StandardsBundle.list();
+      return all.filter(b => b.department === selectedDepartment);
+    },
     enabled: !!selectedDepartment,
     staleTime: 0
   });
