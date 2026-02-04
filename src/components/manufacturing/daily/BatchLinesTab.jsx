@@ -48,11 +48,56 @@ export default function BatchLinesTab({ batchId, department }) {
   const { data: itemCodes = [], isLoading: itemCodesLoading } = useBatchItemCodes(batchId, department);
   const hasItemCodes = itemCodes.length > 0;
 
+  // Fetch batch header to get date and department for scheduled data lookup
+  const { data: batchHeader } = useQuery({
+    queryKey: ['Batch_Header', batchId],
+    queryFn: () => base44.entities.Batch_Header.filter({ id: batchId }),
+    enabled: !!batchId,
+    select: (data) => data?.[0]
+  });
+
+  // Fetch scheduled data for auto-filling batch lines
+  const { data: scheduledData = [] } = useQuery({
+    queryKey: ['ScheduledData', batchHeader?.date, batchHeader?.department],
+    queryFn: () => base44.entities.ScheduledData.filter({
+      date: batchHeader.date,
+      department_id: batchHeader.department
+    }),
+    enabled: !!batchHeader?.date && !!batchHeader?.department,
+    staleTime: 0
+  });
+
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['Batch_Lines', batchId],
     queryFn: () => base44.entities.Batch_Lines.filter({ batch_header_id: batchId }),
-    enabled: !!batchId
+    enabled: !!batchId,
+    staleTime: 0
   });
+
+  // Auto-fill batch lines from scheduled data (only on initial load)
+  useMemo(() => {
+    if (!batchId || lines.length > 0 || scheduledData.length === 0) return;
+
+    // Create batch lines from scheduled data
+    const autoFillLines = scheduledData.map(sd => ({
+      batch_header_id: batchId,
+      item_code: sd.item_code,
+      scheduled_qty: sd.ops_qty,
+      qty_processed: 0,
+      qty_out_good: 0,
+      qty_scrap: 0
+    }));
+
+    // Create all lines
+    Promise.all(autoFillLines.map(line =>
+      base44.entities.Batch_Lines.create(line)
+    )).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['Batch_Lines', batchId] });
+      toast.success(`Auto-filled ${autoFillLines.length} batch lines from schedule`);
+    }).catch(() => {
+      // Silent fail on auto-fill
+    });
+  }, [batchId, lines.length, scheduledData, queryClient]);
 
   const filteredLines = useMemo(() => {
     if (!searchFilter) return lines;
