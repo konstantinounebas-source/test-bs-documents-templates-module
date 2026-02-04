@@ -270,7 +270,7 @@ export default function QCInitialStockTab({ batchId, department }) {
           <TableBody>
             {filteredLines.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-slate-500 py-12">
+                <TableCell colSpan={6} className="text-center text-slate-500 py-12">
                   {searchFilter ? 'No matching QC records found' : 'No QC initial stock defined. Click "Add QC Stock" to start.'}
                 </TableCell>
               </TableRow>
@@ -285,6 +285,7 @@ export default function QCInitialStockTab({ batchId, department }) {
                         {line.qc_level}
                       </span>
                     </TableCell>
+                    <TableCell className="font-mono text-right">{line.qcPerPiece}</TableCell>
                     <TableCell className="font-mono">{line.qty_affected}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -305,6 +306,7 @@ export default function QCInitialStockTab({ batchId, department }) {
                 ))}
                 <TableRow className="bg-blue-50 font-semibold border-t-2">
                   <TableCell colSpan={3} className="text-right">Total:</TableCell>
+                  <TableCell></TableCell>
                   <TableCell className="font-mono font-bold">
                     {filteredLines.reduce((sum, line) => sum + (parseFloat(line.qty_affected) || 0), 0).toFixed(2)}
                   </TableCell>
