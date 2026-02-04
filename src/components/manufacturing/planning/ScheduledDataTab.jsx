@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Plus, Trash2, Search, AlertCircle, Info, Download } from 'lucide-react';
+import { Loader2, Plus, Trash2, Search, AlertCircle, Info, Download, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -15,9 +15,15 @@ import { MultiSelect } from '@/components/ui/multi-select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { buildItemOperationMap, computeOpsPerPiece, getOperationBreakdown, parseMinutes } from '../standards/shared/calculateOperationsTime';
 import { exportScheduledDataToExcel } from '../standards/shared/exportToExcel';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 
-export default function ScheduledDataTab({ selectedDepartment, selectedBundle }) {
+export default function ScheduledDataTab({ selectedDepartment, selectedBundle: initialSelectedBundle }) {
   const queryClient = useQueryClient();
+  
+  // State
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedBundle, setSelectedBundle] = useState(null);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -28,7 +34,6 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
   const [searchFilter, setSearchFilter] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
   const [selectedTargetType, setSelectedTargetType] = useState('');
   const [templateName, setTemplateName] = useState('');
   const [loadToDate, setLoadToDate] = useState('');
@@ -47,6 +52,35 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     qc_qty: '0',
     notes: ''
   });
+
+  // Fetch all bundles for department
+  const { data: allBundles = [] } = useQuery({
+    queryKey: ['StandardsBundle', selectedDepartment],
+    queryFn: () => base44.entities.StandardsBundle.filter({ department: selectedDepartment }),
+    enabled: !!selectedDepartment,
+    staleTime: 0
+  });
+
+  // Auto-select active bundle when department changes or bundles load
+  useEffect(() => {
+    if (!selectedDepartment) {
+      setSelectedBundle(null);
+      setSelectedDate('');
+      return;
+    }
+
+    // Find active bundle for this department
+    const activeBundle = allBundles.find(b => b.department === selectedDepartment && b.status === 'ACTIVE');
+    
+    if (activeBundle) {
+      setSelectedBundle(activeBundle);
+    } else if (allBundles.length > 0) {
+      // Fallback to first bundle if no active
+      setSelectedBundle(allBundles[0]);
+    } else {
+      setSelectedBundle(null);
+    }
+  }, [selectedDepartment, allBundles]);
 
   // Fetch item codes from DATA tab of selected bundle
   const { data: dataLines = [], isLoading: dataLinesLoading, isFetched: dataLinesFetched } = useQuery({
@@ -289,10 +323,33 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     return recalculated;
   }, [lines, searchFilter, selectedDate, dataLines, allProfiles, qcSetLines, dataPivotReady, profilesReady, qcRulesReady]);
 
-  // Get unique dates from lines
-  const availableDates = useMemo(() => {
-    return [...new Set(lines.map(l => l.date))].sort();
+  // Get dates with scheduled records for calendar indicators
+  const datesWithRecords = useMemo(() => {
+    return new Set(lines.map(l => l.date));
   }, [lines]);
+
+  // Calendar navigation
+  const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+
+  // Generate calendar days
+  const calendarDays = useMemo(() => {
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    return eachDayOfInterval({ start: monthStart, end: monthEnd });
+  }, [currentMonth]);
+
+  // Handle day click
+  const handleDayClick = (day) => {
+    const dateStr = format(day, 'yyyy-MM-dd');
+    setSelectedDate(dateStr);
+    
+    // Prefill form date
+    setFormData(prev => ({
+      ...prev,
+      date: dateStr
+    }));
+  };
 
   // Calculate daily summary
   const dailySummary = useMemo(() => {
@@ -494,6 +551,17 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
       toast.error('Failed to save: ' + error.message);
     }
   });
+
+  const handleAddDialogOpen = () => {
+    // Auto-fill date if selected
+    if (selectedDate) {
+      setFormData(prev => ({
+        ...prev,
+        date: selectedDate
+      }));
+    }
+    setShowAddDialog(true);
+  };
 
   const handleAdd = () => {
     // Validation
@@ -765,6 +833,28 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   const isLoading_any = isLoading || dataLinesLoading || profilesLoading || qcTypesLoading || qcLevelsLoading;
   const isCalculationReady = dataPivotReady && profilesReady && qcRulesReady;
 
+  if (!selectedDepartment) {
+    return (
+      <Alert>
+        <AlertCircle className="w-4 h-4" />
+        <AlertDescription>
+          Please select a Department from Step 1 (Reference Data Setup) first.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (!selectedBundle) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+          <p className="text-sm text-slate-600">Loading bundle...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading_any) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -804,68 +894,121 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
         </Alert>
       )}
 
-      <div className="flex justify-between items-center gap-4 flex-wrap">
-        <h3 className="text-lg font-semibold">Scheduled Data</h3>
+      <div className="flex justify-between items-center gap-4">
+        <h3 className="text-lg font-semibold">Scheduled Data - {selectedDepartment}</h3>
         
         <div className="flex gap-2 items-center">
-          <Select value={selectedDate} onValueChange={setSelectedDate}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Select date" />
+          <Label className="text-sm">Source Bundle:</Label>
+          <Select value={selectedBundle?.id} onValueChange={(bundleId) => {
+            const bundle = allBundles.find(b => b.id === bundleId);
+            setSelectedBundle(bundle);
+          }}>
+            <SelectTrigger className="w-64">
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={null}>All Dates</SelectItem>
-              {availableDates.map(date => (
-                <SelectItem key={date} value={date}>{date}</SelectItem>
+              {allBundles.map(b => (
+                <SelectItem key={b.id} value={b.id}>
+                  {b.name} {b.status === 'ACTIVE' && '(Active)'}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input
-              placeholder="Filter..."
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              className="pl-9 w-40"
-            />
-          </div>
         </div>
+      </div>
 
-        <div className="flex gap-2">
-          <Button 
-            onClick={() => exportScheduledDataToExcel(filteredLines, getProfileName, selectedDate, selectedBundle?.name)}
-            variant="outline" 
-            size="sm"
-            disabled={filteredLines.length === 0}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          {selectedDate && (
-            <>
+      {/* Calendar Month View */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <Button variant="ghost" size="icon" onClick={handlePrevMonth}>
+              <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <CardTitle>{format(currentMonth, 'MMMM yyyy')}</CardTitle>
+            <Button variant="ghost" size="icon" onClick={handleNextMonth}>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-7 gap-2">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+              <div key={day} className="text-center text-sm font-semibold text-slate-600 py-2">
+                {day}
+              </div>
+            ))}
+            
+            {calendarDays.map((day, index) => {
+              const dateStr = format(day, 'yyyy-MM-dd');
+              const hasRecords = datesWithRecords.has(dateStr);
+              const isSelected = selectedDate === dateStr;
+              const isToday = isSameDay(day, new Date());
+              
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleDayClick(day)}
+                  className={`
+                    relative p-3 text-center rounded-lg border transition-all
+                    ${isSelected ? 'bg-blue-100 border-blue-500 font-semibold' : 'border-slate-200 hover:bg-slate-50'}
+                    ${isToday ? 'ring-2 ring-blue-300' : ''}
+                    ${!isSameMonth(day, currentMonth) ? 'text-slate-300' : 'text-slate-900'}
+                  `}
+                >
+                  <div className="text-sm">{format(day, 'd')}</div>
+                  {hasRecords && (
+                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Day View - Only show if date selected */}
+      {!selectedDate ? (
+        <Alert>
+          <Info className="w-4 h-4" />
+          <AlertDescription>
+            Select a date from the calendar to view or add scheduled data.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          <div className="flex justify-between items-center gap-4">
+            <h4 className="text-base font-semibold">Scheduled Data - {selectedDate}</h4>
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => exportScheduledDataToExcel(filteredLines, getProfileName, selectedDate, selectedBundle?.name)}
+                variant="outline" 
+                size="sm"
+                disabled={filteredLines.length === 0}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
               <Button onClick={() => setShowSaveTemplateDialog(true)} variant="outline" size="sm">
                 Save Template
               </Button>
               <Button onClick={() => setShowLoadTemplateDialog(true)} variant="outline" size="sm">
                 Load Template
               </Button>
-            </>
-          )}
-          <Button 
-            onClick={() => setShowAddDialog(true)} 
-            variant="outline" 
-            size="sm"
-            disabled={!hasItemCodes || profiles.length === 0}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add
-          </Button>
-        </div>
-      </div>
+              <Button 
+                onClick={handleAddDialogOpen} 
+                variant="outline" 
+                size="sm"
+                disabled={!hasItemCodes || profiles.length === 0}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add
+              </Button>
+            </div>
+          </div>
 
-      {/* Assigned Persons Card */}
-      {selectedDate && (
-        <Card className="bg-purple-50 border-purple-200">
+          {/* Assigned Persons Card */}
+          <Card className="bg-purple-50 border-purple-200">
           <CardContent className="pt-4">
             <div className="flex justify-between items-start">
               <div className="flex-1">
@@ -910,9 +1053,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
         </Card>
       )}
 
-      {/* Daily Summary */}
-      {selectedDate && dailySummary && (
-        <Card className="bg-blue-50">
+          {/* Daily Summary */}
+          {dailySummary && (
+            <Card className="bg-blue-50">
           <CardContent className="pt-4">
             <div className="grid grid-cols-4 gap-4">
               <div>
@@ -958,10 +1101,10 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
               </div>
             </div>
           </CardContent>
-        </Card>
-      )}
+          </Card>
+          )}
 
-      <div className="border rounded-lg overflow-auto bg-white shadow-sm">
+          <div className="border rounded-lg overflow-auto bg-white shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">
@@ -983,7 +1126,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                 </TableCell>
               </TableRow>
             ) : (
-              filteredLines.map(line => (
+              filteredLines.filter(l => l.date === selectedDate).map(line => (
                 <TableRow 
                   key={line.id} 
                   className="hover:bg-slate-50"
@@ -1019,7 +1162,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
             )}
           </TableBody>
         </Table>
-      </div>
+          </div>
+        </>
+      )}
 
       {/* Add Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
