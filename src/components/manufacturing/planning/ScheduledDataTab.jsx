@@ -349,7 +349,8 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
 
   // Get dates with scheduled records for calendar indicators
   const datesWithRecords = useMemo(() => {
-    return new Set(lines.map(l => l.date));
+    if (!lines || lines.length === 0) return new Set();
+    return new Set(lines.map(l => l.date).filter(Boolean));
   }, [lines]);
 
   // Calendar navigation
@@ -1047,7 +1048,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
             <SelectContent>
               {allBundles.map(b => (
                 <SelectItem key={b.id} value={b.id}>
-                  {b.name} {b.status === 'ACTIVE' && '(Active)'}
+                  v{b.version} - {b.name} {b.status === 'ACTIVE' ? '(Active)' : '(Draft)'}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -1946,7 +1947,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                 <SelectContent>
                   {allBundles.map(b => (
                     <SelectItem key={b.id} value={b.id}>
-                      {b.name} {b.status === 'ACTIVE' && '(Active)'}
+                      v{b.version} - {b.name} {b.status === 'ACTIVE' ? '(Active)' : '(Draft)'}
                     </SelectItem>
                   ))}
                 </SelectContent>
