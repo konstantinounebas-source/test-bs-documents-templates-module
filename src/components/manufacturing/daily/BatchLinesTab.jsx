@@ -120,6 +120,18 @@ export default function BatchLinesTab({ batchId, department }) {
     onError: () => toast.error('Failed to add batch line')
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Batch_Lines.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['Batch_Lines']);
+      setShowAddDialog(false);
+      setEditingLine(null);
+      setFormData({ item_code: '', scheduled_qty: '', qty_processed: '', qty_out_good: '', qty_scrap: '' });
+      toast.success('Batch line updated');
+    },
+    onError: () => toast.error('Failed to update batch line')
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Batch_Lines.delete(id),
     onSuccess: () => {
