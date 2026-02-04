@@ -34,6 +34,8 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   const [teamEntries, setTeamEntries] = useState([]);
   const [dayPersons, setDayPersons] = useState([]);
   const [dayNotes, setDayNotes] = useState('');
+  const [newPersonName, setNewPersonName] = useState('');
+  const [newPersonMinutes, setNewPersonMinutes] = useState(480);
   const [formData, setFormData] = useState({
     date: '',
     operation_profile_id: '',
@@ -128,14 +130,6 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     staleTime: 0
   });
 
-  // Fetch target types
-  const { data: targetTypes = [] } = useQuery({
-    queryKey: ['TargetType', selectedBundle?.id],
-    queryFn: () => base44.entities.TargetType.filter({ bundle_id: selectedBundle.id }),
-    enabled: !!selectedBundle,
-    staleTime: 0
-  });
-
   // Fetch daily target lines
   const { data: dailyTargetLines = [] } = useQuery({
     queryKey: ['DailyTargetLines', selectedBundle?.id],
@@ -143,6 +137,12 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     enabled: !!selectedBundle,
     staleTime: 0
   });
+
+  // Get unique target types from DailyTargetLines
+  const targetTypes = useMemo(() => {
+    const uniqueTypes = [...new Set(dailyTargetLines.map(t => t.target_type).filter(Boolean))];
+    return uniqueTypes.sort();
+  }, [dailyTargetLines]);
 
   // Fetch schedule templates
   const { data: templates = [] } = useQuery({
@@ -311,16 +311,24 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     return { opsTotal, qcTotal, grandTotal, targetTotal };
   }, [selectedDate, filteredLines, selectedTargetType, dailyTargetLines]);
 
-  // Calculate team summary
-  const teamSummary = useMemo(() => {
-    if (!selectedDate) return null;
+  // Calculate assigned persons summary
+  const assignedPersonsSummary = useMemo(() => {
+    if (!selectedDate || !currentDayAssignment) return null;
     
-    const totalAvailable = teamAvailability.reduce((sum, t) => sum + (t.available_minutes || 0), 0);
-    const totalScheduled = dailySummary?.grandTotal || 0;
-    const coverage = totalAvailable > 0 ? (totalScheduled / totalAvailable * 100) : 0;
+    const persons = currentDayAssignment.assigned_persons || [];
+    let totalAvailable = 0;
+    
+    // Handle both old (strings) and new (objects) formats
+    if (persons.length > 0) {
+      if (typeof persons[0] === 'string') {
+        totalAvailable = persons.length * 480; // Default 8 hours
+      } else {
+        totalAvailable = persons.reduce((sum, p) => sum + (p.available_minutes || 0), 0);
+      }
+    }
 
-    return { totalAvailable, totalScheduled, coverage };
-  }, [selectedDate, teamAvailability, dailySummary]);
+    return { totalAvailable };
+  }, [selectedDate, currentDayAssignment]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -665,12 +673,22 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
 
   const handleOpenAssignPersons = () => {
     if (currentDayAssignment) {
-      setDayPersons(currentDayAssignment.assigned_persons || []);
+      // Convert old format to new format if needed
+      const persons = currentDayAssignment.assigned_persons || [];
+      if (persons.length > 0 && typeof persons[0] === 'string') {
+        // Old format: array of strings
+        setDayPersons(persons.map(name => ({ name, available_minutes: 480 })));
+      } else {
+        // New format: array of objects
+        setDayPersons(persons);
+      }
       setDayNotes(currentDayAssignment.notes || '');
     } else {
       setDayPersons([]);
       setDayNotes('');
     }
+    setNewPersonName('');
+    setNewPersonMinutes(480);
     setShowAssignPersonsDialog(true);
   };
 
@@ -844,11 +862,30 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                 <p className="text-sm font-semibold text-purple-900 mb-2">Assigned Persons (Day)</p>
                 {currentDayAssignment ? (
                   <>
-                    <p className="text-lg">
-                      {currentDayAssignment.assigned_persons?.join(', ') || 'None assigned'}
-                    </p>
+                    <div className="space-y-1">
+                      {(() => {
+                        const persons = currentDayAssignment.assigned_persons || [];
+                        if (persons.length === 0) return <p className="text-slate-500 italic">None assigned</p>;
+                        
+                        // Handle both old and new formats
+                        if (typeof persons[0] === 'string') {
+                          return <p className="text-lg">{persons.join(', ')}</p>;
+                        } else {
+                          return persons.map((p, i) => (
+                            <p key={i} className="text-sm">
+                              <span className="font-medium">{p.name}</span>: {p.available_minutes} min ({(p.available_minutes / 60).toFixed(1)}h)
+                            </p>
+                          ));
+                        }
+                      })()}
+                    </div>
                     {currentDayAssignment.notes && (
-                      <p className="text-sm text-purple-700 mt-1">{currentDayAssignment.notes}</p>
+                      <p className="text-sm text-purple-700 mt-2">{currentDayAssignment.notes}</p>
+                    )}
+                    {assignedPersonsSummary && (
+                      <p className="text-xs text-purple-800 font-semibold mt-2">
+                        Total: {assignedPersonsSummary.totalAvailable} min ({(assignedPersonsSummary.totalAvailable / 60).toFixed(1)}h)
+                      </p>
                     )}
                   </>
                 ) : (
@@ -877,8 +914,20 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                 <p className="text-xl font-bold">{dailySummary.qcTotal.toFixed(2)} min</p>
               </div>
               <div>
-                <p className="text-sm text-slate-600">Grand Total</p>
+                <p className="text-sm text-slate-600">Grand Total (Scheduled)</p>
                 <p className="text-xl font-bold text-blue-700">{dailySummary.grandTotal.toFixed(2)} min</p>
+                {assignedPersonsSummary && (
+                  <p className="text-xs text-slate-600 mt-1">
+                    Team Available: {assignedPersonsSummary.totalAvailable} min
+                    {assignedPersonsSummary.totalAvailable > 0 && (
+                      <span className={`ml-2 font-semibold ${
+                        dailySummary.grandTotal > assignedPersonsSummary.totalAvailable ? 'text-red-600' : 'text-green-600'
+                      }`}>
+                        ({((dailySummary.grandTotal / assignedPersonsSummary.totalAvailable) * 100).toFixed(0)}%)
+                      </span>
+                    )}
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-sm">Target Type</Label>
@@ -889,7 +938,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                   <SelectContent>
                     <SelectItem value={null}>None</SelectItem>
                     {targetTypes.map(tt => (
-                      <SelectItem key={tt.id} value={tt.name}>{tt.name}</SelectItem>
+                      <SelectItem key={tt} value={tt}>{tt}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1435,33 +1484,104 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
 
       {/* Assign Persons Dialog */}
       <Dialog open={showAssignPersonsDialog} onOpenChange={setShowAssignPersonsDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
           <DialogHeader>
             <DialogTitle>Assigned Persons - {selectedDate}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div>
-              <Label>Select Persons</Label>
-              <MultiSelect
-                options={persons.map(p => ({ value: p.name, label: p.name }))}
-                selected={dayPersons}
-                onChange={setDayPersons}
-                placeholder="Select persons for this day"
-              />
-              <Input
-                placeholder="Or type new person name and press Enter"
-                className="mt-2"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.target.value.trim()) {
-                    const newPerson = e.target.value.trim();
-                    if (!dayPersons.includes(newPerson)) {
-                      setDayPersons([...dayPersons, newPerson]);
-                    }
-                    e.target.value = '';
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <Label>Person Name</Label>
+                <Select value={newPersonName} onValueChange={setNewPersonName}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select or type below" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {persons.map(p => (
+                      <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Or type new person name"
+                  className="mt-1"
+                  value={newPersonName}
+                  onChange={(e) => setNewPersonName(e.target.value)}
+                />
+              </div>
+              <div className="w-32">
+                <Label>Minutes</Label>
+                <Input
+                  type="number"
+                  value={newPersonMinutes}
+                  onChange={(e) => setNewPersonMinutes(parseFloat(e.target.value) || 0)}
+                />
+                <p className="text-xs text-slate-500 mt-1">{(newPersonMinutes / 60).toFixed(1)}h</p>
+              </div>
+              <Button
+                onClick={() => {
+                  if (!newPersonName.trim()) {
+                    toast.error('Enter person name');
+                    return;
                   }
+                  const exists = dayPersons.find(p => p.name === newPersonName.trim());
+                  if (exists) {
+                    toast.error('Person already added');
+                    return;
+                  }
+                  setDayPersons([...dayPersons, { name: newPersonName.trim(), available_minutes: newPersonMinutes }]);
+                  setNewPersonName('');
+                  setNewPersonMinutes(480);
                 }}
-              />
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add
+              </Button>
             </div>
+
+            <div className="border rounded-lg divide-y max-h-60 overflow-auto">
+              {dayPersons.length === 0 ? (
+                <p className="text-center text-slate-500 py-8">No persons assigned yet</p>
+              ) : (
+                dayPersons.map((person, index) => (
+                  <div key={index} className="p-3 flex justify-between items-center hover:bg-slate-50">
+                    <div className="flex-1">
+                      <p className="font-medium">{person.name}</p>
+                      <p className="text-sm text-slate-600">{person.available_minutes} min ({(person.available_minutes / 60).toFixed(1)}h)</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        value={person.available_minutes}
+                        onChange={(e) => {
+                          const updated = [...dayPersons];
+                          updated[index].available_minutes = parseFloat(e.target.value) || 0;
+                          setDayPersons(updated);
+                        }}
+                        className="w-24"
+                      />
+                      <Button
+                        onClick={() => setDayPersons(dayPersons.filter((_, i) => i !== index))}
+                        variant="ghost"
+                        size="icon"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {dayPersons.length > 0 && (
+              <div className="bg-slate-100 p-3 rounded-lg">
+                <p className="text-sm font-semibold">
+                  Total Available: {dayPersons.reduce((sum, p) => sum + p.available_minutes, 0)} min
+                  ({(dayPersons.reduce((sum, p) => sum + p.available_minutes, 0) / 60).toFixed(1)}h)
+                </p>
+              </div>
+            )}
+
             <div>
               <Label>Notes (Optional)</Label>
               <Textarea
