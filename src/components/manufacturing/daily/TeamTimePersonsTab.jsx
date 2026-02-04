@@ -5,19 +5,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Loader2, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function TeamTimePersonsTab({ batchId }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingLine, setEditingLine] = useState(null);
   const [formData, setFormData] = useState({
     person_name: '',
     from_time: '',
     to_time: '',
     notes: ''
+  });
+
+  const { data: persons = [] } = useQuery({
+    queryKey: ['Person'],
+    queryFn: () => base44.entities.Person.filter({ is_active: true })
   });
 
   const { data: lines = [], isLoading } = useQuery({
@@ -40,6 +47,18 @@ export default function TeamTimePersonsTab({ batchId }) {
     onError: () => toast.error('Failed to add team time')
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Team_Time_Persons.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['Team_Time_Persons']);
+      setShowAddDialog(false);
+      setEditingLine(null);
+      setFormData({ person_name: '', from_time: '', to_time: '', notes: '' });
+      toast.success('Team time updated');
+    },
+    onError: () => toast.error('Failed to update team time')
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Team_Time_Persons.delete(id),
     onSuccess: () => {
@@ -54,7 +73,29 @@ export default function TeamTimePersonsTab({ batchId }) {
       toast.error('Person name and time range are required');
       return;
     }
-    createMutation.mutate(formData);
+
+    if (editingLine) {
+      updateMutation.mutate({ id: editingLine.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
+
+  const handleEdit = (line) => {
+    setEditingLine(line);
+    setFormData({
+      person_name: line.person_name,
+      from_time: line.from_time,
+      to_time: line.to_time,
+      notes: line.notes || ''
+    });
+    setShowAddDialog(true);
+  };
+
+  const resetForm = () => {
+    setFormData({ person_name: '', from_time: '', to_time: '', notes: '' });
+    setEditingLine(null);
+    setShowAddDialog(false);
   };
 
   if (isLoading) {
