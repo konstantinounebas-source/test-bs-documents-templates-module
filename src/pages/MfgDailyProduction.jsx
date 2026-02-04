@@ -30,11 +30,105 @@ export default function MfgDailyProduction() {
     queryFn: () => base44.entities.Batch_Header.list('-created_date', 20)
   });
 
+  // Calculate grand totals from all tabs
+  const { data: opsData = [] } = useQuery({
+    queryKey: ['Operations', selectedBatch?.id],
+    queryFn: () => base44.entities.Operations.filter({ batch_header_id: selectedBatch.id }),
+    enabled: !!selectedBatch?.id,
+    staleTime: 0
+  });
+
+  const { data: batchLines = [] } = useQuery({
+    queryKey: ['Batch_Lines', selectedBatch?.id],
+    queryFn: () => base44.entities.Batch_Lines.filter({ batch_header_id: selectedBatch.id }),
+    enabled: !!selectedBatch?.id,
+    staleTime: 0
+  });
+
+  const { data: batchHeader } = useQuery({
+    queryKey: ['Batch_Header', selectedBatch?.id],
+    queryFn: () => base44.entities.Batch_Header.filter({ id: selectedBatch.id }),
+    enabled: !!selectedBatch?.id,
+    select: (data) => data?.[0]
+  });
+
+  const { data: stdSetLines = [] } = useQuery({
+    queryKey: ['StdSetLines', batchHeader?.bundle_id],
+    queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: batchHeader.bundle_id }),
+    enabled: !!batchHeader?.bundle_id,
+    staleTime: 0
+  });
+
+  const { data: profileNames = [] } = useQuery({
+    queryKey: ['OperationProfileName'],
+    queryFn: () => base44.entities.OperationProfileName.list()
+  });
+
+  const { data: qcLines = [] } = useQuery({
+    queryKey: ['QC_Actions', selectedBatch?.id],
+    queryFn: () => base44.entities.QC_Initial_Stock.filter({ batch_header_id: selectedBatch.id }),
+    enabled: !!selectedBatch?.id,
+    staleTime: 0
+  });
+
+  const { data: qcSetLines = [] } = useQuery({
+    queryKey: ['QCSetLines', batchHeader?.bundle_id],
+    queryFn: () => base44.entities.QCSetLines.filter({ bundle_id: batchHeader.bundle_id }),
+    enabled: !!batchHeader?.bundle_id,
+    staleTime: 0
+  });
+
+  // Calculate ops hours
+  const opsHours = useMemo(() => {
+    let totalMinutes = 0;
+    batchLines.forEach(line => {
+      const profile = profileNames.find(p => 
+        opsData.find(op => op.item_code === line.item_code && op.operation_profile === p.name)
+      );
+      
+      if (profile) {
+        const profileOps = profile.operations_required || [];
+        let lineMinutes = 0;
+        profileOps.forEach(opId => {
+          const stdLine = stdSetLines.find(
+            sl => sl.item_code === line.item_code && sl.operation_id === opId
+          );
+          if (stdLine && stdLine.time_per_unit) {
+            lineMinutes += parseFloat(stdLine.time_per_unit);
+          }
+        });
+        totalMinutes += lineMinutes * (parseFloat(line.scheduled_qty) || 0);
+      }
+    });
+    return (totalMinutes / 60).toFixed(2);
+  }, [batchLines, profileNames, opsData, stdSetLines]);
+
+  // Calculate QC hours
+  const qcHours = useMemo(() => {
+    let totalMinutes = 0;
+    qcLines.forEach(line => {
+      const qcRule = qcSetLines.find(
+        ql => ql.item_code === line.item_code && 
+             ql.qc_type === line.qc_type && 
+             ql.qc_level === line.qc_level
+      );
+      if (qcRule && qcRule.time_per_unit) {
+        totalMinutes += parseFloat(qcRule.time_per_unit) * (parseFloat(line.qty_affected) || 0);
+      }
+    });
+    return (totalMinutes / 60).toFixed(2);
+  }, [qcLines, qcSetLines]);
+
+  const grandTotalHours = useMemo(() => {
+    return (parseFloat(opsHours || 0) + parseFloat(qcHours || 0)).toFixed(2);
+  }, [opsHours, qcHours]);
+
   const handleBatchSelect = (batch) => {
     setSelectedBatch(batch);
     queryClient.invalidateQueries(['Batch_Lines']);
     queryClient.invalidateQueries(['QC_Initial_Stock']);
     queryClient.invalidateQueries(['Operations']);
+    queryClient.invalidateQueries(['QC_Actions']);
     queryClient.invalidateQueries(['Team_Time_Persons']);
     queryClient.invalidateQueries(['Team_Time_Extra']);
     queryClient.invalidateQueries(['Help_In']);
