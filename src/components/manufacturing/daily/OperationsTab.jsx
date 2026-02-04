@@ -481,6 +481,12 @@ export default function OperationsTab({ batchId, department }) {
                 />
               </div>
             )}
+
+            {formData.entry_type === 'OPERATION' && !formData.operation_profile && (
+              <div className="text-sm text-slate-500 text-center py-4">
+                Select an Operation Profile above to see operations
+              </div>
+            )}
           </div>
 
           <DialogFooter>
