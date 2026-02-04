@@ -287,7 +287,9 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
                       <TableCell>
                         {(() => {
                           const bundle = allBundlesGlobal.find(b => b.id === batch.bundle_id);
-                          return bundle ? `v${bundle.version || '?'} (${bundle.status})` : '-';
+                          if (!bundle) return `❌ missing (${batch.bundle_id})`;
+                          const version = bundle.version_no || bundle.version || '?';
+                          return `${version} (${bundle.status})`;
                         })()}
                       </TableCell>
                       <TableCell className="text-right">
