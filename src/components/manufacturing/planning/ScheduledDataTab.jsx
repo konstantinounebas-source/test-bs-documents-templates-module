@@ -22,6 +22,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
   const [showLoadTemplateDialog, setShowLoadTemplateDialog] = useState(false);
+  const [showTeamTimeDialog, setShowTeamTimeDialog] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
   const [searchFilter, setSearchFilter] = useState('');
@@ -29,6 +30,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   const [selectedTargetType, setSelectedTargetType] = useState('');
   const [templateName, setTemplateName] = useState('');
   const [loadToDate, setLoadToDate] = useState('');
+  const [teamEntries, setTeamEntries] = useState([]);
   const [formData, setFormData] = useState({
     date: '',
     operation_profile_id: '',
@@ -137,6 +139,17 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     queryKey: ['ScheduleTemplate', selectedBundle?.id],
     queryFn: () => base44.entities.ScheduleTemplate.filter({ bundle_id: selectedBundle.id }),
     enabled: !!selectedBundle,
+    staleTime: 0
+  });
+
+  // Fetch daily team availability
+  const { data: teamAvailability = [] } = useQuery({
+    queryKey: ['DailyTeamAvailability', selectedBundle?.id, selectedDate],
+    queryFn: () => base44.entities.DailyTeamAvailability.filter({ 
+      bundle_id: selectedBundle.id,
+      date: selectedDate 
+    }),
+    enabled: !!selectedBundle && !!selectedDate,
     staleTime: 0
   });
 
@@ -276,6 +289,17 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     return { opsTotal, qcTotal, grandTotal, targetTotal };
   }, [selectedDate, filteredLines, selectedTargetType, selectedBundle]);
 
+  // Calculate team summary
+  const teamSummary = useMemo(() => {
+    if (!selectedDate) return null;
+    
+    const totalAvailable = teamAvailability.reduce((sum, t) => sum + (t.available_minutes || 0), 0);
+    const totalScheduled = dailySummary?.grandTotal || 0;
+    const coverage = totalAvailable > 0 ? (totalScheduled / totalAvailable * 100) : 0;
+
+    return { totalAvailable, totalScheduled, coverage };
+  }, [selectedDate, teamAvailability, dailySummary]);
+
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (records) => {
@@ -383,6 +407,33 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     },
     onError: (error) => {
       toast.error('Failed to load template: ' + error.message);
+    }
+  });
+
+  // Save team availability mutation
+  const saveTeamMutation = useMutation({
+    mutationFn: async (entries) => {
+      // Delete existing entries for this date
+      const existing = teamAvailability;
+      await Promise.all(existing.map(e => base44.entities.DailyTeamAvailability.delete(e.id)));
+      
+      // Create new entries
+      await Promise.all(entries.map(entry => 
+        base44.entities.DailyTeamAvailability.create({
+          bundle_id: selectedBundle.id,
+          date: selectedDate,
+          ...entry
+        })
+      ));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['DailyTeamAvailability'] });
+      setShowTeamTimeDialog(false);
+      setTeamEntries([]);
+      toast.success('Team availability saved');
+    },
+    onError: (error) => {
+      toast.error('Failed to save: ' + error.message);
     }
   });
 
@@ -523,6 +574,44 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
       templateData: template.template_data,
       targetDate: loadToDate
     });
+  };
+
+  const handleOpenTeamTime = () => {
+    // Initialize with existing availability or empty
+    if (teamAvailability.length > 0) {
+      setTeamEntries(teamAvailability.map(t => ({
+        person_name: t.person_name,
+        available_minutes: t.available_minutes,
+        notes: t.notes || ''
+      })));
+    } else {
+      setTeamEntries([]);
+    }
+    setShowTeamTimeDialog(true);
+  };
+
+  const handleAddTeamEntry = () => {
+    setTeamEntries([...teamEntries, { person_name: '', available_minutes: 480, notes: '' }]);
+  };
+
+  const handleRemoveTeamEntry = (index) => {
+    setTeamEntries(teamEntries.filter((_, i) => i !== index));
+  };
+
+  const handleTeamEntryChange = (index, field, value) => {
+    const updated = [...teamEntries];
+    updated[index][field] = value;
+    setTeamEntries(updated);
+  };
+
+  const handleSaveTeam = () => {
+    const valid = teamEntries.every(e => e.person_name.trim() && e.available_minutes > 0);
+    if (!valid) {
+      toast.error('All entries must have a person and positive minutes');
+      return;
+    }
+
+    saveTeamMutation.mutate(teamEntries);
   };
 
   const handleRowClick = (record) => {
@@ -1197,6 +1286,94 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowLoadTemplateDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Team Time Dialog */}
+      <Dialog open={showTeamTimeDialog} onOpenChange={setShowTeamTimeDialog}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>Team Time - {selectedDate}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="flex justify-between items-center">
+              <p className="text-sm text-slate-600">Set available minutes for each team member</p>
+              <Button onClick={handleAddTeamEntry} size="sm" variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Person
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              {teamEntries.map((entry, index) => (
+                <Card key={index} className="p-3">
+                  <div className="grid grid-cols-12 gap-3 items-center">
+                    <div className="col-span-4">
+                      <Label className="text-xs">Person</Label>
+                      <Select 
+                        value={entry.person_name} 
+                        onValueChange={(val) => handleTeamEntryChange(index, 'person_name', val)}
+                      >
+                        <SelectTrigger className="h-8">
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {persons.map(p => (
+                            <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        placeholder="Or type name"
+                        className="mt-1 h-8 text-xs"
+                        value={entry.person_name}
+                        onChange={(e) => handleTeamEntryChange(index, 'person_name', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <Label className="text-xs">Minutes</Label>
+                      <Input
+                        type="number"
+                        className="h-8"
+                        value={entry.available_minutes}
+                        onChange={(e) => handleTeamEntryChange(index, 'available_minutes', parseFloat(e.target.value) || 0)}
+                      />
+                      <p className="text-xs text-slate-500 mt-1">{(entry.available_minutes / 60).toFixed(1)} hrs</p>
+                    </div>
+                    <div className="col-span-4">
+                      <Label className="text-xs">Notes</Label>
+                      <Input
+                        className="h-8"
+                        placeholder="Optional"
+                        value={entry.notes}
+                        onChange={(e) => handleTeamEntryChange(index, 'notes', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-span-1">
+                      <Button
+                        onClick={() => handleRemoveTeamEntry(index)}
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+
+              {teamEntries.length === 0 && (
+                <p className="text-center text-slate-500 py-8">No team entries yet. Click "Add Person" to start.</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTeamTimeDialog(false)}>Cancel</Button>
+            <Button onClick={handleSaveTeam} disabled={teamEntries.length === 0}>
+              Save Team Availability
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
