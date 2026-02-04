@@ -16,7 +16,7 @@ export default function QCTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
   
   // QC Rule Header State
-  const [selectedOperation, setSelectedOperation] = useState('');
+  const [selectedOperationId, setSelectedOperationId] = useState('');
   const [selectedQCType, setSelectedQCType] = useState('');
   const [selectedQCLevel, setSelectedQCLevel] = useState('');
   const [mode, setMode] = useState('percent'); // 'percent' or 'fixed'
@@ -32,24 +32,21 @@ export default function QCTab({ bundle, isEditable }) {
   const { data: allOperations = [] } = useQuery({
     queryKey: ['Operation'],
     queryFn: async () => {
-      const ops = await base44.entities.Operation.list();
-      console.log("ALL OPERATIONS FROM DB:", ops.length, ops);
+      const ops = await base44.entities.Operation.filter({ is_active: true });
+      console.log("OPS_RAW", ops?.length, ops?.map(o => ({ id: o.id, name: o.name, is_active: o.is_active, is_allowed: o.is_allowed })));
       return ops;
     }
   });
   
-  console.log("allOperations after query:", allOperations.length, allOperations);
-  
   const operations = allOperations
-    .filter(op => {
-      const pass = op.is_active && op.is_allowed;
-      console.log(`Operation ${op.name}: is_active=${op.is_active}, is_allowed=${op.is_allowed}, pass=${pass}`);
-      return pass;
-    })
+    .filter(op => op.is_allowed !== false)
     .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
     .slice(0, 10);
   
-  console.log("FILTERED operations count:", operations.length, operations);
+  const operationOptions = operations.map(o => ({ value: String(o.id), label: o.name, name: o.name }));
+  console.log("OPS_OPTIONS", operationOptions.length, operationOptions);
+  
+  const selectedOperation = operations.find(o => String(o.id) === selectedOperationId)?.name || '';
 
   // Fetch QC types
   const { data: allQCTypes = [] } = useQuery({
@@ -81,6 +78,8 @@ export default function QCTab({ bundle, isEditable }) {
     }),
     enabled: !!bundle && !!selectedOperation && !!selectedQCType && !!selectedQCLevel
   });
+  
+  console.log("selectedOperationId:", selectedOperationId, "selectedOperation name:", selectedOperation);
 
   // Get filtered item codes with base times for selected operation
   const itemsWithBaseTimes = useMemo(() => {
@@ -267,18 +266,20 @@ export default function QCTab({ bundle, isEditable }) {
         <div className="grid grid-cols-4 gap-4">
           <div>
             <Label>Operation *</Label>
-            <Select value={selectedOperation} onValueChange={setSelectedOperation}>
+            <Select value={selectedOperationId} onValueChange={setSelectedOperationId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select operation" />
               </SelectTrigger>
               <SelectContent>
-                {operations.length === 0 && (
+                {operationOptions.length === 0 ? (
                   <div className="p-2 text-sm text-slate-500">No operations found</div>
+                ) : (
+                  operationOptions.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))
                 )}
-                {operations.map((op, idx) => {
-                  console.log(`Operation ${idx}:`, op.id, op.name);
-                  return <SelectItem key={op.id} value={op.name}>{op.name}</SelectItem>;
-                })}
               </SelectContent>
             </Select>
           </div>
