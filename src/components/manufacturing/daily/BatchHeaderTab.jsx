@@ -240,10 +240,10 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
         <CardContent>
           {batchHeaders.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
-              No batch headers found. Create one to start.
+              No batch headers found. Select a date from the calendar to create one.
             </div>
           ) : (
-            <div className="border rounded-lg overflow-auto max-h-[500px]">
+            <div className="border rounded-lg overflow-auto max-h-[400px]">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -253,12 +253,14 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {batchHeaders.map(batch => (
+                  {batchHeaders
+                    .filter(b => !selectedDepartment || b.department === selectedDepartment)
+                    .map(batch => (
                     <TableRow 
                       key={batch.id}
                       className={selectedBatch?.id === batch.id ? 'bg-blue-50' : ''}
                     >
-                      <TableCell>{batch.date}</TableCell>
+                      <TableCell className="font-medium">{batch.date}</TableCell>
                       <TableCell>{batch.department}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
@@ -269,9 +271,6 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
                             disabled={selectedBatch?.id === batch.id}
                           >
                             Select
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(batch)}>
-                            <Edit2 className="w-4 h-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
