@@ -1043,12 +1043,14 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
             setSelectedBundle(bundle);
           }}>
             <SelectTrigger className="w-64">
-              <SelectValue />
+              <SelectValue>
+                {selectedBundle && `v${selectedBundle.version} - ${selectedBundle.name} (${selectedBundle.status})`}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {allBundles.map(b => (
                 <SelectItem key={b.id} value={b.id}>
-                  v{b.version} - {b.name} {b.status === 'ACTIVE' ? '(Active)' : '(Draft)'}
+                  v{b.version} - {b.name} ({b.status})
                 </SelectItem>
               ))}
             </SelectContent>
@@ -1942,12 +1944,17 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
               <Label>Source Bundle</Label>
               <Select value={tempSourceBundleId} onValueChange={setTempSourceBundleId}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>
+                    {tempSourceBundleId && (() => {
+                      const bundle = allBundles.find(b => b.id === tempSourceBundleId);
+                      return bundle ? `v${bundle.version} - ${bundle.name} (${bundle.status})` : 'Select bundle';
+                    })()}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {allBundles.map(b => (
                     <SelectItem key={b.id} value={b.id}>
-                      v{b.version} - {b.name} {b.status === 'ACTIVE' ? '(Active)' : '(Draft)'}
+                      v{b.version} - {b.name} ({b.status})
                     </SelectItem>
                   ))}
                 </SelectContent>
