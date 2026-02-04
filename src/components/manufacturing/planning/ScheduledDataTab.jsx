@@ -1980,12 +1980,16 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                 </Select>
               )}
               {tempSourceBundleId && (() => {
-                const bundle = allBundles.find(b => b.id === tempSourceBundleId);
+                const bundle = allBundles.find(b => String(b.id) === String(tempSourceBundleId));
                 return bundle ? (
                   <p className="text-sm text-slate-600 mt-2">
                     <span className="font-semibold">v{bundle.version || '?'} - {bundle.name} ({bundle.status})</span>
                   </p>
-                ) : null;
+                ) : (
+                  <p className="text-sm text-red-600 mt-2">
+                    ❌ Bundle not found (id: {tempSourceBundleId})
+                  </p>
+                );
               })()}
             </div>
             <Alert>
