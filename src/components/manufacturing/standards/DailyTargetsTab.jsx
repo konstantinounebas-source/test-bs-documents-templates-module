@@ -11,9 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, AlertCircle, TrendingUp } from "lucide-react";
+import { Plus, Trash2, AlertCircle, TrendingUp, X } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
 
 export default function DailyTargetsTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
@@ -24,15 +23,12 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   const [showAddTargetDialog, setShowAddTargetDialog] = useState(false);
   const [showAssigned, setShowAssigned] = useState(true);
   const [filterItemCode, setFilterItemCode] = useState('');
-  const [filterDate, setFilterDate] = useState('');
   const [filterTargetType, setFilterTargetType] = useState('');
 
   // Form state for adding target
-  const [formDate, setFormDate] = useState('');
   const [formTargetType, setFormTargetType] = useState('');
-  const [formItemCode, setFormItemCode] = useState('');
-  const [formTargetQty, setFormTargetQty] = useState('');
-  const [formNotes, setFormNotes] = useState('');
+  const [selectedItemCodes, setSelectedItemCodes] = useState([]);
+  const [itemQuantities, setItemQuantities] = useState({});
 
   // Fetch Target Types
   const { data: targetTypes = [] } = useQuery({
@@ -81,16 +77,31 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     return map;
   }, [stdLines]);
 
-  // Assigned items map: item_code -> target_type
+  // Calculate per-piece totals for each item
+  const itemPerPieceTotals = useMemo(() => {
+    const totals = {};
+    itemCodesFromData.forEach(ic => {
+      const itemOps = itemOperationMap[ic] || {};
+      let total = 0;
+      operations.forEach(op => {
+        total += itemOps[op.name] || 0;
+      });
+      totals[ic] = total;
+    });
+    return totals;
+  }, [itemCodesFromData, itemOperationMap, operations]);
+
+  // Assigned items map: item_code -> target_type_name
   const assignedItems = useMemo(() => {
     const map = {};
     dailyTargets.forEach(dt => {
       if (!map[dt.item_code]) {
-        map[dt.item_code] = dt.target_type;
+        const tt = targetTypes.find(t => t.id === dt.target_type_id);
+        map[dt.item_code] = tt?.name || 'Unknown';
       }
     });
     return map;
-  }, [dailyTargets]);
+  }, [dailyTargets, targetTypes]);
 
   // Item codes available for selection
   const availableItemCodes = useMemo(() => {
@@ -114,41 +125,22 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   const filteredDailyTargets = useMemo(() => {
     return dailyTargets.filter(dt => {
       if (filterItemCode && !dt.item_code.toLowerCase().includes(filterItemCode.toLowerCase())) return false;
-      if (filterDate && dt.date !== filterDate) return false;
-      if (filterTargetType && dt.target_type !== filterTargetType) return false;
+      if (filterTargetType) {
+        const tt = targetTypes.find(t => t.id === dt.target_type_id);
+        if (tt?.name !== filterTargetType) return false;
+      }
       return true;
     });
-  }, [dailyTargets, filterItemCode, filterDate, filterTargetType]);
+  }, [dailyTargets, filterItemCode, filterTargetType, targetTypes]);
 
-  // Calculate summaries per Target Type
-  const targetTypeSummaries = useMemo(() => {
-    const summaries = {};
-
+  // Group targets by Target Type for display
+  const targetsByType = useMemo(() => {
+    const grouped = {};
     targetTypes.forEach(tt => {
-      const targets = dailyTargets.filter(dt => dt.target_type === tt.name);
-      const operationTotals = {};
-      let totalMinutes = 0;
-
-      targets.forEach(dt => {
-        const itemOps = itemOperationMap[dt.item_code] || {};
-        operations.forEach(op => {
-          const opMinutes = (itemOps[op.name] || 0) * dt.target_qty;
-          operationTotals[op.name] = (operationTotals[op.name] || 0) + opMinutes;
-          totalMinutes += opMinutes;
-        });
-      });
-
-      const breakdown = operations.map(op => ({
-        name: op.name,
-        minutes: operationTotals[op.name] || 0,
-        percent: totalMinutes > 0 ? ((operationTotals[op.name] || 0) / totalMinutes * 100).toFixed(2) : 0
-      }));
-
-      summaries[tt.name] = { totalMinutes, breakdown };
+      grouped[tt.id] = dailyTargets.filter(dt => dt.target_type_id === tt.id);
     });
-
-    return summaries;
-  }, [targetTypes, dailyTargets, itemOperationMap, operations]);
+    return grouped;
+  }, [targetTypes, dailyTargets]);
 
   // Mutations
   const createTargetTypeMutation = useMutation({
@@ -171,15 +163,20 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     onError: (err) => toast.error('Failed to delete Target Type: ' + err.message)
   });
 
-  const createDailyTargetMutation = useMutation({
-    mutationFn: (data) => base44.entities.DailyTargetLines.create(data),
+  const createDailyTargetsMutation = useMutation({
+    mutationFn: async (targets) => {
+      const results = await Promise.all(
+        targets.map(t => base44.entities.DailyTargetLines.create(t))
+      );
+      return results;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['DailyTargetLines']);
-      toast.success('Daily Target added');
+      toast.success('Daily Targets added');
       setShowAddTargetDialog(false);
       resetForm();
     },
-    onError: (err) => toast.error('Failed to add Daily Target: ' + err.message)
+    onError: (err) => toast.error('Failed to add Daily Targets: ' + err.message)
   });
 
   const deleteDailyTargetMutation = useMutation({
@@ -192,11 +189,9 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   });
 
   const resetForm = () => {
-    setFormDate('');
     setFormTargetType('');
-    setFormItemCode('');
-    setFormTargetQty('');
-    setFormNotes('');
+    setSelectedItemCodes([]);
+    setItemQuantities({});
   };
 
   const handleAddTargetType = () => {
@@ -211,20 +206,60 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     createTargetTypeMutation.mutate({ bundle_id: bundle.id, name: newTypeName.trim() });
   };
 
-  const handleAddDailyTarget = () => {
-    if (!formDate || !formTargetType || !formItemCode || formTargetQty === '' || parseFloat(formTargetQty) < 0) {
-      toast.error('Date, Target Type, Item Code, and Target Quantity (≥0) are required');
+  const handleAddItemCode = (itemCode) => {
+    if (!selectedItemCodes.includes(itemCode)) {
+      setSelectedItemCodes([...selectedItemCodes, itemCode]);
+      setItemQuantities({ ...itemQuantities, [itemCode]: 0 });
+    }
+  };
+
+  const handleRemoveItemCode = (itemCode) => {
+    setSelectedItemCodes(selectedItemCodes.filter(ic => ic !== itemCode));
+    const newQty = { ...itemQuantities };
+    delete newQty[itemCode];
+    setItemQuantities(newQty);
+  };
+
+  const handleAddDailyTargets = () => {
+    if (!formTargetType) {
+      toast.error('Target Type is required');
       return;
     }
-    // Server-side validation will block if item already assigned to another target type
-    createDailyTargetMutation.mutate({
-      bundle_id: bundle.id,
-      date: formDate,
-      target_type: formTargetType,
-      item_code: formItemCode,
-      target_qty: parseFloat(formTargetQty),
-      notes: formNotes
+    if (selectedItemCodes.length === 0) {
+      toast.error('Select at least one item code');
+      return;
+    }
+
+    // Validate quantities
+    for (const ic of selectedItemCodes) {
+      const qty = parseFloat(itemQuantities[ic]);
+      if (isNaN(qty) || qty < 0) {
+        toast.error(`Invalid quantity for ${ic}`);
+        return;
+      }
+    }
+
+    const targetTypeId = targetTypes.find(tt => tt.name === formTargetType)?.id;
+    if (!targetTypeId) {
+      toast.error('Invalid Target Type');
+      return;
+    }
+
+    const targets = selectedItemCodes.map(ic => {
+      const qty = parseFloat(itemQuantities[ic]);
+      const perPieceTotal = itemPerPieceTotals[ic] || 0;
+      const itemTotal = perPieceTotal * qty;
+      return {
+        bundle_id: bundle.id,
+        target_type_id: targetTypeId,
+        item_code: ic,
+        target_qty: qty,
+        per_piece_total_min: perPieceTotal,
+        item_total_min: itemTotal
+      };
     });
+
+    createDailyTargetsMutation.mutate(targets);
   };
 
   if (!bundle) {
@@ -277,11 +312,13 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
         </CardContent>
       </Card>
 
-      {/* Target Type Summaries */}
+      {/* Target Type Summaries with Per-Piece Breakdowns */}
       {targetTypes.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-4">
           {targetTypes.map(tt => {
-            const summary = targetTypeSummaries[tt.name] || { totalMinutes: 0, breakdown: [] };
+            const targets = targetsByType[tt.id] || [];
+            if (targets.length === 0) return null;
+
             return (
               <Card key={tt.id}>
                 <CardHeader>
@@ -291,19 +328,59 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between font-semibold">
-                      <span>Total Minutes:</span>
-                      <span>{summary.totalMinutes.toFixed(2)}</span>
-                    </div>
-                    <div className="text-xs text-slate-600 space-y-1">
-                      {summary.breakdown.map(op => (
-                        <div key={op.name} className="flex justify-between">
-                          <span>{op.name}:</span>
-                          <span>{op.minutes.toFixed(2)} min ({op.percent}%)</span>
+                  <div className="space-y-4">
+                    {targets.map(target => {
+                      const itemOps = itemOperationMap[target.item_code] || {};
+                      const perPieceTotal = target.per_piece_total_min;
+                      const breakdown = operations.map(op => {
+                        const opMin = itemOps[op.name] || 0;
+                        const opPercent = perPieceTotal > 0 ? (opMin / perPieceTotal * 100).toFixed(2) : 0;
+                        return { name: op.name, minutes: opMin, percent: opPercent };
+                      });
+
+                      return (
+                        <div key={target.id} className="border rounded-lg p-3 space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <span className="font-semibold text-slate-900">{target.item_code}</span>
+                              <span className="text-sm text-slate-500 ml-2">Qty: {target.target_qty}</span>
+                            </div>
+                            {isEditable && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (confirm('Delete this target?')) {
+                                    deleteDailyTargetMutation.mutate(target.id);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600" />
+                              </Button>
+                            )}
+                          </div>
+                          <div className="text-sm">
+                            <div className="flex justify-between font-medium text-slate-700">
+                              <span>Per-Piece Total:</span>
+                              <span>{perPieceTotal.toFixed(2)} min</span>
+                            </div>
+                            <div className="flex justify-between font-medium text-slate-700">
+                              <span>Item Total:</span>
+                              <span>{target.item_total_min.toFixed(2)} min</span>
+                            </div>
+                          </div>
+                          <div className="text-xs text-slate-600 space-y-1 pl-2">
+                            <p className="font-semibold text-slate-700">Per-Piece Breakdown:</p>
+                            {breakdown.map(op => (
+                              <div key={op.name} className="flex justify-between">
+                                <span>{op.name}:</span>
+                                <span>{op.minutes.toFixed(2)} min ({op.percent}%)</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 </CardContent>
               </Card>
@@ -327,14 +404,10 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
         </CardHeader>
         <CardContent>
           {/* Filters */}
-          <div className="grid grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <Label>Item Code</Label>
               <Input placeholder="Filter by item..." value={filterItemCode} onChange={(e) => setFilterItemCode(e.target.value)} />
-            </div>
-            <div>
-              <Label>Date</Label>
-              <Input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} />
             </div>
             <div>
               <Label>Target Type</Label>
@@ -356,39 +429,42 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
                   <TableHead>Target Type</TableHead>
                   <TableHead>Item Code</TableHead>
                   <TableHead>Target Qty</TableHead>
-                  <TableHead>Notes</TableHead>
+                  <TableHead>Per-Piece (min)</TableHead>
+                  <TableHead>Total (min)</TableHead>
                   {isEditable && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDailyTargets.map(dt => (
-                  <TableRow key={dt.id}>
-                    <TableCell>{format(new Date(dt.date), 'yyyy-MM-dd')}</TableCell>
-                    <TableCell><Badge variant="outline">{dt.target_type}</Badge></TableCell>
-                    <TableCell>{dt.item_code}</TableCell>
-                    <TableCell>{dt.target_qty}</TableCell>
-                    <TableCell className="text-sm text-slate-600">{dt.notes || '—'}</TableCell>
-                    {isEditable && (
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            if (confirm('Delete this target?')) {
-                              deleteDailyTargetMutation.mutate(dt.id);
-                            }
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </Button>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
+                {filteredDailyTargets.map(dt => {
+                  const tt = targetTypes.find(t => t.id === dt.target_type_id);
+                  return (
+                    <TableRow key={dt.id}>
+                      <TableCell><Badge variant="outline">{tt?.name || '—'}</Badge></TableCell>
+                      <TableCell>{dt.item_code}</TableCell>
+                      <TableCell>{dt.target_qty}</TableCell>
+                      <TableCell>{dt.per_piece_total_min.toFixed(2)}</TableCell>
+                      <TableCell>{dt.item_total_min.toFixed(2)}</TableCell>
+                      {isEditable && (
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (confirm('Delete this target?')) {
+                                deleteDailyTargetMutation.mutate(dt.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                          </Button>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
                 {filteredDailyTargets.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={isEditable ? 6 : 5} className="text-center text-slate-500">
@@ -427,67 +503,75 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
 
       {/* Add Daily Target Dialog */}
       <Dialog open={showAddTargetDialog} onOpenChange={setShowAddTargetDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Daily Target</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Date *</Label>
-                <Input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
-              </div>
-              <div>
-                <Label>Target Type *</Label>
-                <Select value={formTargetType} onValueChange={setFormTargetType}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {targetTypes.map(tt => (
-                      <SelectItem key={tt.id} value={tt.name}>{tt.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div>
+              <Label>Target Type *</Label>
+              <Select value={formTargetType} onValueChange={setFormTargetType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent>
+                  {targetTypes.map(tt => (
+                    <SelectItem key={tt.id} value={tt.name}>{tt.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
             <div>
               <div className="flex items-center space-x-2 mb-2">
                 <Checkbox id="showAssigned" checked={showAssigned} onCheckedChange={setShowAssigned} />
                 <Label htmlFor="showAssigned" className="text-sm">Show assigned items</Label>
               </div>
-              <Label>Item Code *</Label>
-              <Select value={formItemCode} onValueChange={setFormItemCode}>
+              <Label>Item Codes (Multi-Select) *</Label>
+              <Select onValueChange={handleAddItemCode}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select item" />
+                  <SelectValue placeholder="Select items to add" />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredAvailableItems.map(item => (
-                    <SelectItem key={item.value} value={item.value} disabled={item.disabled}>
+                    <SelectItem key={item.value} value={item.value} disabled={item.disabled || selectedItemCodes.includes(item.value)}>
                       {item.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Target Quantity *</Label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formTargetQty}
-                onChange={(e) => setFormTargetQty(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Notes</Label>
-              <Input value={formNotes} onChange={(e) => setFormNotes(e.target.value)} />
-            </div>
+
+            {/* Selected Items with Quantities */}
+            {selectedItemCodes.length > 0 && (
+              <div className="border rounded-lg p-4 space-y-2">
+                <Label className="font-semibold">Selected Items & Quantities</Label>
+                <div className="space-y-2">
+                  {selectedItemCodes.map(ic => (
+                    <div key={ic} className="flex items-center gap-3">
+                      <div className="flex-1 font-medium text-sm">{ic}</div>
+                      <div className="w-32">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="Qty"
+                          value={itemQuantities[ic] || ''}
+                          onChange={(e) => setItemQuantities({ ...itemQuantities, [ic]: e.target.value })}
+                        />
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => handleRemoveItemCode(ic)}>
+                        <X className="w-4 h-4 text-red-600" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddTargetDialog(false)}>Cancel</Button>
-            <Button onClick={handleAddDailyTarget}>Add</Button>
+            <Button onClick={handleAddDailyTargets} disabled={selectedItemCodes.length === 0}>Add</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
