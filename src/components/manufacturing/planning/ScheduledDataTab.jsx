@@ -631,6 +631,24 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
   // Save day assignments mutation
   const saveDayAssignmentsMutation = useMutation({
     mutationFn: async ({ persons, notes }) => {
+      // Also update the day header
+      if (currentDayHeader) {
+        await base44.entities.ScheduledDayHeader.update(currentDayHeader.id, {
+          assigned_persons: persons,
+          day_notes: notes
+        });
+      } else {
+        // Create day header if doesn't exist
+        await base44.entities.ScheduledDayHeader.create({
+          department_id: selectedDepartment,
+          date: selectedDate,
+          source_bundle_id: selectedBundle.id,
+          assigned_persons: persons,
+          day_notes: notes
+        });
+      }
+
+      // Also update old ScheduledDayAssignments for backward compatibility
       if (currentDayAssignment) {
         await base44.entities.ScheduledDayAssignments.update(currentDayAssignment.id, {
           assigned_persons: persons,
@@ -646,6 +664,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ScheduledDayHeader'] });
       queryClient.invalidateQueries({ queryKey: ['ScheduledDayAssignments'] });
       setShowAssignPersonsDialog(false);
       toast.success('Day assignments saved');
@@ -1676,7 +1695,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                     <div key={template.id} className="p-4 hover:bg-slate-50 flex justify-between items-center">
                       <div>
                         <p className="font-medium">{template.template_name}</p>
-                        <p className="text-sm text-slate-500">{template.template_data.length} items</p>
+                        <p className="text-sm text-slate-500">
+                          {template.template_data?.length || 0} items{template.assigned_persons_data?.assigned_persons ? ' + assigned persons' : ''}
+                        </p>
                       </div>
                       <Button
                         onClick={() => handleLoadTemplate(template)}
@@ -1902,6 +1923,151 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAssignPersonsDialog(false)}>Cancel</Button>
             <Button onClick={handleSaveDayAssignments}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Day Source Bundle Dialog */}
+      <Dialog open={editingDaySourceBundle} onOpenChange={setEditingDaySourceBundle}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Source Bundle for {selectedDate}</DialogTitle>
+            <DialogDescription>
+              Changing the source bundle will recalculate all scheduled data times for this day based on the new bundle's DATA.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Source Bundle</Label>
+              <Select value={tempSourceBundleId} onValueChange={setTempSourceBundleId}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {allBundles.map(b => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name} {b.status === 'ACTIVE' && '(Active)'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Alert>
+              <AlertCircle className="w-4 h-4" />
+              <AlertDescription>
+                If any item codes don't exist in the new bundle's DATA, the save will be blocked.
+              </AlertDescription>
+            </Alert>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingDaySourceBundle(false)}>Cancel</Button>
+            <Button onClick={async () => {
+              try {
+                // Get all scheduled lines for this day
+                const dayLines = lines.filter(l => l.date === selectedDate);
+                
+                // Fetch new bundle's DATA
+                const newBundleData = await base44.entities.StdSetLines.filter({ bundle_id: tempSourceBundleId });
+                const newBundleQCData = await base44.entities.QCSetLines.filter({ bundle_id: tempSourceBundleId });
+                const validItemCodes = new Set(newBundleData.map(l => l.item_code));
+                
+                // Validate all item codes exist
+                const missingItems = dayLines.filter(l => !validItemCodes.has(l.item_code));
+                if (missingItems.length > 0) {
+                  toast.error(`Cannot change bundle: Items not found in new bundle: ${missingItems.map(l => l.item_code).join(', ')}`);
+                  return;
+                }
+                
+                // Build new calculation maps
+                const newItemOperationMap = buildItemOperationMap(newBundleData);
+                
+                // Update or create day header
+                if (currentDayHeader) {
+                  await base44.entities.ScheduledDayHeader.update(currentDayHeader.id, {
+                    source_bundle_id: tempSourceBundleId
+                  });
+                } else {
+                  await base44.entities.ScheduledDayHeader.create({
+                    department_id: selectedDepartment,
+                    date: selectedDate,
+                    source_bundle_id: tempSourceBundleId,
+                    assigned_persons: []
+                  });
+                }
+                
+                // Recalculate and update all lines
+                for (const line of dayLines) {
+                  // Recalculate with new bundle data
+                  const profile = allProfiles.find(p => p.id === line.operation_profile_id);
+                  const ops_per_piece_min = computeOpsPerPiece(line.item_code, profile, operations, newItemOperationMap, false);
+                  const ops_total_min = ops_per_piece_min * line.ops_qty;
+                  
+                  // Recalculate QC
+                  let qc_per_piece_min = 0;
+                  let qc_total_min = 0;
+                  
+                  if (line.qc_type && line.qc_level && line.qc_qty > 0) {
+                    const canonicalOpKey = (name) => {
+                      if (!name) return '';
+                      return name.toString().trim().toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ');
+                    };
+                    
+                    const allowedOpsCanonical = profile?.operations_required
+                      ?.map(opId => operations.find(o => o.id === opId)?.name)
+                      .filter(Boolean)
+                      .map(canonicalOpKey) || [];
+                    
+                    const qcRules = newBundleQCData.filter(qc => 
+                      qc.item_code === line.item_code && 
+                      qc.qc_type === line.qc_type && 
+                      qc.qc_level === line.qc_level &&
+                      allowedOpsCanonical.includes(canonicalOpKey(qc.operation))
+                    );
+                    
+                    for (const qc of qcRules) {
+                      const baseLine = newBundleData.find(l => 
+                        l.item_code === line.item_code && 
+                        canonicalOpKey(l.operation) === canonicalOpKey(qc.operation)
+                      );
+                      const baseTime = baseLine ? parseMinutes(baseLine.std_min_per_pc) : 0;
+                      
+                      let extraTime = 0;
+                      if (qc.mode === 'percent') {
+                        extraTime = baseTime * (qc.qc_value / 100);
+                      } else if (qc.mode === 'fixed') {
+                        extraTime = parseMinutes(qc.qc_value);
+                      } else {
+                        extraTime = parseMinutes(qc.calculated_extra_time_min);
+                      }
+                      
+                      qc_per_piece_min += extraTime;
+                    }
+                    
+                    qc_total_min = qc_per_piece_min * line.qc_qty;
+                  }
+                  
+                  const grand_total_min = ops_total_min + qc_total_min;
+                  
+                  // Update line
+                  await base44.entities.ScheduledData.update(line.id, {
+                    ops_per_piece_min,
+                    ops_total_min,
+                    qc_per_piece_min,
+                    qc_total_min,
+                    grand_total_min
+                  });
+                }
+                
+                queryClient.invalidateQueries({ queryKey: ['ScheduledData'] });
+                queryClient.invalidateQueries({ queryKey: ['ScheduledDayHeader'] });
+                setEditingDaySourceBundle(false);
+                toast.success('Source bundle updated and all times recalculated');
+              } catch (error) {
+                toast.error('Failed to update: ' + error.message);
+              }
+            }}>
+              Update & Recalculate
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
