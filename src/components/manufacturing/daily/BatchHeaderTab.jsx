@@ -276,7 +276,10 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
                       <TableCell className="font-medium">{batch.date}</TableCell>
                       <TableCell>{batch.department}</TableCell>
                       <TableCell>
-                        {allBundles.find(b => b.id === batch.bundle_id)?.bundle_number || '-'}
+                        {(() => {
+                          const bundle = allBundlesGlobal.find(b => b.id === batch.bundle_id);
+                          return bundle ? `v${bundle.version || '?'} (${bundle.status})` : '-';
+                        })()}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
