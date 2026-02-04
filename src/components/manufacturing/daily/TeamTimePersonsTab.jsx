@@ -183,16 +183,17 @@ export default function TeamTimePersonsTab({ batchId }) {
           <div className="space-y-4 py-4">
             <div>
               <Label>Person Name *</Label>
-              <Select value={formData.person_name} onValueChange={(v) => setFormData({ ...formData, person_name: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select person" />
-                </SelectTrigger>
-                <SelectContent>
-                  {persons.map(p => (
-                    <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                placeholder="Select from list or enter name"
+                value={formData.person_name}
+                onChange={(e) => setFormData({ ...formData, person_name: e.target.value })}
+                list="person-list"
+              />
+              <datalist id="person-list">
+                {persons.map(p => (
+                  <option key={p.id} value={p.name} />
+                ))}
+              </datalist>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
