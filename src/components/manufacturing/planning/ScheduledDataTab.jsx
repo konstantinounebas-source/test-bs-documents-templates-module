@@ -1130,11 +1130,19 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
               <div className="flex justify-between items-center">
                 <div>
                   <p className="text-sm font-semibold text-amber-900 mb-1">Source Bundle (for this day)</p>
-                  <p className="text-base font-medium">
-                    v{sourceBundleForDay?.version || selectedBundle?.version} - {sourceBundleForDay?.name || selectedBundle?.name} ({sourceBundleForDay?.status || selectedBundle?.status})
-                  </p>
-                  {currentDayHeader && currentDayHeader.source_bundle_id !== selectedBundle?.id && (
-                    <p className="text-xs text-amber-700 mt-1">⚠️ Different from default bundle</p>
+                  {sourceBundleForDay ? (
+                    <>
+                      <p className="text-base font-medium">
+                        v{sourceBundleForDay.version || '?'} - {sourceBundleForDay.name} ({sourceBundleForDay.status})
+                      </p>
+                      {currentDayHeader && currentDayHeader.source_bundle_id !== selectedBundle?.id && (
+                        <p className="text-xs text-amber-700 mt-1">⚠️ Different from default bundle</p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-base font-medium text-red-600">
+                      ❌ Stored source bundle not found (id: {currentDayHeader?.source_bundle_id})
+                    </p>
                   )}
                 </div>
                 <Button 
