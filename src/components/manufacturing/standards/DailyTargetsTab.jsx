@@ -30,8 +30,8 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
 
   // Fetch daily targets lines
   const { data: lines = [], isLoading } = useQuery({
-    queryKey: ['Target_Daily', bundle.id],
-    queryFn: () => base44.entities.Target_Daily.filter({ bundle_id: bundle.id }),
+    queryKey: ['TargetDaily', bundle.id],
+    queryFn: () => base44.entities.TargetDaily.filter({ bundle_id: bundle.id }),
     enabled: !!bundle
   });
 
@@ -45,14 +45,14 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      await base44.entities.Target_Daily.create({
+      await base44.entities.TargetDaily.create({
         bundle_id: bundle.id,
         department: bundle.department,
         ...data
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['Target_Daily'] });
+      queryClient.invalidateQueries({ queryKey: ['TargetDaily'] });
       setShowAddDialog(false);
       setFormData({
         date: '',
@@ -70,10 +70,10 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      await base44.entities.Target_Daily.delete(id);
+      await base44.entities.TargetDaily.delete(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['Target_Daily'] });
+      queryClient.invalidateQueries({ queryKey: ['TargetDaily'] });
       toast.success('Daily target deleted');
     },
     onError: (error) => {

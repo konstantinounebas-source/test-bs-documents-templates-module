@@ -63,8 +63,8 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
 
   // Fetch scheduled data lines
   const { data: lines = [], isLoading } = useQuery({
-    queryKey: ['Scheduled_Data', selectedBundle?.id],
-    queryFn: () => base44.entities.Scheduled_Data.filter({ bundle_id: selectedBundle.id }),
+    queryKey: ['ScheduledData', selectedBundle?.id],
+    queryFn: () => base44.entities.ScheduledData.filter({ bundle_id: selectedBundle.id }),
     enabled: !!selectedBundle
   });
 
@@ -82,14 +82,14 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      await base44.entities.Scheduled_Data.create({
+      await base44.entities.ScheduledData.create({
         bundle_id: selectedBundle.id,
         department: selectedDepartment,
         ...data
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['Scheduled_Data'] });
+      queryClient.invalidateQueries({ queryKey: ['ScheduledData'] });
       setShowAddDialog(false);
       setFormData({
         date: '',
@@ -110,10 +110,10 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      await base44.entities.Scheduled_Data.delete(id);
+      await base44.entities.ScheduledData.delete(id);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['Scheduled_Data'] });
+      queryClient.invalidateQueries({ queryKey: ['ScheduledData'] });
       toast.success('Scheduled data deleted');
     },
     onError: (error) => {
