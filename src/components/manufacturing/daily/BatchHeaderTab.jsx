@@ -134,6 +134,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
       bundle_id: batch.bundle_id || '',
       notes: batch.notes || ''
     });
+    setShowCreateDialog(true);
   };
 
   const handleDelete = (id) => {
