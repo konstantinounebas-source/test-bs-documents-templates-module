@@ -23,7 +23,6 @@ import ConsumablesTab from '@/components/manufacturing/standards/ConsumablesTab.
 import KPITab from '@/components/manufacturing/standards/KPITab.jsx';
 import MetricsTab from '@/components/manufacturing/standards/MetricsTab.jsx';
 import DailyTargetsTab from '@/components/manufacturing/standards/DailyTargetsTab.jsx';
-import ScheduledDataTab from '@/components/manufacturing/standards/ScheduledDataTab.jsx';
 
 export default function MfgStandardsManagementPage() {
   const { accessLevel, loading: accessLoading } = usePageAccess('MfgStandardsManagement');
@@ -88,14 +87,12 @@ export default function MfgStandardsManagementPage() {
       });
 
       // Clone all data from each tab
-      const [stdLines, qcLines, profileLines, targetTypes, targetLines, scheduledData, scheduledTemplates, consumablesLines, kpiLines, metricsLines] = await Promise.all([
+      const [stdLines, qcLines, profileLines, targetTypes, targetLines, consumablesLines, kpiLines, metricsLines] = await Promise.all([
         base44.entities.StdSetLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.QCSetLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.ProfileSetLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.TargetType.filter({ bundle_id: currentBundle.id }),
         base44.entities.DailyTargetLines.filter({ bundle_id: currentBundle.id }),
-        base44.entities.StdScheduledData.filter({ bundle_id: currentBundle.id }),
-        base44.entities.ScheduledTemplate.filter({ bundle_id: currentBundle.id }),
         base44.entities.ConsumablesStandardsLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.KPIDefSetLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.MetricsDefSetLines.filter({ bundle_id: currentBundle.id })
@@ -108,8 +105,6 @@ export default function MfgStandardsManagementPage() {
         ...profileLines.map(l => base44.entities.ProfileSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...targetTypes.map(l => base44.entities.TargetType.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...targetLines.map(l => base44.entities.DailyTargetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
-        ...scheduledData.map(l => base44.entities.StdScheduledData.create({ ...l, id: undefined, bundle_id: newBundle.id })),
-        ...scheduledTemplates.map(l => base44.entities.ScheduledTemplate.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...consumablesLines.map(l => base44.entities.ConsumablesStandardsLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...kpiLines.map(l => base44.entities.KPIDefSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...metricsLines.map(l => base44.entities.MetricsDefSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id }))
@@ -188,8 +183,6 @@ export default function MfgStandardsManagementPage() {
     await queryClient.invalidateQueries({ queryKey: ['ProfileSetLines'] });
     await queryClient.invalidateQueries({ queryKey: ['TargetType'] });
     await queryClient.invalidateQueries({ queryKey: ['DailyTargetLines'] });
-    await queryClient.invalidateQueries({ queryKey: ['StdScheduledData'] });
-    await queryClient.invalidateQueries({ queryKey: ['ScheduledTemplate'] });
     await queryClient.invalidateQueries({ queryKey: ['ConsumablesStandardsLines'] });
     await queryClient.invalidateQueries({ queryKey: ['KPIDefSetLines'] });
     await queryClient.invalidateQueries({ queryKey: ['MetricsDefSetLines'] });
@@ -313,12 +306,11 @@ export default function MfgStandardsManagementPage() {
           {/* Tabs */}
           {currentBundle ? (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-8">
+              <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="data">DATA</TabsTrigger>
                 <TabsTrigger value="qc">QC</TabsTrigger>
                 <TabsTrigger value="profiles">Profiles</TabsTrigger>
                 <TabsTrigger value="targets">Daily Targets</TabsTrigger>
-                <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
                 <TabsTrigger value="consumables">Consumables</TabsTrigger>
                 <TabsTrigger value="kpi">KPI</TabsTrigger>
                 <TabsTrigger value="metrics">Metrics</TabsTrigger>
@@ -339,10 +331,6 @@ export default function MfgStandardsManagementPage() {
 
                 <TabsContent value="targets">
                   <DailyTargetsTab bundle={currentBundle} isEditable={isEditable} />
-                </TabsContent>
-
-                <TabsContent value="scheduled">
-                  <ScheduledDataTab bundle={currentBundle} isEditable={isEditable} />
                 </TabsContent>
 
                 <TabsContent value="consumables">
