@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Trash2, AlertCircle, X, Info } from "lucide-react";
 import { toast } from "sonner";
+import { buildItemOperationMap, computeOpsPerPiece, getOperationBreakdown } from './shared/calculateOperationsTime';
 
 export default function DailyTargetsTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
@@ -84,36 +85,13 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
 
   // Build map: item_code -> { operation -> std_min_per_pc }
   const itemOperationMap = useMemo(() => {
-    const map = {};
-    stdLines.forEach(line => {
-      if (!line.item_code) return;
-      if (!map[line.item_code]) map[line.item_code] = {};
-      map[line.item_code][line.operation] = line.std_min_per_pc || 0;
-    });
-    return map;
+    return buildItemOperationMap(stdLines);
   }, [stdLines]);
 
-  // Get enabled operations for a profile from operations_required array
-  const getEnabledOperations = (profileId) => {
-    const profile = operationProfiles.find(p => p.id === profileId);
-    if (!profile || !profile.operations_required) return [];
-    
-    // Return operation names from the operations_required array
-    return profile.operations_required
-      .map(opId => operations.find(o => o.id === opId))
-      .filter(Boolean)
-      .map(op => op.name);
-  };
-
-  // Calculate per-piece total for item with profile filter
+  // Calculate per-piece total for item with profile filter (uses shared engine)
   const calculatePerPieceTotal = (itemCode, profileId) => {
-    const enabledOps = getEnabledOperations(profileId);
-    const itemOps = itemOperationMap[itemCode] || {};
-    let total = 0;
-    enabledOps.forEach(opName => {
-      total += itemOps[opName] || 0;
-    });
-    return total;
+    const profile = operationProfiles.find(p => p.id === profileId);
+    return computeOpsPerPiece(itemCode, profile, operations, itemOperationMap);
   };
 
   // Assigned items map: item_code -> true
@@ -616,17 +594,16 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
                     </TableHeader>
                     <TableBody>
                       {(() => {
-                        const enabledOps = getEnabledOperations(selectedBreakdownTarget.operation_profile_id);
-                        const itemOps = itemOperationMap[selectedBreakdownTarget.item_code] || {};
+                        const profile = operationProfiles.find(p => p.id === selectedBreakdownTarget.operation_profile_id);
+                        const breakdown = getOperationBreakdown(selectedBreakdownTarget.item_code, profile, operations, itemOperationMap);
                         const perPieceTotal = selectedBreakdownTarget.per_piece_total_min;
                         
-                        return enabledOps.map(opName => {
-                          const opMin = itemOps[opName] || 0;
-                          const opPercent = perPieceTotal > 0 ? (opMin / perPieceTotal * 100).toFixed(2) : 0;
+                        return breakdown.map(item => {
+                          const opPercent = perPieceTotal > 0 ? (item.minutes / perPieceTotal * 100).toFixed(2) : 0;
                           return (
-                            <TableRow key={opName}>
-                              <TableCell>{opName}</TableCell>
-                              <TableCell>{opMin.toFixed(2)}</TableCell>
+                            <TableRow key={item.operation}>
+                              <TableCell>{item.operation}</TableCell>
+                              <TableCell>{item.minutes.toFixed(2)}</TableCell>
                               <TableCell>{opPercent}%</TableCell>
                             </TableRow>
                           );

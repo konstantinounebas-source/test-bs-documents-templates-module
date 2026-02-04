@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { buildItemOperationMap, computeOpsPerPiece, getOperationBreakdown, parseMinutes } from '../standards/shared/calculateOperationsTime';
 
 export default function ScheduledDataTab({ selectedDepartment, selectedBundle }) {
   const queryClient = useQueryClient();
@@ -56,6 +57,17 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     return allProfiles.filter(p => p.department === selectedBundle.department);
   }, [allProfiles, selectedBundle]);
 
+  // Fetch Operations (needed for shared calculation engine)
+  const { data: allOperations = [] } = useQuery({
+    queryKey: ['Operation'],
+    queryFn: () => base44.entities.Operation.filter({ is_active: true }),
+    staleTime: 0
+  });
+  const operations = allOperations
+    .filter(op => op.is_allowed !== false)
+    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+    .slice(0, 10);
+
   // Fetch QC types
   const { data: qcTypes = [], isLoading: qcTypesLoading } = useQuery({
     queryKey: ['QC_Type'],
@@ -83,6 +95,11 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   const profilesReady = profilesFetched && allProfiles.length >= 0;
   const qcRulesReady = qcSetLinesFetched && qcSetLines.length >= 0;
 
+  // Build item-operation map using shared utility
+  const itemOperationMap = useMemo(() => {
+    return buildItemOperationMap(dataLines);
+  }, [dataLines]);
+
   // Fetch scheduled data lines
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['ScheduledData', selectedBundle?.id],
@@ -91,33 +108,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     staleTime: 0
   });
 
-  // Canonical operation key for matching (Step 3)
-  const canonicalOpKey = (name) => {
-    if (!name) return '';
-    return name
-      .toString()
-      .trim()
-      .toLowerCase()
-      .replace(/_/g, ' ')
-      .replace(/\s+/g, ' '); // collapse multiple spaces
-  };
-
-  // Parse minutes from DATA - handle string/null/"–" (Step 4)
-  const parseMinutes = (value) => {
-    if (value === null || value === undefined || value === '' || value === '–' || value === '-') {
-      return 0;
-    }
-    const parsed = Number(value);
-    if (isNaN(parsed)) {
-      console.warn('⚠️ Invalid minutes value:', value, '- treating as 0');
-      return 0;
-    }
-    return parsed;
-  };
-
-  // Calculate per-piece and total times
+  // Calculate per-piece and total times (REUSES Daily Targets engine)
   const calculateTimes = (itemCode, profileId, opsQty, qcQty, qcType, qcLevel, isDebugRecord = false) => {
-    // Step 2: Check if data is ready
+    // Check if data is ready
     if (!dataPivotReady || !profilesReady || !qcRulesReady) {
       if (isDebugRecord) {
         console.warn('⏳ Data not ready yet:', { dataPivotReady, profilesReady, qcRulesReady });
@@ -125,86 +118,35 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
       return { ops_per_piece_min: 0, ops_total_min: 0, qc_per_piece_min: 0, qc_total_min: 0, grand_total_min: 0 };
     }
 
-    if (isDebugRecord) {
-      console.log('🔍 ===== DEBUG FIRST RECORD =====');
-      console.log('bundle_id:', selectedBundle?.id);
-      console.log('item_code:', itemCode);
-      console.log('operation_profile_id:', profileId);
-    }
-
     // Get the profile
     const profile = allProfiles.find(p => p.id === profileId);
-    if (!profile || !profile.operations_required || profile.operations_required.length === 0) {
-      if (isDebugRecord) {
-        console.warn('⚠️ No profile or operations_required:', profile);
-      }
-      return { ops_per_piece_min: 0, ops_total_min: 0, qc_per_piece_min: 0, qc_total_min: 0, grand_total_min: 0 };
-    }
-
-    if (isDebugRecord) {
-      console.log('profile.operations_required:', profile.operations_required);
-    }
-
-    // Step 3: Use canonical operation keys
-    const allowedOpsCanonical = profile.operations_required.map(canonicalOpKey);
     
-    // Find DATA row for this item_code
-    const dataRowsForItem = dataLines.filter(l => l.item_code === itemCode);
-    const dataRowFound = dataRowsForItem.length > 0;
-    
-    if (isDebugRecord) {
-      console.log('dataRowFound?', dataRowFound);
-      if (dataRowFound) {
-        console.log('dataRow keys:', Object.keys(dataRowsForItem[0]));
-      } else {
-        console.log('distinctItemCodesFromData (first 20):', 
-          [...new Set(dataLines.map(l => l.item_code))].slice(0, 20)
-        );
-      }
-    }
-
-    // Match operations
-    const matchedOps = dataRowsForItem.filter(l => 
-      allowedOpsCanonical.includes(canonicalOpKey(l.operation))
-    );
-
-    if (isDebugRecord) {
-      console.log('matchedOps[]:', matchedOps.map(m => ({ 
-        operation: m.operation, 
-        std_min_per_pc: m.std_min_per_pc,
-        canonical: canonicalOpKey(m.operation)
-      })));
-    }
-
-    // Step 4: Parse minutes properly
-    let ops_per_piece_raw_sum = 0;
-    for (const line of matchedOps) {
-      const minutes = parseMinutes(line.std_min_per_pc);
-      ops_per_piece_raw_sum += minutes;
-    }
-
-    const ops_per_piece_min = ops_per_piece_raw_sum;
+    // USE SHARED CALCULATION ENGINE from Daily Targets
+    const ops_per_piece_min = computeOpsPerPiece(itemCode, profile, operations, itemOperationMap, isDebugRecord);
     const ops_total_min = ops_per_piece_min * opsQty;
 
-    if (isDebugRecord) {
-      console.log('ops_per_piece_raw_sum:', ops_per_piece_raw_sum);
-    }
-
-    // Calculate QC time
+    // Calculate QC time (still specific to Scheduled Data)
     let qc_per_piece_min = 0;
     let qc_total_min = 0;
-    let qcRulesFoundCount = 0;
-    let qc_per_piece_raw_sum = 0;
 
     if (qcType && qcLevel && qcQty > 0) {
+      // For QC, we need to use canonical matching since QC rules may use different casing
+      const canonicalOpKey = (name) => {
+        if (!name) return '';
+        return name.toString().trim().toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ');
+      };
+
+      const allowedOpsCanonical = profile?.operations_required
+        ?.map(opId => operations.find(o => o.id === opId)?.name)
+        .filter(Boolean)
+        .map(canonicalOpKey) || [];
+
       const qcRules = qcSetLines.filter(qc => 
         qc.item_code === itemCode && 
         qc.qc_type === qcType && 
         qc.qc_level === qcLevel &&
         allowedOpsCanonical.includes(canonicalOpKey(qc.operation))
       );
-
-      qcRulesFoundCount = qcRules.length;
 
       for (const qc of qcRules) {
         const baseLine = dataLines.find(l => 
@@ -222,24 +164,17 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
           extraTime = parseMinutes(qc.calculated_extra_time_min);
         }
 
-        qc_per_piece_raw_sum += extraTime;
+        qc_per_piece_min += extraTime;
       }
 
-      qc_per_piece_min = qc_per_piece_raw_sum;
       qc_total_min = qc_per_piece_min * qcQty;
 
-      if (isDebugRecord) {
-        console.log('qc_type/qc_level:', qcType, '/', qcLevel);
-        console.log('qcRulesFoundCount:', qcRulesFoundCount);
-        console.log('qc_per_piece_raw_sum:', qc_per_piece_raw_sum);
+      if (isDebugRecord && qcRules.length > 0) {
+        console.log('🧪 QC calculation:', { qcRulesFoundCount: qcRules.length, qc_per_piece_min, qc_total_min });
       }
     }
 
     const grand_total_min = ops_total_min + qc_total_min;
-
-    if (isDebugRecord) {
-      console.log('===== END DEBUG =====');
-    }
 
     return { ops_per_piece_min, ops_total_min, qc_per_piece_min, qc_total_min, grand_total_min };
   };
@@ -408,21 +343,21 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     const profile = allProfiles.find(p => p.id === record.operation_profile_id);
     if (!profile) return null;
 
-    const allowedOps = profile.operations_required || [];
-    const allowedOpsCanonical = allowedOps.map(canonicalOpKey);
-    
-    const itemDataLines = dataLines.filter(l => 
-      l.item_code === record.item_code && 
-      allowedOpsCanonical.includes(canonicalOpKey(l.operation))
-    );
-    
-    const breakdown = itemDataLines.map(l => ({
-      operation: l.operation,
-      minutes: parseMinutes(l.std_min_per_pc)
-    }));
+    // Use shared breakdown utility
+    const breakdown = getOperationBreakdown(record.item_code, profile, operations, itemOperationMap);
 
     const qcBreakdown = [];
     if (record.qc_type && record.qc_level) {
+      const canonicalOpKey = (name) => {
+        if (!name) return '';
+        return name.toString().trim().toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ');
+      };
+
+      const allowedOpsCanonical = profile.operations_required
+        ?.map(opId => operations.find(o => o.id === opId)?.name)
+        .filter(Boolean)
+        .map(canonicalOpKey) || [];
+
       const qcRules = qcSetLines.filter(qc => 
         qc.item_code === record.item_code && 
         qc.qc_type === record.qc_type && 
@@ -430,7 +365,6 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
         allowedOpsCanonical.includes(canonicalOpKey(qc.operation))
       );
 
-      // Recalculate QC extra time per operation
       qcBreakdown.push(...qcRules.map(qc => {
         const baseLine = dataLines.find(l => 
           l.item_code === record.item_code && 
