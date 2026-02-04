@@ -5,12 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Save, Search, AlertCircle, Check } from 'lucide-react';
+import { Loader2, Save, Search, AlertCircle, Check, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { exportQCTabToExcel } from './shared/exportToExcel';
 
 export default function QCTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
@@ -382,6 +383,15 @@ export default function QCTab({ bundle, isEditable }) {
               <SelectItem value="missing_qc">Missing QC Value</SelectItem>
             </SelectContent>
           </Select>
+
+          <Button 
+            onClick={() => exportQCTabToExcel(filteredItems, gridData, mode, selectedOperation, selectedQCType, selectedQCLevel, bundle?.name)}
+            variant="outline"
+            disabled={!canSave || filteredItems.length === 0}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
 
           {isEditable && (
             <Button 

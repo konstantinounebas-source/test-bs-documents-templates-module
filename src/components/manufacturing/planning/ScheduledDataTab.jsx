@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Plus, Trash2, Search, AlertCircle, Info } from 'lucide-react';
+import { Loader2, Plus, Trash2, Search, AlertCircle, Info, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { buildItemOperationMap, computeOpsPerPiece, getOperationBreakdown, parseMinutes } from '../standards/shared/calculateOperationsTime';
+import { exportScheduledDataToExcel } from '../standards/shared/exportToExcel';
 
 export default function ScheduledDataTab({ selectedDepartment, selectedBundle }) {
   const queryClient = useQueryClient();
@@ -831,6 +832,15 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
         </div>
 
         <div className="flex gap-2">
+          <Button 
+            onClick={() => exportScheduledDataToExcel(filteredLines, getProfileName, selectedDate, selectedBundle?.name)}
+            variant="outline" 
+            size="sm"
+            disabled={filteredLines.length === 0}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
           {selectedDate && (
             <>
               <Button onClick={() => setShowSaveTemplateDialog(true)} variant="outline" size="sm">

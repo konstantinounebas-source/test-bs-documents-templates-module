@@ -4,8 +4,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Plus, Trash2, Save } from 'lucide-react';
+import { Loader2, Plus, Trash2, Save, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import { exportDataTabToExcel } from './shared/exportToExcel';
 
 export default function DataTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
@@ -218,6 +219,15 @@ export default function DataTab({ bundle, isEditable }) {
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Standard Minutes Grid (Excel-like)</h3>
         <div className="flex gap-2">
+          <Button 
+            onClick={() => exportDataTabToExcel(gridRows, operationColumns, bundle?.name)}
+            variant="outline" 
+            size="sm"
+            disabled={gridRows.length === 0}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Export to Excel
+          </Button>
           {isEditable && (
             <>
               <Button onClick={addRow} variant="outline" size="sm" disabled={hasNoOperations}>

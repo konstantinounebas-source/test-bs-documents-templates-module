@@ -11,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Edit, AlertCircle, Loader2 } from "lucide-react";
+import { Plus, Trash2, Edit, AlertCircle, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { exportProfilesToExcel } from './shared/exportToExcel';
 
 export default function ProfilesTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
@@ -185,12 +186,23 @@ export default function ProfilesTab({ bundle, isEditable }) {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             Operation Profiles
-            {isEditable && (
-              <Button onClick={handleOpenAddDialog} size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Profile
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => exportProfilesToExcel(filteredProfiles, operations, bundle?.name)}
+                variant="outline"
+                size="sm"
+                disabled={filteredProfiles.length === 0}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export
               </Button>
-            )}
+              {isEditable && (
+                <Button onClick={handleOpenAddDialog} size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Profile
+                </Button>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
