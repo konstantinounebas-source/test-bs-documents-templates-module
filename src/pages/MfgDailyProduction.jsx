@@ -78,42 +78,41 @@ export default function MfgDailyProduction() {
     staleTime: 0
   });
 
-  // Calculate ops hours
+  // Calculate ops hours - same logic as OperationsTimeTab
   const opsHours = useMemo(() => {
     let totalMinutes = 0;
     batchLines.forEach(line => {
-      const profile = profileNames.find(p => 
-        opsData.find(op => op.item_code === line.item_code && op.operation_profile === p.name)
-      );
+      const opsForLine = opsData.filter(op => op.item_code === line.item_code);
+      let lineMinutes = 0;
       
-      if (profile) {
-        const profileOps = profile.operations_required || [];
-        let lineMinutes = 0;
-        profileOps.forEach(opId => {
+      opsForLine.forEach(op => {
+        const profile = profileNames.find(p => p.name === op.operation_profile);
+        if (profile) {
           const stdLine = stdSetLines.find(
-            sl => sl.item_code === line.item_code && sl.operation_id === opId
+            sl => sl.item_code === line.item_code && sl.profile_name === profile.name
           );
-          if (stdLine && stdLine.time_per_unit) {
-            lineMinutes += parseFloat(stdLine.time_per_unit);
+          if (stdLine && stdLine.time_minutes) {
+            lineMinutes += parseFloat(stdLine.time_minutes);
           }
-        });
-        totalMinutes += lineMinutes * (parseFloat(line.scheduled_qty) || 0);
-      }
+        }
+      });
+      
+      totalMinutes += lineMinutes * (parseFloat(line.scheduled_qty) || 0);
     });
     return (totalMinutes / 60).toFixed(2);
   }, [batchLines, profileNames, opsData, stdSetLines]);
 
-  // Calculate QC hours
+  // Calculate QC hours - same logic as QCActionsTab
   const qcHours = useMemo(() => {
     let totalMinutes = 0;
     qcLines.forEach(line => {
-      const qcRule = qcSetLines.find(
+      const qcSet = qcSetLines.find(
         ql => ql.item_code === line.item_code && 
              ql.qc_type === line.qc_type && 
              ql.qc_level === line.qc_level
       );
-      if (qcRule && qcRule.time_per_unit) {
-        totalMinutes += parseFloat(qcRule.time_per_unit) * (parseFloat(line.qty_affected) || 0);
+      if (qcSet && qcSet.time_minutes) {
+        totalMinutes += parseFloat(qcSet.time_minutes) * (parseFloat(line.qty_affected) || 0);
       }
     });
     return (totalMinutes / 60).toFixed(2);
