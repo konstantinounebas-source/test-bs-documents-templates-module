@@ -81,9 +81,6 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
       setSelectedBundle(null);
     }
   }, [selectedDepartment, allBundles]);
-
-  // Fetch item codes from DATA tab of source bundle for selected day (or default to selected bundle)
-  const activeBundleIdForCalculations = sourceBundleForDay?.id || selectedBundle?.id;
   
   const { data: dataLines = [], isLoading: dataLinesLoading, isFetched: dataLinesFetched } = useQuery({
     queryKey: ['StdSetLines', activeBundleIdForCalculations],
@@ -179,6 +176,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     if (!selectedDate || !currentDayHeader) return selectedBundle;
     return allBundles.find(b => b.id === currentDayHeader.source_bundle_id) || selectedBundle;
   }, [selectedDate, currentDayHeader, allBundles, selectedBundle]);
+
+  // Fetch item codes from DATA tab of source bundle for selected day (or default to selected bundle)
+  const activeBundleIdForCalculations = sourceBundleForDay?.id || selectedBundle?.id;
 
   // Fetch persons
   const { data: persons = [] } = useQuery({
