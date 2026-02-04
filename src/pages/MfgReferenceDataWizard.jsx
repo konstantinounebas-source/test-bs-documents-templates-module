@@ -127,7 +127,7 @@ export default function MfgReferenceDataWizard() {
       return;
     }
     toast.success("Reference data setup complete!");
-    navigate(createPageUrl("MfgStandardsWizard"));
+    navigate(createPageUrl("MfgStandardsManagement"));
   };
 
   const CurrentIcon = tabs.find(t => t.id === activeTab)?.icon || Database;

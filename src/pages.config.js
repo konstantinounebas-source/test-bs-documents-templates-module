@@ -84,7 +84,6 @@ import MfgReferenceDataWizard from './pages/MfgReferenceDataWizard';
 import MfgStandards from './pages/MfgStandards';
 import MfgStandardsData from './pages/MfgStandardsData';
 import MfgStandardsManagement from './pages/MfgStandardsManagement';
-import MfgStandardsWizard from './pages/MfgStandardsWizard';
 import MobileFieldWork from './pages/MobileFieldWork';
 import MyWorkday from './pages/MyWorkday';
 import MyWorkspaceUserGuide from './pages/MyWorkspaceUserGuide';
@@ -162,7 +161,6 @@ export const PAGES = {
     "MfgStandards": MfgStandards,
     "MfgStandardsData": MfgStandardsData,
     "MfgStandardsManagement": MfgStandardsManagement,
-    "MfgStandardsWizard": MfgStandardsWizard,
     "MobileFieldWork": MobileFieldWork,
     "MyWorkday": MyWorkday,
     "MyWorkspaceUserGuide": MyWorkspaceUserGuide,
