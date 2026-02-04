@@ -131,6 +131,18 @@ export default function OperationsTab({ batchId, department }) {
     onError: () => toast.error('Failed to add operation')
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Operations.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['Operations']);
+      setShowAddDialog(false);
+      setEditingLine(null);
+      setFormData({ item_code: '', entry_type: '', operation_profile: '', operation: '', qty_operation: '' });
+      toast.success('Operation updated');
+    },
+    onError: () => toast.error('Failed to update operation')
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Operations.delete(id),
     onSuccess: () => {
@@ -145,10 +157,35 @@ export default function OperationsTab({ batchId, department }) {
       toast.error('Item code and entry type are required');
       return;
     }
-    createMutation.mutate({
+
+    const data = {
       ...formData,
       qty_operation: parseFloat(formData.qty_operation) || 0
+    };
+
+    if (editingLine) {
+      updateMutation.mutate({ id: editingLine.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const handleEdit = (line) => {
+    setEditingLine(line);
+    setFormData({
+      item_code: line.item_code,
+      entry_type: line.entry_type,
+      operation_profile: line.operation_profile || '',
+      operation: line.operation || '',
+      qty_operation: line.qty_operation || ''
     });
+    setShowAddDialog(true);
+  };
+
+  const resetForm = () => {
+    setFormData({ item_code: '', entry_type: '', operation_profile: '', operation: '', qty_operation: '' });
+    setEditingLine(null);
+    setShowAddDialog(false);
   };
 
   if (isLoading) {
