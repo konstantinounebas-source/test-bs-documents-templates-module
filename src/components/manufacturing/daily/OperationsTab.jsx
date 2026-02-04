@@ -55,7 +55,10 @@ export default function OperationsTab({ batchId, department }) {
 
   const { data: profileNames = [] } = useQuery({
     queryKey: ['Operation_Profile_Name'],
-    queryFn: () => base44.entities.Operation_Profile_Name.list()
+    queryFn: async () => {
+      const all = await base44.entities.Operation_Profile_Name.list();
+      return all.filter(p => p.is_active !== false);
+    }
   });
 
   // Fetch batch header to get date and department for scheduled data lookup
