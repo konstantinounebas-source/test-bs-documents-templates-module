@@ -136,6 +136,14 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     staleTime: 0
   });
 
+  // Fetch daily target lines
+  const { data: dailyTargetLines = [] } = useQuery({
+    queryKey: ['DailyTargetLines', selectedBundle?.id],
+    queryFn: () => base44.entities.DailyTargetLines.filter({ bundle_id: selectedBundle.id }),
+    enabled: !!selectedBundle,
+    staleTime: 0
+  });
+
   // Fetch schedule templates
   const { data: templates = [] } = useQuery({
     queryKey: ['ScheduleTemplate', selectedBundle?.id],
@@ -296,13 +304,12 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
 
     let targetTotal = 0;
     if (selectedTargetType) {
-      const { data: targetLines = [] } = queryClient.getQueryData(['DailyTargetLines', selectedBundle?.id]) || {};
-      const typeTargets = (targetLines || []).filter(t => t.target_type === selectedTargetType);
+      const typeTargets = dailyTargetLines.filter(t => t.target_type === selectedTargetType);
       targetTotal = typeTargets.reduce((sum, t) => sum + (t.item_total_min || 0), 0);
     }
 
     return { opsTotal, qcTotal, grandTotal, targetTotal };
-  }, [selectedDate, filteredLines, selectedTargetType, selectedBundle]);
+  }, [selectedDate, filteredLines, selectedTargetType, dailyTargetLines]);
 
   // Calculate team summary
   const teamSummary = useMemo(() => {
