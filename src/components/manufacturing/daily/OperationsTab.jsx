@@ -55,7 +55,7 @@ export default function OperationsTab({ batchId, department }) {
 
   const { data: profileNames = [] } = useQuery({
     queryKey: ['Operation_Profile_Name'],
-    queryFn: () => base44.entities.Operation_Profile_Name.filter({ is_active: true })
+    queryFn: () => base44.entities.Operation_Profile_Name.list()
   });
 
   // Fetch batch header to get date and department for scheduled data lookup
@@ -172,6 +172,7 @@ export default function OperationsTab({ batchId, department }) {
 
   const handleEdit = (line) => {
     setEditingLine(line);
+    // When editing, only get operations/profiles from the currently selected entry type
     setFormData({
       item_code: line.item_code,
       entry_type: line.entry_type,
