@@ -1938,7 +1938,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div>
-              <Label>Source Bundle</Label>
+              <Label>Source Bundle for {selectedDate}</Label>
               {dataLinesLoading ? (
                 <div className="flex items-center h-10 px-3 border border-input rounded-md bg-slate-50">
                   <Loader2 className="w-4 h-4 animate-spin text-slate-500 mr-2" />
@@ -1950,9 +1950,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                     <SelectValue placeholder="Select bundle" />
                   </SelectTrigger>
                   <SelectContent>
-                    {allBundles.map(b => (
+                    {allBundles.filter(b => b.department === selectedDepartment).map(b => (
                       <SelectItem key={b.id} value={b.id}>
-                        {b.version ? `v${b.version}` : 'v-'} - {b.name} ({b.status})
+                        {selectedDepartment} – v{b.version || '?'} ({b.status})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1962,7 +1962,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                 const bundle = allBundles.find(b => b.id === tempSourceBundleId);
                 return bundle ? (
                   <p className="text-sm text-slate-600 mt-2">
-                    Selected: <span className="font-semibold">v{bundle.version} - {bundle.name} ({bundle.status})</span>
+                    <span className="font-semibold">v{bundle.version || '?'} - {bundle.name} ({bundle.status})</span>
                   </p>
                 ) : null;
               })()}
