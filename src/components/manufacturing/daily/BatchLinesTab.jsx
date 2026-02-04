@@ -146,13 +146,38 @@ export default function BatchLinesTab({ batchId, department }) {
       toast.error('Item code is required');
       return;
     }
-    createMutation.mutate({
+
+    const data = {
       item_code: formData.item_code,
       scheduled_qty: parseFloat(formData.scheduled_qty) || 0,
       qty_processed: parseFloat(formData.qty_processed) || 0,
       qty_out_good: parseFloat(formData.qty_out_good) || 0,
       qty_scrap: parseFloat(formData.qty_scrap) || 0
+    };
+
+    if (editingLine) {
+      updateMutation.mutate({ id: editingLine.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const handleEdit = (line) => {
+    setEditingLine(line);
+    setFormData({
+      item_code: line.item_code,
+      scheduled_qty: line.scheduled_qty || '',
+      qty_processed: line.qty_processed || '',
+      qty_out_good: line.qty_out_good || '',
+      qty_scrap: line.qty_scrap || ''
     });
+    setShowAddDialog(true);
+  };
+
+  const resetForm = () => {
+    setFormData({ item_code: '', scheduled_qty: '', qty_processed: '', qty_out_good: '', qty_scrap: '' });
+    setEditingLine(null);
+    setShowAddDialog(false);
   };
 
   if (isLoading) {
@@ -221,14 +246,19 @@ export default function BatchLinesTab({ batchId, department }) {
                   <TableCell>{line.qty_out_good || 0}</TableCell>
                   <TableCell>{line.qty_scrap || 0}</TableCell>
                   <TableCell>
-                    <Button
-                      onClick={() => deleteMutation.mutate(line.id)}
-                      variant="ghost"
-                      size="icon"
-                      disabled={deleteMutation.isPending}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(line)}>
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        onClick={() => deleteMutation.mutate(line.id)}
+                        variant="ghost"
+                        size="icon"
+                        disabled={deleteMutation.isPending}
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -237,11 +267,16 @@ export default function BatchLinesTab({ batchId, department }) {
         </Table>
       </div>
 
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog open={showAddDialog} onOpenChange={(open) => {
+        if (!open) resetForm();
+        setShowAddDialog(open);
+      }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Batch Line</DialogTitle>
-            <DialogDescription>Add production quantities for an item</DialogDescription>
+            <DialogTitle>{editingLine ? 'Edit Batch Line' : 'Add Batch Line'}</DialogTitle>
+            <DialogDescription>
+              {editingLine ? 'Update production quantities for this item' : 'Add production quantities for an item'}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -303,10 +338,16 @@ export default function BatchLinesTab({ batchId, department }) {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={createMutation.isPending}>
-              {createMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-              Add
+            <Button variant="outline" onClick={resetForm}>Cancel</Button>
+            <Button onClick={handleAdd} disabled={createMutation.isPending || updateMutation.isPending}>
+              {createMutation.isPending || updateMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : editingLine ? (
+                <Edit2 className="w-4 h-4 mr-2" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
+              {editingLine ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>
         </DialogContent>
