@@ -192,37 +192,19 @@ export default function TeamTimePersonsTab({ batchId }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>From Time *</Label>
-                <Select value={formData.from_time} onValueChange={(v) => setFormData({ ...formData, from_time: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select start time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 35 }, (_, i) => {
-                      const hours = 7 + Math.floor(i / 2);
-                      const minutes = i % 2 === 0 ? '00' : '30';
-                      if (hours > 15 || (hours === 15 && minutes === '30')) return null;
-                      const time = `${String(hours).padStart(2, '0')}:${minutes}`;
-                      return <SelectItem key={time} value={time}>{time}</SelectItem>;
-                    }).filter(Boolean)}
-                  </SelectContent>
-                </Select>
+                <Input
+                  type="time"
+                  value={formData.from_time}
+                  onChange={(e) => setFormData({ ...formData, from_time: e.target.value })}
+                />
               </div>
               <div>
                 <Label>To Time *</Label>
-                <Select value={formData.to_time} onValueChange={(v) => setFormData({ ...formData, to_time: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select end time" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 35 }, (_, i) => {
-                      const hours = 7 + Math.floor(i / 2);
-                      const minutes = i % 2 === 0 ? '00' : '30';
-                      if (hours > 15 || (hours === 15 && minutes === '30')) return null;
-                      const time = `${String(hours).padStart(2, '0')}:${minutes}`;
-                      return <SelectItem key={time} value={time}>{time}</SelectItem>;
-                    }).filter(Boolean)}
-                  </SelectContent>
-                </Select>
+                <Input
+                  type="time"
+                  value={formData.to_time}
+                  onChange={(e) => setFormData({ ...formData, to_time: e.target.value })}
+                />
               </div>
             </div>
 
