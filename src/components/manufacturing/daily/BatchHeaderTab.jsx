@@ -254,6 +254,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Dept</TableHead>
+                    <TableHead>Bundle</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
