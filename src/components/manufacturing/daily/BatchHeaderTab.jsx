@@ -128,6 +128,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
 
   const handleEdit = (batch) => {
     setEditingBatch(batch);
+    setSelectedDepartment(batch.department);
     setFormData({
       date: batch.date,
       department: batch.department,
