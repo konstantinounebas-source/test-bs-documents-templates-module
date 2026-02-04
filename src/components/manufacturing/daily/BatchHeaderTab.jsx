@@ -222,7 +222,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
                 <SelectContent>
                   {allBundles.map(b => (
                     <SelectItem key={b.id} value={b.id}>
-                      v{b.version || '?'} ({b.status})
+                      {b.version_no || b.version || '?'} ({b.status})
                     </SelectItem>
                   ))}
                 </SelectContent>
