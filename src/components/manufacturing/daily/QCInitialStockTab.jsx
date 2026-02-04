@@ -17,15 +17,12 @@ function useBatchItemCodes(batchId, department) {
     queryFn: async () => {
       if (!batchId || !department) return [];
       
-      const bundles = await base44.entities.StandardsBundle.filter({ 
-        department: department,
-        status: 'ACTIVE'
-      });
+      // Get batch header to get its bundle_id
+      const batch = await base44.entities.Batch_Header.filter({ id: batchId });
+      if (!batch || batch.length === 0) return [];
       
-      if (bundles.length === 0) return [];
-      
-      const activeBundle = bundles[0];
-      const lines = await base44.entities.StdSetLines.filter({ bundle_id: activeBundle.id });
+      const bundleId = batch[0].bundle_id;
+      const lines = await base44.entities.StdSetLines.filter({ bundle_id: bundleId });
       
       const uniqueItemCodes = [...new Set(lines.map(l => l.item_code))].filter(Boolean);
       return uniqueItemCodes.sort();
@@ -60,11 +57,59 @@ export default function QCInitialStockTab({ batchId, department }) {
     queryFn: () => base44.entities.QCLevel.filter({ is_active: true })
   });
 
+  // Fetch batch header to get date and department for scheduled data lookup
+  const { data: batchHeader } = useQuery({
+    queryKey: ['Batch_Header', batchId],
+    queryFn: () => base44.entities.Batch_Header.filter({ id: batchId }),
+    enabled: !!batchId,
+    select: (data) => data?.[0]
+  });
+
+  // Fetch scheduled data for auto-filling QC records
+  const { data: scheduledData = [] } = useQuery({
+    queryKey: ['ScheduledData', batchHeader?.date, batchHeader?.department],
+    queryFn: () => base44.entities.ScheduledData.filter({
+      date: batchHeader.date,
+      department_id: batchHeader.department
+    }),
+    enabled: !!batchHeader?.date && !!batchHeader?.department,
+    staleTime: 0
+  });
+
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['QC_Initial_Stock', batchId],
     queryFn: () => base44.entities.QC_Initial_Stock.filter({ batch_header_id: batchId }),
-    enabled: !!batchId
+    enabled: !!batchId,
+    staleTime: 0
   });
+
+  // Auto-fill QC initial stock from scheduled data (only on initial load)
+  useMemo(() => {
+    if (!batchId || lines.length > 0 || scheduledData.length === 0) return;
+
+    // Create QC records from scheduled data that have QC qty
+    const autoFillLines = scheduledData
+      .filter(sd => sd.qc_qty && sd.qc_qty > 0)
+      .map(sd => ({
+        batch_header_id: batchId,
+        item_code: sd.item_code,
+        qc_type: sd.qc_type || '',
+        qc_level: sd.qc_level || '',
+        qty_affected: sd.qc_qty
+      }));
+
+    if (autoFillLines.length === 0) return;
+
+    // Create all lines
+    Promise.all(autoFillLines.map(line =>
+      base44.entities.QC_Initial_Stock.create(line)
+    )).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['QC_Initial_Stock', batchId] });
+      toast.success(`Auto-filled ${autoFillLines.length} QC records from schedule`);
+    }).catch(() => {
+      // Silent fail on auto-fill
+    });
+  }, [batchId, lines.length, scheduledData, queryClient]);
 
   const filteredLines = useMemo(() => {
     if (!searchFilter) return lines;
@@ -86,6 +131,18 @@ export default function QCInitialStockTab({ batchId, department }) {
     onError: () => toast.error('Failed to add QC initial stock')
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.QC_Initial_Stock.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['QC_Initial_Stock']);
+      setShowAddDialog(false);
+      setEditingLine(null);
+      setFormData({ item_code: '', qc_type: '', qc_level: '', qty_affected: '' });
+      toast.success('QC initial stock updated');
+    },
+    onError: () => toast.error('Failed to update QC initial stock')
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.QC_Initial_Stock.delete(id),
     onSuccess: () => {
@@ -100,10 +157,34 @@ export default function QCInitialStockTab({ batchId, department }) {
       toast.error('All fields are required');
       return;
     }
-    createMutation.mutate({
+
+    const data = {
       ...formData,
       qty_affected: parseFloat(formData.qty_affected)
+    };
+
+    if (editingLine) {
+      updateMutation.mutate({ id: editingLine.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const handleEdit = (line) => {
+    setEditingLine(line);
+    setFormData({
+      item_code: line.item_code,
+      qc_type: line.qc_type,
+      qc_level: line.qc_level,
+      qty_affected: line.qty_affected || ''
     });
+    setShowAddDialog(true);
+  };
+
+  const resetForm = () => {
+    setFormData({ item_code: '', qc_type: '', qc_level: '', qty_affected: '' });
+    setEditingLine(null);
+    setShowAddDialog(false);
   };
 
   if (isLoading) {
