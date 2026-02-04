@@ -1971,11 +1971,15 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                     <SelectValue placeholder="Select bundle" />
                   </SelectTrigger>
                   <SelectContent>
-                    {allBundles.filter(b => b.department === selectedDepartment).map(b => (
-                      <SelectItem key={b.id} value={b.id}>
-                        {selectedDepartment} – v{b.version || '?'} ({b.status})
-                      </SelectItem>
-                    ))}
+                    {allBundles.length === 0 ? (
+                      <div className="p-2 text-sm text-slate-500">No bundles found for {selectedDepartment}</div>
+                    ) : (
+                      allBundles.map(b => (
+                        <SelectItem key={b.id} value={b.id}>
+                          {selectedDepartment} – v{b.version || '?'} ({b.status})
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               )}
