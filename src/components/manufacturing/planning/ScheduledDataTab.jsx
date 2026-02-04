@@ -19,8 +19,16 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
+  const [showLoadTemplateDialog, setShowLoadTemplateDialog] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [editingRecord, setEditingRecord] = useState(null);
   const [searchFilter, setSearchFilter] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTargetType, setSelectedTargetType] = useState('');
+  const [templateName, setTemplateName] = useState('');
+  const [loadToDate, setLoadToDate] = useState('');
   const [formData, setFormData] = useState({
     date: '',
     operation_profile_id: '',
@@ -29,7 +37,8 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     qc_level: '',
     ops_qty: '',
     qc_qty: '0',
-    notes: ''
+    notes: '',
+    assigned_persons: []
   });
 
   // Fetch item codes from DATA tab of selected bundle
@@ -108,6 +117,29 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     staleTime: 0
   });
 
+  // Fetch persons
+  const { data: persons = [] } = useQuery({
+    queryKey: ['Person'],
+    queryFn: () => base44.entities.Person.filter({ is_active: true }),
+    staleTime: 0
+  });
+
+  // Fetch target types
+  const { data: targetTypes = [] } = useQuery({
+    queryKey: ['TargetType', selectedBundle?.id],
+    queryFn: () => base44.entities.TargetType.filter({ bundle_id: selectedBundle.id }),
+    enabled: !!selectedBundle,
+    staleTime: 0
+  });
+
+  // Fetch schedule templates
+  const { data: templates = [] } = useQuery({
+    queryKey: ['ScheduleTemplate', selectedBundle?.id],
+    queryFn: () => base44.entities.ScheduleTemplate.filter({ bundle_id: selectedBundle.id }),
+    enabled: !!selectedBundle,
+    staleTime: 0
+  });
+
   // Calculate per-piece and total times (REUSES Daily Targets engine)
   const calculateTimes = (itemCode, profileId, opsQty, qcQty, qcType, qcLevel, isDebugRecord = false) => {
     // Check if data is ready
@@ -179,21 +211,27 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     return { ops_per_piece_min, ops_total_min, qc_per_piece_min, qc_total_min, grand_total_min };
   };
 
-  // Filtered lines with recalculated values (Step 1: One-shot debug)
+  // Filtered lines with recalculated values
   const filteredLines = useMemo(() => {
-    // Step 2: Only calculate if all data is ready
     if (!dataPivotReady || !profilesReady || !qcRulesReady) {
-      return lines; // Return raw lines without calculation
+      return lines;
     }
 
-    const filtered = searchFilter 
-      ? lines.filter(l => {
-          const term = searchFilter.toLowerCase();
-          return l.item_code?.toLowerCase().includes(term) || l.date?.includes(term);
-        })
-      : lines;
+    let filtered = lines;
+    
+    // Filter by date if selected
+    if (selectedDate) {
+      filtered = filtered.filter(l => l.date === selectedDate);
+    }
+    
+    // Filter by search
+    if (searchFilter) {
+      const term = searchFilter.toLowerCase();
+      filtered = filtered.filter(l => 
+        l.item_code?.toLowerCase().includes(term) || l.date?.includes(term)
+      );
+    }
 
-    // Recalculate times for each line on-the-fly
     const recalculated = filtered.map((line, index) => {
       const isFirstRecord = index === 0 && filtered.length > 0;
       const computed = calculateTimes(
@@ -203,7 +241,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
         line.qc_qty,
         line.qc_type,
         line.qc_level,
-        isFirstRecord // Enable debug for first record
+        isFirstRecord
       );
       return {
         ...line,
@@ -212,7 +250,31 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     });
 
     return recalculated;
-  }, [lines, searchFilter, dataLines, allProfiles, qcSetLines, dataPivotReady, profilesReady, qcRulesReady]);
+  }, [lines, searchFilter, selectedDate, dataLines, allProfiles, qcSetLines, dataPivotReady, profilesReady, qcRulesReady]);
+
+  // Get unique dates from lines
+  const availableDates = useMemo(() => {
+    return [...new Set(lines.map(l => l.date))].sort();
+  }, [lines]);
+
+  // Calculate daily summary
+  const dailySummary = useMemo(() => {
+    if (!selectedDate) return null;
+    
+    const dateLines = filteredLines.filter(l => l.date === selectedDate);
+    const opsTotal = dateLines.reduce((sum, l) => sum + (l.ops_total_min || 0), 0);
+    const qcTotal = dateLines.reduce((sum, l) => sum + (l.qc_total_min || 0), 0);
+    const grandTotal = opsTotal + qcTotal;
+
+    let targetTotal = 0;
+    if (selectedTargetType) {
+      const { data: targetLines = [] } = queryClient.getQueryData(['DailyTargetLines', selectedBundle?.id]) || {};
+      const typeTargets = (targetLines || []).filter(t => t.target_type === selectedTargetType);
+      targetTotal = typeTargets.reduce((sum, t) => sum + (t.item_total_min || 0), 0);
+    }
+
+    return { opsTotal, qcTotal, grandTotal, targetTotal };
+  }, [selectedDate, filteredLines, selectedTargetType, selectedBundle]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -264,6 +326,63 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     },
     onError: (error) => {
       toast.error('Failed to delete: ' + error.message);
+    }
+  });
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }) => {
+      await base44.entities.ScheduledData.update(id, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ScheduledData'] });
+      setShowEditDialog(false);
+      setEditingRecord(null);
+      toast.success('Scheduled data updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update: ' + error.message);
+    }
+  });
+
+  // Save template mutation
+  const saveTemplateMutation = useMutation({
+    mutationFn: async ({ name, data }) => {
+      await base44.entities.ScheduleTemplate.create({
+        bundle_id: selectedBundle.id,
+        template_name: name,
+        template_data: data
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ScheduleTemplate'] });
+      setShowSaveTemplateDialog(false);
+      setTemplateName('');
+      toast.success('Template saved');
+    },
+    onError: (error) => {
+      toast.error('Failed to save template: ' + error.message);
+    }
+  });
+
+  // Load template mutation
+  const loadTemplateMutation = useMutation({
+    mutationFn: async ({ templateData, targetDate }) => {
+      const records = templateData.map(item => ({
+        ...item,
+        date: targetDate,
+        bundle_id: selectedBundle.id
+      }));
+      await Promise.all(records.map(r => base44.entities.ScheduledData.create(r)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ScheduledData'] });
+      setShowLoadTemplateDialog(false);
+      setLoadToDate('');
+      toast.success('Template loaded');
+    },
+    onError: (error) => {
+      toast.error('Failed to load template: ' + error.message);
     }
   });
 
@@ -327,6 +446,83 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     });
 
     createMutation.mutate(records);
+  };
+
+  const handleEdit = (record) => {
+    setEditingRecord(record);
+    setShowEditDialog(true);
+  };
+
+  const handleUpdateRecord = () => {
+    if (!editingRecord) return;
+
+    const opsQty = parseFloat(editingRecord.ops_qty);
+    if (isNaN(opsQty) || opsQty <= 0) {
+      toast.error('Ops Qty must be greater than 0');
+      return;
+    }
+
+    let qcQty = parseFloat(editingRecord.qc_qty);
+    if (isNaN(qcQty) || qcQty === 0) {
+      qcQty = opsQty;
+    }
+
+    const times = calculateTimes(
+      editingRecord.item_code,
+      editingRecord.operation_profile_id,
+      opsQty,
+      qcQty,
+      editingRecord.qc_type,
+      editingRecord.qc_level
+    );
+
+    updateMutation.mutate({
+      id: editingRecord.id,
+      data: {
+        ...editingRecord,
+        ops_qty: opsQty,
+        qc_qty: qcQty,
+        ...times
+      }
+    });
+  };
+
+  const handleSaveTemplate = () => {
+    if (!templateName.trim()) {
+      toast.error('Template name is required');
+      return;
+    }
+
+    if (!selectedDate) {
+      toast.error('Please select a date first');
+      return;
+    }
+
+    const dateLines = lines.filter(l => l.date === selectedDate);
+    if (dateLines.length === 0) {
+      toast.error('No scheduled data for selected date');
+      return;
+    }
+
+    // Remove date and IDs from template data
+    const templateData = dateLines.map(({ id, date, bundle_id, created_date, updated_date, created_by, ...rest }) => rest);
+
+    saveTemplateMutation.mutate({
+      name: templateName.trim(),
+      data: templateData
+    });
+  };
+
+  const handleLoadTemplate = (template) => {
+    if (!loadToDate) {
+      toast.error('Please select target date');
+      return;
+    }
+
+    loadTemplateMutation.mutate({
+      templateData: template.template_data,
+      targetDate: loadToDate
+    });
   };
 
   const handleRowClick = (record) => {
@@ -433,29 +629,94 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
         </Alert>
       )}
 
-      <div className="flex justify-between items-center gap-4">
+      <div className="flex justify-between items-center gap-4 flex-wrap">
         <h3 className="text-lg font-semibold">Scheduled Data</h3>
-        <div className="flex gap-2 items-center flex-1 max-w-md">
-          <div className="relative flex-1">
+        
+        <div className="flex gap-2 items-center">
+          <Select value={selectedDate} onValueChange={setSelectedDate}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Select date" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>All Dates</SelectItem>
+              {availableDates.map(date => (
+                <SelectItem key={date} value={date}>{date}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
-              placeholder="Filter by item code or date..."
+              placeholder="Filter..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="pl-9"
+              className="pl-9 w-40"
             />
           </div>
         </div>
-        <Button 
-          onClick={() => setShowAddDialog(true)} 
-          variant="outline" 
-          size="sm"
-          disabled={!hasItemCodes || profiles.length === 0}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Scheduled Data
-        </Button>
+
+        <div className="flex gap-2">
+          {selectedDate && (
+            <>
+              <Button onClick={() => setShowSaveTemplateDialog(true)} variant="outline" size="sm">
+                Save Template
+              </Button>
+              <Button onClick={() => setShowLoadTemplateDialog(true)} variant="outline" size="sm">
+                Load Template
+              </Button>
+            </>
+          )}
+          <Button 
+            onClick={() => setShowAddDialog(true)} 
+            variant="outline" 
+            size="sm"
+            disabled={!hasItemCodes || profiles.length === 0}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add
+          </Button>
+        </div>
       </div>
+
+      {/* Daily Summary */}
+      {selectedDate && dailySummary && (
+        <Card className="bg-blue-50">
+          <CardContent className="pt-4">
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <p className="text-sm text-slate-600">Ops Total</p>
+                <p className="text-xl font-bold">{dailySummary.opsTotal.toFixed(2)} min</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">QC Total</p>
+                <p className="text-xl font-bold">{dailySummary.qcTotal.toFixed(2)} min</p>
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">Grand Total</p>
+                <p className="text-xl font-bold text-blue-700">{dailySummary.grandTotal.toFixed(2)} min</p>
+              </div>
+              <div>
+                <Label className="text-sm">Target Type</Label>
+                <Select value={selectedTargetType} onValueChange={setSelectedTargetType}>
+                  <SelectTrigger className="h-8">
+                    <SelectValue placeholder="Compare" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>None</SelectItem>
+                    {targetTypes.map(tt => (
+                      <SelectItem key={tt.id} value={tt.name}>{tt.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedTargetType && (
+                  <p className="text-lg font-semibold mt-1">{dailySummary.targetTotal.toFixed(2)} min</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="border rounded-lg overflow-auto bg-white shadow-sm">
         <Table>
@@ -463,12 +724,10 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
             <TableRow className="bg-slate-50">
               <TableHead className="font-semibold">Date</TableHead>
               <TableHead className="font-semibold">Item Code</TableHead>
-              <TableHead className="font-semibold">Operation Profile</TableHead>
+              <TableHead className="font-semibold">Profile</TableHead>
+              <TableHead className="font-semibold">Persons</TableHead>
               <TableHead className="font-semibold text-right">Ops Qty</TableHead>
-              <TableHead className="font-semibold text-right">QC Qty</TableHead>
-              <TableHead className="font-semibold text-right">Ops Per-piece</TableHead>
               <TableHead className="font-semibold text-right">Ops Total</TableHead>
-              <TableHead className="font-semibold text-right">QC Per-piece</TableHead>
               <TableHead className="font-semibold text-right">QC Total</TableHead>
               <TableHead className="font-semibold text-right">Grand Total</TableHead>
               <TableHead className="font-semibold">Actions</TableHead>
@@ -485,28 +744,36 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
               filteredLines.map(line => (
                 <TableRow 
                   key={line.id} 
-                  className="hover:bg-slate-50 cursor-pointer"
-                  onClick={() => handleRowClick(line)}
+                  className="hover:bg-slate-50"
                 >
                   <TableCell className="font-medium">{line.date}</TableCell>
                   <TableCell className="font-medium">{line.item_code}</TableCell>
-                  <TableCell>{getProfileName(line.operation_profile_id)}</TableCell>
+                  <TableCell className="text-sm">{getProfileName(line.operation_profile_id)}</TableCell>
+                  <TableCell className="text-xs">
+                    {line.assigned_persons?.length > 0 ? line.assigned_persons.join(', ') : '—'}
+                  </TableCell>
                   <TableCell className="text-right font-mono">{line.ops_qty}</TableCell>
-                  <TableCell className="text-right font-mono">{line.qc_qty}</TableCell>
-                  <TableCell className="text-right font-mono">{(line.ops_per_piece_min || 0).toFixed(2)}</TableCell>
                   <TableCell className="text-right font-mono">{(line.ops_total_min || 0).toFixed(2)}</TableCell>
-                  <TableCell className="text-right font-mono">{(line.qc_per_piece_min || 0).toFixed(2)}</TableCell>
                   <TableCell className="text-right font-mono">{(line.qc_total_min || 0).toFixed(2)}</TableCell>
                   <TableCell className="text-right font-mono font-semibold">{(line.grand_total_min || 0).toFixed(2)}</TableCell>
                   <TableCell onClick={(e) => e.stopPropagation()}>
-                    <Button
-                      onClick={() => deleteMutation.mutate(line.id)}
-                      variant="ghost"
-                      size="icon"
-                      disabled={deleteMutation.isPending}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button onClick={() => handleEdit(line)} variant="ghost" size="sm">
+                        Edit
+                      </Button>
+                      <Button onClick={() => handleRowClick(line)} variant="ghost" size="sm">
+                        <Info className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          if (confirm('Delete?')) deleteMutation.mutate(line.id);
+                        }}
+                        variant="ghost"
+                        size="icon"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -624,6 +891,32 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                   placeholder="Leave blank to use Ops Qty"
                 />
               </div>
+            </div>
+
+            <div>
+              <Label>Assigned Persons (Multi-select)</Label>
+              <MultiSelect
+                options={persons.map(p => ({ value: p.name, label: p.name }))}
+                selected={formData.assigned_persons}
+                onChange={(selected) => setFormData({ ...formData, assigned_persons: selected })}
+                placeholder="Select persons"
+              />
+              <Input
+                placeholder="Or type additional person name"
+                className="mt-2"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.target.value.trim()) {
+                    const newPerson = e.target.value.trim();
+                    if (!formData.assigned_persons.includes(newPerson)) {
+                      setFormData({ 
+                        ...formData, 
+                        assigned_persons: [...formData.assigned_persons, newPerson] 
+                      });
+                    }
+                    e.target.value = '';
+                  }
+                }}
+              />
             </div>
 
             <div>
@@ -773,6 +1066,137 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Scheduled Data</DialogTitle>
+          </DialogHeader>
+
+          {editingRecord && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Date</Label>
+                  <Input type="date" value={editingRecord.date} onChange={(e) => setEditingRecord({...editingRecord, date: e.target.value})} />
+                </div>
+                <div>
+                  <Label>Item Code</Label>
+                  <Input value={editingRecord.item_code} disabled />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Ops Qty</Label>
+                  <Input type="number" step="0.01" value={editingRecord.ops_qty} onChange={(e) => setEditingRecord({...editingRecord, ops_qty: e.target.value})} />
+                </div>
+                <div>
+                  <Label>QC Qty</Label>
+                  <Input type="number" step="0.01" value={editingRecord.qc_qty} onChange={(e) => setEditingRecord({...editingRecord, qc_qty: e.target.value})} />
+                </div>
+              </div>
+
+              <div>
+                <Label>Assigned Persons</Label>
+                <MultiSelect
+                  options={persons.map(p => ({ value: p.name, label: p.name }))}
+                  selected={editingRecord.assigned_persons || []}
+                  onChange={(selected) => setEditingRecord({ ...editingRecord, assigned_persons: selected })}
+                  placeholder="Select persons"
+                />
+              </div>
+
+              <div>
+                <Label>Notes</Label>
+                <Textarea value={editingRecord.notes || ''} onChange={(e) => setEditingRecord({...editingRecord, notes: e.target.value})} rows={3} />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+            <Button onClick={handleUpdateRecord}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Save Template Dialog */}
+      <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Schedule as Template</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Template Name *</Label>
+              <Input
+                placeholder="e.g., Standard Monday Schedule"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+              />
+            </div>
+            <Alert>
+              <Info className="w-4 h-4" />
+              <AlertDescription>
+                This will save all scheduled data for {selectedDate} as a reusable template (without date).
+              </AlertDescription>
+            </Alert>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveTemplateDialog(false)}>Cancel</Button>
+            <Button onClick={handleSaveTemplate}>Save Template</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Load Template Dialog */}
+      <Dialog open={showLoadTemplateDialog} onOpenChange={setShowLoadTemplateDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Load Schedule Template</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Target Date *</Label>
+              <Input
+                type="date"
+                value={loadToDate}
+                onChange={(e) => setLoadToDate(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label>Select Template</Label>
+              <div className="border rounded-lg divide-y max-h-96 overflow-auto">
+                {templates.length === 0 ? (
+                  <p className="text-center text-slate-500 py-8">No templates saved yet</p>
+                ) : (
+                  templates.map(template => (
+                    <div key={template.id} className="p-4 hover:bg-slate-50 flex justify-between items-center">
+                      <div>
+                        <p className="font-medium">{template.template_name}</p>
+                        <p className="text-sm text-slate-500">{template.template_data.length} items</p>
+                      </div>
+                      <Button
+                        onClick={() => handleLoadTemplate(template)}
+                        disabled={!loadToDate}
+                        size="sm"
+                      >
+                        Load
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLoadTemplateDialog(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
