@@ -405,7 +405,7 @@ export default function OperationsTab({ batchId, department }) {
               </div>
             )}
 
-            {(formData.entry_type === 'OPERATION' || formData.entry_type === 'PROFILE') && (
+            {formData.entry_type === 'OPERATION' && (
               <div>
                 <Label>Operation Profile</Label>
                 <Select value={formData.operation_profile} onValueChange={(v) => setFormData({ ...formData, operation_profile: v })}>
@@ -479,12 +479,6 @@ export default function OperationsTab({ batchId, department }) {
                   value={formData.qty_operation}
                   onChange={(e) => setFormData({ ...formData, qty_operation: e.target.value })}
                 />
-              </div>
-            )}
-
-            {formData.entry_type === 'OPERATION' && !formData.operation_profile && (
-              <div className="text-sm text-slate-500 text-center py-4">
-                Select an Operation Profile above to see operations
               </div>
             )}
           </div>
