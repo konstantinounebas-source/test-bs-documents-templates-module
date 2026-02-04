@@ -407,29 +407,80 @@ export default function OperationsTab({ batchId, department }) {
 
             {formData.entry_type === 'OPERATION' && (
               <div>
-                <Label>Operation</Label>
-                <Select value={formData.operation} onValueChange={(v) => setFormData({ ...formData, operation: v })}>
+                <Label>Operation Profile</Label>
+                <Select value={formData.operation_profile} onValueChange={(v) => setFormData({ ...formData, operation_profile: v })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select operation" />
+                    <SelectValue placeholder="Select profile" />
                   </SelectTrigger>
                   <SelectContent>
-                    {operations.map(op => (
-                      <SelectItem key={op.id} value={op.name}>{op.name}</SelectItem>
+                    {profileNames.map(pn => (
+                      <SelectItem key={pn.id} value={pn.name}>{pn.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
             )}
 
-            <div>
-              <Label>Qty Operation</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.qty_operation}
-                onChange={(e) => setFormData({ ...formData, qty_operation: e.target.value })}
-              />
-            </div>
+            {formData.entry_type === 'OPERATION' && formData.operation_profile && (
+              <div>
+                <Label>Select Operations</Label>
+                <div className="border rounded-lg p-3 max-h-64 overflow-y-auto space-y-3 bg-slate-50">
+                  {operationsForProfile.length === 0 ? (
+                    <p className="text-sm text-slate-500">No operations in this profile</p>
+                  ) : (
+                    operationsForProfile.map(op => (
+                      <div key={op.id} className="flex items-end gap-2">
+                        <Checkbox
+                          checked={selectedOperations[op.id] > 0}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedOperations(prev => ({ ...prev, [op.id]: 1 }));
+                            } else {
+                              const { [op.id]: _, ...rest } = selectedOperations;
+                              setSelectedOperations(rest);
+                            }
+                          }}
+                          id={`op-${op.id}`}
+                        />
+                        <label htmlFor={`op-${op.id}`} className="text-sm flex-1 cursor-pointer">
+                          {op.name}
+                        </label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={selectedOperations[op.id] || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) {
+                              setSelectedOperations(prev => ({ ...prev, [op.id]: parseFloat(val) || 0 }));
+                            } else {
+                              const { [op.id]: _, ...rest } = selectedOperations;
+                              setSelectedOperations(rest);
+                            }
+                          }}
+                          disabled={!selectedOperations[op.id]}
+                          placeholder="0"
+                          className="w-20"
+                        />
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+            {formData.entry_type === 'PROFILE' && (
+              <div>
+                <Label>Qty Operation</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.qty_operation}
+                  onChange={(e) => setFormData({ ...formData, qty_operation: e.target.value })}
+                />
+              </div>
+            )}
           </div>
 
           <DialogFooter>
