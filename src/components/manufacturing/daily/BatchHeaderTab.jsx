@@ -99,6 +99,17 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
   const resetForm = () => {
     setFormData({ date: '', department: '', bundle_id: '', notes: '' });
     setEditingBatch(null);
+    setShowCreateDialog(false);
+  };
+
+  const handleCreateBatch = (dateStr) => {
+    setShowCreateDialog(true);
+    setFormData({
+      date: dateStr,
+      department: selectedDepartment,
+      bundle_id: defaultBundleId,
+      notes: ''
+    });
   };
 
   const handleSubmit = (e) => {
