@@ -60,6 +60,19 @@ export default function OperationsTab({ batchId, department }) {
     queryFn: () => base44.entities.OperationProfileName.list()
   });
 
+  // Get operations for selected profile when entry_type is OPERATION
+  const operationsForProfile = useMemo(() => {
+    if (formData.entry_type !== 'OPERATION' || !formData.operation_profile) return [];
+    
+    const profile = profileNames.find(p => p.name === formData.operation_profile);
+    if (!profile || !profile.operations_required) return [];
+    
+    // Map operation IDs to operation details
+    return profile.operations_required
+      .map(opId => operations.find(op => op.id === opId))
+      .filter(Boolean);
+  }, [formData.entry_type, formData.operation_profile, profileNames, operations]);
+
   // Fetch batch header to get date and department for scheduled data lookup
   const { data: batchHeader } = useQuery({
     queryKey: ['Batch_Header', batchId],
