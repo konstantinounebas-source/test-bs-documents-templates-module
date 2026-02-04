@@ -86,32 +86,6 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     staleTime: 0
   });
 
-  // Filtered lines with recalculated values
-  const filteredLines = useMemo(() => {
-    const filtered = searchFilter 
-      ? lines.filter(l => {
-          const term = searchFilter.toLowerCase();
-          return l.item_code?.toLowerCase().includes(term) || l.date?.includes(term);
-        })
-      : lines;
-
-    // Recalculate times for each line on-the-fly
-    return filtered.map(line => {
-      const recalculated = calculateTimes(
-        line.item_code,
-        line.operation_profile_id,
-        line.ops_qty,
-        line.qc_qty,
-        line.qc_type,
-        line.qc_level
-      );
-      return {
-        ...line,
-        ...recalculated
-      };
-    });
-  }, [lines, searchFilter, dataLines, allProfiles, qcSetLines]);
-
   // Normalize operation names for matching
   const normalizeOpName = (name) => {
     if (!name) return '';
@@ -195,6 +169,32 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
 
     return { ops_per_piece_min, ops_total_min, qc_per_piece_min, qc_total_min, grand_total_min };
   };
+
+  // Filtered lines with recalculated values
+  const filteredLines = useMemo(() => {
+    const filtered = searchFilter 
+      ? lines.filter(l => {
+          const term = searchFilter.toLowerCase();
+          return l.item_code?.toLowerCase().includes(term) || l.date?.includes(term);
+        })
+      : lines;
+
+    // Recalculate times for each line on-the-fly
+    return filtered.map(line => {
+      const recalculated = calculateTimes(
+        line.item_code,
+        line.operation_profile_id,
+        line.ops_qty,
+        line.qc_qty,
+        line.qc_type,
+        line.qc_level
+      );
+      return {
+        ...line,
+        ...recalculated
+      };
+    });
+  }, [lines, searchFilter, dataLines, allProfiles, qcSetLines]);
 
   // Create mutation
   const createMutation = useMutation({
