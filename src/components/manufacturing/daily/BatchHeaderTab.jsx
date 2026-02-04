@@ -178,7 +178,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Create Batch Header</DialogTitle>
+            <DialogTitle>{editingBatch ? 'Edit Batch Header' : 'Create Batch Header'}</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 py-4">
@@ -221,13 +221,15 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
 
           <DialogFooter>
             <Button variant="outline" onClick={resetForm}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={createMutation.isPending}>
-              {createMutation.isPending ? (
+            <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
+              {createMutation.isPending || updateMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : editingBatch ? (
+                <Save className="w-4 h-4 mr-2" />
               ) : (
                 <Plus className="w-4 h-4 mr-2" />
               )}
-              Create Batch
+              {editingBatch ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -271,6 +273,9 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
                             disabled={selectedBatch?.id === batch.id}
                           >
                             Select
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleEdit(batch)}>
+                            <Edit2 className="w-4 h-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
