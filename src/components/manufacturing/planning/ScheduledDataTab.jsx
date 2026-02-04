@@ -168,6 +168,18 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     staleTime: 0
   });
 
+  // Get current day header (contains source_bundle_id for this day)
+  const currentDayHeader = useMemo(() => {
+    if (!selectedDate) return null;
+    return dayHeaders.find(h => h.date === selectedDate) || null;
+  }, [dayHeaders, selectedDate]);
+
+  // Get source bundle for current day
+  const sourceBundleForDay = useMemo(() => {
+    if (!selectedDate || !currentDayHeader) return selectedBundle;
+    return allBundles.find(b => b.id === currentDayHeader.source_bundle_id) || selectedBundle;
+  }, [selectedDate, currentDayHeader, allBundles, selectedBundle]);
+
   // Fetch persons
   const { data: persons = [] } = useQuery({
     queryKey: ['Person'],
@@ -220,18 +232,6 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
   });
 
   const currentDayAssignment = dayAssignments[0] || null;
-
-  // Get current day header (contains source_bundle_id for this day)
-  const currentDayHeader = useMemo(() => {
-    if (!selectedDate) return null;
-    return dayHeaders.find(h => h.date === selectedDate) || null;
-  }, [dayHeaders, selectedDate]);
-
-  // Get source bundle for current day
-  const sourceBundleForDay = useMemo(() => {
-    if (!selectedDate || !currentDayHeader) return selectedBundle;
-    return allBundles.find(b => b.id === currentDayHeader.source_bundle_id) || selectedBundle;
-  }, [selectedDate, currentDayHeader, allBundles, selectedBundle]);
 
   // State for editing day source bundle
   const [editingDaySourceBundle, setEditingDaySourceBundle] = useState(false);
