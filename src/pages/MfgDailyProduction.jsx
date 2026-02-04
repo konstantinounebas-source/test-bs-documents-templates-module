@@ -12,6 +12,8 @@ import BatchHeaderTab from "../components/manufacturing/daily/BatchHeaderTab";
 import BatchLinesTab from "../components/manufacturing/daily/BatchLinesTab";
 import QCInitialStockTab from "../components/manufacturing/daily/QCInitialStockTab";
 import OperationsTab from "../components/manufacturing/daily/OperationsTab";
+import OperationsTimeTab from "../components/manufacturing/daily/OperationsTimeTab";
+import QCActionsTab from "../components/manufacturing/daily/QCActionsTab";
 import TeamTimePersonsTab from "../components/manufacturing/daily/TeamTimePersonsTab";
 import TeamTimeExtraTab from "../components/manufacturing/daily/TeamTimeExtraTab";
 import HelpInTab from "../components/manufacturing/daily/HelpInTab";
