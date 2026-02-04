@@ -174,14 +174,14 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
         />
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">
-            {editingBatch ? 'Edit Batch Header' : 'Add / Edit Batch Header'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Create/Edit Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Batch Header</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">
             <div>
               <Label>Date *</Label>
               <Input
@@ -192,68 +192,46 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
               />
             </div>
             <div>
-              <Label>Department *</Label>
-              <Select
-                value={formData.department}
-                onValueChange={(value) => {
-                  setFormData({ ...formData, department: value, bundle_id: '' });
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map(d => (
-                    <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
               <Label>Standards Bundle *</Label>
               <Select
                 value={formData.bundle_id}
                 onValueChange={(value) => setFormData({ ...formData, bundle_id: value })}
-                disabled={!formData.department}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={formData.department ? "Select bundle version" : "Select department first"} />
+                  <SelectValue placeholder="Select bundle" />
                 </SelectTrigger>
                 <SelectContent>
-                  {bundles.map(b => (
+                  {allBundles.map(b => (
                     <SelectItem key={b.id} value={b.id}>
-                      {b.version_no} {b.status === 'ACTIVE' ? '- ACTIVE' : ''}
+                      v{b.version || '?'} ({b.status})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label>Notes</Label>
+              <Label>Notes (Optional)</Label>
               <Textarea
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 rows={3}
               />
             </div>
-            <div className="flex gap-2">
-              {editingBatch && (
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-              )}
-              <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                {createMutation.isPending || updateMutation.isPending ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
-                {editingBatch ? 'Update' : 'Create'}
-              </Button>
-            </div>
           </form>
-        </CardContent>
-      </Card>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={resetForm}>Cancel</Button>
+            <Button onClick={handleSubmit} disabled={createMutation.isPending}>
+              {createMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
+              Create Batch
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
