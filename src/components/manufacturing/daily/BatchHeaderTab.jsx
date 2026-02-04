@@ -127,10 +127,19 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
       return;
     }
 
+    const payload = {
+      date: formData.date,
+      department: formData.department,
+      bundle_id: formData.bundle_id,
+      notes: formData.notes
+    };
+
+    console.log('BatchHeader payload:', payload);
+
     if (editingBatch) {
-      updateMutation.mutate({ id: editingBatch.id, data: formData });
+      updateMutation.mutate({ id: editingBatch.id, data: payload });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(payload);
     }
   };
 
