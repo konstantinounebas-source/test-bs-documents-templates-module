@@ -374,23 +374,7 @@ export default function OperationsTab({ batchId, department }) {
               </Select>
             </div>
 
-            {formData.entry_type === 'PROFILE' && (
-              <div>
-                <Label>Operation Profile</Label>
-                <Select value={formData.operation_profile} onValueChange={(v) => setFormData({ ...formData, operation_profile: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select profile name" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {profileNames.map(pn => (
-                      <SelectItem key={pn.id} value={pn.name}>{pn.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {formData.entry_type === 'OPERATION' && (
+            {formData.entry_type && (
               <div>
                 <Label>Operation Profile</Label>
                 <Select value={formData.operation_profile} onValueChange={(v) => setFormData({ ...formData, operation_profile: v })}>
@@ -406,7 +390,7 @@ export default function OperationsTab({ batchId, department }) {
               </div>
             )}
 
-            {formData.entry_type === 'OPERATION' && formData.operation_profile && (
+            {formData.operation_profile && (
               <div>
                 <Label>Select Operations Required</Label>
                 <p className="text-sm text-slate-500 mb-2">Select operations included in this profile</p>
@@ -414,9 +398,9 @@ export default function OperationsTab({ batchId, department }) {
                   {operationsForProfile.length === 0 ? (
                     <p className="text-sm text-slate-500">No operations in this profile</p>
                   ) : (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3">
                       {operationsForProfile.map(op => (
-                        <div key={op.id} className="flex items-center gap-2">
+                        <div key={op.id} className="flex items-end gap-2">
                           <Checkbox
                             checked={selectedOperations[op.id] > 0}
                             onCheckedChange={(checked) => {
@@ -429,26 +413,32 @@ export default function OperationsTab({ batchId, department }) {
                             }}
                             id={`op-${op.id}`}
                           />
-                          <label htmlFor={`op-${op.id}`} className="text-sm cursor-pointer">
+                          <label htmlFor={`op-${op.id}`} className="text-sm cursor-pointer flex-1">
                             {op.name}
                           </label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={selectedOperations[op.id] || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val) {
+                                setSelectedOperations(prev => ({ ...prev, [op.id]: parseFloat(val) || 0 }));
+                              } else {
+                                const { [op.id]: _, ...rest } = selectedOperations;
+                                setSelectedOperations(rest);
+                              }
+                            }}
+                            disabled={!selectedOperations[op.id]}
+                            placeholder="0"
+                            className="w-20 h-9"
+                          />
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-
-            {formData.entry_type === 'PROFILE' && (
-              <div>
-                <Label>Qty Operation</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.qty_operation}
-                  onChange={(e) => setFormData({ ...formData, qty_operation: e.target.value })}
-                />
               </div>
             )}
           </div>
