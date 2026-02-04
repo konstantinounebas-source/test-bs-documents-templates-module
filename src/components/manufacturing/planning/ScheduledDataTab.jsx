@@ -32,7 +32,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   });
 
   // Fetch item codes from DATA tab of selected bundle
-  const { data: dataLines = [], isLoading: dataLinesLoading } = useQuery({
+  const { data: dataLines = [], isLoading: dataLinesLoading, isFetched: dataLinesFetched } = useQuery({
     queryKey: ['StdSetLines', selectedBundle?.id],
     queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: selectedBundle.id }),
     enabled: !!selectedBundle,
@@ -45,7 +45,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   const hasItemCodes = itemCodes.length > 0;
 
   // Fetch operation profiles from Profiles tab (same department)
-  const { data: allProfiles = [], isLoading: profilesLoading } = useQuery({
+  const { data: allProfiles = [], isLoading: profilesLoading, isFetched: profilesFetched } = useQuery({
     queryKey: ['OperationProfileName'],
     queryFn: () => base44.entities.OperationProfileName.filter({ is_active: true }),
     staleTime: 0
@@ -71,12 +71,17 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   });
 
   // Fetch QC Set Lines for QC calculations
-  const { data: qcSetLines = [] } = useQuery({
+  const { data: qcSetLines = [], isFetched: qcSetLinesFetched } = useQuery({
     queryKey: ['QCSetLines', selectedBundle?.id],
     queryFn: () => base44.entities.QCSetLines.filter({ bundle_id: selectedBundle.id }),
     enabled: !!selectedBundle,
     staleTime: 0
   });
+
+  // Check if all required data is ready for calculations
+  const dataPivotReady = dataLinesFetched && dataLines.length >= 0;
+  const profilesReady = profilesFetched && allProfiles.length >= 0;
+  const qcRulesReady = qcSetLinesFetched && qcSetLines.length >= 0;
 
   // Fetch scheduled data lines
   const { data: lines = [], isLoading } = useQuery({
@@ -86,92 +91,166 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     staleTime: 0
   });
 
-  // Normalize operation names for matching
-  const normalizeOpName = (name) => {
+  // Canonical operation key for matching (Step 3)
+  const canonicalOpKey = (name) => {
     if (!name) return '';
-    return name.toString().trim().toLowerCase().replace(/[_\s-]+/g, ' ');
+    return name
+      .toString()
+      .trim()
+      .toLowerCase()
+      .replace(/_/g, ' ')
+      .replace(/\s+/g, ' '); // collapse multiple spaces
+  };
+
+  // Parse minutes from DATA - handle string/null/"–" (Step 4)
+  const parseMinutes = (value) => {
+    if (value === null || value === undefined || value === '' || value === '–' || value === '-') {
+      return 0;
+    }
+    const parsed = Number(value);
+    if (isNaN(parsed)) {
+      console.warn('⚠️ Invalid minutes value:', value, '- treating as 0');
+      return 0;
+    }
+    return parsed;
   };
 
   // Calculate per-piece and total times
-  const calculateTimes = (itemCode, profileId, opsQty, qcQty, qcType, qcLevel) => {
-    console.log('🔢 calculateTimes called:', { itemCode, profileId, opsQty, qcQty, qcType, qcLevel });
+  const calculateTimes = (itemCode, profileId, opsQty, qcQty, qcType, qcLevel, isDebugRecord = false) => {
+    // Step 2: Check if data is ready
+    if (!dataPivotReady || !profilesReady || !qcRulesReady) {
+      if (isDebugRecord) {
+        console.warn('⏳ Data not ready yet:', { dataPivotReady, profilesReady, qcRulesReady });
+      }
+      return { ops_per_piece_min: 0, ops_total_min: 0, qc_per_piece_min: 0, qc_total_min: 0, grand_total_min: 0 };
+    }
+
+    if (isDebugRecord) {
+      console.log('🔍 ===== DEBUG FIRST RECORD =====');
+      console.log('bundle_id:', selectedBundle?.id);
+      console.log('item_code:', itemCode);
+      console.log('operation_profile_id:', profileId);
+    }
 
     // Get the profile
     const profile = allProfiles.find(p => p.id === profileId);
     if (!profile || !profile.operations_required || profile.operations_required.length === 0) {
-      console.warn('⚠️ No profile or operations_required:', profile);
+      if (isDebugRecord) {
+        console.warn('⚠️ No profile or operations_required:', profile);
+      }
       return { ops_per_piece_min: 0, ops_total_min: 0, qc_per_piece_min: 0, qc_total_min: 0, grand_total_min: 0 };
     }
 
-    console.log('✅ Profile found:', profile.name, 'Operations:', profile.operations_required);
+    if (isDebugRecord) {
+      console.log('profile.operations_required:', profile.operations_required);
+    }
 
-    // Calculate operations time (only for operations in profile)
-    // Normalize both sides for matching
-    const allowedOpsNormalized = profile.operations_required.map(normalizeOpName);
-    const itemDataLines = dataLines.filter(l => {
-      const match = l.item_code === itemCode && allowedOpsNormalized.includes(normalizeOpName(l.operation));
-      return match;
-    });
+    // Step 3: Use canonical operation keys
+    const allowedOpsCanonical = profile.operations_required.map(canonicalOpKey);
+    
+    // Find DATA row for this item_code
+    const dataRowsForItem = dataLines.filter(l => l.item_code === itemCode);
+    const dataRowFound = dataRowsForItem.length > 0;
+    
+    if (isDebugRecord) {
+      console.log('dataRowFound?', dataRowFound);
+      if (dataRowFound) {
+        console.log('dataRow keys:', Object.keys(dataRowsForItem[0]));
+      } else {
+        console.log('distinctItemCodesFromData (first 20):', 
+          [...new Set(dataLines.map(l => l.item_code))].slice(0, 20)
+        );
+      }
+    }
 
-    console.log('📊 Matched DATA lines:', itemDataLines.length, itemDataLines);
+    // Match operations
+    const matchedOps = dataRowsForItem.filter(l => 
+      allowedOpsCanonical.includes(canonicalOpKey(l.operation))
+    );
 
-    const ops_per_piece_min = itemDataLines.reduce((sum, l) => sum + (l.std_min_per_pc || 0), 0);
+    if (isDebugRecord) {
+      console.log('matchedOps[]:', matchedOps.map(m => ({ 
+        operation: m.operation, 
+        std_min_per_pc: m.std_min_per_pc,
+        canonical: canonicalOpKey(m.operation)
+      })));
+    }
+
+    // Step 4: Parse minutes properly
+    let ops_per_piece_raw_sum = 0;
+    for (const line of matchedOps) {
+      const minutes = parseMinutes(line.std_min_per_pc);
+      ops_per_piece_raw_sum += minutes;
+    }
+
+    const ops_per_piece_min = ops_per_piece_raw_sum;
     const ops_total_min = ops_per_piece_min * opsQty;
 
-    console.log('⚙️ Ops calculation:', { ops_per_piece_min, ops_total_min });
+    if (isDebugRecord) {
+      console.log('ops_per_piece_raw_sum:', ops_per_piece_raw_sum);
+    }
 
-    // Calculate QC time (independent from ops_qty)
+    // Calculate QC time
     let qc_per_piece_min = 0;
     let qc_total_min = 0;
+    let qcRulesFoundCount = 0;
+    let qc_per_piece_raw_sum = 0;
 
     if (qcType && qcLevel && qcQty > 0) {
-      // Find QC rules for this item's operations (that are in the profile)
-      const qcRules = qcSetLines.filter(qc => {
-        const opMatch = qc.item_code === itemCode && 
-          qc.qc_type === qcType && 
-          qc.qc_level === qcLevel &&
-          allowedOpsNormalized.includes(normalizeOpName(qc.operation));
-        return opMatch;
-      });
+      const qcRules = qcSetLines.filter(qc => 
+        qc.item_code === itemCode && 
+        qc.qc_type === qcType && 
+        qc.qc_level === qcLevel &&
+        allowedOpsCanonical.includes(canonicalOpKey(qc.operation))
+      );
 
-      console.log('🔍 Matched QC rules:', qcRules.length, qcRules);
+      qcRulesFoundCount = qcRules.length;
 
-      // For each QC rule, recalculate if needed
       for (const qc of qcRules) {
-        // Get base time for this operation from DATA
         const baseLine = dataLines.find(l => 
           l.item_code === itemCode && 
-          normalizeOpName(l.operation) === normalizeOpName(qc.operation)
+          canonicalOpKey(l.operation) === canonicalOpKey(qc.operation)
         );
-        const baseTime = baseLine?.std_min_per_pc || 0;
+        const baseTime = baseLine ? parseMinutes(baseLine.std_min_per_pc) : 0;
 
         let extraTime = 0;
         if (qc.mode === 'percent') {
           extraTime = baseTime * (qc.qc_value / 100);
         } else if (qc.mode === 'fixed') {
-          extraTime = qc.qc_value;
+          extraTime = parseMinutes(qc.qc_value);
         } else {
-          // Use pre-calculated if available
-          extraTime = qc.calculated_extra_time_min || 0;
+          extraTime = parseMinutes(qc.calculated_extra_time_min);
         }
 
-        qc_per_piece_min += extraTime;
+        qc_per_piece_raw_sum += extraTime;
       }
 
+      qc_per_piece_min = qc_per_piece_raw_sum;
       qc_total_min = qc_per_piece_min * qcQty;
 
-      console.log('🧪 QC calculation:', { qc_per_piece_min, qc_total_min });
+      if (isDebugRecord) {
+        console.log('qc_type/qc_level:', qcType, '/', qcLevel);
+        console.log('qcRulesFoundCount:', qcRulesFoundCount);
+        console.log('qc_per_piece_raw_sum:', qc_per_piece_raw_sum);
+      }
     }
 
     const grand_total_min = ops_total_min + qc_total_min;
 
-    console.log('✅ Final totals:', { ops_total_min, qc_total_min, grand_total_min });
+    if (isDebugRecord) {
+      console.log('===== END DEBUG =====');
+    }
 
     return { ops_per_piece_min, ops_total_min, qc_per_piece_min, qc_total_min, grand_total_min };
   };
 
-  // Filtered lines with recalculated values
+  // Filtered lines with recalculated values (Step 1: One-shot debug)
   const filteredLines = useMemo(() => {
+    // Step 2: Only calculate if all data is ready
+    if (!dataPivotReady || !profilesReady || !qcRulesReady) {
+      return lines; // Return raw lines without calculation
+    }
+
     const filtered = searchFilter 
       ? lines.filter(l => {
           const term = searchFilter.toLowerCase();
@@ -180,21 +259,25 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
       : lines;
 
     // Recalculate times for each line on-the-fly
-    return filtered.map(line => {
-      const recalculated = calculateTimes(
+    const recalculated = filtered.map((line, index) => {
+      const isFirstRecord = index === 0 && filtered.length > 0;
+      const computed = calculateTimes(
         line.item_code,
         line.operation_profile_id,
         line.ops_qty,
         line.qc_qty,
         line.qc_type,
-        line.qc_level
+        line.qc_level,
+        isFirstRecord // Enable debug for first record
       );
       return {
         ...line,
-        ...recalculated
+        ...computed
       };
     });
-  }, [lines, searchFilter, dataLines, allProfiles, qcSetLines]);
+
+    return recalculated;
+  }, [lines, searchFilter, dataLines, allProfiles, qcSetLines, dataPivotReady, profilesReady, qcRulesReady]);
 
   // Create mutation
   const createMutation = useMutation({
@@ -326,16 +409,16 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     if (!profile) return null;
 
     const allowedOps = profile.operations_required || [];
-    const allowedOpsNormalized = allowedOps.map(normalizeOpName);
+    const allowedOpsCanonical = allowedOps.map(canonicalOpKey);
     
     const itemDataLines = dataLines.filter(l => 
       l.item_code === record.item_code && 
-      allowedOpsNormalized.includes(normalizeOpName(l.operation))
+      allowedOpsCanonical.includes(canonicalOpKey(l.operation))
     );
     
     const breakdown = itemDataLines.map(l => ({
       operation: l.operation,
-      minutes: l.std_min_per_pc || 0
+      minutes: parseMinutes(l.std_min_per_pc)
     }));
 
     const qcBreakdown = [];
@@ -344,24 +427,24 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
         qc.item_code === record.item_code && 
         qc.qc_type === record.qc_type && 
         qc.qc_level === record.qc_level &&
-        allowedOpsNormalized.includes(normalizeOpName(qc.operation))
+        allowedOpsCanonical.includes(canonicalOpKey(qc.operation))
       );
 
       // Recalculate QC extra time per operation
       qcBreakdown.push(...qcRules.map(qc => {
         const baseLine = dataLines.find(l => 
           l.item_code === record.item_code && 
-          normalizeOpName(l.operation) === normalizeOpName(qc.operation)
+          canonicalOpKey(l.operation) === canonicalOpKey(qc.operation)
         );
-        const baseTime = baseLine?.std_min_per_pc || 0;
+        const baseTime = baseLine ? parseMinutes(baseLine.std_min_per_pc) : 0;
 
         let extraTime = 0;
         if (qc.mode === 'percent') {
           extraTime = baseTime * (qc.qc_value / 100);
         } else if (qc.mode === 'fixed') {
-          extraTime = qc.qc_value;
+          extraTime = parseMinutes(qc.qc_value);
         } else {
-          extraTime = qc.calculated_extra_time_min || 0;
+          extraTime = parseMinutes(qc.calculated_extra_time_min);
         }
 
         return {
@@ -375,11 +458,23 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   };
 
   const isLoading_any = isLoading || dataLinesLoading || profilesLoading || qcTypesLoading || qcLevelsLoading;
+  const isCalculationReady = dataPivotReady && profilesReady && qcRulesReady;
 
   if (isLoading_any) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isCalculationReady) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+          <p className="text-sm text-slate-600">Loading calculation data...</p>
+        </div>
       </div>
     );
   }
