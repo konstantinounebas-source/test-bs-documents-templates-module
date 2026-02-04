@@ -37,6 +37,17 @@ export default function QCActionsTab({ batchId, department }) {
     select: (data) => data?.[0]
   });
 
+  // Fetch scheduled data from bundle to get calculated QC times
+  const { data: scheduledData = [] } = useQuery({
+    queryKey: ['ScheduledData', batchHeader?.date, batchHeader?.department],
+    queryFn: () => base44.entities.ScheduledData.filter({
+      date: batchHeader.date,
+      department_id: batchHeader.department
+    }),
+    enabled: !!batchHeader?.date && !!batchHeader?.department,
+    staleTime: 0
+  });
+
   // Fetch QC rules from bundle
   const { data: qcSetLines = [] } = useQuery({
     queryKey: ['QCSetLines', batchHeader?.bundle_id],
