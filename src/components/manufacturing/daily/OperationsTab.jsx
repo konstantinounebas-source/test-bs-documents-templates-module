@@ -242,6 +242,7 @@ export default function OperationsTab({ batchId, department }) {
 
   const resetForm = () => {
     setFormData({ item_code: '', entry_type: '', operation_profile: '', operation: '', qty_operation: '' });
+    setSelectedOperations({});
     setEditingLine(null);
     setShowAddDialog(false);
   };
