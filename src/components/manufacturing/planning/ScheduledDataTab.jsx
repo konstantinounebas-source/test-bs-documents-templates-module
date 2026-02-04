@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Plus, Trash2, Search, AlertCircle, Info } from 'lucide-react';
 import { toast } from 'sonner';
@@ -25,14 +26,17 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     item_codes: [],
     qc_type: '',
     qc_level: '',
-    qty: ''
+    ops_qty: '',
+    qc_qty: '0',
+    notes: ''
   });
 
   // Fetch item codes from DATA tab of selected bundle
   const { data: dataLines = [], isLoading: dataLinesLoading } = useQuery({
     queryKey: ['StdSetLines', selectedBundle?.id],
     queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: selectedBundle.id }),
-    enabled: !!selectedBundle
+    enabled: !!selectedBundle,
+    staleTime: 0
   });
   
   const itemCodes = useMemo(() => {
@@ -40,10 +44,11 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   }, [dataLines]);
   const hasItemCodes = itemCodes.length > 0;
 
-  // Fetch operation profiles from Profiles tab
+  // Fetch operation profiles from Profiles tab (same department)
   const { data: allProfiles = [], isLoading: profilesLoading } = useQuery({
     queryKey: ['OperationProfileName'],
-    queryFn: () => base44.entities.OperationProfileName.filter({ is_active: true })
+    queryFn: () => base44.entities.OperationProfileName.filter({ is_active: true }),
+    staleTime: 0
   });
 
   const profiles = useMemo(() => {
@@ -54,27 +59,31 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   // Fetch QC types
   const { data: qcTypes = [], isLoading: qcTypesLoading } = useQuery({
     queryKey: ['QC_Type'],
-    queryFn: () => base44.entities.QC_Type.filter({ is_active: true })
+    queryFn: () => base44.entities.QC_Type.filter({ is_active: true }),
+    staleTime: 0
   });
 
   // Fetch QC levels
   const { data: qcLevels = [], isLoading: qcLevelsLoading } = useQuery({
     queryKey: ['QCLevel'],
-    queryFn: () => base44.entities.QCLevel.filter({ is_active: true })
+    queryFn: () => base44.entities.QCLevel.filter({ is_active: true }),
+    staleTime: 0
   });
 
   // Fetch QC Set Lines for QC calculations
   const { data: qcSetLines = [] } = useQuery({
     queryKey: ['QCSetLines', selectedBundle?.id],
     queryFn: () => base44.entities.QCSetLines.filter({ bundle_id: selectedBundle.id }),
-    enabled: !!selectedBundle
+    enabled: !!selectedBundle,
+    staleTime: 0
   });
 
   // Fetch scheduled data lines
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['ScheduledData', selectedBundle?.id],
     queryFn: () => base44.entities.ScheduledData.filter({ bundle_id: selectedBundle.id }),
-    enabled: !!selectedBundle
+    enabled: !!selectedBundle,
+    staleTime: 0
   });
 
   // Filtered lines
@@ -88,7 +97,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   }, [lines, searchFilter]);
 
   // Calculate per-piece and total times
-  const calculateTimes = (itemCode, profileId, qty, qcType, qcLevel) => {
+  const calculateTimes = (itemCode, profileId, opsQty, qcQty, qcType, qcLevel) => {
     // Get the profile
     const profile = allProfiles.find(p => p.id === profileId);
     if (!profile || !profile.operations_required) {
@@ -99,14 +108,14 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     const allowedOps = profile.operations_required;
     const itemDataLines = dataLines.filter(l => l.item_code === itemCode && allowedOps.includes(l.operation));
     const ops_per_piece_min = itemDataLines.reduce((sum, l) => sum + (l.std_min_per_pc || 0), 0);
-    const ops_total_min = ops_per_piece_min * qty;
+    const ops_total_min = ops_per_piece_min * opsQty;
 
-    // Calculate QC time
+    // Calculate QC time (independent from ops_qty)
     let qc_per_piece_min = 0;
     let qc_total_min = 0;
 
-    if (qcType && qcLevel) {
-      // Find QC rules for this item's operations
+    if (qcType && qcLevel && qcQty > 0) {
+      // Find QC rules for this item's operations (that are in the profile)
       const qcRules = qcSetLines.filter(qc => 
         qc.item_code === itemCode && 
         qc.qc_type === qcType && 
@@ -114,7 +123,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
         allowedOps.includes(qc.operation)
       );
       qc_per_piece_min = qcRules.reduce((sum, qc) => sum + (qc.calculated_extra_time_min || 0), 0);
-      qc_total_min = qc_per_piece_min * qty;
+      qc_total_min = qc_per_piece_min * qcQty;
     }
 
     const grand_total_min = ops_total_min + qc_total_min;
@@ -150,7 +159,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
         item_codes: [],
         qc_type: '',
         qc_level: '',
-        qty: ''
+        ops_qty: '',
+        qc_qty: '0',
+        notes: ''
       });
       toast.success('Scheduled data added');
     },
@@ -174,8 +185,21 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   });
 
   const handleAdd = () => {
-    if (!formData.date || !formData.operation_profile_id || formData.item_codes.length === 0 || !formData.qty) {
-      toast.error('Please fill all required fields');
+    // Validation
+    if (!formData.date || !formData.operation_profile_id || formData.item_codes.length === 0 || !formData.ops_qty) {
+      toast.error('Please fill all required fields (Date, Operation Profile, Item Codes, Ops Qty)');
+      return;
+    }
+
+    const opsQty = parseFloat(formData.ops_qty);
+    if (isNaN(opsQty) || opsQty <= 0) {
+      toast.error('Ops Qty must be greater than 0');
+      return;
+    }
+
+    const qcQty = parseFloat(formData.qc_qty) || 0;
+    if (qcQty < 0) {
+      toast.error('QC Qty must be 0 or greater');
       return;
     }
 
@@ -184,23 +208,33 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
       return;
     }
 
-    const qty = parseFloat(formData.qty);
-    if (isNaN(qty) || qty <= 0) {
-      toast.error('Quantity must be greater than 0');
+    // Check item codes exist in DATA
+    const invalidItems = formData.item_codes.filter(ic => !itemCodes.includes(ic));
+    if (invalidItems.length > 0) {
+      toast.error(`Item codes not found in DATA tab: ${invalidItems.join(', ')}`);
+      return;
+    }
+
+    // Check profile is active
+    const profile = allProfiles.find(p => p.id === formData.operation_profile_id);
+    if (!profile || !profile.is_active) {
+      toast.error('Selected Operation Profile is not active');
       return;
     }
 
     // Create one record per selected item code
     const records = formData.item_codes.map(itemCode => {
-      const times = calculateTimes(itemCode, formData.operation_profile_id, qty, formData.qc_type, formData.qc_level);
+      const times = calculateTimes(itemCode, formData.operation_profile_id, opsQty, qcQty, formData.qc_type, formData.qc_level);
       return {
         bundle_id: selectedBundle.id,
         date: formData.date,
         item_code: itemCode,
         operation_profile_id: formData.operation_profile_id,
-        qty: qty,
+        ops_qty: opsQty,
+        qc_qty: qcQty,
         qc_type: formData.qc_type || null,
         qc_level: formData.qc_level || null,
+        notes: formData.notes || null,
         ...times
       };
     });
@@ -308,7 +342,8 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
               <TableHead className="font-semibold">Date</TableHead>
               <TableHead className="font-semibold">Item Code</TableHead>
               <TableHead className="font-semibold">Operation Profile</TableHead>
-              <TableHead className="font-semibold text-right">Qty</TableHead>
+              <TableHead className="font-semibold text-right">Ops Qty</TableHead>
+              <TableHead className="font-semibold text-right">QC Qty</TableHead>
               <TableHead className="font-semibold text-right">Ops Per-piece</TableHead>
               <TableHead className="font-semibold text-right">Ops Total</TableHead>
               <TableHead className="font-semibold text-right">QC Per-piece</TableHead>
@@ -320,7 +355,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
           <TableBody>
             {filteredLines.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={10} className="text-center text-slate-500 py-12">
+                <TableCell colSpan={11} className="text-center text-slate-500 py-12">
                   {searchFilter ? 'No matching scheduled data found' : 'No scheduled data defined. Click "Add Scheduled Data" to start.'}
                 </TableCell>
               </TableRow>
@@ -334,7 +369,8 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                   <TableCell className="font-medium">{line.date}</TableCell>
                   <TableCell className="font-medium">{line.item_code}</TableCell>
                   <TableCell>{getProfileName(line.operation_profile_id)}</TableCell>
-                  <TableCell className="text-right font-mono">{line.qty}</TableCell>
+                  <TableCell className="text-right font-mono">{line.ops_qty}</TableCell>
+                  <TableCell className="text-right font-mono">{line.qc_qty}</TableCell>
                   <TableCell className="text-right font-mono">{(line.ops_per_piece_min || 0).toFixed(2)}</TableCell>
                   <TableCell className="text-right font-mono">{(line.ops_total_min || 0).toFixed(2)}</TableCell>
                   <TableCell className="text-right font-mono">{(line.qc_per_piece_min || 0).toFixed(2)}</TableCell>
@@ -392,24 +428,12 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
               </Select>
             </div>
 
-            {formData.operation_profile_id && (
-              <div>
-                <Label>Item Codes * (Multi-select)</Label>
-                <MultiSelect
-                  options={itemCodes.map(code => ({ value: code, label: code }))}
-                  selected={formData.item_codes}
-                  onChange={(selected) => setFormData({ ...formData, item_codes: selected })}
-                  placeholder="Select item codes from DATA tab"
-                />
-              </div>
-            )}
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>QC Type (Optional)</Label>
                 <Select 
                   value={formData.qc_type} 
-                  onValueChange={(v) => setFormData({ ...formData, qc_type: v })}
+                  onValueChange={(v) => setFormData({ ...formData, qc_type: v, qc_level: v ? formData.qc_level : '' })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select QC type" />
@@ -442,14 +466,51 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
               </div>
             </div>
 
+            {formData.operation_profile_id && (
+              <div>
+                <Label>Item Codes * (Multi-select)</Label>
+                <MultiSelect
+                  options={itemCodes.map(code => ({ value: code, label: code }))}
+                  selected={formData.item_codes}
+                  onChange={(selected) => setFormData({ ...formData, item_codes: selected })}
+                  placeholder="Select item codes from DATA tab"
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Ops Qty *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  value={formData.ops_qty}
+                  onChange={(e) => setFormData({ ...formData, ops_qty: e.target.value })}
+                  placeholder="Enter ops quantity"
+                />
+              </div>
+
+              <div>
+                <Label>QC Qty (Optional, default 0)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.qc_qty}
+                  onChange={(e) => setFormData({ ...formData, qc_qty: e.target.value })}
+                  placeholder="Enter QC quantity"
+                />
+              </div>
+            </div>
+
             <div>
-              <Label>Quantity *</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.qty}
-                onChange={(e) => setFormData({ ...formData, qty: e.target.value })}
-                placeholder="Enter quantity (applies to all selected items)"
+              <Label>Notes (Optional)</Label>
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Add notes..."
+                rows={3}
               />
             </div>
           </div>
@@ -491,9 +552,19 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                     <p className="font-medium">{details.profile.name}</p>
                   </div>
                   <div>
-                    <Label className="text-slate-600">Quantity</Label>
-                    <p className="font-medium">{selectedRecord.qty}</p>
+                    <Label className="text-slate-600">Ops Qty</Label>
+                    <p className="font-medium">{selectedRecord.ops_qty}</p>
                   </div>
+                  <div>
+                    <Label className="text-slate-600">QC Qty</Label>
+                    <p className="font-medium">{selectedRecord.qc_qty}</p>
+                  </div>
+                  {selectedRecord.notes && (
+                    <div className="col-span-2">
+                      <Label className="text-slate-600">Notes</Label>
+                      <p className="font-medium">{selectedRecord.notes}</p>
+                    </div>
+                  )}
                 </div>
 
                 <Card>
@@ -516,7 +587,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                           </TableRow>
                         ))}
                         <TableRow className="font-semibold bg-slate-50">
-                          <TableCell>Total</TableCell>
+                          <TableCell>Total Per-piece</TableCell>
                           <TableCell className="text-right font-mono">{(selectedRecord.ops_per_piece_min || 0).toFixed(2)}</TableCell>
                         </TableRow>
                       </TableBody>
@@ -545,7 +616,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                             </TableRow>
                           ))}
                           <TableRow className="font-semibold bg-slate-50">
-                            <TableCell>Total</TableCell>
+                            <TableCell>Total Per-piece</TableCell>
                             <TableCell className="text-right font-mono">{(selectedRecord.qc_per_piece_min || 0).toFixed(2)}</TableCell>
                           </TableRow>
                         </TableBody>
@@ -560,10 +631,12 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                       <div>
                         <p className="text-sm text-slate-600">Ops Total</p>
                         <p className="text-lg font-bold">{(selectedRecord.ops_total_min || 0).toFixed(2)} min</p>
+                        <p className="text-xs text-slate-500">({selectedRecord.ops_per_piece_min.toFixed(2)} × {selectedRecord.ops_qty})</p>
                       </div>
                       <div>
                         <p className="text-sm text-slate-600">QC Total</p>
                         <p className="text-lg font-bold">{(selectedRecord.qc_total_min || 0).toFixed(2)} min</p>
+                        <p className="text-xs text-slate-500">({selectedRecord.qc_per_piece_min.toFixed(2)} × {selectedRecord.qc_qty})</p>
                       </div>
                       <div>
                         <p className="text-sm text-slate-600">Grand Total</p>
