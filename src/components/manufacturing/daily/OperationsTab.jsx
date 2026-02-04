@@ -17,15 +17,12 @@ function useBatchItemCodes(batchId, department) {
     queryFn: async () => {
       if (!batchId || !department) return [];
       
-      const bundles = await base44.entities.StandardsBundle.filter({ 
-        department: department,
-        status: 'ACTIVE'
-      });
+      // Get batch header to get its bundle_id
+      const batch = await base44.entities.Batch_Header.filter({ id: batchId });
+      if (!batch || batch.length === 0) return [];
       
-      if (bundles.length === 0) return [];
-      
-      const activeBundle = bundles[0];
-      const lines = await base44.entities.StdSetLines.filter({ bundle_id: activeBundle.id });
+      const bundleId = batch[0].bundle_id;
+      const lines = await base44.entities.StdSetLines.filter({ bundle_id: bundleId });
       
       const uniqueItemCodes = [...new Set(lines.map(l => l.item_code))].filter(Boolean);
       return uniqueItemCodes.sort();
@@ -61,11 +58,58 @@ export default function OperationsTab({ batchId, department }) {
     queryFn: () => base44.entities.Operation_Profile_Name.filter({ is_active: true })
   });
 
+  // Fetch batch header to get date and department for scheduled data lookup
+  const { data: batchHeader } = useQuery({
+    queryKey: ['Batch_Header', batchId],
+    queryFn: () => base44.entities.Batch_Header.filter({ id: batchId }),
+    enabled: !!batchId,
+    select: (data) => data?.[0]
+  });
+
+  // Fetch scheduled data for auto-filling operations
+  const { data: scheduledData = [] } = useQuery({
+    queryKey: ['ScheduledData', batchHeader?.date, batchHeader?.department],
+    queryFn: () => base44.entities.ScheduledData.filter({
+      date: batchHeader.date,
+      department_id: batchHeader.department
+    }),
+    enabled: !!batchHeader?.date && !!batchHeader?.department,
+    staleTime: 0
+  });
+
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['Operations', batchId],
     queryFn: () => base44.entities.Operations.filter({ batch_header_id: batchId }),
-    enabled: !!batchId
+    enabled: !!batchId,
+    staleTime: 0
   });
+
+  // Auto-fill operations from scheduled data (only on initial load)
+  useMemo(() => {
+    if (!batchId || lines.length > 0 || scheduledData.length === 0) return;
+
+    // Create operation records from scheduled data
+    const autoFillLines = scheduledData.map(sd => ({
+      batch_header_id: batchId,
+      item_code: sd.item_code,
+      entry_type: 'PROFILE',
+      operation_profile: sd.operation_profile_id || '',
+      operation: '',
+      qty_operation: sd.ops_qty || 0
+    }));
+
+    if (autoFillLines.length === 0) return;
+
+    // Create all lines
+    Promise.all(autoFillLines.map(line =>
+      base44.entities.Operations.create(line)
+    )).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['Operations', batchId] });
+      toast.success(`Auto-filled ${autoFillLines.length} operations from schedule`);
+    }).catch(() => {
+      // Silent fail on auto-fill
+    });
+  }, [batchId, lines.length, scheduledData, queryClient]);
 
   const filteredLines = useMemo(() => {
     if (!searchFilter) return lines;
