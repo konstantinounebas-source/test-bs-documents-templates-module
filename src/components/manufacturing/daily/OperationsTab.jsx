@@ -405,7 +405,7 @@ export default function OperationsTab({ batchId, department }) {
               </div>
             )}
 
-            {formData.entry_type === 'OPERATION' && (
+            {(formData.entry_type === 'OPERATION' || formData.entry_type === 'PROFILE') && (
               <div>
                 <Label>Operation Profile</Label>
                 <Select value={formData.operation_profile} onValueChange={(v) => setFormData({ ...formData, operation_profile: v })}>
