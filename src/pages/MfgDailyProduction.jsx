@@ -234,6 +234,14 @@ export default function MfgDailyProduction() {
                   <OperationsTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
                 </TabsContent>
 
+                <TabsContent value="ops_time">
+                  <OperationsTimeTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                </TabsContent>
+
+                <TabsContent value="qc_actions">
+                  <QCActionsTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                </TabsContent>
+
                 <TabsContent value="team_persons">
                   <TeamTimePersonsTab batchId={selectedBatch?.id} />
                 </TabsContent>
