@@ -261,14 +261,19 @@ export default function OperationsTab({ batchId, department }) {
                     <TableCell>{line.operation || '-'}</TableCell>
                     <TableCell className="font-mono">{line.qty_operation || 0}</TableCell>
                     <TableCell>
-                      <Button
-                        onClick={() => deleteMutation.mutate(line.id)}
-                        variant="ghost"
-                        size="icon"
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(line)}>
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={() => deleteMutation.mutate(line.id)}
+                          variant="ghost"
+                          size="icon"
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -285,11 +290,16 @@ export default function OperationsTab({ batchId, department }) {
         </Table>
       </div>
 
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog open={showAddDialog} onOpenChange={(open) => {
+        if (!open) resetForm();
+        setShowAddDialog(open);
+      }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Operation</DialogTitle>
-            <DialogDescription>Record operation performed on an item</DialogDescription>
+            <DialogTitle>{editingLine ? 'Edit Operation' : 'Add Operation'}</DialogTitle>
+            <DialogDescription>
+              {editingLine ? 'Update operation for this item' : 'Record operation performed on an item'}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -364,10 +374,16 @@ export default function OperationsTab({ batchId, department }) {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={createMutation.isPending}>
-              {createMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-              Add
+            <Button variant="outline" onClick={resetForm}>Cancel</Button>
+            <Button onClick={handleAdd} disabled={createMutation.isPending || updateMutation.isPending}>
+              {createMutation.isPending || updateMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : editingLine ? (
+                <Edit2 className="w-4 h-4 mr-2" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
+              {editingLine ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>
         </DialogContent>
