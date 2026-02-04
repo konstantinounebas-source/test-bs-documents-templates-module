@@ -173,15 +173,42 @@ export default function OperationsTab({ batchId, department }) {
       return;
     }
 
-    const data = {
-      ...formData,
-      qty_operation: parseFloat(formData.qty_operation) || 0
-    };
+    if (formData.entry_type === 'OPERATION') {
+      const selectedOps = Object.entries(selectedOperations)
+        .filter(([_, qty]) => qty > 0)
+        .map(([opId, qty]) => ({ op_id: opId, qty: parseFloat(qty) }));
+      
+      if (selectedOps.length === 0) {
+        toast.error('Select at least one operation with quantity');
+        return;
+      }
 
-    if (editingLine) {
-      updateMutation.mutate({ id: editingLine.id, data });
+      // For OPERATION type, save operations_data as JSON
+      const data = {
+        item_code: formData.item_code,
+        entry_type: 'OPERATION',
+        operation_profile: formData.operation_profile,
+        operations_data: JSON.stringify(selectedOps),
+        qty_operation: 0
+      };
+
+      if (editingLine) {
+        updateMutation.mutate({ id: editingLine.id, data });
+      } else {
+        createMutation.mutate(data);
+      }
     } else {
-      createMutation.mutate(data);
+      const data = {
+        ...formData,
+        qty_operation: parseFloat(formData.qty_operation) || 0,
+        operations_data: null
+      };
+
+      if (editingLine) {
+        updateMutation.mutate({ id: editingLine.id, data });
+      } else {
+        createMutation.mutate(data);
+      }
     }
   };
 
