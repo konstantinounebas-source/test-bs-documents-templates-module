@@ -96,19 +96,39 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     );
   }, [lines, searchFilter]);
 
+  // Normalize operation names for matching
+  const normalizeOpName = (name) => {
+    if (!name) return '';
+    return name.toString().trim().toLowerCase().replace(/[_\s-]+/g, ' ');
+  };
+
   // Calculate per-piece and total times
   const calculateTimes = (itemCode, profileId, opsQty, qcQty, qcType, qcLevel) => {
+    console.log('🔢 calculateTimes called:', { itemCode, profileId, opsQty, qcQty, qcType, qcLevel });
+
     // Get the profile
     const profile = allProfiles.find(p => p.id === profileId);
-    if (!profile || !profile.operations_required) {
+    if (!profile || !profile.operations_required || profile.operations_required.length === 0) {
+      console.warn('⚠️ No profile or operations_required:', profile);
       return { ops_per_piece_min: 0, ops_total_min: 0, qc_per_piece_min: 0, qc_total_min: 0, grand_total_min: 0 };
     }
 
+    console.log('✅ Profile found:', profile.name, 'Operations:', profile.operations_required);
+
     // Calculate operations time (only for operations in profile)
-    const allowedOps = profile.operations_required;
-    const itemDataLines = dataLines.filter(l => l.item_code === itemCode && allowedOps.includes(l.operation));
+    // Normalize both sides for matching
+    const allowedOpsNormalized = profile.operations_required.map(normalizeOpName);
+    const itemDataLines = dataLines.filter(l => {
+      const match = l.item_code === itemCode && allowedOpsNormalized.includes(normalizeOpName(l.operation));
+      return match;
+    });
+
+    console.log('📊 Matched DATA lines:', itemDataLines.length, itemDataLines);
+
     const ops_per_piece_min = itemDataLines.reduce((sum, l) => sum + (l.std_min_per_pc || 0), 0);
     const ops_total_min = ops_per_piece_min * opsQty;
+
+    console.log('⚙️ Ops calculation:', { ops_per_piece_min, ops_total_min });
 
     // Calculate QC time (independent from ops_qty)
     let qc_per_piece_min = 0;
@@ -116,17 +136,46 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
 
     if (qcType && qcLevel && qcQty > 0) {
       // Find QC rules for this item's operations (that are in the profile)
-      const qcRules = qcSetLines.filter(qc => 
-        qc.item_code === itemCode && 
-        qc.qc_type === qcType && 
-        qc.qc_level === qcLevel &&
-        allowedOps.includes(qc.operation)
-      );
-      qc_per_piece_min = qcRules.reduce((sum, qc) => sum + (qc.calculated_extra_time_min || 0), 0);
+      const qcRules = qcSetLines.filter(qc => {
+        const opMatch = qc.item_code === itemCode && 
+          qc.qc_type === qcType && 
+          qc.qc_level === qcLevel &&
+          allowedOpsNormalized.includes(normalizeOpName(qc.operation));
+        return opMatch;
+      });
+
+      console.log('🔍 Matched QC rules:', qcRules.length, qcRules);
+
+      // For each QC rule, recalculate if needed
+      for (const qc of qcRules) {
+        // Get base time for this operation from DATA
+        const baseLine = dataLines.find(l => 
+          l.item_code === itemCode && 
+          normalizeOpName(l.operation) === normalizeOpName(qc.operation)
+        );
+        const baseTime = baseLine?.std_min_per_pc || 0;
+
+        let extraTime = 0;
+        if (qc.mode === 'percent') {
+          extraTime = baseTime * (qc.qc_value / 100);
+        } else if (qc.mode === 'fixed') {
+          extraTime = qc.qc_value;
+        } else {
+          // Use pre-calculated if available
+          extraTime = qc.calculated_extra_time_min || 0;
+        }
+
+        qc_per_piece_min += extraTime;
+      }
+
       qc_total_min = qc_per_piece_min * qcQty;
+
+      console.log('🧪 QC calculation:', { qc_per_piece_min, qc_total_min });
     }
 
     const grand_total_min = ops_total_min + qc_total_min;
+
+    console.log('✅ Final totals:', { ops_total_min, qc_total_min, grand_total_min });
 
     return { ops_per_piece_min, ops_total_min, qc_per_piece_min, qc_total_min, grand_total_min };
   };
@@ -197,7 +246,11 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
       return;
     }
 
-    const qcQty = parseFloat(formData.qc_qty) || 0;
+    // Default QC Qty to Ops Qty if not specified or 0
+    let qcQty = parseFloat(formData.qc_qty);
+    if (isNaN(qcQty) || qcQty === 0) {
+      qcQty = opsQty; // Default to ops_qty
+    }
     if (qcQty < 0) {
       toast.error('QC Qty must be 0 or greater');
       return;
@@ -257,7 +310,12 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     if (!profile) return null;
 
     const allowedOps = profile.operations_required || [];
-    const itemDataLines = dataLines.filter(l => l.item_code === record.item_code && allowedOps.includes(l.operation));
+    const allowedOpsNormalized = allowedOps.map(normalizeOpName);
+    
+    const itemDataLines = dataLines.filter(l => 
+      l.item_code === record.item_code && 
+      allowedOpsNormalized.includes(normalizeOpName(l.operation))
+    );
     
     const breakdown = itemDataLines.map(l => ({
       operation: l.operation,
@@ -270,12 +328,31 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
         qc.item_code === record.item_code && 
         qc.qc_type === record.qc_type && 
         qc.qc_level === record.qc_level &&
-        allowedOps.includes(qc.operation)
+        allowedOpsNormalized.includes(normalizeOpName(qc.operation))
       );
-      qcBreakdown.push(...qcRules.map(qc => ({
-        operation: qc.operation,
-        minutes: qc.calculated_extra_time_min || 0
-      })));
+
+      // Recalculate QC extra time per operation
+      qcBreakdown.push(...qcRules.map(qc => {
+        const baseLine = dataLines.find(l => 
+          l.item_code === record.item_code && 
+          normalizeOpName(l.operation) === normalizeOpName(qc.operation)
+        );
+        const baseTime = baseLine?.std_min_per_pc || 0;
+
+        let extraTime = 0;
+        if (qc.mode === 'percent') {
+          extraTime = baseTime * (qc.qc_value / 100);
+        } else if (qc.mode === 'fixed') {
+          extraTime = qc.qc_value;
+        } else {
+          extraTime = qc.calculated_extra_time_min || 0;
+        }
+
+        return {
+          operation: qc.operation,
+          minutes: extraTime
+        };
+      }));
     }
 
     return { profile, breakdown, qcBreakdown };
@@ -492,14 +569,14 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
               </div>
 
               <div>
-                <Label>QC Qty (Optional, default 0)</Label>
+                <Label>QC Qty (Optional, defaults to Ops Qty)</Label>
                 <Input
                   type="number"
                   step="0.01"
                   min="0"
                   value={formData.qc_qty}
                   onChange={(e) => setFormData({ ...formData, qc_qty: e.target.value })}
-                  placeholder="Enter QC quantity"
+                  placeholder="Leave blank to use Ops Qty"
                 />
               </div>
             </div>
