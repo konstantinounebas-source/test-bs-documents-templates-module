@@ -17,8 +17,8 @@ export default function TeamTimePersonsTab({ batchId }) {
   const [editingLine, setEditingLine] = useState(null);
   const [formData, setFormData] = useState({
     person_name: '',
-    from_time: '',
-    to_time: '',
+    from_time: '07:00',
+    to_time: '15:30',
     notes: ''
   });
 
@@ -40,7 +40,7 @@ export default function TeamTimePersonsTab({ batchId }) {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries(['Team_Time_Persons']);
-      setFormData({ person_name: '', from_time: '', to_time: '', notes: '' });
+      setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', notes: '' });
       toast.success('Team time added');
     },
     onError: () => toast.error('Failed to add team time')
@@ -51,7 +51,7 @@ export default function TeamTimePersonsTab({ batchId }) {
     onSuccess: () => {
       queryClient.invalidateQueries(['Team_Time_Persons']);
       setEditingLine(null);
-      setFormData({ person_name: '', from_time: '', to_time: '', notes: '' });
+      setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', notes: '' });
       setShowAddDialog(false);
       toast.success('Team time updated');
     },
@@ -92,7 +92,7 @@ export default function TeamTimePersonsTab({ batchId }) {
   };
 
   const resetForm = () => {
-    setFormData({ person_name: '', from_time: '', to_time: '', notes: '' });
+    setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', notes: '' });
     setEditingLine(null);
     setShowAddDialog(false);
   };
