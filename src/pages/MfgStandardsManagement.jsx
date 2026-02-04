@@ -87,11 +87,12 @@ export default function MfgStandardsManagementPage() {
       });
 
       // Clone all data from each tab
-      const [stdLines, qcLines, profileLines, targetLines, consumablesLines, kpiLines, metricsLines] = await Promise.all([
+      const [stdLines, qcLines, profileLines, targetTypes, targetLines, consumablesLines, kpiLines, metricsLines] = await Promise.all([
         base44.entities.StdSetLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.QCSetLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.ProfileSetLines.filter({ bundle_id: currentBundle.id }),
-        base44.entities.TargetDaily.filter({ bundle_id: currentBundle.id }),
+        base44.entities.TargetType.filter({ bundle_id: currentBundle.id }),
+        base44.entities.DailyTargetLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.ConsumablesStandardsLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.KPIDefSetLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.MetricsDefSetLines.filter({ bundle_id: currentBundle.id })
@@ -102,7 +103,8 @@ export default function MfgStandardsManagementPage() {
         ...stdLines.map(l => base44.entities.StdSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...qcLines.map(l => base44.entities.QCSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...profileLines.map(l => base44.entities.ProfileSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
-        ...targetLines.map(l => base44.entities.TargetDaily.create({ ...l, id: undefined, bundle_id: newBundle.id })),
+        ...targetTypes.map(l => base44.entities.TargetType.create({ ...l, id: undefined, bundle_id: newBundle.id })),
+        ...targetLines.map(l => base44.entities.DailyTargetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...consumablesLines.map(l => base44.entities.ConsumablesStandardsLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...kpiLines.map(l => base44.entities.KPIDefSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...metricsLines.map(l => base44.entities.MetricsDefSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id }))
@@ -179,7 +181,8 @@ export default function MfgStandardsManagementPage() {
     await queryClient.invalidateQueries({ queryKey: ['StdSetLines'] });
     await queryClient.invalidateQueries({ queryKey: ['QCSetLines'] });
     await queryClient.invalidateQueries({ queryKey: ['ProfileSetLines'] });
-    await queryClient.invalidateQueries({ queryKey: ['TargetDaily'] });
+    await queryClient.invalidateQueries({ queryKey: ['TargetType'] });
+    await queryClient.invalidateQueries({ queryKey: ['DailyTargetLines'] });
     await queryClient.invalidateQueries({ queryKey: ['ConsumablesStandardsLines'] });
     await queryClient.invalidateQueries({ queryKey: ['KPIDefSetLines'] });
     await queryClient.invalidateQueries({ queryKey: ['MetricsDefSetLines'] });
