@@ -1925,18 +1925,25 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
           <div className="space-y-4 py-4">
             <div>
               <Label>Source Bundle</Label>
-              <Select value={tempSourceBundleId} onValueChange={setTempSourceBundleId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select bundle" />
-                </SelectTrigger>
-                <SelectContent>
-                  {allBundles.map(b => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.version ? `v${b.version}` : 'v-'} - {b.name} ({b.status})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {dataLinesLoading ? (
+                <div className="flex items-center h-10 px-3 border border-input rounded-md bg-slate-50">
+                  <Loader2 className="w-4 h-4 animate-spin text-slate-500 mr-2" />
+                  <span className="text-sm text-slate-500">Loading versions...</span>
+                </div>
+              ) : (
+                <Select value={tempSourceBundleId} onValueChange={setTempSourceBundleId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select bundle" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allBundles.map(b => (
+                      <SelectItem key={b.id} value={b.id}>
+                        {b.version ? `v${b.version}` : 'v-'} - {b.name} ({b.status})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               {tempSourceBundleId && (() => {
                 const bundle = allBundles.find(b => b.id === tempSourceBundleId);
                 return bundle ? (
