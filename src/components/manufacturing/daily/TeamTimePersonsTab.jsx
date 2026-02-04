@@ -40,7 +40,6 @@ export default function TeamTimePersonsTab({ batchId }) {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries(['Team_Time_Persons']);
-      setShowAddDialog(false);
       setFormData({ person_name: '', from_time: '', to_time: '', notes: '' });
       toast.success('Team time added');
     },
@@ -51,9 +50,9 @@ export default function TeamTimePersonsTab({ batchId }) {
     mutationFn: ({ id, data }) => base44.entities.Team_Time_Persons.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['Team_Time_Persons']);
-      setShowAddDialog(false);
       setEditingLine(null);
       setFormData({ person_name: '', from_time: '', to_time: '', notes: '' });
+      setShowAddDialog(false);
       toast.success('Team time updated');
     },
     onError: () => toast.error('Failed to update team time')
