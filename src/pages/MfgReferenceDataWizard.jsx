@@ -10,10 +10,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ArrowRight, Save, Plus, Trash2, Edit2, Building2, Wrench, AlertTriangle, Package, Briefcase, Database, Ruler, Tag, FileText, Target, FileCheck } from "lucide-react";
+import { ArrowRight, Save, Plus, Trash2, Edit2, Building2, Wrench, AlertTriangle, Package, Briefcase, Database, Ruler, Tag, FileText, Target, FileCheck, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
+import PersonManagement from "@/components/manufacturing/PersonManagement";
 
 export default function MfgReferenceDataWizard() {
   const navigate = useNavigate();
@@ -33,7 +34,8 @@ export default function MfgReferenceDataWizard() {
     { id: "rate_types", label: "Rate Types", entity: "Rate_Type", icon: Tag },
     { id: "entry_types", label: "Entry Types", entity: "Entry_Type", icon: FileText },
     { id: "target_profiles", label: "Target Profiles", entity: "Target_Profile_Name", icon: Target },
-    { id: "operation_profiles", label: "Operation Profiles", entity: "Operation_Profile_Name", icon: FileCheck }
+    { id: "operation_profiles", label: "Operation Profiles", entity: "Operation_Profile_Name", icon: FileCheck },
+    { id: "persons", label: "Persons", entity: "Person", icon: Users, customComponent: true }
   ];
 
   const currentEntity = tabs.find(t => t.id === activeTab)?.entity;
@@ -176,14 +178,18 @@ export default function MfgReferenceDataWizard() {
 
               {tabs.map(tab => (
                 <TabsContent key={tab.id} value={tab.id} className="mt-6 space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <CurrentIcon className="w-5 h-5" />
-                        Add / Edit {tab.label}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                  {tab.customComponent && tab.id === "persons" ? (
+                    <PersonManagement />
+                  ) : (
+                    <>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            <CurrentIcon className="w-5 h-5" />
+                            Add / Edit {tab.label}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
                       <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -290,8 +296,10 @@ export default function MfgReferenceDataWizard() {
                           </Table>
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
                 </TabsContent>
               ))}
             </Tabs>
