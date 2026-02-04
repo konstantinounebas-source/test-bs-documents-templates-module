@@ -22,6 +22,7 @@ import ProfilesTab from '@/components/manufacturing/standards/ProfilesTab.jsx';
 import ConsumablesTab from '@/components/manufacturing/standards/ConsumablesTab.jsx';
 import KPITab from '@/components/manufacturing/standards/KPITab.jsx';
 import MetricsTab from '@/components/manufacturing/standards/MetricsTab.jsx';
+import DailyTargetsTab from '@/components/manufacturing/standards/DailyTargetsTab.jsx';
 
 export default function MfgStandardsManagementPage() {
   const { accessLevel, loading: accessLoading } = usePageAccess('MfgStandardsManagement');
@@ -86,10 +87,11 @@ export default function MfgStandardsManagementPage() {
       });
 
       // Clone all data from each tab
-      const [stdLines, qcLines, profileLines, consumablesLines, kpiLines, metricsLines] = await Promise.all([
+      const [stdLines, qcLines, profileLines, targetLines, consumablesLines, kpiLines, metricsLines] = await Promise.all([
         base44.entities.StdSetLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.QCSetLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.ProfileSetLines.filter({ bundle_id: currentBundle.id }),
+        base44.entities.Target_Daily.filter({ bundle_id: currentBundle.id }),
         base44.entities.ConsumablesStandardsLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.KPIDefSetLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.MetricsDefSetLines.filter({ bundle_id: currentBundle.id })
@@ -100,6 +102,7 @@ export default function MfgStandardsManagementPage() {
         ...stdLines.map(l => base44.entities.StdSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...qcLines.map(l => base44.entities.QCSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...profileLines.map(l => base44.entities.ProfileSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
+        ...targetLines.map(l => base44.entities.Target_Daily.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...consumablesLines.map(l => base44.entities.ConsumablesStandardsLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...kpiLines.map(l => base44.entities.KPIDefSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
         ...metricsLines.map(l => base44.entities.MetricsDefSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id }))
@@ -176,6 +179,7 @@ export default function MfgStandardsManagementPage() {
     await queryClient.invalidateQueries({ queryKey: ['StdSetLines'] });
     await queryClient.invalidateQueries({ queryKey: ['QCSetLines'] });
     await queryClient.invalidateQueries({ queryKey: ['ProfileSetLines'] });
+    await queryClient.invalidateQueries({ queryKey: ['Target_Daily'] });
     await queryClient.invalidateQueries({ queryKey: ['ConsumablesStandardsLines'] });
     await queryClient.invalidateQueries({ queryKey: ['KPIDefSetLines'] });
     await queryClient.invalidateQueries({ queryKey: ['MetricsDefSetLines'] });
@@ -299,10 +303,11 @@ export default function MfgStandardsManagementPage() {
           {/* Tabs */}
           {currentBundle ? (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-7">
                 <TabsTrigger value="data">DATA</TabsTrigger>
                 <TabsTrigger value="qc">QC</TabsTrigger>
                 <TabsTrigger value="profiles">Profiles</TabsTrigger>
+                <TabsTrigger value="targets">Daily Targets</TabsTrigger>
                 <TabsTrigger value="consumables">Consumables</TabsTrigger>
                 <TabsTrigger value="kpi">KPI</TabsTrigger>
                 <TabsTrigger value="metrics">Metrics</TabsTrigger>
@@ -319,6 +324,10 @@ export default function MfgStandardsManagementPage() {
 
                 <TabsContent value="profiles">
                   <ProfilesTab bundle={currentBundle} isEditable={isEditable} />
+                </TabsContent>
+
+                <TabsContent value="targets">
+                  <DailyTargetsTab bundle={currentBundle} isEditable={isEditable} />
                 </TabsContent>
 
                 <TabsContent value="consumables">
