@@ -1927,12 +1927,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
               <Label>Source Bundle</Label>
               <Select value={tempSourceBundleId} onValueChange={setTempSourceBundleId}>
                 <SelectTrigger>
-                  <SelectValue>
-                    {tempSourceBundleId && (() => {
-                      const bundle = allBundles.find(b => b.id === tempSourceBundleId);
-                      return bundle ? `v${bundle.version} - ${bundle.name} (${bundle.status})` : 'Select bundle';
-                    })()}
-                  </SelectValue>
+                  <SelectValue placeholder="Select bundle" />
                 </SelectTrigger>
                 <SelectContent>
                   {allBundles.map(b => (
@@ -1942,6 +1937,14 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                   ))}
                 </SelectContent>
               </Select>
+              {tempSourceBundleId && (() => {
+                const bundle = allBundles.find(b => b.id === tempSourceBundleId);
+                return bundle ? (
+                  <p className="text-sm text-slate-600 mt-2">
+                    Selected: <span className="font-semibold">v{bundle.version} - {bundle.name} ({bundle.status})</span>
+                  </p>
+                ) : null;
+              })()}
             </div>
             <Alert>
               <AlertCircle className="w-4 h-4" />
