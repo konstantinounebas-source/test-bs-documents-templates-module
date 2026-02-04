@@ -42,8 +42,8 @@ export default function ProfilesTab({ bundle, isEditable }) {
 
   // Fetch Operation Profiles for this department
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
-    queryKey: ['Operation_Profile_Name', bundle?.department],
-    queryFn: () => base44.entities.Operation_Profile_Name.filter({ department: bundle.department }),
+    queryKey: ['OperationProfileName', bundle?.department],
+    queryFn: () => base44.entities.OperationProfileName.filter({ department: bundle.department }),
     enabled: !!bundle
   });
 
@@ -58,9 +58,9 @@ export default function ProfilesTab({ bundle, isEditable }) {
 
   // Mutations
   const createProfileMutation = useMutation({
-    mutationFn: (data) => base44.entities.Operation_Profile_Name.create(data),
+    mutationFn: (data) => base44.entities.OperationProfileName.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['Operation_Profile_Name']);
+      queryClient.invalidateQueries(['OperationProfileName']);
       toast.success('Profile created');
       handleCloseDialog();
     },
@@ -68,9 +68,9 @@ export default function ProfilesTab({ bundle, isEditable }) {
   });
 
   const updateProfileMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Operation_Profile_Name.update(id, data),
+    mutationFn: ({ id, data }) => base44.entities.OperationProfileName.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['Operation_Profile_Name']);
+      queryClient.invalidateQueries(['OperationProfileName']);
       toast.success('Profile updated');
       handleCloseDialog();
     },
@@ -78,9 +78,9 @@ export default function ProfilesTab({ bundle, isEditable }) {
   });
 
   const deleteProfileMutation = useMutation({
-    mutationFn: (id) => base44.entities.Operation_Profile_Name.delete(id),
+    mutationFn: (id) => base44.entities.OperationProfileName.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['Operation_Profile_Name']);
+      queryClient.invalidateQueries(['OperationProfileName']);
       toast.success('Profile deleted');
     },
     onError: (err) => toast.error('Failed to delete profile: ' + err.message)
