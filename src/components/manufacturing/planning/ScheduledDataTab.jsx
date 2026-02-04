@@ -81,6 +81,37 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
       setSelectedBundle(null);
     }
   }, [selectedDepartment, allBundles]);
+
+  // Fetch scheduled data lines
+  const { data: lines = [], isLoading } = useQuery({
+    queryKey: ['ScheduledData', selectedDepartment],
+    queryFn: () => base44.entities.ScheduledData.filter({ department_id: selectedDepartment }),
+    enabled: !!selectedDepartment,
+    staleTime: 0
+  });
+
+  // Fetch day headers
+  const { data: dayHeaders = [] } = useQuery({
+    queryKey: ['ScheduledDayHeader', selectedDepartment],
+    queryFn: () => base44.entities.ScheduledDayHeader.filter({ department_id: selectedDepartment }),
+    enabled: !!selectedDepartment,
+    staleTime: 0
+  });
+
+  // Get current day header (contains source_bundle_id for this day)
+  const currentDayHeader = useMemo(() => {
+    if (!selectedDate) return null;
+    return dayHeaders.find(h => h.date === selectedDate) || null;
+  }, [dayHeaders, selectedDate]);
+
+  // Get source bundle for current day
+  const sourceBundleForDay = useMemo(() => {
+    if (!selectedDate || !currentDayHeader) return selectedBundle;
+    return allBundles.find(b => b.id === currentDayHeader.source_bundle_id) || selectedBundle;
+  }, [selectedDate, currentDayHeader, allBundles, selectedBundle]);
+
+  // Fetch item codes from DATA tab of source bundle for selected day (or default to selected bundle)
+  const activeBundleIdForCalculations = sourceBundleForDay?.id || selectedBundle?.id;
   
   const { data: dataLines = [], isLoading: dataLinesLoading, isFetched: dataLinesFetched } = useQuery({
     queryKey: ['StdSetLines', activeBundleIdForCalculations],
@@ -148,37 +179,6 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
   const itemOperationMap = useMemo(() => {
     return buildItemOperationMap(dataLines);
   }, [dataLines]);
-
-  // Fetch scheduled data lines
-  const { data: lines = [], isLoading } = useQuery({
-    queryKey: ['ScheduledData', selectedDepartment],
-    queryFn: () => base44.entities.ScheduledData.filter({ department_id: selectedDepartment }),
-    enabled: !!selectedDepartment,
-    staleTime: 0
-  });
-
-  // Fetch day headers
-  const { data: dayHeaders = [] } = useQuery({
-    queryKey: ['ScheduledDayHeader', selectedDepartment],
-    queryFn: () => base44.entities.ScheduledDayHeader.filter({ department_id: selectedDepartment }),
-    enabled: !!selectedDepartment,
-    staleTime: 0
-  });
-
-  // Get current day header (contains source_bundle_id for this day)
-  const currentDayHeader = useMemo(() => {
-    if (!selectedDate) return null;
-    return dayHeaders.find(h => h.date === selectedDate) || null;
-  }, [dayHeaders, selectedDate]);
-
-  // Get source bundle for current day
-  const sourceBundleForDay = useMemo(() => {
-    if (!selectedDate || !currentDayHeader) return selectedBundle;
-    return allBundles.find(b => b.id === currentDayHeader.source_bundle_id) || selectedBundle;
-  }, [selectedDate, currentDayHeader, allBundles, selectedBundle]);
-
-  // Fetch item codes from DATA tab of source bundle for selected day (or default to selected bundle)
-  const activeBundleIdForCalculations = sourceBundleForDay?.id || selectedBundle?.id;
 
   // Fetch persons
   const { data: persons = [] } = useQuery({
