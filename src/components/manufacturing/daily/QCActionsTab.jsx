@@ -45,6 +45,14 @@ export default function QCActionsTab({ batchId, department }) {
     staleTime: 0
   });
 
+  // Fetch standard minutes (base operation times) from DATA tab of the bundle
+  const { data: stdSetLines = [] } = useQuery({
+    queryKey: ['StdSetLines', batchHeader?.bundle_id],
+    queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: batchHeader.bundle_id }),
+    enabled: !!batchHeader?.bundle_id,
+    staleTime: 0
+  });
+
   const { data: qcTypes = [] } = useQuery({
     queryKey: ['QC_Type'],
     queryFn: () => base44.entities.QC_Type.list()
