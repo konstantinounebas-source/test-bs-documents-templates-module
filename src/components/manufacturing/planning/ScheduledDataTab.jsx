@@ -828,6 +828,34 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
         </div>
       </div>
 
+      {/* Assigned Persons Card */}
+      {selectedDate && (
+        <Card className="bg-purple-50 border-purple-200">
+          <CardContent className="pt-4">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-purple-900 mb-2">Assigned Persons (Day)</p>
+                {currentDayAssignment ? (
+                  <>
+                    <p className="text-lg">
+                      {currentDayAssignment.assigned_persons?.join(', ') || 'None assigned'}
+                    </p>
+                    {currentDayAssignment.notes && (
+                      <p className="text-sm text-purple-700 mt-1">{currentDayAssignment.notes}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-slate-500 italic">No persons assigned yet</p>
+                )}
+              </div>
+              <Button onClick={handleOpenAssignPersons} size="sm">
+                {currentDayAssignment ? 'Edit' : 'Assign'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Daily Summary */}
       {selectedDate && dailySummary && (
         <Card className="bg-blue-50">
