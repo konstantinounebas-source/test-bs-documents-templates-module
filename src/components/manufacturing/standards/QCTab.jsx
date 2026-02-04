@@ -33,7 +33,12 @@ export default function QCTab({ bundle, isEditable }) {
     queryKey: ['Operation'],
     queryFn: () => base44.entities.Operation.list()
   });
-  const operations = allOperations.filter(op => op.is_active && op.is_allowed).slice(0, 10);
+  const operations = allOperations
+    .filter(op => op.is_active && op.is_allowed)
+    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+    .slice(0, 10);
+  
+  console.log("operations count:", operations.length, operations);
 
   // Fetch QC types
   const { data: allQCTypes = [] } = useQuery({
