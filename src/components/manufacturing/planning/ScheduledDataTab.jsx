@@ -459,11 +459,12 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
 
   // Save template mutation
   const saveTemplateMutation = useMutation({
-    mutationFn: async ({ name, data }) => {
+    mutationFn: async ({ name, scheduledLines, assignedPersonsData }) => {
       await base44.entities.ScheduleTemplate.create({
         bundle_id: selectedBundle.id,
         template_name: name,
-        template_data: data
+        template_data: scheduledLines,
+        assigned_persons_data: assignedPersonsData
       });
     },
     onSuccess: () => {
@@ -479,19 +480,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
 
   // Load template mutation
   const loadTemplateMutation = useMutation({
-    mutationFn: async ({ templateData, targetDate }) => {
-      // Handle both old (array) and new (object) template format
-      let scheduledLines = [];
-      let assignedPersonsData = null;
-
-      if (Array.isArray(templateData)) {
-        // Old format: just array of lines
-        scheduledLines = templateData;
-      } else {
-        // New format: object with scheduled_lines + assigned_persons_data
-        scheduledLines = templateData.scheduled_lines || [];
-        assignedPersonsData = templateData.assigned_persons_data;
-      }
+    mutationFn: async ({ template, targetDate }) => {
+      const scheduledLines = template.template_data || [];
+      const assignedPersonsData = template.assigned_persons_data;
 
       // Create scheduled records
       const records = scheduledLines.map(item => ({
@@ -732,10 +723,8 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
 
     saveTemplateMutation.mutate({
       name: templateName.trim(),
-      data: {
-        scheduled_lines: templateData,
-        assigned_persons_data: assignedPersonsData
-      }
+      scheduledLines: templateData,
+      assignedPersonsData: assignedPersonsData
     });
   };
 
@@ -746,7 +735,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     }
 
     loadTemplateMutation.mutate({
-      templateData: template.template_data,
+      template: template,
       targetDate: loadToDate
     });
   };
