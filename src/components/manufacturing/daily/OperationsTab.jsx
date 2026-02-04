@@ -423,48 +423,33 @@ export default function OperationsTab({ batchId, department }) {
 
             {formData.entry_type === 'OPERATION' && formData.operation_profile && (
               <div>
-                <Label>Select Operations</Label>
-                <div className="border rounded-lg p-3 max-h-64 overflow-y-auto space-y-3 bg-slate-50">
+                <Label>Select Operations Required</Label>
+                <p className="text-sm text-slate-500 mb-2">Select operations included in this profile</p>
+                <div className="border rounded-lg p-4 bg-slate-50">
                   {operationsForProfile.length === 0 ? (
                     <p className="text-sm text-slate-500">No operations in this profile</p>
                   ) : (
-                    operationsForProfile.map(op => (
-                      <div key={op.id} className="flex items-end gap-2">
-                        <Checkbox
-                          checked={selectedOperations[op.id] > 0}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedOperations(prev => ({ ...prev, [op.id]: 1 }));
-                            } else {
-                              const { [op.id]: _, ...rest } = selectedOperations;
-                              setSelectedOperations(rest);
-                            }
-                          }}
-                          id={`op-${op.id}`}
-                        />
-                        <label htmlFor={`op-${op.id}`} className="text-sm flex-1 cursor-pointer">
-                          {op.name}
-                        </label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={selectedOperations[op.id] || ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val) {
-                              setSelectedOperations(prev => ({ ...prev, [op.id]: parseFloat(val) || 0 }));
-                            } else {
-                              const { [op.id]: _, ...rest } = selectedOperations;
-                              setSelectedOperations(rest);
-                            }
-                          }}
-                          disabled={!selectedOperations[op.id]}
-                          placeholder="0"
-                          className="w-20"
-                        />
-                      </div>
-                    ))
+                    <div className="grid grid-cols-2 gap-4">
+                      {operationsForProfile.map(op => (
+                        <div key={op.id} className="flex items-center gap-2">
+                          <Checkbox
+                            checked={selectedOperations[op.id] > 0}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedOperations(prev => ({ ...prev, [op.id]: 1 }));
+                              } else {
+                                const { [op.id]: _, ...rest } = selectedOperations;
+                                setSelectedOperations(rest);
+                              }
+                            }}
+                            id={`op-${op.id}`}
+                          />
+                          <label htmlFor={`op-${op.id}`} className="text-sm cursor-pointer">
+                            {op.name}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
