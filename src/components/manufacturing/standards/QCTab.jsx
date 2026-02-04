@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -91,7 +91,7 @@ export default function QCTab({ bundle, isEditable }) {
   }, [dataLines, selectedOperation]);
 
   // Initialize grid data when QC lines load
-  useMemo(() => {
+  useEffect(() => {
     if (!selectedOperation || !selectedQCType || !selectedQCLevel) return;
     
     const newGridData = {};
