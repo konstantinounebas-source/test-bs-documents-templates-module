@@ -261,9 +261,13 @@ export default function QCTab({ bundle, isEditable }) {
                 <SelectValue placeholder="Select operation" />
               </SelectTrigger>
               <SelectContent>
-                {operations.map(op => (
-                  <SelectItem key={op.id} value={op.name}>{op.name}</SelectItem>
-                ))}
+                {operations.length === 0 && (
+                  <div className="p-2 text-sm text-slate-500">No operations found</div>
+                )}
+                {operations.map((op, idx) => {
+                  console.log(`Operation ${idx}:`, op.id, op.name);
+                  return <SelectItem key={op.id} value={op.name}>{op.name}</SelectItem>;
+                })}
               </SelectContent>
             </Select>
           </div>
