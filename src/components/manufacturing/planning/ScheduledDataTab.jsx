@@ -108,10 +108,19 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     return dayHeaders.find(h => h.date === selectedDate) || null;
   }, [dayHeaders, selectedDate]);
 
-  // Get source bundle for current day
+  // Get source bundle for current day (resolve from currentDayHeader.source_bundle_id)
   const sourceBundleForDay = useMemo(() => {
     if (!selectedDate || !currentDayHeader) return selectedBundle;
-    return allBundles.find(b => b.id === currentDayHeader.source_bundle_id) || selectedBundle;
+    
+    const foundBundle = allBundles.find(b => String(b.id) === String(currentDayHeader.source_bundle_id));
+    
+    if (foundBundle) {
+      return foundBundle;
+    }
+    
+    // Log warning if bundle not found
+    console.warn(`⚠️ Source bundle not found for day ${selectedDate}: stored ID = ${currentDayHeader.source_bundle_id}`);
+    return selectedBundle;
   }, [selectedDate, currentDayHeader, allBundles, selectedBundle]);
 
   // Fetch item codes from DATA tab of source bundle for selected day (or default to selected bundle)
