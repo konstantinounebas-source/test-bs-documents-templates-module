@@ -333,17 +333,24 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {targetTypesList.map(tt => (
-              <Badge key={tt} variant="secondary" className="text-sm px-3 py-1">
-                {tt}
-                {isEditable && (
-                  <Trash2
-                    className="w-3 h-3 ml-2 cursor-pointer text-red-600 hover:text-red-800"
-                    onClick={() => handleRemoveTargetType(tt)}
-                  />
-                )}
-              </Badge>
-            ))}
+            {targetTypesList.map(tt => {
+              const totalMin = dailyTargets
+                .filter(dt => dt.target_type === tt)
+                .reduce((sum, dt) => sum + (dt.item_total_min || 0), 0);
+              
+              return (
+                <Badge key={tt} variant="secondary" className="text-sm px-3 py-1 flex items-center gap-2">
+                  <span>{tt}</span>
+                  <span className="text-blue-700 font-semibold">({totalMin.toFixed(2)} min)</span>
+                  {isEditable && (
+                    <Trash2
+                      className="w-3 h-3 cursor-pointer text-red-600 hover:text-red-800"
+                      onClick={() => handleRemoveTargetType(tt)}
+                    />
+                  )}
+                </Badge>
+              );
+            })}
             {targetTypesList.length === 0 && <p className="text-sm text-slate-500">No Target Types defined yet.</p>}
           </div>
         </CardContent>
