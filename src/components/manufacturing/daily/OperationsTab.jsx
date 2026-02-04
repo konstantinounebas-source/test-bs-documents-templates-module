@@ -38,6 +38,7 @@ export default function OperationsTab({ batchId, department }) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingLine, setEditingLine] = useState(null);
   const [searchFilter, setSearchFilter] = useState('');
+  const [selectedOperations, setSelectedOperations] = useState({});
   const [formData, setFormData] = useState({
     item_code: '',
     entry_type: '',
