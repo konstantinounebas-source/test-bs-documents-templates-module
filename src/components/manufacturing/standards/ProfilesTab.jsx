@@ -1,295 +1,322 @@
-import React, { useState, useMemo } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Plus, Trash2, Search, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useBundleItemCodes } from './useBundleItemCodes';
+import React, { useState, useMemo } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Plus, Trash2, Edit, AlertCircle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ProfilesTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
+
+  // State
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [searchFilter, setSearchFilter] = useState('');
-  const [formData, setFormData] = useState({
-    item_code: '',
-    profile_name: '',
-    sanding_yn: false,
-    masking_yn: false,
-    zink_yn: false,
-    repair_yn: false,
-    remake_yn: false,
-    hanging_yn: false,
-    unhanging_yn: false,
-    oven_clean_yn: false,
-    other_yn: false,
-    notes: ''
+  const [editingProfile, setEditingProfile] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Form state
+  const [formName, setFormName] = useState('');
+  const [formDescription, setFormDescription] = useState('');
+  const [formOperations, setFormOperations] = useState([]);
+
+  // Fetch Operations (active, max 10)
+  const { data: allOperations = [], isLoading: opsLoading } = useQuery({
+    queryKey: ['Operation'],
+    queryFn: () => base44.entities.Operation.filter({ is_active: true })
   });
 
-  // Fetch item codes from DATA tab (master list)
-  const { data: itemCodes = [], isLoading: itemCodesLoading } = useBundleItemCodes(bundle?.id);
-  const hasItemCodes = itemCodes.length > 0;
+  const operations = useMemo(() => {
+    return allOperations
+      .filter(op => op.is_allowed !== false)
+      .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+      .slice(0, 10);
+  }, [allOperations]);
 
-  // Fetch operation profile names
-  const { data: profileNames = [] } = useQuery({
-    queryKey: ['Operation_Profile_Name'],
-    queryFn: () => base44.entities.Operation_Profile_Name.filter({ is_active: true })
-  });
-
-  // Fetch lines
-  const { data: lines = [], isLoading } = useQuery({
-    queryKey: ['ProfileSetLines', bundle.id],
-    queryFn: () => base44.entities.ProfileSetLines.filter({ bundle_id: bundle.id }),
+  // Fetch Operation Profiles for this department
+  const { data: profiles = [], isLoading: profilesLoading } = useQuery({
+    queryKey: ['Operation_Profile_Name', bundle?.department],
+    queryFn: () => base44.entities.Operation_Profile_Name.filter({ department: bundle.department }),
     enabled: !!bundle
   });
 
-  // Filtered lines
-  const filteredLines = useMemo(() => {
-    if (!searchFilter) return lines;
-    const term = searchFilter.toLowerCase();
-    return lines.filter(l => l.item_code?.toLowerCase().includes(term));
-  }, [lines, searchFilter]);
+  // Filter profiles by search
+  const filteredProfiles = useMemo(() => {
+    if (!searchTerm) return profiles;
+    return profiles.filter(p => 
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [profiles, searchTerm]);
 
-  // Create mutation
-  const createMutation = useMutation({
-    mutationFn: async (data) => {
-      await base44.entities.ProfileSetLines.create({
-        bundle_id: bundle.id,
-        ...data
-      });
-    },
+  // Mutations
+  const createProfileMutation = useMutation({
+    mutationFn: (data) => base44.entities.Operation_Profile_Name.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ProfileSetLines'] });
-      setShowAddDialog(false);
-      setFormData({
-        item_code: '',
-        profile_name: '',
-        sanding_yn: false,
-        masking_yn: false,
-        zink_yn: false,
-        repair_yn: false,
-        remake_yn: false,
-        hanging_yn: false,
-        unhanging_yn: false,
-        oven_clean_yn: false,
-        other_yn: false,
-        notes: ''
-      });
-      toast.success('Profile line added');
+      queryClient.invalidateQueries(['Operation_Profile_Name']);
+      toast.success('Profile created');
+      handleCloseDialog();
     },
-    onError: (error) => {
-      toast.error('Failed to add: ' + error.message);
-    }
+    onError: (err) => toast.error('Failed to create profile: ' + err.message)
   });
 
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (id) => {
-      await base44.entities.ProfileSetLines.delete(id);
-    },
+  const updateProfileMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Operation_Profile_Name.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ProfileSetLines'] });
-      toast.success('Profile line deleted');
+      queryClient.invalidateQueries(['Operation_Profile_Name']);
+      toast.success('Profile updated');
+      handleCloseDialog();
     },
-    onError: (error) => {
-      toast.error('Failed to delete: ' + error.message);
-    }
+    onError: (err) => toast.error('Failed to update profile: ' + err.message)
   });
 
-  const handleAdd = () => {
-    if (!formData.item_code || !formData.profile_name) {
-      toast.error('Please fill required fields');
-      return;
-    }
-    createMutation.mutate(formData);
+  const deleteProfileMutation = useMutation({
+    mutationFn: (id) => base44.entities.Operation_Profile_Name.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['Operation_Profile_Name']);
+      toast.success('Profile deleted');
+    },
+    onError: (err) => toast.error('Failed to delete profile: ' + err.message)
+  });
+
+  const handleOpenAddDialog = () => {
+    setEditingProfile(null);
+    setFormName('');
+    setFormDescription('');
+    setFormOperations([]);
+    setShowAddDialog(true);
   };
 
-  if (isLoading) {
+  const handleOpenEditDialog = (profile) => {
+    setEditingProfile(profile);
+    setFormName(profile.name);
+    setFormDescription(profile.description || '');
+    setFormOperations(profile.operations_required || []);
+    setShowAddDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setShowAddDialog(false);
+    setEditingProfile(null);
+    setFormName('');
+    setFormDescription('');
+    setFormOperations([]);
+  };
+
+  const handleToggleOperation = (opId) => {
+    if (formOperations.includes(opId)) {
+      setFormOperations(formOperations.filter(id => id !== opId));
+    } else {
+      setFormOperations([...formOperations, opId]);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!formName.trim()) {
+      toast.error('Profile name is required');
+      return;
+    }
+    if (formOperations.length === 0) {
+      toast.error('Select at least one operation');
+      return;
+    }
+
+    const data = {
+      name: formName.trim(),
+      department: bundle.department,
+      description: formDescription.trim(),
+      is_active: true,
+      operations_required: formOperations
+    };
+
+    if (editingProfile) {
+      updateProfileMutation.mutate({ id: editingProfile.id, data });
+    } else {
+      createProfileMutation.mutate(data);
+    }
+  };
+
+  const handleDelete = (profile) => {
+    if (confirm(`Delete profile "${profile.name}"?`)) {
+      deleteProfileMutation.mutate(profile.id);
+    }
+  };
+
+  if (!bundle) {
+    return <Alert><AlertCircle className="w-4 h-4" /><AlertDescription>No bundle selected</AlertDescription></Alert>;
+  }
+
+  if (opsLoading || profilesLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin" />
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
       </div>
     );
   }
 
-  return (
-    <div className="space-y-4">
-      {!hasItemCodes && !itemCodesLoading && (
-        <Alert variant="destructive">
-          <AlertCircle className="w-4 h-4" />
-          <AlertDescription>
-            Add Item Codes in DATA tab first before defining profiles.
-          </AlertDescription>
-        </Alert>
-      )}
+  if (operations.length === 0) {
+    return (
+      <Alert>
+        <AlertCircle className="w-4 h-4" />
+        <AlertDescription>No active operations found. Please add operations in Step 1 (Reference Data Setup).</AlertDescription>
+      </Alert>
+    );
+  }
 
-      <div className="flex justify-between items-center gap-4">
-        <h3 className="text-lg font-semibold">Operation Profiles</h3>
-        <div className="flex gap-2 items-center flex-1 max-w-md">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+  if (operations.length > 10) {
+    return (
+      <Alert>
+        <AlertCircle className="w-4 h-4 text-orange-600" />
+        <AlertDescription>Warning: More than 10 operations found. Only the first 10 will be available for selection.</AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            Operation Profiles
+            {isEditable && (
+              <Button onClick={handleOpenAddDialog} size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Profile
+              </Button>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {/* Search */}
+          <div className="mb-4">
             <Input
-              placeholder="Filter by item code..."
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              className="pl-9"
+              placeholder="Search profiles..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-        </div>
-        {isEditable && (
-          <Button 
-            onClick={() => setShowAddDialog(true)} 
-            variant="outline" 
-            size="sm"
-            disabled={!hasItemCodes}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Profile
-          </Button>
-        )}
-      </div>
 
-      <div className="border rounded-lg overflow-auto bg-white shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-slate-50">
-              <TableHead className="font-semibold">Item Code</TableHead>
-              <TableHead className="font-semibold">Profile Name</TableHead>
-              <TableHead className="font-semibold text-center">Sanding</TableHead>
-              <TableHead className="font-semibold text-center">Masking</TableHead>
-              <TableHead className="font-semibold text-center">Zink</TableHead>
-              <TableHead className="font-semibold text-center">Repair</TableHead>
-              <TableHead className="font-semibold text-center">Remake</TableHead>
-              <TableHead className="font-semibold text-center">Hanging</TableHead>
-              <TableHead className="font-semibold text-center">Unhanging</TableHead>
-              <TableHead className="font-semibold text-center">Oven Clean</TableHead>
-              <TableHead className="font-semibold text-center">Other</TableHead>
-              {isEditable && <TableHead className="font-semibold">Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredLines.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={12} className="text-center text-slate-500 py-12">
-                  {searchFilter ? 'No matching profiles found' : 'No profiles defined. Click "Add Profile" to start.'}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredLines.map(line => (
-                <TableRow key={line.id} className="hover:bg-slate-50">
-                  <TableCell className="font-medium">{line.item_code}</TableCell>
-                  <TableCell className="font-medium">{line.profile_name}</TableCell>
-                  <TableCell className="text-center">{line.sanding_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
-                  <TableCell className="text-center">{line.masking_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
-                  <TableCell className="text-center">{line.zink_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
-                  <TableCell className="text-center">{line.repair_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
-                  <TableCell className="text-center">{line.remake_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
-                  <TableCell className="text-center">{line.hanging_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
-                  <TableCell className="text-center">{line.unhanging_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
-                  <TableCell className="text-center">{line.oven_clean_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
-                  <TableCell className="text-center">{line.other_yn ? <span className="text-green-600 font-bold">✓</span> : <span className="text-slate-300">-</span>}</TableCell>
-                  {isEditable && (
-                    <TableCell>
-                      <Button
-                        onClick={() => deleteMutation.mutate(line.id)}
-                        variant="ghost"
-                        size="icon"
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </TableCell>
-                  )}
+          {/* Profiles Table */}
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Profile Name</TableHead>
+                  <TableHead>Operations</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Status</TableHead>
+                  {isEditable && <TableHead>Actions</TableHead>}
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              </TableHeader>
+              <TableBody>
+                {filteredProfiles.map(profile => {
+                  const profileOps = (profile.operations_required || [])
+                    .map(opId => operations.find(o => o.id === opId))
+                    .filter(Boolean);
+                  
+                  return (
+                    <TableRow key={profile.id}>
+                      <TableCell className="font-medium">{profile.name}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {profileOps.map(op => (
+                            <Badge key={op.id} variant="secondary" className="text-xs">
+                              {op.name}
+                            </Badge>
+                          ))}
+                          {profileOps.length === 0 && <span className="text-slate-500 text-sm">None</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-600">{profile.description || '—'}</TableCell>
+                      <TableCell>
+                        <Badge variant={profile.is_active ? 'default' : 'outline'}>
+                          {profile.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </TableCell>
+                      {isEditable && (
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEditDialog(profile)}>
+                              <Edit className="w-4 h-4 text-blue-600" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDelete(profile)}>
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
+                {filteredProfiles.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={isEditable ? 5 : 4} className="text-center text-slate-500">
+                      No profiles found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Add Dialog */}
+      {/* Add/Edit Profile Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add Profile</DialogTitle>
-            <DialogDescription>Define an operation profile for an item</DialogDescription>
+            <DialogTitle>{editingProfile ? 'Edit Profile' : 'Add Profile'}</DialogTitle>
           </DialogHeader>
-
-          <div className="space-y-4 py-4 max-h-[500px] overflow-auto">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Item Code *</Label>
-                <Select value={formData.item_code} onValueChange={(v) => setFormData({ ...formData, item_code: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select item code from DATA tab" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {itemCodes.map(code => (
-                      <SelectItem key={code} value={code}>{code}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Profile Name *</Label>
-                <Select value={formData.profile_name} onValueChange={(v) => setFormData({ ...formData, profile_name: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select profile name" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {profileNames.map(pn => (
-                      <SelectItem key={pn.id} value={pn.name}>{pn.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="space-y-4">
+            <div>
+              <Label>Profile Name *</Label>
+              <Input
+                placeholder="e.g., Standard Process"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+              />
             </div>
 
-            <div className="space-y-2">
-              <Label>Operations Required</Label>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { key: 'sanding_yn', label: 'Sanding' },
-                  { key: 'masking_yn', label: 'Masking' },
-                  { key: 'zink_yn', label: 'Zink' },
-                  { key: 'repair_yn', label: 'Repair' },
-                  { key: 'remake_yn', label: 'Remake' },
-                  { key: 'hanging_yn', label: 'Hanging' },
-                  { key: 'unhanging_yn', label: 'Unhanging' },
-                  { key: 'oven_clean_yn', label: 'Oven Clean' },
-                  { key: 'other_yn', label: 'Other' }
-                ].map(({ key, label }) => (
-                  <div key={key} className="flex items-center space-x-2">
+            <div>
+              <Label>Operations Required *</Label>
+              <p className="text-xs text-slate-500 mb-2">Select operations included in this profile (max 10)</p>
+              <div className="grid grid-cols-2 gap-3 border rounded-lg p-4">
+                {operations.map(op => (
+                  <div key={op.id} className="flex items-center space-x-2">
                     <Checkbox
-                      checked={formData[key]}
-                      onCheckedChange={(checked) => setFormData({ ...formData, [key]: checked })}
+                      id={`op-${op.id}`}
+                      checked={formOperations.includes(op.id)}
+                      onCheckedChange={() => handleToggleOperation(op.id)}
                     />
-                    <Label className="cursor-pointer">{label}</Label>
+                    <Label htmlFor={`op-${op.id}`} className="text-sm font-normal cursor-pointer">
+                      {op.name}
+                    </Label>
                   </div>
                 ))}
               </div>
             </div>
 
             <div>
-              <Label>Notes</Label>
-              <Input
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              <Label>Description / Notes</Label>
+              <Textarea
+                placeholder="Optional description"
+                value={formDescription}
+                onChange={(e) => setFormDescription(e.target.value)}
+                rows={3}
               />
             </div>
           </div>
-
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={createMutation.isPending}>
-              {createMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-              Add
+            <Button variant="outline" onClick={handleCloseDialog}>Cancel</Button>
+            <Button onClick={handleSubmit}>
+              {editingProfile ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>
         </DialogContent>

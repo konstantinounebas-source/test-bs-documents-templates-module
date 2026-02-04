@@ -58,12 +58,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     queryFn: () => base44.entities.Operation_Profile_Name.filter({ is_active: true })
   });
 
-  // Fetch ProfileSetLines to get enabled operations per profile
-  const { data: profileSetLines = [] } = useQuery({
-    queryKey: ['ProfileSetLines', bundle?.id],
-    queryFn: () => base44.entities.ProfileSetLines.filter({ bundle_id: bundle.id }),
-    enabled: !!bundle
-  });
+  // Profiles now store operations_required directly - no need for ProfileSetLines
 
   // Fetch Operations
   const { data: allOperations = [] } = useQuery({
@@ -98,47 +93,21 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     return map;
   }, [stdLines]);
 
-  // Get enabled operations for a profile
-  const getEnabledOperations = (profileName) => {
-    const profileLines = profileSetLines.filter(pl => pl.profile_name === profileName);
-    if (profileLines.length === 0) return [];
+  // Get enabled operations for a profile from operations_required array
+  const getEnabledOperations = (profileId) => {
+    const profile = operationProfiles.find(p => p.id === profileId);
+    if (!profile || !profile.operations_required) return [];
     
-    const enabled = [];
-    const operationFields = [
-      'sanding_yn', 'masking_yn', 'zink_yn', 'repair_yn', 
-      'remake_yn', 'hanging_yn', 'unhanging_yn', 'oven_clean_yn', 'other_yn'
-    ];
-    
-    // Map field names to operation names (adjust based on your Operation entity)
-    const fieldToOp = {
-      'sanding_yn': 'Sanding',
-      'masking_yn': 'Masking',
-      'zink_yn': 'Zink',
-      'repair_yn': 'Repair',
-      'remake_yn': 'Remake',
-      'hanging_yn': 'Hanging',
-      'unhanging_yn': 'Unhanging',
-      'oven_clean_yn': 'Oven Clean',
-      'other_yn': 'Other'
-    };
-
-    profileLines.forEach(pl => {
-      operationFields.forEach(field => {
-        if (pl[field]) {
-          const opName = fieldToOp[field];
-          if (opName && !enabled.includes(opName)) {
-            enabled.push(opName);
-          }
-        }
-      });
-    });
-
-    return enabled;
+    // Return operation names from the operations_required array
+    return profile.operations_required
+      .map(opId => operations.find(o => o.id === opId))
+      .filter(Boolean)
+      .map(op => op.name);
   };
 
   // Calculate per-piece total for item with profile filter
-  const calculatePerPieceTotal = (itemCode, profileName) => {
-    const enabledOps = getEnabledOperations(profileName);
+  const calculatePerPieceTotal = (itemCode, profileId) => {
+    const enabledOps = getEnabledOperations(profileId);
     const itemOps = itemOperationMap[itemCode] || {};
     let total = 0;
     enabledOps.forEach(opName => {
@@ -534,7 +503,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
                   </SelectTrigger>
                   <SelectContent>
                     {operationProfiles.map(op => (
-                      <SelectItem key={op.id} value={op.name}>{op.name}</SelectItem>
+                      <SelectItem key={op.id} value={op.id}>{op.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -641,8 +610,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
                     </TableHeader>
                     <TableBody>
                       {(() => {
-                        const profile = operationProfiles.find(op => op.id === selectedBreakdownTarget.operation_profile_id);
-                        const enabledOps = getEnabledOperations(profile?.name || '');
+                        const enabledOps = getEnabledOperations(selectedBreakdownTarget.operation_profile_id);
                         const itemOps = itemOperationMap[selectedBreakdownTarget.item_code] || {};
                         const perPieceTotal = selectedBreakdownTarget.per_piece_total_min;
                         
