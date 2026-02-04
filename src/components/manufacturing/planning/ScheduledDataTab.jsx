@@ -1035,27 +1035,6 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
 
       <div className="flex justify-between items-center gap-4">
         <h3 className="text-lg font-semibold">Scheduled Data - {selectedDepartment}</h3>
-        
-        <div className="flex gap-2 items-center">
-          <Label className="text-sm">Default Bundle (for new days):</Label>
-          <Select value={selectedBundle?.id} onValueChange={(bundleId) => {
-            const bundle = allBundles.find(b => b.id === bundleId);
-            setSelectedBundle(bundle);
-          }}>
-            <SelectTrigger className="w-64">
-              <SelectValue>
-                {selectedBundle && `v${selectedBundle.version} - ${selectedBundle.name} (${selectedBundle.status})`}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {allBundles.map(b => (
-                <SelectItem key={b.id} value={b.id}>
-                  v{b.version} - {b.name} ({b.status})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
       </div>
 
       {/* Calendar Month View */}
