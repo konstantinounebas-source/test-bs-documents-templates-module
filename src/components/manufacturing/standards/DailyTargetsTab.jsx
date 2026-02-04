@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, AlertCircle, TrendingUp, X } from "lucide-react";
+import { Plus, Trash2, AlertCircle, X, Info } from "lucide-react";
 import { toast } from "sonner";
 
 export default function DailyTargetsTab({ bundle, isEditable }) {
@@ -21,26 +21,47 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   const [showAddTypeDialog, setShowAddTypeDialog] = useState(false);
   const [newTypeName, setNewTypeName] = useState('');
   const [showAddTargetDialog, setShowAddTargetDialog] = useState(false);
-  const [showAssigned, setShowAssigned] = useState(true);
+  const [showAssigned, setShowAssigned] = useState(false);
   const [filterItemCode, setFilterItemCode] = useState('');
   const [filterTargetType, setFilterTargetType] = useState('');
+  const [showBreakdownDialog, setShowBreakdownDialog] = useState(false);
+  const [selectedBreakdownTarget, setSelectedBreakdownTarget] = useState(null);
 
   // Form state for adding target
   const [formTargetType, setFormTargetType] = useState('');
+  const [formOperationProfile, setFormOperationProfile] = useState('');
   const [selectedItemCodes, setSelectedItemCodes] = useState([]);
   const [itemQuantities, setItemQuantities] = useState({});
 
-  // Fetch Target Types
-  const { data: targetTypes = [] } = useQuery({
-    queryKey: ['TargetType', bundle?.id],
-    queryFn: () => base44.entities.TargetType.filter({ bundle_id: bundle.id }),
-    enabled: !!bundle
-  });
+  // Fetch Target Types (free text list)
+  const [targetTypesList, setTargetTypesList] = useState([]);
+  
+  // Load target types from existing records
+  React.useEffect(() => {
+    if (!bundle) return;
+    base44.entities.DailyTargetLines.filter({ bundle_id: bundle.id }).then(lines => {
+      const types = [...new Set(lines.map(l => l.target_type))].filter(Boolean);
+      setTargetTypesList(types);
+    });
+  }, [bundle]);
 
   // Fetch Daily Target Lines
   const { data: dailyTargets = [] } = useQuery({
     queryKey: ['DailyTargetLines', bundle?.id],
     queryFn: () => base44.entities.DailyTargetLines.filter({ bundle_id: bundle.id }),
+    enabled: !!bundle
+  });
+
+  // Fetch Operation Profiles
+  const { data: operationProfiles = [] } = useQuery({
+    queryKey: ['Operation_Profile_Name'],
+    queryFn: () => base44.entities.Operation_Profile_Name.filter({ is_active: true })
+  });
+
+  // Fetch ProfileSetLines to get enabled operations per profile
+  const { data: profileSetLines = [] } = useQuery({
+    queryKey: ['ProfileSetLines', bundle?.id],
+    queryFn: () => base44.entities.ProfileSetLines.filter({ bundle_id: bundle.id }),
     enabled: !!bundle
   });
 
@@ -77,40 +98,72 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     return map;
   }, [stdLines]);
 
-  // Calculate per-piece totals for each item
-  const itemPerPieceTotals = useMemo(() => {
-    const totals = {};
-    itemCodesFromData.forEach(ic => {
-      const itemOps = itemOperationMap[ic] || {};
-      let total = 0;
-      operations.forEach(op => {
-        total += itemOps[op.name] || 0;
-      });
-      totals[ic] = total;
-    });
-    return totals;
-  }, [itemCodesFromData, itemOperationMap, operations]);
+  // Get enabled operations for a profile
+  const getEnabledOperations = (profileName) => {
+    const profileLines = profileSetLines.filter(pl => pl.profile_name === profileName);
+    if (profileLines.length === 0) return [];
+    
+    const enabled = [];
+    const operationFields = [
+      'sanding_yn', 'masking_yn', 'zink_yn', 'repair_yn', 
+      'remake_yn', 'hanging_yn', 'unhanging_yn', 'oven_clean_yn', 'other_yn'
+    ];
+    
+    // Map field names to operation names (adjust based on your Operation entity)
+    const fieldToOp = {
+      'sanding_yn': 'Sanding',
+      'masking_yn': 'Masking',
+      'zink_yn': 'Zink',
+      'repair_yn': 'Repair',
+      'remake_yn': 'Remake',
+      'hanging_yn': 'Hanging',
+      'unhanging_yn': 'Unhanging',
+      'oven_clean_yn': 'Oven Clean',
+      'other_yn': 'Other'
+    };
 
-  // Assigned items map: item_code -> target_type_name
+    profileLines.forEach(pl => {
+      operationFields.forEach(field => {
+        if (pl[field]) {
+          const opName = fieldToOp[field];
+          if (opName && !enabled.includes(opName)) {
+            enabled.push(opName);
+          }
+        }
+      });
+    });
+
+    return enabled;
+  };
+
+  // Calculate per-piece total for item with profile filter
+  const calculatePerPieceTotal = (itemCode, profileName) => {
+    const enabledOps = getEnabledOperations(profileName);
+    const itemOps = itemOperationMap[itemCode] || {};
+    let total = 0;
+    enabledOps.forEach(opName => {
+      total += itemOps[opName] || 0;
+    });
+    return total;
+  };
+
+  // Assigned items map: item_code -> true
   const assignedItems = useMemo(() => {
     const map = {};
     dailyTargets.forEach(dt => {
-      if (!map[dt.item_code]) {
-        const tt = targetTypes.find(t => t.id === dt.target_type_id);
-        map[dt.item_code] = tt?.name || 'Unknown';
-      }
+      map[dt.item_code] = true;
     });
     return map;
-  }, [dailyTargets, targetTypes]);
+  }, [dailyTargets]);
 
   // Item codes available for selection
   const availableItemCodes = useMemo(() => {
     return itemCodesFromData.map(ic => {
-      const assignedTo = assignedItems[ic];
+      const isAssigned = assignedItems[ic];
       return {
         value: ic,
-        label: assignedTo ? `${ic} (Assigned to ${assignedTo})` : ic,
-        disabled: !!assignedTo
+        label: isAssigned ? `${ic} (Already Assigned)` : ic,
+        disabled: isAssigned
       };
     });
   }, [itemCodesFromData, assignedItems]);
@@ -125,44 +178,35 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   const filteredDailyTargets = useMemo(() => {
     return dailyTargets.filter(dt => {
       if (filterItemCode && !dt.item_code.toLowerCase().includes(filterItemCode.toLowerCase())) return false;
-      if (filterTargetType) {
-        const tt = targetTypes.find(t => t.id === dt.target_type_id);
-        if (tt?.name !== filterTargetType) return false;
-      }
+      if (filterTargetType && dt.target_type !== filterTargetType) return false;
       return true;
     });
-  }, [dailyTargets, filterItemCode, filterTargetType, targetTypes]);
+  }, [dailyTargets, filterItemCode, filterTargetType]);
 
-  // Group targets by Target Type for display
-  const targetsByType = useMemo(() => {
+  // Calculate share % for each target within its Target Type group
+  const targetsWithShare = useMemo(() => {
     const grouped = {};
-    targetTypes.forEach(tt => {
-      grouped[tt.id] = dailyTargets.filter(dt => dt.target_type_id === tt.id);
+    dailyTargets.forEach(dt => {
+      if (!grouped[dt.target_type]) grouped[dt.target_type] = [];
+      grouped[dt.target_type].push(dt);
     });
-    return grouped;
-  }, [targetTypes, dailyTargets]);
+
+    const result = [];
+    Object.keys(grouped).forEach(targetType => {
+      const targets = grouped[targetType];
+      const targetTotal = targets.reduce((sum, t) => sum + t.item_total_min, 0);
+      targets.forEach(t => {
+        result.push({
+          ...t,
+          share_percent: targetTotal > 0 ? (t.item_total_min / targetTotal * 100).toFixed(2) : 0
+        });
+      });
+    });
+
+    return result;
+  }, [dailyTargets]);
 
   // Mutations
-  const createTargetTypeMutation = useMutation({
-    mutationFn: (data) => base44.entities.TargetType.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['TargetType']);
-      toast.success('Target Type created');
-      setShowAddTypeDialog(false);
-      setNewTypeName('');
-    },
-    onError: (err) => toast.error('Failed to create Target Type: ' + err.message)
-  });
-
-  const deleteTargetTypeMutation = useMutation({
-    mutationFn: (id) => base44.entities.TargetType.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['TargetType']);
-      toast.success('Target Type deleted');
-    },
-    onError: (err) => toast.error('Failed to delete Target Type: ' + err.message)
-  });
-
   const createDailyTargetsMutation = useMutation({
     mutationFn: async (targets) => {
       const results = await Promise.all(
@@ -190,6 +234,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
 
   const resetForm = () => {
     setFormTargetType('');
+    setFormOperationProfile('');
     setSelectedItemCodes([]);
     setItemQuantities({});
   };
@@ -199,17 +244,35 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
       toast.error('Target Type name is required');
       return;
     }
-    if (targetTypes.length >= 10) {
-      toast.error('Maximum 10 Target Types per bundle');
+    if (targetTypesList.length >= 10) {
+      toast.error('Maximum 10 Target Types');
       return;
     }
-    createTargetTypeMutation.mutate({ bundle_id: bundle.id, name: newTypeName.trim() });
+    if (targetTypesList.includes(newTypeName.trim())) {
+      toast.error('Target Type already exists');
+      return;
+    }
+    setTargetTypesList([...targetTypesList, newTypeName.trim()]);
+    setShowAddTypeDialog(false);
+    setNewTypeName('');
+    toast.success('Target Type added to list');
+  };
+
+  const handleRemoveTargetType = (typeName) => {
+    // Check if any targets use this type
+    const used = dailyTargets.some(dt => dt.target_type === typeName);
+    if (used) {
+      toast.error('Cannot remove: Target Type is in use');
+      return;
+    }
+    setTargetTypesList(targetTypesList.filter(t => t !== typeName));
+    toast.success('Target Type removed');
   };
 
   const handleAddItemCode = (itemCode) => {
     if (!selectedItemCodes.includes(itemCode)) {
       setSelectedItemCodes([...selectedItemCodes, itemCode]);
-      setItemQuantities({ ...itemQuantities, [itemCode]: 0 });
+      setItemQuantities({ ...itemQuantities, [itemCode]: 1 });
     }
   };
 
@@ -225,6 +288,10 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
       toast.error('Target Type is required');
       return;
     }
+    if (!formOperationProfile) {
+      toast.error('Operation Profile is required');
+      return;
+    }
     if (selectedItemCodes.length === 0) {
       toast.error('Select at least one item code');
       return;
@@ -233,25 +300,26 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     // Validate quantities
     for (const ic of selectedItemCodes) {
       const qty = parseFloat(itemQuantities[ic]);
-      if (isNaN(qty) || qty < 0) {
+      if (isNaN(qty) || qty <= 0) {
         toast.error(`Invalid quantity for ${ic}`);
         return;
       }
     }
 
-    const targetTypeId = targetTypes.find(tt => tt.name === formTargetType)?.id;
-    if (!targetTypeId) {
-      toast.error('Invalid Target Type');
+    const profileId = operationProfiles.find(op => op.name === formOperationProfile)?.id;
+    if (!profileId) {
+      toast.error('Invalid Operation Profile');
       return;
     }
 
     const targets = selectedItemCodes.map(ic => {
       const qty = parseFloat(itemQuantities[ic]);
-      const perPieceTotal = itemPerPieceTotals[ic] || 0;
+      const perPieceTotal = calculatePerPieceTotal(ic, formOperationProfile);
       const itemTotal = perPieceTotal * qty;
       return {
         bundle_id: bundle.id,
-        target_type_id: targetTypeId,
+        target_type: formTargetType,
+        operation_profile_id: profileId,
         item_code: ic,
         target_qty: qty,
         per_piece_total_min: perPieceTotal,
@@ -260,6 +328,11 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     });
 
     createDailyTargetsMutation.mutate(targets);
+  };
+
+  const handleShowBreakdown = (target) => {
+    setSelectedBreakdownTarget(target);
+    setShowBreakdownDialog(true);
   };
 
   if (!bundle) {
@@ -281,120 +354,39 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            Target Types
+            Target Types (Max 10)
             {isEditable && (
-              <Button onClick={() => setShowAddTypeDialog(true)} size="sm" disabled={targetTypes.length >= 10}>
+              <Button onClick={() => setShowAddTypeDialog(true)} size="sm" disabled={targetTypesList.length >= 10}>
                 <Plus className="w-4 h-4 mr-2" />
-                Add Target Type ({targetTypes.length}/10)
+                Add Target Type ({targetTypesList.length}/10)
               </Button>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-2">
-            {targetTypes.map(tt => (
-              <Badge key={tt.id} variant="secondary" className="text-sm px-3 py-1">
-                {tt.name}
+            {targetTypesList.map(tt => (
+              <Badge key={tt} variant="secondary" className="text-sm px-3 py-1">
+                {tt}
                 {isEditable && (
                   <Trash2
                     className="w-3 h-3 ml-2 cursor-pointer text-red-600 hover:text-red-800"
-                    onClick={() => {
-                      if (confirm(`Delete Target Type "${tt.name}"?`)) {
-                        deleteTargetTypeMutation.mutate(tt.id);
-                      }
-                    }}
+                    onClick={() => handleRemoveTargetType(tt)}
                   />
                 )}
               </Badge>
             ))}
-            {targetTypes.length === 0 && <p className="text-sm text-slate-500">No Target Types defined yet.</p>}
+            {targetTypesList.length === 0 && <p className="text-sm text-slate-500">No Target Types defined yet.</p>}
           </div>
         </CardContent>
       </Card>
 
-      {/* Target Type Summaries with Per-Piece Breakdowns */}
-      {targetTypes.length > 0 && (
-        <div className="space-y-4">
-          {targetTypes.map(tt => {
-            const targets = targetsByType[tt.id] || [];
-            if (targets.length === 0) return null;
-
-            return (
-              <Card key={tt.id}>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center">
-                    <TrendingUp className="w-4 h-4 mr-2 text-blue-600" />
-                    {tt.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {targets.map(target => {
-                      const itemOps = itemOperationMap[target.item_code] || {};
-                      const perPieceTotal = target.per_piece_total_min;
-                      const breakdown = operations.map(op => {
-                        const opMin = itemOps[op.name] || 0;
-                        const opPercent = perPieceTotal > 0 ? (opMin / perPieceTotal * 100).toFixed(2) : 0;
-                        return { name: op.name, minutes: opMin, percent: opPercent };
-                      });
-
-                      return (
-                        <div key={target.id} className="border rounded-lg p-3 space-y-2">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <span className="font-semibold text-slate-900">{target.item_code}</span>
-                              <span className="text-sm text-slate-500 ml-2">Qty: {target.target_qty}</span>
-                            </div>
-                            {isEditable && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  if (confirm('Delete this target?')) {
-                                    deleteDailyTargetMutation.mutate(target.id);
-                                  }
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4 text-red-600" />
-                              </Button>
-                            )}
-                          </div>
-                          <div className="text-sm">
-                            <div className="flex justify-between font-medium text-slate-700">
-                              <span>Per-Piece Total:</span>
-                              <span>{perPieceTotal.toFixed(2)} min</span>
-                            </div>
-                            <div className="flex justify-between font-medium text-slate-700">
-                              <span>Item Total:</span>
-                              <span>{target.item_total_min.toFixed(2)} min</span>
-                            </div>
-                          </div>
-                          <div className="text-xs text-slate-600 space-y-1 pl-2">
-                            <p className="font-semibold text-slate-700">Per-Piece Breakdown:</p>
-                            {breakdown.map(op => (
-                              <div key={op.name} className="flex justify-between">
-                                <span>{op.name}:</span>
-                                <span>{op.minutes.toFixed(2)} min ({op.percent}%)</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Daily Targets Grid */}
+      {/* Daily Targets Table */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             Daily Targets
-            {isEditable && targetTypes.length > 0 && (
+            {isEditable && targetTypesList.length > 0 && (
               <Button onClick={() => setShowAddTargetDialog(true)} size="sm">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Daily Target
@@ -417,8 +409,8 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value={null}>All</SelectItem>
-                  {targetTypes.map(tt => (
-                    <SelectItem key={tt.id} value={tt.name}>{tt.name}</SelectItem>
+                  {targetTypesList.map(tt => (
+                    <SelectItem key={tt} value={tt}>{tt}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -431,43 +423,55 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
                 <TableRow>
                   <TableHead>Target Type</TableHead>
                   <TableHead>Item Code</TableHead>
-                  <TableHead>Target Qty</TableHead>
+                  <TableHead>Qty</TableHead>
                   <TableHead>Per-Piece (min)</TableHead>
-                  <TableHead>Total (min)</TableHead>
-                  {isEditable && <TableHead>Actions</TableHead>}
+                  <TableHead>Share %</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDailyTargets.map(dt => {
-                  const tt = targetTypes.find(t => t.id === dt.target_type_id);
-                  return (
-                    <TableRow key={dt.id}>
-                      <TableCell><Badge variant="outline">{tt?.name || '—'}</Badge></TableCell>
+                {targetsWithShare
+                  .filter(dt => {
+                    if (filterItemCode && !dt.item_code.toLowerCase().includes(filterItemCode.toLowerCase())) return false;
+                    if (filterTargetType && dt.target_type !== filterTargetType) return false;
+                    return true;
+                  })
+                  .map(dt => (
+                    <TableRow key={dt.id} className="cursor-pointer hover:bg-slate-50" onClick={() => handleShowBreakdown(dt)}>
+                      <TableCell><Badge variant="outline">{dt.target_type}</Badge></TableCell>
                       <TableCell>{dt.item_code}</TableCell>
                       <TableCell>{dt.target_qty}</TableCell>
                       <TableCell>{dt.per_piece_total_min.toFixed(2)}</TableCell>
-                      <TableCell>{dt.item_total_min.toFixed(2)}</TableCell>
-                      {isEditable && (
-                        <TableCell>
+                      <TableCell>{dt.share_percent}%</TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => {
-                              if (confirm('Delete this target?')) {
-                                deleteDailyTargetMutation.mutate(dt.id);
-                              }
-                            }}
+                            onClick={() => handleShowBreakdown(dt)}
                           >
-                            <Trash2 className="w-4 h-4 text-red-600" />
+                            <Info className="w-4 h-4 text-blue-600" />
                           </Button>
-                        </TableCell>
-                      )}
+                          {isEditable && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm('Delete this target?')) {
+                                  deleteDailyTargetMutation.mutate(dt.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4 text-red-600" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  );
-                })}
+                  ))}
                 {filteredDailyTargets.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={isEditable ? 6 : 5} className="text-center text-slate-500">
+                    <TableCell colSpan={6} className="text-center text-slate-500">
                       No daily targets found
                     </TableCell>
                   </TableRow>
@@ -508,18 +512,33 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
             <DialogTitle>Add Daily Target</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Target Type *</Label>
-              <Select value={formTargetType} onValueChange={setFormTargetType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  {targetTypes.map(tt => (
-                    <SelectItem key={tt.id} value={tt.name}>{tt.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Target Type *</Label>
+                <Select value={formTargetType} onValueChange={setFormTargetType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {targetTypesList.map(tt => (
+                      <SelectItem key={tt} value={tt}>{tt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Operation Profile *</Label>
+                <Select value={formOperationProfile} onValueChange={setFormOperationProfile}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {operationProfiles.map(op => (
+                      <SelectItem key={op.id} value={op.name}>{op.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div>
@@ -553,8 +572,8 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
                       <div className="w-32">
                         <Input
                           type="number"
-                          min="0"
-                          step="0.01"
+                          min="1"
+                          step="1"
                           placeholder="Qty"
                           value={itemQuantities[ic] || ''}
                           onChange={(e) => setItemQuantities({ ...itemQuantities, [ic]: e.target.value })}
@@ -572,6 +591,81 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddTargetDialog(false)}>Cancel</Button>
             <Button onClick={handleAddDailyTargets} disabled={selectedItemCodes.length === 0}>Add</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Breakdown Dialog */}
+      <Dialog open={showBreakdownDialog} onOpenChange={setShowBreakdownDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Target Breakdown - {selectedBreakdownTarget?.item_code}</DialogTitle>
+          </DialogHeader>
+          {selectedBreakdownTarget && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm text-slate-500">Target Type</Label>
+                  <p className="font-medium">{selectedBreakdownTarget.target_type}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-slate-500">Operation Profile</Label>
+                  <p className="font-medium">
+                    {operationProfiles.find(op => op.id === selectedBreakdownTarget.operation_profile_id)?.name || '—'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm text-slate-500">Target Quantity</Label>
+                  <p className="font-medium">{selectedBreakdownTarget.target_qty}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-slate-500">Per-Piece Total</Label>
+                  <p className="font-medium">{selectedBreakdownTarget.per_piece_total_min.toFixed(2)} min</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-slate-500">Item Total</Label>
+                  <p className="font-medium">{selectedBreakdownTarget.item_total_min.toFixed(2)} min</p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="font-semibold mb-2 block">Per-Operation Breakdown (Per Piece)</Label>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Operation</TableHead>
+                        <TableHead>Minutes</TableHead>
+                        <TableHead>Percentage</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(() => {
+                        const profile = operationProfiles.find(op => op.id === selectedBreakdownTarget.operation_profile_id);
+                        const enabledOps = getEnabledOperations(profile?.name || '');
+                        const itemOps = itemOperationMap[selectedBreakdownTarget.item_code] || {};
+                        const perPieceTotal = selectedBreakdownTarget.per_piece_total_min;
+                        
+                        return enabledOps.map(opName => {
+                          const opMin = itemOps[opName] || 0;
+                          const opPercent = perPieceTotal > 0 ? (opMin / perPieceTotal * 100).toFixed(2) : 0;
+                          return (
+                            <TableRow key={opName}>
+                              <TableCell>{opName}</TableCell>
+                              <TableCell>{opMin.toFixed(2)}</TableCell>
+                              <TableCell>{opPercent}%</TableCell>
+                            </TableRow>
+                          );
+                        });
+                      })()}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setShowBreakdownDialog(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
