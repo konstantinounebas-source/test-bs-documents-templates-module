@@ -111,6 +111,19 @@ export default function QCActionsTab({ batchId, department }) {
       return;
     }
 
+    // Check for duplicates (same date, item_code, qc_type, qc_level, operation)
+    const isDuplicate = lines.some(l => 
+      l.id !== editingLine?.id &&
+      (l.item_code || '').trim().toLowerCase() === formData.item_code.trim().toLowerCase() &&
+      l.qc_type === formData.qc_type &&
+      l.qc_level === formData.qc_level
+    );
+
+    if (isDuplicate) {
+      toast.error('Duplicate QC action for this item, type, and level');
+      return;
+    }
+
     const data = {
       item_code: formData.item_code,
       qc_type: formData.qc_type,
