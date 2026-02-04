@@ -152,9 +152,17 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
 
   // Fetch scheduled data lines
   const { data: lines = [], isLoading } = useQuery({
-    queryKey: ['ScheduledData', selectedBundle?.id],
-    queryFn: () => base44.entities.ScheduledData.filter({ bundle_id: selectedBundle.id }),
-    enabled: !!selectedBundle,
+    queryKey: ['ScheduledData', selectedDepartment],
+    queryFn: () => base44.entities.ScheduledData.filter({ department_id: selectedDepartment }),
+    enabled: !!selectedDepartment,
+    staleTime: 0
+  });
+
+  // Fetch day headers
+  const { data: dayHeaders = [] } = useQuery({
+    queryKey: ['ScheduledDayHeader', selectedDepartment],
+    queryFn: () => base44.entities.ScheduledDayHeader.filter({ department_id: selectedDepartment }),
+    enabled: !!selectedDepartment,
     staleTime: 0
   });
 
@@ -210,6 +218,22 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
   });
 
   const currentDayAssignment = dayAssignments[0] || null;
+
+  // Get current day header (contains source_bundle_id for this day)
+  const currentDayHeader = useMemo(() => {
+    if (!selectedDate) return null;
+    return dayHeaders.find(h => h.date === selectedDate) || null;
+  }, [dayHeaders, selectedDate]);
+
+  // Get source bundle for current day
+  const sourceBundleForDay = useMemo(() => {
+    if (!currentDayHeader) return selectedBundle;
+    return allBundles.find(b => b.id === currentDayHeader.source_bundle_id) || selectedBundle;
+  }, [currentDayHeader, allBundles, selectedBundle]);
+
+  // State for editing day source bundle
+  const [editingDaySourceBundle, setEditingDaySourceBundle] = useState(false);
+  const [tempSourceBundleId, setTempSourceBundleId] = useState('');
 
   // Calculate per-piece and total times (REUSES Daily Targets engine)
   const calculateTimes = (itemCode, profileId, opsQty, qcQty, qcType, qcLevel, isDebugRecord = false) => {
@@ -349,6 +373,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
       ...prev,
       date: dateStr
     }));
+    
+    // If no header exists, we'll use the default active bundle
+    // Header will be created when first line is added
   };
 
   // Calculate daily summary
@@ -391,11 +418,38 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
   // Create mutation
   const createMutation = useMutation({
     mutationFn: async (records) => {
+      const firstRecord = records[0];
+      const date = firstRecord.date;
+      
+      // Check/create day header first
+      let dayHeader = dayHeaders.find(h => h.date === date);
+      
+      if (!dayHeader) {
+        // Create new day header with source_bundle_id
+        dayHeader = await base44.entities.ScheduledDayHeader.create({
+          department_id: selectedDepartment,
+          date: date,
+          source_bundle_id: selectedBundle.id,
+          assigned_persons: []
+        });
+      }
+
+      // Validate all item codes exist in source bundle's DATA
+      const sourceBundleId = dayHeader.source_bundle_id;
+      const sourceBundleData = await base44.entities.StdSetLines.filter({ bundle_id: sourceBundleId });
+      const validItemCodes = new Set(sourceBundleData.map(l => l.item_code));
+      
+      for (const record of records) {
+        if (!validItemCodes.has(record.item_code)) {
+          throw new Error(`Item "${record.item_code}" does not exist in the source bundle's DATA. Change source bundle or use a different item code.`);
+        }
+      }
+
       // Check for duplicates
       for (const record of records) {
         const exists = lines.find(l => 
           l.date === record.date &&
-          l.bundle_id === record.bundle_id &&
+          l.department_id === record.department_id &&
           l.item_code === record.item_code &&
           l.operation_profile_id === record.operation_profile_id
         );
@@ -404,11 +458,15 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
         }
       }
 
-      // Create all records
-      await Promise.all(records.map(r => base44.entities.ScheduledData.create(r)));
+      // Create all records with scheduled_day_id
+      await Promise.all(records.map(r => base44.entities.ScheduledData.create({
+        ...r,
+        scheduled_day_id: dayHeader.id
+      })));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ScheduledData'] });
+      queryClient.invalidateQueries({ queryKey: ['ScheduledDayHeader'] });
       setShowAddDialog(false);
       setFormData({
         date: '',
@@ -484,11 +542,24 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
       const scheduledLines = template.template_data || [];
       const assignedPersonsData = template.assigned_persons_data;
 
-      // Create scheduled records
+      // Check/create day header first
+      let dayHeader = dayHeaders.find(h => h.date === targetDate);
+      
+      if (!dayHeader) {
+        dayHeader = await base44.entities.ScheduledDayHeader.create({
+          department_id: selectedDepartment,
+          date: targetDate,
+          source_bundle_id: selectedBundle.id,
+          assigned_persons: assignedPersonsData?.assigned_persons || []
+        });
+      }
+
+      // Create scheduled records with scheduled_day_id
       const records = scheduledLines.map(item => ({
         ...item,
-        date: targetDate,
-        bundle_id: selectedBundle.id
+        scheduled_day_id: dayHeader.id,
+        department_id: selectedDepartment,
+        date: targetDate
       }));
       await Promise.all(records.map(r => base44.entities.ScheduledData.create(r)));
 
@@ -519,6 +590,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ScheduledData'] });
+      queryClient.invalidateQueries({ queryKey: ['ScheduledDayHeader'] });
       queryClient.invalidateQueries({ queryKey: ['ScheduledDayAssignments'] });
       setShowLoadTemplateDialog(false);
       setLoadToDate('');
@@ -640,7 +712,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     const records = formData.item_codes.map(itemCode => {
       const times = calculateTimes(itemCode, formData.operation_profile_id, opsQty, qcQty, formData.qc_type, formData.qc_level);
       return {
-        bundle_id: selectedBundle.id,
+        department_id: selectedDepartment,
         date: formData.date,
         item_code: itemCode,
         operation_profile_id: formData.operation_profile_id,
@@ -945,7 +1017,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
         <h3 className="text-lg font-semibold">Scheduled Data - {selectedDepartment}</h3>
         
         <div className="flex gap-2 items-center">
-          <Label className="text-sm">Source Bundle:</Label>
+          <Label className="text-sm">Default Bundle (for new days):</Label>
           <Select value={selectedBundle?.id} onValueChange={(bundleId) => {
             const bundle = allBundles.find(b => b.id === bundleId);
             setSelectedBundle(bundle);
@@ -1023,6 +1095,31 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
         </Alert>
       ) : (
         <>
+          {/* Source Bundle for Day */}
+          <Card className="bg-amber-50 border-amber-200">
+            <CardContent className="pt-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-sm font-semibold text-amber-900 mb-1">Source Bundle (for this day)</p>
+                  <p className="text-base font-medium">{sourceBundleForDay?.name || selectedBundle?.name}</p>
+                  {currentDayHeader && currentDayHeader.source_bundle_id !== selectedBundle?.id && (
+                    <p className="text-xs text-amber-700 mt-1">⚠️ Different from default bundle</p>
+                  )}
+                </div>
+                <Button 
+                  onClick={() => {
+                    setTempSourceBundleId(sourceBundleForDay?.id || selectedBundle?.id);
+                    setEditingDaySourceBundle(true);
+                  }} 
+                  size="sm"
+                  variant="outline"
+                >
+                  Edit Source Bundle
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="flex justify-between items-center gap-4">
             <h4 className="text-base font-semibold">Scheduled Data - {selectedDate}</h4>
             
