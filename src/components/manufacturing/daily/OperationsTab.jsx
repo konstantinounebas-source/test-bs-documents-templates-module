@@ -207,8 +207,8 @@ export default function OperationsTab({ batchId, department }) {
       qty_operation: line.qty_operation || ''
     });
 
-    // If OPERATION type, parse operations_data for editing
-    if (line.entry_type === 'OPERATION' && line.operations_data) {
+    // Parse operations_data for editing (for both PROFILE and OPERATION types)
+    if (line.operations_data) {
       try {
         const opsData = JSON.parse(line.operations_data);
         const opsMap = {};
