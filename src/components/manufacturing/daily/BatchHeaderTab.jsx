@@ -143,7 +143,37 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="space-y-6">
+      <div>
+        <Label className="text-sm font-semibold">Select Department</Label>
+        <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+          <SelectTrigger className="mt-2">
+            <SelectValue placeholder="Select department" />
+          </SelectTrigger>
+          <SelectContent>
+            {departments.map(d => (
+              <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {selectedDepartment && (
+        <DailyProductionCalendarSelector
+          selectedDepartment={selectedDepartment}
+          selectedDate={selectedDate}
+          onDateSelect={(dateStr) => {
+            setSelectedDate(dateStr);
+            // Find if batch exists for this date
+            const existingBatch = batchHeaders.find(b => b.date === dateStr && b.department === selectedDepartment);
+            if (existingBatch) {
+              onBatchSelect(existingBatch);
+            }
+          }}
+          onCreateBatch={handleCreateBatch}
+        />
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">
