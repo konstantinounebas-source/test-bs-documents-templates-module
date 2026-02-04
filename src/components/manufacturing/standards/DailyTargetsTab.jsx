@@ -275,8 +275,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
       }
     }
 
-    const profileId = operationProfiles.find(op => op.name === formOperationProfile)?.id;
-    if (!profileId) {
+    if (!formOperationProfile) {
       toast.error('Invalid Operation Profile');
       return;
     }
@@ -288,7 +287,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
       return {
         bundle_id: bundle.id,
         target_type: formTargetType,
-        operation_profile_id: profileId,
+        operation_profile_id: formOperationProfile,
         item_code: ic,
         target_qty: qty,
         per_piece_total_min: perPieceTotal,
