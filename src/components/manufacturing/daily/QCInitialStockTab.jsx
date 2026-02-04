@@ -262,6 +262,7 @@ export default function QCInitialStockTab({ batchId, department }) {
               <TableHead className="font-semibold">Item Code</TableHead>
               <TableHead className="font-semibold">QC Type</TableHead>
               <TableHead className="font-semibold">QC Level</TableHead>
+              <TableHead className="font-semibold text-right">QC Per-piece (min)</TableHead>
               <TableHead className="font-semibold">Qty Affected</TableHead>
               <TableHead className="font-semibold">Actions</TableHead>
             </TableRow>
