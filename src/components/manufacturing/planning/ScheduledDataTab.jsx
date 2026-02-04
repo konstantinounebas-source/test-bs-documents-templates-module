@@ -1126,7 +1126,8 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                 </div>
                 <Button 
                   onClick={() => {
-                    setTempSourceBundleId(sourceBundleForDay?.id || selectedBundle?.id);
+                    // Always use the current day's source_bundle_id
+                    setTempSourceBundleId(currentDayHeader?.source_bundle_id || selectedBundle?.id || '');
                     setEditingDaySourceBundle(true);
                   }} 
                   size="sm"
