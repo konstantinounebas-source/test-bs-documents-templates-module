@@ -73,6 +73,12 @@ export default function TeamTimePersonsTab({ batchId }) {
       return;
     }
 
+    // Check for duplicate person (only when adding, not when editing)
+    if (!editingLine && lines.some(line => line.person_name === formData.person_name)) {
+      toast.error('This person is already added for this batch');
+      return;
+    }
+
     if (editingLine) {
       updateMutation.mutate({ id: editingLine.id, data: formData });
     } else {
