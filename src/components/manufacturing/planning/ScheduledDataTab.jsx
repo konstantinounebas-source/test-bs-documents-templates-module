@@ -367,7 +367,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
   }, [currentMonth]);
 
   // Handle day click
-  const handleDayClick = (day) => {
+  const handleDayClick = async (day) => {
     const dateStr = format(day, 'yyyy-MM-dd');
     setSelectedDate(dateStr);
     
@@ -377,8 +377,21 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
       date: dateStr
     }));
     
-    // If no header exists, we'll use the default active bundle
-    // Header will be created when first line is added
+    // Auto-create day header if it doesn't exist
+    const existingHeader = dayHeaders.find(h => h.date === dateStr);
+    if (!existingHeader && selectedBundle) {
+      try {
+        await base44.entities.ScheduledDayHeader.create({
+          department_id: selectedDepartment,
+          date: dateStr,
+          source_bundle_id: selectedBundle.id,
+          assigned_persons: []
+        });
+        queryClient.invalidateQueries({ queryKey: ['ScheduledDayHeader'] });
+      } catch (error) {
+        console.error('Failed to create day header:', error);
+      }
+    }
   };
 
   // Calculate daily summary
