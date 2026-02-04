@@ -41,7 +41,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
   const [dayPersons, setDayPersons] = useState([]);
   const [dayNotes, setDayNotes] = useState('');
   const [newPersonName, setNewPersonName] = useState('');
-  const [newPersonMinutes, setNewPersonMinutes] = useState(480);
+  const [newPersonMinutes, setNewPersonMinutes] = useState(465);
   const [formData, setFormData] = useState({
     date: '',
     operation_profile_id: '',
@@ -470,7 +470,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
       queryClient.invalidateQueries({ queryKey: ['ScheduleTemplate'] });
       setShowSaveTemplateDialog(false);
       setTemplateName('');
-      toast.success('Template saved');
+      toast.success('Template saved with assigned persons');
     },
     onError: (error) => {
       toast.error('Failed to save template: ' + error.message);
@@ -480,18 +480,58 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
   // Load template mutation
   const loadTemplateMutation = useMutation({
     mutationFn: async ({ templateData, targetDate }) => {
-      const records = templateData.map(item => ({
+      // Handle both old (array) and new (object) template format
+      let scheduledLines = [];
+      let assignedPersonsData = null;
+
+      if (Array.isArray(templateData)) {
+        // Old format: just array of lines
+        scheduledLines = templateData;
+      } else {
+        // New format: object with scheduled_lines + assigned_persons_data
+        scheduledLines = templateData.scheduled_lines || [];
+        assignedPersonsData = templateData.assigned_persons_data;
+      }
+
+      // Create scheduled records
+      const records = scheduledLines.map(item => ({
         ...item,
         date: targetDate,
         bundle_id: selectedBundle.id
       }));
       await Promise.all(records.map(r => base44.entities.ScheduledData.create(r)));
+
+      // Load assigned persons if exists
+      if (assignedPersonsData && assignedPersonsData.assigned_persons) {
+        // Check if day assignment already exists
+        const existingAssignment = await base44.entities.ScheduledDayAssignments.filter({
+          bundle_id: selectedBundle.id,
+          date: targetDate
+        });
+
+        if (existingAssignment.length > 0) {
+          // Update existing
+          await base44.entities.ScheduledDayAssignments.update(existingAssignment[0].id, {
+            assigned_persons: assignedPersonsData.assigned_persons,
+            notes: assignedPersonsData.day_notes || ''
+          });
+        } else {
+          // Create new
+          await base44.entities.ScheduledDayAssignments.create({
+            bundle_id: selectedBundle.id,
+            date: targetDate,
+            assigned_persons: assignedPersonsData.assigned_persons,
+            notes: assignedPersonsData.day_notes || ''
+          });
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ScheduledData'] });
+      queryClient.invalidateQueries({ queryKey: ['ScheduledDayAssignments'] });
       setShowLoadTemplateDialog(false);
       setLoadToDate('');
-      toast.success('Template loaded');
+      toast.success('Template loaded with assigned persons');
     },
     onError: (error) => {
       toast.error('Failed to load template: ' + error.message);
@@ -684,9 +724,18 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     // Remove date and IDs from template data
     const templateData = dateLines.map(({ id, date, bundle_id, created_date, updated_date, created_by, ...rest }) => rest);
 
+    // Include assigned persons if exists
+    const assignedPersonsData = currentDayAssignment ? {
+      assigned_persons: currentDayAssignment.assigned_persons || [],
+      day_notes: currentDayAssignment.notes || ''
+    } : null;
+
     saveTemplateMutation.mutate({
       name: templateName.trim(),
-      data: templateData
+      data: {
+        scheduled_lines: templateData,
+        assigned_persons_data: assignedPersonsData
+      }
     });
   };
 
@@ -700,6 +749,15 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
       templateData: template.template_data,
       targetDate: loadToDate
     });
+  };
+
+  const handleLoadTemplateDialogOpen = () => {
+    if (!selectedDate) {
+      toast.error('Select a date from the calendar first');
+      return;
+    }
+    setLoadToDate(selectedDate);
+    setShowLoadTemplateDialog(true);
   };
 
   const handleOpenTeamTime = () => {
@@ -717,7 +775,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
   };
 
   const handleAddTeamEntry = () => {
-    setTeamEntries([...teamEntries, { person_name: '', available_minutes: 480, notes: '' }]);
+    setTeamEntries([...teamEntries, { person_name: '', available_minutes: 465, notes: '' }]);
   };
 
   const handleRemoveTeamEntry = (index) => {
@@ -757,7 +815,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
       setDayNotes('');
     }
     setNewPersonName('');
-    setNewPersonMinutes(480);
+    setNewPersonMinutes(465);
     setShowAssignPersonsDialog(true);
   };
 
@@ -992,7 +1050,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
               <Button onClick={() => setShowSaveTemplateDialog(true)} variant="outline" size="sm">
                 Save Template
               </Button>
-              <Button onClick={() => setShowLoadTemplateDialog(true)} variant="outline" size="sm">
+              <Button onClick={handleLoadTemplateDialogOpen} variant="outline" size="sm">
                 Load Template
               </Button>
               <Button 
@@ -1024,11 +1082,15 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                         if (typeof persons[0] === 'string') {
                           return <p className="text-lg">{persons.join(', ')}</p>;
                         } else {
-                          return persons.map((p, i) => (
-                            <p key={i} className="text-sm">
-                              <span className="font-medium">{p.name}</span>: {p.available_minutes} min ({(p.available_minutes / 60).toFixed(1)}h)
-                            </p>
-                          ));
+                          return persons.map((p, i) => {
+                            const hours = Math.floor(p.available_minutes / 60);
+                            const mins = p.available_minutes % 60;
+                            return (
+                              <p key={i} className="text-sm">
+                                <span className="font-medium">{p.name}</span>: {p.available_minutes} min ({hours}h {mins}m)
+                              </p>
+                            );
+                          });
                         }
                       })()}
                     </div>
@@ -1037,7 +1099,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                     )}
                     {assignedPersonsSummary && (
                       <p className="text-xs text-purple-800 font-semibold mt-2">
-                        Total: {assignedPersonsSummary.totalAvailable} min ({(assignedPersonsSummary.totalAvailable / 60).toFixed(1)}h)
+                        Total: {assignedPersonsSummary.totalAvailable} min ({Math.floor(assignedPersonsSummary.totalAvailable / 60)}h {assignedPersonsSummary.totalAvailable % 60}m)
                       </p>
                     )}
                   </>
@@ -1491,7 +1553,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
             <Alert>
               <Info className="w-4 h-4" />
               <AlertDescription>
-                This will save all scheduled data for {selectedDate} as a reusable template (without date).
+                This will save all scheduled data and assigned persons for {selectedDate} as a reusable template.
               </AlertDescription>
             </Alert>
           </div>
@@ -1671,7 +1733,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                   value={newPersonMinutes}
                   onChange={(e) => setNewPersonMinutes(parseFloat(e.target.value) || 0)}
                 />
-                <p className="text-xs text-slate-500 mt-1">{(newPersonMinutes / 60).toFixed(1)}h</p>
+                <p className="text-xs text-slate-500 mt-1">
+                  {Math.floor(newPersonMinutes / 60)}h {newPersonMinutes % 60}m
+                </p>
               </div>
               <Button
                 onClick={() => {
@@ -1686,7 +1750,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                   }
                   setDayPersons([...dayPersons, { name: newPersonName.trim(), available_minutes: newPersonMinutes }]);
                   setNewPersonName('');
-                  setNewPersonMinutes(480);
+                  setNewPersonMinutes(465);
                 }}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -1702,7 +1766,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                   <div key={index} className="p-3 flex justify-between items-center hover:bg-slate-50">
                     <div className="flex-1">
                       <p className="font-medium">{person.name}</p>
-                      <p className="text-sm text-slate-600">{person.available_minutes} min ({(person.available_minutes / 60).toFixed(1)}h)</p>
+                      <p className="text-sm text-slate-600">
+                        {person.available_minutes} min ({Math.floor(person.available_minutes / 60)}h {person.available_minutes % 60}m)
+                      </p>
                     </div>
                     <div className="flex gap-2">
                       <Input
@@ -1732,7 +1798,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
               <div className="bg-slate-100 p-3 rounded-lg">
                 <p className="text-sm font-semibold">
                   Total Available: {dayPersons.reduce((sum, p) => sum + p.available_minutes, 0)} min
-                  ({(dayPersons.reduce((sum, p) => sum + p.available_minutes, 0) / 60).toFixed(1)}h)
+                  ({Math.floor(dayPersons.reduce((sum, p) => sum + p.available_minutes, 0) / 60)}h {dayPersons.reduce((sum, p) => sum + p.available_minutes, 0) % 60}m)
                 </p>
               </div>
             )}
