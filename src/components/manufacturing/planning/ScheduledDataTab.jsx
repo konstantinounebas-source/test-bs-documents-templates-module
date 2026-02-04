@@ -1932,7 +1932,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                 <SelectContent>
                   {allBundles.map(b => (
                     <SelectItem key={b.id} value={b.id}>
-                      v{b.version} - {b.name} ({b.status})
+                      {b.version ? `v${b.version}` : 'v-'} - {b.name} ({b.status})
                     </SelectItem>
                   ))}
                 </SelectContent>
