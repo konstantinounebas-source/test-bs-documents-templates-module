@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Save, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Save, Edit2, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import DailyProductionCalendarSelector from './DailyProductionCalendarSelector';
 
@@ -19,6 +19,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
   const [selectedDate, setSelectedDate] = useState('');
   const [editingBatch, setEditingBatch] = useState(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
   const [formData, setFormData] = useState({
     date: '',
     department: '',
@@ -110,6 +111,40 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
     setSelectedDepartment('');
   };
 
+  // Migration: Set bundle_id for existing batch headers without one
+  useEffect(() => {
+    const runMigration = async () => {
+      try {
+        const batchesNeedingMigration = batchHeaders.filter(b => !b.bundle_id);
+        if (batchesNeedingMigration.length === 0) return;
+
+        setIsMigrating(true);
+        const allBundles = await base44.entities.StandardsBundle.list();
+
+        for (const batch of batchesNeedingMigration) {
+          const activeBundle = allBundles.find(b => b.department === batch.department && b.status === 'ACTIVE');
+          if (activeBundle) {
+            console.log(`Migrating batch ${batch.id}: setting bundle_id to ${activeBundle.id}`);
+            await base44.entities.Batch_Header.update(batch.id, { bundle_id: activeBundle.id });
+          } else {
+            console.warn(`No ACTIVE bundle found for department ${batch.department} (batch ${batch.id})`);
+          }
+        }
+        queryClient.invalidateQueries(['Batch_Header']);
+        toast.success(`Migration complete: ${batchesNeedingMigration.length} batch headers updated`);
+      } catch (error) {
+        console.error('Migration error:', error);
+        toast.error('Migration error - check console');
+      } finally {
+        setIsMigrating(false);
+      }
+    };
+
+    if (batchHeaders.length > 0) {
+      runMigration();
+    }
+  }, [batchHeaders, queryClient]);
+
   const handleCreateBatch = (dateStr) => {
     setShowCreateDialog(true);
     setFormData({
@@ -163,6 +198,16 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
 
   return (
     <div className="space-y-6">
+      {isMigrating && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-800">
+            <p className="font-semibold">Migrating batch headers...</p>
+            <p className="text-xs text-blue-700 mt-1">Setting bundle_id for existing records without one</p>
+          </div>
+        </div>
+      )}
+
       <div>
         <Label className="text-sm font-semibold">Select Department</Label>
         <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
