@@ -82,11 +82,13 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     }
   }, [selectedDepartment, allBundles]);
 
-  // Fetch item codes from DATA tab of selected bundle
+  // Fetch item codes from DATA tab of source bundle for selected day (or default to selected bundle)
+  const activeBundleIdForCalculations = sourceBundleForDay?.id || selectedBundle?.id;
+  
   const { data: dataLines = [], isLoading: dataLinesLoading, isFetched: dataLinesFetched } = useQuery({
-    queryKey: ['StdSetLines', selectedBundle?.id],
-    queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: selectedBundle.id }),
-    enabled: !!selectedBundle,
+    queryKey: ['StdSetLines', activeBundleIdForCalculations],
+    queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: activeBundleIdForCalculations }),
+    enabled: !!activeBundleIdForCalculations,
     staleTime: 0
   });
   
@@ -132,11 +134,11 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     staleTime: 0
   });
 
-  // Fetch QC Set Lines for QC calculations
+  // Fetch QC Set Lines for QC calculations (use source bundle for day)
   const { data: qcSetLines = [], isFetched: qcSetLinesFetched } = useQuery({
-    queryKey: ['QCSetLines', selectedBundle?.id],
-    queryFn: () => base44.entities.QCSetLines.filter({ bundle_id: selectedBundle.id }),
-    enabled: !!selectedBundle,
+    queryKey: ['QCSetLines', activeBundleIdForCalculations],
+    queryFn: () => base44.entities.QCSetLines.filter({ bundle_id: activeBundleIdForCalculations }),
+    enabled: !!activeBundleIdForCalculations,
     staleTime: 0
   });
 
@@ -227,9 +229,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
 
   // Get source bundle for current day
   const sourceBundleForDay = useMemo(() => {
-    if (!currentDayHeader) return selectedBundle;
+    if (!selectedDate || !currentDayHeader) return selectedBundle;
     return allBundles.find(b => b.id === currentDayHeader.source_bundle_id) || selectedBundle;
-  }, [currentDayHeader, allBundles, selectedBundle]);
+  }, [selectedDate, currentDayHeader, allBundles, selectedBundle]);
 
   // State for editing day source bundle
   const [editingDaySourceBundle, setEditingDaySourceBundle] = useState(false);
