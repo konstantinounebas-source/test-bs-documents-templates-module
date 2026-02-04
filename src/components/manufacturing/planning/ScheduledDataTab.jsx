@@ -23,6 +23,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
   const [showLoadTemplateDialog, setShowLoadTemplateDialog] = useState(false);
   const [showTeamTimeDialog, setShowTeamTimeDialog] = useState(false);
+  const [showAssignPersonsDialog, setShowAssignPersonsDialog] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
   const [searchFilter, setSearchFilter] = useState('');
@@ -31,6 +32,8 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
   const [templateName, setTemplateName] = useState('');
   const [loadToDate, setLoadToDate] = useState('');
   const [teamEntries, setTeamEntries] = useState([]);
+  const [dayPersons, setDayPersons] = useState([]);
+  const [dayNotes, setDayNotes] = useState('');
   const [formData, setFormData] = useState({
     date: '',
     operation_profile_id: '',
@@ -39,8 +42,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     qc_level: '',
     ops_qty: '',
     qc_qty: '0',
-    notes: '',
-    assigned_persons: []
+    notes: ''
   });
 
   // Fetch item codes from DATA tab of selected bundle
@@ -152,6 +154,19 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     enabled: !!selectedBundle && !!selectedDate,
     staleTime: 0
   });
+
+  // Fetch day assignments
+  const { data: dayAssignments = [] } = useQuery({
+    queryKey: ['ScheduledDayAssignments', selectedBundle?.id, selectedDate],
+    queryFn: () => base44.entities.ScheduledDayAssignments.filter({ 
+      bundle_id: selectedBundle.id,
+      date: selectedDate 
+    }),
+    enabled: !!selectedBundle && !!selectedDate,
+    staleTime: 0
+  });
+
+  const currentDayAssignment = dayAssignments[0] || null;
 
   // Calculate per-piece and total times (REUSES Daily Targets engine)
   const calculateTimes = (itemCode, profileId, opsQty, qcQty, qcType, qcLevel, isDebugRecord = false) => {
@@ -437,6 +452,33 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     }
   });
 
+  // Save day assignments mutation
+  const saveDayAssignmentsMutation = useMutation({
+    mutationFn: async ({ persons, notes }) => {
+      if (currentDayAssignment) {
+        await base44.entities.ScheduledDayAssignments.update(currentDayAssignment.id, {
+          assigned_persons: persons,
+          notes
+        });
+      } else {
+        await base44.entities.ScheduledDayAssignments.create({
+          bundle_id: selectedBundle.id,
+          date: selectedDate,
+          assigned_persons: persons,
+          notes
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ScheduledDayAssignments'] });
+      setShowAssignPersonsDialog(false);
+      toast.success('Day assignments saved');
+    },
+    onError: (error) => {
+      toast.error('Failed to save: ' + error.message);
+    }
+  });
+
   const handleAdd = () => {
     // Validation
     if (!formData.date || !formData.operation_profile_id || formData.item_codes.length === 0 || !formData.ops_qty) {
@@ -612,6 +654,24 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
     }
 
     saveTeamMutation.mutate(teamEntries);
+  };
+
+  const handleOpenAssignPersons = () => {
+    if (currentDayAssignment) {
+      setDayPersons(currentDayAssignment.assigned_persons || []);
+      setDayNotes(currentDayAssignment.notes || '');
+    } else {
+      setDayPersons([]);
+      setDayNotes('');
+    }
+    setShowAssignPersonsDialog(true);
+  };
+
+  const handleSaveDayAssignments = () => {
+    saveDayAssignmentsMutation.mutate({
+      persons: dayPersons,
+      notes: dayNotes
+    });
   };
 
   const handleRowClick = (record) => {
@@ -814,7 +874,6 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
               <TableHead className="font-semibold">Date</TableHead>
               <TableHead className="font-semibold">Item Code</TableHead>
               <TableHead className="font-semibold">Profile</TableHead>
-              <TableHead className="font-semibold">Persons</TableHead>
               <TableHead className="font-semibold text-right">Ops Qty</TableHead>
               <TableHead className="font-semibold text-right">Ops Total</TableHead>
               <TableHead className="font-semibold text-right">QC Total</TableHead>
@@ -838,9 +897,6 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                   <TableCell className="font-medium">{line.date}</TableCell>
                   <TableCell className="font-medium">{line.item_code}</TableCell>
                   <TableCell className="text-sm">{getProfileName(line.operation_profile_id)}</TableCell>
-                  <TableCell className="text-xs">
-                    {line.assigned_persons?.length > 0 ? line.assigned_persons.join(', ') : '—'}
-                  </TableCell>
                   <TableCell className="text-right font-mono">{line.ops_qty}</TableCell>
                   <TableCell className="text-right font-mono">{(line.ops_total_min || 0).toFixed(2)}</TableCell>
                   <TableCell className="text-right font-mono">{(line.qc_total_min || 0).toFixed(2)}</TableCell>
@@ -980,32 +1036,6 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                   placeholder="Leave blank to use Ops Qty"
                 />
               </div>
-            </div>
-
-            <div>
-              <Label>Assigned Persons (Multi-select)</Label>
-              <MultiSelect
-                options={persons.map(p => ({ value: p.name, label: p.name }))}
-                selected={formData.assigned_persons}
-                onChange={(selected) => setFormData({ ...formData, assigned_persons: selected })}
-                placeholder="Select persons"
-              />
-              <Input
-                placeholder="Or type additional person name"
-                className="mt-2"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && e.target.value.trim()) {
-                    const newPerson = e.target.value.trim();
-                    if (!formData.assigned_persons.includes(newPerson)) {
-                      setFormData({ 
-                        ...formData, 
-                        assigned_persons: [...formData.assigned_persons, newPerson] 
-                      });
-                    }
-                    e.target.value = '';
-                  }
-                }}
-              />
             </div>
 
             <div>
@@ -1188,20 +1218,10 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
                   <Label>QC Qty</Label>
                   <Input type="number" step="0.01" value={editingRecord.qc_qty} onChange={(e) => setEditingRecord({...editingRecord, qc_qty: e.target.value})} />
                 </div>
-              </div>
+                </div>
 
-              <div>
-                <Label>Assigned Persons</Label>
-                <MultiSelect
-                  options={persons.map(p => ({ value: p.name, label: p.name }))}
-                  selected={editingRecord.assigned_persons || []}
-                  onChange={(selected) => setEditingRecord({ ...editingRecord, assigned_persons: selected })}
-                  placeholder="Select persons"
-                />
-              </div>
-
-              <div>
-                <Label>Notes</Label>
+                <div>
+                  <Label>Notes</Label>
                 <Textarea value={editingRecord.notes || ''} onChange={(e) => setEditingRecord({...editingRecord, notes: e.target.value})} rows={3} />
               </div>
             </div>
@@ -1374,6 +1394,52 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle })
             <Button onClick={handleSaveTeam} disabled={teamEntries.length === 0}>
               Save Team Availability
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Persons Dialog */}
+      <Dialog open={showAssignPersonsDialog} onOpenChange={setShowAssignPersonsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Assigned Persons - {selectedDate}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Select Persons</Label>
+              <MultiSelect
+                options={persons.map(p => ({ value: p.name, label: p.name }))}
+                selected={dayPersons}
+                onChange={setDayPersons}
+                placeholder="Select persons for this day"
+              />
+              <Input
+                placeholder="Or type new person name and press Enter"
+                className="mt-2"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.target.value.trim()) {
+                    const newPerson = e.target.value.trim();
+                    if (!dayPersons.includes(newPerson)) {
+                      setDayPersons([...dayPersons, newPerson]);
+                    }
+                    e.target.value = '';
+                  }
+                }}
+              />
+            </div>
+            <div>
+              <Label>Notes (Optional)</Label>
+              <Textarea
+                value={dayNotes}
+                onChange={(e) => setDayNotes(e.target.value)}
+                placeholder="Day notes..."
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAssignPersonsDialog(false)}>Cancel</Button>
+            <Button onClick={handleSaveDayAssignments}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
