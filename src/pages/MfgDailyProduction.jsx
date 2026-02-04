@@ -166,12 +166,36 @@ export default function MfgDailyProduction() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Production Data Entry</CardTitle>
-            {selectedBatch && (
-              <p className="text-sm text-slate-600 mt-1">
-                Selected Batch: {selectedBatch.date} - {selectedBatch.department}
-              </p>
-            )}
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle>Production Data Entry</CardTitle>
+                {selectedBatch && (
+                  <p className="text-sm text-slate-600 mt-1">
+                    Selected Batch: {selectedBatch.date} - {selectedBatch.department}
+                  </p>
+                )}
+              </div>
+              {selectedBatch && (
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-2 text-sm min-w-max">
+                  <div className="flex items-center gap-2 font-semibold text-slate-900">
+                    <Clock className="w-4 h-4 text-blue-600" />
+                    Production Summary
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-600">Total Ops Hours:</span>
+                    <span className="font-mono font-bold text-blue-600">{opsHours}h</span>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-slate-600">Total QC Hours:</span>
+                    <span className="font-mono font-bold text-purple-600">{qcHours}h</span>
+                  </div>
+                  <div className="border-t border-slate-300 pt-2 mt-2 flex items-center justify-between gap-4">
+                    <span className="text-slate-700 font-semibold">Grand Total Hours:</span>
+                    <span className="font-mono font-bold text-green-600 text-lg">{grandTotalHours}h</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
