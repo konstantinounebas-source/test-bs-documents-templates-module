@@ -256,14 +256,19 @@ export default function QCInitialStockTab({ batchId, department }) {
                     </TableCell>
                     <TableCell className="font-mono">{line.qty_affected}</TableCell>
                     <TableCell>
-                      <Button
-                        onClick={() => deleteMutation.mutate(line.id)}
-                        variant="ghost"
-                        size="icon"
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(line)}>
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={() => deleteMutation.mutate(line.id)}
+                          variant="ghost"
+                          size="icon"
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -280,11 +285,16 @@ export default function QCInitialStockTab({ batchId, department }) {
         </Table>
       </div>
 
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog open={showAddDialog} onOpenChange={(open) => {
+        if (!open) resetForm();
+        setShowAddDialog(open);
+      }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add QC Initial Stock</DialogTitle>
-            <DialogDescription>Record initial QC stock for an item</DialogDescription>
+            <DialogTitle>{editingLine ? 'Edit QC Initial Stock' : 'Add QC Initial Stock'}</DialogTitle>
+            <DialogDescription>
+              {editingLine ? 'Update initial QC stock for this item' : 'Record initial QC stock for an item'}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
@@ -343,10 +353,16 @@ export default function QCInitialStockTab({ batchId, department }) {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={createMutation.isPending}>
-              {createMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-              Add
+            <Button variant="outline" onClick={resetForm}>Cancel</Button>
+            <Button onClick={handleAdd} disabled={createMutation.isPending || updateMutation.isPending}>
+              {createMutation.isPending || updateMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : editingLine ? (
+                <Edit2 className="w-4 h-4 mr-2" />
+              ) : (
+                <Plus className="w-4 h-4 mr-2" />
+              )}
+              {editingLine ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>
         </DialogContent>
