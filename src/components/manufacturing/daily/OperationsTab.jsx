@@ -214,7 +214,6 @@ export default function OperationsTab({ batchId, department }) {
 
   const handleEdit = (line) => {
     setEditingLine(line);
-    // When editing, only get operations/profiles from the currently selected entry type
     setFormData({
       item_code: line.item_code,
       entry_type: line.entry_type,
@@ -222,6 +221,22 @@ export default function OperationsTab({ batchId, department }) {
       operation: line.operation || '',
       qty_operation: line.qty_operation || ''
     });
+
+    // If OPERATION type, parse operations_data for editing
+    if (line.entry_type === 'OPERATION' && line.operations_data) {
+      try {
+        const opsData = JSON.parse(line.operations_data);
+        const opsMap = {};
+        opsData.forEach(({ op_id, qty }) => {
+          opsMap[op_id] = qty;
+        });
+        setSelectedOperations(opsMap);
+      } catch {
+        setSelectedOperations({});
+      }
+    } else {
+      setSelectedOperations({});
+    }
     setShowAddDialog(true);
   };
 
