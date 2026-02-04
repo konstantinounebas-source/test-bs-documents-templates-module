@@ -199,11 +199,13 @@ export default function MfgDailyProduction() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-8 w-full">
+              <TabsList className="grid grid-cols-10 w-full">
                 <TabsTrigger value="batch_header">Batch Header</TabsTrigger>
                 <TabsTrigger value="batch_lines" disabled={!selectedBatch}>Batch Lines</TabsTrigger>
                 <TabsTrigger value="qc_initial" disabled={!selectedBatch}>QC Initial Stock</TabsTrigger>
                 <TabsTrigger value="operations" disabled={!selectedBatch}>Operations</TabsTrigger>
+                <TabsTrigger value="ops_time" disabled={!selectedBatch}>Ops Time</TabsTrigger>
+                <TabsTrigger value="qc_actions" disabled={!selectedBatch}>QC Actions</TabsTrigger>
                 <TabsTrigger value="team_persons" disabled={!selectedBatch}>Team Time Persons</TabsTrigger>
                 <TabsTrigger value="team_extra" disabled={!selectedBatch}>Team Time Extra</TabsTrigger>
                 <TabsTrigger value="help_in" disabled={!selectedBatch}>Help In</TabsTrigger>
