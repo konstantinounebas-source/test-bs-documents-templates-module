@@ -116,7 +116,8 @@ export default function TeamTimePersonsTab({ batchId }) {
   };
 
   const handleOpenAddDialog = () => {
-    const defaultBreak = breakTimes.length > 0 ? breakTimes[0].duration_minutes : 0;
+    const activeBreakTimes = breakTimes.filter(b => b.is_active !== false);
+    const defaultBreak = activeBreakTimes.length > 0 ? activeBreakTimes[0].duration_minutes || 0 : 0;
     setFormData({
       person_name: '',
       from_time: '07:00',
