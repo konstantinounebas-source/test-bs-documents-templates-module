@@ -107,14 +107,14 @@ export default function MetricDefinitionManager() {
         <h3 className="text-lg font-semibold">Metric Definitions (Read-only)</h3>
       </div>
 
-      <div className="border rounded-lg overflow-auto bg-white shadow-sm">
+      <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">
+              <TableHead className="font-semibold w-8"></TableHead>
               <TableHead className="font-semibold">Code</TableHead>
-                    <TableHead className="font-semibold">Name</TableHead>
-                    <TableHead className="font-semibold">Applies To</TableHead>
-                    <TableHead className="font-semibold">Formula</TableHead>
+              <TableHead className="font-semibold">Name</TableHead>
+              <TableHead className="font-semibold">Applies To</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -126,13 +126,35 @@ export default function MetricDefinitionManager() {
               </TableRow>
             ) : (
               metrics.map(metric => (
-                <TableRow key={metric.id} className="hover:bg-slate-50">
-                  <TableCell className="font-mono font-semibold">{metric.metric_code}</TableCell>
-                  <TableCell>{metric.metric_name}</TableCell>
-                  <TableCell className="text-sm text-slate-600">{metric.applies_to}</TableCell>
-                  <TableCell className="text-sm font-mono text-slate-600 truncate max-w-xs">{metric.formula_full}</TableCell>
-                  <TableCell></TableCell>
-                </TableRow>
+                <React.Fragment key={metric.id}>
+                  <TableRow 
+                    className="hover:bg-slate-50 cursor-pointer"
+                    onClick={() => setExpandedId(expandedId === metric.id ? null : metric.id)}
+                  >
+                    <TableCell className="w-8 text-center">
+                      {expandedId === metric.id ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
+                    </TableCell>
+                    <TableCell className="font-mono font-semibold">{metric.metric_code}</TableCell>
+                    <TableCell>{metric.metric_name}</TableCell>
+                    <TableCell className="text-sm text-slate-600">{metric.applies_to}</TableCell>
+                  </TableRow>
+                  {expandedId === metric.id && (
+                    <TableRow className="bg-slate-50 border-t">
+                      <TableCell colSpan={4} className="p-4">
+                        <div className="space-y-2">
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600 uppercase">Description</p>
+                            <p className="text-sm text-slate-800 mt-1">{metric.description}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
               ))
             )}
           </TableBody>
