@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BarChart3, Lock } from "lucide-react";
+import MetricDefinitionManager from "@/components/manufacturing/metrics/MetricDefinitionManager";
+import DailyMetricValuesViewer from "@/components/manufacturing/metrics/DailyMetricValuesViewer";
 
 export default function MfgKPIDashboardPage() {
   const { data: kpiRuns = [] } = useQuery({
@@ -69,6 +71,20 @@ export default function MfgKPIDashboardPage() {
                 )}
               </TableBody>
             </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">Metric Definitions & Values</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            <div>
+              <MetricDefinitionManager />
+            </div>
+            <div className="border-t pt-6">
+              <DailyMetricValuesViewer />
+            </div>
           </CardContent>
         </Card>
       </div>
