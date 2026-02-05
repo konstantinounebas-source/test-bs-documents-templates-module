@@ -104,11 +104,22 @@ export default function MetricDefinitionManager() {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Metric Definitions (Read-only)</h3>
-      </div>
+        <div 
+          className="flex justify-between items-center cursor-pointer p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+          onClick={() => setSectionExpanded(!sectionExpanded)}
+        >
+          <div className="flex items-center gap-2">
+            {sectionExpanded ? (
+              <ChevronDown className="w-5 h-5 text-slate-600" />
+            ) : (
+              <ChevronRight className="w-5 h-5 text-slate-600" />
+            )}
+            <h3 className="text-lg font-semibold">Metric Definitions (Read-only)</h3>
+          </div>
+        </div>
 
-      <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
+        {sectionExpanded && (
+        <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">
