@@ -50,7 +50,8 @@ export default function TeamTimePersonsTab({ batchId }) {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries(['Team_Time_Persons']);
-      setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', break_time_minutes: 0, notes: '' });
+      resetForm();
+      setShowAddDialog(false);
       toast.success('Team time added');
     },
     onError: () => toast.error('Failed to add team time')
@@ -204,10 +205,7 @@ export default function TeamTimePersonsTab({ batchId }) {
         </Table>
       </div>
 
-      <Dialog open={showAddDialog} onOpenChange={(open) => {
-        if (!open) resetForm();
-        setShowAddDialog(open);
-      }}>
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingLine ? 'Edit Team Time - Person' : 'Add Team Time - Person'}</DialogTitle>
@@ -279,7 +277,10 @@ export default function TeamTimePersonsTab({ batchId }) {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={resetForm}>Cancel</Button>
+           <Button variant="outline" onClick={() => {
+             resetForm();
+             setShowAddDialog(false);
+           }}>Cancel</Button>
             <Button onClick={handleAdd} disabled={createMutation.isPending || updateMutation.isPending}>
               {createMutation.isPending || updateMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
