@@ -120,16 +120,20 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
     mutationFn: async (data) => {
       const newBatch = await base44.entities.BatchHeader.create(data);
       
-      // Create GT_TIME metric with initial value 0
-      await base44.entities.DailyMetricValue.create({
-        metric_code: 'GT_TIME',
-        batch_header_id: newBatch.id,
-        date: newBatch.date,
-        department: newBatch.department,
-        bundle_id: newBatch.bundle_id,
-        value: 0
-      });
+      // Fetch all metric definitions and create initial metric values
+      const metrics = await base44.entities.MetricDefinition.list();
+      const metricPromises = metrics.map(metric =>
+        base44.entities.DailyMetricValue.create({
+          metric_code: metric.metric_code,
+          batch_header_id: newBatch.id,
+          date: newBatch.date,
+          department: newBatch.department,
+          bundle_id: newBatch.bundle_id,
+          value: 0
+        })
+      );
       
+      await Promise.all(metricPromises);
       return newBatch;
     },
     onSuccess: (newBatch) => {
