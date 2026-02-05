@@ -143,6 +143,16 @@ export default function TeamTimePersonsTab({ batchId }) {
     setShowAddDialog(false);
   };
 
+  const calculateTotalAvailableTime = () => {
+    return lines.reduce((sum, line) => {
+      const [fromH, fromM] = line.from_time.split(':').map(Number);
+      const [toH, toM] = line.to_time.split(':').map(Number);
+      const totalMin = (toH * 60 + toM) - (fromH * 60 + fromM);
+      const availableMin = Math.max(0, totalMin - (line.break_time_minutes || 0));
+      return sum + availableMin;
+    }, 0);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -159,6 +169,13 @@ export default function TeamTimePersonsTab({ batchId }) {
           <Plus className="w-4 h-4 mr-2" />
           Add Person Time
         </Button>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-blue-900">Total Available Time</span>
+          <span className="text-lg font-bold text-blue-900">{calculateTotalAvailableTime().toFixed(2)} min ({(calculateTotalAvailableTime() / 60).toFixed(2)} hrs)</span>
+        </div>
       </div>
 
       <div className="border rounded-lg overflow-auto">
