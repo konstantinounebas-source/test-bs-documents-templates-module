@@ -526,14 +526,10 @@ export default function OperationsTab({ batchId, department }) {
                 <Label>Select Operations & Quantities *</Label>
                 <p className="text-sm text-slate-500 mb-2">Check operations and enter quantities</p>
                 {/* DEBUG INFO */}
-                <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
-                  <strong>Debug:</strong> Item Code: {formData.item_code}, 
-                  StdSetLines count: {stdSetLines.length},
-                  Bundle ID: {batchHeader?.bundle_id}
-                  <br />
-                  Available item_codes in StdSetLines: {[...new Set(stdSetLines.map(s => s.item_code))].join(', ')}
-                  <br />
-                  Available operations for {formData.item_code}: {stdSetLines.filter(s => s.item_code === formData.item_code).map(s => s.operation).join(', ')}
+                <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs space-y-1">
+                  <div><strong>Debug:</strong> Item Code: {formData.item_code}, StdSetLines count: {stdSetLines.length}, Bundle ID: {batchHeader?.bundle_id}</div>
+                  <div>Available item_codes: {[...new Set(stdSetLines.map(s => s.item_code))].join(', ')}</div>
+                  <div>Operations for {formData.item_code}: {stdSetLines.filter(s => s.item_code === formData.item_code).map(s => `${s.operation} (${s.std_min_per_pc} min/pc)`).join(', ')}</div>
                 </div>
                 <div className="border rounded-lg p-4 bg-slate-50 max-h-96 overflow-y-auto">
                   {operationsForProfile.length === 0 ? (
