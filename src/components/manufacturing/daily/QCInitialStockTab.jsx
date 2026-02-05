@@ -86,7 +86,17 @@ export default function QCInitialStockTab({ batchId, department }) {
   // Fetch QC rules from bundle for calculated extra time
   const { data: qcSetLines = [] } = useQuery({
     queryKey: ['QCSetLines', batchHeader?.bundle_id],
-    queryFn: () => base44.entities.QCSetLines.filter({ bundle_id: batchHeader.bundle_id }),
+    queryFn: async () => {
+      console.log('=== FETCHING QC SET LINES ===');
+      console.log('Batch Header:', batchHeader);
+      console.log('Bundle ID:', batchHeader.bundle_id);
+      
+      const lines = await base44.entities.QCSetLines.filter({ bundle_id: batchHeader.bundle_id });
+      console.log('QC Set Lines found:', lines.length);
+      console.log('QC Set Lines data:', lines);
+      
+      return lines;
+    },
     enabled: !!batchHeader?.bundle_id,
     staleTime: 0
   });
