@@ -163,25 +163,16 @@ export default function TeamTimePersonsTab({ batchId }) {
 
       const totalAvailableTime = calculateTotalAvailableTime();
 
-      // Check if metric already exists for this batch
+      // Find and update the GT_TIME metric by date and department
       const existingMetrics = await base44.entities.DailyMetricValue.filter({
         metric_code: 'GT_TIME',
-        batch_header_id: batchId
+        date: batchHeader[0].date,
+        department: batchHeader[0].department
       });
 
       if (existingMetrics.length > 0) {
-        // Update existing metric
+        // Update only the first matching metric
         await base44.entities.DailyMetricValue.update(existingMetrics[0].id, {
-          value: totalAvailableTime
-        });
-      } else {
-        // Create new metric
-        await base44.entities.DailyMetricValue.create({
-          metric_code: 'GT_TIME',
-          batch_header_id: batchId,
-          date: batchHeader[0].date,
-          department: batchHeader[0].department,
-          bundle_id: batchHeader[0].bundle_id,
           value: totalAvailableTime
         });
       }
