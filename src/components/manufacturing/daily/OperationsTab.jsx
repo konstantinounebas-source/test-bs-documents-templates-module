@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Plus, Trash2, Loader2, Search, AlertCircle, Edit2, ChevronDown, ChevronRight } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
 
 function useBatchItemCodes(batchId, department) {
   return useQuery({
@@ -379,75 +379,73 @@ export default function OperationsTab({ batchId, department }) {
               <>
                 {filteredGroups.map(group => (
                   <React.Fragment key={group.item_code}>
-                    <Collapsible
-                      open={expandedItems[group.item_code]}
-                      onOpenChange={(open) => setExpandedItems(prev => ({ ...prev, [group.item_code]: open }))}
+                    <TableRow 
+                      className="hover:bg-slate-50 bg-slate-100 font-semibold cursor-pointer"
+                      onClick={() => setExpandedItems(prev => ({ ...prev, [group.item_code]: !prev[group.item_code] }))}
                     >
-                      <TableRow className="hover:bg-slate-50 bg-slate-100 font-semibold">
-                        <CollapsibleTrigger asChild>
-                          <TableCell className="cursor-pointer">
-                            {expandedItems[group.item_code] ? (
-                              <ChevronDown className="w-4 h-4" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4" />
-                            )}
+                      <TableCell className="w-12">
+                        {expandedItems[group.item_code] ? (
+                          <ChevronDown className="w-4 h-4" />
+                        ) : (
+                          <ChevronRight className="w-4 h-4" />
+                        )}
+                      </TableCell>
+                      <TableCell className="font-bold">{group.item_code}</TableCell>
+                      <TableCell className="text-slate-600">{group.subGroups.length} profile(s)</TableCell>
+                      <TableCell className="font-mono font-bold text-right">{group.total_time.toFixed(2)}</TableCell>
+                      <TableCell className="text-center"></TableCell>
+                    </TableRow>
+                    {expandedItems[group.item_code] && group.subGroups.map(subGroup => (
+                      <React.Fragment key={subGroup.profile_group_id}>
+                        <TableRow className="bg-purple-50">
+                          <TableCell className="w-12"></TableCell>
+                          <TableCell className="font-semibold text-purple-800 pl-6" colSpan={2}>
+                            {subGroup.profile_name}
                           </TableCell>
-                        </CollapsibleTrigger>
-                        <TableCell className="font-bold">{group.item_code}</TableCell>
-                        <TableCell className="text-slate-600">{group.subGroups.length} profile(s)</TableCell>
-                        <TableCell className="font-mono font-bold text-right">{group.total_time.toFixed(2)}</TableCell>
-                        <TableCell className="text-center"></TableCell>
-                      </TableRow>
-                      <CollapsibleContent asChild>
-                        <>
-                          {group.subGroups.map(subGroup => (
-                            <React.Fragment key={subGroup.profile_group_id}>
-                              <TableRow className="bg-purple-50">
-                                <TableCell className="w-12"></TableCell>
-                                <TableCell className="font-semibold text-purple-800 pl-6" colSpan={2}>
-                                  {subGroup.profile_name}
-                                </TableCell>
-                                <TableCell className="font-mono font-semibold text-right text-purple-900">{subGroup.total_time.toFixed(2)}</TableCell>
-                                <TableCell className="text-center">
-                                  <div className="flex gap-1 justify-center">
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      onClick={() => handleEdit(subGroup.profile_group_id)}
-                                      className="h-8 w-8"
-                                    >
-                                      <Edit2 className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                      onClick={() => deleteMutation.mutate(subGroup.profile_group_id)}
-                                      variant="ghost"
-                                      size="icon"
-                                      disabled={deleteMutation.isPending}
-                                      className="h-8 w-8"
-                                    >
-                                      <Trash2 className="w-4 h-4 text-red-500" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                              {subGroup.operations.map(op => (
-                                <TableRow key={op.id} className="hover:bg-slate-50">
-                                  <TableCell className="w-12"></TableCell>
-                                  <TableCell className="pl-12 text-slate-700">
-                                    <span className="text-slate-400">↳</span> {op.operation}
-                                  </TableCell>
-                                  <TableCell className="font-mono text-sm text-slate-600">
-                                    Qty: <span className="font-semibold">{op.qty_operation}</span>
-                                  </TableCell>
-                                  <TableCell className="font-mono text-sm font-medium text-right">{op.operation_time_min?.toFixed(2) || '0.00'}</TableCell>
-                                  <TableCell className="text-center"></TableCell>
-                                </TableRow>
-                              ))}
-                            </React.Fragment>
-                          ))}
-                        </>
-                      </CollapsibleContent>
-                    </Collapsible>
+                          <TableCell className="font-mono font-semibold text-right text-purple-900">{subGroup.total_time.toFixed(2)}</TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex gap-1 justify-center">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(subGroup.profile_group_id);
+                                }}
+                                className="h-8 w-8"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteMutation.mutate(subGroup.profile_group_id);
+                                }}
+                                variant="ghost"
+                                size="icon"
+                                disabled={deleteMutation.isPending}
+                                className="h-8 w-8"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                        {subGroup.operations.map(op => (
+                          <TableRow key={op.id} className="hover:bg-slate-50">
+                            <TableCell className="w-12"></TableCell>
+                            <TableCell className="pl-12 text-slate-700">
+                              <span className="text-slate-400">↳</span> {op.operation}
+                            </TableCell>
+                            <TableCell className="font-mono text-sm text-slate-600">
+                              Qty: <span className="font-semibold">{op.qty_operation}</span>
+                            </TableCell>
+                            <TableCell className="font-mono text-sm font-medium text-right">{op.operation_time_min?.toFixed(2) || '0.00'}</TableCell>
+                            <TableCell className="text-center"></TableCell>
+                          </TableRow>
+                        ))}
+                      </React.Fragment>
+                    ))}
                   </React.Fragment>
                 ))}
               </>
