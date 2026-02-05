@@ -11,17 +11,18 @@ import { Plus, Trash2, Edit2, Loader2, ChevronDown, ChevronRight } from 'lucide-
 import { toast } from 'sonner';
 
 export default function MetricDefinitionManager() {
-  const queryClient = useQueryClient();
-  const [showDialog, setShowDialog] = useState(false);
-  const [editingMetric, setEditingMetric] = useState(null);
-  const [formData, setFormData] = useState({
-    metric_code: '',
-    metric_name: '',
-    applies_to: '',
-    description: '',
-    formula_full: '',
-    source_tables_fields: ''
-  });
+    const queryClient = useQueryClient();
+    const [showDialog, setShowDialog] = useState(false);
+    const [editingMetric, setEditingMetric] = useState(null);
+    const [expandedId, setExpandedId] = useState(null);
+    const [formData, setFormData] = useState({
+      metric_code: '',
+      metric_name: '',
+      applies_to: '',
+      description: '',
+      formula_full: '',
+      source_tables_fields: ''
+    });
 
   const { data: metrics = [], isLoading } = useQuery({
     queryKey: ['MetricDefinition'],
