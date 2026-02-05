@@ -19,7 +19,7 @@ function useBatchItemCodes(batchId, department) {
       if (!batchId || !department) return [];
       
       // Get batch header to get its bundle_id
-      const batch = await base44.entities.Batch_Header.filter({ id: batchId });
+      const batch = await base44.entities.BatchHeader.filter({ id: batchId });
       if (!batch || batch.length === 0) return [];
       
       const bundleId = batch[0].bundle_id;
@@ -51,8 +51,8 @@ export default function BatchLinesTab({ batchId, department }) {
 
   // Fetch batch header to get date and department for scheduled data lookup
   const { data: batchHeader } = useQuery({
-    queryKey: ['Batch_Header', batchId],
-    queryFn: () => base44.entities.Batch_Header.filter({ id: batchId }),
+    queryKey: ['BatchHeader', batchId],
+    queryFn: () => base44.entities.BatchHeader.filter({ id: batchId }),
     enabled: !!batchId,
     select: (data) => data?.[0]
   });
