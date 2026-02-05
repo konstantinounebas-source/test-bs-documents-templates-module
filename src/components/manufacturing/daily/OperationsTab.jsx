@@ -431,19 +431,31 @@ export default function OperationsTab({ batchId, department }) {
                             </div>
                           </TableCell>
                         </TableRow>
-                        {subGroup.operations.map(op => (
-                          <TableRow key={op.id} className="hover:bg-slate-50">
-                            <TableCell className="w-12"></TableCell>
-                            <TableCell className="pl-12 text-slate-700">
-                              <span className="text-slate-400">↳</span> {op.operation}
-                            </TableCell>
-                            <TableCell className="font-mono text-sm text-slate-600">
-                              Qty: <span className="font-semibold">{op.qty_operation}</span>
-                            </TableCell>
-                            <TableCell className="font-mono text-sm font-medium text-right">{op.operation_time_min?.toFixed(2) || '0.00'}</TableCell>
-                            <TableCell className="text-center"></TableCell>
-                          </TableRow>
-                        ))}
+                        {subGroup.operations.map(op => {
+                         console.log('Operation:', {
+                           operation: op.operation,
+                           qty: op.qty_operation,
+                           std_min_pc: op.std_min_pc_lookup,
+                           time_min: op.operation_time_min,
+                           calculated: (op.qty_operation || 0) * (op.std_min_pc_lookup || 0)
+                         });
+                         return (
+                           <TableRow key={op.id} className="hover:bg-slate-50">
+                             <TableCell className="w-12"></TableCell>
+                             <TableCell className="pl-12 text-slate-700">
+                               <span className="text-slate-400">↳</span> {op.operation}
+                               <span className="text-xs text-slate-400 ml-2">
+                                 (std: {op.std_min_pc_lookup?.toFixed(3) || '0.000'} min/pc)
+                               </span>
+                             </TableCell>
+                             <TableCell className="font-mono text-sm text-slate-600">
+                               Qty: <span className="font-semibold">{op.qty_operation}</span>
+                             </TableCell>
+                             <TableCell className="font-mono text-sm font-medium text-right">{op.operation_time_min?.toFixed(2) || '0.00'}</TableCell>
+                             <TableCell className="text-center"></TableCell>
+                           </TableRow>
+                         );
+                        })}
                       </React.Fragment>
                     ))}
                   </React.Fragment>
