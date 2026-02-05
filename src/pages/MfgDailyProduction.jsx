@@ -12,8 +12,6 @@ import BatchHeaderTab from "../components/manufacturing/daily/BatchHeaderTab";
 import BatchLinesTab from "../components/manufacturing/daily/BatchLinesTab";
 import QCInitialStockTab from "../components/manufacturing/daily/QCInitialStockTab";
 import OperationsTab from "../components/manufacturing/daily/OperationsTab";
-import OperationsTimeTab from "../components/manufacturing/daily/OperationsTimeTab";
-import QCActionsTab from "../components/manufacturing/daily/QCActionsTab";
 import TeamTimePersonsTab from "../components/manufacturing/daily/TeamTimePersonsTab";
 import TeamTimeExtraTab from "../components/manufacturing/daily/TeamTimeExtraTab";
 import HelpInTab from "../components/manufacturing/daily/HelpInTab";
@@ -30,97 +28,7 @@ export default function MfgDailyProduction() {
     queryFn: () => base44.entities.BatchHeader.list('-created_date', 20)
   });
 
-  // Calculate grand totals from all tabs
-  const { data: opsData = [] } = useQuery({
-    queryKey: ['Operations', selectedBatch?.id],
-    queryFn: () => base44.entities.Operations.filter({ batch_header_id: selectedBatch.id }),
-    enabled: !!selectedBatch?.id,
-    staleTime: 0
-  });
 
-  const { data: batchLines = [] } = useQuery({
-    queryKey: ['Batch_Lines', selectedBatch?.id],
-    queryFn: () => base44.entities.Batch_Lines.filter({ batch_header_id: selectedBatch.id }),
-    enabled: !!selectedBatch?.id,
-    staleTime: 0
-  });
-
-  const { data: batchHeader } = useQuery({
-    queryKey: ['BatchHeader', selectedBatch?.id],
-    queryFn: () => base44.entities.BatchHeader.filter({ id: selectedBatch.id }),
-    enabled: !!selectedBatch?.id,
-    select: (data) => data?.[0]
-  });
-
-  const { data: stdSetLines = [] } = useQuery({
-    queryKey: ['StdSetLines', batchHeader?.bundle_id],
-    queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: batchHeader.bundle_id }),
-    enabled: !!batchHeader?.bundle_id,
-    staleTime: 0
-  });
-
-  const { data: profileNames = [] } = useQuery({
-    queryKey: ['OperationProfileName'],
-    queryFn: () => base44.entities.OperationProfileName.list()
-  });
-
-  const { data: qcLines = [] } = useQuery({
-    queryKey: ['QC_Actions', selectedBatch?.id],
-    queryFn: () => base44.entities.QC_Initial_Stock.filter({ batch_header_id: selectedBatch.id }),
-    enabled: !!selectedBatch?.id,
-    staleTime: 0
-  });
-
-  const { data: qcSetLines = [] } = useQuery({
-    queryKey: ['QCSetLines', batchHeader?.bundle_id],
-    queryFn: () => base44.entities.QCSetLines.filter({ bundle_id: batchHeader.bundle_id }),
-    enabled: !!batchHeader?.bundle_id,
-    staleTime: 0
-  });
-
-  // Calculate ops hours - same logic as OperationsTimeTab
-  const opsHours = useMemo(() => {
-    let totalMinutes = 0;
-    batchLines.forEach(line => {
-      const opsForLine = opsData.filter(op => op.item_code === line.item_code);
-      let lineMinutes = 0;
-      
-      opsForLine.forEach(op => {
-        const profile = profileNames.find(p => p.name === op.operation_profile);
-        if (profile) {
-          const stdLine = stdSetLines.find(
-            sl => sl.item_code === line.item_code && sl.profile_name === profile.name
-          );
-          if (stdLine && stdLine.time_minutes) {
-            lineMinutes += parseFloat(stdLine.time_minutes);
-          }
-        }
-      });
-      
-      totalMinutes += lineMinutes * (parseFloat(line.scheduled_qty) || 0);
-    });
-    return (totalMinutes / 60).toFixed(2);
-  }, [batchLines, profileNames, opsData, stdSetLines]);
-
-  // Calculate QC hours - same logic as QCActionsTab
-  const qcHours = useMemo(() => {
-    let totalMinutes = 0;
-    qcLines.forEach(line => {
-      const qcSet = qcSetLines.find(
-        ql => ql.item_code === line.item_code && 
-             ql.qc_type === line.qc_type && 
-             ql.qc_level === line.qc_level
-      );
-      if (qcSet && qcSet.time_minutes) {
-        totalMinutes += parseFloat(qcSet.time_minutes) * (parseFloat(line.qty_affected) || 0);
-      }
-    });
-    return (totalMinutes / 60).toFixed(2);
-  }, [qcLines, qcSetLines]);
-
-  const grandTotalHours = useMemo(() => {
-    return (parseFloat(opsHours || 0) + parseFloat(qcHours || 0)).toFixed(2);
-  }, [opsHours, qcHours]);
 
   const handleBatchSelect = (batch) => {
     setSelectedBatch(batch);
@@ -165,46 +73,20 @@ export default function MfgDailyProduction() {
 
         <Card>
           <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle>Production Data Entry</CardTitle>
-                {selectedBatch && (
-                  <p className="text-sm text-slate-600 mt-1">
-                    Selected Batch: {selectedBatch.date} - {selectedBatch.department}
-                  </p>
-                )}
-              </div>
-              {selectedBatch && (
-                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-2 text-sm min-w-max">
-                  <div className="flex items-center gap-2 font-semibold text-slate-900">
-                    <Clock className="w-4 h-4 text-blue-600" />
-                    Production Summary
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-slate-600">Total Ops Hours:</span>
-                    <span className="font-mono font-bold text-blue-600">{opsHours}h</span>
-                  </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="text-slate-600">Total QC Hours:</span>
-                    <span className="font-mono font-bold text-purple-600">{qcHours}h</span>
-                  </div>
-                  <div className="border-t border-slate-300 pt-2 mt-2 flex items-center justify-between gap-4">
-                    <span className="text-slate-700 font-semibold">Grand Total Hours:</span>
-                    <span className="font-mono font-bold text-green-600 text-lg">{grandTotalHours}h</span>
-                  </div>
-                </div>
-              )}
-            </div>
+            <CardTitle>Production Data Entry</CardTitle>
+            {selectedBatch && (
+              <p className="text-sm text-slate-600 mt-1">
+                Selected Batch: {selectedBatch.date} - {selectedBatch.department}
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-10 w-full">
+              <TabsList className="grid grid-cols-8 w-full">
                 <TabsTrigger value="batch_header">Batch Header</TabsTrigger>
                 <TabsTrigger value="batch_lines" disabled={!selectedBatch}>Batch Lines</TabsTrigger>
                 <TabsTrigger value="qc_initial" disabled={!selectedBatch}>QC Initial Stock</TabsTrigger>
                 <TabsTrigger value="operations" disabled={!selectedBatch}>Operations</TabsTrigger>
-                <TabsTrigger value="ops_time" disabled={!selectedBatch}>Ops Time</TabsTrigger>
-                <TabsTrigger value="qc_actions" disabled={!selectedBatch}>QC Actions</TabsTrigger>
                 <TabsTrigger value="team_persons" disabled={!selectedBatch}>Team Time Persons</TabsTrigger>
                 <TabsTrigger value="team_extra" disabled={!selectedBatch}>Team Time Extra</TabsTrigger>
                 <TabsTrigger value="help_in" disabled={!selectedBatch}>Help In</TabsTrigger>
@@ -231,14 +113,6 @@ export default function MfgDailyProduction() {
 
                 <TabsContent value="operations">
                   <OperationsTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                </TabsContent>
-
-                <TabsContent value="ops_time">
-                  <OperationsTimeTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                </TabsContent>
-
-                <TabsContent value="qc_actions">
-                  <QCActionsTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
                 </TabsContent>
 
                 <TabsContent value="team_persons">
