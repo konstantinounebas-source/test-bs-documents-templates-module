@@ -153,22 +153,31 @@ export default function QCInitialStockTab({ batchId, department }) {
       console.log('  QC Level:', line.qc_level);
       
       const qcRule = qcSetLines.find(
-        ql => (ql.item_code || '').trim().toLowerCase() === trimmedItemCode.toLowerCase() &&
-             ql.qc_type === line.qc_type &&
-             ql.qc_level === line.qc_level
+        ql => {
+          const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
+          const qlQcType = ql.data?.qc_type || ql.qc_type;
+          const qlQcLevel = ql.data?.qc_level || ql.qc_level;
+          
+          return qlItemCode === trimmedItemCode.toLowerCase() &&
+                 qlQcType === line.qc_type &&
+                 qlQcLevel === line.qc_level;
+        }
       );
       
       console.log('  Matching rule found:', qcRule);
       
       let qcPerPiece = 0;
-      if (qcRule && qcRule.calculated_extra_time) {
-        qcPerPiece = parseFloat(qcRule.calculated_extra_time);
-        console.log('  ✅ QC Per-piece:', qcPerPiece);
-      } else {
-        console.log('  ❌ No rule or no calculated_extra_time');
-        if (qcRule) {
+      if (qcRule) {
+        const extraTime = qcRule.data?.calculated_extra_time_min || qcRule.calculated_extra_time_min || qcRule.calculated_extra_time;
+        if (extraTime) {
+          qcPerPiece = parseFloat(extraTime);
+          console.log('  ✅ QC Per-piece:', qcPerPiece);
+        } else {
+          console.log('  ❌ No calculated_extra_time found in rule');
           console.log('  Rule data:', qcRule);
         }
+      } else {
+        console.log('  ❌ No matching rule found');
       }
       
       return {
