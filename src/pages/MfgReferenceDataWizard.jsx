@@ -21,7 +21,7 @@ export default function MfgReferenceDataWizard() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("departments");
   const [editingItem, setEditingItem] = useState(null);
-  const [formData, setFormData] = useState({ name: "", description: "", is_active: true });
+  const [formData, setFormData] = useState({ name: "", description: "", duration_minutes: "", is_active: true });
 
   const tabs = [
     { id: "departments", label: "Departments", entity: "Department", icon: Building2 },
@@ -51,7 +51,7 @@ export default function MfgReferenceDataWizard() {
     mutationFn: (data) => base44.entities[currentEntity].create(data),
     onSuccess: () => {
       queryClient.invalidateQueries([currentEntity]);
-      setFormData({ name: "", description: "", is_active: true });
+      setFormData({ name: "", description: "", duration_minutes: "", is_active: true });
       setEditingItem(null);
       toast.success("Item created successfully");
     },
@@ -64,7 +64,7 @@ export default function MfgReferenceDataWizard() {
     mutationFn: ({ id, data }) => base44.entities[currentEntity].update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries([currentEntity]);
-      setFormData({ name: "", description: "", is_active: true });
+      setFormData({ name: "", description: "", duration_minutes: "", is_active: true });
       setEditingItem(null);
       toast.success("Item updated successfully");
     },
@@ -90,6 +90,11 @@ export default function MfgReferenceDataWizard() {
       toast.error("Name is required");
       return;
     }
+    
+    if (activeTab === 'break_times' && !formData.duration_minutes) {
+      toast.error("Duration is required for break times");
+      return;
+    }
 
     if (editingItem) {
       updateMutation.mutate({ id: editingItem.id, data: formData });
@@ -103,6 +108,7 @@ export default function MfgReferenceDataWizard() {
     setFormData({
       name: item.name,
       description: item.description || "",
+      duration_minutes: item.duration_minutes || "",
       is_active: item.is_active !== false
     });
   };
@@ -115,7 +121,7 @@ export default function MfgReferenceDataWizard() {
 
   const handleCancel = () => {
     setEditingItem(null);
-    setFormData({ name: "", description: "", is_active: true });
+    setFormData({ name: "", description: "", duration_minutes: "", is_active: true });
   };
 
   const canProceed = () => {
@@ -163,19 +169,19 @@ export default function MfgReferenceDataWizard() {
           </CardHeader>
           <CardContent>
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-5 w-full gap-1 h-auto flex-wrap">
-                {tabs.map(tab => {
-                  const TabIcon = tab.icon;
-                  const count = queryClient.getQueryData([tab.entity])?.length || 0;
-                  return (
-                    <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
-                      <TabIcon className="w-4 h-4" />
-                      {tab.label}
-                      <Badge variant="secondary">{count}</Badge>
-                    </TabsTrigger>
-                  );
-                })}
-              </TabsList>
+                     <TabsList className="grid grid-cols-6 w-full gap-1 h-auto flex-wrap">
+                       {tabs.map(tab => {
+                         const TabIcon = tab.icon;
+                         const count = queryClient.getQueryData([tab.entity])?.length || 0;
+                         return (
+                           <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
+                             <TabIcon className="w-4 h-4" />
+                             {tab.label}
+                             <Badge variant="secondary">{count}</Badge>
+                           </TabsTrigger>
+                         );
+                       })}
+                     </TabsList>
 
               {tabs.map(tab => (
                 <TabsContent key={tab.id} value={tab.id} className="mt-6 space-y-6">
@@ -192,27 +198,40 @@ export default function MfgReferenceDataWizard() {
                         </CardHeader>
                         <CardContent>
                       <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="name">Name *</Label>
-                            <Input
-                              id="name"
-                              value={formData.name}
-                              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                              placeholder={`Enter ${tab.label.toLowerCase()} name`}
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="description">Description</Label>
-                            <Input
-                              id="description"
-                              value={formData.description}
-                              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                              placeholder="Optional description"
-                            />
-                          </div>
-                        </div>
+                         <div className="grid grid-cols-2 gap-4">
+                           <div>
+                             <Label htmlFor="name">Name *</Label>
+                             <Input
+                               id="name"
+                               value={formData.name}
+                               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                               placeholder={`Enter ${tab.label.toLowerCase()} name`}
+                               required
+                             />
+                           </div>
+                           <div>
+                             <Label htmlFor="description">Description</Label>
+                             <Input
+                               id="description"
+                               value={formData.description}
+                               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                               placeholder="Optional description"
+                             />
+                           </div>
+                         </div>
+                         {activeTab === 'break_times' && (
+                           <div>
+                             <Label htmlFor="duration">Duration (minutes) *</Label>
+                             <Input
+                               id="duration"
+                               type="number"
+                               value={formData.duration_minutes}
+                               onChange={(e) => setFormData({ ...formData, duration_minutes: parseInt(e.target.value) || "" })}
+                               placeholder="e.g., 15"
+                               required={activeTab === 'break_times'}
+                             />
+                           </div>
+                         )}
                         <div className="flex items-center space-x-2">
                           <Checkbox
                             id="is_active"
