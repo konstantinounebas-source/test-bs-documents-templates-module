@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Loader2, Search, AlertCircle, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Loader2, Search, AlertCircle, Edit2, ChevronDown, ChevronRight } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 function useBatchItemCodes(batchId, department) {
   return useQuery({
@@ -18,7 +19,6 @@ function useBatchItemCodes(batchId, department) {
     queryFn: async () => {
       if (!batchId || !department) return [];
       
-      // Get batch header to get its bundle_id
       const batch = await base44.entities.BatchHeader.filter({ id: batchId });
       if (!batch || batch.length === 0) return [];
       
@@ -36,15 +36,14 @@ function useBatchItemCodes(batchId, department) {
 export default function OperationsTab({ batchId, department }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingLine, setEditingLine] = useState(null);
+  const [editingGroupId, setEditingGroupId] = useState(null);
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedOperations, setSelectedOperations] = useState({});
+  const [expandedItems, setExpandedItems] = useState({});
   const [formData, setFormData] = useState({
     item_code: '',
-    entry_type: '',
-    operation_profile: '',
-    operation: '',
-    qty_operation: ''
+    operation_profile_id: '',
+    operation_profile_name: ''
   });
 
   const { data: itemCodes = [], isLoading: itemCodesLoading } = useBatchItemCodes(batchId, department);
@@ -60,20 +59,6 @@ export default function OperationsTab({ batchId, department }) {
     queryFn: () => base44.entities.OperationProfileName.list()
   });
 
-  // Get operations for selected profile
-  const operationsForProfile = useMemo(() => {
-    if (!formData.operation_profile) return [];
-    
-    const profile = profileNames.find(p => p.name === formData.operation_profile);
-    if (!profile || !profile.operations_required) return [];
-    
-    // Map operation IDs to operation details
-    return profile.operations_required
-      .map(opId => operations.find(op => op.id === opId))
-      .filter(Boolean);
-  }, [formData.operation_profile, profileNames, operations]);
-
-  // Fetch batch header to get date and department for scheduled data lookup
   const { data: batchHeader } = useQuery({
     queryKey: ['BatchHeader', batchId],
     queryFn: () => base44.entities.BatchHeader.filter({ id: batchId }),
@@ -81,7 +66,13 @@ export default function OperationsTab({ batchId, department }) {
     select: (data) => data?.[0]
   });
 
-  // Fetch scheduled data for auto-filling operations
+  const { data: stdSetLines = [] } = useQuery({
+    queryKey: ['StdSetLines', batchHeader?.bundle_id],
+    queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: batchHeader.bundle_id }),
+    enabled: !!batchHeader?.bundle_id,
+    staleTime: 0
+  });
+
   const { data: scheduledData = [] } = useQuery({
     queryKey: ['ScheduledData', batchHeader?.date, batchHeader?.department],
     queryFn: () => base44.entities.ScheduledData.filter({
@@ -99,138 +90,227 @@ export default function OperationsTab({ batchId, department }) {
     staleTime: 0
   });
 
-  // Auto-fill operations from scheduled data (only on initial load)
+  const operationsForProfile = useMemo(() => {
+    if (!formData.operation_profile_id) return [];
+    
+    const profile = profileNames.find(p => p.id === formData.operation_profile_id);
+    if (!profile || !profile.operations_required) return [];
+    
+    return profile.operations_required
+      .map(opId => operations.find(op => op.id === opId))
+      .filter(Boolean);
+  }, [formData.operation_profile_id, profileNames, operations]);
+
+  // Auto-fill from scheduled data (seed only, once)
   useMemo(() => {
-    if (!batchId || lines.length > 0 || scheduledData.length === 0) return;
+    if (!batchId || !batchHeader || lines.length > 0 || scheduledData.length === 0) return;
 
-    // Create operation records from scheduled data
-    const autoFillLines = scheduledData.map(sd => ({
-      batch_header_id: batchId,
-      item_code: sd.item_code,
-      entry_type: 'PROFILE',
-      operation_profile: sd.operation_profile_id || '',
-      operation: '',
-      qty_operation: sd.ops_qty || 0
-    }));
+    const autoFillPromises = [];
 
-    if (autoFillLines.length === 0) return;
+    scheduledData.forEach(sd => {
+      const profile = profileNames.find(p => p.id === sd.operation_profile_id);
+      if (!profile || !profile.operations_required) return;
 
-    // Create all lines
-    Promise.all(autoFillLines.map(line =>
-      base44.entities.Operations.create(line)
-    )).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['Operations', batchId] });
-      toast.success(`Auto-filled ${autoFillLines.length} operations from schedule`);
-    }).catch(() => {
-      // Silent fail on auto-fill
+      const groupId = `schedule-${sd.item_code}-${Date.now()}`;
+      
+      profile.operations_required.forEach(opId => {
+        const operation = operations.find(op => op.id === opId);
+        if (!operation) return;
+
+        const stdLine = stdSetLines.find(sl => 
+          sl.item_code === sd.item_code && 
+          sl.operation === operation.name
+        );
+
+        const stdMinPc = stdLine?.time_min_pc || 0;
+        const qty = sd.ops_qty || 0;
+        const opTime = qty * stdMinPc;
+
+        autoFillPromises.push(
+          base44.entities.Operations.create({
+            batch_header_id: batchId,
+            item_code: sd.item_code,
+            operation: operation.name,
+            qty_operation: qty,
+            source_type: 'SCHEDULE',
+            operation_profile_id: sd.operation_profile_id,
+            profile_group_id: groupId,
+            std_min_pc_lookup: stdMinPc,
+            operation_time_min: opTime
+          })
+        );
+      });
     });
-  }, [batchId, lines.length, scheduledData, queryClient]);
 
-  const filteredLines = useMemo(() => {
-    if (!searchFilter) return lines;
+    if (autoFillPromises.length > 0) {
+      Promise.all(autoFillPromises)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['Operations', batchId] });
+          toast.success(`Auto-filled operations from schedule`);
+        })
+        .catch(() => {
+          // Silent fail
+        });
+    }
+  }, [batchId, batchHeader, lines.length, scheduledData, profileNames, operations, stdSetLines, queryClient]);
+
+  // Group operations by item_code and profile_group_id
+  const groupedOperations = useMemo(() => {
+    const groups = {};
+    
+    lines.forEach(line => {
+      const key = line.item_code;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(line);
+    });
+
+    return Object.entries(groups).map(([itemCode, ops]) => {
+      // Further group by profile_group_id
+      const profileGroups = {};
+      ops.forEach(op => {
+        const pgId = op.profile_group_id || op.id;
+        if (!profileGroups[pgId]) {
+          profileGroups[pgId] = [];
+        }
+        profileGroups[pgId].push(op);
+      });
+
+      const subGroups = Object.entries(profileGroups).map(([pgId, groupOps]) => {
+        const totalTime = groupOps.reduce((sum, op) => sum + (op.operation_time_min || 0), 0);
+        const profile = groupOps[0].operation_profile_id 
+          ? profileNames.find(p => p.id === groupOps[0].operation_profile_id) 
+          : null;
+        
+        return {
+          profile_group_id: pgId,
+          profile_name: profile?.name || 'Manual Entry',
+          operations: groupOps,
+          total_time: totalTime
+        };
+      });
+
+      const itemTotalTime = ops.reduce((sum, op) => sum + (op.operation_time_min || 0), 0);
+
+      return {
+        item_code: itemCode,
+        subGroups,
+        total_time: itemTotalTime
+      };
+    });
+  }, [lines, profileNames]);
+
+  const filteredGroups = useMemo(() => {
+    if (!searchFilter) return groupedOperations;
     const term = searchFilter.toLowerCase();
-    return lines.filter(l => l.item_code?.toLowerCase().includes(term));
-  }, [lines, searchFilter]);
-
-  const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Operations.create({
-      batch_header_id: batchId,
-      ...data
-    }),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['Operations']);
-      setShowAddDialog(false);
-      setFormData({ item_code: '', entry_type: '', operation_profile: '', operation: '', qty_operation: '' });
-      toast.success('Operation added');
-    },
-    onError: () => toast.error('Failed to add operation')
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Operations.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['Operations']);
-      setShowAddDialog(false);
-      setEditingLine(null);
-      setFormData({ item_code: '', entry_type: '', operation_profile: '', operation: '', qty_operation: '' });
-      toast.success('Operation updated');
-    },
-    onError: () => toast.error('Failed to update operation')
-  });
+    return groupedOperations.filter(g => g.item_code?.toLowerCase().includes(term));
+  }, [groupedOperations, searchFilter]);
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Operations.delete(id),
+    mutationFn: async (profile_group_id) => {
+      const opsToDelete = lines.filter(l => l.profile_group_id === profile_group_id);
+      await Promise.all(opsToDelete.map(op => base44.entities.Operations.delete(op.id)));
+    },
     onSuccess: () => {
       queryClient.invalidateQueries(['Operations']);
-      toast.success('Operation deleted');
+      toast.success('Operations deleted');
     },
-    onError: () => toast.error('Failed to delete operation')
+    onError: () => toast.error('Failed to delete operations')
   });
 
-  const handleAdd = () => {
-    if (!formData.item_code || !formData.entry_type) {
-      toast.error('Item code and entry type are required');
+  const handleAdd = async () => {
+    if (!formData.item_code || !formData.operation_profile_id) {
+      toast.error('Item code and operation profile are required');
       return;
     }
 
     const selectedOps = Object.entries(selectedOperations)
-      .filter(([_, qty]) => qty > 0)
-      .map(([opId, qty]) => ({ op_id: opId, qty: parseFloat(qty) }));
+      .filter(([_, qty]) => qty > 0);
     
     if (selectedOps.length === 0) {
       toast.error('Select at least one operation with quantity');
       return;
     }
 
-    const data = {
-      item_code: formData.item_code,
-      entry_type: formData.entry_type,
-      operation_profile: formData.operation_profile,
-      operations_data: JSON.stringify(selectedOps),
-      qty_operation: 0
-    };
+    const groupId = editingGroupId || `manual-${Date.now()}`;
+    
+    if (editingGroupId) {
+      // Delete existing operations in this group
+      const opsToDelete = lines.filter(l => l.profile_group_id === editingGroupId);
+      await Promise.all(opsToDelete.map(op => base44.entities.Operations.delete(op.id)));
+    }
 
-    if (editingLine) {
-      updateMutation.mutate({ id: editingLine.id, data });
-    } else {
-      createMutation.mutate(data);
+    // Create new operations
+    const createPromises = selectedOps.map(([opId, qty]) => {
+      const operation = operations.find(op => op.id === opId);
+      if (!operation) return null;
+
+      const stdLine = stdSetLines.find(sl => 
+        sl.item_code === formData.item_code && 
+        sl.operation === operation.name
+      );
+
+      const stdMinPc = stdLine?.time_min_pc || 0;
+      const opTime = parseFloat(qty) * stdMinPc;
+
+      return base44.entities.Operations.create({
+        batch_header_id: batchId,
+        item_code: formData.item_code,
+        operation: operation.name,
+        qty_operation: parseFloat(qty),
+        source_type: 'PROFILE',
+        operation_profile_id: formData.operation_profile_id,
+        profile_group_id: groupId,
+        std_min_pc_lookup: stdMinPc,
+        operation_time_min: opTime
+      });
+    }).filter(Boolean);
+
+    try {
+      await Promise.all(createPromises);
+      queryClient.invalidateQueries(['Operations']);
+      setShowAddDialog(false);
+      resetForm();
+      toast.success(editingGroupId ? 'Operations updated' : 'Operations added');
+    } catch (error) {
+      toast.error('Failed to save operations');
     }
   };
 
-  const handleEdit = (line) => {
-    setEditingLine(line);
+  const handleEdit = (profile_group_id) => {
+    const groupOps = lines.filter(l => l.profile_group_id === profile_group_id);
+    if (groupOps.length === 0) return;
+
+    const firstOp = groupOps[0];
+    setEditingGroupId(profile_group_id);
     setFormData({
-      item_code: line.item_code,
-      entry_type: line.entry_type,
-      operation_profile: line.operation_profile || '',
-      operation: line.operation || '',
-      qty_operation: line.qty_operation || ''
+      item_code: firstOp.item_code,
+      operation_profile_id: firstOp.operation_profile_id || '',
+      operation_profile_name: profileNames.find(p => p.id === firstOp.operation_profile_id)?.name || ''
     });
 
-    // Parse operations_data for editing (for both PROFILE and OPERATION types)
-    if (line.operations_data) {
-      try {
-        const opsData = JSON.parse(line.operations_data);
-        const opsMap = {};
-        opsData.forEach(({ op_id, qty }) => {
-          opsMap[op_id] = qty;
-        });
-        setSelectedOperations(opsMap);
-      } catch {
-        setSelectedOperations({});
+    const opsMap = {};
+    groupOps.forEach(op => {
+      const operation = operations.find(o => o.name === op.operation);
+      if (operation) {
+        opsMap[operation.id] = op.qty_operation;
       }
-    } else {
-      setSelectedOperations({});
-    }
+    });
+    setSelectedOperations(opsMap);
     setShowAddDialog(true);
   };
 
   const resetForm = () => {
-    setFormData({ item_code: '', entry_type: '', operation_profile: '', operation: '', qty_operation: '' });
+    setFormData({ item_code: '', operation_profile_id: '', operation_profile_name: '' });
     setSelectedOperations({});
-    setEditingLine(null);
+    setEditingGroupId(null);
     setShowAddDialog(false);
   };
+
+  const totalOperationsTime = useMemo(() => {
+    return lines.reduce((sum, op) => sum + (op.operation_time_min || 0), 0);
+  }, [lines]);
 
   if (isLoading) {
     return (
@@ -266,68 +346,104 @@ export default function OperationsTab({ batchId, department }) {
         </div>
         <Button onClick={() => setShowAddDialog(true)} variant="outline" size="sm" disabled={!hasItemCodes}>
           <Plus className="w-4 h-4 mr-2" />
-          Add Operation
+          Add Operations
         </Button>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-blue-900">Total Operations Time</span>
+          <span className="text-lg font-bold text-blue-900">{totalOperationsTime.toFixed(2)} min ({(totalOperationsTime / 60).toFixed(2)} hrs)</span>
+        </div>
       </div>
 
       <div className="border rounded-lg overflow-auto bg-white shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">
+              <TableHead className="font-semibold w-12"></TableHead>
               <TableHead className="font-semibold">Item Code</TableHead>
-              <TableHead className="font-semibold">Entry Type</TableHead>
               <TableHead className="font-semibold">Profile</TableHead>
-              <TableHead className="font-semibold">Operation</TableHead>
-              <TableHead className="font-semibold">Qty</TableHead>
+              <TableHead className="font-semibold">Total Time (min)</TableHead>
               <TableHead className="font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredLines.length === 0 ? (
+            {filteredGroups.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-slate-500 py-12">
-                  {searchFilter ? 'No matching operations found' : 'No operations defined. Click "Add Operation" to start.'}
+                <TableCell colSpan={5} className="text-center text-slate-500 py-12">
+                  {searchFilter ? 'No matching operations found' : 'No operations defined. Click "Add Operations" to start.'}
                 </TableCell>
               </TableRow>
             ) : (
               <>
-                {filteredLines.map(line => (
-                  <TableRow key={line.id} className="hover:bg-slate-50">
-                    <TableCell className="font-medium">{line.item_code}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-md text-sm font-medium ${
-                        line.entry_type === 'PROFILE' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                      }`}>
-                        {line.entry_type}
-                      </span>
-                    </TableCell>
-                    <TableCell>{line.operation_profile || '-'}</TableCell>
-                    <TableCell>{line.operation || '-'}</TableCell>
-                    <TableCell className="font-mono">{line.qty_operation || 0}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(line)}>
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          onClick={() => deleteMutation.mutate(line.id)}
-                          variant="ghost"
-                          size="icon"
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                {filteredGroups.map(group => (
+                  <React.Fragment key={group.item_code}>
+                    <Collapsible
+                      open={expandedItems[group.item_code]}
+                      onOpenChange={(open) => setExpandedItems(prev => ({ ...prev, [group.item_code]: open }))}
+                    >
+                      <TableRow className="hover:bg-slate-50 bg-slate-100 font-semibold">
+                        <CollapsibleTrigger asChild>
+                          <TableCell className="cursor-pointer">
+                            {expandedItems[group.item_code] ? (
+                              <ChevronDown className="w-4 h-4" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
+                          </TableCell>
+                        </CollapsibleTrigger>
+                        <TableCell className="font-bold">{group.item_code}</TableCell>
+                        <TableCell>{group.subGroups.length} profile(s)</TableCell>
+                        <TableCell className="font-mono font-bold">{group.total_time.toFixed(2)}</TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
+                      <CollapsibleContent asChild>
+                        <>
+                          {group.subGroups.map(subGroup => (
+                            <React.Fragment key={subGroup.profile_group_id}>
+                              <TableRow className="bg-purple-50">
+                                <TableCell></TableCell>
+                                <TableCell colSpan={2} className="font-semibold text-purple-800">
+                                  {subGroup.profile_name}
+                                </TableCell>
+                                <TableCell className="font-mono font-semibold">{subGroup.total_time.toFixed(2)}</TableCell>
+                                <TableCell>
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      onClick={() => handleEdit(subGroup.profile_group_id)}
+                                    >
+                                      <Edit2 className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      onClick={() => deleteMutation.mutate(subGroup.profile_group_id)}
+                                      variant="ghost"
+                                      size="icon"
+                                      disabled={deleteMutation.isPending}
+                                    >
+                                      <Trash2 className="w-4 h-4 text-red-500" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                              {subGroup.operations.map(op => (
+                                <TableRow key={op.id} className="hover:bg-slate-50">
+                                  <TableCell></TableCell>
+                                  <TableCell className="pl-8">↳ {op.operation}</TableCell>
+                                  <TableCell className="font-mono text-sm">Qty: {op.qty_operation}</TableCell>
+                                  <TableCell className="font-mono text-sm">{op.operation_time_min?.toFixed(2) || 0}</TableCell>
+                                  <TableCell></TableCell>
+                                </TableRow>
+                              ))}
+                            </React.Fragment>
+                          ))}
+                        </>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </React.Fragment>
                 ))}
-                <TableRow className="bg-purple-50 font-semibold border-t-2">
-                  <TableCell colSpan={4} className="text-right">Total Quantity:</TableCell>
-                  <TableCell className="font-mono font-bold">
-                    {filteredLines.reduce((sum, line) => sum + (parseFloat(line.qty_operation) || 0), 0).toFixed(2)}
-                  </TableCell>
-                  <TableCell></TableCell>
-                </TableRow>
               </>
             )}
           </TableBody>
@@ -338,18 +454,22 @@ export default function OperationsTab({ batchId, department }) {
         if (!open) resetForm();
         setShowAddDialog(open);
       }}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingLine ? 'Edit Operation' : 'Add Operation'}</DialogTitle>
+            <DialogTitle>{editingGroupId ? 'Edit Operations' : 'Add Operations'}</DialogTitle>
             <DialogDescription>
-              {editingLine ? 'Update operation for this item' : 'Record operation performed on an item'}
+              {editingGroupId ? 'Update operations for this item' : 'Select profile and operations to add'}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div>
               <Label>Item Code *</Label>
-              <Select value={formData.item_code} onValueChange={(v) => setFormData({ ...formData, item_code: v })}>
+              <Select 
+                value={formData.item_code} 
+                onValueChange={(v) => setFormData({ ...formData, item_code: v })}
+                disabled={!!editingGroupId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select item code from standards" />
                 </SelectTrigger>
@@ -362,80 +482,93 @@ export default function OperationsTab({ batchId, department }) {
             </div>
 
             <div>
-              <Label>Entry Type *</Label>
-              <Select value={formData.entry_type} onValueChange={(v) => setFormData({ ...formData, entry_type: v })}>
+              <Label>Operation Profile *</Label>
+              <Select 
+                value={formData.operation_profile_id} 
+                onValueChange={(v) => {
+                  const profile = profileNames.find(p => p.id === v);
+                  setFormData({ 
+                    ...formData, 
+                    operation_profile_id: v,
+                    operation_profile_name: profile?.name || ''
+                  });
+                }}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder="Select profile" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PROFILE">PROFILE</SelectItem>
-                  <SelectItem value="OPERATION">OPERATION</SelectItem>
+                  {profileNames.map(pn => (
+                    <SelectItem key={pn.id} value={pn.id}>{pn.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {formData.entry_type && (
+            {formData.operation_profile_id && (
               <div>
-                <Label>Operation Profile</Label>
-                <Select value={formData.operation_profile} onValueChange={(v) => setFormData({ ...formData, operation_profile: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select profile" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {profileNames.map(pn => (
-                      <SelectItem key={pn.id} value={pn.name}>{pn.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {formData.operation_profile && (
-              <div>
-                <Label>Select Operations Required</Label>
-                <p className="text-sm text-slate-500 mb-2">Select operations included in this profile</p>
-                <div className="border rounded-lg p-4 bg-slate-50">
+                <Label>Select Operations & Quantities *</Label>
+                <p className="text-sm text-slate-500 mb-2">Check operations and enter quantities</p>
+                <div className="border rounded-lg p-4 bg-slate-50 max-h-96 overflow-y-auto">
                   {operationsForProfile.length === 0 ? (
                     <p className="text-sm text-slate-500">No operations in this profile</p>
                   ) : (
-                    <div className="grid grid-cols-2 gap-3">
-                      {operationsForProfile.map(op => (
-                        <div key={op.id} className="flex items-end gap-2">
-                          <Checkbox
-                            checked={selectedOperations[op.id] > 0}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedOperations(prev => ({ ...prev, [op.id]: 1 }));
-                              } else {
-                                const { [op.id]: _, ...rest } = selectedOperations;
-                                setSelectedOperations(rest);
-                              }
-                            }}
-                            id={`op-${op.id}`}
-                          />
-                          <label htmlFor={`op-${op.id}`} className="text-sm cursor-pointer flex-1">
-                            {op.name}
-                          </label>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            value={selectedOperations[op.id] || ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val) {
-                                setSelectedOperations(prev => ({ ...prev, [op.id]: parseFloat(val) || 0 }));
-                              } else {
-                                const { [op.id]: _, ...rest } = selectedOperations;
-                                setSelectedOperations(rest);
-                              }
-                            }}
-                            disabled={!selectedOperations[op.id]}
-                            placeholder="0"
-                            className="w-20 h-9"
-                          />
-                        </div>
-                      ))}
+                    <div className="space-y-3">
+                      {operationsForProfile.map(op => {
+                        const stdLine = stdSetLines.find(sl => 
+                          sl.item_code === formData.item_code && 
+                          sl.operation === op.name
+                        );
+                        const stdMinPc = stdLine?.time_min_pc || 0;
+                        const qty = selectedOperations[op.id] || 0;
+                        const opTime = qty * stdMinPc;
+
+                        return (
+                          <div key={op.id} className="flex items-center gap-3 p-3 bg-white rounded border">
+                            <Checkbox
+                              checked={selectedOperations[op.id] > 0}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedOperations(prev => ({ ...prev, [op.id]: 1 }));
+                                } else {
+                                  const { [op.id]: _, ...rest } = selectedOperations;
+                                  setSelectedOperations(rest);
+                                }
+                              }}
+                              id={`op-${op.id}`}
+                            />
+                            <label htmlFor={`op-${op.id}`} className="text-sm font-medium cursor-pointer flex-1">
+                              {op.name}
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={selectedOperations[op.id] || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (val) {
+                                    setSelectedOperations(prev => ({ ...prev, [op.id]: parseFloat(val) || 0 }));
+                                  } else {
+                                    const { [op.id]: _, ...rest } = selectedOperations;
+                                    setSelectedOperations(rest);
+                                  }
+                                }}
+                                disabled={!selectedOperations[op.id]}
+                                placeholder="Qty"
+                                className="w-24 h-9"
+                              />
+                              <span className="text-xs text-slate-500 w-32">
+                                {stdMinPc.toFixed(3)} min/pc
+                              </span>
+                              <span className="text-sm font-semibold text-blue-700 w-24 text-right">
+                                {opTime.toFixed(2)} min
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -445,15 +578,18 @@ export default function OperationsTab({ batchId, department }) {
 
           <DialogFooter>
             <Button variant="outline" onClick={resetForm}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={createMutation.isPending || updateMutation.isPending}>
-              {createMutation.isPending || updateMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : editingLine ? (
-                <Edit2 className="w-4 h-4 mr-2" />
+            <Button onClick={handleAdd}>
+              {editingGroupId ? (
+                <>
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Update
+                </>
               ) : (
-                <Plus className="w-4 h-4 mr-2" />
+                <>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add
+                </>
               )}
-              {editingLine ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>
         </DialogContent>
