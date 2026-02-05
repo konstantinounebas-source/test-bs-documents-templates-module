@@ -103,11 +103,7 @@ export default function MetricDefinitionManager() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Metric Definitions</h3>
-        <Button onClick={() => setShowDialog(true)} size="sm">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Metric
-        </Button>
+        <h3 className="text-lg font-semibold">Metric Definitions (Read-only)</h3>
       </div>
 
       <div className="border rounded-lg overflow-auto bg-white shadow-sm">
@@ -124,7 +120,7 @@ export default function MetricDefinitionManager() {
           <TableBody>
             {metrics.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-slate-500 py-8">
+                <TableCell colSpan={4} className="text-center text-slate-500 py-8">
                   No metrics defined yet
                 </TableCell>
               </TableRow>
@@ -135,21 +131,7 @@ export default function MetricDefinitionManager() {
                   <TableCell>{metric.metric_name}</TableCell>
                   <TableCell className="text-sm text-slate-600">{metric.applies_to}</TableCell>
                   <TableCell className="text-sm font-mono text-slate-600 truncate max-w-xs">{metric.formula_full}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(metric)}>
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteMutation.mutate(metric.id)}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </TableCell>
+                  <TableCell></TableCell>
                 </TableRow>
               ))
             )}
@@ -157,94 +139,7 @@ export default function MetricDefinitionManager() {
         </Table>
       </div>
 
-      <Dialog open={showDialog} onOpenChange={(open) => {
-        if (!open) resetForm();
-        setShowDialog(open);
-      }}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{editingMetric ? 'Edit Metric Definition' : 'Add Metric Definition'}</DialogTitle>
-            <DialogDescription>
-              Define a metric and its calculation formula
-            </DialogDescription>
-          </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Metric Code *</Label>
-                <Input
-                  value={formData.metric_code}
-                  onChange={(e) => setFormData({ ...formData, metric_code: e.target.value })}
-                  placeholder="e.g., GT_TIME"
-                  disabled={!!editingMetric}
-                />
-              </div>
-              <div>
-                <Label>Metric Name *</Label>
-                <Input
-                  value={formData.metric_name}
-                  onChange={(e) => setFormData({ ...formData, metric_name: e.target.value })}
-                  placeholder="e.g., Gross Team Time"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label>Applies To</Label>
-              <Input
-                value={formData.applies_to}
-                onChange={(e) => setFormData({ ...formData, applies_to: e.target.value })}
-                placeholder="e.g., Operations, QC"
-              />
-            </div>
-
-            <div>
-              <Label>Description</Label>
-              <Textarea
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe what this metric measures..."
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label>Formula *</Label>
-              <Textarea
-                value={formData.formula_full}
-                onChange={(e) => setFormData({ ...formData, formula_full: e.target.value })}
-                placeholder="e.g., SUM(Operations.operation_time_min) + SUM(TeamTimePersons.time_duration)"
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label>Source Tables & Fields</Label>
-              <Textarea
-                value={formData.source_tables_fields}
-                onChange={(e) => setFormData({ ...formData, source_tables_fields: e.target.value })}
-                placeholder="e.g., Operations.qty_operation, Operations.operation_time_min, TeamTimePersons.time_duration"
-                rows={2}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={resetForm}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
-              {createMutation.isPending || updateMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : editingMetric ? (
-                <Edit2 className="w-4 h-4 mr-2" />
-              ) : (
-                <Plus className="w-4 h-4 mr-2" />
-              )}
-              {editingMetric ? 'Update' : 'Create'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
