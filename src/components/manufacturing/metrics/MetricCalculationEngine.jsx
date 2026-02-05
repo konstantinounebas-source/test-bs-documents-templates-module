@@ -19,16 +19,6 @@ export default function MetricCalculationEngine() {
     queryFn: () => base44.entities.Department.list()
   });
 
-  const { data: teamTimePersons = [] } = useQuery({
-    queryKey: ['Team_Time_Persons'],
-    queryFn: () => base44.entities.Team_Time_Persons.list()
-  });
-
-  const { data: breakTimes = [] } = useQuery({
-    queryKey: ['BreakTime'],
-    queryFn: () => base44.entities.BreakTime.list()
-  });
-
   const { data: batches = [] } = useQuery({
     queryKey: ['BatchHeader', selectedDate, selectedDept],
     queryFn: () => base44.entities.BatchHeader.filter({
@@ -38,6 +28,32 @@ export default function MetricCalculationEngine() {
     enabled: !!selectedDept && !!selectedDate
   });
 
+  const { data: teamTimePersons = [] } = useQuery({
+    queryKey: ['Team_Time_Persons', selectedDate, selectedDept],
+    queryFn: async () => {
+      const batchHeader = batches[0];
+      if (!batchHeader) return [];
+      return await base44.entities.Team_Time_Persons.filter({
+        batch_header_id: batchHeader.id
+      });
+    },
+    enabled: !!batches?.[0]?.id
+  });
+
+  const { data: breakTimes = [] } = useQuery({
+    queryKey: ['BreakTime'],
+    queryFn: () => base44.entities.BreakTime.list()
+  });
+
+  const calculateTimeInMinutes = (fromTime, toTime) => {
+    if (!fromTime || !toTime) return 0;
+    const [fromH, fromM] = fromTime.split(':').map(Number);
+    const [toH, toM] = toTime.split(':').map(Number);
+    const fromTotalMin = fromH * 60 + fromM;
+    const toTotalMin = toH * 60 + toM;
+    return toTotalMin - fromTotalMin;
+  };
+
   const calculateMetrics = async () => {
     if (!selectedDate || !selectedDept) {
       toast.error('Please select date and department');
@@ -46,7 +62,6 @@ export default function MetricCalculationEngine() {
 
     setIsCalculating(true);
     try {
-      // Get batch header to find bundle_id
       const batchHeader = batches[0];
       if (!batchHeader) {
         toast.error('No batch found for this date and department');
@@ -54,16 +69,16 @@ export default function MetricCalculationEngine() {
         return;
       }
 
-      // Calculate Gross Team Time
-      const teamTimeForDate = teamTimePersons.filter(t => 
-        t.created_date?.includes(selectedDate) && 
-        t.created_by === selectedDept // or however department is linked
-      );
-
-      const totalTeamTime = teamTimeForDate.reduce((sum, t) => sum + (t.time_minutes || 0), 0);
+      // Calculate total team time from all persons
+      const totalTeamTime = teamTimePersons.reduce((sum, record) => {
+        const timeMinutes = calculateTimeInMinutes(record.from_time, record.to_time);
+        return sum + timeMinutes;
+      }, 0);
       
+      // Calculate total break time
       const totalBreakTime = breakTimes.reduce((sum, b) => sum + (b.duration_minutes || 0), 0);
       
+      // Gross Team Time = Total Team Time - Total Break Time
       const grossTeamTime = totalTeamTime - totalBreakTime;
 
       // Create the metric value
