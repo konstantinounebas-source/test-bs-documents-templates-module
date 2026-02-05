@@ -62,7 +62,14 @@ export default function QCInitialStockTab({ batchId, department }) {
   // Fetch batch header to get date and department for scheduled data lookup
   const { data: batchHeader } = useQuery({
     queryKey: ['BatchHeader', batchId],
-    queryFn: () => base44.entities.BatchHeader.filter({ id: batchId }),
+    queryFn: async () => {
+      const result = await base44.entities.BatchHeader.filter({ id: batchId });
+      console.log('=== BATCH HEADER FETCH ===');
+      console.log('Batch ID:', batchId);
+      console.log('Result:', result);
+      console.log('Bundle ID from result:', result?.[0]?.bundle_id);
+      return result;
+    },
     enabled: !!batchId,
     select: (data) => data?.[0]
   });
