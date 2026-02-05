@@ -42,7 +42,11 @@ export default function TeamTimePersonsTab({ batchId }) {
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Team_Time_Persons.create({
       batch_header_id: batchId,
-      ...data
+      person_name: data.person_name,
+      from_time: data.from_time,
+      to_time: data.to_time,
+      break_time_minutes: data.break_time_minutes || 0,
+      notes: data.notes
     }),
     onSuccess: () => {
       queryClient.invalidateQueries(['Team_Time_Persons']);
@@ -53,7 +57,13 @@ export default function TeamTimePersonsTab({ batchId }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Team_Time_Persons.update(id, data),
+    mutationFn: ({ id, data }) => base44.entities.Team_Time_Persons.update(id, {
+      person_name: data.person_name,
+      from_time: data.from_time,
+      to_time: data.to_time,
+      break_time_minutes: data.break_time_minutes || 0,
+      notes: data.notes
+    }),
     onSuccess: () => {
       queryClient.invalidateQueries(['Team_Time_Persons']);
       setEditingLine(null);
@@ -244,19 +254,13 @@ export default function TeamTimePersonsTab({ batchId }) {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Break Time (minutes)</Label>
-                <Select value={formData.break_time_minutes?.toString()} onValueChange={(val) => setFormData({ ...formData, break_time_minutes: Number(val) })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select break" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">No break</SelectItem>
-                    {breakTimes.map(b => (
-                      <SelectItem key={b.id} value={b.duration_minutes?.toString()}>
-                        {b.name} ({b.duration_minutes} min)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input
+                  type="number"
+                  min="0"
+                  value={formData.break_time_minutes || 0}
+                  onChange={(e) => setFormData({ ...formData, break_time_minutes: Number(e.target.value) })}
+                  placeholder="0"
+                />
               </div>
               <div>
                 <Label>Available Time</Label>
