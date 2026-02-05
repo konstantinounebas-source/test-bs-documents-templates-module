@@ -15,6 +15,7 @@ export default function MetricDefinitionManager() {
     const [showDialog, setShowDialog] = useState(false);
     const [editingMetric, setEditingMetric] = useState(null);
     const [expandedId, setExpandedId] = useState(null);
+    const [sectionExpanded, setSectionExpanded] = useState(false);
     const [formData, setFormData] = useState({
       metric_code: '',
       metric_name: '',
