@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ArrowRight, Save, Plus, Trash2, Edit2, Building2, Wrench, AlertTriangle, Package, Briefcase, Database, Ruler, Tag, FileText, Target, FileCheck, Users } from "lucide-react";
+import { ArrowRight, Save, Plus, Trash2, Edit2, Building2, Wrench, AlertTriangle, Package, Briefcase, Database, Ruler, Tag, FileText, Target, FileCheck, Users, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -33,6 +33,7 @@ export default function MfgReferenceDataWizard() {
     { id: "units", label: "Units", entity: "Unit", icon: Ruler },
     { id: "rate_types", label: "Rate Types", entity: "Rate_Type", icon: Tag },
     { id: "entry_types", label: "Entry Types", entity: "Entry_Type", icon: FileText },
+    { id: "break_times", label: "Break Times", entity: "BreakTime", icon: Clock },
     { id: "target_profiles", label: "Target Profiles", entity: "Target_Profile_Name", icon: Target },
     { id: "operation_profiles", label: "Operation Profiles", entity: "Operation_Profile_Name", icon: FileCheck },
     { id: "persons", label: "Persons", entity: "Person", icon: Users, customComponent: true }
