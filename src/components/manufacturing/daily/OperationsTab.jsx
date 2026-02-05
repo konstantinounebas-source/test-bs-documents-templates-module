@@ -525,6 +525,16 @@ export default function OperationsTab({ batchId, department }) {
               <div>
                 <Label>Select Operations & Quantities *</Label>
                 <p className="text-sm text-slate-500 mb-2">Check operations and enter quantities</p>
+                {/* DEBUG INFO */}
+                <div className="mb-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                  <strong>Debug:</strong> Item Code: {formData.item_code}, 
+                  StdSetLines count: {stdSetLines.length},
+                  Bundle ID: {batchHeader?.bundle_id}
+                  <br />
+                  Available item_codes in StdSetLines: {[...new Set(stdSetLines.map(s => s.item_code))].join(', ')}
+                  <br />
+                  Available operations for {formData.item_code}: {stdSetLines.filter(s => s.item_code === formData.item_code).map(s => s.operation).join(', ')}
+                </div>
                 <div className="border rounded-lg p-4 bg-slate-50 max-h-96 overflow-y-auto">
                   {operationsForProfile.length === 0 ? (
                     <p className="text-sm text-slate-500">No operations in this profile</p>
@@ -538,6 +548,14 @@ export default function OperationsTab({ batchId, department }) {
                         const stdMinPc = stdLine?.time_min_pc || 0;
                         const qty = selectedOperations[op.id] || 0;
                         const opTime = qty * stdMinPc;
+
+                        console.log('Looking for std time:', {
+                          item_code: formData.item_code,
+                          operation: op.name,
+                          found: !!stdLine,
+                          stdMinPc,
+                          stdLine
+                        });
 
                         return (
                           <div key={op.id} className="flex items-center gap-3 p-3 bg-white rounded border">
@@ -555,6 +573,7 @@ export default function OperationsTab({ batchId, department }) {
                             />
                             <label htmlFor={`op-${op.id}`} className="text-sm font-medium cursor-pointer flex-1">
                               {op.name}
+                              {!stdLine && <span className="text-red-500 text-xs ml-2">(⚠ No std time found)</span>}
                             </label>
                             <div className="flex items-center gap-2">
                               <Input
