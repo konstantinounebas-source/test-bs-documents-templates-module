@@ -121,17 +121,35 @@ export default function QCInitialStockTab({ batchId, department }) {
 
   // Add QC per-piece to each line
   const linesWithQCPerPiece = useMemo(() => {
+    console.log('=== QC PER-PIECE DEBUG ===');
+    console.log('Total qcSetLines:', qcSetLines.length);
+    console.log('QC Set Lines:', qcSetLines);
+    console.log('Lines to process:', lines);
+    
     return lines.map(line => {
       const trimmedItemCode = (line.item_code || '').trim();
+      
+      console.log(`\n--- Processing line: ${line.item_code} ---`);
+      console.log('  QC Type:', line.qc_type);
+      console.log('  QC Level:', line.qc_level);
+      
       const qcRule = qcSetLines.find(
         ql => (ql.item_code || '').trim().toLowerCase() === trimmedItemCode.toLowerCase() &&
              ql.qc_type === line.qc_type &&
              ql.qc_level === line.qc_level
       );
       
+      console.log('  Matching rule found:', qcRule);
+      
       let qcPerPiece = 0;
       if (qcRule && qcRule.calculated_extra_time) {
         qcPerPiece = parseFloat(qcRule.calculated_extra_time);
+        console.log('  ✅ QC Per-piece:', qcPerPiece);
+      } else {
+        console.log('  ❌ No rule or no calculated_extra_time');
+        if (qcRule) {
+          console.log('  Rule data:', qcRule);
+        }
       }
       
       return {
