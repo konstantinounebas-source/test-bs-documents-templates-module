@@ -171,9 +171,8 @@ export default function MetricDefinitionManager() {
             )}
           </TableBody>
         </Table>
-        </div>
-        )}
-
-        </div>
-        );
-        }
+      </div>
+      )}
+    </div>
+  );
+}
