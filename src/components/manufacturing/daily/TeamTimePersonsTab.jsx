@@ -19,12 +19,18 @@ export default function TeamTimePersonsTab({ batchId }) {
     person_name: '',
     from_time: '07:00',
     to_time: '15:30',
+    break_time_minutes: 0,
     notes: ''
   });
 
   const { data: persons = [] } = useQuery({
     queryKey: ['Person'],
     queryFn: () => base44.entities.Person.filter({ is_active: true })
+  });
+
+  const { data: breakTimes = [] } = useQuery({
+    queryKey: ['BreakTime'],
+    queryFn: () => base44.entities.BreakTime.list()
   });
 
   const { data: lines = [], isLoading } = useQuery({
@@ -40,7 +46,7 @@ export default function TeamTimePersonsTab({ batchId }) {
     }),
     onSuccess: () => {
       queryClient.invalidateQueries(['Team_Time_Persons']);
-      setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', notes: '' });
+      setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', break_time_minutes: 0, notes: '' });
       toast.success('Team time added');
     },
     onError: () => toast.error('Failed to add team time')
@@ -51,7 +57,7 @@ export default function TeamTimePersonsTab({ batchId }) {
     onSuccess: () => {
       queryClient.invalidateQueries(['Team_Time_Persons']);
       setEditingLine(null);
-      setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', notes: '' });
+      setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', break_time_minutes: 0, notes: '' });
       setShowAddDialog(false);
       toast.success('Team time updated');
     },
@@ -92,13 +98,22 @@ export default function TeamTimePersonsTab({ batchId }) {
       person_name: line.person_name,
       from_time: line.from_time,
       to_time: line.to_time,
+      break_time_minutes: line.break_time_minutes || 0,
       notes: line.notes || ''
     });
     setShowAddDialog(true);
   };
 
+  const calculateAvailableTime = () => {
+    if (!formData.from_time || !formData.to_time) return 0;
+    const [fromH, fromM] = formData.from_time.split(':').map(Number);
+    const [toH, toM] = formData.to_time.split(':').map(Number);
+    const totalMin = (toH * 60 + toM) - (fromH * 60 + fromM);
+    return Math.max(0, totalMin - (formData.break_time_minutes || 0));
+  };
+
   const resetForm = () => {
-    setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', notes: '' });
+    setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', break_time_minutes: 0, notes: '' });
     setEditingLine(null);
     setShowAddDialog(false);
   };
@@ -128,6 +143,8 @@ export default function TeamTimePersonsTab({ batchId }) {
               <TableHead>Person Name</TableHead>
               <TableHead>From Time</TableHead>
               <TableHead>To Time</TableHead>
+              <TableHead>Break (min)</TableHead>
+              <TableHead>Available (min)</TableHead>
               <TableHead>Notes</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
@@ -135,34 +152,43 @@ export default function TeamTimePersonsTab({ batchId }) {
           <TableBody>
             {lines.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-slate-500">
+                <TableCell colSpan={7} className="text-center text-slate-500">
                   No team time records defined.
                 </TableCell>
               </TableRow>
             ) : (
-              lines.map(line => (
-                <TableRow key={line.id}>
-                  <TableCell className="font-medium">{line.person_name}</TableCell>
-                  <TableCell>{line.from_time}</TableCell>
-                  <TableCell>{line.to_time}</TableCell>
-                  <TableCell>{line.notes || '-'}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(line)}>
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        onClick={() => deleteMutation.mutate(line.id)}
-                        variant="ghost"
-                        size="icon"
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+              lines.map(line => {
+                const [fromH, fromM] = line.from_time.split(':').map(Number);
+                const [toH, toM] = line.to_time.split(':').map(Number);
+                const totalMin = (toH * 60 + toM) - (fromH * 60 + fromM);
+                const availableMin = Math.max(0, totalMin - (line.break_time_minutes || 0));
+                
+                return (
+                  <TableRow key={line.id}>
+                    <TableCell className="font-medium">{line.person_name}</TableCell>
+                    <TableCell>{line.from_time}</TableCell>
+                    <TableCell>{line.to_time}</TableCell>
+                    <TableCell>{line.break_time_minutes || 0}</TableCell>
+                    <TableCell className="font-semibold text-blue-600">{availableMin}</TableCell>
+                    <TableCell>{line.notes || '-'}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(line)}>
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={() => deleteMutation.mutate(line.id)}
+                          variant="ghost"
+                          size="icon"
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -212,6 +238,29 @@ export default function TeamTimePersonsTab({ batchId }) {
                   value={formData.to_time}
                   onChange={(e) => setFormData({ ...formData, to_time: e.target.value })}
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Break Time (minutes)</Label>
+                <Select value={formData.break_time_minutes?.toString()} onValueChange={(val) => setFormData({ ...formData, break_time_minutes: Number(val) })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select break" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">No break</SelectItem>
+                    {breakTimes.map(b => (
+                      <SelectItem key={b.id} value={b.duration_minutes?.toString()}>
+                        {b.name} ({b.duration_minutes} min)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Available Time</Label>
+                <Input type="text" value={`${calculateAvailableTime()} min`} disabled className="bg-slate-100" />
               </div>
             </div>
 
