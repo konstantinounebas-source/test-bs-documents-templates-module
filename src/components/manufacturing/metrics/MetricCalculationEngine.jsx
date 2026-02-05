@@ -19,9 +19,6 @@ export default function MetricCalculationEngine() {
     queryFn: () => base44.entities.Department.list()
   });
 
-  const selectedDeptData = departments.find(d => d.name === selectedDept);
-  const workingHoursPerDay = selectedDeptData?.working_hours_per_day || 8;
-
   const { data: batches = [] } = useQuery({
     queryKey: ['BatchHeader', selectedDate, selectedDept],
     queryFn: () => base44.entities.BatchHeader.filter({
@@ -72,27 +69,17 @@ export default function MetricCalculationEngine() {
         return;
       }
 
-      // Calculate total team time and deduct breaks per person if they worked >= working_hours_per_day
-      const workingHoursInMinutes = workingHoursPerDay * 60;
-      let totalTeamTime = 0;
-      let totalBreakTimeDeducted = 0;
-
-      teamTimePersons.forEach(record => {
+      // Calculate total team time from all persons
+      const totalTeamTime = teamTimePersons.reduce((sum, record) => {
         const timeMinutes = calculateTimeInMinutes(record.from_time, record.to_time);
-        
-        // If person worked >= working hours per day, deduct break times
-        if (timeMinutes >= workingHoursInMinutes) {
-          const breakTimeDeduction = breakTimes.reduce((sum, b) => sum + (b.duration_minutes || 0), 0);
-          totalTeamTime += timeMinutes - breakTimeDeduction;
-          totalBreakTimeDeducted += breakTimeDeduction;
-        } else {
-          // If person worked less than full day, no break deduction
-          totalTeamTime += timeMinutes;
-        }
-      });
+        return sum + timeMinutes;
+      }, 0);
       
-      // Gross Team Time = Total Team Time (with breaks already deducted per person)
-      const grossTeamTime = totalTeamTime;
+      // Calculate total break time
+      const totalBreakTime = breakTimes.reduce((sum, b) => sum + (b.duration_minutes || 0), 0);
+      
+      // Gross Team Time = Total Team Time - Total Break Time
+      const grossTeamTime = totalTeamTime - totalBreakTime;
 
       // Create the metric value
       await base44.entities.DailyMetricValue.create({
@@ -152,8 +139,7 @@ export default function MetricCalculationEngine() {
           <AlertCircle className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-blue-700">
             <p className="font-semibold">Calculation Formula</p>
-            <p>For each person: If worked ≥ {workingHoursPerDay}h, deduct break times</p>
-            <p>Gross Team Time = SUM(Person Time - Breaks if applicable)</p>
+            <p>Gross Team Time = SUM(Team Time) - SUM(Break Times)</p>
           </div>
         </div>
 
