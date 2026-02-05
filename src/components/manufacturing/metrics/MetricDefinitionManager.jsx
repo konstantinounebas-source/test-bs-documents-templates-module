@@ -111,10 +111,9 @@ export default function MetricDefinitionManager() {
           <TableHeader>
             <TableRow className="bg-slate-50">
               <TableHead className="font-semibold">Code</TableHead>
-              <TableHead className="font-semibold">Name</TableHead>
-              <TableHead className="font-semibold">Applies To</TableHead>
-              <TableHead className="font-semibold">Formula</TableHead>
-              <TableHead className="font-semibold">Actions</TableHead>
+                    <TableHead className="font-semibold">Name</TableHead>
+                    <TableHead className="font-semibold">Applies To</TableHead>
+                    <TableHead className="font-semibold">Formula</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
