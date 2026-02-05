@@ -26,8 +26,8 @@ export default function MfgDailyProduction() {
   const [selectedBatch, setSelectedBatch] = useState(null);
 
   const { data: batchHeaders = [] } = useQuery({
-    queryKey: ['Batch_Header'],
-    queryFn: () => base44.entities.Batch_Header.list('-created_date', 20)
+    queryKey: ['BatchHeader'],
+    queryFn: () => base44.entities.BatchHeader.list('-created_date', 20)
   });
 
   // Calculate grand totals from all tabs
@@ -46,8 +46,8 @@ export default function MfgDailyProduction() {
   });
 
   const { data: batchHeader } = useQuery({
-    queryKey: ['Batch_Header', selectedBatch?.id],
-    queryFn: () => base44.entities.Batch_Header.filter({ id: selectedBatch.id }),
+    queryKey: ['BatchHeader', selectedBatch?.id],
+    queryFn: () => base44.entities.BatchHeader.filter({ id: selectedBatch.id }),
     enabled: !!selectedBatch?.id,
     select: (data) => data?.[0]
   });
@@ -138,7 +138,7 @@ export default function MfgDailyProduction() {
   const handleBatchCreated = (newBatch) => {
     setSelectedBatch(newBatch);
     setActiveTab("batch_lines");
-    queryClient.invalidateQueries(['Batch_Header']);
+    queryClient.invalidateQueries(['BatchHeader']);
   };
 
   return (

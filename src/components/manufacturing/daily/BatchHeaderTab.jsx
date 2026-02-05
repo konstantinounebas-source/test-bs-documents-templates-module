@@ -111,39 +111,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
     setSelectedDepartment('');
   };
 
-  // Migration: Set bundle_id for existing batch headers without one
-  useEffect(() => {
-    const runMigration = async () => {
-      try {
-        const batchesNeedingMigration = batchHeaders.filter(b => !b.bundle_id);
-        if (batchesNeedingMigration.length === 0) return;
 
-        setIsMigrating(true);
-        const allBundles = await base44.entities.StandardsBundle.list();
-
-        for (const batch of batchesNeedingMigration) {
-          const activeBundle = allBundles.find(b => b.department === batch.department && b.status === 'ACTIVE');
-          if (activeBundle) {
-            console.log(`Migrating batch ${batch.id}: setting bundle_id to ${activeBundle.id}`);
-            await base44.entities.Batch_Header.update(batch.id, { bundle_id: activeBundle.id });
-          } else {
-            console.warn(`No ACTIVE bundle found for department ${batch.department} (batch ${batch.id})`);
-          }
-        }
-        queryClient.invalidateQueries(['Batch_Header']);
-        toast.success(`Migration complete: ${batchesNeedingMigration.length} batch headers updated`);
-      } catch (error) {
-        console.error('Migration error:', error);
-        toast.error('Migration error - check console');
-      } finally {
-        setIsMigrating(false);
-      }
-    };
-
-    if (batchHeaders.length > 0) {
-      runMigration();
-    }
-  }, [batchHeaders, queryClient]);
 
   const handleCreateBatch = (dateStr) => {
     setShowCreateDialog(true);
