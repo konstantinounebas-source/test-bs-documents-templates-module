@@ -48,7 +48,8 @@ export default function TeamTimePersonsTab({ batchId }) {
       break_time_minutes: data.break_time_minutes || 0,
       notes: data.notes
     }),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveMetric();
       queryClient.invalidateQueries(['TeamTimePerson']);
       resetForm();
       setShowAddDialog(false);
@@ -65,7 +66,8 @@ export default function TeamTimePersonsTab({ batchId }) {
       break_time_minutes: data.break_time_minutes || 0,
       notes: data.notes
     }),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveMetric();
       queryClient.invalidateQueries(['TeamTimePerson']);
       setEditingLine(null);
       setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', break_time_minutes: 0, notes: '' });
@@ -77,7 +79,8 @@ export default function TeamTimePersonsTab({ batchId }) {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.TeamTimePerson.delete(id),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveMetric();
       queryClient.invalidateQueries(['TeamTimePerson']);
       toast.success('Team time deleted');
     },
@@ -151,6 +154,42 @@ export default function TeamTimePersonsTab({ batchId }) {
       const availableMin = Math.max(0, totalMin - (line.break_time_minutes || 0));
       return sum + availableMin;
     }, 0);
+  };
+
+  const saveMetric = async () => {
+    try {
+      const batchHeader = await base44.entities.BatchHeader.filter({ id: batchId });
+      if (!batchHeader || batchHeader.length === 0) return;
+
+      const totalAvailableTime = calculateTotalAvailableTime();
+
+      // Check if metric already exists for this batch
+      const existingMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'GT_TIME',
+        batch_header_id: batchId
+      });
+
+      if (existingMetrics.length > 0) {
+        // Update existing metric
+        await base44.entities.DailyMetricValue.update(existingMetrics[0].id, {
+          value: totalAvailableTime
+        });
+      } else {
+        // Create new metric
+        await base44.entities.DailyMetricValue.create({
+          metric_code: 'GT_TIME',
+          batch_header_id: batchId,
+          date: batchHeader[0].date,
+          department: batchHeader[0].department,
+          bundle_id: batchHeader[0].bundle_id,
+          value: totalAvailableTime
+        });
+      }
+
+      queryClient.invalidateQueries(['DailyMetricValue']);
+    } catch (error) {
+      console.error('Failed to save metric:', error);
+    }
   };
 
   if (isLoading) {
