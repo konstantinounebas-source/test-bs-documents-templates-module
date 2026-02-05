@@ -362,10 +362,10 @@ export default function OperationsTab({ batchId, department }) {
           <TableHeader>
             <TableRow className="bg-slate-50">
               <TableHead className="font-semibold w-12"></TableHead>
-              <TableHead className="font-semibold">Item Code</TableHead>
+              <TableHead className="font-semibold w-32">Item Code</TableHead>
               <TableHead className="font-semibold">Profile</TableHead>
-              <TableHead className="font-semibold">Total Time (min)</TableHead>
-              <TableHead className="font-semibold">Actions</TableHead>
+              <TableHead className="font-semibold w-40 text-right">Total Time (min)</TableHead>
+              <TableHead className="font-semibold w-32 text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -394,26 +394,27 @@ export default function OperationsTab({ batchId, department }) {
                           </TableCell>
                         </CollapsibleTrigger>
                         <TableCell className="font-bold">{group.item_code}</TableCell>
-                        <TableCell>{group.subGroups.length} profile(s)</TableCell>
-                        <TableCell className="font-mono font-bold">{group.total_time.toFixed(2)}</TableCell>
-                        <TableCell></TableCell>
+                        <TableCell className="text-slate-600">{group.subGroups.length} profile(s)</TableCell>
+                        <TableCell className="font-mono font-bold text-right">{group.total_time.toFixed(2)}</TableCell>
+                        <TableCell className="text-center"></TableCell>
                       </TableRow>
                       <CollapsibleContent asChild>
                         <>
                           {group.subGroups.map(subGroup => (
                             <React.Fragment key={subGroup.profile_group_id}>
                               <TableRow className="bg-purple-50">
-                                <TableCell></TableCell>
-                                <TableCell colSpan={2} className="font-semibold text-purple-800">
+                                <TableCell className="w-12"></TableCell>
+                                <TableCell className="font-semibold text-purple-800 pl-6" colSpan={2}>
                                   {subGroup.profile_name}
                                 </TableCell>
-                                <TableCell className="font-mono font-semibold">{subGroup.total_time.toFixed(2)}</TableCell>
-                                <TableCell>
-                                  <div className="flex gap-2">
+                                <TableCell className="font-mono font-semibold text-right text-purple-900">{subGroup.total_time.toFixed(2)}</TableCell>
+                                <TableCell className="text-center">
+                                  <div className="flex gap-1 justify-center">
                                     <Button 
                                       variant="ghost" 
                                       size="icon" 
                                       onClick={() => handleEdit(subGroup.profile_group_id)}
+                                      className="h-8 w-8"
                                     >
                                       <Edit2 className="w-4 h-4" />
                                     </Button>
@@ -422,6 +423,7 @@ export default function OperationsTab({ batchId, department }) {
                                       variant="ghost"
                                       size="icon"
                                       disabled={deleteMutation.isPending}
+                                      className="h-8 w-8"
                                     >
                                       <Trash2 className="w-4 h-4 text-red-500" />
                                     </Button>
@@ -430,11 +432,15 @@ export default function OperationsTab({ batchId, department }) {
                               </TableRow>
                               {subGroup.operations.map(op => (
                                 <TableRow key={op.id} className="hover:bg-slate-50">
-                                  <TableCell></TableCell>
-                                  <TableCell className="pl-8">↳ {op.operation}</TableCell>
-                                  <TableCell className="font-mono text-sm">Qty: {op.qty_operation}</TableCell>
-                                  <TableCell className="font-mono text-sm">{op.operation_time_min?.toFixed(2) || 0}</TableCell>
-                                  <TableCell></TableCell>
+                                  <TableCell className="w-12"></TableCell>
+                                  <TableCell className="pl-12 text-slate-700">
+                                    <span className="text-slate-400">↳</span> {op.operation}
+                                  </TableCell>
+                                  <TableCell className="font-mono text-sm text-slate-600">
+                                    Qty: <span className="font-semibold">{op.qty_operation}</span>
+                                  </TableCell>
+                                  <TableCell className="font-mono text-sm font-medium text-right">{op.operation_time_min?.toFixed(2) || '0.00'}</TableCell>
+                                  <TableCell className="text-center"></TableCell>
                                 </TableRow>
                               ))}
                             </React.Fragment>
