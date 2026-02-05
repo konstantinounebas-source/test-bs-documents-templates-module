@@ -34,13 +34,13 @@ export default function TeamTimePersonsTab({ batchId }) {
   });
 
   const { data: lines = [], isLoading } = useQuery({
-    queryKey: ['Team_Time_Persons', batchId],
-    queryFn: () => base44.entities.Team_Time_Persons.filter({ batch_header_id: batchId }),
+    queryKey: ['TeamTimePerson', batchId],
+    queryFn: () => base44.entities.TeamTimePerson.filter({ batch_header_id: batchId }),
     enabled: !!batchId
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Team_Time_Persons.create({
+    mutationFn: (data) => base44.entities.TeamTimePerson.create({
       batch_header_id: batchId,
       person_name: data.person_name,
       from_time: data.from_time,
@@ -49,7 +49,7 @@ export default function TeamTimePersonsTab({ batchId }) {
       notes: data.notes
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['Team_Time_Persons']);
+      queryClient.invalidateQueries(['TeamTimePerson']);
       resetForm();
       setShowAddDialog(false);
       toast.success('Team time added');
@@ -58,7 +58,7 @@ export default function TeamTimePersonsTab({ batchId }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Team_Time_Persons.update(id, {
+    mutationFn: ({ id, data }) => base44.entities.TeamTimePerson.update(id, {
       person_name: data.person_name,
       from_time: data.from_time,
       to_time: data.to_time,
@@ -66,7 +66,7 @@ export default function TeamTimePersonsTab({ batchId }) {
       notes: data.notes
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['Team_Time_Persons']);
+      queryClient.invalidateQueries(['TeamTimePerson']);
       setEditingLine(null);
       setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', break_time_minutes: 0, notes: '' });
       setShowAddDialog(false);
@@ -76,9 +76,9 @@ export default function TeamTimePersonsTab({ batchId }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Team_Time_Persons.delete(id),
+    mutationFn: (id) => base44.entities.TeamTimePerson.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['Team_Time_Persons']);
+      queryClient.invalidateQueries(['TeamTimePerson']);
       toast.success('Team time deleted');
     },
     onError: () => toast.error('Failed to delete team time')
