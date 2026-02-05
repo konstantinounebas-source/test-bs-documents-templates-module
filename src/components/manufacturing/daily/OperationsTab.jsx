@@ -122,7 +122,7 @@ export default function OperationsTab({ batchId, department }) {
           sl.operation === operation.name
         );
 
-        const stdMinPc = stdLine?.time_min_pc || 0;
+        const stdMinPc = stdLine?.std_min_per_pc || 0;
         const qty = sd.ops_qty || 0;
         const opTime = qty * stdMinPc;
 
@@ -251,7 +251,7 @@ export default function OperationsTab({ batchId, department }) {
         sl.operation === operation.name
       );
 
-      const stdMinPc = stdLine?.time_min_pc || 0;
+      const stdMinPc = stdLine?.std_min_per_pc || 0;
       const opTime = parseFloat(qty) * stdMinPc;
 
       return base44.entities.Operations.create({
@@ -545,7 +545,7 @@ export default function OperationsTab({ batchId, department }) {
                           sl.item_code === formData.item_code && 
                           sl.operation === op.name
                         );
-                        const stdMinPc = stdLine?.time_min_pc || 0;
+                        const stdMinPc = stdLine?.std_min_per_pc || 0;
                         const qty = selectedOperations[op.id] || 0;
                         const opTime = qty * stdMinPc;
 
