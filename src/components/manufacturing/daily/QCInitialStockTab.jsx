@@ -28,7 +28,7 @@ function useBatchItemCodes(batchId, department) {
       return uniqueItemCodes.sort();
     },
     enabled: !!batchId && !!department,
-    staleTime: 0
+    staleTime: Infinity
   });
 }
 
@@ -49,12 +49,14 @@ export default function QCInitialStockTab({ batchId, department }) {
 
   const { data: qcTypes = [] } = useQuery({
     queryKey: ['QC_Type'],
-    queryFn: () => base44.entities.QC_Type.list()
+    queryFn: () => base44.entities.QC_Type.list(),
+    staleTime: Infinity
   });
 
   const { data: qcLevels = [] } = useQuery({
     queryKey: ['QCLevel'],
-    queryFn: () => base44.entities.QCLevel.filter({ is_active: true })
+    queryFn: () => base44.entities.QCLevel.filter({ is_active: true }),
+    staleTime: Infinity
   });
 
   // Fetch batch header to get date and department for scheduled data lookup
@@ -73,14 +75,14 @@ export default function QCInitialStockTab({ batchId, department }) {
       department_id: batchHeader.department
     }),
     enabled: !!batchHeader?.date && !!batchHeader?.department,
-    staleTime: 0
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['QC_Initial_Stock', batchId],
     queryFn: () => base44.entities.QC_Initial_Stock.filter({ batch_header_id: batchId }),
     enabled: !!batchId,
-    staleTime: 0
+    staleTime: 30 * 1000
   });
 
   // Fetch QC rules from bundle for calculated extra time
@@ -98,7 +100,7 @@ export default function QCInitialStockTab({ batchId, department }) {
       return lines;
     },
     enabled: !!batchHeader?.bundle_id,
-    staleTime: 0
+    staleTime: Infinity
   });
 
   // Auto-fill QC initial stock from scheduled data (only on initial load)
