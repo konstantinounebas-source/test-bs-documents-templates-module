@@ -59,6 +59,48 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
     staleTime: 0
   });
 
+  // Migration: Copy data from old Batch_Header to new BatchHeader
+  useEffect(() => {
+    const migrateOldData = async () => {
+      try {
+        const oldBatches = await base44.entities.Batch_Header.list();
+        if (oldBatches.length === 0) return;
+
+        setIsMigrating(true);
+        const allBundlesData = await base44.entities.StandardsBundle.list();
+
+        for (const oldBatch of oldBatches) {
+          const activeBundle = allBundlesData.find(b => b.department === oldBatch.department && b.status === 'ACTIVE');
+          
+          const existing = await base44.entities.BatchHeader.filter({ 
+            date: oldBatch.date, 
+            department: oldBatch.department 
+          });
+          
+          if (existing.length === 0 && activeBundle) {
+            await base44.entities.BatchHeader.create({
+              date: oldBatch.date,
+              department: oldBatch.department,
+              bundle_id: activeBundle.id,
+              notes: oldBatch.notes || '',
+              created_by: oldBatch.created_by
+            });
+            console.log(`Migrated batch ${oldBatch.date} - ${oldBatch.department}`);
+          }
+        }
+        
+        queryClient.invalidateQueries(['BatchHeader']);
+        toast.success('Data migration complete');
+      } catch (error) {
+        console.error('Migration error:', error);
+      } finally {
+        setIsMigrating(false);
+      }
+    };
+
+    migrateOldData();
+  }, [queryClient]);
+
   // Determine which bundle to use (from scheduled day or active bundle)
   const defaultBundleId = useMemo(() => {
     if (!selectedDate || !selectedDepartment) return '';
@@ -75,9 +117,9 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
   }, [selectedDate, selectedDepartment, scheduledDayHeaders, allBundles]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Batch_Header.create(data),
+    mutationFn: (data) => base44.entities.BatchHeader.create(data),
     onSuccess: (newBatch) => {
-      queryClient.invalidateQueries(['Batch_Header']);
+      queryClient.invalidateQueries(['BatchHeader']);
       resetForm();
       toast.success('Batch header created');
       onBatchCreated(newBatch);
@@ -86,9 +128,9 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Batch_Header.update(id, data),
+    mutationFn: ({ id, data }) => base44.entities.BatchHeader.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['Batch_Header']);
+      queryClient.invalidateQueries(['BatchHeader']);
       resetForm();
       toast.success('Batch header updated');
     },
@@ -96,9 +138,9 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Batch_Header.delete(id),
+    mutationFn: (id) => base44.entities.BatchHeader.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['Batch_Header']);
+      queryClient.invalidateQueries(['BatchHeader']);
       toast.success('Batch header deleted');
     },
     onError: () => toast.error('Failed to delete batch header')
