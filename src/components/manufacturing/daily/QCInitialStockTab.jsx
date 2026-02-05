@@ -193,6 +193,19 @@ export default function QCInitialStockTab({ batchId, department }) {
     return linesWithQCPerPiece.filter(l => l.item_code?.toLowerCase().includes(term));
   }, [linesWithQCPerPiece, searchFilter]);
 
+  // Calculate total QC time
+  const totalQCTime = useMemo(() => {
+    const totalMin = filteredLines.reduce((sum, line) => {
+      const qcTime = parseFloat(line.qcPerPiece) || 0;
+      const qty = parseFloat(line.qty_affected) || 0;
+      return sum + (qcTime * qty);
+    }, 0);
+    return {
+      minutes: totalMin.toFixed(2),
+      hours: (totalMin / 60).toFixed(2)
+    };
+  }, [filteredLines]);
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.QC_Initial_Stock.create({
       batch_header_id: batchId,
@@ -363,6 +376,17 @@ export default function QCInitialStockTab({ batchId, department }) {
           </TableBody>
         </Table>
       </div>
+
+      {filteredLines.length > 0 && (
+        <div className="border rounded-lg bg-blue-50 p-4">
+          <div className="flex justify-between items-center">
+            <span className="font-semibold text-slate-700">Total QC Time</span>
+            <span className="text-lg font-bold text-blue-700">
+              {totalQCTime.minutes} min ({totalQCTime.hours} hrs)
+            </span>
+          </div>
+        </div>
+      )}
 
       <Dialog open={showAddDialog} onOpenChange={(open) => {
         if (!open) resetForm();
