@@ -115,6 +115,19 @@ export default function TeamTimePersonsTab({ batchId }) {
     setShowAddDialog(true);
   };
 
+  const handleOpenAddDialog = () => {
+    const defaultBreak = breakTimes.length > 0 ? breakTimes[0].duration_minutes : 0;
+    setFormData({
+      person_name: '',
+      from_time: '07:00',
+      to_time: '15:30',
+      break_time_minutes: defaultBreak,
+      notes: ''
+    });
+    setEditingLine(null);
+    setShowAddDialog(true);
+  };
+
   const calculateAvailableTime = () => {
     if (!formData.from_time || !formData.to_time) return 0;
     const [fromH, fromM] = formData.from_time.split(':').map(Number);
@@ -141,7 +154,7 @@ export default function TeamTimePersonsTab({ batchId }) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Team Time - Persons</h3>
-        <Button onClick={() => setShowAddDialog(true)} variant="outline" size="sm">
+        <Button onClick={handleOpenAddDialog} variant="outline" size="sm">
           <Plus className="w-4 h-4 mr-2" />
           Add Person Time
         </Button>
