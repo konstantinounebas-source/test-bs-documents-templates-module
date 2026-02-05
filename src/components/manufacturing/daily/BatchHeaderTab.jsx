@@ -117,9 +117,24 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
   }, [selectedDate, selectedDepartment, scheduledDayHeaders, allBundles]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.BatchHeader.create(data),
+    mutationFn: async (data) => {
+      const newBatch = await base44.entities.BatchHeader.create(data);
+      
+      // Create GT_TIME metric with initial value 0
+      await base44.entities.DailyMetricValue.create({
+        metric_code: 'GT_TIME',
+        batch_header_id: newBatch.id,
+        date: newBatch.date,
+        department: newBatch.department,
+        bundle_id: newBatch.bundle_id,
+        value: 0
+      });
+      
+      return newBatch;
+    },
     onSuccess: (newBatch) => {
       queryClient.invalidateQueries(['BatchHeader']);
+      queryClient.invalidateQueries(['DailyMetricValue']);
       resetForm();
       toast.success('Batch header created');
       onBatchCreated(newBatch);
