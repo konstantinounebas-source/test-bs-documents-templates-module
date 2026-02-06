@@ -87,13 +87,6 @@ export default function JVFinancialCalculations() {
                         <SectionAContractIncome shelterTypeId={selectedShelterType} onTotalsChange={setSectionATotals} />
 
                         <SectionBCostBreakdown shelterTypeId={selectedShelterType} onTotalsChange={setSectionBTotals} />
-
-                        <SectionCCostSummary 
-                            sectionATotal={sectionATotals.contractIncome}
-                            sectionBVerified={sectionBTotals.verified}
-                            sectionBWaste={sectionBTotals.waste}
-                            sectionBAccrued={sectionBTotals.accrued}
-                        />
                     </div>
                 )}
             </div>
