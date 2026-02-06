@@ -132,46 +132,45 @@ export default function ReceiptsPage() {
     if (!selectedOrderForReceipt) return;
 
     const selectedItemIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
-    if (selectedItemIds.length === 0) {
-      alert("Please select at least one item to receive");
-      return;
-    }
 
     setLoading(true);
 
     try {
       const user = await base44.auth.me();
       
-      // Create receipt
-      const receipt = await base44.entities.Receipt.create({
-        order_id: selectedOrderForReceipt,
-        received_date: receiptData.received_date,
-        received_by: user.email,
-        notes: receiptData.notes
-      });
+      // Only create receipt if there are items to receive
+      if (selectedItemIds.length > 0) {
+        // Create receipt
+        const receipt = await base44.entities.Receipt.create({
+          order_id: selectedOrderForReceipt,
+          received_date: receiptData.received_date,
+          received_by: user.email,
+          notes: receiptData.notes
+        });
 
-      // Create receipt lines and update items
-      for (const itemId of selectedItemIds) {
-        const line = orderLines.find(l => l.order_id === selectedOrderForReceipt && l.sticker_item_id === itemId);
-        if (line) {
-          await base44.entities.ReceiptLine.create({
-            receipt_id: receipt.id,
-            sticker_item_id: itemId,
-            received_quantity: line.ordered_quantity
-          });
+        // Create receipt lines and update items
+        for (const itemId of selectedItemIds) {
+          const line = orderLines.find(l => l.order_id === selectedOrderForReceipt && l.sticker_item_id === itemId);
+          if (line) {
+            await base44.entities.ReceiptLine.create({
+              receipt_id: receipt.id,
+              sticker_item_id: itemId,
+              received_quantity: line.ordered_quantity
+            });
 
-          await base44.entities.StickerItem.update(itemId, {
-            status: "Received"
-          });
+            await base44.entities.StickerItem.update(itemId, {
+              status: "Received"
+            });
 
-          await base44.entities.StickerMovementLog.create({
-            sticker_item_id: itemId,
-            action_type: "Received",
-            old_status: "Ordered",
-            new_status: "Received",
-            notes: `Receipt #${receipt.id.slice(0, 8)}`,
-            user_email: user.email
-          });
+            await base44.entities.StickerMovementLog.create({
+              sticker_item_id: itemId,
+              action_type: "Received",
+              old_status: "Ordered",
+              new_status: "Received",
+              notes: `Receipt #${receipt.id.slice(0, 8)}`,
+              user_email: user.email
+            });
+          }
         }
       }
 
@@ -187,8 +186,12 @@ export default function ReceiptsPage() {
       
       if (allReceived) {
         await base44.entities.Order.update(selectedOrderForReceipt, { status: "Closed" });
+        alert("Order closed successfully - all items received!");
       } else {
         await base44.entities.Order.update(selectedOrderForReceipt, { status: "Partial" });
+        if (selectedItemIds.length > 0) {
+          alert("Receipt created successfully!");
+        }
       }
 
       queryClient.invalidateQueries(['orders']);
@@ -204,7 +207,6 @@ export default function ReceiptsPage() {
         notes: ""
       });
 
-      alert("Receipt created successfully!");
     } catch (error) {
       console.error("Error creating receipt:", error);
       alert("Error creating receipt");
