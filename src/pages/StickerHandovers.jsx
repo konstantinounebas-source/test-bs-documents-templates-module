@@ -12,6 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Save, Users, FileDown } from "lucide-react";
 import ExcelJS from 'exceljs';
+import ExportHandoverTemplateDialog from "@/components/stickers/ExportHandoverTemplateDialog";
+import ImportHandoverFromFileDialog from "@/components/stickers/ImportHandoverFromFileDialog";
 
 export default function StickerHandoversPage() {
   const [selectedTechnician, setSelectedTechnician] = useState("");
@@ -19,6 +21,7 @@ export default function StickerHandoversPage() {
   const [notes, setNotes] = useState("");
   const [selectedItems, setSelectedItems] = useState({});
   const [loading, setLoading] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: appUsers = [] } = useQuery({
@@ -152,6 +155,48 @@ export default function StickerHandoversPage() {
     setLoading(false);
   };
 
+  const handleImportItems = async (itemsToImport) => {
+    if (!selectedTechnician) {
+      alert("Please select a technician first");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const user = await base44.auth.me();
+
+      // Create handover
+      const handover = await base44.entities.StickerHandover.create({
+        technician_id: selectedTechnician,
+        given_by: user.email,
+        given_date: new Date().toISOString(),
+        notes: "Imported from file"
+      });
+
+      // Create handover lines and update sticker items
+      for (const item of itemsToImport) {
+        await base44.entities.HandoverLine.create({
+          handover_id: handover.id,
+          sticker_item_id: item.stickerId,
+          quantity: item.quantity
+        });
+
+        await base44.entities.StickerItem.update(item.stickerId, {
+          current_custodian_id: selectedTechnician,
+          custody_status: "With Technician"
+        });
+      }
+
+      queryClient.invalidateQueries(['stickerItems']);
+
+      alert("Handover created successfully from imported data!");
+    } catch (error) {
+      console.error("Error creating handover from import:", error);
+      alert("Error creating handover");
+    }
+    setLoading(false);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-3">
@@ -213,10 +258,20 @@ export default function StickerHandoversPage() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Select Sticker Items ({Object.values(selectedItems).filter(Boolean).length} selected)</span>
-              <Button variant="outline" size="sm" onClick={handleExportToExcel}>
-                <FileDown className="w-4 h-4 mr-2" />
-                Export to Excel
-              </Button>
+              <div className="flex gap-2">
+                <ImportHandoverFromFileDialog 
+                  isOpen={importDialogOpen}
+                  onClose={() => setImportDialogOpen(false)}
+                  onItemsImported={handleImportItems}
+                  stops={stops}
+                  stickerItems={availableItems}
+                  stickerTemplates={stickerTemplates}
+                />
+                <Button variant="outline" size="sm" onClick={handleExportToExcel}>
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Export to Excel
+                </Button>
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
