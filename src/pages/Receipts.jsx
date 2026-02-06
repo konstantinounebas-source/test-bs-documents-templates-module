@@ -658,7 +658,7 @@ export default function ReceiptsPage() {
                       const stop = stops.find(s => s.id === item?.stop_id);
                       const template = stickerTemplates.find(t => t.id === item?.sticker_template_id);
                       const critical = item && isCriticalItem(item.stop_id, item.id);
-                      const alreadyReceived = item?.status !== "Ordered";
+                      const alreadyReceived = item?.status === "Received";
 
                       return (
                         <TableRow key={line.id} className={critical ? "bg-red-50" : alreadyReceived ? "bg-gray-100 opacity-50" : ""}>
