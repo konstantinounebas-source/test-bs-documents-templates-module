@@ -251,25 +251,26 @@ export default function StickerItemsPage() {
     return <Badge className={colors[status]}>{status}</Badge>;
   };
 
-  const filteredItems = stickerItems.filter(item => {
-    const term = searchTerm.toLowerCase();
-    const stopName = getStopName(item.stop_id).toLowerCase();
-    const templateName = getStickerTemplateName(item.sticker_template_id).toLowerCase();
-    
-    const matchesSearch = (
-      stopName.includes(term) ||
-      templateName.includes(term) ||
-      item.print_line_1?.toLowerCase().includes(term) ||
-      item.print_line_2?.toLowerCase().includes(term) ||
-      item.print_line_3?.toLowerCase().includes(term)
-    );
+  const filteredItems = useMemo(() => {
+    return stickerItems.filter(item => {
+      const term = searchTerm.toLowerCase();
+      const stopName = getStopName(item.stop_id).toLowerCase();
+      const templateName = getStickerTemplateName(item.sticker_template_id).toLowerCase();
+      
+      const matchesSearch = (
+        stopName.includes(term) ||
+        templateName.includes(term) ||
+        item.print_line_1?.toLowerCase().includes(term) ||
+        item.print_line_2?.toLowerCase().includes(term) ||
+        item.print_line_3?.toLowerCase().includes(term)
+      );
 
-    const matchesStatus = filterStatuses.length === 0 || filterStatuses.includes(item.status);
-    const matchesCustodyStatus = filterCustodyStatuses.length === 0 || filterCustodyStatuses.includes(item.custody_status);
-    const matchesTemplate = filterTemplates.length === 0 || filterTemplates.includes(item.sticker_template_id);
+      const matchesStatus = filterStatuses.length === 0 || filterStatuses.includes(item.status);
+      const matchesCustodyStatus = filterCustodyStatuses.length === 0 || filterCustodyStatuses.includes(item.custody_status);
+      const matchesTemplate = filterTemplates.length === 0 || filterTemplates.includes(item.sticker_template_id);
 
-    return matchesSearch && matchesStatus && matchesCustodyStatus && matchesTemplate;
-  }).sort((a, b) => {
+      return matchesSearch && matchesStatus && matchesCustodyStatus && matchesTemplate;
+    }).sort((a, b) => {
     let aVal, bVal;
     
     switch(sortColumn) {
