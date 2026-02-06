@@ -123,7 +123,7 @@ export default function ImportReceiptFromFileDialog({ isOpen, onClose, onItemsIm
         const notes = row.getCell('D').value;
         const ok = row.getCell('E').value;
 
-        if (stopId && stickerName && ok === 'x') {
+        if (stopId && stickerName && (ok === 'x' || ok === 'Yes')) {
           rows.push({
             stop_id: String(stopId).trim(),
             sticker_name: String(stickerName).trim(),
