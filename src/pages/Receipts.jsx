@@ -212,9 +212,14 @@ export default function ReceiptsPage() {
     try {
       const user = await base44.auth.me();
       
+      // Find the order_id from the first item
+      const firstItemId = itemsToImport[0]?.stickerId;
+      const orderLine = orderLines.find(ol => ol.sticker_item_id === firstItemId);
+      const orderId = orderLine?.order_id || null;
+      
       // Create receipt
       const receipt = await base44.entities.Receipt.create({
-        order_id: itemsToImport[0]?.order_id || null,
+        order_id: orderId,
         received_date: new Date().toISOString().split('T')[0],
         received_by: user.email,
         notes: "Imported from file"
