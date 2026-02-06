@@ -8,13 +8,13 @@ export default function TablePagination({ items = [], onItemsChange }) {
   const [currentPage, setCurrentPage] = useState(1);
 
   const totalItems = items.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const totalPages = pageSize === 'all' ? 1 : Math.ceil(totalItems / pageSize);
+  const startIndex = pageSize === 'all' ? 0 : (currentPage - 1) * pageSize;
+  const endIndex = pageSize === 'all' ? totalItems : Math.min(startIndex + pageSize, totalItems);
   const displayedItems = items.slice(startIndex, endIndex);
 
   const handlePageSizeChange = (size) => {
-    setPageSize(parseInt(size));
+    setPageSize(size === 'all' ? 'all' : parseInt(size));
     setCurrentPage(1); // Reset to first page
   };
 
@@ -74,6 +74,7 @@ export default function TablePagination({ items = [], onItemsChange }) {
             <SelectItem value="20">20</SelectItem>
             <SelectItem value="50">50</SelectItem>
             <SelectItem value="100">100</SelectItem>
+            <SelectItem value="all">All</SelectItem>
           </SelectContent>
         </Select>
         <span className="text-sm text-gray-600">items</span>
@@ -83,44 +84,46 @@ export default function TablePagination({ items = [], onItemsChange }) {
         Showing {totalItems === 0 ? 0 : startIndex + 1} to {endIndex} of {totalItems}
       </span>
 
-      <div className="flex items-center gap-1">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="w-8 h-8"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
+      {pageSize !== 'all' && (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="w-8 h-8"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
 
-        {getPageNumbers().map((page, idx) => (
-          <React.Fragment key={idx}>
-            {page === '...' ? (
-              <span className="px-2 text-gray-400">...</span>
-            ) : (
-              <Button
-                variant={page === currentPage ? "default" : "outline"}
-                size="icon"
-                onClick={() => handlePageChange(page)}
-                className="w-8 h-8 text-xs"
-              >
-                {page}
-              </Button>
-            )}
-          </React.Fragment>
-        ))}
+          {getPageNumbers().map((page, idx) => (
+            <React.Fragment key={idx}>
+              {page === '...' ? (
+                <span className="px-2 text-gray-400">...</span>
+              ) : (
+                <Button
+                  variant={page === currentPage ? "default" : "outline"}
+                  size="icon"
+                  onClick={() => handlePageChange(page)}
+                  className="w-8 h-8 text-xs"
+                >
+                  {page}
+                </Button>
+              )}
+            </React.Fragment>
+          ))}
 
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="w-8 h-8"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="w-8 h-8"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
