@@ -113,6 +113,7 @@ export default function BatchLinesTab({ batchId, department }) {
     }),
     onSuccess: async () => {
       await saveACTQtyMetric();
+      await saveSchQtyMetric();
       queryClient.invalidateQueries(['Batch_Lines']);
       setShowAddDialog(false);
       setFormData({ item_code: '', scheduled_qty: '', qty_processed: '', qty_out_good: '', qty_scrap: '' });
@@ -125,6 +126,7 @@ export default function BatchLinesTab({ batchId, department }) {
     mutationFn: ({ id, data }) => base44.entities.Batch_Lines.update(id, data),
     onSuccess: async () => {
       await saveACTQtyMetric();
+      await saveSchQtyMetric();
       queryClient.invalidateQueries(['Batch_Lines']);
       setShowAddDialog(false);
       setEditingLine(null);
@@ -138,6 +140,7 @@ export default function BatchLinesTab({ batchId, department }) {
     mutationFn: (id) => base44.entities.Batch_Lines.delete(id),
     onSuccess: async () => {
       await saveACTQtyMetric();
+      await saveSchQtyMetric();
       queryClient.invalidateQueries(['Batch_Lines']);
       toast.success('Batch line deleted');
     },
@@ -171,6 +174,36 @@ export default function BatchLinesTab({ batchId, department }) {
       queryClient.invalidateQueries(['DailyMetricValue']);
     } catch (error) {
       console.error('Failed to save ACT_QTY metric:', error);
+    }
+  };
+
+  const saveSchQtyMetric = async () => {
+    try {
+      const batchHeader = await base44.entities.BatchHeader.filter({ id: batchId });
+      if (!batchHeader || batchHeader.length === 0) return;
+
+      // Fetch fresh Batch_Lines data from database
+      const allLines = await base44.entities.Batch_Lines.filter({ batch_header_id: batchId });
+      
+      // Calculate total Scheduled Qty
+      const totalScheduledQty = allLines.reduce((sum, line) => sum + (line.scheduled_qty || 0), 0);
+
+      // Find and update the SCH_QTY metric by date and department
+      const existingMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'SCH_QTY',
+        date: batchHeader[0].date,
+        department: batchHeader[0].department
+      });
+
+      if (existingMetrics.length > 0) {
+        await base44.entities.DailyMetricValue.update(existingMetrics[0].id, {
+          value: totalScheduledQty
+        });
+      }
+
+      queryClient.invalidateQueries(['DailyMetricValue']);
+    } catch (error) {
+      console.error('Failed to save SCH_QTY metric:', error);
     }
   };
 
