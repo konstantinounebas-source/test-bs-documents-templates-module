@@ -231,9 +231,48 @@ export default function OperationsTab({ batchId, department }) {
         });
       }
 
+      // Update SBP_TIME (OP_TIME + QC_TIME)
+      await saveSBPTimeMetric(batchHeader[0].date, batchHeader[0].department);
+
       queryClient.invalidateQueries(['DailyMetricValue']);
     } catch (error) {
       console.error('Failed to save OP_TIME metric:', error);
+    }
+  };
+
+  const saveSBPTimeMetric = async (date, department) => {
+    try {
+      // Fetch OP_TIME and QC_TIME metrics
+      const opTimeMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'OP_TIME',
+        date: date,
+        department: department
+      });
+      
+      const qcTimeMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'QC_TIME',
+        date: date,
+        department: department
+      });
+
+      const opTimeValue = opTimeMetrics.length > 0 ? (opTimeMetrics[0].value || 0) : 0;
+      const qcTimeValue = qcTimeMetrics.length > 0 ? (qcTimeMetrics[0].value || 0) : 0;
+      const sbpTimeValue = opTimeValue + qcTimeValue;
+
+      // Find and update the SBP_TIME metric
+      const existingSBPMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'SBP_TIME',
+        date: date,
+        department: department
+      });
+
+      if (existingSBPMetrics.length > 0) {
+        await base44.entities.DailyMetricValue.update(existingSBPMetrics[0].id, {
+          value: sbpTimeValue
+        });
+      }
+    } catch (error) {
+      console.error('Failed to save SBP_TIME metric:', error);
     }
   };
 
