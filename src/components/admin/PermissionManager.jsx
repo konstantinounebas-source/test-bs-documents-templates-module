@@ -33,8 +33,6 @@ const ALL_PAGES = [
   { key: 'BusStopTypesBOM', label: 'Bus Stop Types & BOM', module: 'Warehouse & Stock' },
   { key: 'WarehouseUserGuide', label: 'Warehouse User Guide', module: 'Warehouse & Stock' },
 
-  { key: 'ShelterFinancialPerformance', label: 'Financial Dashboard', module: 'Shelter Financial Performance' },
-
   { key: 'Dashboard', label: 'Dashboard', module: 'Stickers & Installation' },
   { key: 'Stops', label: 'Stops', module: 'Stickers & Installation' },
   { key: 'ShelterTypes', label: 'Shelter Types', module: 'Stickers & Installation' },

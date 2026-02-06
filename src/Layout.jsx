@@ -232,19 +232,6 @@ const allNavigationGroups = [
     ]
   },
   {
-    id: 'shelter-financial',
-    label: 'Shelter Financial Performance',
-    items: [
-      {
-        title: "Financial Dashboard",
-        url: createPageUrl("ShelterFinancialPerformance"),
-        icon: BarChart3,
-        description: "Track income, costs, and profit distribution per Shelter Type",
-        pageKey: "ShelterFinancialPerformance"
-      }
-    ]
-  },
-  {
     id: 'stickers-installation',
     label: 'Stickers & Installation',
     items: [
@@ -538,7 +525,6 @@ export default function Layout({ children }) {
     'my-workspace': true,
     'document-templates': true,
     'warehouse-stock': true,
-    'shelter-financial': true,
     'stickers-installation': true,
     'delivery-management': true,
     'manufacturing': true,
