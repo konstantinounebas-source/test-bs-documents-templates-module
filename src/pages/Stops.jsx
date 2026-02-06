@@ -31,22 +31,26 @@ export default function StopsPage() {
 
   const { data: stops = [], isLoading } = useQuery({
     queryKey: ['stops'],
-    queryFn: () => base44.entities.Stop.list('-created_date')
+    queryFn: () => base44.entities.Stop.list('-created_date'),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: shelterTypes = [] } = useQuery({
     queryKey: ['shelterTypes'],
-    queryFn: () => base44.entities.ShelterType.list()
+    queryFn: () => base44.entities.ShelterType.list(),
+    staleTime: Infinity
   });
 
   const { data: stickerItems = [] } = useQuery({
     queryKey: ['stickerItems'],
-    queryFn: () => base44.entities.StickerItem.list()
+    queryFn: () => base44.entities.StickerItem.list(),
+    staleTime: 2 * 60 * 1000
   });
 
   const { data: stickerTemplates = [] } = useQuery({
     queryKey: ['stickerTemplates'],
-    queryFn: () => base44.entities.StickerTemplate.list()
+    queryFn: () => base44.entities.StickerTemplate.list(),
+    staleTime: Infinity
   });
 
   const getShelterTypeName = (shelterTypeId) => {
