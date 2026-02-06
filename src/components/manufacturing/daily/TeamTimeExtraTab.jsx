@@ -145,13 +145,52 @@ export default function TeamTimeExtraTab({ batchId }) {
     }
   };
 
+  const saveNATTimeMetric = async () => {
+    try {
+      const batchHeader = await base44.entities.BatchHeader.filter({ id: batchId });
+      if (!batchHeader || batchHeader.length === 0) return;
+
+      const date = batchHeader[0].date;
+      const dept = batchHeader[0].department;
+
+      // Fetch all contributing metrics
+      const allMetrics = await base44.entities.DailyMetricValue.filter({
+        date: date,
+        department: dept
+      });
+
+      const gtTime = allMetrics.find(m => m.metric_code === 'GT_TIME')?.value || 0;
+      const neTime = allMetrics.find(m => m.metric_code === 'NE_TIME')?.value || 0;
+      const odTime = allMetrics.find(m => m.metric_code === 'OD_TIME')?.value || 0;
+      const supTime = allMetrics.find(m => m.metric_code === 'SUP_TIME')?.value || 0;
+
+      // Calculate NAT_TIME = GT_TIME - NE_TIME - OD_TIME - SUP_TIME
+      const natTime = gtTime - neTime - odTime - supTime;
+
+      const natMetric = allMetrics.find(m => m.metric_code === 'NAT_TIME');
+
+      if (natMetric) {
+        await base44.entities.DailyMetricValue.update(natMetric.id, {
+          value: natTime
+        });
+      }
+
+      queryClient.invalidateQueries(['DailyMetricValue']);
+    } catch (error) {
+      console.error('Failed to save NAT_TIME metric:', error);
+    }
+  };
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Team_Time_Extra.create({
       batch_header_id: batchId,
       ...data
     }),
     onSuccess: async () => {
-      await Promise.all([saveNETimeMetric(), saveODTimeMetric(), saveSUPTimeMetric()]);
+      await saveNETimeMetric();
+      await saveODTimeMetric();
+      await saveSUPTimeMetric();
+      await saveNATTimeMetric();
       queryClient.invalidateQueries(['Team_Time_Extra']);
       setShowAddDialog(false);
       setFormData({ person_name: '', charge_dept: '', work_type: '', duration_min: '' });
@@ -163,7 +202,10 @@ export default function TeamTimeExtraTab({ batchId }) {
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Team_Time_Extra.delete(id),
     onSuccess: async () => {
-      await Promise.all([saveNETimeMetric(), saveODTimeMetric(), saveSUPTimeMetric()]);
+      await saveNETimeMetric();
+      await saveODTimeMetric();
+      await saveSUPTimeMetric();
+      await saveNATTimeMetric();
       queryClient.invalidateQueries(['Team_Time_Extra']);
       toast.success('Extra time deleted');
     },
