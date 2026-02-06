@@ -124,7 +124,7 @@ export default function MfgDailyProduction() {
                 </TabsContent>
 
                 <TabsContent value="help_in">
-                  <HelpInTab batchId={selectedBatch?.id} />
+                  <HelpInTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
                 </TabsContent>
 
                 <TabsContent value="consumables">
