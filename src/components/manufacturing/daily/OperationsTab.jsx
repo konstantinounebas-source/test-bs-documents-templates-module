@@ -29,7 +29,7 @@ function useBatchItemCodes(batchId, department) {
       return uniqueItemCodes.sort();
     },
     enabled: !!batchId && !!department,
-    staleTime: 0
+    staleTime: Infinity
   });
 }
 
@@ -52,12 +52,14 @@ export default function OperationsTab({ batchId, department }) {
 
   const { data: operations = [] } = useQuery({
     queryKey: ['Operation'],
-    queryFn: () => base44.entities.Operation.list()
+    queryFn: () => base44.entities.Operation.list(),
+    staleTime: Infinity
   });
 
   const { data: profileNames = [] } = useQuery({
     queryKey: ['OperationProfileName'],
-    queryFn: () => base44.entities.OperationProfileName.list()
+    queryFn: () => base44.entities.OperationProfileName.list(),
+    staleTime: Infinity
   });
 
   const { data: batchHeader } = useQuery({
@@ -71,7 +73,7 @@ export default function OperationsTab({ batchId, department }) {
     queryKey: ['StdSetLines', batchHeader?.bundle_id],
     queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: batchHeader.bundle_id }),
     enabled: !!batchHeader?.bundle_id,
-    staleTime: 0
+    staleTime: Infinity
   });
 
   const { data: scheduledData = [] } = useQuery({
@@ -81,14 +83,14 @@ export default function OperationsTab({ batchId, department }) {
       department_id: batchHeader.department
     }),
     enabled: !!batchHeader?.date && !!batchHeader?.department,
-    staleTime: 0
+    staleTime: Infinity
   });
 
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['Operations', batchId],
     queryFn: () => base44.entities.Operations.filter({ batch_header_id: batchId }),
     enabled: !!batchId,
-    staleTime: 0
+    staleTime: 30 * 1000
   });
 
   const operationsForProfile = useMemo(() => {
@@ -398,8 +400,16 @@ export default function OperationsTab({ batchId, department }) {
       await Promise.all(createPromises);
       await queryClient.invalidateQueries(['Operations']);
       await saveOpTimeMetric();
-      setShowAddDialog(false);
-      resetForm();
+      
+      // Reset form but keep dialog open for adding more
+      setFormData({
+        item_code: '',
+        operation_profile_id: '',
+        operation_profile_name: ''
+      });
+      setSelectedOperations({});
+      setEditingGroupId(null);
+      
       toast.success(editingGroupId ? 'Operations updated' : 'Operations added');
     } catch (error) {
       toast.error('Failed to save operations');
