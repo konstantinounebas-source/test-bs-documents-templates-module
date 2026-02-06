@@ -1,13 +1,12 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { FormTemplate } from "@/entities/FormTemplate";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Filter, ChevronDown, Download, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import orderBy from 'lodash/orderBy';
-
 import { Badge } from "@/components/ui/badge";
+import orderBy from 'lodash/orderBy';
 
 import CreateTemplateDialog from "../components/templates/CreateTemplateDialog";
 import TemplateTable from "../components/templates/TemplateTable";
