@@ -28,10 +28,24 @@ export default function StopsWithStickersPage() {
     queryFn: () => base44.entities.StickerTemplate.list()
   });
 
-  const getStickerTemplateName = (templateId) => {
-    const template = stickerTemplates.find(t => t.id === templateId);
-    return template ? template.sticker_name_category : "-";
-  };
+  const templatesMap = useMemo(() => {
+    const map = {};
+    stickerTemplates.forEach(t => map[t.id] = t);
+    return map;
+  }, [stickerTemplates]);
+
+  const stickersByStop = useMemo(() => {
+    const map = {};
+    stickerItems.forEach(item => {
+      if (!map[item.stop_id]) map[item.stop_id] = [];
+      map[item.stop_id].push(item);
+    });
+    return map;
+  }, [stickerItems]);
+
+  const getStickerTemplateName = useMemo(() => (templateId) => {
+    return templatesMap[templateId]?.sticker_name_category || "-";
+  }, [templatesMap]);
 
   const getStatusBadge = (status) => {
     const colors = {
@@ -50,9 +64,9 @@ export default function StopsWithStickersPage() {
     }));
   };
 
-  const getStopStickers = (stopId) => {
-    return stickerItems.filter(item => item.stop_id === stopId);
-  };
+  const getStopStickers = useMemo(() => (stopId) => {
+    return stickersByStop[stopId] || [];
+  }, [stickersByStop]);
 
   const filteredStops = stops.filter(stop => {
     const term = searchTerm.toLowerCase();
