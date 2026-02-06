@@ -27,7 +27,7 @@ export default function ExportReceiptTemplateDialog({ orderedItems, stops, stick
         sticker_name: template?.sticker_name_category || '',
         quantity: 1,
         notes: '',
-        ok: 'x'
+        ok: 'Yes'
       });
     });
 
