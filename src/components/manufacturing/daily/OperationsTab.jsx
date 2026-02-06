@@ -595,16 +595,26 @@ export default function OperationsTab({ batchId, department }) {
                                 step="0.01"
                                 min="0"
                                 value={op.remake_qty || 0}
-                                onChange={async (e) => {
+                                onBlur={async (e) => {
                                   const newRemakeQty = parseFloat(e.target.value) || 0;
+                                  if (newRemakeQty === (op.remake_qty || 0)) return;
+
                                   try {
                                     await base44.entities.Operations.update(op.id, {
                                       remake_qty: newRemakeQty
                                     });
                                     await saveOpTimeMetric();
                                     queryClient.invalidateQueries(['Operations']);
+                                    toast.success('Remake qty updated');
                                   } catch (error) {
+                                    console.error('Failed to update remake qty:', error);
                                     toast.error('Failed to update remake qty');
+                                    queryClient.invalidateQueries(['Operations']);
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.target.blur();
                                   }
                                 }}
                                 className="w-24 h-8 text-right"
