@@ -92,23 +92,20 @@ export default function DashboardPage() {
 
 
 
-  // 1η ΣΕΙΡΑ: Δημιουργία Αυτοκόλλητων (Needs Assessment)
-  
-  // Στάσεις χωρίς Stickers (δεν έχουν καμία εγγραφή στο StickerItem)
-  const stopsWithoutStickersCreated = stops.filter(stop => {
-    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
-    return stopStickers.length === 0;
-  });
-
-  // Κρίσιμες χωρίς Stickers: Χωρίς stickers και planned date < 1 μήνα
   const [bufferDays, setBufferDays] = React.useState(30);
-  const criticalStopsWarning = stops.filter(stop => {
-    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
-    if (stopStickers.length > 0) return false; // έχει stickers, όχι κρίσιμη
-    if (!stop.current_planned_installation_date) return false;
-    const daysUntil = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
-    return daysUntil < bufferDays && daysUntil >= 0;
-  });
+
+  // 1η ΣΕΙΡΑ: Δημιουργία Αυτοκόλλητων (Needs Assessment)
+  const stopsWithoutStickersCreated = stopsWithoutStickers;
+
+  const criticalStopsWarning = useMemo(() =>
+    stops.filter(stop => {
+      if (stickersByStop[stop.id]) return false;
+      if (!stop.current_planned_installation_date) return false;
+      const daysUntil = Math.floor((new Date(stop.current_planned_installation_date) - new Date()) / (1000 * 60 * 60 * 24));
+      return daysUntil < bufferDays && daysUntil >= 0;
+    }),
+    [stops, stickersByStop, bufferDays]
+  );
 
   // 2η ΣΕΙΡΑ: Διαδικασία Παραγγελίας (Ordering Flow)
   
