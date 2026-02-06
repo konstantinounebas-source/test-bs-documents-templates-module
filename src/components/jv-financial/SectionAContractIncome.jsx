@@ -57,6 +57,7 @@ export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }
     }, [totalContractIncome, onTotalsChange]);
 
     return (
+        <>
         <Card>
             <CardHeader>
                 <CardTitle>SECTION A — Contract & Income</CardTitle>
