@@ -138,7 +138,11 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
 
         stop.shelter_type_initial_id = shelterTypeMap[initialTypeId];
 
-        if (approvedTypeId && shelterTypeMap[approvedTypeId]) {
+        if (approvedTypeId) {
+          if (!shelterTypeMap[approvedTypeId]) {
+            errors.push(`Row ${rowNumber} (Stop ${stop.stop_id}): Approved Type "${approvedTypeId}" does not exist`);
+            return;
+          }
           stop.shelter_type_approved_id = shelterTypeMap[approvedTypeId];
         }
 
