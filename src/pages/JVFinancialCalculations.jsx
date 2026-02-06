@@ -101,22 +101,42 @@ export default function JVFinancialCalculations() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Select Shelter Type</CardTitle>
-                        <CardDescription>Choose a shelter type to view its detailed financial calculations</CardDescription>
+                        <CardTitle>Select Shelter Type & BOM Version</CardTitle>
+                        <CardDescription>Choose a shelter type and BOM version to view its detailed financial calculations</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <Select value={selectedShelterType || ''} onValueChange={setSelectedShelterType}>
-                            <SelectTrigger className="w-64">
-                                <SelectValue placeholder="Select a Shelter Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {shelterTypes.map(type => (
-                                    <SelectItem key={type.id} value={type.id}>
-                                        {type.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                    <CardContent className="flex gap-6 items-end">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">Shelter Type</label>
+                            <Select value={selectedShelterType || ''} onValueChange={setSelectedShelterType}>
+                                <SelectTrigger className="w-64">
+                                    <SelectValue placeholder="Select a Shelter Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {shelterTypes.map(type => (
+                                        <SelectItem key={type.id} value={type.id}>
+                                            {type.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {bomVersions.length > 0 && (
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">BOM Version</label>
+                                <Select value={selectedBomVersion} onValueChange={setSelectedBomVersion}>
+                                    <SelectTrigger className="w-64">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {bomVersions.map((v) => (
+                                            <SelectItem key={v.version} value={v.version}>
+                                                {v.version} {v.comment && `- ${v.comment}`}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
