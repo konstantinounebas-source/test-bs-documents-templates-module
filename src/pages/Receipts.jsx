@@ -705,8 +705,8 @@ export default function ReceiptsPage() {
             <Button variant="outline" onClick={() => setReceiptDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmitReceipt} disabled={loading || selectedCount === 0}>
-              {loading ? "Processing..." : `Receive ${selectedCount} Items`}
+            <Button onClick={handleSubmitReceipt} disabled={loading}>
+              {loading ? "Processing..." : selectedCount === 0 ? "Close Order" : `Receive ${selectedCount} Items`}
             </Button>
           </DialogFooter>
         </DialogContent>
