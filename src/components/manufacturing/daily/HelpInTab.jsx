@@ -75,6 +75,41 @@ export default function HelpInTab({ batchId, department }) {
     }
   };
 
+  const saveNATTimeMetric = async () => {
+    try {
+      if (!batchHeader?.date || !department) return;
+
+      const date = batchHeader.date;
+      const dept = department;
+
+      // Fetch all contributing metrics
+      const allMetrics = await base44.entities.DailyMetricValue.filter({
+        date: date,
+        department: dept
+      });
+
+      const gtTime = allMetrics.find(m => m.metric_code === 'GT_TIME')?.value || 0;
+      const helpTime = allMetrics.find(m => m.metric_code === 'HELP_TIME')?.value || 0;
+      const neTime = allMetrics.find(m => m.metric_code === 'NE_TIME')?.value || 0;
+      const odTime = allMetrics.find(m => m.metric_code === 'OD_TIME')?.value || 0;
+
+      // Calculate NAT_TIME = GT_TIME + HELP_TIME - NE_TIME - OD_TIME
+      const natTime = gtTime + helpTime - neTime - odTime;
+
+      const natMetric = allMetrics.find(m => m.metric_code === 'NAT_TIME');
+
+      if (natMetric) {
+        await base44.entities.DailyMetricValue.update(natMetric.id, {
+          value: natTime
+        });
+      }
+
+      queryClient.invalidateQueries(['DailyMetricValue']);
+    } catch (error) {
+      console.error('Failed to save NAT_TIME metric:', error);
+    }
+  };
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Help_In.create({
       batch_header_id: batchId,
@@ -83,6 +118,7 @@ export default function HelpInTab({ batchId, department }) {
     onSuccess: async () => {
       await queryClient.invalidateQueries(['Help_In']);
       await saveHelpTimeMetric();
+      await saveNATTimeMetric();
       setShowAddDialog(false);
       setFormData({ department: '', from_department: '', help_min: '' });
       toast.success('Help-in record added');
@@ -95,6 +131,7 @@ export default function HelpInTab({ batchId, department }) {
     onSuccess: async () => {
       await queryClient.invalidateQueries(['Help_In']);
       await saveHelpTimeMetric();
+      await saveNATTimeMetric();
       toast.success('Help-in record deleted');
     },
     onError: () => toast.error('Failed to delete help-in record')
