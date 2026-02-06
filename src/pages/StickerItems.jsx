@@ -27,6 +27,8 @@ export default function StickerItemsPage() {
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [paginatedItems, setPaginatedItems] = useState([]);
+  const [sortColumn, setSortColumn] = useState("stop_id");
+  const [sortDirection, setSortDirection] = useState("asc");
 
   const queryClient = useQueryClient();
 
@@ -267,7 +269,73 @@ export default function StickerItemsPage() {
     const matchesTemplate = filterTemplates.length === 0 || filterTemplates.includes(item.sticker_template_id);
 
     return matchesSearch && matchesStatus && matchesCustodyStatus && matchesTemplate;
+  }).sort((a, b) => {
+    let aVal, bVal;
+    
+    switch(sortColumn) {
+      case "stop_id":
+        aVal = getStopName(a.stop_id);
+        bVal = getStopName(b.stop_id);
+        break;
+      case "greek_name":
+        aVal = getStopGreekName(a.stop_id);
+        bVal = getStopGreekName(b.stop_id);
+        break;
+      case "template":
+        aVal = getStickerTemplateName(a.sticker_template_id);
+        bVal = getStickerTemplateName(b.sticker_template_id);
+        break;
+      case "status":
+        aVal = a.status || "";
+        bVal = b.status || "";
+        break;
+      case "custody":
+        aVal = a.custody_status || "";
+        bVal = b.custody_status || "";
+        break;
+      case "installed":
+        aVal = a.installed ? 1 : 0;
+        bVal = b.installed ? 1 : 0;
+        break;
+      default:
+        aVal = "";
+        bVal = "";
+    }
+    
+    if (typeof aVal === "string") {
+      aVal = aVal.toLowerCase();
+      bVal = bVal.toLowerCase();
+    }
+    
+    if (sortDirection === "asc") {
+      return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+    } else {
+      return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+    }
   });
+
+  const toggleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortHeader = ({ column, label }) => (
+    <TableHead 
+      className="cursor-pointer hover:bg-gray-100 select-none"
+      onClick={() => toggleSort(column)}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        {sortColumn === column && (
+          <span>{sortDirection === "asc" ? "↑" : "↓"}</span>
+        )}
+      </div>
+    </TableHead>
+  );
 
   const isLoading = itemsLoading || stopsLoading || templatesLoading;
 
@@ -357,13 +425,13 @@ export default function StickerItemsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Stop</TableHead>
-                  <TableHead>Ονομασία Στάσης</TableHead>
-                  <TableHead>Ονομασία</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Custody</TableHead>
+                  <SortHeader column="stop_id" label="Stop" />
+                  <SortHeader column="greek_name" label="Ονομασία Στάσης" />
+                  <SortHeader column="template" label="Ονομασία" />
+                  <SortHeader column="status" label="Status" />
+                  <SortHeader column="custody" label="Custody" />
                   <TableHead>Current Custodian</TableHead>
-                  <TableHead>Installed</TableHead>
+                  <SortHeader column="installed" label="Installed" />
                   <TableHead className="w-[280px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
