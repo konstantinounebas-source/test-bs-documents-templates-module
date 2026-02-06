@@ -87,7 +87,7 @@ export default function ApplyStickerRequirementsDialog({ open, onClose, shelterT
               installed: false,
               need_reorder: false,
               total_ordered_quantity: 0,
-              custody_status: "In Stock"
+              custody_status: "Needed"
             });
           }
         }
