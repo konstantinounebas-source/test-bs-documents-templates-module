@@ -132,12 +132,23 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
         });
         
         if (existingMetric.length === 0) {
+          let initialValue = 0;
+          
+          // Calculate SCH_TIME from existing ScheduledData
+          if (metric.metric_code === 'SCH_TIME') {
+            const scheduledData = await base44.entities.ScheduledData.filter({
+              date: newBatch.date,
+              department_id: newBatch.department
+            });
+            initialValue = scheduledData.reduce((sum, sd) => sum + (sd.grand_total_min || 0), 0);
+          }
+          
           await base44.entities.DailyMetricValue.create({
             metric_code: metric.metric_code,
             date: newBatch.date,
             department: newBatch.department,
             bundle_id: newBatch.bundle_id,
-            value: 0
+            value: initialValue
           });
         }
       }
