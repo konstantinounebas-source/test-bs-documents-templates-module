@@ -120,16 +120,18 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
     mutationFn: async (data) => {
       const newBatch = await base44.entities.BatchHeader.create(data);
       
-      // Check if metrics already exist for this date/department
-      const existingMetrics = await base44.entities.DailyMetricValue.filter({
-        date: newBatch.date,
-        department: newBatch.department
-      });
+      // Fetch all metric definitions
+      const metrics = await base44.entities.MetricDefinition.list();
       
-      // Only create metrics if they don't already exist
-      if (existingMetrics.length === 0) {
-        const metrics = await base44.entities.MetricDefinition.list();
-        for (const metric of metrics) {
+      // For each metric, check if it exists and create only if missing
+      for (const metric of metrics) {
+        const existingMetric = await base44.entities.DailyMetricValue.filter({
+          metric_code: metric.metric_code,
+          date: newBatch.date,
+          department: newBatch.department
+        });
+        
+        if (existingMetric.length === 0) {
           await base44.entities.DailyMetricValue.create({
             metric_code: metric.metric_code,
             date: newBatch.date,

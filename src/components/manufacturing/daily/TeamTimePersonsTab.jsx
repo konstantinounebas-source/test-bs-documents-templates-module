@@ -161,7 +161,17 @@ export default function TeamTimePersonsTab({ batchId }) {
       const batchHeader = await base44.entities.BatchHeader.filter({ id: batchId });
       if (!batchHeader || batchHeader.length === 0) return;
 
-      const totalAvailableTime = calculateTotalAvailableTime();
+      // Fetch fresh team time data from database
+      const allLines = await base44.entities.TeamTimePerson.filter({ batch_header_id: batchId });
+      
+      // Calculate total from fresh data
+      const totalAvailableTime = allLines.reduce((sum, line) => {
+        const [fromH, fromM] = line.from_time.split(':').map(Number);
+        const [toH, toM] = line.to_time.split(':').map(Number);
+        const totalMin = (toH * 60 + toM) - (fromH * 60 + fromM);
+        const availableMin = Math.max(0, totalMin - (line.break_time_minutes || 0));
+        return sum + availableMin;
+      }, 0);
 
       // Find and update the GT_TIME metric by date and department
       const existingMetrics = await base44.entities.DailyMetricValue.filter({
