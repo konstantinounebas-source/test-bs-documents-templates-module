@@ -218,8 +218,15 @@ export default function OperationsTab({ batchId, department }) {
       
       // Calculate total from fresh data
       const totalOpTime = allOps.reduce((sum, op) => sum + (op.operation_time_min || 0), 0);
-      const totalRemakeQty = allOps.reduce((sum, op) => sum + (op.remake_qty || 0), 0);
-      const totalRemakeTime = allOps.reduce((sum, op) => sum + ((op.remake_qty || 0) * (op.std_min_pc_lookup || 0)), 0);
+      
+      // Calculate REMAKE_QTY and REMAKE_TIME from operations with operation name "Remake"
+      const remakeOps = allOps.filter(op => {
+        const opName = op.operation || '';
+        return opName.toLowerCase().trim() === 'remake';
+      });
+      
+      const totalRemakeQty = remakeOps.reduce((sum, op) => sum + (op.qty_operation || 0), 0);
+      const totalRemakeTime = remakeOps.reduce((sum, op) => sum + (op.operation_time_min || 0), 0);
 
       // Find and update the OP_TIME metric by date and department
       const existingMetrics = await base44.entities.DailyMetricValue.filter({
@@ -413,11 +420,19 @@ export default function OperationsTab({ batchId, department }) {
   }, [lines]);
 
   const totalRemakeQty = useMemo(() => {
-    return lines.reduce((sum, op) => sum + (op.remake_qty || 0), 0);
+    const remakeOps = lines.filter(op => {
+      const opName = op.operation || '';
+      return opName.toLowerCase().trim() === 'remake';
+    });
+    return remakeOps.reduce((sum, op) => sum + (op.qty_operation || 0), 0);
   }, [lines]);
 
   const totalRemakeTime = useMemo(() => {
-    return lines.reduce((sum, op) => sum + ((op.remake_qty || 0) * (op.std_min_pc_lookup || 0)), 0);
+    const remakeOps = lines.filter(op => {
+      const opName = op.operation || '';
+      return opName.toLowerCase().trim() === 'remake';
+    });
+    return remakeOps.reduce((sum, op) => sum + (op.operation_time_min || 0), 0);
   }, [lines]);
 
   if (isLoading) {
@@ -522,7 +537,7 @@ export default function OperationsTab({ batchId, department }) {
                         {group.subGroups.reduce((sum, sg) => sum + sg.operations.reduce((s, o) => s + (o.qty_operation || 0), 0), 0).toFixed(2)}
                       </TableCell>
                       <TableCell className="font-mono font-bold text-right text-orange-700">
-                        {group.subGroups.reduce((sum, sg) => sum + sg.operations.reduce((s, o) => s + (o.remake_qty || 0), 0), 0).toFixed(2)}
+                        {group.subGroups.reduce((sum, sg) => sum + sg.operations.filter(o => (o.operation || '').toLowerCase().trim() === 'remake').reduce((s, o) => s + (o.qty_operation || 0), 0), 0).toFixed(2)}
                       </TableCell>
                       <TableCell className="font-mono font-bold text-right">{group.total_time.toFixed(2)}</TableCell>
                       <TableCell className="text-center"></TableCell>
@@ -538,7 +553,7 @@ export default function OperationsTab({ batchId, department }) {
                             {subGroup.operations.reduce((s, o) => s + (o.qty_operation || 0), 0).toFixed(2)}
                           </TableCell>
                           <TableCell className="font-mono font-semibold text-right text-orange-700">
-                            {subGroup.operations.reduce((s, o) => s + (o.remake_qty || 0), 0).toFixed(2)}
+                            {subGroup.operations.filter(o => (o.operation || '').toLowerCase().trim() === 'remake').reduce((s, o) => s + (o.qty_operation || 0), 0).toFixed(2)}
                           </TableCell>
                           <TableCell className="font-mono font-semibold text-right text-purple-900">{subGroup.total_time.toFixed(2)}</TableCell>
                           <TableCell className="text-center">
@@ -591,58 +606,11 @@ export default function OperationsTab({ batchId, department }) {
                               <span className="font-semibold">{op.qty_operation}</span>
                             </TableCell>
                             <TableCell className="font-mono text-sm text-orange-700 text-right">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={editingRemakeQty[op.id] !== undefined ? editingRemakeQty[op.id] : (op.remake_qty || 0)}
-                                onChange={(e) => {
-                                  setEditingRemakeQty(prev => ({
-                                    ...prev,
-                                    [op.id]: e.target.value
-                                  }));
-                                }}
-                                onBlur={async (e) => {
-                                  const newRemakeQty = parseFloat(e.target.value) || 0;
-                                  const currentRemakeQty = op.remake_qty || 0;
-
-                                  if (newRemakeQty === currentRemakeQty) {
-                                    setEditingRemakeQty(prev => {
-                                      const { [op.id]: _, ...rest } = prev;
-                                      return rest;
-                                    });
-                                    return;
-                                  }
-
-                                  try {
-                                    await base44.entities.Operations.update(op.id, {
-                                      remake_qty: newRemakeQty
-                                    });
-                                    await saveOpTimeMetric();
-                                    queryClient.invalidateQueries(['Operations']);
-                                    setEditingRemakeQty(prev => {
-                                      const { [op.id]: _, ...rest } = prev;
-                                      return rest;
-                                    });
-                                    toast.success('Remake qty updated');
-                                  } catch (error) {
-                                    console.error('Failed to update remake qty:', error);
-                                    toast.error('Failed to update: ' + error.message);
-                                    setEditingRemakeQty(prev => {
-                                      const { [op.id]: _, ...rest } = prev;
-                                      return rest;
-                                    });
-                                    queryClient.invalidateQueries(['Operations']);
-                                  }
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    e.target.blur();
-                                  }
-                                }}
-                                className="w-24 h-8 text-right"
-                                onClick={(e) => e.stopPropagation()}
-                              />
+                              {(op.operation || '').toLowerCase().trim() === 'remake' ? (
+                                <span className="font-semibold">{op.qty_operation || 0}</span>
+                              ) : (
+                                <span className="text-slate-300">-</span>
+                              )}
                             </TableCell>
                             <TableCell className="font-mono text-sm font-medium text-right">{op.operation_time_min?.toFixed(2) || '0.00'}</TableCell>
                             <TableCell className="text-center"></TableCell>
