@@ -37,42 +37,50 @@ export default function OrdersManagementPage() {
 
   const { data: stickerItems = [] } = useQuery({
     queryKey: ['stickerItems'],
-    queryFn: () => base44.entities.StickerItem.list()
+    queryFn: () => base44.entities.StickerItem.list(),
+    staleTime: 30 * 1000
   });
 
   const { data: stops = [] } = useQuery({
     queryKey: ['stops'],
-    queryFn: () => base44.entities.Stop.list()
+    queryFn: () => base44.entities.Stop.list(),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: stickerTemplates = [] } = useQuery({
     queryKey: ['stickerTemplates'],
-    queryFn: () => base44.entities.StickerTemplate.list()
+    queryFn: () => base44.entities.StickerTemplate.list(),
+    staleTime: Infinity
   });
 
   const { data: orders = [] } = useQuery({
     queryKey: ['orders'],
-    queryFn: () => base44.entities.Order.list('-order_date')
+    queryFn: () => base44.entities.Order.list('-order_date'),
+    staleTime: 30 * 1000
   });
 
   const { data: orderLines = [] } = useQuery({
     queryKey: ['orderLines'],
-    queryFn: () => base44.entities.OrderLine.list()
+    queryFn: () => base44.entities.OrderLine.list(),
+    staleTime: 30 * 1000
   });
 
   const { data: shelterTypes = [] } = useQuery({
     queryKey: ['shelterTypes'],
-    queryFn: () => base44.entities.ShelterType.list()
+    queryFn: () => base44.entities.ShelterType.list(),
+    staleTime: Infinity
   });
 
   const { data: receipts = [] } = useQuery({
     queryKey: ['receipts'],
-    queryFn: () => base44.entities.Receipt.list()
+    queryFn: () => base44.entities.Receipt.list(),
+    staleTime: 30 * 1000
   });
 
   const { data: receiptLines = [] } = useQuery({
     queryKey: ['receiptLines'],
-    queryFn: () => base44.entities.ReceiptLine.list()
+    queryFn: () => base44.entities.ReceiptLine.list(),
+    staleTime: 30 * 1000
   });
 
   const createOrderMutation = useMutation({
