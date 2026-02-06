@@ -106,6 +106,13 @@ export default function BatchLinesTab({ batchId, department }) {
     return lines.filter(l => l.item_code?.toLowerCase().includes(term));
   }, [lines, searchFilter]);
 
+  const totals = useMemo(() => ({
+    scheduled_qty: lines.reduce((sum, l) => sum + (l.scheduled_qty || 0), 0),
+    qty_processed: lines.reduce((sum, l) => sum + (l.qty_processed || 0), 0),
+    qty_out_good: lines.reduce((sum, l) => sum + (l.qty_out_good || 0), 0),
+    qty_scrap: lines.reduce((sum, l) => sum + (l.qty_scrap || 0), 0)
+  }), [lines]);
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Batch_Lines.create({
       batch_header_id: batchId,
@@ -284,18 +291,38 @@ export default function BatchLinesTab({ batchId, department }) {
         </Button>
       </div>
 
-      <div className="border rounded-lg overflow-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Item Code</TableHead>
-              <TableHead>Scheduled Qty</TableHead>
-              <TableHead>Qty Processed</TableHead>
-              <TableHead>Qty Out Good</TableHead>
-              <TableHead>Qty Scrap</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
+      <div className="space-y-2">
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="text-xs font-medium text-blue-900">Total Scheduled Qty</div>
+            <div className="text-lg font-bold text-blue-900">{totals.scheduled_qty.toFixed(2)}</div>
+          </div>
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+            <div className="text-xs font-medium text-purple-900">Total Qty Processed</div>
+            <div className="text-lg font-bold text-purple-900">{totals.qty_processed.toFixed(2)}</div>
+          </div>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <div className="text-xs font-medium text-green-900">Total Qty Out Good</div>
+            <div className="text-lg font-bold text-green-900">{totals.qty_out_good.toFixed(2)}</div>
+          </div>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <div className="text-xs font-medium text-red-900">Total Qty Scrap</div>
+            <div className="text-lg font-bold text-red-900">{totals.qty_scrap.toFixed(2)}</div>
+          </div>
+        </div>
+
+        <div className="border rounded-lg overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Item Code</TableHead>
+                <TableHead>Scheduled Qty</TableHead>
+                <TableHead>Qty Processed</TableHead>
+                <TableHead>Qty Out Good</TableHead>
+                <TableHead>Qty Scrap</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
           <TableBody>
             {filteredLines.length === 0 ? (
               <TableRow>
@@ -331,6 +358,7 @@ export default function BatchLinesTab({ batchId, department }) {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       <Dialog open={showAddDialog} onOpenChange={(open) => {
