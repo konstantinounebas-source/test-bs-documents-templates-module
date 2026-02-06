@@ -201,7 +201,43 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
 
       await base44.entities.Stop.bulkCreate(stops);
 
-      setSuccess(`Successfully imported ${stops.length} stops`);
+      // Get the created stops to get their IDs
+      const createdStops = await base44.entities.Stop.list();
+      const createdStopsMap = {};
+      createdStops.forEach(stop => {
+        createdStopsMap[stop.stop_id] = stop.id;
+      });
+
+      // Create sticker items for stops with approved shelter type
+      const stickerRequirements = await base44.entities.ShelterTypeStickerRequirement.list();
+      const stickerItemsToCreate = [];
+
+      for (const stop of stops) {
+        if (stop.shelter_type_approved_id) {
+          // Find sticker requirements for this shelter type
+          const requirements = stickerRequirements.filter(req => req.shelter_type_id === stop.shelter_type_approved_id);
+          const stopId = createdStopsMap[stop.stop_id];
+
+          for (const requirement of requirements) {
+            for (let i = 0; i < requirement.quantity_required; i++) {
+              stickerItemsToCreate.push({
+                stop_id: stopId,
+                sticker_template_id: requirement.sticker_template_id,
+                print_line_1: stop.stop_id,
+                print_line_2: stop.greek_name,
+                print_line_3: stop.english_name,
+                status: "Needed"
+              });
+            }
+          }
+        }
+      }
+
+      if (stickerItemsToCreate.length > 0) {
+        await base44.entities.StickerItem.bulkCreate(stickerItemsToCreate);
+      }
+
+      setSuccess(`Successfully imported ${stops.length} stops${stickerItemsToCreate.length > 0 ? ` and ${stickerItemsToCreate.length} sticker items` : ""}`);
       setTimeout(() => {
         onImportComplete();
         onClose();
