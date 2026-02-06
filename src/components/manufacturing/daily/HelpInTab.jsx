@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -111,6 +111,12 @@ export default function HelpInTab({ batchId, department }) {
     });
   };
 
+  const totalHelpTime = useMemo(() => {
+    return lines
+      .filter(h => h.department === department)
+      .reduce((sum, h) => sum + (h.help_min || 0), 0);
+  }, [lines, department]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -127,6 +133,13 @@ export default function HelpInTab({ batchId, department }) {
           <Plus className="w-4 h-4 mr-2" />
           Add Help-In
         </Button>
+      </div>
+
+      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium text-green-900">Total Help Time for {department}</span>
+          <span className="text-lg font-bold text-green-900">{totalHelpTime.toFixed(2)} min ({(totalHelpTime / 60).toFixed(2)} hrs)</span>
+        </div>
       </div>
 
       <div className="border rounded-lg overflow-auto">
