@@ -469,6 +469,13 @@ const allNavigationGroups = [
     label: 'System Management',
     items: [
       {
+        title: "Modules Documentation",
+        url: createPageUrl("ModulesDocumentation"),
+        icon: BookOpen,
+        description: "Reference guide for all system modules and tables",
+        pageKey: "ModulesDocumentation"
+      },
+      {
         title: "Users",
         url: createPageUrl("Users"),
         icon: Users2,
