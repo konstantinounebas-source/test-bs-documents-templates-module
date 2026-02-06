@@ -54,26 +54,41 @@ export default function DashboardPage() {
   // 1. Συνολικός αριθμός στάσεων
   const totalStops = stops.length;
 
+  // Memoized sticker lookups for performance
+  const stickersByStop = useMemo(() => {
+    const map = {};
+    stickerItems.forEach(item => {
+      if (!map[item.stop_id]) map[item.stop_id] = [];
+      map[item.stop_id].push(item);
+    });
+    return map;
+  }, [stickerItems]);
+
   // 2. Πόσες δεν έχουν δημιουργηθεί αυτοκόλλητα
-  const stopsWithoutStickers = stops.filter(stop => {
-    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
-    return stopStickers.length === 0;
-  });
+  const stopsWithoutStickers = useMemo(() => 
+    stops.filter(stop => !stickersByStop[stop.id] || stickersByStop[stop.id].length === 0),
+    [stops, stickersByStop]
+  );
 
-  // 3. Πόσες είναι critical (έχουν εγκατασταθεί τα στέγαστρα αλλά δεν έχουν εγκατασταθεί όλα τα αυτοκόλλητα)
-  const criticalStops = stops.filter(stop => {
-    if (!stop.shelter_installed) return false;
-    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
-    if (stopStickers.length === 0) return false;
-    const allInstalled = stopStickers.every(item => item.status === "Installed");
-    return !allInstalled;
-  });
+  // 3. Πόσες είναι critical
+  const criticalStops = useMemo(() => 
+    stops.filter(stop => {
+      if (!stop.shelter_installed) return false;
+      const stopStickers = stickersByStop[stop.id];
+      if (!stopStickers || stopStickers.length === 0) return false;
+      return !stopStickers.every(item => item.status === "Installed");
+    }),
+    [stops, stickersByStop]
+  );
 
-  // 4. Πόσες έχουν παραγγελθεί τα αυτοκόλλητα (έχουν έστω ένα sticker με status Ordered ή Received ή Installed)
-  const stopsWithOrderedStickers = stops.filter(stop => {
-    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
-    return stopStickers.some(item => ["Ordered", "Received", "Installed"].includes(item.status));
-  });
+  // 4. Πόσες έχουν παραγγελθεί τα αυτοκόλλητα
+  const stopsWithOrderedStickers = useMemo(() =>
+    stops.filter(stop => {
+      const stopStickers = stickersByStop[stop.id];
+      return stopStickers && stopStickers.some(item => ["Ordered", "Received", "Installed"].includes(item.status));
+    }),
+    [stops, stickersByStop]
+  );
 
 
 
