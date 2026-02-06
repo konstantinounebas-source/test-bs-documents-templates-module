@@ -173,19 +173,30 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
           await base44.entities.QC_Initial_Stock.bulkCreate(qcLines);
         }
 
-        // Auto-populate Operations
-        const operations = scheduledData
+        // Auto-populate Operations - group by item_code and operation to avoid duplicates
+        const opsMap = new Map();
+        scheduledData
           .filter(sd => sd.operation && sd.ops_qty)
-          .map(sd => ({
-            batch_header_id: newBatch.id,
-            item_code: sd.item_code,
-            operation: sd.operation,
-            qty_operation: sd.ops_qty || 0,
-            remake_qty: 0,
-            source_type: 'SCHEDULE',
-            std_min_pc_lookup: sd.std_min_pc || 0,
-            operation_time_min: (sd.ops_qty || 0) * (sd.std_min_pc || 0)
-          }));
+          .forEach(sd => {
+            const key = `${sd.item_code}|${sd.operation}`;
+            if (opsMap.has(key)) {
+              const existing = opsMap.get(key);
+              existing.qty_operation += sd.ops_qty || 0;
+              existing.operation_time_min += (sd.ops_qty || 0) * (sd.std_min_pc || 0);
+            } else {
+              opsMap.set(key, {
+                batch_header_id: newBatch.id,
+                item_code: sd.item_code,
+                operation: sd.operation,
+                qty_operation: sd.ops_qty || 0,
+                remake_qty: 0,
+                source_type: 'SCHEDULE',
+                std_min_pc_lookup: sd.std_min_pc || 0,
+                operation_time_min: (sd.ops_qty || 0) * (sd.std_min_pc || 0)
+              });
+            }
+          });
+        const operations = Array.from(opsMap.values());
         if (operations.length > 0) {
           await base44.entities.Operations.bulkCreate(operations);
         }
