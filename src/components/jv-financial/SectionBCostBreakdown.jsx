@@ -27,44 +27,12 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
 
     const loadData = async () => {
         try {
-            const [productsList, categoriesList, busStopTypesList] = await Promise.all([
+            const [productsList, categoriesList] = await Promise.all([
                 base44.entities.Product.list(),
                 base44.entities.ProductCategory.list(),
-                base44.entities.BusStopType.list(),
             ]);
             setProducts(productsList);
             setCostCategories(categoriesList);
-
-            // Find BOM versions for the selected shelter type
-            if (shelterTypeId && busStopTypesList.length > 0) {
-                const matchingTypes = busStopTypesList.filter(t => t.id === shelterTypeId);
-                if (matchingTypes.length > 0) {
-                    // Load BOM component types for this bus stop type
-                    const bomComponents = await base44.entities.BusStopTypeComponent.filter({
-                        bus_stop_type_id: shelterTypeId
-                    });
-                    
-                    // Group by version (V1, V2, etc.)
-                    const versions = {};
-                    bomComponents.forEach(comp => {
-                        const version = comp.version || 'V1';
-                        if (!versions[version]) {
-                            versions[version] = {
-                                version,
-                                components: [],
-                                comment: comp.comment || ''
-                            };
-                        }
-                        versions[version].components.push(comp);
-                    });
-                    
-                    const versionsList = Object.values(versions);
-                    setBomVersions(versionsList);
-                    if (versionsList.length > 0) {
-                        setSelectedBomVersion(versionsList[0].version);
-                    }
-                }
-            }
         } catch (error) {
             console.error('Failed to load data:', error);
         } finally {
