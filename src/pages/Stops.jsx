@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import TablePagination from "@/components/common/TablePagination";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ export default function StopsPage() {
   const [filterStickerStatus, setFilterStickerStatus] = useState([]);
   const [sortField, setSortField] = useState(null);
   const [sortDirection, setSortDirection] = useState("asc");
+  const [paginatedStops, setPaginatedStops] = useState([]);
   const queryClient = useQueryClient();
 
   const { data: stops = [], isLoading } = useQuery({
@@ -370,6 +372,11 @@ export default function StopsPage() {
             </div>
           </div>
 
+          <TablePagination 
+            items={sortedStops} 
+            onItemsChange={setPaginatedStops}
+          />
+
           <div className="border rounded-lg">
             <Table>
               <TableHeader>
@@ -408,14 +415,14 @@ export default function StopsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedStops.length === 0 ? (
+                {paginatedStops.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={11} className="text-center text-gray-500 py-8">
                       No stops found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  sortedStops.map((stop) => {
+                  paginatedStops.map((stop) => {
                     const stickerCount = getStickerCounts(stop.id);
                     const isCritical = isCriticalStop(stop.id);
                     
