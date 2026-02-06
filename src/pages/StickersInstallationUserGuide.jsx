@@ -389,6 +389,20 @@ export default function StickersInstallationUserGuide() {
                 </AlertDescription>
               </Alert>
 
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded mt-4">
+                <h3 className="font-bold text-blue-900 mb-2">📊 Σχετικές Σελίδες</h3>
+                <ul className="text-sm space-y-1 text-blue-800">
+                  <li><strong>Dashboard:</strong> Ολοκληρωμένη άποψη με ενδείξεις ειδοποιήσεων και μετρήσεων</li>
+                  <li><strong>Stops:</strong> Διαχείριση στάσεων με φιλτράρισμα και ταξινόμηση</li>
+                  <li><strong>Stops & Stickers:</strong> Αναλυτική προβολή αυτοκόλλητων ανά στάση</li>
+                  <li><strong>Sticker Items:</strong> Πλήρης κατάλογος με επεξεργασία και λογοστικής παρακολούθηση</li>
+                  <li><strong>Sticker Templates:</strong> Ρύθμιση κατηγοριών και παραμέτρων</li>
+                  <li><strong>Orders Management:</strong> Δημιουργία και παρακολούθηση παραγγελιών</li>
+                  <li><strong>Receive Stickers:</strong> Καταχώρηση παραλαβών</li>
+                  <li><strong>Handover to Technician:</strong> Διανομή σε τεχνικούς</li>
+                </ul>
+              </div>
+
             </CardContent>
           </Card>
         </TabsContent>
