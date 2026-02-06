@@ -153,19 +153,22 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
         // Auto-populate QC Initial Stock - group by item_code to avoid duplicates
         const qcMap = new Map();
         scheduledData
-          .filter(sd => sd.qc_qty && sd.qc_qty > 0)
+          .filter(sd => sd.qc_type)
           .forEach(sd => {
-            const key = `${sd.item_code}|${sd.qc_type || ''}|${sd.qc_level || ''}`;
-            if (qcMap.has(key)) {
-              qcMap.get(key).qty_affected += sd.qc_qty;
-            } else {
-              qcMap.set(key, {
-                batch_header_id: newBatch.id,
-                item_code: sd.item_code,
-                qc_type: sd.qc_type || '',
-                qc_level: sd.qc_level || '',
-                qty_affected: sd.qc_qty
-              });
+            const key = `${sd.item_code}|${sd.qc_type}|${sd.qc_level || ''}`;
+            const qtyAffected = sd.qc_qty || sd.ops_qty || 0;
+            if (qtyAffected > 0) {
+              if (qcMap.has(key)) {
+                qcMap.get(key).qty_affected += qtyAffected;
+              } else {
+                qcMap.set(key, {
+                  batch_header_id: newBatch.id,
+                  item_code: sd.item_code,
+                  qc_type: sd.qc_type,
+                  qc_level: sd.qc_level || '',
+                  qty_affected: qtyAffected
+                });
+              }
             }
           });
         const qcLines = Array.from(qcMap.values());
