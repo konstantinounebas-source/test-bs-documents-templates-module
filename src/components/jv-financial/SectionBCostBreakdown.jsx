@@ -81,6 +81,16 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange })
     const totalVerifiedCosts = verifiedCosts.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
     const totalCostBreakdown = totalVerifiedCosts + totalWasteAllowance + totalAccruedCosts;
 
+    useEffect(() => {
+        if (onTotalsChange) {
+            onTotalsChange({
+                verified: totalVerifiedCosts,
+                waste: totalWasteAllowance,
+                accrued: totalAccruedCosts
+            });
+        }
+    }, [totalVerifiedCosts, totalWasteAllowance, totalAccruedCosts, onTotalsChange]);
+
     if (isLoadingData) {
         return (
             <Card>
