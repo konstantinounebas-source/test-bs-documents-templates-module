@@ -340,6 +340,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
         <DailyProductionCalendarSelector
           selectedDepartment={selectedDepartment}
           selectedDate={selectedDate}
+          batchHeaders={batchHeaders}
           onDateSelect={(dateStr) => {
             setSelectedDate(dateStr);
             // Find if batch exists for this date

@@ -12,17 +12,21 @@ export default function DailyProductionCalendarSelector({
   selectedDepartment, 
   selectedDate, 
   onDateSelect,
-  onCreateBatch
+  onCreateBatch,
+  batchHeaders: propBatchHeaders
 }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   // Fetch batch headers to mark days with existing batches
-  const { data: batchHeaders = [] } = useQuery({
-    queryKey: ['Batch_Header', selectedDepartment],
-    queryFn: () => base44.entities.Batch_Header.filter({ department: selectedDepartment }),
+  const { data: fetchedBatchHeaders = [] } = useQuery({
+    queryKey: ['BatchHeader', selectedDepartment],
+    queryFn: () => base44.entities.BatchHeader.filter({ department: selectedDepartment }),
     enabled: !!selectedDepartment,
     staleTime: 0
   });
+
+  // Use prop or fetched data
+  const batchHeaders = propBatchHeaders || fetchedBatchHeaders;
 
   // Get dates with batch records
   const datesWithBatches = useMemo(() => {
@@ -108,7 +112,7 @@ export default function DailyProductionCalendarSelector({
         </CardContent>
       </Card>
 
-      {selectedDate && (
+      {selectedDate && !datesWithBatches.has(selectedDate) && (
         <Card className="bg-slate-50">
           <CardContent className="pt-4">
             <p className="text-sm font-semibold text-slate-700 mb-3">
