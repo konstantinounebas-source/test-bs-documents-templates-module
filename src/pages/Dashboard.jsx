@@ -109,25 +109,41 @@ export default function DashboardPage() {
 
   // 2η ΣΕΙΡΑ: Διαδικασία Παραγγελίας (Ordering Flow)
   
-  // Στάσεις με Stickers αλλά χωρίς Παραγγελία (status = Needed)
-  const stopsWithStickersNoOrder = stops.filter(stop => {
-    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
-    if (stopStickers.length === 0) return false;
-    return stopStickers.some(item => item.status === "Needed");
-  });
+  // Create template lookup for performance
+  const templatesMap = useMemo(() => {
+    const map = {};
+    stickerTemplates.forEach(t => map[t.id] = t);
+    return map;
+  }, [stickerTemplates]);
 
-  // Καθυστερημένη Παραγγελία: Planned Date < Estimated Delivery
-  const delayedOrderingRisk = stickerItems.filter(item => {
-    if (item.status !== "Needed") return false;
-    const stop = stops.find(s => s.id === item.stop_id);
-    if (!stop?.current_planned_installation_date) return false;
-    const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-    if (!template?.estimated_delivery_days) return false;
-    const plannedDate = new Date(stop.current_planned_installation_date);
-    const estimatedDeliveryDate = new Date();
-    estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + template.estimated_delivery_days);
-    return estimatedDeliveryDate > plannedDate;
-  });
+  const stopsMap = useMemo(() => {
+    const map = {};
+    stops.forEach(s => map[s.id] = s);
+    return map;
+  }, [stops]);
+
+  const stopsWithStickersNoOrder = useMemo(() =>
+    stops.filter(stop => {
+      const stopStickers = stickersByStop[stop.id];
+      return stopStickers && stopStickers.some(item => item.status === "Needed");
+    }),
+    [stops, stickersByStop]
+  );
+
+  const delayedOrderingRisk = useMemo(() =>
+    stickerItems.filter(item => {
+      if (item.status !== "Needed") return false;
+      const stop = stopsMap[item.stop_id];
+      if (!stop?.current_planned_installation_date) return false;
+      const template = templatesMap[item.sticker_template_id];
+      if (!template?.estimated_delivery_days) return false;
+      const plannedDate = new Date(stop.current_planned_installation_date);
+      const estimatedDeliveryDate = new Date();
+      estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + template.estimated_delivery_days);
+      return estimatedDeliveryDate > plannedDate;
+    }),
+    [stickerItems, stopsMap, templatesMap]
+  );
 
   // 3η ΣΕΙΡΑ: Παρακολούθηση Παραγγελιών (Order Tracking)
   
