@@ -394,10 +394,10 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange })
                 </div>
 
                 {/* Total Cost Breakdown */}
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center justify-between">
                         <span className="text-lg font-semibold text-slate-900">Total Cost Breakdown</span>
-                        <span className="text-2xl font-bold text-orange-600">€{totalCostBreakdown.toFixed(2)}</span>
+                        <span className="text-2xl font-bold text-blue-600">€{totalCostBreakdown.toFixed(2)}</span>
                     </div>
                 </div>
             </CardContent>
