@@ -120,7 +120,7 @@ export default function MfgDailyProduction() {
               </Select>
             </div>
 
-            {selectedDepartment && (
+            {selectedDepartment && !selectedBatch && (
               <BatchHeaderTab 
                 batchHeaders={batchHeaders}
                 selectedBatch={selectedBatch}
