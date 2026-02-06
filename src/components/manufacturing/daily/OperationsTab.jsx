@@ -239,6 +239,13 @@ export default function OperationsTab({ batchId, department }) {
         await base44.entities.DailyMetricValue.update(existingMetrics[0].id, {
           value: totalOpTime
         });
+      } else {
+        await base44.entities.DailyMetricValue.create({
+          metric_code: 'OP_TIME',
+          date: batchHeader[0].date,
+          department: batchHeader[0].department,
+          value: totalOpTime
+        });
       }
 
       // Update REMAKE_QTY metric
@@ -252,6 +259,13 @@ export default function OperationsTab({ batchId, department }) {
         await base44.entities.DailyMetricValue.update(remakeQtyMetrics[0].id, {
           value: totalRemakeQty
         });
+      } else {
+        await base44.entities.DailyMetricValue.create({
+          metric_code: 'REMAKE_QTY',
+          date: batchHeader[0].date,
+          department: batchHeader[0].department,
+          value: totalRemakeQty
+        });
       }
 
       // Update REMAKE_TIME metric
@@ -263,6 +277,13 @@ export default function OperationsTab({ batchId, department }) {
 
       if (remakeTimeMetrics.length > 0) {
         await base44.entities.DailyMetricValue.update(remakeTimeMetrics[0].id, {
+          value: totalRemakeTime
+        });
+      } else {
+        await base44.entities.DailyMetricValue.create({
+          metric_code: 'REMAKE_TIME',
+          date: batchHeader[0].date,
+          department: batchHeader[0].department,
           value: totalRemakeTime
         });
       }
