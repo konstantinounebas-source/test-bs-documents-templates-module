@@ -203,7 +203,62 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange })
                     )}
                 </div>
 
-                {/* 2. Waste Allowance */}
+                {/* 2. Verified Non BOM Costs */}
+                <div>
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">2. Verified Non BOM Costs</label>
+                            <p className="text-xs text-slate-500">Additional verified costs not included in BOM</p>
+                        </div>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={addNonBomCost}
+                            className="flex items-center gap-1"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Add
+                        </Button>
+                    </div>
+                    <div className="space-y-3">
+                        {nonBomCosts.map((cost) => (
+                            <div key={cost.id} className="flex gap-3 items-end bg-slate-50 p-3 rounded-lg">
+                                <div className="flex-1">
+                                    <label className="text-xs text-slate-600 mb-1 block">Description</label>
+                                    <Input
+                                        placeholder="Cost description"
+                                        value={cost.description}
+                                        onChange={(e) => updateNonBomCost(cost.id, 'description', e.target.value)}
+                                    />
+                                </div>
+                                <div className="w-32">
+                                    <label className="text-xs text-slate-600 mb-1 block">Amount</label>
+                                    <Input
+                                        type="number"
+                                        placeholder="0.00"
+                                        value={cost.amount}
+                                        onChange={(e) => updateNonBomCost(cost.id, 'amount', e.target.value)}
+                                    />
+                                </div>
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => removeNonBomCost(cost.id)}
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        ))}
+                        {nonBomCosts.length > 0 && (
+                            <div className="text-right text-sm font-medium text-slate-700 pt-2">
+                                Subtotal Non BOM Costs: €{totalNonBomCosts.toFixed(2)}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* 3. Waste Allowance */}
                 <div>
                     <div className="flex items-center justify-between mb-4">
                         <div>
