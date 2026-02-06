@@ -45,12 +45,45 @@ export default function TeamTimeExtraTab({ batchId }) {
     enabled: !!batchId
   });
 
+  const saveNETimeMetric = async () => {
+    try {
+      const batchHeader = await base44.entities.BatchHeader.filter({ id: batchId });
+      if (!batchHeader || batchHeader.length === 0) return;
+
+      // Fetch fresh Team_Time_Extra data from database
+      const allExtra = await base44.entities.Team_Time_Extra.filter({ batch_header_id: batchId });
+      
+      // Calculate total from records with work_type "Non Execution Time"
+      const totalNETime = allExtra
+        .filter(te => te.work_type === 'Non Execution Time')
+        .reduce((sum, te) => sum + (te.duration_min || 0), 0);
+
+      // Find and update the NE_TIME metric by date and department
+      const existingMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'NE_TIME',
+        date: batchHeader[0].date,
+        department: batchHeader[0].department
+      });
+
+      if (existingMetrics.length > 0) {
+        await base44.entities.DailyMetricValue.update(existingMetrics[0].id, {
+          value: totalNETime
+        });
+      }
+
+      queryClient.invalidateQueries(['DailyMetricValue']);
+    } catch (error) {
+      console.error('Failed to save NE_TIME metric:', error);
+    }
+  };
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Team_Time_Extra.create({
       batch_header_id: batchId,
       ...data
     }),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveNETimeMetric();
       queryClient.invalidateQueries(['Team_Time_Extra']);
       setShowAddDialog(false);
       setFormData({ person_name: '', charge_dept: '', work_type: '', duration_min: '' });
@@ -61,7 +94,8 @@ export default function TeamTimeExtraTab({ batchId }) {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Team_Time_Extra.delete(id),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveNETimeMetric();
       queryClient.invalidateQueries(['Team_Time_Extra']);
       toast.success('Extra time deleted');
     },
