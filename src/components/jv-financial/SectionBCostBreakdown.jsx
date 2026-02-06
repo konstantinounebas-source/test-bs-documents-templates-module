@@ -262,7 +262,7 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange })
                 <div>
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">2. Waste Allowance</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">3. Waste Allowance</label>
                             <p className="text-xs text-slate-500">Material / Product Base Cost Allowance</p>
                         </div>
                         <Button
