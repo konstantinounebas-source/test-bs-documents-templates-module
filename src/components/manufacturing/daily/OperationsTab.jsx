@@ -217,6 +217,8 @@ export default function OperationsTab({ batchId, department }) {
       
       // Calculate total from fresh data
       const totalOpTime = allOps.reduce((sum, op) => sum + (op.operation_time_min || 0), 0);
+      const totalRemakeQty = allOps.reduce((sum, op) => sum + (op.remake_qty || 0), 0);
+      const totalRemakeTime = allOps.reduce((sum, op) => sum + ((op.remake_qty || 0) * (op.std_min_pc_lookup || 0)), 0);
 
       // Find and update the OP_TIME metric by date and department
       const existingMetrics = await base44.entities.DailyMetricValue.filter({
@@ -228,6 +230,32 @@ export default function OperationsTab({ batchId, department }) {
       if (existingMetrics.length > 0) {
         await base44.entities.DailyMetricValue.update(existingMetrics[0].id, {
           value: totalOpTime
+        });
+      }
+
+      // Update REMAKE_QTY metric
+      const remakeQtyMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'REMAKE_QTY',
+        date: batchHeader[0].date,
+        department: batchHeader[0].department
+      });
+
+      if (remakeQtyMetrics.length > 0) {
+        await base44.entities.DailyMetricValue.update(remakeQtyMetrics[0].id, {
+          value: totalRemakeQty
+        });
+      }
+
+      // Update REMAKE_TIME metric
+      const remakeTimeMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'REMAKE_TIME',
+        date: batchHeader[0].date,
+        department: batchHeader[0].department
+      });
+
+      if (remakeTimeMetrics.length > 0) {
+        await base44.entities.DailyMetricValue.update(remakeTimeMetrics[0].id, {
+          value: totalRemakeTime
         });
       }
 
@@ -383,6 +411,14 @@ export default function OperationsTab({ batchId, department }) {
     return lines.reduce((sum, op) => sum + (op.operation_time_min || 0), 0);
   }, [lines]);
 
+  const totalRemakeQty = useMemo(() => {
+    return lines.reduce((sum, op) => sum + (op.remake_qty || 0), 0);
+  }, [lines]);
+
+  const totalRemakeTime = useMemo(() => {
+    return lines.reduce((sum, op) => sum + ((op.remake_qty || 0) * (op.std_min_pc_lookup || 0)), 0);
+  }, [lines]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -421,10 +457,26 @@ export default function OperationsTab({ batchId, department }) {
         </Button>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-blue-900">Total Operations Time</span>
-          <span className="text-lg font-bold text-blue-900">{totalOperationsTime.toFixed(2)} min ({(totalOperationsTime / 60).toFixed(2)} hrs)</span>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-blue-900">Total Operations Time</span>
+            <span className="text-lg font-bold text-blue-900">{totalOperationsTime.toFixed(2)} min ({(totalOperationsTime / 60).toFixed(2)} hrs)</span>
+          </div>
+        </div>
+        
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-orange-900">Total Remake Qty</span>
+            <span className="text-lg font-bold text-orange-900">{totalRemakeQty.toFixed(2)}</span>
+          </div>
+        </div>
+        
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-red-900">Total Remake Time</span>
+            <span className="text-lg font-bold text-red-900">{totalRemakeTime.toFixed(2)} min ({(totalRemakeTime / 60).toFixed(2)} hrs)</span>
+          </div>
         </div>
       </div>
 
@@ -435,6 +487,8 @@ export default function OperationsTab({ batchId, department }) {
               <TableHead className="font-semibold w-12"></TableHead>
               <TableHead className="font-semibold w-32">Item Code</TableHead>
               <TableHead className="font-semibold">Profile</TableHead>
+              <TableHead className="font-semibold w-32 text-right">Qty</TableHead>
+              <TableHead className="font-semibold w-32 text-right">Remake Qty</TableHead>
               <TableHead className="font-semibold w-40 text-right">Total Time (min)</TableHead>
               <TableHead className="font-semibold w-32 text-center">Actions</TableHead>
             </TableRow>
@@ -442,7 +496,7 @@ export default function OperationsTab({ batchId, department }) {
           <TableBody>
             {filteredGroups.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-slate-500 py-12">
+                <TableCell colSpan={7} className="text-center text-slate-500 py-12">
                   {searchFilter ? 'No matching operations found' : 'No operations defined. Click "Add Operations" to start.'}
                 </TableCell>
               </TableRow>
@@ -463,6 +517,12 @@ export default function OperationsTab({ batchId, department }) {
                       </TableCell>
                       <TableCell className="font-bold">{group.item_code}</TableCell>
                       <TableCell className="text-slate-600">{group.subGroups.length} profile(s)</TableCell>
+                      <TableCell className="font-mono font-bold text-right">
+                        {group.subGroups.reduce((sum, sg) => sum + sg.operations.reduce((s, o) => s + (o.qty_operation || 0), 0), 0).toFixed(2)}
+                      </TableCell>
+                      <TableCell className="font-mono font-bold text-right text-orange-700">
+                        {group.subGroups.reduce((sum, sg) => sum + sg.operations.reduce((s, o) => s + (o.remake_qty || 0), 0), 0).toFixed(2)}
+                      </TableCell>
                       <TableCell className="font-mono font-bold text-right">{group.total_time.toFixed(2)}</TableCell>
                       <TableCell className="text-center"></TableCell>
                     </TableRow>
@@ -470,8 +530,14 @@ export default function OperationsTab({ batchId, department }) {
                       <React.Fragment key={subGroup.profile_group_id}>
                         <TableRow className="bg-purple-50">
                           <TableCell className="w-12"></TableCell>
-                          <TableCell className="font-semibold text-purple-800 pl-6" colSpan={2}>
+                          <TableCell className="font-semibold text-purple-800 pl-6">
                             {subGroup.profile_name}
+                          </TableCell>
+                          <TableCell className="font-mono font-semibold text-right text-purple-900">
+                            {subGroup.operations.reduce((s, o) => s + (o.qty_operation || 0), 0).toFixed(2)}
+                          </TableCell>
+                          <TableCell className="font-mono font-semibold text-right text-orange-700">
+                            {subGroup.operations.reduce((s, o) => s + (o.remake_qty || 0), 0).toFixed(2)}
                           </TableCell>
                           <TableCell className="font-mono font-semibold text-right text-purple-900">{subGroup.total_time.toFixed(2)}</TableCell>
                           <TableCell className="text-center">
@@ -503,29 +569,52 @@ export default function OperationsTab({ batchId, department }) {
                           </TableCell>
                         </TableRow>
                         {subGroup.operations.map(op => {
-                         console.log('Operation:', {
-                           operation: op.operation,
-                           qty: op.qty_operation,
-                           std_min_pc: op.std_min_pc_lookup,
-                           time_min: op.operation_time_min,
-                           calculated: (op.qty_operation || 0) * (op.std_min_pc_lookup || 0)
-                         });
-                         return (
-                           <TableRow key={op.id} className="hover:bg-slate-50">
-                             <TableCell className="w-12"></TableCell>
-                             <TableCell className="pl-12 text-slate-700">
-                               <span className="text-slate-400">↳</span> {op.operation}
-                               <span className="text-xs text-slate-400 ml-2">
-                                 (std: {op.std_min_pc_lookup?.toFixed(3) || '0.000'} min/pc)
-                               </span>
-                             </TableCell>
-                             <TableCell className="font-mono text-sm text-slate-600">
-                               Qty: <span className="font-semibold">{op.qty_operation}</span>
-                             </TableCell>
-                             <TableCell className="font-mono text-sm font-medium text-right">{op.operation_time_min?.toFixed(2) || '0.00'}</TableCell>
-                             <TableCell className="text-center"></TableCell>
-                           </TableRow>
-                         );
+                        console.log('Operation:', {
+                          operation: op.operation,
+                          qty: op.qty_operation,
+                          remake_qty: op.remake_qty,
+                          std_min_pc: op.std_min_pc_lookup,
+                          time_min: op.operation_time_min,
+                          calculated: (op.qty_operation || 0) * (op.std_min_pc_lookup || 0)
+                        });
+                        return (
+                          <TableRow key={op.id} className="hover:bg-slate-50">
+                            <TableCell className="w-12"></TableCell>
+                            <TableCell className="pl-12 text-slate-700">
+                              <span className="text-slate-400">↳</span> {op.operation}
+                              <span className="text-xs text-slate-400 ml-2">
+                                (std: {op.std_min_pc_lookup?.toFixed(3) || '0.000'} min/pc)
+                              </span>
+                            </TableCell>
+                            <TableCell className="font-mono text-sm text-slate-600 text-right">
+                              <span className="font-semibold">{op.qty_operation}</span>
+                            </TableCell>
+                            <TableCell className="font-mono text-sm text-orange-700 text-right">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={op.remake_qty || 0}
+                                onChange={async (e) => {
+                                  const newRemakeQty = parseFloat(e.target.value) || 0;
+                                  try {
+                                    await base44.entities.Operations.update(op.id, {
+                                      remake_qty: newRemakeQty
+                                    });
+                                    await saveOpTimeMetric();
+                                    queryClient.invalidateQueries(['Operations']);
+                                  } catch (error) {
+                                    toast.error('Failed to update remake qty');
+                                  }
+                                }}
+                                className="w-24 h-8 text-right"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </TableCell>
+                            <TableCell className="font-mono text-sm font-medium text-right">{op.operation_time_min?.toFixed(2) || '0.00'}</TableCell>
+                            <TableCell className="text-center"></TableCell>
+                          </TableRow>
+                        );
                         })}
                       </React.Fragment>
                     ))}
