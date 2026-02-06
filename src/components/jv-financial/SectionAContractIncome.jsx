@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from 'lucide-react';
 
-export default function SectionAContractIncome({ shelterTypeId }) {
+export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }) {
     const [contractAmount, setContractAmount] = useState('');
     const [approvedVariations, setApprovedVariations] = useState([]);
     const [potentialVariations, setPotentialVariations] = useState([]);
