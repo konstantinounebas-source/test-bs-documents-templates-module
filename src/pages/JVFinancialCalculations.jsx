@@ -144,7 +144,7 @@ export default function JVFinancialCalculations() {
                     <div className="space-y-6">
                         <SectionAContractIncome shelterTypeId={selectedShelterType} onTotalsChange={setSectionATotals} />
 
-                        <SectionBCostBreakdown shelterTypeId={selectedShelterType} onTotalsChange={setSectionBTotals} />
+                        <SectionBCostBreakdown shelterTypeId={selectedShelterType} onTotalsChange={setSectionBTotals} bomVersions={bomVersions} selectedBomVersion={selectedBomVersion} />
                     </div>
                 )}
             </div>
