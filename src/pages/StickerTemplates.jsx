@@ -14,6 +14,8 @@ export default function StickerTemplatesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [sortColumn, setSortColumn] = useState("template_id");
+  const [sortDirection, setSortDirection] = useState("asc");
   const queryClient = useQueryClient();
 
   const { data: stickerTemplates = [], isLoading } = useQuery({
@@ -28,6 +30,49 @@ export default function StickerTemplatesPage() {
       template.sticker_name_category?.toLowerCase().includes(term) ||
       template.default_vendor?.toLowerCase().includes(term)
     );
+  }).sort((a, b) => {
+    let aVal, bVal;
+    
+    switch(sortColumn) {
+      case "template_id":
+        aVal = a.sticker_template_id || "";
+        bVal = b.sticker_template_id || "";
+        break;
+      case "category":
+        aVal = a.sticker_name_category || "";
+        bVal = b.sticker_name_category || "";
+        break;
+      case "vendor":
+        aVal = a.default_vendor || "";
+        bVal = b.default_vendor || "";
+        break;
+      case "delivery":
+        aVal = a.estimated_delivery_days || 0;
+        bVal = b.estimated_delivery_days || 0;
+        break;
+      case "days_before":
+        aVal = a.days_before_installation_to_receive || 0;
+        bVal = b.days_before_installation_to_receive || 0;
+        break;
+      case "status":
+        aVal = a.active ? 1 : 0;
+        bVal = b.active ? 1 : 0;
+        break;
+      default:
+        aVal = "";
+        bVal = "";
+    }
+    
+    if (typeof aVal === "string") {
+      aVal = aVal.toLowerCase();
+      bVal = bVal.toLowerCase();
+    }
+    
+    if (sortDirection === "asc") {
+      return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+    } else {
+      return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+    }
   });
 
   const handleCreate = () => {
@@ -85,6 +130,29 @@ export default function StickerTemplatesPage() {
     window.URL.revokeObjectURL(url);
   };
 
+  const toggleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortHeader = ({ column, label }) => (
+    <TableHead 
+      className="cursor-pointer hover:bg-gray-100 select-none"
+      onClick={() => toggleSort(column)}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        {sortColumn === column && (
+          <span>{sortDirection === "asc" ? "↑" : "↓"}</span>
+        )}
+      </div>
+    </TableHead>
+  );
+
   if (isLoading) {
     return <div className="p-6">Loading...</div>;
   }
@@ -124,12 +192,12 @@ export default function StickerTemplatesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                    <TableHead>Template ID</TableHead>
-                    <TableHead>Name / Category</TableHead>
-                    <TableHead>Default Vendor</TableHead>
-                    <TableHead>Est. Delivery (days)</TableHead>
-                    <TableHead>Days Before Install (days)</TableHead>
-                    <TableHead>Status</TableHead>
+                    <SortHeader column="template_id" label="Template ID" />
+                    <SortHeader column="category" label="Name / Category" />
+                    <SortHeader column="vendor" label="Default Vendor" />
+                    <SortHeader column="delivery" label="Est. Delivery (days)" />
+                    <SortHeader column="days_before" label="Days Before Install (days)" />
+                    <SortHeader column="status" label="Status" />
                     <TableHead className="w-[80px]"></TableHead>
                   </TableRow>
               </TableHeader>
