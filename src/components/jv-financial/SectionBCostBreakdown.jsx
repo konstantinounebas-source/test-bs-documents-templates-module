@@ -25,7 +25,7 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange })
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [shelterTypeId]);
 
     const loadData = async () => {
         try {
