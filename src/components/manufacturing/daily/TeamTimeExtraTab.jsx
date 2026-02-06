@@ -30,6 +30,15 @@ export default function TeamTimeExtraTab({ batchId }) {
     queryFn: () => base44.entities.Work_Type.list()
   });
 
+  const { data: persons = [] } = useQuery({
+    queryKey: ['Person'],
+    queryFn: async () => {
+      const allPersons = await base44.entities.Person.filter({ is_active: true });
+      return allPersons.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    },
+    staleTime: Infinity
+  });
+
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['Team_Time_Extra', batchId],
     queryFn: () => base44.entities.Team_Time_Extra.filter({ batch_header_id: batchId }),
@@ -140,10 +149,16 @@ export default function TeamTimeExtraTab({ batchId }) {
           <div className="space-y-4 py-4">
             <div>
               <Label>Person Name *</Label>
-              <Input
-                value={formData.person_name}
-                onChange={(e) => setFormData({ ...formData, person_name: e.target.value })}
-              />
+              <Select value={formData.person_name} onValueChange={(v) => setFormData({ ...formData, person_name: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select person" />
+                </SelectTrigger>
+                <SelectContent>
+                  {persons.map(p => (
+                    <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
