@@ -97,6 +97,20 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange })
         }));
     };
 
+    const addNonBomCost = () => {
+        setNonBomCosts([...nonBomCosts, { id: Date.now(), description: '', amount: '' }]);
+    };
+
+    const removeNonBomCost = (id) => {
+        setNonBomCosts(nonBomCosts.filter(n => n.id !== id));
+    };
+
+    const updateNonBomCost = (id, field, value) => {
+        setNonBomCosts(nonBomCosts.map(n =>
+            n.id === id ? { ...n, [field]: value } : n
+        ));
+    };
+
     const addAccruedCost = () => {
         setAccruedCosts([...accruedCosts, { id: Date.now(), category: '', amount: '' }]);
     };
