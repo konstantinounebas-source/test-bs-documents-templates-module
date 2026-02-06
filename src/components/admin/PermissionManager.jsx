@@ -67,6 +67,7 @@ const ALL_PAGES = [
   { key: 'MfgDailyProduction', label: 'Daily Production Entry', module: 'Manufacturing Production' },
   { key: 'MfgKPIDashboard', label: 'KPI Dashboard', module: 'Manufacturing Production' },
 
+  { key: 'ModulesDocumentation', label: 'Modules Documentation', module: 'System Management' },
   { key: 'Users', label: 'Users', module: 'System Management' },
   { key: 'AccessControl', label: 'Access Control', module: 'System Management' },
   { key: 'VersionManagement', label: 'Version Management', module: 'System Management' },
