@@ -145,11 +145,19 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
     setValidationResults([]);
     setCurrentValidationIndex(0);
     setConfirmDialogOpen(false);
+    setStep("idle");
+    setSelectedValidIds([]);
     onClose();
   };
 
   const currentItem = importedData[currentValidationIndex];
   const currentValidation = validationResults[currentValidationIndex];
+  const validItems = validationResults
+    .map((r, idx) => ({ result: r, index: idx }))
+    .filter(({ result }) => result.isValid);
+  const invalidItems = validationResults
+    .map((r, idx) => ({ result: r, index: idx, data: importedData[idx] }))
+    .filter(({ result }) => !result.isValid);
 
   return (
     <>
@@ -169,68 +177,101 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
 
       {/* Validation Dialog */}
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Validate Import Items</DialogTitle>
+            <DialogTitle>
+              {step === "validating" ? "Validating Import..." : "Review Import Results"}
+            </DialogTitle>
           </DialogHeader>
 
-          {importedData.length > 0 && currentItem && (
+          {step === "validating" && importedData.length > 0 && (
             <div className="space-y-4 py-4">
-              <div className="flex items-center justify-between text-sm text-gray-600">
-                <span>
-                  Item {currentValidationIndex + 1} of {importedData.length}
-                </span>
-                <span>
-                  Valid: {validationResults.filter(r => r.isValid).length}
-                </span>
+              <div className="text-center">
+                <p className="text-lg font-semibold">Processing {importedData.length} items...</p>
+                <p className="text-sm text-gray-600 mt-2">This will validate all items automatically.</p>
               </div>
-
-              <div className="border rounded-lg p-4 space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Stop ID</label>
-                  <p className="text-lg font-semibold">{currentItem.stop_id}</p>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Sticker Name</label>
-                  <p className="text-lg font-semibold">{currentItem.sticker_name}</p>
-                </div>
-
-                {currentValidation?.isValid === false && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex gap-2">
-                    <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                    <div>
-                      <p className="text-sm font-medium text-red-800">Validation Error</p>
-                      <p className="text-sm text-red-700">{currentValidation.error}</p>
-                    </div>
-                  </div>
-                )}
-
-                {currentValidation?.isValid === true && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                    <p className="text-sm font-medium text-green-800">✓ Valid - Item will be added to order</p>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2">
+              <DialogFooter>
                 <Button
                   variant="outline"
                   onClick={() => {
                     setConfirmDialogOpen(false);
                     resetDialog();
                   }}
-                  className="flex-1"
                 >
                   Cancel
                 </Button>
-                <Button
-                  onClick={validateCurrentItem}
-                  className="flex-1"
-                >
-                  {currentValidationIndex < importedData.length - 1 ? 'Next' : 'Finish'}
+                <Button onClick={validateAllItems} className="bg-blue-600">
+                  Start Validation
                 </Button>
-              </div>
+              </DialogFooter>
+            </div>
+          )}
+
+          {step === "review" && (
+            <div className="space-y-4 py-4">
+              {validItems.length > 0 && (
+                <div className="border rounded-lg p-4 bg-green-50">
+                  <h3 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                    <Check className="w-5 h-5" />
+                    Valid Items ({validItems.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {validItems.map(({ result, index }) => (
+                      <div key={index} className="flex items-center justify-between bg-white p-2 rounded border border-green-200">
+                        <span className="text-sm">
+                          <span className="font-medium">{importedData[index].stop_id}</span>
+                          {" - "}
+                          <span>{importedData[index].sticker_name}</span>
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedValidIds(prev => prev.filter(id => id !== result.stickerId))}
+                          className="text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {invalidItems.length > 0 && (
+                <div className="border rounded-lg p-4 bg-red-50">
+                  <h3 className="font-semibold text-red-800 mb-3 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5" />
+                    Invalid Items ({invalidItems.length})
+                  </h3>
+                  {invalidItems.map(({ result, data }, displayIdx) => (
+                    <div key={displayIdx} className="bg-white p-3 rounded border border-red-200 mb-2">
+                      <div className="text-sm">
+                        <p className="font-medium text-gray-900">{data.stop_id} - {data.sticker_name}</p>
+                        <p className="text-red-700 text-xs mt-1">{result.error}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setConfirmDialogOpen(false);
+                    resetDialog();
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={finishReview} 
+                  className="bg-blue-600"
+                  disabled={selectedValidIds.length === 0}
+                >
+                  Create Order with {selectedValidIds.length} Items
+                </Button>
+              </DialogFooter>
             </div>
           )}
         </DialogContent>
