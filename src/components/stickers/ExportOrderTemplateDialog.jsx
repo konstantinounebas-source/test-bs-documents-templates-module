@@ -1,7 +1,7 @@
 import React from "react";
 import ExcelJS from 'exceljs';
 
-export default function ExportOrderTemplateDialog() {
+export default function ExportOrderTemplateDialog({ filteredItems, stickerItems, stickerTemplates, stops }) {
   const handleExportTemplate = async () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Order Template');
@@ -13,16 +13,16 @@ export default function ExportOrderTemplateDialog() {
       { header: 'OK (Yes/No)', key: 'ok', width: 15 }
     ];
 
-    // Add example rows with instructions
-    worksheet.addRow({
-      stop_id: 'S001',
-      sticker_name: 'Direction Sign',
-      ok: 'Yes'
-    });
-    worksheet.addRow({
-      stop_id: 'S002',
-      sticker_name: 'Information Sign',
-      ok: 'No'
+    // Add rows for each available item
+    filteredItems.forEach(item => {
+      const stop = stops.find(s => s.id === item.stop_id);
+      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+      
+      worksheet.addRow({
+        stop_id: stop?.stop_id || '-',
+        sticker_name: template?.sticker_name_category || '-',
+        ok: ''
+      });
     });
 
     // Style header row
@@ -33,11 +33,11 @@ export default function ExportOrderTemplateDialog() {
       fgColor: { argb: 'FF4472C4' }
     };
 
-    // Add instructions in a separate row
+    // Add instructions
     worksheet.addRow({});
     const instructionRow = worksheet.addRow({
       stop_id: 'Instructions:',
-      sticker_name: 'Fill in Stop ID and Sticker Name, then mark "Yes" in OK column for items to order',
+      sticker_name: 'Mark "Yes" in OK column for items to order',
       ok: ''
     });
     instructionRow.font = { italic: true, color: { argb: 'FF666666' } };

@@ -818,7 +818,12 @@ export default function OrdersManagementPage() {
           <div className="flex items-center justify-between">
             <CardTitle>Create New Order - Select Sticker Items</CardTitle>
             <div className="flex gap-2">
-              <ExportOrderTemplateDialog />
+              <ExportOrderTemplateDialog 
+                filteredItems={filteredItems}
+                stickerItems={stickerItems}
+                stickerTemplates={stickerTemplates}
+                stops={stops}
+              />
               <ImportOrderFromFileDialog 
                 isOpen={false} 
                 onClose={() => {}}
