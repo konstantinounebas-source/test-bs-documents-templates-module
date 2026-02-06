@@ -81,24 +81,8 @@ const COLUMN_CATEGORIES = [
 
 
 export default function TemplatesPage() {
-  // Check page access first
   const { hasAccess, isLoading: accessLoading, accessLevel } = usePageAccess('Templates');
   
-  // Show loading while checking access
-  if (accessLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
-
-  // If no access, this component won't render (user will be redirected by usePageAccess)
-  if (!hasAccess) {
-    return null;
-  }
-  
-  // All other hooks come AFTER the early returns
   const [templates, setTemplates] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -154,61 +138,55 @@ export default function TemplatesPage() {
     return filtered;
   }, [templates, activeTab, searchTerm, sortConfig, statFilter]);
 
+  const loadTemplates = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await FormTemplate.list("-updated_date");
+      setTemplates(data);
+    } catch (error) {
+      console.error("Error loading templates:", error);
+    }
+    setIsLoading(false);
+  }, []);
+
+  const loadCustomFieldLabels = useCallback(async () => {
+    const labels = await getCustomFieldLabels();
+    setCustomFieldLabels(labels);
+  }, []);
+  
+  const loadUsersCache = useCallback(async () => {
+    try {
+      const [systemUsers, appUsers] = await Promise.all([
+        User.list().catch(() => []),
+        AppUser.list().catch(() => [])
+      ]);
+      
+      const cache = {};
+      systemUsers.forEach(user => {
+        if (user.id) cache[user.id] = user.full_name;
+        if (user.email) cache[user.email] = user.full_name;
+      });
+      appUsers.forEach(user => {
+        if (user.id) cache[user.id] = user.full_name;
+      });
+      setUsersCache(cache);
+    } catch (error) {
+      console.warn("Could not load users cache - using IDs/emails instead:", error);
+      setUsersCache({});
+    }
+  }, []);
+
   useEffect(() => {
     if (hasAccess !== null && hasAccess) {
       loadTemplates();
       loadCustomFieldLabels();
       loadUsersCache();
     }
-  }, [hasAccess]);
+  }, [hasAccess, loadTemplates, loadCustomFieldLabels, loadUsersCache]);
   
   useEffect(() => {
     localStorage.setItem('visibleTemplateColumns', JSON.stringify(visibleColumns));
   }, [visibleColumns]);
-
-  const loadTemplates = async () => {
-    setIsLoading(true);
-    try {
-      const data = await FormTemplate.list("-updated_date"); // Default to descending order
-      setTemplates(data);
-    } catch (error) {
-      console.error("Error loading templates:", error);
-    }
-    setIsLoading(false);
-  };
-
-  const loadCustomFieldLabels = async () => {
-    const labels = await getCustomFieldLabels();
-    setCustomFieldLabels(labels);
-  };
-  
-  const loadUsersCache = async () => {
-    try {
-      const [systemUsers, appUsers] = await Promise.all([
-        User.list().catch(() => []), // System users (platform)
-        AppUser.list().catch(() => []) // App-specific users
-      ]);
-      
-      const cache = {};
-      
-      // Add system users to cache, keyed by ID and email
-      systemUsers.forEach(user => {
-        if (user.id) cache[user.id] = user.full_name;
-        if (user.email) cache[user.email] = user.full_name;
-      });
-
-      // Add/overwrite with app users to cache, keyed by ID
-      // This allows AppUser overrides if necessary
-      appUsers.forEach(user => {
-        if (user.id) cache[user.id] = user.full_name;
-      });
-
-      setUsersCache(cache);
-    } catch (error) {
-      console.warn("Could not load users cache - using IDs/emails instead:", error);
-      setUsersCache({});
-    }
-  };
 
   const handleStatClick = useCallback((field, value) => {
     setStatFilter(currentFilter => {
@@ -229,12 +207,12 @@ export default function TemplatesPage() {
   const handleTemplateCreated = useCallback(() => {
     setShowCreateDialog(false);
     loadTemplates();
-  }, []);
+  }, [loadTemplates]);
 
   const handleTemplateUpdated = useCallback(() => {
     loadTemplates();
     loadUsersCache();
-  }, []);
+  }, [loadTemplates, loadUsersCache]);
 
   const exportToCsv = useCallback((data, filename) => {
     if (data.length === 0) return;
@@ -291,6 +269,18 @@ export default function TemplatesPage() {
     }
     return column.label;
   }, [customFieldLabels]);
+
+  if (accessLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
