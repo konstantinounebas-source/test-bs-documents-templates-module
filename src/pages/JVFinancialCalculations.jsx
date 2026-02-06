@@ -13,13 +13,15 @@ import SectionBCostBreakdown from "@/components/jv-financial/SectionBCostBreakdo
 import SectionCCostSummary from "@/components/jv-financial/SectionCCostSummary";
 
 export default function JVFinancialCalculations() {
-    // Check page access first
-    const { hasAccess, isLoading: accessLoading } = usePageAccess('JVFinancialCalculations');
-    const [selectedShelterType, setSelectedShelterType] = useState(null);
-    const [shelterTypes, setShelterTypes] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [sectionATotals, setSectionATotals] = useState({ contractIncome: 0 });
-    const [sectionBTotals, setSectionBTotals] = useState({ verified: 0, waste: 0, accrued: 0 });
+     // Check page access first
+     const { hasAccess, isLoading: accessLoading } = usePageAccess('JVFinancialCalculations');
+     const [selectedShelterType, setSelectedShelterType] = useState(null);
+     const [shelterTypes, setShelterTypes] = useState([]);
+     const [isLoading, setIsLoading] = useState(true);
+     const [sectionATotals, setSectionATotals] = useState({ contractIncome: 0 });
+     const [sectionBTotals, setSectionBTotals] = useState({ verified: 0, waste: 0, accrued: 0 });
+     const [bomVersions, setBomVersions] = useState([]);
+     const [selectedBomVersion, setSelectedBomVersion] = useState('');
 
     useEffect(() => {
         if (!accessLoading && hasAccess) {
