@@ -339,8 +339,8 @@ export default function OperationsTab({ batchId, department }) {
       await Promise.all(opsToDelete.map(op => base44.entities.Operations.delete(op.id)));
     },
     onSuccess: async () => {
+      await queryClient.invalidateQueries(['Operations']);
       await saveOpTimeMetric();
-      queryClient.invalidateQueries(['Operations']);
       toast.success('Operations deleted');
     },
     onError: () => toast.error('Failed to delete operations')
@@ -396,8 +396,8 @@ export default function OperationsTab({ batchId, department }) {
 
     try {
       await Promise.all(createPromises);
+      await queryClient.invalidateQueries(['Operations']);
       await saveOpTimeMetric();
-      queryClient.invalidateQueries(['Operations']);
       setShowAddDialog(false);
       resetForm();
       toast.success(editingGroupId ? 'Operations updated' : 'Operations added');
