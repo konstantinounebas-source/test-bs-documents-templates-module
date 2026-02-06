@@ -81,21 +81,16 @@ export default function JVFinancialCalculations() {
 
                 {selectedShelterType && (
                     <div className="space-y-6">
-                        <SectionAContractIncome shelterTypeId={selectedShelterType} />
+                        <SectionAContractIncome shelterTypeId={selectedShelterType} onTotalsChange={setSectionATotals} />
 
-                        <SectionBCostBreakdown shelterTypeId={selectedShelterType} />
+                        <SectionBCostBreakdown shelterTypeId={selectedShelterType} onTotalsChange={setSectionBTotals} />
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>SECTION C — Cost Summary (auto-calculated)</CardTitle>
-                                <CardDescription>Gross balance, warranty provision, net profit, and profit distribution</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-slate-600">
-                                    Content will be added here...
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <SectionCCostSummary 
+                            sectionATotal={sectionATotals.contractIncome}
+                            sectionBVerified={sectionBTotals.verified}
+                            sectionBWaste={sectionBTotals.waste}
+                            sectionBAccrued={sectionBTotals.accrued}
+                        />
                     </div>
                 )}
             </div>
