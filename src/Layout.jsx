@@ -548,6 +548,7 @@ export default function Layout({ children }) {
     'stickers-installation': true,
     'delivery-management': true,
     'manufacturing': true,
+    'shelter-financial-performance': true,
     'system-management': true,
     'administration': true,
     'bus-stop-orders-management': true,
