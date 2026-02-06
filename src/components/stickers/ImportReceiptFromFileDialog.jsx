@@ -246,7 +246,28 @@ export default function ImportReceiptFromFileDialog({ isOpen, onClose, onItemsIm
               {/* Valid Items */}
               {validationResults.filter(r => r.isValid).length > 0 && (
                 <div>
-                  <h3 className="font-semibold mb-2 text-green-700">✓ Valid Items to Import</h3>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-green-700">✓ Valid Items to Import</h3>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const validIds = validationResults
+                            .map((r, idx) => r.isValid ? r.stickerId : null)
+                            .filter(Boolean);
+                          setSelectedValidIds(validIds);
+                        }}
+                        className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
+                      >
+                        Select All
+                      </button>
+                      <button
+                        onClick={() => setSelectedValidIds([])}
+                        className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                      >
+                        Deselect All
+                      </button>
+                    </div>
+                  </div>
                   <div className="space-y-2 max-h-[30vh] overflow-y-auto">
                     {validationResults.map((result, idx) => result.isValid && (
                       <div key={idx} className="p-2 border rounded bg-green-50 flex items-center gap-2">

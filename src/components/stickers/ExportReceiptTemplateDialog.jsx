@@ -14,7 +14,7 @@ export default function ExportReceiptTemplateDialog({ orderedItems, stops, stick
       { header: 'Sticker Name', key: 'sticker_name', width: 30 },
       { header: 'Quantity', key: 'quantity', width: 12 },
       { header: 'Notes', key: 'notes', width: 40 },
-      { header: 'ok', key: 'ok', width: 10, hidden: true }
+      { header: 'ok', key: 'ok', width: 8 }
     ];
 
     // Add items
