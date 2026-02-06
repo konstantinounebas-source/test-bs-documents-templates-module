@@ -2,12 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit2 } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }) {
     const [contractAmount, setContractAmount] = useState('');
     const [approvedVariations, setApprovedVariations] = useState([]);
     const [potentialVariations, setPotentialVariations] = useState([]);
+    const [showEditDialog, setShowEditDialog] = useState(false);
+    const [editAmount, setEditAmount] = useState('');
 
     const addApprovedVariation = () => {
         setApprovedVariations([...approvedVariations, { id: Date.now(), description: '', amount: '' }]);
@@ -56,13 +65,23 @@ export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }
                 {/* Contract Amount */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Contract Amount</label>
-                    <Input
-                        type="number"
-                        placeholder="0.00"
-                        value={contractAmount}
-                        onChange={(e) => setContractAmount(e.target.value)}
-                        className="w-full"
-                    />
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-sm font-medium text-slate-900">
+                            €{parseFloat(contractAmount || 0).toFixed(2)}
+                        </div>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                                setEditAmount(contractAmount);
+                                setShowEditDialog(true);
+                            }}
+                            className="flex items-center gap-1"
+                        >
+                            <Edit2 className="w-4 h-4" />
+                            Edit
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Approved Variations */}
@@ -172,7 +191,41 @@ export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }
                         <span className="text-2xl font-bold text-blue-600">€{totalContractIncome.toFixed(2)}</span>
                     </div>
                 </div>
-            </CardContent>
-        </Card>
-    );
-}
+                </CardContent>
+                </Card>
+
+                {/* Edit Contract Amount Dialog */}
+                <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+                <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Contract Amount</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Amount</label>
+                        <Input
+                            type="number"
+                            placeholder="0.00"
+                            value={editAmount}
+                            onChange={(e) => setEditAmount(e.target.value)}
+                            className="w-full"
+                        />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={() => {
+                            setContractAmount(editAmount);
+                            setShowEditDialog(false);
+                        }}
+                    >
+                        Save
+                    </Button>
+                </DialogFooter>
+                </DialogContent>
+                </Dialog>
+                );
+                }
