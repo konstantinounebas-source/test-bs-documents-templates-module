@@ -68,89 +68,74 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
     }
   };
 
-  const validateCurrentItem = () => {
-    if (currentValidationIndex >= importedData.length) return;
+  const validateAllItems = async () => {
+    const results = importedData.map((item) => {
+      const stop = stops.find(s => s.stop_id === item.stop_id);
 
-    const item = importedData[currentValidationIndex];
-    const stop = stops.find(s => s.stop_id === item.stop_id);
-
-    if (!stop) {
-      setValidationResults(prev => {
-        const updated = [...prev];
-        updated[currentValidationIndex] = {
+      if (!stop) {
+        return {
           isValid: false,
           error: `Stop ID "${item.stop_id}" not found`
         };
-        return updated;
-      });
-      moveToNextItem();
-      return;
-    }
+      }
 
-    const matchingStickerItems = stickerItems.filter(
-      si => si.stop_id === stop.id && si.status === "Needed"
-    );
+      const matchingStickerItems = stickerItems.filter(
+        si => si.stop_id === stop.id && si.status === "Needed"
+      );
 
-    if (matchingStickerItems.length === 0) {
-      setValidationResults(prev => {
-        const updated = [...prev];
-        updated[currentValidationIndex] = {
+      if (matchingStickerItems.length === 0) {
+        return {
           isValid: false,
           error: `No stickers needed for Stop ID "${item.stop_id}"`
         };
-        return updated;
+      }
+
+      const matchingByName = matchingStickerItems.filter(si => {
+        const template = stickerItems.find(s => s.id === si.sticker_template_id);
+        return template && template.sticker_name_category.toLowerCase().includes(item.sticker_name.toLowerCase());
       });
-      moveToNextItem();
-      return;
-    }
 
-    // Check if sticker name matches
-    const matchingByName = matchingStickerItems.filter(si => {
-      const template = stickerItems.find(s => s.id === si.sticker_template_id);
-      return template && template.sticker_name_category.toLowerCase().includes(item.sticker_name.toLowerCase());
-    });
-
-    if (matchingByName.length === 0) {
-      setValidationResults(prev => {
-        const updated = [...prev];
-        updated[currentValidationIndex] = {
+      if (matchingByName.length === 0) {
+        return {
           isValid: false,
           error: `No sticker matching "${item.sticker_name}" found for Stop ID "${item.stop_id}"`
         };
-        return updated;
-      });
-      moveToNextItem();
-      return;
-    }
+      }
 
-    // Valid item
-    setValidationResults(prev => {
-      const updated = [...prev];
-      updated[currentValidationIndex] = {
+      return {
         isValid: true,
         stickerId: matchingByName[0].id,
         error: null
       };
-      return updated;
     });
-    moveToNextItem();
-  };
 
-  const moveToNextItem = () => {
-    if (currentValidationIndex < importedData.length - 1) {
-      setCurrentValidationIndex(prev => prev + 1);
-    } else {
-      finishValidation();
-    }
-  };
-
-  const finishValidation = () => {
-    const validItems = validationResults
+    setValidationResults(results);
+    const validIds = results
       .map((result, index) => ({ result, index }))
       .filter(({ result }) => result.isValid)
       .map(({ result }) => result.stickerId);
+    
+    setSelectedValidIds(validIds);
+    setStep("review");
+    setCurrentValidationIndex(0);
+  };
 
-    onItemsImported(validItems);
+  const moveToNextInvalidItem = () => {
+    const invalidIndices = validationResults
+      .map((r, idx) => !r.isValid ? idx : null)
+      .filter(idx => idx !== null);
+    
+    const currentInvalidIdx = invalidIndices.indexOf(currentValidationIndex);
+    
+    if (currentInvalidIdx < invalidIndices.length - 1) {
+      setCurrentValidationIndex(invalidIndices[currentInvalidIdx + 1]);
+    } else {
+      finishReview();
+    }
+  };
+
+  const finishReview = () => {
+    onItemsImported(selectedValidIds);
     resetDialog();
   };
 
