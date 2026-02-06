@@ -116,7 +116,7 @@ export default function EditApprovedTypeDialog({ open, onClose, stop, onTypeChan
           print_line_2: currentStop.greek_name,
           print_line_3: currentStop.english_name,
           status: "Needed",
-          custody_status: "In Stock"
+          custody_status: "Needed"
         });
       }
     }
