@@ -27,6 +27,8 @@ export default function OrdersManagementPage() {
   const [filterStatuses, setFilterStatuses] = useState(["Open"]);
   const [sortColumn, setSortColumn] = useState("order_date");
   const [sortDirection, setSortDirection] = useState("desc");
+  const [itemsSortColumn, setItemsSortColumn] = useState("stop_id");
+  const [itemsSortDirection, setItemsSortDirection] = useState("asc");
   const [orderFormData, setOrderFormData] = useState({
     vendor: "",
     order_date: new Date().toISOString().split('T')[0],
@@ -245,6 +247,50 @@ export default function OrdersManagementPage() {
       (stop?.stop_id && stop.stop_id.toString().toLowerCase().includes(stopIdFilter.toLowerCase()));
     
     return matchesCategory && matchesSearch && matchesStopId;
+  }).sort((a, b) => {
+    const templateA = stickerTemplates.find(t => t.id === a.sticker_template_id);
+    const templateB = stickerTemplates.find(t => t.id === b.sticker_template_id);
+    const stopA = getStopInfo(a.id).stop;
+    const stopB = getStopInfo(b.id).stop;
+    
+    let aVal, bVal;
+    
+    switch(itemsSortColumn) {
+      case "stop_id":
+        aVal = stopA?.stop_id || "";
+        bVal = stopB?.stop_id || "";
+        break;
+      case "greek_name":
+        aVal = stopA?.greek_name || "";
+        bVal = stopB?.greek_name || "";
+        break;
+      case "english_name":
+        aVal = stopA?.english_name || "";
+        bVal = stopB?.english_name || "";
+        break;
+      case "category":
+        aVal = templateA?.sticker_name_category || "";
+        bVal = templateB?.sticker_name_category || "";
+        break;
+      case "status":
+        aVal = a.status || "";
+        bVal = b.status || "";
+        break;
+      default:
+        aVal = "";
+        bVal = "";
+    }
+    
+    if (typeof aVal === "string") {
+      aVal = aVal.toLowerCase();
+      bVal = bVal.toLowerCase();
+    }
+    
+    if (itemsSortDirection === "asc") {
+      return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+    } else {
+      return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+    }
   });
 
   // Filter and sort orders
@@ -288,6 +334,29 @@ export default function OrdersManagementPage() {
         {label}
         {sortColumn === column && (
           <span>{sortDirection === "asc" ? "↑" : "↓"}</span>
+        )}
+      </div>
+    </TableHead>
+  );
+
+  const toggleItemsSort = (column) => {
+    if (itemsSortColumn === column) {
+      setItemsSortDirection(itemsSortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setItemsSortColumn(column);
+      setItemsSortDirection("asc");
+    }
+  };
+
+  const ItemsSortHeader = ({ column, label }) => (
+    <TableHead 
+      className="cursor-pointer hover:bg-gray-100 select-none"
+      onClick={() => toggleItemsSort(column)}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        {itemsSortColumn === column && (
+          <span>{itemsSortDirection === "asc" ? "↑" : "↓"}</span>
         )}
       </div>
     </TableHead>
@@ -792,17 +861,17 @@ export default function OrdersManagementPage() {
               />
               <div className="border rounded-lg">
                 <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[50px]"></TableHead>
-                    <TableHead>Stop ID</TableHead>
-                    <TableHead>Greek Name</TableHead>
-                    <TableHead>English Name</TableHead>
-                    <TableHead>Sticker Name/Category</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Critical</TableHead>
-                  </TableRow>
-                  </TableHeader>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px]"></TableHead>
+                      <ItemsSortHeader column="stop_id" label="Stop ID" />
+                      <ItemsSortHeader column="greek_name" label="Greek Name" />
+                      <ItemsSortHeader column="english_name" label="English Name" />
+                      <ItemsSortHeader column="category" label="Sticker Name/Category" />
+                      <ItemsSortHeader column="status" label="Status" />
+                      <TableHead>Critical</TableHead>
+                    </TableRow>
+                    </TableHeader>
                   <TableBody>
                   {paginatedItems.map((item) => {
                     const { stop } = getStopInfo(item.id);
