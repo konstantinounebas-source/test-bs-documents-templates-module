@@ -150,16 +150,25 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
         }));
         await base44.entities.Batch_Lines.bulkCreate(batchLines);
 
-        // Auto-populate QC Initial Stock
-        const qcLines = scheduledData
+        // Auto-populate QC Initial Stock - group by item_code to avoid duplicates
+        const qcMap = new Map();
+        scheduledData
           .filter(sd => sd.qc_qty && sd.qc_qty > 0)
-          .map(sd => ({
-            batch_header_id: newBatch.id,
-            item_code: sd.item_code,
-            qc_type: sd.qc_type || '',
-            qc_level: sd.qc_level || '',
-            qty_affected: sd.qc_qty
-          }));
+          .forEach(sd => {
+            const key = `${sd.item_code}|${sd.qc_type || ''}|${sd.qc_level || ''}`;
+            if (qcMap.has(key)) {
+              qcMap.get(key).qty_affected += sd.qc_qty;
+            } else {
+              qcMap.set(key, {
+                batch_header_id: newBatch.id,
+                item_code: sd.item_code,
+                qc_type: sd.qc_type || '',
+                qc_level: sd.qc_level || '',
+                qty_affected: sd.qc_qty
+              });
+            }
+          });
+        const qcLines = Array.from(qcMap.values());
         if (qcLines.length > 0) {
           await base44.entities.QC_Initial_Stock.bulkCreate(qcLines);
         }
