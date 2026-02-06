@@ -15,6 +15,7 @@ import { Save, AlertTriangle, PackageCheck, FileDown } from "lucide-react";
 import ExcelJS from 'exceljs';
 import ExportReceiptTemplateDialog from "@/components/stickers/ExportReceiptTemplateDialog";
 import ImportReceiptFromFileDialog from "@/components/stickers/ImportReceiptFromFileDialog";
+import { Loader2 } from "lucide-react";
 
 export default function ReceiptsPage() {
   const [selectedOrderForReceipt, setSelectedOrderForReceipt] = useState(null);
@@ -454,6 +455,11 @@ export default function ReceiptsPage() {
           <CardTitle className="flex items-center justify-between">
             <span>Pending Items to Receive</span>
             <div className="flex gap-2">
+              <ExportReceiptTemplateDialog 
+                orderedItems={filteredOrderedItems}
+                stops={stops}
+                stickerTemplates={stickerTemplates}
+              />
               <ImportReceiptFromFileDialog 
                 isOpen={importDialogOpen}
                 onClose={() => setImportDialogOpen(false)}
