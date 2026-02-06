@@ -43,6 +43,42 @@ export default function JVFinancialCalculations() {
         }
     };
 
+    useEffect(() => {
+        if (selectedShelterType) {
+            loadBomVersions();
+        }
+    }, [selectedShelterType]);
+
+    const loadBomVersions = async () => {
+        try {
+            const bomComponents = await base44.entities.BusStopTypeComponent.filter({
+                bus_stop_type_id: selectedShelterType
+            });
+
+            // Group by version (V1, V2, etc.)
+            const versions = {};
+            bomComponents.forEach(comp => {
+                const version = comp.version || 'V1';
+                if (!versions[version]) {
+                    versions[version] = {
+                        version,
+                        components: [],
+                        comment: comp.comment || ''
+                    };
+                }
+                versions[version].components.push(comp);
+            });
+
+            const versionsList = Object.values(versions);
+            setBomVersions(versionsList);
+            if (versionsList.length > 0) {
+                setSelectedBomVersion(versionsList[0].version);
+            }
+        } catch (error) {
+            console.error('Failed to load BOM versions:', error);
+        }
+    };
+
     if (accessLoading || isLoading) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
