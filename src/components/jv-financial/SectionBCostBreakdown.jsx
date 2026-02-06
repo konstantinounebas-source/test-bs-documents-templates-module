@@ -125,10 +125,11 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange })
         ));
     };
 
+    const totalNonBomCosts = nonBomCosts.reduce((sum, n) => sum + (parseFloat(n.amount) || 0), 0);
     const totalWasteAllowance = wasteAllowances.reduce((sum, w) => sum + (w.cost || 0), 0);
     const totalAccruedCosts = accruedCosts.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
     const totalVerifiedCosts = verifiedCosts.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
-    const totalCostBreakdown = totalVerifiedCosts + totalWasteAllowance + totalAccruedCosts;
+    const totalCostBreakdown = totalVerifiedCosts + totalNonBomCosts + totalWasteAllowance + totalAccruedCosts;
 
     useEffect(() => {
         if (onTotalsChange) {
