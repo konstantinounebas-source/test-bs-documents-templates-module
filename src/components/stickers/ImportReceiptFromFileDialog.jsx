@@ -184,9 +184,11 @@ export default function ImportReceiptFromFileDialog({ isOpen, onClose, onItemsIm
         📥 Import Receipt Data
       </Button>
 
-      <Dialog open={isOpen} onOpenChange={(open) => {
-        if (!open) resetDialog();
-        onClose();
+      <Dialog open={step !== "idle"} onOpenChange={(open) => {
+        if (!open) {
+          resetDialog();
+          onClose();
+        }
       }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>

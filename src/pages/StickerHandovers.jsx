@@ -266,8 +266,7 @@ export default function StickerHandoversPage() {
                   stickerTemplates={stickerTemplates}
                 />
                 <ImportHandoverFromFileDialog 
-                  isOpen={importDialogOpen}
-                  onClose={() => setImportDialogOpen(false)}
+                  onClose={() => {}}
                   onItemsImported={handleImportItems}
                   stops={stops}
                   stickerItems={availableItems}

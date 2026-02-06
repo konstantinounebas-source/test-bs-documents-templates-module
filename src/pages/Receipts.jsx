@@ -461,8 +461,7 @@ export default function ReceiptsPage() {
                 stickerTemplates={stickerTemplates}
               />
               <ImportReceiptFromFileDialog 
-                isOpen={importDialogOpen}
-                onClose={() => setImportDialogOpen(false)}
+                onClose={() => {}}
                 onItemsImported={handleImportItems}
                 stops={stops}
                 stickerItems={stickerItems}
