@@ -29,7 +29,7 @@ function useBatchItemCodes(batchId, department) {
       return uniqueItemCodes.sort();
     },
     enabled: !!batchId && !!department,
-    staleTime: 0
+    staleTime: Infinity
   });
 }
 
@@ -65,14 +65,14 @@ export default function BatchLinesTab({ batchId, department }) {
       department_id: batchHeader.department
     }),
     enabled: !!batchHeader?.date && !!batchHeader?.department,
-    staleTime: 0
+    staleTime: Infinity
   });
 
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['Batch_Lines', batchId],
     queryFn: () => base44.entities.Batch_Lines.filter({ batch_header_id: batchId }),
     enabled: !!batchId,
-    staleTime: 0
+    staleTime: 30 * 1000
   });
 
   // Auto-fill batch lines from scheduled data (only on initial load)

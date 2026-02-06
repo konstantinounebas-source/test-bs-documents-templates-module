@@ -22,12 +22,14 @@ export default function TeamTimeExtraTab({ batchId }) {
 
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
-    queryFn: () => base44.entities.Department.list()
+    queryFn: () => base44.entities.Department.list(),
+    staleTime: Infinity
   });
 
   const { data: workTypes = [] } = useQuery({
     queryKey: ['Work_Type'],
-    queryFn: () => base44.entities.Work_Type.list()
+    queryFn: () => base44.entities.Work_Type.list(),
+    staleTime: Infinity
   });
 
   const { data: persons = [] } = useQuery({

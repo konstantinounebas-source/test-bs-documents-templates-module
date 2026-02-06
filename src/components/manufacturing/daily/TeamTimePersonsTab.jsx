@@ -25,12 +25,14 @@ export default function TeamTimePersonsTab({ batchId }) {
 
   const { data: persons = [] } = useQuery({
     queryKey: ['Person'],
-    queryFn: () => base44.entities.Person.filter({ is_active: true })
+    queryFn: () => base44.entities.Person.filter({ is_active: true }),
+    staleTime: Infinity
   });
 
   const { data: breakTimes = [] } = useQuery({
     queryKey: ['BreakTime'],
-    queryFn: () => base44.entities.BreakTime.list()
+    queryFn: () => base44.entities.BreakTime.list(),
+    staleTime: Infinity
   });
 
   const { data: lines = [], isLoading } = useQuery({

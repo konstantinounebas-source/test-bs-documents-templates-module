@@ -22,12 +22,14 @@ export default function ConsumablesActualTab({ batchId }) {
 
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
-    queryFn: () => base44.entities.Department.list()
+    queryFn: () => base44.entities.Department.list(),
+    staleTime: Infinity
   });
 
   const { data: consumables = [] } = useQuery({
     queryKey: ['Consumable'],
-    queryFn: () => base44.entities.Consumable.list()
+    queryFn: () => base44.entities.Consumable.list(),
+    staleTime: Infinity
   });
 
   const { data: lines = [], isLoading } = useQuery({

@@ -21,7 +21,8 @@ export default function HelpInTab({ batchId, department }) {
 
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
-    queryFn: () => base44.entities.Department.list()
+    queryFn: () => base44.entities.Department.list(),
+    staleTime: Infinity
   });
 
   const { data: lines = [], isLoading } = useQuery({
