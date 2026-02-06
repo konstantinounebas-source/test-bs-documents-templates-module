@@ -85,39 +85,53 @@ export default function OrdersManagementPage() {
 
   const createOrderMutation = useMutation({
     mutationFn: async (orderData) => {
-      const user = await base44.auth.me();
-      const order = await base44.entities.Order.create(orderData);
+      const [user, order] = await Promise.all([
+        base44.auth.me(),
+        base44.entities.Order.create(orderData)
+      ]);
+      
       const selectedItemIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
       
-      for (const itemId of selectedItemIds) {
-        await base44.entities.OrderLine.create({
-          order_id: order.id,
-          sticker_item_id: itemId,
-          ordered_quantity: 1
-        });
-
-        const allOrderLines = await base44.entities.OrderLine.filter({
-          sticker_item_id: itemId
-        });
-        const totalOrdered = allOrderLines.reduce((sum, ol) => sum + (ol.ordered_quantity || 0), 0) + 1;
-        
-        const item = stickerItems.find(i => i.id === itemId);
-        const oldStatus = item?.status;
-        
-        await base44.entities.StickerItem.update(itemId, {
+      // Bulk create all order lines
+      const orderLinesToCreate = selectedItemIds.map(itemId => ({
+        order_id: order.id,
+        sticker_item_id: itemId,
+        ordered_quantity: 1
+      }));
+      await base44.entities.OrderLine.bulkCreate(orderLinesToCreate);
+      
+      // Fetch all order lines for all items in parallel
+      const allOrderLinesPromises = selectedItemIds.map(itemId =>
+        base44.entities.OrderLine.filter({ sticker_item_id: itemId })
+      );
+      const allOrderLinesResults = await Promise.all(allOrderLinesPromises);
+      
+      // Prepare bulk updates and logs
+      const itemUpdates = selectedItemIds.map((itemId, index) => {
+        const totalOrdered = allOrderLinesResults[index].reduce((sum, ol) => sum + (ol.ordered_quantity || 0), 0);
+        return base44.entities.StickerItem.update(itemId, {
           total_ordered_quantity: totalOrdered,
           status: "Ordered"
         });
-        
-        await base44.entities.StickerMovementLog.create({
+      });
+      
+      const logsToCreate = selectedItemIds.map(itemId => {
+        const item = stickerItems.find(i => i.id === itemId);
+        return {
           sticker_item_id: itemId,
           action_type: "Ordered",
-          old_status: oldStatus,
+          old_status: item?.status,
           new_status: "Ordered",
           notes: `Order #${order.id.slice(0, 8)} - Vendor: ${orderData.vendor}`,
           user_email: user.email
-        });
-      }
+        };
+      });
+      
+      // Execute all updates and logs in parallel
+      await Promise.all([
+        ...itemUpdates,
+        base44.entities.StickerMovementLog.bulkCreate(logsToCreate)
+      ]);
       
       return order;
     },
