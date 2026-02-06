@@ -22,7 +22,7 @@ export default function OrdersManagementPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [categoryFilters, setCategoryFilters] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatuses, setFilterStatuses] = useState([]);
+  const [filterStatuses, setFilterStatuses] = useState(["Open"]);
   const [orderFormData, setOrderFormData] = useState({
     vendor: "",
     order_date: new Date().toISOString().split('T')[0],
@@ -525,7 +525,99 @@ export default function OrdersManagementPage() {
         </div>
       </div>
 
-      {/* SECTION 1 - Create Order */}
+      {/* SECTION 1 - Order List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Orders</span>
+            <Button variant="outline" size="sm" onClick={handleExportOrders}>
+              <FileDown className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <Label className="text-xs text-gray-600 mb-1">Filter by Status</Label>
+            <MultiSelect
+              options={[
+                { value: "Open", label: "Open" },
+                { value: "Closed", label: "Closed" },
+                { value: "Cancelled", label: "Cancelled" }
+              ]}
+              selected={filterStatuses}
+              onChange={setFilterStatuses}
+              placeholder="All Statuses"
+              className="w-64"
+            />
+          </div>
+          {filteredOrders.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No orders found</p>
+          ) : (
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead>Vendor</TableHead>
+                    <TableHead>Order Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Items</TableHead>
+                    <TableHead>Critical Stops</TableHead>
+                    <TableHead className="w-[120px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredOrders.map((order) => {
+                    const stats = getOrderStats(order.id);
+                    return (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">#{order.id.slice(0, 8)}</TableCell>
+                        <TableCell>{order.vendor || "-"}</TableCell>
+                        <TableCell>{order.order_date}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{order.status}</Badge>
+                        </TableCell>
+                        <TableCell>{stats.itemCount}</TableCell>
+                        <TableCell>
+                          {stats.criticalStops > 0 ? (
+                            <div className="flex items-center gap-1">
+                              <AlertTriangle className="w-4 h-4 text-red-600" />
+                              <span className="font-semibold text-red-600">{stats.criticalStops}</span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setViewOrderId(order.id)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handlePrintOrder(order.id)}
+                            >
+                              <Printer className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* SECTION 2 - Create Order */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -644,98 +736,6 @@ export default function OrdersManagementPage() {
                   </Table>
               </div>
             </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* SECTION 2 - Order List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Orders</span>
-            <Button variant="outline" size="sm" onClick={handleExportOrders}>
-              <FileDown className="w-4 h-4 mr-2" />
-              Export
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <Label className="text-xs text-gray-600 mb-1">Filter by Status</Label>
-            <MultiSelect
-              options={[
-                { value: "Open", label: "Open" },
-                { value: "Closed", label: "Closed" },
-                { value: "Cancelled", label: "Cancelled" }
-              ]}
-              selected={filterStatuses}
-              onChange={setFilterStatuses}
-              placeholder="All Statuses"
-              className="w-64"
-            />
-          </div>
-          {filteredOrders.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No orders found</p>
-          ) : (
-            <div className="border rounded-lg">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Vendor</TableHead>
-                    <TableHead>Order Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Items</TableHead>
-                    <TableHead>Critical Stops</TableHead>
-                    <TableHead className="w-[120px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((order) => {
-                    const stats = getOrderStats(order.id);
-                    return (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">#{order.id.slice(0, 8)}</TableCell>
-                        <TableCell>{order.vendor || "-"}</TableCell>
-                        <TableCell>{order.order_date}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{order.status}</Badge>
-                        </TableCell>
-                        <TableCell>{stats.itemCount}</TableCell>
-                        <TableCell>
-                          {stats.criticalStops > 0 ? (
-                            <div className="flex items-center gap-1">
-                              <AlertTriangle className="w-4 h-4 text-red-600" />
-                              <span className="font-semibold text-red-600">{stats.criticalStops}</span>
-                            </div>
-                          ) : (
-                            <span className="text-gray-400">0</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => setViewOrderId(order.id)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handlePrintOrder(order.id)}
-                            >
-                              <Printer className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
           )}
         </CardContent>
       </Card>
