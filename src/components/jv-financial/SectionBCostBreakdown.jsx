@@ -135,11 +135,12 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange })
         if (onTotalsChange) {
             onTotalsChange({
                 verified: totalVerifiedCosts,
+                nonBom: totalNonBomCosts,
                 waste: totalWasteAllowance,
                 accrued: totalAccruedCosts
             });
         }
-    }, [totalVerifiedCosts, totalWasteAllowance, totalAccruedCosts, onTotalsChange]);
+    }, [totalVerifiedCosts, totalNonBomCosts, totalWasteAllowance, totalAccruedCosts, onTotalsChange]);
 
     if (isLoadingData) {
         return (
