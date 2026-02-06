@@ -23,6 +23,10 @@ export default function StickerHandoversPage() {
   const [selectedItems, setSelectedItems] = useState({});
   const [loading, setLoading] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [stickerTypeFilter, setStickerTypeFilter] = useState("all");
+  const [sortField, setSortField] = useState("stop_id");
+  const [sortDirection, setSortDirection] = useState("asc");
   const queryClient = useQueryClient();
 
   const { data: appUsers = [] } = useQuery({
@@ -51,10 +55,53 @@ export default function StickerHandoversPage() {
     return `${stop?.stop_id || "?"} - ${template?.sticker_name_category || "?"}`;
   };
 
-  const availableItems = stickerItems.filter(item => 
+  // Only show items that are In Stock (not with technician)
+  const inStockItems = stickerItems.filter(item => 
     item.status === "Received" && 
-    (item.custody_status === "In Stock" || item.custody_status === "With Technician")
+    item.custody_status === "In Stock"
   );
+
+  // Get unique sticker types for filter
+  const stickerTypes = Array.from(new Set(
+    inStockItems.map(item => {
+      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+      return template?.sticker_name_category;
+    }).filter(Boolean)
+  )).sort();
+
+  // Filter and sort items
+  const filteredAndSortedItems = inStockItems
+    .filter(item => {
+      const stop = stops.find(s => s.id === item.stop_id);
+      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+      
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm || 
+        stop?.stop_id?.toLowerCase().includes(searchLower) ||
+        template?.sticker_name_category?.toLowerCase().includes(searchLower);
+      
+      const matchesStickerType = stickerTypeFilter === "all" || 
+        template?.sticker_name_category === stickerTypeFilter;
+      
+      return matchesSearch && matchesStickerType;
+    })
+    .sort((a, b) => {
+      const stopA = stops.find(s => s.id === a.stop_id);
+      const stopB = stops.find(s => s.id === b.stop_id);
+      const templateA = stickerTemplates.find(t => t.id === a.sticker_template_id);
+      const templateB = stickerTemplates.find(t => t.id === b.sticker_template_id);
+
+      let compareValue = 0;
+      if (sortField === "stop_id") {
+        compareValue = (stopA?.stop_id || "").localeCompare(stopB?.stop_id || "");
+      } else if (sortField === "sticker_type") {
+        compareValue = (templateA?.sticker_name_category || "").localeCompare(templateB?.sticker_name_category || "");
+      }
+
+      return sortDirection === "asc" ? compareValue : -compareValue;
+    });
+
+  const availableItems = inStockItems;
 
   const toggleItemSelection = (itemId) => {
     setSelectedItems(prev => ({
@@ -258,7 +305,7 @@ export default function StickerHandoversPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Select Sticker Items ({Object.values(selectedItems).filter(Boolean).length} selected)</span>
+              <span>Select Sticker Items (In Stock Only - {Object.values(selectedItems).filter(Boolean).length} selected)</span>
               <div className="flex gap-2">
                 <ExportHandoverTemplateDialog 
                   availableItems={availableItems}
@@ -280,47 +327,107 @@ export default function StickerHandoversPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {availableItems.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">
-                No available sticker items to handover
-              </p>
-            ) : (
-              <div className="border rounded-lg">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]"></TableHead>
-                      <TableHead>Stop</TableHead>
-                      <TableHead>Sticker Template</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Current Custody</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {availableItems.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedItems[item.id] || false}
-                            onCheckedChange={() => toggleItemSelection(item.id)}
-                          />
-                        </TableCell>
-                        <TableCell>{getStickerItemDisplay(item)}</TableCell>
-                        <TableCell>
-                          {stickerTemplates.find(t => t.id === item.sticker_template_id)?.sticker_name_category || "-"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className="bg-green-100 text-green-800">{item.status}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{item.custody_status}</Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+            <div className="space-y-4">
+              {/* Filters */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Search</Label>
+                  <Input
+                    placeholder="Search by Stop ID or Sticker Type..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Sticker Type</Label>
+                  <Select value={stickerTypeFilter} onValueChange={setStickerTypeFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      {stickerTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Sort By</Label>
+                  <div className="flex gap-2">
+                    <Select value={sortField} onValueChange={setSortField}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="stop_id">Stop ID</SelectItem>
+                        <SelectItem value="sticker_type">Sticker Type</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setSortDirection(prev => prev === "asc" ? "desc" : "asc")}
+                    >
+                      {sortDirection === "asc" ? "↑" : "↓"}
+                    </Button>
+                  </div>
+                </div>
               </div>
-            )}
+
+              {filteredAndSortedItems.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">
+                  No sticker items found matching filters
+                </p>
+              ) : (
+                <div className="border rounded-lg">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[50px]">
+                          <Checkbox
+                            checked={filteredAndSortedItems.every(item => selectedItems[item.id])}
+                            onCheckedChange={(checked) => {
+                              const newSelected = {};
+                              if (checked) {
+                                filteredAndSortedItems.forEach(item => {
+                                  newSelected[item.id] = true;
+                                });
+                              }
+                              setSelectedItems(newSelected);
+                            }}
+                          />
+                        </TableHead>
+                        <TableHead>Stop ID</TableHead>
+                        <TableHead>Sticker Template</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredAndSortedItems.map((item) => {
+                        const stop = stops.find(s => s.id === item.stop_id);
+                        const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedItems[item.id] || false}
+                                onCheckedChange={() => toggleItemSelection(item.id)}
+                              />
+                            </TableCell>
+                            <TableCell className="font-medium">{stop?.stop_id || "-"}</TableCell>
+                            <TableCell>{template?.sticker_name_category || "-"}</TableCell>
+                            <TableCell>
+                              <Badge className="bg-green-100 text-green-800">In Stock</Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
