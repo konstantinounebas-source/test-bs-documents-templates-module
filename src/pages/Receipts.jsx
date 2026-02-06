@@ -175,9 +175,15 @@ export default function ReceiptsPage() {
         }
       }
 
-      // Check if order is fully received by checking if all items in this order are now received
+      // Refetch updated sticker items to check actual statuses
+      const updatedStickerItems = await base44.entities.StickerItem.list();
+      
+      // Check if order is fully received by checking if all items have status "Received"
       const allOrderLines = orderLines.filter(l => l.order_id === selectedOrderForReceipt);
-      const allReceived = allOrderLines.every(line => selectedItemIds.includes(line.sticker_item_id));
+      const allReceived = allOrderLines.every(line => {
+        const item = updatedStickerItems.find(i => i.id === line.sticker_item_id);
+        return item?.status === "Received";
+      });
       
       if (allReceived) {
         await base44.entities.Order.update(selectedOrderForReceipt, { status: "Closed" });
