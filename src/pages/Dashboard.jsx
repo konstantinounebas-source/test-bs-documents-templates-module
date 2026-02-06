@@ -147,26 +147,30 @@ export default function DashboardPage() {
 
   // 3η ΣΕΙΡΑ: Παρακολούθηση Παραγγελιών (Order Tracking)
   
-  // Stickers σε Παραγγελία με Warning (Ordered αλλά παραβιάζουν Days Before Installation)
-  const orderedWithWarning = stickerItems.filter(item => {
-    if (item.status !== "Ordered") return false;
-    const stop = stops.find(s => s.id === item.stop_id);
-    if (!stop?.current_planned_installation_date) return false;
-    const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-    if (!template) return false;
-    const plannedDate = new Date(stop.current_planned_installation_date);
-    const daysBeforeNeeded = template.days_before_installation_to_receive || 7;
-    const neededByDate = new Date(plannedDate);
-    neededByDate.setDate(neededByDate.getDate() - daysBeforeNeeded);
-    return new Date() > neededByDate;
-  });
+  const orderedWithWarning = useMemo(() =>
+    stickerItems.filter(item => {
+      if (item.status !== "Ordered") return false;
+      const stop = stopsMap[item.stop_id];
+      if (!stop?.current_planned_installation_date) return false;
+      const template = templatesMap[item.sticker_template_id];
+      if (!template) return false;
+      const plannedDate = new Date(stop.current_planned_installation_date);
+      const daysBeforeNeeded = template.days_before_installation_to_receive || 7;
+      const neededByDate = new Date(plannedDate);
+      neededByDate.setDate(neededByDate.getDate() - daysBeforeNeeded);
+      return new Date() > neededByDate;
+    }),
+    [stickerItems, stopsMap, templatesMap]
+  );
 
-  // Παραγγελμένα σε Εγκατεστημένες Στάσεις χωρίς Παραλαβή
-  const orderedOnInstalledNotReceived = stickerItems.filter(item => {
-    if (item.status !== "Ordered") return false;
-    const stop = stops.find(s => s.id === item.stop_id);
-    return stop && stop.shelter_installed;
-  });
+  const orderedOnInstalledNotReceived = useMemo(() =>
+    stickerItems.filter(item => {
+      if (item.status !== "Ordered") return false;
+      const stop = stopsMap[item.stop_id];
+      return stop && stop.shelter_installed;
+    }),
+    [stickerItems, stopsMap]
+  );
 
   // 4η ΣΕΙΡΑ: Επιχειρησιακές Ασυμφωνίες (Mismatches)
   
