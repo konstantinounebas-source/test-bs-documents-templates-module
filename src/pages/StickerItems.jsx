@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -313,49 +314,6 @@ export default function StickerItemsPage() {
     } else {
       return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
     }
-    }).sort((a, b) => {
-      let aVal, bVal;
-      
-      switch(sortColumn) {
-        case "stop_id":
-          aVal = getStopName(a.stop_id);
-          bVal = getStopName(b.stop_id);
-          break;
-        case "greek_name":
-          aVal = getStopGreekName(a.stop_id);
-          bVal = getStopGreekName(b.stop_id);
-          break;
-        case "template":
-          aVal = getStickerTemplateName(a.sticker_template_id);
-          bVal = getStickerTemplateName(b.sticker_template_id);
-          break;
-        case "status":
-          aVal = a.status || "";
-          bVal = b.status || "";
-          break;
-        case "custody":
-          aVal = a.custody_status || "";
-          bVal = b.custody_status || "";
-          break;
-        case "installed":
-          aVal = a.installed ? 1 : 0;
-          bVal = b.installed ? 1 : 0;
-          break;
-        default:
-          aVal = "";
-          bVal = "";
-      }
-      
-      if (typeof aVal === "string") {
-        aVal = aVal.toLowerCase();
-        bVal = bVal.toLowerCase();
-      }
-      
-      if (sortDirection === "asc") {
-        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-      } else {
-        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
-      }
     });
   }, [stickerItems, searchTerm, filterStatuses, filterCustodyStatuses, filterTemplates, sortColumn, sortDirection, stops, stickerTemplates]);
 
