@@ -175,9 +175,12 @@ export default function ReceiptsPage() {
         }
       }
 
-      // Check if order is fully received
+      // Check if order is fully received by checking the actual status of all items
       const allOrderLines = orderLines.filter(l => l.order_id === selectedOrderForReceipt);
-      const allReceived = allOrderLines.every(line => selectedItemIds.includes(line.sticker_item_id));
+      const allReceived = allOrderLines.every(line => {
+        const item = stickerItems.find(i => i.id === line.sticker_item_id);
+        return item?.status === "Received";
+      });
       
       if (allReceived) {
         await base44.entities.Order.update(selectedOrderForReceipt, { status: "Closed" });
