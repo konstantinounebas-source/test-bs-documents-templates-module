@@ -87,9 +87,11 @@ export default function TeamTimeExtraTab({ batchId }) {
       // Fetch fresh Team_Time_Extra data from database
       const allExtra = await base44.entities.Team_Time_Extra.filter({ batch_header_id: batchId });
       
-      // Calculate total from records with work_type "Other Departments Works" and charge_dept != batch department
+      // Calculate total from records where charge_dept != batch department
+      // AND (work_type is "Other Departments Works" OR "Supportive Works")
       const totalODTime = allExtra
-        .filter(te => te.work_type === 'Other Departments Works' && te.charge_dept !== batchDept)
+        .filter(te => te.charge_dept !== batchDept && 
+                     (te.work_type === 'Other Departments Works' || te.work_type === 'Supportive Works'))
         .reduce((sum, te) => sum + (te.duration_min || 0), 0);
 
       // Find and update the OD_TIME metric by date and department
