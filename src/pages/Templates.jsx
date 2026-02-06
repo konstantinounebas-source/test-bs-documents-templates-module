@@ -219,47 +219,42 @@ export default function TemplatesPage() {
     }
   };
 
-  const handleStatClick = (field, value) => {
+  const handleStatClick = useCallback((field, value) => {
     setStatFilter(currentFilter => {
       if (currentFilter && currentFilter.field === field && currentFilter.value === value) {
         return null;
       }
       return { field, value };
     });
-  };
+  }, []);
 
-  const getStatFilterLabel = () => {
+  const getStatFilterLabel = useMemo(() => {
     if (!statFilter) return '';
     const fieldDef = ALL_COLUMNS.find(c => c.key === statFilter.field);
     const label = customFieldLabels[statFilter.field] || fieldDef?.label || statFilter.field;
     return `${label}: ${statFilter.value}`;
-  };
+  }, [statFilter, customFieldLabels]);
 
-  const handleTemplateCreated = () => {
+  const handleTemplateCreated = useCallback(() => {
     setShowCreateDialog(false);
     loadTemplates();
-  };
+  }, []);
 
-  const handleTemplateUpdated = () => {
+  const handleTemplateUpdated = useCallback(() => {
     loadTemplates();
-    loadUsersCache(); // Refresh user cache in case sync happened
-  };
+    loadUsersCache();
+  }, []);
 
-  const exportToCsv = (data, filename) => {
+  const exportToCsv = useCallback((data, filename) => {
     if (data.length === 0) return;
-    
     const headers = Object.keys(data[0]);
     const csvContent = [
       headers.join(','),
       ...data.map(row => 
         headers.map(header => {
           let cell = row[header];
-          if (cell === null || cell === undefined) {
-            return '';
-          }
-          if (typeof cell === 'object') {
-            cell = JSON.stringify(cell);
-          }
+          if (cell === null || cell === undefined) return '';
+          if (typeof cell === 'object') cell = JSON.stringify(cell);
           const strCell = String(cell);
           if (strCell.includes(',') || strCell.includes('"') || strCell.includes('\n') || strCell.includes('\r')) {
             return `"${strCell.replace(/"/g, '""')}"`;
@@ -268,7 +263,6 @@ export default function TemplatesPage() {
         }).join(',')
       )
     ].join('\n');
-    
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -278,42 +272,34 @@ export default function TemplatesPage() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    
     logAction({
       action_type: 'EXPORT',
       target_entity: 'FormTemplate',
       details: { filename, record_count: data.length }
     });
-  };
+  }, []);
 
-  const handleExport = (type) => {
+  const handleExport = useCallback((type) => {
     const dataToExport = type === 'all' ? templates : filteredTemplates;
     const filename = `templates_${type}_${new Date().toISOString().split('T')[0]}.csv`;
     exportToCsv(dataToExport, filename);
-  };
-  
-  const toggleColumn = (columnKey) => {
-    setVisibleColumns(prev => 
-      prev.includes(columnKey) 
-        ? prev.filter(key => key !== columnKey)
-        : [...prev, columnKey]
-    );
-  };
+  }, [templates, filteredTemplates, exportToCsv]);
 
-  const handleColumnReorder = (startIndex, endIndex) => {
-    const newColumns = Array.from(visibleColumns);
-    const [removed] = newColumns.splice(startIndex, 1);
-    newColumns.splice(endIndex, 0, removed);
-    setVisibleColumns(newColumns);
-  };
+  const handleColumnReorder = useCallback((startIndex, endIndex) => {
+    setVisibleColumns(prev => {
+      const newColumns = Array.from(prev);
+      const [removed] = newColumns.splice(startIndex, 1);
+      newColumns.splice(endIndex, 0, removed);
+      return newColumns;
+    });
+  }, []);
 
-  // Get column label - now using custom field labels
-  const getColumnLabel = (column) => {
+  const getColumnLabel = useCallback((column) => {
     if (column.key.startsWith('template_custom_field_')) {
       return customFieldLabels[column.key] || column.label;
     }
     return column.label;
-  };
+  }, [customFieldLabels]);
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
