@@ -73,7 +73,7 @@ export default function ManufacturingPage() {
       description: "Define standards, profiles, QC sets, consumables standards, KPI/Metrics definitions",
       icon: FileText,
       status: stdSets.length > 0 && profileSets.length > 0 && qcSets.length > 0 ? 'complete' : 'incomplete',
-      page: "MfgStandardsWizard",
+      page: "MfgStandardsManagement",
       stats: `${stdSets.length} std sets, ${profileSets.length} profile sets, ${qcSets.length} QC sets`
     },
     {
