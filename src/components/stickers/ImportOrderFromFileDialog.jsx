@@ -104,7 +104,7 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
         };
       }
 
-      const matchingStickerItems = (stickersByStopId.get(stop.id) || []).filter(si => si.status === "Needed");
+      const matchingStickerItems = (stickersByStopId.get(stop.id) || []).filter(si => si.status === "Needed" && !si.total_ordered_quantity);
 
       if (matchingStickerItems.length === 0) {
         return {
