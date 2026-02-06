@@ -138,7 +138,8 @@ export default function OrdersManagementPage() {
         const totalOrdered = allOrderLinesResults[index].reduce((sum, ol) => sum + (ol.ordered_quantity || 0), 0);
         return base44.entities.StickerItem.update(itemId, {
           total_ordered_quantity: totalOrdered,
-          status: "Ordered"
+          status: "Ordered",
+          custody_status: "Ordered"
         });
       });
       
