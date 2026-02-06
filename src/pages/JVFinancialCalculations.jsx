@@ -80,17 +80,7 @@ export default function JVFinancialCalculations() {
                     <div className="space-y-6">
                         <SectionAContractIncome shelterTypeId={selectedShelterType} />
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>SECTION B — Cost Breakdown (BOM-driven)</CardTitle>
-                                <CardDescription>Costs grouped by BOM categories with full traceability</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-slate-600">
-                                    Content will be added here...
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <SectionBCostBreakdown shelterTypeId={selectedShelterType} />
 
                         <Card>
                             <CardHeader>
