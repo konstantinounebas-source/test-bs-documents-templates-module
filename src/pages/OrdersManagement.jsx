@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Plus, ShoppingCart, Eye, Printer, AlertTriangle, Search, FileDown } from "lucide-react";
+import { Plus, ShoppingCart, Eye, Printer, AlertTriangle, Search, FileDown, FileText, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ExcelJS from 'exceljs';
@@ -31,6 +31,8 @@ export default function OrdersManagementPage() {
     reason: "Initial"
   });
   const [viewOrderId, setViewOrderId] = useState(null);
+  const [editOrderId, setEditOrderId] = useState(null);
+  const [editOrderData, setEditOrderData] = useState({});
   const [charLimitWarnings, setCharLimitWarnings] = useState([]);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmedItems, setConfirmedItems] = useState({});
@@ -83,6 +85,22 @@ export default function OrdersManagementPage() {
     queryKey: ['receiptLines'],
     queryFn: () => base44.entities.ReceiptLine.list(),
     staleTime: 30 * 1000
+  });
+
+  const updateOrderMutation = useMutation({
+    mutationFn: (updateData) => base44.entities.Order.update(editOrderId, updateData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      setEditOrderId(null);
+      setEditOrderData({});
+    }
+  });
+
+  const cancelOrderMutation = useMutation({
+    mutationFn: (orderId) => base44.entities.Order.update(orderId, { status: "Cancelled" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+    }
   });
 
   const createOrderMutation = useMutation({
@@ -138,9 +156,9 @@ export default function OrdersManagementPage() {
       return order;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['orders']);
-      queryClient.invalidateQueries(['orderLines']);
-      queryClient.invalidateQueries(['stickerItems']);
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['orderLines'] });
+      queryClient.invalidateQueries({ queryKey: ['stickerItems'] });
       setSelectedItems({});
       setCreateDialogOpen(false);
       setCategoryFilters([]);
@@ -571,7 +589,8 @@ export default function OrdersManagementPage() {
                     <TableHead>Status</TableHead>
                     <TableHead>Items</TableHead>
                     <TableHead>Critical Stops</TableHead>
-                    <TableHead className="w-[120px]">Actions</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead className="w-[150px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -583,7 +602,7 @@ export default function OrdersManagementPage() {
                         <TableCell>{order.vendor || "-"}</TableCell>
                         <TableCell>{order.order_date}</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{order.status}</Badge>
+                          <Badge variant={order.status === "Cancelled" ? "destructive" : "outline"}>{order.status}</Badge>
                         </TableCell>
                         <TableCell>{stats.itemCount}</TableCell>
                         <TableCell>
@@ -596,8 +615,38 @@ export default function OrdersManagementPage() {
                             <span className="text-gray-400">0</span>
                           )}
                         </TableCell>
+                        <TableCell className="max-w-[200px]">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="truncate text-sm text-gray-600 cursor-help">
+                                  {order.notes || "-"}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="max-w-xs">{order.notes || "-"}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
+                            {order.status !== "Cancelled" && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  setEditOrderId(order.id);
+                                  setEditOrderData({
+                                    order_date: order.order_date,
+                                    notes: order.notes || ""
+                                  });
+                                }}
+                                title="Edit"
+                              >
+                                <FileText className="w-4 h-4" />
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="icon"
@@ -612,6 +661,21 @@ export default function OrdersManagementPage() {
                             >
                               <Printer className="w-4 h-4" />
                             </Button>
+                            {order.status !== "Cancelled" && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  if (confirm("Are you sure you want to cancel this order?")) {
+                                    cancelOrderMutation.mutate(order.id);
+                                  }
+                                }}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                title="Cancel"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -948,6 +1012,44 @@ export default function OrdersManagementPage() {
               {createOrderMutation.isPending 
                 ? "Δημιουργία..." 
                 : `Επιβεβαίωση & Δημιουργία Παραγγελίας (${Object.values(confirmedItems).filter(Boolean).length})`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Order Dialog */}
+      <Dialog open={!!editOrderId} onOpenChange={() => setEditOrderId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Order</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Order Date *</Label>
+              <Input
+                type="date"
+                value={editOrderData.order_date || ""}
+                onChange={(e) => setEditOrderData({ ...editOrderData, order_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Notes / Comments</Label>
+              <Input
+                placeholder="Add notes about this order..."
+                value={editOrderData.notes || ""}
+                onChange={(e) => setEditOrderData({ ...editOrderData, notes: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOrderId(null)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => updateOrderMutation.mutate(editOrderData)}
+              disabled={updateOrderMutation.isPending}
+            >
+              {updateOrderMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
