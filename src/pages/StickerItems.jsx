@@ -391,6 +391,7 @@ export default function StickerItemsPage() {
                 <Label className="text-xs text-gray-600 mb-1">Custody Status</Label>
                 <MultiSelect
                   options={[
+                    { value: "Needed", label: "Needed" },
                     { value: "In Stock", label: "In Stock" },
                     { value: "With Technician", label: "With Technician" },
                     { value: "Installed", label: "Installed" },
