@@ -10,21 +10,28 @@ export function useLazyPagination(items = [], defaultPageSize = 20) {
   const [isLoadingRest, setIsLoadingRest] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
+  // Reset showAll and start lazy loading when items change
+  useEffect(() => {
+    setShowAll(false);
+    setIsLoadingRest(false);
+  }, [items.length]);
+
   // Load first batch immediately
   const currentBatch = useMemo(() => {
     return items.slice(0, pageSize);
   }, [items, pageSize]);
 
-  // Load rest after 2 seconds
+  // Load rest after 2 seconds (only if not already showing all and pageSize < total)
   useEffect(() => {
-    if (pageSize < items.length && !showAll) {
-      setIsLoadingRest(true);
-      const timer = setTimeout(() => {
-        setShowAll(true);
-        setIsLoadingRest(false);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
+    if (pageSize >= items.length || showAll) return;
+    
+    setIsLoadingRest(true);
+    const timer = setTimeout(() => {
+      setShowAll(true);
+      setIsLoadingRest(false);
+    }, 2000);
+    
+    return () => clearTimeout(timer);
   }, [pageSize, items.length, showAll]);
 
   const displayedItems = showAll ? items : currentBatch;
