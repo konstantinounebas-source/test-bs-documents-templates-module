@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Trash2, Check } from "lucide-react";
 import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 
@@ -10,6 +10,8 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
   const [validationResults, setValidationResults] = useState([]);
   const [currentValidationIndex, setCurrentValidationIndex] = useState(0);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [step, setStep] = useState("idle"); // idle, validating, review
+  const [selectedValidIds, setSelectedValidIds] = useState([]);
   const fileInputRef = useRef(null);
 
   const handleFileSelect = async (event) => {
