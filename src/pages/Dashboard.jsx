@@ -204,36 +204,41 @@ export default function DashboardPage() {
   );
 
   // 7. Στάσεις εγκατεστημένες - υπολειπόμενα αυτοκόλλητα ανά κατηγορία
-  const installedStopsWithRemainingStickers = stops.filter(stop => {
-    if (!stop.shelter_installed) return false;
-    const stopStickers = stickerItems.filter(item => item.stop_id === stop.id);
-    if (stopStickers.length === 0) return false;
-    return stopStickers.some(item => item.status !== "Installed");
-  });
+  const installedStopsWithRemainingStickers = useMemo(() =>
+    stops.filter(stop => {
+      if (!stop.shelter_installed) return false;
+      const stopStickers = stickersByStop[stop.id];
+      if (!stopStickers || stopStickers.length === 0) return false;
+      return stopStickers.some(item => item.status !== "Installed");
+    }),
+    [stops, stickersByStop]
+  );
 
-  const remainingStickersByCategory = {};
-  installedStopsWithRemainingStickers.forEach(stop => {
-    const stopStickers = stickerItems.filter(item => 
-      item.stop_id === stop.id && item.status !== "Installed"
-    );
-    stopStickers.forEach(item => {
-      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-      const category = template?.sticker_name_category || "Unknown";
-      if (!remainingStickersByCategory[category]) remainingStickersByCategory[category] = 0;
-      remainingStickersByCategory[category]++;
+  const remainingStickersByCategory = useMemo(() => {
+    const map = {};
+    installedStopsWithRemainingStickers.forEach(stop => {
+      const stopStickers = (stickersByStop[stop.id] || []).filter(item => item.status !== "Installed");
+      stopStickers.forEach(item => {
+        const template = templatesMap[item.sticker_template_id];
+        const category = template?.sticker_name_category || "Unknown";
+        map[category] = (map[category] || 0) + 1;
+      });
     });
-  });
+    return map;
+  }, [installedStopsWithRemainingStickers, stickersByStop, templatesMap]);
 
-  // 8. Αυτοκόλλητα installed ανά κατηγορία (sticker template)
-  const installedStickersByCategory = stickerItems
-    .filter(item => item.status === "Installed")
-    .reduce((acc, item) => {
-      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-      const category = template?.sticker_name_category || "Unknown";
-      if (!acc[category]) acc[category] = 0;
-      acc[category]++;
-      return acc;
-    }, {});
+  // 8. Αυτοκόλλητα installed ανά κατηγορία
+  const installedStickersByCategory = useMemo(() => {
+    const map = {};
+    stickerItems.forEach(item => {
+      if (item.status === "Installed") {
+        const template = templatesMap[item.sticker_template_id];
+        const category = template?.sticker_name_category || "Unknown";
+        map[category] = (map[category] || 0) + 1;
+      }
+    });
+    return map;
+  }, [stickerItems, templatesMap]);
 
   const getStopDisplay = (item) => {
     const stop = stops.find(s => s.id === item.stop_id);
