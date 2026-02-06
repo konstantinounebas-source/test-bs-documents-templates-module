@@ -376,7 +376,7 @@ export default function TemplatesPage() {
               {statFilter && (
                 <Badge variant="secondary" className="flex items-center gap-2 py-1.5 px-3">
                   <span className="font-normal">Filtering by:</span> 
-                  <span className="font-semibold">{getStatFilterLabel()}</span>
+                  <span className="font-semibold">{getStatFilterLabel && getStatFilterLabel()}</span>
                   <button onClick={() => setStatFilter(null)} className="ml-1 rounded-full hover:bg-slate-300 p-0.5">
                     <X className="w-3 h-3"/>
                   </button>
