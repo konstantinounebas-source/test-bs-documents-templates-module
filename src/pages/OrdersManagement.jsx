@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLazyPagination } from "@/components/stickers/hooks/useLazyPagination";
+import PaginationSelector from "@/components/stickers/PaginationSelector";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -508,6 +510,9 @@ export default function OrdersManagementPage() {
     window.URL.revokeObjectURL(url);
   };
 
+  // Pagination for available items
+  const availablePagination = useLazyPagination(filteredItems, 20);
+
   const selectedCount = Object.values(selectedItems).filter(Boolean).length;
   const criticalInSelection = Object.keys(selectedItems)
     .filter(id => selectedItems[id])
@@ -654,13 +659,22 @@ export default function OrdersManagementPage() {
                     className="pl-10"
                   />
                 </div>
-                <div>
-                  <Label className="text-xs text-gray-600 mb-1">Sticker Categories</Label>
-                  <MultiSelect
-                    options={stickerCategories.map(cat => ({ value: cat, label: cat }))}
-                    selected={categoryFilters}
-                    onChange={setCategoryFilters}
-                    placeholder="All Categories"
+                <div className="flex items-end justify-between gap-4">
+                  <div className="flex-1">
+                    <Label className="text-xs text-gray-600 mb-1">Sticker Categories</Label>
+                    <MultiSelect
+                      options={stickerCategories.map(cat => ({ value: cat, label: cat }))}
+                      selected={categoryFilters}
+                      onChange={setCategoryFilters}
+                      placeholder="All Categories"
+                    />
+                  </div>
+                  <PaginationSelector
+                    pageSize={availablePagination.pageSize}
+                    onPageSizeChange={availablePagination.setPageSize}
+                    total={availablePagination.total}
+                    shown={availablePagination.shown}
+                    isLoading={availablePagination.isLoadingRest}
                   />
                 </div>
               </div>
@@ -678,7 +692,7 @@ export default function OrdersManagementPage() {
                   </TableRow>
                   </TableHeader>
                   <TableBody>
-                  {filteredItems.map((item) => {
+                  {availablePagination.displayedItems.map((item) => {
                     const { stop } = getStopInfo(item.id);
                     const template = getTemplateInfo(item.sticker_template_id);
                     const critical = isCriticalStop(item.stop_id, item.id);
