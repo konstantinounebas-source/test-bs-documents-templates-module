@@ -14,6 +14,7 @@ import { Save, Users, FileDown } from "lucide-react";
 import ExcelJS from 'exceljs';
 import ExportHandoverTemplateDialog from "@/components/stickers/ExportHandoverTemplateDialog";
 import ImportHandoverFromFileDialog from "@/components/stickers/ImportHandoverFromFileDialog";
+import { Loader2 } from "lucide-react";
 
 export default function StickerHandoversPage() {
   const [selectedTechnician, setSelectedTechnician] = useState("");
@@ -259,6 +260,11 @@ export default function StickerHandoversPage() {
             <CardTitle className="flex items-center justify-between">
               <span>Select Sticker Items ({Object.values(selectedItems).filter(Boolean).length} selected)</span>
               <div className="flex gap-2">
+                <ExportHandoverTemplateDialog 
+                  availableItems={availableItems}
+                  stops={stops}
+                  stickerTemplates={stickerTemplates}
+                />
                 <ImportHandoverFromFileDialog 
                   isOpen={importDialogOpen}
                   onClose={() => setImportDialogOpen(false)}
