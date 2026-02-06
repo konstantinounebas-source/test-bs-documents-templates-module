@@ -228,12 +228,12 @@ export default function TemplatesPage() {
     });
   }, []);
 
-  const getStatFilterLabel = useMemo(() => {
+  const getStatFilterLabel = () => {
     if (!statFilter) return '';
     const fieldDef = ALL_COLUMNS.find(c => c.key === statFilter.field);
     const label = customFieldLabels[statFilter.field] || fieldDef?.label || statFilter.field;
     return `${label}: ${statFilter.value}`;
-  }, [statFilter, customFieldLabels]);
+  };
 
   const handleTemplateCreated = useCallback(() => {
     setShowCreateDialog(false);
