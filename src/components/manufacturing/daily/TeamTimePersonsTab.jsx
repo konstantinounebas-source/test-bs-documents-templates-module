@@ -50,6 +50,7 @@ export default function TeamTimePersonsTab({ batchId }) {
     }),
     onSuccess: async () => {
       await saveMetric();
+      await saveNATTimeMetric();
       queryClient.invalidateQueries(['TeamTimePerson']);
       resetForm();
       setShowAddDialog(false);
@@ -68,6 +69,7 @@ export default function TeamTimePersonsTab({ batchId }) {
     }),
     onSuccess: async () => {
       await saveMetric();
+      await saveNATTimeMetric();
       queryClient.invalidateQueries(['TeamTimePerson']);
       setEditingLine(null);
       setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', break_time_minutes: 0, notes: '' });
@@ -81,6 +83,7 @@ export default function TeamTimePersonsTab({ batchId }) {
     mutationFn: (id) => base44.entities.TeamTimePerson.delete(id),
     onSuccess: async () => {
       await saveMetric();
+      await saveNATTimeMetric();
       queryClient.invalidateQueries(['TeamTimePerson']);
       toast.success('Team time deleted');
     },
@@ -190,6 +193,42 @@ export default function TeamTimePersonsTab({ batchId }) {
       queryClient.invalidateQueries(['DailyMetricValue']);
     } catch (error) {
       console.error('Failed to save metric:', error);
+    }
+  };
+
+  const saveNATTimeMetric = async () => {
+    try {
+      const batchHeader = await base44.entities.BatchHeader.filter({ id: batchId });
+      if (!batchHeader || batchHeader.length === 0) return;
+
+      const date = batchHeader[0].date;
+      const dept = batchHeader[0].department;
+
+      // Fetch all contributing metrics
+      const allMetrics = await base44.entities.DailyMetricValue.filter({
+        date: date,
+        department: dept
+      });
+
+      const gtTime = allMetrics.find(m => m.metric_code === 'GT_TIME')?.value || 0;
+      const neTime = allMetrics.find(m => m.metric_code === 'NE_TIME')?.value || 0;
+      const odTime = allMetrics.find(m => m.metric_code === 'OD_TIME')?.value || 0;
+      const supTime = allMetrics.find(m => m.metric_code === 'SUP_TIME')?.value || 0;
+
+      // Calculate NAT_TIME = GT_TIME - NE_TIME - OD_TIME - SUP_TIME
+      const natTime = gtTime - neTime - odTime - supTime;
+
+      const natMetric = allMetrics.find(m => m.metric_code === 'NAT_TIME');
+
+      if (natMetric) {
+        await base44.entities.DailyMetricValue.update(natMetric.id, {
+          value: natTime
+        });
+      }
+
+      queryClient.invalidateQueries(['DailyMetricValue']);
+    } catch (error) {
+      console.error('Failed to save NAT_TIME metric:', error);
     }
   };
 
