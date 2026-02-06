@@ -390,34 +390,34 @@ export default function TemplatesPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
-                  <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {useMemo(() => COLUMN_CATEGORIES.map((category, index) => (
-                    <React.Fragment key={category.label}>
-                      {index > 0 && <DropdownMenuSeparator />}
-                      <DropdownMenuLabel className="text-slate-500 font-semibold">{category.label}</DropdownMenuLabel>
-                      {category.keys.map(key => {
-                        const col = ALL_COLUMNS.find(c => c.key === key);
-                        if (!col) return null;
-                        return (
-                          <DropdownMenuCheckboxItem
-                            key={col.key}
-                            checked={visibleColumns.includes(col.key)}
-                            onCheckedChange={(checked) => {
-                              setVisibleColumns(prev => 
-                                checked 
-                                  ? prev.includes(col.key) ? prev : [...prev, col.key]
-                                  : prev.filter(k => k !== col.key)
-                              );
-                            }}
-                          >
-                            {getColumnLabel(col)}
-                          </DropdownMenuCheckboxItem>
-                        );
-                      })}
-                    </React.Fragment>
-                  )), [visibleColumns, getColumnLabel])}
-                </DropdownMenuContent>
+                   <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
+                   <DropdownMenuSeparator />
+                   {COLUMN_CATEGORIES.map((category, index) => (
+                     <React.Fragment key={category.label}>
+                       {index > 0 && <DropdownMenuSeparator />}
+                       <DropdownMenuLabel className="text-slate-500 font-semibold">{category.label}</DropdownMenuLabel>
+                       {category.keys.map(key => {
+                         const col = ALL_COLUMNS.find(c => c.key === key);
+                         if (!col) return null;
+                         return (
+                           <DropdownMenuCheckboxItem
+                             key={col.key}
+                             checked={visibleColumns.includes(col.key)}
+                             onCheckedChange={(checked) => {
+                               setVisibleColumns(prev => 
+                                 checked 
+                                   ? prev.includes(col.key) ? prev : [...prev, col.key]
+                                   : prev.filter(k => k !== col.key)
+                               );
+                             }}
+                           >
+                             {getColumnLabel(col)}
+                           </DropdownMenuCheckboxItem>
+                         );
+                       })}
+                     </React.Fragment>
+                   ))}
+                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </div>
