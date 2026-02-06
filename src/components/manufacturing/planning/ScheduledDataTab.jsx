@@ -493,7 +493,8 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
         scheduled_day_id: dayHeader.id
       })));
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveSCHTimeMetric();
       queryClient.invalidateQueries({ queryKey: ['ScheduledData'] });
       queryClient.invalidateQueries({ queryKey: ['ScheduledDayHeader'] });
       setShowAddDialog(false);
@@ -519,7 +520,8 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     mutationFn: async (id) => {
       await base44.entities.ScheduledData.delete(id);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveSCHTimeMetric();
       queryClient.invalidateQueries({ queryKey: ['ScheduledData'] });
       toast.success('Scheduled data deleted');
     },
@@ -528,12 +530,45 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     }
   });
 
+  const saveSCHTimeMetric = async () => {
+    try {
+      if (!selectedDate) return;
+
+      // Fetch fresh ScheduledData for this date and department
+      const allScheduled = await base44.entities.ScheduledData.filter({
+        date: selectedDate,
+        department_id: selectedDepartment
+      });
+
+      // Calculate total grand_total_min (Grand Total Scheduled)
+      const totalScheduledTime = allScheduled.reduce((sum, sd) => sum + (sd.grand_total_min || 0), 0);
+
+      // Find and update the SCH_TIME metric by date and department
+      const existingMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'SCH_TIME',
+        date: selectedDate,
+        department: selectedDepartment
+      });
+
+      if (existingMetrics.length > 0) {
+        await base44.entities.DailyMetricValue.update(existingMetrics[0].id, {
+          value: totalScheduledTime
+        });
+      }
+
+      queryClient.invalidateQueries(['DailyMetricValue']);
+    } catch (error) {
+      console.error('Failed to save SCH_TIME metric:', error);
+    }
+  };
+
   // Update mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, data }) => {
       await base44.entities.ScheduledData.update(id, data);
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveSCHTimeMetric();
       queryClient.invalidateQueries({ queryKey: ['ScheduledData'] });
       setShowEditDialog(false);
       setEditingRecord(null);
