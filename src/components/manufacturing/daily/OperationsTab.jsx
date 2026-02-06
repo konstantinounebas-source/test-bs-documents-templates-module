@@ -40,6 +40,7 @@ export default function OperationsTab({ batchId, department }) {
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedOperations, setSelectedOperations] = useState({});
   const [expandedItems, setExpandedItems] = useState({});
+  const [editingRemakeQty, setEditingRemakeQty] = useState({});
   const [formData, setFormData] = useState({
     item_code: '',
     operation_profile_id: '',
@@ -594,10 +595,24 @@ export default function OperationsTab({ batchId, department }) {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                value={op.remake_qty || 0}
+                                value={editingRemakeQty[op.id] !== undefined ? editingRemakeQty[op.id] : (op.remake_qty || 0)}
+                                onChange={(e) => {
+                                  setEditingRemakeQty(prev => ({
+                                    ...prev,
+                                    [op.id]: e.target.value
+                                  }));
+                                }}
                                 onBlur={async (e) => {
                                   const newRemakeQty = parseFloat(e.target.value) || 0;
-                                  if (newRemakeQty === (op.remake_qty || 0)) return;
+                                  const currentRemakeQty = op.remake_qty || 0;
+
+                                  if (newRemakeQty === currentRemakeQty) {
+                                    setEditingRemakeQty(prev => {
+                                      const { [op.id]: _, ...rest } = prev;
+                                      return rest;
+                                    });
+                                    return;
+                                  }
 
                                   try {
                                     await base44.entities.Operations.update(op.id, {
@@ -605,10 +620,18 @@ export default function OperationsTab({ batchId, department }) {
                                     });
                                     await saveOpTimeMetric();
                                     queryClient.invalidateQueries(['Operations']);
+                                    setEditingRemakeQty(prev => {
+                                      const { [op.id]: _, ...rest } = prev;
+                                      return rest;
+                                    });
                                     toast.success('Remake qty updated');
                                   } catch (error) {
                                     console.error('Failed to update remake qty:', error);
-                                    toast.error('Failed to update remake qty');
+                                    toast.error('Failed to update: ' + error.message);
+                                    setEditingRemakeQty(prev => {
+                                      const { [op.id]: _, ...rest } = prev;
+                                      return rest;
+                                    });
                                     queryClient.invalidateQueries(['Operations']);
                                   }
                                 }}
