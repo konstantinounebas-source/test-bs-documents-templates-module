@@ -240,7 +240,7 @@ export default function OrdersManagementPage() {
     );
     
     const matchesStopId = !stopIdFilter || 
-      stop?.stop_id?.toLowerCase().includes(stopIdFilter.toLowerCase());
+      (stop?.stop_id && stop.stop_id.toString().toLowerCase().includes(stopIdFilter.toLowerCase()));
     
     return matchesCategory && matchesSearch && matchesStopId;
   });
