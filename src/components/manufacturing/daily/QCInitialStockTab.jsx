@@ -313,7 +313,7 @@ export default function QCInitialStockTab({ batchId, department }) {
       queryClient.invalidateQueries(['QC_Initial_Stock']);
       setShowAddDialog(false);
       setFormData({ item_code: '', qc_type: '', qc_level: '', qty_affected: '' });
-      toast.success('QC initial stock added');
+      toast.success('✓ QC Initial Stock added');
     },
     onError: () => toast.error('Failed to add QC initial stock')
   });
@@ -326,7 +326,7 @@ export default function QCInitialStockTab({ batchId, department }) {
       setShowAddDialog(false);
       setEditingLine(null);
       setFormData({ item_code: '', qc_type: '', qc_level: '', qty_affected: '' });
-      toast.success('QC initial stock updated');
+      toast.success('✓ QC Initial Stock updated');
     },
     onError: () => toast.error('Failed to update QC initial stock')
   });

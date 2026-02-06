@@ -343,7 +343,7 @@ export default function OperationsTab({ batchId, department }) {
     onSuccess: async () => {
       await queryClient.invalidateQueries(['Operations']);
       await saveOpTimeMetric();
-      toast.success('Operations deleted');
+      toast.success('✓ Operations deleted');
     },
     onError: () => toast.error('Failed to delete operations')
   });
@@ -410,7 +410,7 @@ export default function OperationsTab({ batchId, department }) {
       setSelectedOperations({});
       setEditingGroupId(null);
       
-      toast.success(editingGroupId ? 'Operations updated' : 'Operations added');
+      toast.success(editingGroupId ? '✓ Operations updated' : '✓ Operations added');
     } catch (error) {
       toast.error('Failed to save operations');
     }
