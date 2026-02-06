@@ -227,7 +227,7 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
                 print_line_2: stop.greek_name,
                 print_line_3: stop.english_name,
                 status: "Needed",
-                custody_status: "In Stock"
+                custody_status: "Needed"
               });
             }
           }
