@@ -414,6 +414,17 @@ export default function QCInitialStockTab({ batchId, department }) {
         </Button>
       </div>
 
+      {filteredLines.length > 0 && (
+        <div className="border rounded-lg bg-blue-50 p-4">
+          <div className="flex justify-between items-center">
+            <span className="font-semibold text-slate-700">Total QC Time</span>
+            <span className="text-lg font-bold text-blue-700">
+              {totalQCTime.minutes} min ({totalQCTime.hours} hrs)
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="border rounded-lg overflow-auto bg-white shadow-sm">
         <Table>
           <TableHeader>
@@ -476,17 +487,6 @@ export default function QCInitialStockTab({ batchId, department }) {
           </TableBody>
         </Table>
       </div>
-
-      {filteredLines.length > 0 && (
-        <div className="border rounded-lg bg-blue-50 p-4">
-          <div className="flex justify-between items-center">
-            <span className="font-semibold text-slate-700">Total QC Time</span>
-            <span className="text-lg font-bold text-blue-700">
-              {totalQCTime.minutes} min ({totalQCTime.hours} hrs)
-            </span>
-          </div>
-        </div>
-      )}
 
       <Dialog open={showAddDialog} onOpenChange={(open) => {
         if (!open) resetForm();
