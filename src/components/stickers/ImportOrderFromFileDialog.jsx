@@ -1,7 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Trash2, Check } from "lucide-react";
+import { AlertTriangle, Trash2, Check, Loader2 } from "lucide-react";
 import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 
@@ -12,7 +12,18 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [step, setStep] = useState("idle"); // idle, validating, review
   const [selectedValidIds, setSelectedValidIds] = useState([]);
+  const [validationProgress, setValidationProgress] = useState(0);
   const fileInputRef = useRef(null);
+
+  // Auto-start validation when dialog opens with data
+  useEffect(() => {
+    if (step === "validating" && importedData.length > 0) {
+      const timer = setTimeout(() => {
+        validateAllItems();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [step, importedData]);
 
   const handleFileSelect = async (event) => {
     const file = event.target.files[0];
@@ -56,8 +67,8 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
       setImportedData(rows);
       setValidationResults(rows.map(() => ({ isValid: null, error: null })));
       setCurrentValidationIndex(0);
-      setStep("validating");
       setConfirmDialogOpen(true);
+      setStep("validating");
     } catch (error) {
       console.error('Error reading Excel file:', error);
       toast.error('Error reading Excel file: ' + error.message);
@@ -70,9 +81,22 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
   };
 
   const validateAllItems = async () => {
-    const results = importedData.map((item) => {
-      const stop = stops.find(s => s.stop_id === item.stop_id);
+    // Pre-build lookup maps for faster access
+    const stopMap = new Map(stops.map(s => [s.stop_id, s]));
+    const templateMap = new Map(stickerTemplates.map(t => [t.id, t]));
+    const stickersByStopId = new Map();
+    
+    stickerItems.forEach(si => {
+      if (!stickersByStopId.has(si.stop_id)) {
+        stickersByStopId.set(si.stop_id, []);
+      }
+      stickersByStopId.get(si.stop_id).push(si);
+    });
 
+    const results = importedData.map((item, idx) => {
+      setValidationProgress(Math.round(((idx + 1) / importedData.length) * 100));
+      
+      const stop = stopMap.get(item.stop_id);
       if (!stop) {
         return {
           isValid: false,
@@ -80,9 +104,7 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
         };
       }
 
-      const matchingStickerItems = stickerItems.filter(
-        si => si.stop_id === stop.id && si.status === "Needed"
-      );
+      const matchingStickerItems = (stickersByStopId.get(stop.id) || []).filter(si => si.status === "Needed");
 
       if (matchingStickerItems.length === 0) {
         return {
@@ -91,12 +113,12 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
         };
       }
 
-      const matchingByName = matchingStickerItems.filter(si => {
-        const template = stickerTemplates.find(t => t.id === si.sticker_template_id);
+      const matchingByName = matchingStickerItems.find(si => {
+        const template = templateMap.get(si.sticker_template_id);
         return template && template.sticker_name_category.toLowerCase().includes(item.sticker_name.toLowerCase());
       });
 
-      if (matchingByName.length === 0) {
+      if (!matchingByName) {
         return {
           isValid: false,
           error: `No sticker matching "${item.sticker_name}" found for Stop ID "${item.stop_id}"`
@@ -105,20 +127,20 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
 
       return {
         isValid: true,
-        stickerId: matchingByName[0].id,
+        stickerId: matchingByName.id,
         error: null
       };
     });
 
     setValidationResults(results);
+    setValidationProgress(100);
     const validIds = results
-      .map((result, index) => ({ result, index }))
-      .filter(({ result }) => result.isValid)
-      .map(({ result }) => result.stickerId);
+      .map((result) => result.isValid ? result.stickerId : null)
+      .filter(Boolean);
     
     setSelectedValidIds(validIds);
     setStep("review");
-    setCurrentValidationIndex(0);
+    setValidationProgress(0);
   };
 
   const moveToNextInvalidItem = () => {
@@ -187,23 +209,28 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
           {step === "validating" && importedData.length > 0 && (
             <div className="space-y-4 py-4">
               <div className="text-center">
-                <p className="text-lg font-semibold">Processing {importedData.length} items...</p>
-                <p className="text-sm text-gray-600 mt-2">This will validate all items automatically.</p>
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+                  <p className="text-lg font-semibold">Validating {importedData.length} items...</p>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">{validationProgress}%</p>
+                <div className="w-full bg-gray-200 rounded-full h-2 mt-4">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${validationProgress}%` }}
+                  />
+                </div>
               </div>
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setConfirmDialogOpen(false);
-                    resetDialog();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button onClick={validateAllItems} className="bg-blue-600">
-                  Start Validation
-                </Button>
-              </DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setConfirmDialogOpen(false);
+                  resetDialog();
+                }}
+                className="w-full"
+              >
+                Cancel
+              </Button>
             </div>
           )}
 
