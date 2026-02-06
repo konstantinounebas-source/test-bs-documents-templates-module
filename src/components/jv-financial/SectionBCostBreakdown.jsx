@@ -12,7 +12,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-export default function SectionBCostBreakdown({ shelterTypeId }) {
+export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange }) {
     const [verifiedCosts, setVerifiedCosts] = useState([]);
     const [wasteAllowances, setWasteAllowances] = useState([]);
     const [accruedCosts, setAccruedCosts] = useState([]);
