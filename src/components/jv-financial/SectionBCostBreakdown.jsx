@@ -12,16 +12,14 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange }) {
-    const [verifiedCosts, setVerifiedCosts] = useState([]);
-    const [nonBomCosts, setNonBomCosts] = useState([]);
-    const [wasteAllowances, setWasteAllowances] = useState([]);
-    const [accruedCosts, setAccruedCosts] = useState([]);
-    const [products, setProducts] = useState([]);
-    const [costCategories, setCostCategories] = useState([]);
-    const [bomVersions, setBomVersions] = useState([]);
-    const [selectedBomVersion, setSelectedBomVersion] = useState('');
-    const [isLoadingData, setIsLoadingData] = useState(true);
+export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, bomVersions = [], selectedBomVersion = '' }) {
+     const [verifiedCosts, setVerifiedCosts] = useState([]);
+     const [nonBomCosts, setNonBomCosts] = useState([]);
+     const [wasteAllowances, setWasteAllowances] = useState([]);
+     const [accruedCosts, setAccruedCosts] = useState([]);
+     const [products, setProducts] = useState([]);
+     const [costCategories, setCostCategories] = useState([]);
+     const [isLoadingData, setIsLoadingData] = useState(true);
 
     useEffect(() => {
         loadData();
