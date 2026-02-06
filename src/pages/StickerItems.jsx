@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import TablePagination from "@/components/common/TablePagination";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,7 @@ export default function StickerItemsPage() {
   const [handoverDialogOpen, setHandoverDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [paginatedItems, setPaginatedItems] = useState([]);
 
   const queryClient = useQueryClient();
 
@@ -346,6 +348,11 @@ export default function StickerItemsPage() {
             </div>
           </div>
 
+          <TablePagination 
+            items={filteredItems} 
+            onItemsChange={setPaginatedItems}
+          />
+
           <div className="border rounded-lg overflow-x-auto">
             <Table>
               <TableHeader>
@@ -361,14 +368,14 @@ export default function StickerItemsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredItems.length === 0 ? (
+                {paginatedItems.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-gray-500 py-8">
                       No sticker items found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredItems.map((item) => (
+                  paginatedItems.map((item) => (
                     <TableRow key={item.id}>
                        <TableCell className="font-medium">{getStopName(item.stop_id)}</TableCell>
                        <TableCell>{getStopGreekName(item.stop_id)}</TableCell>
