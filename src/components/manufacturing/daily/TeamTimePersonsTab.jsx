@@ -211,12 +211,12 @@ export default function TeamTimePersonsTab({ batchId }) {
       });
 
       const gtTime = allMetrics.find(m => m.metric_code === 'GT_TIME')?.value || 0;
+      const helpTime = allMetrics.find(m => m.metric_code === 'HELP_TIME')?.value || 0;
       const neTime = allMetrics.find(m => m.metric_code === 'NE_TIME')?.value || 0;
       const odTime = allMetrics.find(m => m.metric_code === 'OD_TIME')?.value || 0;
-      const supTime = allMetrics.find(m => m.metric_code === 'SUP_TIME')?.value || 0;
 
-      // Calculate NAT_TIME = GT_TIME - NE_TIME - OD_TIME - SUP_TIME
-      const natTime = gtTime - neTime - odTime - supTime;
+      // Calculate NAT_TIME = GT_TIME + HELP_TIME - NE_TIME - OD_TIME
+      const natTime = gtTime + helpTime - neTime - odTime;
 
       const natMetric = allMetrics.find(m => m.metric_code === 'NAT_TIME');
 
