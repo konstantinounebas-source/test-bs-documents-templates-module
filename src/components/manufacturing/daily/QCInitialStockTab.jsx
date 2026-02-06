@@ -206,12 +206,71 @@ export default function QCInitialStockTab({ batchId, department }) {
     };
   }, [filteredLines]);
 
+  const saveQCTimeMetric = async () => {
+    try {
+      const batchHeader = await base44.entities.BatchHeader.filter({ id: batchId });
+      if (!batchHeader || batchHeader.length === 0) return;
+
+      // Fetch fresh QC data from database
+      const allQC = await base44.entities.QC_Initial_Stock.filter({ batch_header_id: batchId });
+      
+      // Fetch fresh QC set lines for calculations
+      const freshQCSetLines = await base44.entities.QCSetLines.filter({ bundle_id: batchHeader[0].bundle_id });
+      
+      // Calculate total QC time from fresh data
+      const totalQCMin = allQC.reduce((sum, line) => {
+        const trimmedItemCode = (line.item_code || '').trim();
+        
+        const qcRule = freshQCSetLines.find(
+          ql => {
+            const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
+            const qlQcType = ql.data?.qc_type || ql.qc_type;
+            const qlQcLevel = ql.data?.qc_level || ql.qc_level;
+            
+            return qlItemCode === trimmedItemCode.toLowerCase() &&
+                   qlQcType === line.qc_type &&
+                   qlQcLevel === line.qc_level;
+          }
+        );
+        
+        let qcPerPiece = 0;
+        if (qcRule) {
+          const extraTime = qcRule.data?.calculated_extra_time_min || qcRule.calculated_extra_time_min || qcRule.calculated_extra_time;
+          if (extraTime) {
+            qcPerPiece = parseFloat(extraTime);
+          }
+        }
+        
+        const qty = parseFloat(line.qty_affected) || 0;
+        return sum + (qcPerPiece * qty);
+      }, 0);
+
+      // Find and update the QC_TIME metric by date and department
+      const existingMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'QC_TIME',
+        date: batchHeader[0].date,
+        department: batchHeader[0].department
+      });
+
+      if (existingMetrics.length > 0) {
+        await base44.entities.DailyMetricValue.update(existingMetrics[0].id, {
+          value: totalQCMin
+        });
+      }
+
+      queryClient.invalidateQueries(['DailyMetricValue']);
+    } catch (error) {
+      console.error('Failed to save QC_TIME metric:', error);
+    }
+  };
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.QC_Initial_Stock.create({
       batch_header_id: batchId,
       ...data
     }),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveQCTimeMetric();
       queryClient.invalidateQueries(['QC_Initial_Stock']);
       setShowAddDialog(false);
       setFormData({ item_code: '', qc_type: '', qc_level: '', qty_affected: '' });
@@ -222,7 +281,8 @@ export default function QCInitialStockTab({ batchId, department }) {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.QC_Initial_Stock.update(id, data),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveQCTimeMetric();
       queryClient.invalidateQueries(['QC_Initial_Stock']);
       setShowAddDialog(false);
       setEditingLine(null);
@@ -234,7 +294,8 @@ export default function QCInitialStockTab({ batchId, department }) {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.QC_Initial_Stock.delete(id),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveQCTimeMetric();
       queryClient.invalidateQueries(['QC_Initial_Stock']);
       toast.success('QC initial stock deleted');
     },
