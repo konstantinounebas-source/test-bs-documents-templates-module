@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function HelpInTab({ batchId }) {
+export default function HelpInTab({ batchId, department }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [formData, setFormData] = useState({
@@ -30,13 +30,59 @@ export default function HelpInTab({ batchId }) {
     enabled: !!batchId
   });
 
+  const { data: batchHeader } = useQuery({
+    queryKey: ['BatchHeader', batchId],
+    queryFn: () => base44.entities.BatchHeader.filter({ id: batchId }),
+    enabled: !!batchId,
+    select: (data) => data?.[0]
+  });
+
+  const saveHelpTimeMetric = async () => {
+    try {
+      if (!batchHeader?.date || !department) return;
+
+      // Fetch fresh Help_In data from database
+      const allHelpIn = await base44.entities.Help_In.filter({ batch_header_id: batchId });
+      
+      // Calculate total HELP_TIME for this department (where department = receiving department)
+      const totalHelpTime = allHelpIn
+        .filter(h => h.department === department)
+        .reduce((sum, h) => sum + (h.help_min || 0), 0);
+      
+      // Find and update the HELP_TIME metric
+      const existingMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'HELP_TIME',
+        date: batchHeader.date,
+        department: department
+      });
+
+      if (existingMetrics.length > 0) {
+        await base44.entities.DailyMetricValue.update(existingMetrics[0].id, {
+          value: totalHelpTime
+        });
+      } else {
+        await base44.entities.DailyMetricValue.create({
+          metric_code: 'HELP_TIME',
+          date: batchHeader.date,
+          department: department,
+          value: totalHelpTime
+        });
+      }
+
+      queryClient.invalidateQueries(['DailyMetricValue']);
+    } catch (error) {
+      console.error('Failed to save HELP_TIME metric:', error);
+    }
+  };
+
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Help_In.create({
       batch_header_id: batchId,
       ...data
     }),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['Help_In']);
+    onSuccess: async () => {
+      await queryClient.invalidateQueries(['Help_In']);
+      await saveHelpTimeMetric();
       setShowAddDialog(false);
       setFormData({ department: '', from_department: '', help_min: '' });
       toast.success('Help-in record added');
@@ -46,8 +92,9 @@ export default function HelpInTab({ batchId }) {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Help_In.delete(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['Help_In']);
+    onSuccess: async () => {
+      await queryClient.invalidateQueries(['Help_In']);
+      await saveHelpTimeMetric();
       toast.success('Help-in record deleted');
     },
     onError: () => toast.error('Failed to delete help-in record')
