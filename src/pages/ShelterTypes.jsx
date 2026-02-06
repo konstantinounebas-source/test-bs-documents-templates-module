@@ -15,6 +15,8 @@ export default function ShelterTypesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [selectedShelterType, setSelectedShelterType] = useState(null);
+  const [sortColumn, setSortColumn] = useState("shelter_type_id");
+  const [sortDirection, setSortDirection] = useState("asc");
   const queryClient = useQueryClient();
 
   const { data: shelterTypes = [], isLoading } = useQuery({
@@ -28,6 +30,37 @@ export default function ShelterTypesPage() {
       type.shelter_type_id?.toLowerCase().includes(term) ||
       type.description?.toLowerCase().includes(term)
     );
+  }).sort((a, b) => {
+    let aVal, bVal;
+    
+    switch(sortColumn) {
+      case "shelter_type_id":
+        aVal = a.shelter_type_id || "";
+        bVal = b.shelter_type_id || "";
+        break;
+      case "description":
+        aVal = a.description || "";
+        bVal = b.description || "";
+        break;
+      case "status":
+        aVal = a.active ? 1 : 0;
+        bVal = b.active ? 1 : 0;
+        break;
+      default:
+        aVal = "";
+        bVal = "";
+    }
+    
+    if (typeof aVal === "string") {
+      aVal = aVal.toLowerCase();
+      bVal = bVal.toLowerCase();
+    }
+    
+    if (sortDirection === "asc") {
+      return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+    } else {
+      return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+    }
   });
 
   const handleCreate = () => {
@@ -48,6 +81,29 @@ export default function ShelterTypesPage() {
   const handleShelterTypeSaved = () => {
     queryClient.invalidateQueries(['shelterTypes']);
   };
+
+  const toggleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortHeader = ({ column, label }) => (
+    <TableHead 
+      className="cursor-pointer hover:bg-gray-100 select-none"
+      onClick={() => toggleSort(column)}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        {sortColumn === column && (
+          <span>{sortDirection === "asc" ? "↑" : "↓"}</span>
+        )}
+      </div>
+    </TableHead>
+  );
 
   if (isLoading) {
     return <div className="p-6">Loading...</div>;
@@ -82,9 +138,9 @@ export default function ShelterTypesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Shelter Type ID</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Status</TableHead>
+                  <SortHeader column="shelter_type_id" label="Shelter Type ID" />
+                  <SortHeader column="description" label="Description" />
+                  <SortHeader column="status" label="Status" />
                   <TableHead className="w-[120px]"></TableHead>
                 </TableRow>
               </TableHeader>
