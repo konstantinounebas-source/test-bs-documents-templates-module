@@ -56,6 +56,7 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
       setImportedData(rows);
       setValidationResults(rows.map(() => ({ isValid: null, error: null })));
       setCurrentValidationIndex(0);
+      setStep("validating");
       setConfirmDialogOpen(true);
     } catch (error) {
       console.error('Error reading Excel file:', error);
