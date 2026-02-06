@@ -84,13 +84,28 @@ export default function TemplatesPage() {
   // Check page access first
   const { hasAccess, isLoading: accessLoading, accessLevel } = usePageAccess('Templates');
   
+  // Show loading while checking access
+  if (accessLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  // If no access, this component won't render (user will be redirected by usePageAccess)
+  if (!hasAccess) {
+    return null;
+  }
+  
+  // All other hooks come AFTER the early returns
   const [templates, setTemplates] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [columnFilters, setColumnFilters] = useState({});
-  const [sortConfig, setSortConfig] = useState({ key: 'updated_date', direction: 'desc' }); // Default to descending
+  const [sortConfig, setSortConfig] = useState({ key: 'updated_date', direction: 'desc' });
   const [statFilter, setStatFilter] = useState(null);
   const [visibleColumns, setVisibleColumns] = useState(() => {
     try {
@@ -103,7 +118,6 @@ export default function TemplatesPage() {
   const [customFieldLabels, setCustomFieldLabels] = useState({});
   const [usersCache, setUsersCache] = useState({});
 
-  // Calculate actual visible columns count based on available columns
   const actualVisibleColumnsCount = useMemo(() => {
     return visibleColumns.filter(columnKey => 
       ALL_COLUMNS.find(col => col.key === columnKey)
@@ -112,15 +126,11 @@ export default function TemplatesPage() {
 
   const filteredTemplates = useMemo(() => {
     let filtered = [...templates];
-
-    // Apply tab filter
     if (activeTab === "file") {
       filtered = filtered.filter(t => t.template_type === "file_template");
     } else if (activeTab === "interactive") {
       filtered = filtered.filter(t => t.template_type === "interactive_form");
     }
-
-    // Apply global search term
     if (searchTerm) {
       filtered = filtered.filter(t => 
         Object.values(t).some(value => 
@@ -128,8 +138,6 @@ export default function TemplatesPage() {
         )
       );
     }
-    
-    // Apply stat filter from clickable cards
     if (statFilter) {
         filtered = filtered.filter(t => {
             const tValue = t[statFilter.field];
@@ -140,12 +148,9 @@ export default function TemplatesPage() {
             return String(tValue) === String(filterValue);
         });
     }
-
-    // Apply sorting
     if (sortConfig.key) {
       filtered = orderBy(filtered, [sortConfig.key], [sortConfig.direction]);
     }
-
     return filtered;
   }, [templates, activeTab, searchTerm, sortConfig, statFilter]);
 
@@ -160,20 +165,6 @@ export default function TemplatesPage() {
   useEffect(() => {
     localStorage.setItem('visibleTemplateColumns', JSON.stringify(visibleColumns));
   }, [visibleColumns]);
-
-  // Show loading while checking access
-  if (accessLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
-    );
-  }
-
-  // If no access, this component won't render (user will be redirected by usePageAccess)
-  if (!hasAccess) {
-    return null;
-  }
 
   const loadTemplates = async () => {
     setIsLoading(true);
