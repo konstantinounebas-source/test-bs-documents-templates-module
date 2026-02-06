@@ -268,9 +268,9 @@ export default function OperationsTab({ batchId, department }) {
         });
       }
 
-      // Update REMAKE_TIME metric
+      // Update Remake_TIME metric (note: case-sensitive)
       const remakeTimeMetrics = await base44.entities.DailyMetricValue.filter({
-        metric_code: 'REMAKE_TIME',
+        metric_code: 'Remake_TIME',
         date: batchHeader[0].date,
         department: batchHeader[0].department
       });
@@ -281,7 +281,7 @@ export default function OperationsTab({ batchId, department }) {
         });
       } else {
         await base44.entities.DailyMetricValue.create({
-          metric_code: 'REMAKE_TIME',
+          metric_code: 'Remake_TIME',
           date: batchHeader[0].date,
           department: batchHeader[0].department,
           value: totalRemakeTime
