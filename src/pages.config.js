@@ -85,7 +85,6 @@ import MfgStandards from './pages/MfgStandards';
 import MfgStandardsData from './pages/MfgStandardsData';
 import MfgStandardsManagement from './pages/MfgStandardsManagement';
 import MobileFieldWork from './pages/MobileFieldWork';
-import ModulesDocumentation from './pages/ModulesDocumentation';
 import MyWorkday from './pages/MyWorkday';
 import MyWorkspaceUserGuide from './pages/MyWorkspaceUserGuide';
 import OfficialOrders from './pages/OfficialOrders';
@@ -121,7 +120,7 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import ShelterFinancialPerformance from './pages/ShelterFinancialPerformance';
+import ModulesDocumentation from './pages/ModulesDocumentation';
 import __Layout from './Layout.jsx';
 
 
@@ -164,7 +163,6 @@ export const PAGES = {
     "MfgStandardsData": MfgStandardsData,
     "MfgStandardsManagement": MfgStandardsManagement,
     "MobileFieldWork": MobileFieldWork,
-    "ModulesDocumentation": ModulesDocumentation,
     "MyWorkday": MyWorkday,
     "MyWorkspaceUserGuide": MyWorkspaceUserGuide,
     "OfficialOrders": OfficialOrders,
@@ -200,7 +198,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "ShelterFinancialPerformance": ShelterFinancialPerformance,
+    "ModulesDocumentation": ModulesDocumentation,
 }
 
 export const pagesConfig = {
