@@ -207,12 +207,43 @@ export default function OperationsTab({ batchId, department }) {
     return groupedOperations.filter(g => g.item_code?.toLowerCase().includes(term));
   }, [groupedOperations, searchFilter]);
 
+  const saveOpTimeMetric = async () => {
+    try {
+      const batchHeader = await base44.entities.BatchHeader.filter({ id: batchId });
+      if (!batchHeader || batchHeader.length === 0) return;
+
+      // Fetch fresh operations data from database
+      const allOps = await base44.entities.Operations.filter({ batch_header_id: batchId });
+      
+      // Calculate total from fresh data
+      const totalOpTime = allOps.reduce((sum, op) => sum + (op.operation_time_min || 0), 0);
+
+      // Find and update the OP_TIME metric by date and department
+      const existingMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'OP_TIME',
+        date: batchHeader[0].date,
+        department: batchHeader[0].department
+      });
+
+      if (existingMetrics.length > 0) {
+        await base44.entities.DailyMetricValue.update(existingMetrics[0].id, {
+          value: totalOpTime
+        });
+      }
+
+      queryClient.invalidateQueries(['DailyMetricValue']);
+    } catch (error) {
+      console.error('Failed to save OP_TIME metric:', error);
+    }
+  };
+
   const deleteMutation = useMutation({
     mutationFn: async (profile_group_id) => {
       const opsToDelete = lines.filter(l => l.profile_group_id === profile_group_id);
       await Promise.all(opsToDelete.map(op => base44.entities.Operations.delete(op.id)));
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveOpTimeMetric();
       queryClient.invalidateQueries(['Operations']);
       toast.success('Operations deleted');
     },
@@ -269,6 +300,7 @@ export default function OperationsTab({ batchId, department }) {
 
     try {
       await Promise.all(createPromises);
+      await saveOpTimeMetric();
       queryClient.invalidateQueries(['Operations']);
       setShowAddDialog(false);
       resetForm();
