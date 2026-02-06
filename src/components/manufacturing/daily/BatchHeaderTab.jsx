@@ -148,7 +148,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
           qty_out_good: 0,
           qty_scrap: 0
         }));
-        await Promise.all(batchLines.map(line => base44.entities.Batch_Lines.create(line)));
+        await base44.entities.Batch_Lines.bulkCreate(batchLines);
 
         // Auto-populate QC Initial Stock
         const qcLines = scheduledData
@@ -161,7 +161,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
             qty_affected: sd.qc_qty
           }));
         if (qcLines.length > 0) {
-          await Promise.all(qcLines.map(line => base44.entities.QC_Initial_Stock.create(line)));
+          await base44.entities.QC_Initial_Stock.bulkCreate(qcLines);
         }
 
         // Auto-populate Operations
@@ -178,22 +178,24 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
             operation_time_min: (sd.ops_qty || 0) * (sd.std_min_pc || 0)
           }));
         if (operations.length > 0) {
-          await Promise.all(operations.map(op => base44.entities.Operations.create(op)));
+          await base44.entities.Operations.bulkCreate(operations);
         }
       }
       
       // Fetch all metric definitions
       const metrics = await base44.entities.MetricDefinition.list();
       
-      // For each metric, check if it exists and create only if missing
-      for (const metric of metrics) {
-        const existingMetric = await base44.entities.DailyMetricValue.filter({
-          metric_code: metric.metric_code,
-          date: newBatch.date,
-          department: newBatch.department
-        });
-        
-        if (existingMetric.length === 0) {
+      // Create all metrics in one bulk call
+      const existingMetrics = await base44.entities.DailyMetricValue.filter({
+        date: newBatch.date,
+        department: newBatch.department
+      });
+      
+      const existingMetricCodes = new Set(existingMetrics.map(m => m.metric_code));
+      
+      const metricsToCreate = metrics
+        .filter(metric => !existingMetricCodes.has(metric.metric_code))
+        .map(metric => {
           let initialValue = 0;
           
           // Calculate SCH_TIME from existing ScheduledData
@@ -201,14 +203,17 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
             initialValue = scheduledData.reduce((sum, sd) => sum + (sd.grand_total_min || 0), 0);
           }
           
-          await base44.entities.DailyMetricValue.create({
+          return {
             metric_code: metric.metric_code,
             date: newBatch.date,
             department: newBatch.department,
             bundle_id: newBatch.bundle_id,
             value: initialValue
-          });
-        }
+          };
+        });
+      
+      if (metricsToCreate.length > 0) {
+        await base44.entities.DailyMetricValue.bulkCreate(metricsToCreate);
       }
       
       return newBatch;
