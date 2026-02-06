@@ -96,16 +96,22 @@ export default function StickersInstallationUserGuide() {
         </TabsList>
 
         {/* OVERVIEW TAB */}
-        <TabsContent value="overview" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="w-5 h-5" />
-                Επισκόπηση Συστήματος
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p>Το σύστημα παρακολούθησης αυτοκόλλητων διαιρείται σε 5 κύριες σειρές:</p>
+         <TabsContent value="overview" className="space-y-4">
+           <Card>
+             <CardHeader>
+               <CardTitle className="flex items-center gap-2">
+                 <BookOpen className="w-5 h-5" />
+                 Επισκόπηση Συστήματος
+               </CardTitle>
+             </CardHeader>
+             <CardContent className="space-y-4">
+               <div className="bg-green-50 border border-green-200 p-3 rounded">
+                 <p className="text-sm text-green-800">
+                   ✅ <strong>Πρόσφατες Βελτιώσεις:</strong> Η απόδοση της εφαρμογής έχει βελτιωθεί σημαντικά με 
+                   βελτιστοποιημένες υπολογισμούς και ταχύτερη ανανέωση δεδομένων σε όλες τις σελίδες.
+                 </p>
+               </div>
+               <p>Το σύστημα παρακολούθησης αυτοκόλλητων διαιρείται σε 5 κύριες σειρές:</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="bg-blue-50 border-blue-200">
