@@ -25,6 +25,8 @@ export default function OrdersManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [stopIdFilter, setStopIdFilter] = useState("");
   const [filterStatuses, setFilterStatuses] = useState(["Open"]);
+  const [sortColumn, setSortColumn] = useState("order_date");
+  const [sortDirection, setSortDirection] = useState("desc");
   const [orderFormData, setOrderFormData] = useState({
     vendor: "",
     order_date: new Date().toISOString().split('T')[0],
@@ -245,11 +247,51 @@ export default function OrdersManagementPage() {
     return matchesCategory && matchesSearch && matchesStopId;
   });
 
-  // Filter orders
+  // Filter and sort orders
   const filteredOrders = orders.filter(order => {
     const matchesStatus = filterStatuses.length === 0 || filterStatuses.includes(order.status);
     return matchesStatus;
+  }).sort((a, b) => {
+    let aVal = a[sortColumn];
+    let bVal = b[sortColumn];
+    
+    if (aVal === undefined || aVal === null) aVal = "";
+    if (bVal === undefined || bVal === null) bVal = "";
+    
+    if (typeof aVal === "string") {
+      aVal = aVal.toLowerCase();
+      bVal = bVal.toLowerCase();
+    }
+    
+    if (sortDirection === "asc") {
+      return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+    } else {
+      return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+    }
   });
+
+  const toggleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortHeader = ({ column, label }) => (
+    <TableHead 
+      className="cursor-pointer hover:bg-gray-100 select-none"
+      onClick={() => toggleSort(column)}
+    >
+      <div className="flex items-center gap-1">
+        {label}
+        {sortColumn === column && (
+          <span>{sortDirection === "asc" ? "↑" : "↓"}</span>
+        )}
+      </div>
+    </TableHead>
+  );
 
   const toggleItemSelection = (itemId) => {
     setSelectedItems(prev => ({
@@ -583,10 +625,10 @@ export default function OrdersManagementPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Vendor</TableHead>
-                    <TableHead>Order Date</TableHead>
-                    <TableHead>Status</TableHead>
+                    <SortHeader column="id" label="Order ID" />
+                    <SortHeader column="vendor" label="Vendor" />
+                    <SortHeader column="order_date" label="Order Date" />
+                    <SortHeader column="status" label="Status" />
                     <TableHead>Items</TableHead>
                     <TableHead>Critical Stops</TableHead>
                     <TableHead>Notes</TableHead>
