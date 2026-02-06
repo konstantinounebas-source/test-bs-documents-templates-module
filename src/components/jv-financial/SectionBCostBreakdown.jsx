@@ -158,24 +158,7 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange })
                 <CardTitle>SECTION B — Cost Breakdown (BOM-driven)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-8">
-                {/* BOM Version Selector */}
-                {bomVersions.length > 0 && (
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">BOM Version</label>
-                        <Select value={selectedBomVersion} onValueChange={setSelectedBomVersion}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {bomVersions.map((v) => (
-                                    <SelectItem key={v.version} value={v.version}>
-                                        {v.version} {v.comment && `- ${v.comment}`}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                )}
+                {/* BOM Version Selector - Hidden */}
 
                 {/* 1. Verified Costs from BOM */}
                 <div>
