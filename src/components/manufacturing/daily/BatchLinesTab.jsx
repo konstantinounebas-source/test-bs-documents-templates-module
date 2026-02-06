@@ -111,7 +111,8 @@ export default function BatchLinesTab({ batchId, department }) {
       batch_header_id: batchId,
       ...data
     }),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveACTQtyMetric();
       queryClient.invalidateQueries(['Batch_Lines']);
       setShowAddDialog(false);
       setFormData({ item_code: '', scheduled_qty: '', qty_processed: '', qty_out_good: '', qty_scrap: '' });
@@ -122,7 +123,8 @@ export default function BatchLinesTab({ batchId, department }) {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Batch_Lines.update(id, data),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveACTQtyMetric();
       queryClient.invalidateQueries(['Batch_Lines']);
       setShowAddDialog(false);
       setEditingLine(null);
@@ -134,12 +136,43 @@ export default function BatchLinesTab({ batchId, department }) {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Batch_Lines.delete(id),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await saveACTQtyMetric();
       queryClient.invalidateQueries(['Batch_Lines']);
       toast.success('Batch line deleted');
     },
     onError: () => toast.error('Failed to delete batch line')
   });
+
+  const saveACTQtyMetric = async () => {
+    try {
+      const batchHeader = await base44.entities.BatchHeader.filter({ id: batchId });
+      if (!batchHeader || batchHeader.length === 0) return;
+
+      // Fetch fresh Batch_Lines data from database
+      const allLines = await base44.entities.Batch_Lines.filter({ batch_header_id: batchId });
+      
+      // Calculate total Qty Out Good
+      const totalQtyOutGood = allLines.reduce((sum, line) => sum + (line.qty_out_good || 0), 0);
+
+      // Find and update the ACT_QTY metric by date and department
+      const existingMetrics = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'ACT_QTY',
+        date: batchHeader[0].date,
+        department: batchHeader[0].department
+      });
+
+      if (existingMetrics.length > 0) {
+        await base44.entities.DailyMetricValue.update(existingMetrics[0].id, {
+          value: totalQtyOutGood
+        });
+      }
+
+      queryClient.invalidateQueries(['DailyMetricValue']);
+    } catch (error) {
+      console.error('Failed to save ACT_QTY metric:', error);
+    }
+  };
 
   const handleAdd = () => {
     if (!formData.item_code) {
