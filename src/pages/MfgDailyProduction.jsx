@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -8,6 +10,7 @@ import { ArrowLeft, ClipboardList, Plus, Edit2, Trash2, Save, Loader2, Clock } f
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
+import DailyProductionCalendarSelector from "../components/manufacturing/daily/DailyProductionCalendarSelector";
 import BatchHeaderTab from "../components/manufacturing/daily/BatchHeaderTab";
 import BatchLinesTab from "../components/manufacturing/daily/BatchLinesTab";
 import QCInitialStockTab from "../components/manufacturing/daily/QCInitialStockTab";
@@ -20,8 +23,16 @@ import ConsumablesActualTab from "../components/manufacturing/daily/ConsumablesA
 export default function MfgDailyProduction() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("batch_header");
+  const [activeTab, setActiveTab] = useState("batch_lines");
   const [selectedBatch, setSelectedBatch] = useState(null);
+  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ['Department'],
+    queryFn: () => base44.entities.Department.list(),
+    staleTime: Infinity
+  });
 
   const { data: batchHeaders = [] } = useQuery({
     queryKey: ['BatchHeader'],
@@ -47,6 +58,20 @@ export default function MfgDailyProduction() {
     setSelectedBatch(newBatch);
     setActiveTab("batch_lines");
     queryClient.invalidateQueries(['BatchHeader']);
+  };
+
+  const handleDateSelect = (dateStr) => {
+    setSelectedDate(dateStr);
+    const existingBatch = batchHeaders.find(b => b.date === dateStr && b.department === selectedDepartment);
+    if (existingBatch) {
+      handleBatchSelect(existingBatch);
+    } else {
+      setSelectedBatch(null);
+    }
+  };
+
+  const handleCreateBatch = async (dateStr) => {
+    // This will be handled by BatchHeaderTab but we need to pass the department
   };
 
   return (
@@ -80,58 +105,75 @@ export default function MfgDailyProduction() {
               </p>
             )}
           </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid grid-cols-8 w-full">
-                <TabsTrigger value="batch_header">Batch Header</TabsTrigger>
-                <TabsTrigger value="batch_lines" disabled={!selectedBatch}>Batch Lines</TabsTrigger>
-                <TabsTrigger value="qc_initial" disabled={!selectedBatch}>QC Initial Stock</TabsTrigger>
-                <TabsTrigger value="operations" disabled={!selectedBatch}>Operations</TabsTrigger>
-                <TabsTrigger value="team_persons" disabled={!selectedBatch}>Team Time Persons</TabsTrigger>
-                <TabsTrigger value="team_extra" disabled={!selectedBatch}>Team Time Extra</TabsTrigger>
-                <TabsTrigger value="help_in" disabled={!selectedBatch}>Help In</TabsTrigger>
-                <TabsTrigger value="consumables" disabled={!selectedBatch}>Consumables</TabsTrigger>
-              </TabsList>
+          <CardContent className="space-y-6">
+            <div>
+              <Label className="text-sm font-semibold">Select Department</Label>
+              <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map(d => (
+                    <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="mt-6">
-                <TabsContent value="batch_header">
-                  <BatchHeaderTab 
-                    batchHeaders={batchHeaders}
-                    selectedBatch={selectedBatch}
-                    onBatchSelect={handleBatchSelect}
-                    onBatchCreated={handleBatchCreated}
-                  />
-                </TabsContent>
+            {selectedDepartment && (
+              <BatchHeaderTab 
+                batchHeaders={batchHeaders}
+                selectedBatch={selectedBatch}
+                selectedDepartment={selectedDepartment}
+                onBatchSelect={handleBatchSelect}
+                onBatchCreated={handleBatchCreated}
+                hideHeader={true}
+              />
+            )}
 
-                <TabsContent value="batch_lines">
-                  <BatchLinesTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                </TabsContent>
+            {selectedBatch && (
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="grid grid-cols-7 w-full">
+                  <TabsTrigger value="batch_lines">Batch Lines</TabsTrigger>
+                  <TabsTrigger value="qc_initial">QC Initial Stock</TabsTrigger>
+                  <TabsTrigger value="operations">Operations</TabsTrigger>
+                  <TabsTrigger value="team_persons">Team Time Persons</TabsTrigger>
+                  <TabsTrigger value="team_extra">Team Time Extra</TabsTrigger>
+                  <TabsTrigger value="help_in">Help In</TabsTrigger>
+                  <TabsTrigger value="consumables">Consumables</TabsTrigger>
+                </TabsList>
 
-                <TabsContent value="qc_initial">
-                  <QCInitialStockTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                </TabsContent>
+                <div className="mt-6">
+                  <TabsContent value="batch_lines">
+                    <BatchLinesTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                  </TabsContent>
 
-                <TabsContent value="operations">
-                  <OperationsTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                </TabsContent>
+                  <TabsContent value="qc_initial">
+                    <QCInitialStockTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                  </TabsContent>
 
-                <TabsContent value="team_persons">
-                  <TeamTimePersonsTab batchId={selectedBatch?.id} />
-                </TabsContent>
+                  <TabsContent value="operations">
+                    <OperationsTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                  </TabsContent>
 
-                <TabsContent value="team_extra">
-                  <TeamTimeExtraTab batchId={selectedBatch?.id} />
-                </TabsContent>
+                  <TabsContent value="team_persons">
+                    <TeamTimePersonsTab batchId={selectedBatch?.id} />
+                  </TabsContent>
 
-                <TabsContent value="help_in">
-                  <HelpInTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                </TabsContent>
+                  <TabsContent value="team_extra">
+                    <TeamTimeExtraTab batchId={selectedBatch?.id} />
+                  </TabsContent>
 
-                <TabsContent value="consumables">
-                  <ConsumablesActualTab batchId={selectedBatch?.id} />
-                </TabsContent>
-              </div>
-            </Tabs>
+                  <TabsContent value="help_in">
+                    <HelpInTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                  </TabsContent>
+
+                  <TabsContent value="consumables">
+                    <ConsumablesActualTab batchId={selectedBatch?.id} />
+                  </TabsContent>
+                </div>
+              </Tabs>
+            )}
           </CardContent>
         </Card>
       </div>

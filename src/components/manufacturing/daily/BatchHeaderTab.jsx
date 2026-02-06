@@ -13,9 +13,9 @@ import { Plus, Save, Edit2, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import DailyProductionCalendarSelector from './DailyProductionCalendarSelector';
 
-export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSelect, onBatchCreated }) {
+export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDepartment: propDepartment, onBatchSelect, onBatchCreated, hideHeader = false }) {
   const queryClient = useQueryClient();
-  const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState(propDepartment || '');
   const [selectedDate, setSelectedDate] = useState('');
   const [editingBatch, setEditingBatch] = useState(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -27,9 +27,17 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
     notes: ''
   });
 
+  // Sync with prop
+  React.useEffect(() => {
+    if (propDepartment) {
+      setSelectedDepartment(propDepartment);
+    }
+  }, [propDepartment]);
+
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
-    queryFn: () => base44.entities.Department.list()
+    queryFn: () => base44.entities.Department.list(),
+    staleTime: Infinity
   });
 
   // Fetch scheduled day headers for bundle resolution
@@ -312,19 +320,21 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
         </div>
       )}
 
-      <div>
-        <Label className="text-sm font-semibold">Select Department</Label>
-        <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-          <SelectTrigger className="mt-2">
-            <SelectValue placeholder="Select department" />
-          </SelectTrigger>
-          <SelectContent>
-            {departments.map(d => (
-              <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {!hideHeader && (
+        <div>
+          <Label className="text-sm font-semibold">Select Department</Label>
+          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+            <SelectTrigger className="mt-2">
+              <SelectValue placeholder="Select department" />
+            </SelectTrigger>
+            <SelectContent>
+              {departments.map(d => (
+                <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {selectedDepartment && (
         <DailyProductionCalendarSelector
