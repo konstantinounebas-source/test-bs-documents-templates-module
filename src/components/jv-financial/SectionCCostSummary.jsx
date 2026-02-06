@@ -48,7 +48,6 @@ export default function SectionCCostSummary({ sectionATotal, sectionBVerified, s
 
                     {/* Cost Breakdown Summary */}
                     <div className="bg-slate-50 rounded-lg p-4 mt-4">
-                        <p className="text-sm font-semibold text-slate-700 mb-3">Breakdown:</p>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-slate-600">Contract Income (A)</span>

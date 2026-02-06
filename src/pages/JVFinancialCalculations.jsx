@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import { Button } from "@/components/ui/button";
+import { Download, Plus } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import { usePageAccess } from "@/components/lib/usePageAccess";
 import SectionAContractIncome from "@/components/jv-financial/SectionAContractIncome";
 import SectionBCostBreakdown from "@/components/jv-financial/SectionBCostBreakdown";
