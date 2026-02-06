@@ -13,10 +13,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from 'sonner';
 import { Plus, ShoppingCart, Eye, Printer, AlertTriangle, Search, FileDown, FileText, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import ExcelJS from 'exceljs';
+import ExportOrderTemplateDialog from "@/components/stickers/ExportOrderTemplateDialog";
+import ImportOrderFromFileDialog from "@/components/stickers/ImportOrderFromFileDialog";
 
 export default function OrdersManagementPage() {
   const [selectedItems, setSelectedItems] = useState({});
@@ -548,6 +551,16 @@ export default function OrdersManagementPage() {
     navigate(createPageUrl("OrderPrint") + `?orderId=${orderId}`);
   };
 
+  const handleImportItemsFromFile = (validItemIds) => {
+    // Add imported items to selected items
+    const newSelection = { ...selectedItems };
+    validItemIds.forEach(itemId => {
+      newSelection[itemId] = true;
+    });
+    setSelectedItems(newSelection);
+    toast.success(`${validItemIds.length} sticker items imported successfully`);
+  };
+
   const handleExportAvailableItems = async () => {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Available Sticker Items');
@@ -805,6 +818,14 @@ export default function OrdersManagementPage() {
           <div className="flex items-center justify-between">
             <CardTitle>Create New Order - Select Sticker Items</CardTitle>
             <div className="flex gap-2">
+              <ExportOrderTemplateDialog />
+              <ImportOrderFromFileDialog 
+                isOpen={false} 
+                onClose={() => {}}
+                onItemsImported={handleImportItemsFromFile}
+                stickerItems={stickerItems}
+                stops={stops}
+              />
               <Button variant="outline" size="sm" onClick={handleExportAvailableItems}>
                 <FileDown className="w-4 h-4 mr-2" />
                 Export
