@@ -333,11 +333,11 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange })
                     </div>
                 </div>
 
-                {/* 3. Unfinalised / Accrued Costs */}
+                {/* 4. Unfinalised / Accrued Costs */}
                 <div>
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">3. Unfinalised / Accrued Costs</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">4. Unfinalised / Accrued Costs</label>
                             <p className="text-xs text-slate-500">Estimated costs not yet finalized</p>
                         </div>
                         <Button
