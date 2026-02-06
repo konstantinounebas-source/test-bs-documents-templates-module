@@ -394,7 +394,7 @@ export default function TemplatesPage() {
                 <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto">
                   <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {COLUMN_CATEGORIES.map((category, index) => (
+                  {useMemo(() => COLUMN_CATEGORIES.map((category, index) => (
                     <React.Fragment key={category.label}>
                       {index > 0 && <DropdownMenuSeparator />}
                       <DropdownMenuLabel className="text-slate-500 font-semibold">{category.label}</DropdownMenuLabel>
@@ -406,15 +406,11 @@ export default function TemplatesPage() {
                             key={col.key}
                             checked={visibleColumns.includes(col.key)}
                             onCheckedChange={(checked) => {
-                              setVisibleColumns(prev => {
-                                if (checked) {
-                                  // Add column if it's not already there
-                                  return prev.includes(col.key) ? prev : [...prev, col.key];
-                                } else {
-                                  // Remove column
-                                  return prev.filter(k => k !== col.key);
-                                }
-                              });
+                              setVisibleColumns(prev => 
+                                checked 
+                                  ? prev.includes(col.key) ? prev : [...prev, col.key]
+                                  : prev.filter(k => k !== col.key)
+                              );
                             }}
                           >
                             {getColumnLabel(col)}
@@ -422,7 +418,7 @@ export default function TemplatesPage() {
                         );
                       })}
                     </React.Fragment>
-                  ))}
+                  )), [visibleColumns, getColumnLabel])}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
