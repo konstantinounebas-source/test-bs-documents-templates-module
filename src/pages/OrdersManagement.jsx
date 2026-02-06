@@ -23,6 +23,7 @@ export default function OrdersManagementPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [categoryFilters, setCategoryFilters] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [stopIdFilter, setStopIdFilter] = useState("");
   const [filterStatuses, setFilterStatuses] = useState(["Open"]);
   const [orderFormData, setOrderFormData] = useState({
     vendor: "",
@@ -220,7 +221,10 @@ export default function OrdersManagementPage() {
       template?.sticker_name_category?.toLowerCase().includes(term)
     );
     
-    return matchesCategory && matchesSearch;
+    const matchesStopId = !stopIdFilter || 
+      stop?.stop_id?.toLowerCase().includes(stopIdFilter.toLowerCase());
+    
+    return matchesCategory && matchesSearch && matchesStopId;
   });
 
   // Filter orders
@@ -655,6 +659,14 @@ export default function OrdersManagementPage() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-gray-600 mb-1">Filter by Stop ID</Label>
+                  <Input
+                    placeholder="Enter Stop ID to filter..."
+                    value={stopIdFilter}
+                    onChange={(e) => setStopIdFilter(e.target.value)}
                   />
                 </div>
                 <div>
