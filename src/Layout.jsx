@@ -465,6 +465,26 @@ const allNavigationGroups = [
     ]
   },
   {
+    id: 'shelter-financial-performance',
+    label: 'Shelter Financial Performance',
+    items: [
+      {
+        title: "JV Financial Results",
+        url: createPageUrl("JVFinancialResults"),
+        icon: BarChart3,
+        description: "View financial results for each Shelter Type",
+        pageKey: "JVFinancialResults"
+      },
+      {
+        title: "JV Financial Calculations",
+        url: createPageUrl("JVFinancialCalculations"),
+        icon: FileText,
+        description: "Detailed calculations and traceability for each Shelter Type",
+        pageKey: "JVFinancialCalculations"
+      }
+    ]
+  },
+  {
     id: 'system-management',
     label: 'System Management',
     items: [
