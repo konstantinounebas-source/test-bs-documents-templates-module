@@ -13,6 +13,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Save, AlertTriangle, PackageCheck, FileDown } from "lucide-react";
 import ExcelJS from 'exceljs';
+import ExportReceiptTemplateDialog from "@/components/stickers/ExportReceiptTemplateDialog";
+import ImportReceiptFromFileDialog from "@/components/stickers/ImportReceiptFromFileDialog";
 
 export default function ReceiptsPage() {
   const [selectedOrderForReceipt, setSelectedOrderForReceipt] = useState(null);
@@ -28,6 +30,7 @@ export default function ReceiptsPage() {
   const [stickerTypeFilter, setStickerTypeFilter] = useState("all");
   const [shelterTypeFilter, setShelterTypeFilter] = useState("all");
   const [criticalFilter, setCriticalFilter] = useState("all");
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: orders = [] } = useQuery({
@@ -200,6 +203,53 @@ export default function ReceiptsPage() {
       alert("Error creating receipt");
     }
 
+    setLoading(false);
+  };
+
+  const handleImportItems = async (itemsToImport) => {
+    setLoading(true);
+    try {
+      const user = await base44.auth.me();
+      
+      // Create receipt
+      const receipt = await base44.entities.Receipt.create({
+        order_id: itemsToImport[0]?.order_id || null,
+        received_date: new Date().toISOString().split('T')[0],
+        received_by: user.email,
+        notes: "Imported from file"
+      });
+
+      // Create receipt lines and update items
+      for (const item of itemsToImport) {
+        await base44.entities.ReceiptLine.create({
+          receipt_id: receipt.id,
+          sticker_item_id: item.stickerId,
+          received_quantity: item.quantity
+        });
+
+        await base44.entities.StickerItem.update(item.stickerId, {
+          status: "Received"
+        });
+
+        await base44.entities.StickerMovementLog.create({
+          sticker_item_id: item.stickerId,
+          action_type: "Received",
+          old_status: "Ordered",
+          new_status: "Received",
+          notes: `Receipt #${receipt.id.slice(0, 8)} - Imported`,
+          user_email: user.email
+        });
+      }
+
+      queryClient.invalidateQueries(['orders']);
+      queryClient.invalidateQueries(['stickerItems']);
+      queryClient.invalidateQueries(['orderLines']);
+
+      alert("Receipt created successfully from imported data!");
+    } catch (error) {
+      console.error("Error creating receipt from import:", error);
+      alert("Error creating receipt");
+    }
     setLoading(false);
   };
 
@@ -403,10 +453,20 @@ export default function ReceiptsPage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Pending Items to Receive</span>
-            <Button variant="outline" size="sm" onClick={handleExportOrderedItems}>
-              <FileDown className="w-4 h-4 mr-2" />
-              Export to Excel
-            </Button>
+            <div className="flex gap-2">
+              <ImportReceiptFromFileDialog 
+                isOpen={importDialogOpen}
+                onClose={() => setImportDialogOpen(false)}
+                onItemsImported={handleImportItems}
+                stops={stops}
+                stickerItems={stickerItems}
+                stickerTemplates={stickerTemplates}
+              />
+              <Button variant="outline" size="sm" onClick={handleExportOrderedItems}>
+                <FileDown className="w-4 h-4 mr-2" />
+                Export to Excel
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
