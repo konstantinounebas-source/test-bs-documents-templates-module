@@ -41,6 +41,12 @@ export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }
     const totalPotentialVariations = potentialVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
     const totalContractIncome = (parseFloat(contractAmount) || 0) + totalApprovedVariations + totalPotentialVariations;
 
+    useEffect(() => {
+        if (onTotalsChange) {
+            onTotalsChange({ contractIncome: totalContractIncome });
+        }
+    }, [totalContractIncome, onTotalsChange]);
+
     return (
         <Card>
             <CardHeader>
