@@ -174,28 +174,34 @@ export default function DashboardPage() {
 
   // 4η ΣΕΙΡΑ: Επιχειρησιακές Ασυμφωνίες (Mismatches)
   
-  // Εγκατεστημένες χωρίς Εγκατεστημένα Stickers
-  const installedWithoutStickerInstall = stickerItems.filter(item => {
-    const stop = stops.find(s => s.id === item.stop_id);
-    return stop && stop.shelter_installed && item.status !== "Installed";
-  });
+  const installedWithoutStickerInstall = useMemo(() =>
+    stickerItems.filter(item => {
+      const stop = stopsMap[item.stop_id];
+      return stop && stop.shelter_installed && item.status !== "Installed";
+    }),
+    [stickerItems, stopsMap]
+  );
 
-  // Εγκατεστημένες χωρίς Παραγγελία (ΚΡΙΣΙΜΟ)
-  const installedWithoutOrder = stickerItems.filter(item => {
-    const stop = stops.find(s => s.id === item.stop_id);
-    return stop && stop.shelter_installed && item.status === "Needed";
-  });
+  const installedWithoutOrder = useMemo(() =>
+    stickerItems.filter(item => {
+      const stop = stopsMap[item.stop_id];
+      return stop && stop.shelter_installed && item.status === "Needed";
+    }),
+    [stickerItems, stopsMap]
+  );
 
-  // Ordered vs Received: Παραγγελμένα που δεν έχουν παραληφθεί
-  const orderedNotReceivedOnInstalled = stickerItems.filter(item => {
-    const stop = stops.find(s => s.id === item.stop_id);
-    return stop && stop.shelter_installed && item.status === "Ordered";
-  });
+  const orderedNotReceivedOnInstalled = useMemo(() =>
+    stickerItems.filter(item => {
+      const stop = stopsMap[item.stop_id];
+      return stop && stop.shelter_installed && item.status === "Ordered";
+    }),
+    [stickerItems, stopsMap]
+  );
 
-  // 6. Πόσα αυτοκόλλητα έχουν παραγγελθεί πάνω από μία φορά
-  const stickersOrderedMultipleTimes = stickerItems.filter(item => {
-    return (item.total_ordered_quantity || 0) > 1;
-  });
+  const stickersOrderedMultipleTimes = useMemo(() =>
+    stickerItems.filter(item => (item.total_ordered_quantity || 0) > 1),
+    [stickerItems]
+  );
 
   // 7. Στάσεις εγκατεστημένες - υπολειπόμενα αυτοκόλλητα ανά κατηγορία
   const installedStopsWithRemainingStickers = stops.filter(stop => {
