@@ -77,7 +77,7 @@ export default function StickerItemsPage() {
   };
 
   const handleSaved = () => {
-    queryClient.invalidateQueries(['stickerItems']);
+    queryClient.invalidateQueries({ queryKey: ['stickerItems'] });
   };
 
   const handleReceived = async (item) => {
