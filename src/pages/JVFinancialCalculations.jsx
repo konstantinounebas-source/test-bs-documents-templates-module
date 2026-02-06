@@ -77,17 +77,7 @@ export default function JVFinancialCalculations() {
 
                 {selectedShelterType && (
                     <div className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>SECTION A — Contract & Income</CardTitle>
-                                <CardDescription>Contract income, extra works, and other revenue sources</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-slate-600">
-                                    Content will be added here...
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <SectionAContractIncome shelterTypeId={selectedShelterType} />
 
                         <Card>
                             <CardHeader>
