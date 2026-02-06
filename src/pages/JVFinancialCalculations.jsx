@@ -15,6 +15,8 @@ export default function JVFinancialCalculations() {
     const [selectedShelterType, setSelectedShelterType] = useState(null);
     const [shelterTypes, setShelterTypes] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [sectionATotals, setSectionATotals] = useState({ contractIncome: 0 });
+    const [sectionBTotals, setSectionBTotals] = useState({ verified: 0, waste: 0, accrued: 0 });
 
     useEffect(() => {
         if (!accessLoading && hasAccess) {
