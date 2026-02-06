@@ -118,7 +118,61 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      const newBatch = await base44.entities.BatchHeader.create(data);
+      // Check if scheduled data exists
+      const scheduledData = await base44.entities.ScheduledData.filter({
+        date: data.date,
+        department_id: data.department
+      });
+      
+      // Create batch header with scheduled data flag
+      const newBatch = await base44.entities.BatchHeader.create({
+        ...data,
+        has_scheduled_data: scheduledData.length > 0
+      });
+      
+      // Auto-populate Batch Lines
+      if (scheduledData.length > 0) {
+        const batchLines = scheduledData.map(sd => ({
+          batch_header_id: newBatch.id,
+          item_code: sd.item_code,
+          scheduled_qty: sd.ops_qty || 0,
+          qty_processed: 0,
+          qty_out_good: 0,
+          qty_scrap: 0
+        }));
+        await Promise.all(batchLines.map(line => base44.entities.Batch_Lines.create(line)));
+
+        // Auto-populate QC Initial Stock
+        const qcLines = scheduledData
+          .filter(sd => sd.qc_qty && sd.qc_qty > 0)
+          .map(sd => ({
+            batch_header_id: newBatch.id,
+            item_code: sd.item_code,
+            qc_type: sd.qc_type || '',
+            qc_level: sd.qc_level || '',
+            qty_affected: sd.qc_qty
+          }));
+        if (qcLines.length > 0) {
+          await Promise.all(qcLines.map(line => base44.entities.QC_Initial_Stock.create(line)));
+        }
+
+        // Auto-populate Operations
+        const operations = scheduledData
+          .filter(sd => sd.operation && sd.ops_qty)
+          .map(sd => ({
+            batch_header_id: newBatch.id,
+            item_code: sd.item_code,
+            operation: sd.operation,
+            qty_operation: sd.ops_qty || 0,
+            remake_qty: 0,
+            source_type: 'SCHEDULE',
+            std_min_pc_lookup: sd.std_min_pc || 0,
+            operation_time_min: (sd.ops_qty || 0) * (sd.std_min_pc || 0)
+          }));
+        if (operations.length > 0) {
+          await Promise.all(operations.map(op => base44.entities.Operations.create(op)));
+        }
+      }
       
       // Fetch all metric definitions
       const metrics = await base44.entities.MetricDefinition.list();
@@ -136,10 +190,6 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
           
           // Calculate SCH_TIME from existing ScheduledData
           if (metric.metric_code === 'SCH_TIME') {
-            const scheduledData = await base44.entities.ScheduledData.filter({
-              date: newBatch.date,
-              department_id: newBatch.department
-            });
             initialValue = scheduledData.reduce((sum, sd) => sum + (sd.grand_total_min || 0), 0);
           }
           
@@ -157,9 +207,15 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
     },
     onSuccess: (newBatch) => {
       queryClient.invalidateQueries(['BatchHeader']);
+      queryClient.invalidateQueries(['Batch_Lines']);
+      queryClient.invalidateQueries(['QC_Initial_Stock']);
+      queryClient.invalidateQueries(['Operations']);
       queryClient.invalidateQueries(['DailyMetricValue']);
       resetForm();
-      toast.success('Batch header created');
+      const msg = newBatch.has_scheduled_data 
+        ? 'Batch created and auto-filled from schedule' 
+        : 'Batch created (no scheduled data found)';
+      toast.success(msg);
       onBatchCreated(newBatch);
     },
     onError: () => toast.error('Failed to create batch header')
@@ -378,12 +434,21 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, onBatchSel
                       <TableCell className="font-medium">{batch.date}</TableCell>
                       <TableCell>{batch.department}</TableCell>
                       <TableCell>
-                        {(() => {
-                          const bundle = allBundlesGlobal.find(b => b.id === batch.bundle_id);
-                          if (!bundle) return `❌ missing (${batch.bundle_id})`;
-                          const version = bundle.version_no || bundle.version || '?';
-                          return `${version} (${bundle.status})`;
-                        })()}
+                        <div className="space-y-1">
+                          <div>
+                            {(() => {
+                              const bundle = allBundlesGlobal.find(b => b.id === batch.bundle_id);
+                              if (!bundle) return `❌ missing (${batch.bundle_id})`;
+                              const version = bundle.version_no || bundle.version || '?';
+                              return `${version} (${bundle.status})`;
+                            })()}
+                          </div>
+                          {batch.has_scheduled_data === false && (
+                            <div className="text-xs text-amber-600 font-medium">
+                              ⚠️ No scheduled data
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
