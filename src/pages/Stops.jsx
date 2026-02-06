@@ -61,25 +61,38 @@ export default function StopsPage() {
     return type ? type.shelter_type_id : "-";
   };
 
-  const getStickerCounts = (stopId) => {
-    const activeItems = stickerItems.filter(item => item.stop_id === stopId);
+  const stickersByStop = useMemo(() => {
+    const map = {};
+    stickerItems.forEach(item => {
+      if (!map[item.stop_id]) map[item.stop_id] = [];
+      map[item.stop_id].push(item);
+    });
+    return map;
+  }, [stickerItems]);
+
+  const templatesMap = useMemo(() => {
+    const map = {};
+    stickerTemplates.forEach(t => map[t.id] = t);
+    return map;
+  }, [stickerTemplates]);
+
+  const getStickerCounts = useMemo(() => (stopId) => {
+    const activeItems = stickersByStop[stopId] || [];
     return {
       needed: activeItems.filter(item => item.status === "Needed").length,
       ordered: activeItems.filter(item => item.status === "Ordered").length,
       received: activeItems.filter(item => item.status === "Received").length,
       installed: activeItems.filter(item => item.status === "Installed").length
     };
-  };
+  }, [stickersByStop]);
 
-  const isCriticalStop = (stopId) => {
+  const isCriticalStop = useMemo(() => (stopId) => {
     const stop = stops.find(s => s.id === stopId);
     if (!stop) return false;
     
-    const items = stickerItems.filter(item => item.stop_id === stopId);
-    
+    const items = stickersByStop[stopId] || [];
     return items.some(item => {
-      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-      
+      const template = templatesMap[item.sticker_template_id];
       if (item?.status === "Needed") {
         const daysBeforeInstall = template?.days_before_installation_to_receive || 0;
         if (stop?.current_planned_installation_date) {
@@ -87,7 +100,6 @@ export default function StopsPage() {
           return daysUntilInstallation < daysBeforeInstall;
         }
       }
-      
       if (item?.status === "Ordered") {
         const daysBeforeInstall = template?.days_before_installation_to_receive || 0;
         if (stop?.current_planned_installation_date) {
@@ -96,10 +108,9 @@ export default function StopsPage() {
           return new Date() > receiveByDate;
         }
       }
-      
       return false;
     });
-  };
+  }, [stops, stickersByStop, templatesMap]);
 
 
 
