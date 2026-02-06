@@ -328,7 +328,7 @@ export default function ReceiptsPage() {
                   <SelectValue placeholder="Filter by Order" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Orders</SelectItem>
+                  <SelectItem value="all">Open Orders</SelectItem>
                   {openOrders.map((order) => (
                     <SelectItem key={order.id} value={order.id}>
                       Order #{order.id.slice(0, 8)}
