@@ -114,59 +114,32 @@ export default function StopsPage() {
 
 
 
-  const checkStickersMismatch = (stop) => {
+  const checkStickersMismatch = useMemo(() => (stop) => {
     if (!stop.shelter_type_approved_id) return false;
-    
-    // Get active (non-obsolete) stickers for this stop
-    const activeStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status !== "Obsolete");
-    
-    // Get the requirements for this shelter type
-    const requirements = stickerItems
-      .filter(s => s.stop_id === stop.id)
-      .reduce((acc, sticker) => {
-        const key = sticker.sticker_template_id;
-        acc[key] = (acc[key] || 0) + 1;
-        return acc;
-      }, {});
-    
-    // Count active stickers by template
+    const activeStickers = (stickersByStop[stop.id] || []).filter(s => s.status !== "Obsolete");
     const activeCounts = {};
     activeStickers.forEach(s => {
       const key = s.sticker_template_id;
       activeCounts[key] = (activeCounts[key] || 0) + 1;
     });
-    
-    // If we have obsolete stickers but they don't match current active ones, show warning
-    const obsoleteStickers = stickerItems.filter(s => s.stop_id === stop.id && s.status === "Obsolete");
+    const obsoleteStickers = (stickersByStop[stop.id] || []).filter(s => s.status === "Obsolete");
     if (obsoleteStickers.length > 0) {
-      // Check if the count/templates have changed
       const obsoleteCounts = {};
       obsoleteStickers.forEach(s => {
         const key = s.sticker_template_id;
         obsoleteCounts[key] = (obsoleteCounts[key] || 0) + 1;
       });
-      
-      // Compare active vs obsolete counts - if different, templates changed
-      const templatesChanged = Object.keys(obsoleteCounts).some(
-        key => activeCounts[key] !== obsoleteCounts[key]
-      );
-      return templatesChanged;
+      return Object.keys(obsoleteCounts).some(key => activeCounts[key] !== obsoleteCounts[key]);
     }
-    
     return false;
-  };
+  }, [stickersByStop]);
 
-  const checkAllStickersInstalled = (stop) => {
+  const checkAllStickersInstalled = useMemo(() => (stop) => {
     if (!stop.shelter_type_approved_id) return false;
-
-    // Get all stickers for this stop
-    const stopStickers = stickerItems.filter(s => s.stop_id === stop.id);
-    if (stopStickers.length === 0) return false;
-
-    // Check if all stickers have status = "Installed"
-    const allInstalled = stopStickers.every(s => s.status === "Installed");
-    return allInstalled;
-  };
+    const stopStickers = stickersByStop[stop.id];
+    if (!stopStickers || stopStickers.length === 0) return false;
+    return stopStickers.every(s => s.status === "Installed");
+  }, [stickersByStop]);
 
   const handleSort = (field) => {
     if (sortField === field) {
