@@ -830,6 +830,7 @@ export default function OrdersManagementPage() {
                 onItemsImported={handleImportItemsFromFile}
                 stickerItems={stickerItems}
                 stops={stops}
+                stickerTemplates={stickerTemplates}
               />
               <Button variant="outline" size="sm" onClick={handleExportAvailableItems}>
                 <FileDown className="w-4 h-4 mr-2" />

@@ -5,7 +5,7 @@ import { AlertTriangle, Trash2, Check } from "lucide-react";
 import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 
-export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImported, stickerItems, stops }) {
+export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImported, stickerItems, stops, stickerTemplates }) {
   const [importedData, setImportedData] = useState([]);
   const [validationResults, setValidationResults] = useState([]);
   const [currentValidationIndex, setCurrentValidationIndex] = useState(0);
@@ -92,7 +92,7 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
       }
 
       const matchingByName = matchingStickerItems.filter(si => {
-        const template = stickerItems.find(s => s.id === si.sticker_template_id);
+        const template = stickerTemplates.find(t => t.id === si.sticker_template_id);
         return template && template.sticker_name_category.toLowerCase().includes(item.sticker_name.toLowerCase());
       });
 
