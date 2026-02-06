@@ -159,7 +159,8 @@ export default function ReceiptsPage() {
             });
 
             await base44.entities.StickerItem.update(itemId, {
-              status: "Received"
+              status: "Received",
+              custody_status: "In Stock"
             });
 
             await base44.entities.StickerMovementLog.create({
@@ -242,7 +243,8 @@ export default function ReceiptsPage() {
         });
 
         await base44.entities.StickerItem.update(item.stickerId, {
-          status: "Received"
+          status: "Received",
+          custody_status: "In Stock"
         });
 
         await base44.entities.StickerMovementLog.create({
