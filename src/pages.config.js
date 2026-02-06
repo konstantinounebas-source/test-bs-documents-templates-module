@@ -122,6 +122,7 @@ import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
 import JVFinancialResults from './pages/JVFinancialResults';
+import JVFinancialCalculations from './pages/JVFinancialCalculations';
 import __Layout from './Layout.jsx';
 
 
@@ -201,6 +202,7 @@ export const PAGES = {
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
     "JVFinancialResults": JVFinancialResults,
+    "JVFinancialCalculations": JVFinancialCalculations,
 }
 
 export const pagesConfig = {
