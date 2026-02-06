@@ -276,8 +276,15 @@ export default function ReceiptsPage() {
 
   const selectedCount = Object.values(selectedItems).filter(Boolean).length;
 
-  // Get all ordered items (pending receipt)
-  const orderedItems = stickerItems.filter(item => item.status === "Ordered");
+  // Get all items that are in open orders and not yet received
+  const openOrderIds = openOrders.map(o => o.id);
+  const itemsInOpenOrders = orderLines
+    .filter(ol => openOrderIds.includes(ol.order_id))
+    .map(ol => ol.sticker_item_id);
+  
+  const orderedItems = stickerItems.filter(item => 
+    itemsInOpenOrders.includes(item.id) && item.status !== "Received"
+  );
 
   // Get unique sticker types and shelter types for filters
   const stickerTypes = Array.from(new Set(
