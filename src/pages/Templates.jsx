@@ -346,18 +346,20 @@ export default function TemplatesPage() {
 
         {/* Configurable Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[0, 1, 2, 3].map(id => (
-            <ConfigurableStatCard 
-              key={id}
-              cardId={id}
-              templates={templates}
-              isLoading={isLoading}
-              onStatClick={handleStatClick}
-              activeFilter={statFilter}
-              customFieldLabels={customFieldLabels}
-              usersCache={usersCache}
-            />
-          ))}
+          {useMemo(() => 
+            [0, 1, 2, 3].map(id => (
+              <ConfigurableStatCard 
+                key={id}
+                cardId={id}
+                templates={templates}
+                isLoading={isLoading}
+                onStatClick={handleStatClick}
+                activeFilter={statFilter}
+                customFieldLabels={customFieldLabels}
+                usersCache={usersCache}
+              />
+            )), [templates, isLoading, handleStatClick, statFilter, customFieldLabels, usersCache]
+          )}
         </div>
 
         {/* Filters */}
