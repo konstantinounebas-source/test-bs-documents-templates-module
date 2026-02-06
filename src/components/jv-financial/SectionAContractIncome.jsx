@@ -191,12 +191,12 @@ export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }
                         <span className="text-2xl font-bold text-blue-600">€{totalContractIncome.toFixed(2)}</span>
                     </div>
                 </div>
-                </CardContent>
-                </Card>
+            </CardContent>
+        </Card>
 
-                {/* Edit Contract Amount Dialog */}
-                <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-                <DialogContent>
+        {/* Edit Contract Amount Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+            <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Edit Contract Amount</DialogTitle>
                 </DialogHeader>
@@ -225,7 +225,8 @@ export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }
                         Save
                     </Button>
                 </DialogFooter>
-                </DialogContent>
-                </Dialog>
-                );
-                }
+            </DialogContent>
+        </Dialog>
+        </>
+    );
+}
