@@ -379,7 +379,8 @@ export default function StickerItemsPage() {
                     { value: "Needed", label: "Needed" },
                     { value: "Ordered", label: "Ordered" },
                     { value: "Received", label: "Received" },
-                    { value: "Installed", label: "Installed" }
+                    { value: "Installed", label: "Installed" },
+                    { value: "Obsolete", label: "Obsolete" }
                   ]}
                   selected={filterStatuses}
                   onChange={setFilterStatuses}
