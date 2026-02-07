@@ -162,7 +162,7 @@ export default function JVFinancialResults() {
                                             </td>
                                         ))}
                                         <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
-                                            {Object.values(shelterQuantities).reduce((sum, val) => sum + (parseFloat(val) || 0), 0)}
+                                            {Object.values(shelterQuantities).reduce((sum, val) => sum + val, 0)}
                                         </td>
                                     </tr>
 
