@@ -31,7 +31,7 @@ export default function JVFinancialCalculations() {
 
     const loadShelterTypes = async () => {
         try {
-            const types = await base44.entities.ShelterType.list();
+            const types = await base44.entities.BusStopType.list();
             setShelterTypes(types);
             if (types.length > 0) {
                 setSelectedShelterType(types[0].id);
@@ -114,7 +114,7 @@ export default function JVFinancialCalculations() {
                                 <SelectContent>
                                     {shelterTypes.map(type => (
                                         <SelectItem key={type.id} value={type.id}>
-                                            {type.name}
+                                            {type.code_bus_stop_type}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
