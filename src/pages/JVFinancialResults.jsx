@@ -40,7 +40,7 @@ export default function JVFinancialResults() {
             // Initialize quantities for each shelter type
             const initialQuantities = {};
             types.forEach(type => {
-                initialQuantities[type.id] = '';
+                initialQuantities[type.id] = 1;
             });
             setShelterQuantities(initialQuantities);
             
