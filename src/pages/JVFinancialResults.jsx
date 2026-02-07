@@ -109,11 +109,11 @@ export default function JVFinancialResults() {
 
     return (
         <div className="min-h-screen bg-slate-50 p-6">
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="mx-auto space-y-6" style={{ maxWidth: '100%' }}>
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-3xl font-bold text-slate-900">JV Financial Results</h1>
-                        <p className="text-slate-600 mt-1">Consolidated financial results and profit distribution</p>
+                        <p className="text-slate-600 mt-1">Consolidated financial results and profit distribution per shelter type</p>
                     </div>
                     <Button className="flex items-center gap-2">
                         <Download className="w-4 h-4" />
@@ -121,159 +121,236 @@ export default function JVFinancialResults() {
                     </Button>
                 </div>
 
-                {/* SECTION A — Financial Results */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>SECTION A — Financial Results</CardTitle>
-                        <CardDescription>Consolidated income, costs, and profit calculations</CardDescription>
+                        <CardTitle>Financial Results Table</CardTitle>
+                        <CardDescription>All shelter types in columns with financial metrics</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                        {/* Total Contract Income */}
-                        <div className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-lg">
-                            <label className="text-sm font-medium text-slate-700">Total Contract Income</label>
-                            <Input
-                                type="number"
-                                placeholder="0.00"
-                                value={totalContractIncome}
-                                onChange={(e) => setTotalContractIncome(parseFloat(e.target.value) || 0)}
-                                className="text-right"
-                            />
-                        </div>
-
-                        {/* Total Cost Breakdown */}
-                        <div className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-lg">
-                            <label className="text-sm font-medium text-slate-700">Total Cost Breakdown</label>
-                            <Input
-                                type="number"
-                                placeholder="0.00"
-                                value={totalCostBreakdown}
-                                onChange={(e) => setTotalCostBreakdown(parseFloat(e.target.value) || 0)}
-                                className="text-right"
-                            />
-                        </div>
-
-                        {/* Gross Balance (Calculated) */}
-                        <div className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-lg">
-                            <label className="text-sm font-semibold text-slate-900">Gross Balance</label>
-                            <div className="text-right text-lg font-bold text-slate-900">
-                                €{grossBalance.toFixed(2)}
-                            </div>
-                        </div>
-
-                        {/* Warranty Provision */}
-                        <div className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-lg">
-                            <label className="text-sm font-medium text-slate-700">Warranty Provision</label>
-                            <Input
-                                type="number"
-                                placeholder="0.00"
-                                value={warrantyProvision}
-                                onChange={(e) => setWarrantyProvision(e.target.value)}
-                                className="text-right"
-                            />
-                        </div>
-
-                        {/* Net Expected Profit (Calculated) */}
-                        <div className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-lg">
-                            <label className="text-sm font-semibold text-slate-900">Net Expected Profit</label>
-                            <div className="text-right text-lg font-bold text-slate-900">
-                                €{netExpectedProfit.toFixed(2)}
-                            </div>
-                        </div>
-
-                        {/* Profit Margin (Calculated) */}
-                        <div className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-lg">
-                            <label className="text-sm font-semibold text-slate-900">Profit Margin (%)</label>
-                            <div className="text-right text-lg font-bold text-slate-900">
-                                {profitMargin.toFixed(2)}%
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* SECTION B — Profit Distribution */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>SECTION B — Profit Distribution</CardTitle>
-                        <CardDescription>Quantity allocation and profit sharing</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        {/* Quantity per Shelter Type - Table Format */}
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-900 mb-3">
-                                Quantity per Shelter Type & Version
-                            </label>
-                            <div className="border border-slate-200 rounded-lg overflow-hidden max-w-2xl">
-                                <table className="w-full">
-                                    <thead className="bg-slate-100">
-                                        <tr>
-                                            <th className="text-left text-xs font-semibold text-slate-700 px-3 py-2 border-b border-slate-200">
-                                                Shelter Type
+                    <CardContent>
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse">
+                                <thead>
+                                    <tr className="bg-slate-100">
+                                        <th className="text-left text-xs font-semibold text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-slate-100 z-10">
+                                            Metric
+                                        </th>
+                                        {shelterTypes.map(type => (
+                                            <th key={type.id} className="text-center text-xs font-semibold text-slate-700 px-3 py-2 border border-slate-200 min-w-[120px]">
+                                                {type.name}
                                             </th>
-                                            <th className="text-right text-xs font-semibold text-slate-700 px-3 py-2 border-b border-slate-200 w-32">
-                                                Quantity
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {shelterTypes.map((type, index) => (
-                                            <tr key={type.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                                                <td className="text-xs text-slate-700 px-3 py-2 border-b border-slate-200">
-                                                    {type.name}
-                                                </td>
-                                                <td className="px-3 py-2 border-b border-slate-200">
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="0"
-                                                        value={shelterQuantities[type.id] || ''}
-                                                        onChange={(e) => handleQuantityChange(type.id, e.target.value)}
-                                                        className="text-right h-8 text-sm"
-                                                    />
-                                                </td>
-                                            </tr>
                                         ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                                        <th className="text-center text-xs font-semibold text-slate-700 px-3 py-2 border border-slate-200 bg-slate-200 min-w-[120px]">
+                                            TOTAL
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {/* Quantity Row */}
+                                    <tr className="bg-white">
+                                        <td className="text-xs font-medium text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-white z-10">
+                                            Quantity
+                                        </td>
+                                        {shelterTypes.map(type => (
+                                            <td key={type.id} className="px-3 py-2 border border-slate-200">
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0"
+                                                    value={shelterQuantities[type.id] || ''}
+                                                    onChange={(e) => handleQuantityChange(type.id, e.target.value)}
+                                                    className="text-center h-8 text-sm w-full"
+                                                />
+                                            </td>
+                                        ))}
+                                        <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
+                                            {Object.values(shelterQuantities).reduce((sum, val) => sum + (parseFloat(val) || 0), 0)}
+                                        </td>
+                                    </tr>
 
-                        {/* Air Control Share */}
-                        <div className="border-t border-slate-200 pt-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-lg">
-                                <label className="text-sm font-medium text-slate-700">Air Control Share (%)</label>
-                                <Input
-                                    type="number"
-                                    placeholder="0.00"
-                                    value={airControlShare}
-                                    onChange={(e) => setAirControlShare(e.target.value)}
-                                    className="text-right"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 items-center bg-blue-50 p-4 rounded-lg border border-blue-200">
-                                <label className="text-sm font-semibold text-slate-900">Air Control Profit Amount</label>
-                                <div className="text-right text-lg font-bold text-blue-600">
-                                    €{airControlProfitAmount.toFixed(2)}
-                                </div>
-                            </div>
-                        </div>
+                                    {/* Section A Metrics */}
+                                    <tr className="bg-slate-50">
+                                        <td colSpan={shelterTypes.length + 2} className="text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200">
+                                            SECTION A — Financial Results
+                                        </td>
+                                    </tr>
 
-                        {/* Amco Share */}
-                        <div className="border-t border-slate-200 pt-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-lg">
-                                <label className="text-sm font-medium text-slate-700">Amco Share (%)</label>
-                                <Input
-                                    type="number"
-                                    placeholder="0.00"
-                                    value={amcoShare}
-                                    onChange={(e) => setAmcoShare(e.target.value)}
-                                    className="text-right"
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 items-center bg-purple-50 p-4 rounded-lg border border-purple-200">
-                                <label className="text-sm font-semibold text-slate-900">Amco Profit Amount</label>
-                                <div className="text-right text-lg font-bold text-purple-600">
-                                    €{amcoProfitAmount.toFixed(2)}
-                                </div>
-                            </div>
+                                    <tr className="bg-white">
+                                        <td className="text-xs font-medium text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-white z-10">
+                                            Total Contract Income
+                                        </td>
+                                        {shelterTypes.map(type => (
+                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
+                                                -
+                                            </td>
+                                        ))}
+                                        <td className="px-3 py-2 border border-slate-200 bg-slate-50">
+                                            <Input
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={totalContractIncome}
+                                                onChange={(e) => setTotalContractIncome(parseFloat(e.target.value) || 0)}
+                                                className="text-center h-8 text-sm w-full font-bold"
+                                            />
+                                        </td>
+                                    </tr>
+
+                                    <tr className="bg-white">
+                                        <td className="text-xs font-medium text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-white z-10">
+                                            Total Cost Breakdown
+                                        </td>
+                                        {shelterTypes.map(type => (
+                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
+                                                -
+                                            </td>
+                                        ))}
+                                        <td className="px-3 py-2 border border-slate-200 bg-slate-50">
+                                            <Input
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={totalCostBreakdown}
+                                                onChange={(e) => setTotalCostBreakdown(parseFloat(e.target.value) || 0)}
+                                                className="text-center h-8 text-sm w-full font-bold"
+                                            />
+                                        </td>
+                                    </tr>
+
+                                    <tr className="bg-blue-50">
+                                        <td className="text-xs font-semibold text-slate-900 px-3 py-2 border border-slate-200 sticky left-0 bg-blue-50 z-10">
+                                            Gross Balance
+                                        </td>
+                                        {shelterTypes.map(type => (
+                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
+                                                -
+                                            </td>
+                                        ))}
+                                        <td className="text-center text-sm font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-blue-100">
+                                            €{grossBalance.toFixed(2)}
+                                        </td>
+                                    </tr>
+
+                                    <tr className="bg-white">
+                                        <td className="text-xs font-medium text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-white z-10">
+                                            Warranty Provision
+                                        </td>
+                                        {shelterTypes.map(type => (
+                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
+                                                -
+                                            </td>
+                                        ))}
+                                        <td className="px-3 py-2 border border-slate-200 bg-slate-50">
+                                            <Input
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={warrantyProvision}
+                                                onChange={(e) => setWarrantyProvision(e.target.value)}
+                                                className="text-center h-8 text-sm w-full font-bold"
+                                            />
+                                        </td>
+                                    </tr>
+
+                                    <tr className="bg-green-50">
+                                        <td className="text-xs font-semibold text-slate-900 px-3 py-2 border border-slate-200 sticky left-0 bg-green-50 z-10">
+                                            Net Expected Profit
+                                        </td>
+                                        {shelterTypes.map(type => (
+                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
+                                                -
+                                            </td>
+                                        ))}
+                                        <td className="text-center text-sm font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-green-100">
+                                            €{netExpectedProfit.toFixed(2)}
+                                        </td>
+                                    </tr>
+
+                                    <tr className="bg-amber-50">
+                                        <td className="text-xs font-semibold text-slate-900 px-3 py-2 border border-slate-200 sticky left-0 bg-amber-50 z-10">
+                                            Profit Margin (%)
+                                        </td>
+                                        {shelterTypes.map(type => (
+                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
+                                                -
+                                            </td>
+                                        ))}
+                                        <td className="text-center text-sm font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-amber-100">
+                                            {profitMargin.toFixed(2)}%
+                                        </td>
+                                    </tr>
+
+                                    {/* Section B Metrics */}
+                                    <tr className="bg-slate-50">
+                                        <td colSpan={shelterTypes.length + 2} className="text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200">
+                                            SECTION B — Profit Distribution
+                                        </td>
+                                    </tr>
+
+                                    <tr className="bg-white">
+                                        <td className="text-xs font-medium text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-white z-10">
+                                            Air Control Share (%)
+                                        </td>
+                                        {shelterTypes.map(type => (
+                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
+                                                -
+                                            </td>
+                                        ))}
+                                        <td className="px-3 py-2 border border-slate-200 bg-slate-50">
+                                            <Input
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={airControlShare}
+                                                onChange={(e) => setAirControlShare(e.target.value)}
+                                                className="text-center h-8 text-sm w-full font-bold"
+                                            />
+                                        </td>
+                                    </tr>
+
+                                    <tr className="bg-blue-50">
+                                        <td className="text-xs font-semibold text-slate-900 px-3 py-2 border border-slate-200 sticky left-0 bg-blue-50 z-10">
+                                            Air Control Profit Amount
+                                        </td>
+                                        {shelterTypes.map(type => (
+                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
+                                                -
+                                            </td>
+                                        ))}
+                                        <td className="text-center text-sm font-bold text-blue-600 px-3 py-2 border border-slate-200 bg-blue-100">
+                                            €{airControlProfitAmount.toFixed(2)}
+                                        </td>
+                                    </tr>
+
+                                    <tr className="bg-white">
+                                        <td className="text-xs font-medium text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-white z-10">
+                                            Amco Share (%)
+                                        </td>
+                                        {shelterTypes.map(type => (
+                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
+                                                -
+                                            </td>
+                                        ))}
+                                        <td className="px-3 py-2 border border-slate-200 bg-slate-50">
+                                            <Input
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={amcoShare}
+                                                onChange={(e) => setAmcoShare(e.target.value)}
+                                                className="text-center h-8 text-sm w-full font-bold"
+                                            />
+                                        </td>
+                                    </tr>
+
+                                    <tr className="bg-purple-50">
+                                        <td className="text-xs font-semibold text-slate-900 px-3 py-2 border border-slate-200 sticky left-0 bg-purple-50 z-10">
+                                            Amco Profit Amount
+                                        </td>
+                                        {shelterTypes.map(type => (
+                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
+                                                -
+                                            </td>
+                                        ))}
+                                        <td className="text-center text-sm font-bold text-purple-600 px-3 py-2 border border-slate-200 bg-purple-100">
+                                            €{amcoProfitAmount.toFixed(2)}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </CardContent>
                 </Card>
