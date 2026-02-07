@@ -45,6 +45,14 @@ export default function JVFinancialResults() {
             });
             setShelterQuantities(initialQuantities);
             
+            // Load financial data for all shelter types
+            const allFinancialData = await base44.entities.ShelterFinancialData.list();
+            const financialDataMap = {};
+            allFinancialData.forEach(data => {
+                financialDataMap[data.shelter_type_id] = data;
+            });
+            setShelterFinancialData(financialDataMap);
+            
         } catch (error) {
             console.error('Failed to load data:', error);
         } finally {
