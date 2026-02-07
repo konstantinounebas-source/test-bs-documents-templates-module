@@ -38,11 +38,54 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
             // Load BOM costs if shelterTypeId is provided
             if (shelterTypeId) {
                 await loadBomCosts();
+                await loadSavedFinancialData();
             }
         } catch (error) {
             console.error('Failed to load data:', error);
         } finally {
             setIsLoadingData(false);
+        }
+    };
+
+    const loadSavedFinancialData = async () => {
+        try {
+            const existing = await base44.entities.ShelterFinancialData.filter({
+                shelter_type_id: shelterTypeId
+            });
+
+            if (existing.length > 0) {
+                const data = existing[0];
+                setFinancialDataId(data.id);
+                
+                // Load saved costs
+                if (data.non_bom_costs && data.non_bom_costs.length > 0) {
+                    setNonBomCosts(data.non_bom_costs.map((item, idx) => ({
+                        id: Date.now() + idx,
+                        description: item.description,
+                        amount: item.amount
+                    })));
+                }
+                
+                if (data.waste_allowances && data.waste_allowances.length > 0) {
+                    setWasteAllowances(data.waste_allowances.map((item, idx) => ({
+                        id: Date.now() + idx + 1000,
+                        product: item.product_id,
+                        baseCost: item.base_cost,
+                        allowancePercent: item.allowance_percent,
+                        cost: (item.base_cost * item.allowance_percent) / 100
+                    })));
+                }
+                
+                if (data.accrued_costs && data.accrued_costs.length > 0) {
+                    setAccruedCosts(data.accrued_costs.map((item, idx) => ({
+                        id: Date.now() + idx + 2000,
+                        category: item.category_id,
+                        amount: item.amount
+                    })));
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load saved financial data:', error);
         }
     };
 
