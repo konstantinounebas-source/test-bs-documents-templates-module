@@ -49,8 +49,7 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
         try {
             // Get BOM components for the selected shelter type
             const bomComponents = await base44.entities.BusStopTypeComponent.filter({
-                bus_stop_type_id: shelterTypeId,
-                ...(selectedBomVersion && { version: selectedBomVersion })
+                bus_stop_type_id: shelterTypeId
             });
 
             // Get all products to map product_id to product details
@@ -60,32 +59,31 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
                 productMap[p.id] = p;
             });
 
-            // Calculate total cost per category
+            // Get material categories
+            const materialCategories = await base44.entities.MaterialCategory.list();
+            const categoryMap = {};
+            materialCategories.forEach(cat => {
+                categoryMap[cat.id] = cat.name;
+            });
+
+            // Calculate total cost per material category
             const categoryTotals = {};
             bomComponents.forEach(comp => {
                 const product = productMap[comp.product_id];
-                if (product && product.category_id) {
-                    const categoryId = product.category_id;
-                    const quantity = parseFloat(comp.quantity) || 0;
+                if (product && comp.material_category_id) {
+                    const categoryId = comp.material_category_id;
+                    const quantity = parseFloat(comp.quantity_required) || 0;
                     const unitCost = parseFloat(product.unit_cost) || 0;
                     const totalCost = quantity * unitCost;
                     
                     if (!categoryTotals[categoryId]) {
                         categoryTotals[categoryId] = {
                             categoryId,
-                            categoryName: '',
                             amount: 0
                         };
                     }
                     categoryTotals[categoryId].amount += totalCost;
                 }
-            });
-
-            // Get category names
-            const categories = await base44.entities.ProductCategory.list();
-            const categoryMap = {};
-            categories.forEach(cat => {
-                categoryMap[cat.id] = cat.name;
             });
 
             // Format verified costs
