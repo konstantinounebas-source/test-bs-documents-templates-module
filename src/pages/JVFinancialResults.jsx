@@ -458,18 +458,18 @@ export default function JVFinancialResults() {
                                             Amco Share (%)
                                         </td>
                                         {shelterTypes.map(type => (
-                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
-                                                -
+                                            <td key={type.id} className="px-3 py-2 border border-slate-200">
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0"
+                                                    value={amcoShares[type.id] || ''}
+                                                    onChange={(e) => handleAmcoShareChange(type.id, e.target.value)}
+                                                    className="text-center h-8 text-sm w-full"
+                                                />
                                             </td>
                                         ))}
-                                        <td className="px-3 py-2 border border-slate-200 bg-slate-50">
-                                            <Input
-                                                type="number"
-                                                placeholder="0.00"
-                                                value={amcoShare}
-                                                onChange={(e) => setAmcoShare(e.target.value)}
-                                                className="text-center h-8 text-sm w-full font-bold"
-                                            />
+                                        <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
+                                            -
                                         </td>
                                     </tr>
 
