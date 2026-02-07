@@ -154,9 +154,9 @@ export default function JVFinancialResults() {
                                             <td key={type.id} className="px-3 py-2 border border-slate-200">
                                                 <Input
                                                     type="number"
-                                                    placeholder="0"
-                                                    value={shelterQuantities[type.id] || ''}
-                                                    onChange={(e) => handleQuantityChange(type.id, e.target.value)}
+                                                    placeholder="1"
+                                                    value={shelterQuantities[type.id]}
+                                                    onChange={(e) => handleQuantityChange(type.id, parseFloat(e.target.value) || 0)}
                                                     className="text-center h-8 text-sm w-full"
                                                 />
                                             </td>
