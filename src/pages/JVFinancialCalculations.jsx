@@ -86,9 +86,102 @@ export default function JVFinancialCalculations() {
         }
     };
 
-    const handleSaveAndRefresh = () => {
-        toast.success('Data saved successfully');
-        setRefreshKey(prev => prev + 1);
+    const handleSaveAndRefresh = async () => {
+        if (!selectedShelterType || !selectedBomVersion) {
+            toast.error('Please select a shelter type and BOM version');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            // Get financial data for warranty and profit shares
+            const financialData = await base44.entities.ShelterFinancialData.filter({
+                shelter_type_id: selectedShelterType
+            });
+            const shelterFinData = financialData[0] || {};
+
+            // Calculate BOM costs
+            const bomComponents = await base44.entities.BusStopTypeComponent.filter({
+                bus_stop_type_id: selectedShelterType
+            });
+            const filteredBomComponents = bomComponents.filter(c => (c.version || 'V1') === selectedBomVersion);
+            
+            const allProducts = await base44.entities.Product.list();
+            const productMap = {};
+            allProducts.forEach(p => { productMap[p.id] = p; });
+
+            let bomCost = 0;
+            filteredBomComponents.forEach(comp => {
+                const product = productMap[comp.product_id];
+                if (product) {
+                    const quantity = parseFloat(comp.quantity_required) || 0;
+                    const unitCost = parseFloat(product.unit_cost) || 0;
+                    bomCost += quantity * unitCost;
+                }
+            });
+
+            // Calculate costs from Section B
+            const nonBomCost = sectionBTotals.verified || 0;
+            const wasteAllowanceCost = sectionBTotals.waste || 0;
+            const accruedCost = sectionBTotals.accrued || 0;
+            const totalCostBreakdown = bomCost + nonBomCost + wasteAllowanceCost + accruedCost;
+
+            // Contract income from Section A
+            const totalContractIncome = sectionATotals.contractIncome || 0;
+
+            // Calculate profits
+            const grossBalance = totalContractIncome - totalCostBreakdown;
+            const warrantyProvision = parseFloat(shelterFinData.warranty_provision) || 0;
+            const netExpectedProfit = grossBalance - warrantyProvision;
+            const profitMarginPercent = totalCostBreakdown > 0 ? (netExpectedProfit / totalCostBreakdown) * 100 : 0;
+
+            const airControlSharePercent = parseFloat(shelterFinData.air_control_share_percent) || 0;
+            const amcoSharePercent = parseFloat(shelterFinData.amco_share_percent) || 0;
+            const airControlProfitAmount = (netExpectedProfit * airControlSharePercent) / 100;
+            const amcoProfitAmount = (netExpectedProfit * amcoSharePercent) / 100;
+
+            // Check if record exists
+            const existingRecords = await base44.entities.ShelterFinancialResults.filter({
+                shelter_type_id: selectedShelterType,
+                bom_version: selectedBomVersion
+            });
+
+            const resultData = {
+                shelter_type_id: selectedShelterType,
+                bom_version: selectedBomVersion,
+                calculation_date: new Date().toISOString(),
+                quantity: 1,
+                total_contract_income: totalContractIncome,
+                bom_cost: bomCost,
+                non_bom_cost: nonBomCost,
+                waste_allowance_cost: wasteAllowanceCost,
+                accrued_cost: accruedCost,
+                total_cost_breakdown: totalCostBreakdown,
+                gross_balance: grossBalance,
+                warranty_provision: warrantyProvision,
+                warranty_provision_total: warrantyProvision,
+                net_expected_profit: netExpectedProfit,
+                profit_margin_percent: profitMarginPercent,
+                air_control_share_percent: airControlSharePercent,
+                air_control_profit_amount: airControlProfitAmount,
+                amco_share_percent: amcoSharePercent,
+                amco_profit_amount: amcoProfitAmount
+            };
+
+            if (existingRecords.length > 0) {
+                await base44.entities.ShelterFinancialResults.update(existingRecords[0].id, resultData);
+            } else {
+                await base44.entities.ShelterFinancialResults.create(resultData);
+            }
+
+            toast.success('Financial results saved successfully');
+            setRefreshKey(prev => prev + 1);
+        } catch (error) {
+            console.error('Failed to save financial results:', error);
+            toast.error('Failed to save financial results');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const exportBOM = async (shelterTypeId, version) => {
