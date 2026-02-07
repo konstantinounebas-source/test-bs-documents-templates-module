@@ -199,17 +199,17 @@ export default function JVFinancialResults() {
                     <CardContent className="space-y-6">
                         {/* Quantity per Shelter Type - Table Format */}
                         <div>
-                            <label className="block text-sm font-semibold text-slate-900 mb-4">
+                            <label className="block text-sm font-semibold text-slate-900 mb-3">
                                 Quantity per Shelter Type & Version
                             </label>
-                            <div className="border border-slate-200 rounded-lg overflow-hidden">
+                            <div className="border border-slate-200 rounded-lg overflow-hidden max-w-2xl">
                                 <table className="w-full">
                                     <thead className="bg-slate-100">
                                         <tr>
-                                            <th className="text-left text-sm font-semibold text-slate-700 p-3 border-b border-slate-200">
+                                            <th className="text-left text-xs font-semibold text-slate-700 px-3 py-2 border-b border-slate-200">
                                                 Shelter Type
                                             </th>
-                                            <th className="text-right text-sm font-semibold text-slate-700 p-3 border-b border-slate-200">
+                                            <th className="text-right text-xs font-semibold text-slate-700 px-3 py-2 border-b border-slate-200 w-32">
                                                 Quantity
                                             </th>
                                         </tr>
@@ -217,16 +217,16 @@ export default function JVFinancialResults() {
                                     <tbody>
                                         {shelterTypes.map((type, index) => (
                                             <tr key={type.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                                                <td className="text-sm text-slate-700 p-3 border-b border-slate-200">
+                                                <td className="text-xs text-slate-700 px-3 py-2 border-b border-slate-200">
                                                     {type.name}
                                                 </td>
-                                                <td className="p-3 border-b border-slate-200">
+                                                <td className="px-3 py-2 border-b border-slate-200">
                                                     <Input
                                                         type="number"
                                                         placeholder="0"
                                                         value={shelterQuantities[type.id] || ''}
                                                         onChange={(e) => handleQuantityChange(type.id, e.target.value)}
-                                                        className="text-right"
+                                                        className="text-right h-8 text-sm"
                                                     />
                                                 </td>
                                             </tr>
