@@ -34,7 +34,7 @@ export default function JVFinancialResults() {
 
     const loadData = async () => {
         try {
-            const types = await base44.entities.ShelterType.list();
+            const types = await base44.entities.BusStopType.list();
             setShelterTypes(types);
             
             // Initialize quantities for each shelter type
@@ -136,7 +136,7 @@ export default function JVFinancialResults() {
                                         </th>
                                         {shelterTypes.map(type => (
                                             <th key={type.id} className="text-center text-xs font-semibold text-slate-700 px-3 py-2 border border-slate-200 min-w-[120px]">
-                                                {type.shelter_type_id}
+                                                {type.code}
                                             </th>
                                         ))}
                                         <th className="text-center text-xs font-semibold text-slate-700 px-3 py-2 border border-slate-200 bg-slate-200 min-w-[120px]">
