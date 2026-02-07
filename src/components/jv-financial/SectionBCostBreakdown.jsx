@@ -23,6 +23,7 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
      const [financialDataId, setFinancialDataId] = useState(null);
 
     useEffect(() => {
+        setIsLoadingData(true);
         loadData();
     }, [shelterTypeId, selectedBomVersion]);
 
