@@ -55,6 +55,7 @@ export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }
 
     useEffect(() => {
         if (shelterTypeId) {
+            setIsLoadingData(true);
             loadSavedData();
         }
     }, [shelterTypeId]);
