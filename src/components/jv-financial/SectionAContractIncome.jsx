@@ -54,10 +54,82 @@ export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }
     const totalContractIncome = (parseFloat(contractAmount) || 0) + totalApprovedVariations + totalPotentialVariations;
 
     useEffect(() => {
+        if (shelterTypeId) {
+            loadSavedData();
+        }
+    }, [shelterTypeId]);
+
+    const loadSavedData = async () => {
+        try {
+            const existing = await base44.entities.ShelterFinancialData.filter({
+                shelter_type_id: shelterTypeId
+            });
+
+            if (existing.length > 0) {
+                const data = existing[0];
+                setFinancialDataId(data.id);
+                setContractAmount(String(data.contract_amount || 0));
+                
+                if (data.approved_variations && data.approved_variations.length > 0) {
+                    setApprovedVariations(data.approved_variations.map((v, idx) => ({
+                        id: Date.now() + idx,
+                        description: v.description,
+                        amount: v.amount
+                    })));
+                }
+                
+                if (data.potential_variations && data.potential_variations.length > 0) {
+                    setPotentialVariations(data.potential_variations.map((v, idx) => ({
+                        id: Date.now() + idx + 1000,
+                        description: v.description,
+                        amount: v.amount
+                    })));
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load saved data:', error);
+        } finally {
+            setIsLoadingData(false);
+        }
+    };
+
+    useEffect(() => {
         if (onTotalsChange) {
             onTotalsChange({ contractIncome: totalContractIncome });
         }
     }, [totalContractIncome, onTotalsChange]);
+
+    useEffect(() => {
+        if (shelterTypeId && !isLoadingData) {
+            saveData();
+        }
+    }, [contractAmount, approvedVariations, potentialVariations]);
+
+    const saveData = async () => {
+        try {
+            const dataToSave = {
+                shelter_type_id: shelterTypeId,
+                contract_amount: parseFloat(contractAmount) || 0,
+                approved_variations: approvedVariations.map(v => ({
+                    description: v.description,
+                    amount: parseFloat(v.amount) || 0
+                })),
+                potential_variations: potentialVariations.map(v => ({
+                    description: v.description,
+                    amount: parseFloat(v.amount) || 0
+                }))
+            };
+
+            if (financialDataId) {
+                await base44.entities.ShelterFinancialData.update(financialDataId, dataToSave);
+            } else {
+                const created = await base44.entities.ShelterFinancialData.create(dataToSave);
+                setFinancialDataId(created.id);
+            }
+        } catch (error) {
+            console.error('Failed to save data:', error);
+        }
+    };
 
     return (
         <>
