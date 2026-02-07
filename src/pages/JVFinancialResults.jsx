@@ -33,103 +33,57 @@ export default function JVFinancialResults() {
         }
     }, [accessLoading, hasAccess]);
 
-    // Reload data every time the page is viewed
-    useEffect(() => {
-        if (!accessLoading && hasAccess && shelterTypes.length > 0) {
-            // Reload financial data to ensure we have the latest
-            const reloadFinancialData = async () => {
-                try {
-                    const allFinancialData = await base44.entities.ShelterFinancialData.list();
-                    const financialDataMap = {};
-                    allFinancialData.forEach(data => {
-                        financialDataMap[data.shelter_type_id] = data;
-                    });
-                    setShelterFinancialData(financialDataMap);
-
-                    // Update states from reloaded data
-                    const warranties = {};
-                    const airControl = {};
-                    const amco = {};
-                    
-                    shelterTypes.forEach(type => {
-                        const data = financialDataMap[type.id];
-                        warranties[type.id] = data?.warranty_provision || 0;
-                        airControl[type.id] = data?.air_control_share_percent || 0;
-                        amco[type.id] = data?.amco_share_percent || 0;
-                    });
-                    
-                    setWarrantyProvisions(warranties);
-                    setAirControlShares(airControl);
-                    setAmcoShares(amco);
-                } catch (error) {
-                    console.error('Failed to reload financial data:', error);
-                }
-            };
-            
-            reloadFinancialData();
-        }
-    }, []);
-
 
 
     const loadData = async () => {
         try {
-            const types = await base44.entities.BusStopType.list();
+            // Load all data in parallel
+            const [types, allFinancialData, allProducts] = await Promise.all([
+                base44.entities.BusStopType.list(),
+                base44.entities.ShelterFinancialData.list(),
+                base44.entities.Product.list()
+            ]);
+            
             setShelterTypes(types.reverse());
 
-            // Initialize quantities, warranty provisions, and shares for each shelter type
-            const initialQuantities = {};
-            const initialWarrantyProvisions = {};
-            const initialAirControlShares = {};
-            const initialAmcoShares = {};
-            types.forEach(type => {
-                initialQuantities[type.id] = 1;
-                initialWarrantyProvisions[type.id] = 0;
-                initialAirControlShares[type.id] = 0;
-                initialAmcoShares[type.id] = 0;
-            });
-            setShelterQuantities(initialQuantities);
-            setWarrantyProvisions(initialWarrantyProvisions);
-            setAirControlShares(initialAirControlShares);
-            setAmcoShares(initialAmcoShares);
+            // Build product map
+            const productMap = {};
+            allProducts.forEach(p => { productMap[p.id] = p; });
 
-            // Load financial data for all shelter types
-            const allFinancialData = await base44.entities.ShelterFinancialData.list();
+            // Build financial data map
             const financialDataMap = {};
             allFinancialData.forEach(data => {
                 financialDataMap[data.shelter_type_id] = data;
             });
 
-            // Create missing ShelterFinancialData records for shelter types
-            for (const type of types) {
-                if (!financialDataMap[type.id]) {
-                    const newData = await base44.entities.ShelterFinancialData.create({
-                        shelter_type_id: type.id,
-                        contract_amount: 0,
-                        approved_variations: [],
-                        potential_variations: [],
-                        non_bom_costs: [],
-                        waste_allowances: [],
-                        accrued_costs: [],
-                        warranty_provision: 0,
-                        air_control_share_percent: 0,
-                        amco_share_percent: 0
-                    });
-                    financialDataMap[type.id] = newData;
-                }
-            }
-
-            // Calculate BOM costs for each shelter type
-            const allProducts = await base44.entities.Product.list();
-            const productMap = {};
-            allProducts.forEach(p => { productMap[p.id] = p; });
-
+            // Initialize state objects
+            const initialQuantities = {};
+            const initialWarrantyProvisions = {};
+            const initialAirControlShares = {};
+            const initialAmcoShares = {};
             const calculatedBomCosts = {};
-            for (const type of types) {
-                const bomComponents = await base44.entities.BusStopTypeComponent.filter({
-                    bus_stop_type_id: type.id
-                });
 
+            // Get all BOM components in one query
+            const allBomComponents = await base44.entities.BusStopTypeComponent.list();
+            const bomByType = {};
+            allBomComponents.forEach(comp => {
+                if (!bomByType[comp.bus_stop_type_id]) {
+                    bomByType[comp.bus_stop_type_id] = [];
+                }
+                bomByType[comp.bus_stop_type_id].push(comp);
+            });
+
+            // Process each shelter type
+            for (const type of types) {
+                initialQuantities[type.id] = 1;
+                
+                const financialData = financialDataMap[type.id];
+                initialWarrantyProvisions[type.id] = financialData?.warranty_provision || 0;
+                initialAirControlShares[type.id] = financialData?.air_control_share_percent || 0;
+                initialAmcoShares[type.id] = financialData?.amco_share_percent || 0;
+
+                // Calculate BOM cost
+                const bomComponents = bomByType[type.id] || [];
                 let totalBOMCost = 0;
                 bomComponents.forEach(comp => {
                     const product = productMap[comp.product_id];
@@ -139,28 +93,16 @@ export default function JVFinancialResults() {
                         totalBOMCost += quantity * unitCost;
                     }
                 });
-
                 calculatedBomCosts[type.id] = totalBOMCost;
             }
-            setBomCosts(calculatedBomCosts);
 
-            setShelterFinancialData(financialDataMap);
-
-            // Load saved warranty provisions and shares
-            Object.values(financialDataMap).forEach(data => {
-                if (data.warranty_provision !== undefined) {
-                    initialWarrantyProvisions[data.shelter_type_id] = data.warranty_provision;
-                }
-                if (data.air_control_share_percent !== undefined) {
-                    initialAirControlShares[data.shelter_type_id] = data.air_control_share_percent;
-                }
-                if (data.amco_share_percent !== undefined) {
-                    initialAmcoShares[data.shelter_type_id] = data.amco_share_percent;
-                }
-            });
+            // Set all state at once
+            setShelterQuantities(initialQuantities);
             setWarrantyProvisions(initialWarrantyProvisions);
             setAirControlShares(initialAirControlShares);
             setAmcoShares(initialAmcoShares);
+            setBomCosts(calculatedBomCosts);
+            setShelterFinancialData(financialDataMap);
 
         } catch (error) {
             console.error('Failed to load data:', error);
