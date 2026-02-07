@@ -77,6 +77,69 @@ export default function JVFinancialResults() {
         }));
     };
 
+    const handleWarrantyProvisionChange = (shelterTypeId, value) => {
+        setWarrantyProvisions(prev => ({
+            ...prev,
+            [shelterTypeId]: parseFloat(value) || 0
+        }));
+    };
+
+    const handleAirControlShareChange = (shelterTypeId, value) => {
+        setAirControlShares(prev => ({
+            ...prev,
+            [shelterTypeId]: parseFloat(value) || 0
+        }));
+    };
+
+    const handleAmcoShareChange = (shelterTypeId, value) => {
+        setAmcoShares(prev => ({
+            ...prev,
+            [shelterTypeId]: parseFloat(value) || 0
+        }));
+    };
+
+    // Helper function to calculate metrics per shelter type
+    const calculateMetrics = (type) => {
+        const financialData = shelterFinancialData[type.id];
+        const quantity = shelterQuantities[type.id] || 1;
+        
+        const contractIncome = financialData 
+            ? (parseFloat(financialData.contract_amount) || 0) + 
+              (financialData.approved_variations?.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0) || 0) +
+              (financialData.potential_variations?.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0) || 0)
+            : 0;
+        
+        const totalCost = financialData 
+            ? (financialData.non_bom_costs?.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0) || 0) +
+              (financialData.waste_allowances?.reduce((sum, w) => {
+                  const baseCost = parseFloat(w.base_cost) || 0;
+                  const allowancePercent = parseFloat(w.allowance_percent) || 0;
+                  return sum + ((baseCost * allowancePercent) / 100);
+              }, 0) || 0) +
+              (financialData.accrued_costs?.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0) || 0)
+            : 0;
+        
+        const grossBalance = (contractIncome - totalCost) * quantity;
+        const warranty = (warrantyProvisions[type.id] || 0) * quantity;
+        const netProfit = grossBalance - warranty;
+        const profitMargin = totalCost > 0 ? (netProfit / (totalCost * quantity)) * 100 : 0;
+        const airControlShare = airControlShares[type.id] || 0;
+        const amcoShare = amcoShares[type.id] || 0;
+        const airControlProfit = (netProfit * airControlShare) / 100;
+        const amcoProfit = (netProfit * amcoShare) / 100;
+        
+        return {
+            contractIncome: contractIncome * quantity,
+            totalCost: totalCost * quantity,
+            grossBalance,
+            warranty,
+            netProfit,
+            profitMargin,
+            airControlProfit,
+            amcoProfit
+        };
+    };
+
     if (accessLoading || isLoading) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
