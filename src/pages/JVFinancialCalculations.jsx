@@ -117,7 +117,7 @@ export default function JVFinancialCalculations() {
                                     ) : (
                                         shelterTypes.map(type => (
                                             <SelectItem key={type.id} value={type.id}>
-                                                {type.name}
+                                                {type.shelter_type_id}
                                             </SelectItem>
                                         ))
                                     )}
