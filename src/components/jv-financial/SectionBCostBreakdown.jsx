@@ -23,7 +23,7 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
 
     useEffect(() => {
         loadData();
-    }, [shelterTypeId]);
+    }, [shelterTypeId, selectedBomVersion]);
 
     const loadData = async () => {
         try {
@@ -33,10 +33,72 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
             ]);
             setProducts(productsList);
             setCostCategories(categoriesList);
+            
+            // Load BOM costs if shelterTypeId is provided
+            if (shelterTypeId) {
+                await loadBomCosts();
+            }
         } catch (error) {
             console.error('Failed to load data:', error);
         } finally {
             setIsLoadingData(false);
+        }
+    };
+
+    const loadBomCosts = async () => {
+        try {
+            // Get BOM components for the selected shelter type
+            const bomComponents = await base44.entities.BusStopTypeComponent.filter({
+                bus_stop_type_id: shelterTypeId,
+                ...(selectedBomVersion && { version: selectedBomVersion })
+            });
+
+            // Get all products to map product_id to product details
+            const allProducts = await base44.entities.Product.list();
+            const productMap = {};
+            allProducts.forEach(p => {
+                productMap[p.id] = p;
+            });
+
+            // Calculate total cost per category
+            const categoryTotals = {};
+            bomComponents.forEach(comp => {
+                const product = productMap[comp.product_id];
+                if (product && product.category_id) {
+                    const categoryId = product.category_id;
+                    const quantity = parseFloat(comp.quantity) || 0;
+                    const unitCost = parseFloat(product.unit_cost) || 0;
+                    const totalCost = quantity * unitCost;
+                    
+                    if (!categoryTotals[categoryId]) {
+                        categoryTotals[categoryId] = {
+                            categoryId,
+                            categoryName: '',
+                            amount: 0
+                        };
+                    }
+                    categoryTotals[categoryId].amount += totalCost;
+                }
+            });
+
+            // Get category names
+            const categories = await base44.entities.ProductCategory.list();
+            const categoryMap = {};
+            categories.forEach(cat => {
+                categoryMap[cat.id] = cat.name;
+            });
+
+            // Format verified costs
+            const costs = Object.values(categoryTotals).map((item, index) => ({
+                id: index,
+                category: categoryMap[item.categoryId] || 'Unknown',
+                amount: item.amount
+            }));
+
+            setVerifiedCosts(costs);
+        } catch (error) {
+            console.error('Failed to load BOM costs:', error);
+            setVerifiedCosts([]);
         }
     };
 
