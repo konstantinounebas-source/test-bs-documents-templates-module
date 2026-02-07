@@ -32,7 +32,7 @@ export default function JVFinancialCalculations() {
     const loadShelterTypes = async () => {
         try {
             const types = await base44.entities.BusStopType.list();
-            setShelterTypes(types);
+            setShelterTypes(types.reverse());
             if (types.length > 0) {
                 setSelectedShelterType(types[0].id);
             }

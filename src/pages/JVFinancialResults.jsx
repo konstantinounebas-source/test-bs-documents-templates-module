@@ -35,7 +35,7 @@ export default function JVFinancialResults() {
     const loadData = async () => {
         try {
             const types = await base44.entities.BusStopType.list();
-            setShelterTypes(types);
+            setShelterTypes(types.reverse());
             
             // Initialize quantities for each shelter type
             const initialQuantities = {};
