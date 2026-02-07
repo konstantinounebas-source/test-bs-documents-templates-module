@@ -22,10 +22,9 @@ export default function JVFinancialResults() {
     
     // Section B - Profit Distribution
     const [shelterQuantities, setShelterQuantities] = useState({});
-    const [airControlShare, setAirControlShare] = useState('');
-    const [airControlProfitAmount, setAirControlProfitAmount] = useState(0);
-    const [amcoShare, setAmcoShare] = useState('');
-    const [amcoProfitAmount, setAmcoProfitAmount] = useState(0);
+    const [warrantyProvisions, setWarrantyProvisions] = useState({});
+    const [airControlShares, setAirControlShares] = useState({});
+    const [amcoShares, setAmcoShares] = useState({});
 
     useEffect(() => {
         if (!accessLoading && hasAccess) {
