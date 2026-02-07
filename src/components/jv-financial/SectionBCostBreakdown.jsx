@@ -20,6 +20,7 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
      const [products, setProducts] = useState([]);
      const [costCategories, setCostCategories] = useState([]);
      const [isLoadingData, setIsLoadingData] = useState(true);
+     const [financialDataId, setFinancialDataId] = useState(null);
 
     useEffect(() => {
         loadData();
