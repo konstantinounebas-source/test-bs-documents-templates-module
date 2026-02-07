@@ -437,13 +437,19 @@ export default function JVFinancialResults() {
                                         <td className="text-xs font-semibold text-slate-900 px-3 py-2 border border-slate-200 sticky left-0 bg-blue-50 z-10">
                                             Air Control Profit Amount
                                         </td>
-                                        {shelterTypes.map(type => (
-                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
-                                                -
-                                            </td>
-                                        ))}
+                                        {shelterTypes.map(type => {
+                                            const metrics = calculateMetrics(type);
+                                            return (
+                                                <td key={type.id} className="text-center text-xs font-medium text-blue-600 px-3 py-2 border border-slate-200">
+                                                    €{metrics.airControlProfit.toFixed(2)}
+                                                </td>
+                                            );
+                                        })}
                                         <td className="text-center text-sm font-bold text-blue-600 px-3 py-2 border border-slate-200 bg-blue-100">
-                                            €{airControlProfitAmount.toFixed(2)}
+                                            €{shelterTypes.reduce((sum, type) => {
+                                                const metrics = calculateMetrics(type);
+                                                return sum + metrics.airControlProfit;
+                                            }, 0).toFixed(2)}
                                         </td>
                                     </tr>
 
