@@ -212,6 +212,43 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
         }
     }, [totalVerifiedCosts, totalNonBomCosts, totalWasteAllowance, totalAccruedCosts, onTotalsChange]);
 
+    // Auto-save data when it changes
+    useEffect(() => {
+        if (shelterTypeId && !isLoadingData) {
+            saveFinancialData();
+        }
+    }, [nonBomCosts, wasteAllowances, accruedCosts]);
+
+    const saveFinancialData = async () => {
+        try {
+            const dataToSave = {
+                shelter_type_id: shelterTypeId,
+                non_bom_costs: nonBomCosts.map(c => ({
+                    description: c.description,
+                    amount: parseFloat(c.amount) || 0
+                })),
+                waste_allowances: wasteAllowances.map(w => ({
+                    product_id: w.product,
+                    base_cost: parseFloat(w.baseCost) || 0,
+                    allowance_percent: parseFloat(w.allowancePercent) || 0
+                })),
+                accrued_costs: accruedCosts.map(a => ({
+                    category_id: a.category,
+                    amount: parseFloat(a.amount) || 0
+                }))
+            };
+
+            if (financialDataId) {
+                await base44.entities.ShelterFinancialData.update(financialDataId, dataToSave);
+            } else {
+                const created = await base44.entities.ShelterFinancialData.create(dataToSave);
+                setFinancialDataId(created.id);
+            }
+        } catch (error) {
+            console.error('Failed to save financial data:', error);
+        }
+    };
+
     if (isLoadingData) {
         return (
             <Card>
