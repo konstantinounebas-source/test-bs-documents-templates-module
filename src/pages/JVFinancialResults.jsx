@@ -68,42 +68,7 @@ export default function JVFinancialResults() {
         }
     };
 
-    // Calculate Gross Balance
-    useEffect(() => {
-        const balance = totalContractIncome - totalCostBreakdown;
-        setGrossBalance(balance);
-    }, [totalContractIncome, totalCostBreakdown]);
 
-    // Calculate Net Expected Profit
-    useEffect(() => {
-        const warranty = parseFloat(warrantyProvision) || 0;
-        const netProfit = grossBalance - warranty;
-        setNetExpectedProfit(netProfit);
-    }, [grossBalance, warrantyProvision]);
-
-    // Calculate Profit Margin
-    useEffect(() => {
-        if (totalCostBreakdown > 0) {
-            const margin = (netExpectedProfit / totalCostBreakdown) * 100;
-            setProfitMargin(margin);
-        } else {
-            setProfitMargin(0);
-        }
-    }, [netExpectedProfit, totalCostBreakdown]);
-
-    // Calculate Air Control Profit Amount
-    useEffect(() => {
-        const share = parseFloat(airControlShare) || 0;
-        const amount = (netExpectedProfit * share) / 100;
-        setAirControlProfitAmount(amount);
-    }, [netExpectedProfit, airControlShare]);
-
-    // Calculate Amco Profit Amount
-    useEffect(() => {
-        const share = parseFloat(amcoShare) || 0;
-        const amount = (netExpectedProfit * share) / 100;
-        setAmcoProfitAmount(amount);
-    }, [netExpectedProfit, amcoShare]);
 
     const handleQuantityChange = (shelterTypeId, value) => {
         setShelterQuantities(prev => ({
