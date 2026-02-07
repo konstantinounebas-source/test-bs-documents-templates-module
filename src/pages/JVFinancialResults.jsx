@@ -197,24 +197,42 @@ export default function JVFinancialResults() {
                         <CardDescription>Quantity allocation and profit sharing</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {/* Quantity per Shelter Type */}
+                        {/* Quantity per Shelter Type - Table Format */}
                         <div>
                             <label className="block text-sm font-semibold text-slate-900 mb-4">
                                 Quantity per Shelter Type & Version
                             </label>
-                            <div className="space-y-3">
-                                {shelterTypes.map((type) => (
-                                    <div key={type.id} className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-3 rounded-lg">
-                                        <span className="text-sm text-slate-700">{type.name}</span>
-                                        <Input
-                                            type="number"
-                                            placeholder="Qty"
-                                            value={shelterQuantities[type.id] || ''}
-                                            onChange={(e) => handleQuantityChange(type.id, e.target.value)}
-                                            className="text-right"
-                                        />
-                                    </div>
-                                ))}
+                            <div className="border border-slate-200 rounded-lg overflow-hidden">
+                                <table className="w-full">
+                                    <thead className="bg-slate-100">
+                                        <tr>
+                                            <th className="text-left text-sm font-semibold text-slate-700 p-3 border-b border-slate-200">
+                                                Shelter Type
+                                            </th>
+                                            <th className="text-right text-sm font-semibold text-slate-700 p-3 border-b border-slate-200">
+                                                Quantity
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {shelterTypes.map((type, index) => (
+                                            <tr key={type.id} className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                                                <td className="text-sm text-slate-700 p-3 border-b border-slate-200">
+                                                    {type.name}
+                                                </td>
+                                                <td className="p-3 border-b border-slate-200">
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="0"
+                                                        value={shelterQuantities[type.id] || ''}
+                                                        onChange={(e) => handleQuantityChange(type.id, e.target.value)}
+                                                        className="text-right"
+                                                    />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
