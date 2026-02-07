@@ -195,29 +195,63 @@ export default function JVFinancialResults() {
         }
     };
 
+    const handleManualIncomeChange = async (shelterTypeId, value) => {
+        const numValue = parseFloat(value) || 0;
+        
+        const financialData = shelterFinancialData[shelterTypeId];
+        if (financialData?.id) {
+            await base44.entities.ShelterFinancialData.update(financialData.id, {
+                manual_contract_income: numValue
+            });
+        } else {
+            const newData = await base44.entities.ShelterFinancialData.create({
+                shelter_type_id: shelterTypeId,
+                manual_contract_income: numValue
+            });
+            setShelterFinancialData(prev => ({
+                ...prev,
+                [shelterTypeId]: newData
+            }));
+        }
+        
+        setShelterFinancialData(prev => ({
+            ...prev,
+            [shelterTypeId]: { ...prev[shelterTypeId], manual_contract_income: numValue }
+        }));
+    };
+
+    const handleManualCostChange = async (shelterTypeId, value) => {
+        const numValue = parseFloat(value) || 0;
+        
+        const financialData = shelterFinancialData[shelterTypeId];
+        if (financialData?.id) {
+            await base44.entities.ShelterFinancialData.update(financialData.id, {
+                manual_total_cost: numValue
+            });
+        } else {
+            const newData = await base44.entities.ShelterFinancialData.create({
+                shelter_type_id: shelterTypeId,
+                manual_total_cost: numValue
+            });
+            setShelterFinancialData(prev => ({
+                ...prev,
+                [shelterTypeId]: newData
+            }));
+        }
+        
+        setShelterFinancialData(prev => ({
+            ...prev,
+            [shelterTypeId]: { ...prev[shelterTypeId], manual_total_cost: numValue }
+        }));
+    };
+
     // Helper function to calculate metrics per shelter type
     const calculateMetrics = (type) => {
         const financialData = shelterFinancialData[type.id];
         const quantity = shelterQuantities[type.id] || 1;
 
-        // Contract Income calculation
-        const contractIncome = financialData 
-            ? (parseFloat(financialData.contract_amount) || 0) + 
-              (financialData.approved_variations?.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0) || 0) +
-              (financialData.potential_variations?.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0) || 0)
-            : 0;
-
-        // Cost calculation - including BOM costs
-        const bomCost = bomCosts[type.id] || 0;
-        const nonBomCost = financialData?.non_bom_costs?.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0) || 0;
-        const wasteCost = financialData?.waste_allowances?.reduce((sum, w) => {
-            const baseCost = parseFloat(w.base_cost) || 0;
-            const allowancePercent = parseFloat(w.allowance_percent) || 0;
-            return sum + ((baseCost * allowancePercent) / 100);
-        }, 0) || 0;
-        const accruedCost = financialData?.accrued_costs?.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0) || 0;
-
-        const totalCost = bomCost + nonBomCost + wasteCost + accruedCost;
+        const contractIncome = parseFloat(financialData?.manual_contract_income) || 0;
+        const totalCost = parseFloat(financialData?.manual_total_cost) || 0;
 
         const grossBalance = (contractIncome - totalCost) * quantity;
         const warranty = (warrantyProvisions[type.id] || 0) * quantity;
@@ -324,15 +358,27 @@ export default function JVFinancialResults() {
                                             Total Contract Income
                                         </td>
                                         {shelterTypes.map(type => {
-                                            const metrics = calculateMetrics(type);
+                                            const financialData = shelterFinancialData[type.id];
+                                            const manualIncome = financialData?.manual_contract_income;
                                             return (
-                                                <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
-                                                    €{metrics.contractIncome.toFixed(2)}
+                                                <td key={type.id} className="px-3 py-2 border border-slate-200">
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="0.00"
+                                                        value={manualIncome || ''}
+                                                        onChange={(e) => handleManualIncomeChange(type.id, e.target.value)}
+                                                        className="text-center h-8 text-sm w-full"
+                                                    />
                                                 </td>
                                             );
                                         })}
                                         <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
-                                            €{shelterTypes.reduce((sum, type) => sum + calculateMetrics(type).contractIncome, 0).toFixed(2)}
+                                            €{shelterTypes.reduce((sum, type) => {
+                                                const financialData = shelterFinancialData[type.id];
+                                                const quantity = shelterQuantities[type.id] || 1;
+                                                const income = parseFloat(financialData?.manual_contract_income) || 0;
+                                                return sum + (income * quantity);
+                                            }, 0).toFixed(2)}
                                         </td>
                                     </tr>
 
@@ -341,15 +387,27 @@ export default function JVFinancialResults() {
                                             Total Cost Breakdown
                                         </td>
                                         {shelterTypes.map(type => {
-                                            const metrics = calculateMetrics(type);
+                                            const financialData = shelterFinancialData[type.id];
+                                            const manualCost = financialData?.manual_total_cost;
                                             return (
-                                                <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
-                                                    €{metrics.totalCost.toFixed(2)}
+                                                <td key={type.id} className="px-3 py-2 border border-slate-200">
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="0.00"
+                                                        value={manualCost || ''}
+                                                        onChange={(e) => handleManualCostChange(type.id, e.target.value)}
+                                                        className="text-center h-8 text-sm w-full"
+                                                    />
                                                 </td>
                                             );
                                         })}
                                         <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
-                                            €{shelterTypes.reduce((sum, type) => sum + calculateMetrics(type).totalCost, 0).toFixed(2)}
+                                            €{shelterTypes.reduce((sum, type) => {
+                                                const financialData = shelterFinancialData[type.id];
+                                                const quantity = shelterQuantities[type.id] || 1;
+                                                const cost = parseFloat(financialData?.manual_total_cost) || 0;
+                                                return sum + (cost * quantity);
+                                            }, 0).toFixed(2)}
                                         </td>
                                     </tr>
 
