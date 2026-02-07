@@ -418,18 +418,18 @@ export default function JVFinancialResults() {
                                             Air Control Share (%)
                                         </td>
                                         {shelterTypes.map(type => (
-                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
-                                                -
+                                            <td key={type.id} className="px-3 py-2 border border-slate-200">
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0"
+                                                    value={airControlShares[type.id] || ''}
+                                                    onChange={(e) => handleAirControlShareChange(type.id, e.target.value)}
+                                                    className="text-center h-8 text-sm w-full"
+                                                />
                                             </td>
                                         ))}
-                                        <td className="px-3 py-2 border border-slate-200 bg-slate-50">
-                                            <Input
-                                                type="number"
-                                                placeholder="0.00"
-                                                value={airControlShare}
-                                                onChange={(e) => setAirControlShare(e.target.value)}
-                                                className="text-center h-8 text-sm w-full font-bold"
-                                            />
+                                        <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
+                                            -
                                         </td>
                                     </tr>
 
