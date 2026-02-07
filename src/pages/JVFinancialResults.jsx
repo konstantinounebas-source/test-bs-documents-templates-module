@@ -153,9 +153,9 @@ export default function JVFinancialResults() {
                         </div>
 
                         {/* Gross Balance (Calculated) */}
-                        <div className="grid grid-cols-2 gap-4 items-center bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <div className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-lg">
                             <label className="text-sm font-semibold text-slate-900">Gross Balance</label>
-                            <div className="text-right text-lg font-bold text-blue-600">
+                            <div className="text-right text-lg font-bold text-slate-900">
                                 €{grossBalance.toFixed(2)}
                             </div>
                         </div>
@@ -173,17 +173,17 @@ export default function JVFinancialResults() {
                         </div>
 
                         {/* Net Expected Profit (Calculated) */}
-                        <div className="grid grid-cols-2 gap-4 items-center bg-green-50 p-4 rounded-lg border border-green-200">
+                        <div className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-lg">
                             <label className="text-sm font-semibold text-slate-900">Net Expected Profit</label>
-                            <div className="text-right text-lg font-bold text-green-600">
+                            <div className="text-right text-lg font-bold text-slate-900">
                                 €{netExpectedProfit.toFixed(2)}
                             </div>
                         </div>
 
                         {/* Profit Margin (Calculated) */}
-                        <div className="grid grid-cols-2 gap-4 items-center bg-amber-50 p-4 rounded-lg border border-amber-200">
+                        <div className="grid grid-cols-2 gap-4 items-center bg-slate-50 p-4 rounded-lg">
                             <label className="text-sm font-semibold text-slate-900">Profit Margin (%)</label>
-                            <div className="text-right text-lg font-bold text-amber-600">
+                            <div className="text-right text-lg font-bold text-slate-900">
                                 {profitMargin.toFixed(2)}%
                             </div>
                         </div>
