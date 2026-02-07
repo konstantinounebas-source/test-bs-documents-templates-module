@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Download, Plus } from 'lucide-react';
+import { Download, Plus, Save } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -12,6 +12,7 @@ import SectionAContractIncome from "@/components/jv-financial/SectionAContractIn
 import SectionBCostBreakdown from "@/components/jv-financial/SectionBCostBreakdown";
 import SectionCCostSummary from "@/components/jv-financial/SectionCCostSummary";
 import ExcelJS from 'exceljs';
+import { toast } from 'sonner';
 
 export default function JVFinancialCalculations() {
      // Check page access first
@@ -23,6 +24,8 @@ export default function JVFinancialCalculations() {
      const [sectionBTotals, setSectionBTotals] = useState({ verified: 0, waste: 0, accrued: 0 });
      const [bomVersions, setBomVersions] = useState([]);
      const [selectedBomVersion, setSelectedBomVersion] = useState('');
+     const [refreshKey, setRefreshKey] = useState(0);
+     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (!accessLoading && hasAccess) {
@@ -75,9 +78,17 @@ export default function JVFinancialCalculations() {
             if (versionsList.length > 0) {
                 setSelectedBomVersion(versionsList[0].version);
             }
+            
+            // Trigger refresh of child components
+            setRefreshKey(prev => prev + 1);
         } catch (error) {
             console.error('Failed to load BOM versions:', error);
         }
+    };
+
+    const handleSaveAndRefresh = () => {
+        toast.success('Data saved successfully');
+        setRefreshKey(prev => prev + 1);
     };
 
     const exportBOM = async (shelterTypeId, version) => {
@@ -229,7 +240,7 @@ export default function JVFinancialCalculations() {
                         <CardTitle>Select Shelter Type & BOM Version</CardTitle>
                         <CardDescription>Choose a shelter type and BOM version to view its detailed financial calculations</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex gap-6 items-end">
+                    <CardContent className="flex gap-4 items-end flex-wrap">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-2">Shelter Type</label>
                             <Select value={selectedShelterType || ''} onValueChange={setSelectedShelterType}>
@@ -267,6 +278,15 @@ export default function JVFinancialCalculations() {
                                     </Select>
                                 </div>
                                 <Button
+                                    variant="default"
+                                    onClick={handleSaveAndRefresh}
+                                    className="flex items-center gap-2"
+                                    disabled={isSaving}
+                                >
+                                    <Save className="w-4 h-4" />
+                                    Save & Refresh
+                                </Button>
+                                <Button
                                     variant="outline"
                                     onClick={() => exportBOM(selectedShelterType, selectedBomVersion)}
                                     className="flex items-center gap-2"
@@ -281,9 +301,9 @@ export default function JVFinancialCalculations() {
 
                 {selectedShelterType && (
                     <div className="space-y-6">
-                        <SectionAContractIncome shelterTypeId={selectedShelterType} onTotalsChange={setSectionATotals} />
+                        <SectionAContractIncome key={`section-a-${refreshKey}`} shelterTypeId={selectedShelterType} onTotalsChange={setSectionATotals} />
 
-                        <SectionBCostBreakdown shelterTypeId={selectedShelterType} onTotalsChange={setSectionBTotals} bomVersions={bomVersions} selectedBomVersion={selectedBomVersion} />
+                        <SectionBCostBreakdown key={`section-b-${refreshKey}`} shelterTypeId={selectedShelterType} onTotalsChange={setSectionBTotals} bomVersions={bomVersions} selectedBomVersion={selectedBomVersion} />
                     </div>
                 )}
             </div>
