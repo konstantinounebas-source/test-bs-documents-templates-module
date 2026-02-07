@@ -10,6 +10,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from "@/components/ui/dialog";
+import { base44 } from '@/api/base44Client';
 
 export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }) {
     const [contractAmount, setContractAmount] = useState('');
@@ -17,6 +18,8 @@ export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }
     const [potentialVariations, setPotentialVariations] = useState([]);
     const [showEditDialog, setShowEditDialog] = useState(false);
     const [editAmount, setEditAmount] = useState('');
+    const [financialDataId, setFinancialDataId] = useState(null);
+    const [isLoadingData, setIsLoadingData] = useState(true);
 
     const addApprovedVariation = () => {
         setApprovedVariations([...approvedVariations, { id: Date.now(), description: '', amount: '' }]);
