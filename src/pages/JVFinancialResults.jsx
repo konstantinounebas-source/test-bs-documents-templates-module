@@ -10,6 +10,7 @@ export default function JVFinancialResults() {
     const { hasAccess, isLoading: accessLoading } = usePageAccess('JVFinancialResults');
     const [shelterTypes, setShelterTypes] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [shelterFinancialData, setShelterFinancialData] = useState({});
     
     // Section A - Financial Results
     const [totalContractIncome, setTotalContractIncome] = useState(0);
