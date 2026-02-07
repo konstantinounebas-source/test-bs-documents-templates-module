@@ -60,6 +60,22 @@ export default function JVFinancialResults() {
                 financialDataMap[data.shelter_type_id] = data;
             });
             setShelterFinancialData(financialDataMap);
+
+            // Load saved warranty provisions and shares
+            allFinancialData.forEach(data => {
+                if (data.warranty_provision !== undefined) {
+                    initialWarrantyProvisions[data.shelter_type_id] = data.warranty_provision;
+                }
+                if (data.air_control_share_percent !== undefined) {
+                    initialAirControlShares[data.shelter_type_id] = data.air_control_share_percent;
+                }
+                if (data.amco_share_percent !== undefined) {
+                    initialAmcoShares[data.shelter_type_id] = data.amco_share_percent;
+                }
+            });
+            setWarrantyProvisions(initialWarrantyProvisions);
+            setAirControlShares(initialAirControlShares);
+            setAmcoShares(initialAmcoShares);
             
         } catch (error) {
             console.error('Failed to load data:', error);
@@ -77,25 +93,79 @@ export default function JVFinancialResults() {
         }));
     };
 
-    const handleWarrantyProvisionChange = (shelterTypeId, value) => {
+    const handleWarrantyProvisionChange = async (shelterTypeId, value) => {
+        const numValue = parseFloat(value) || 0;
         setWarrantyProvisions(prev => ({
             ...prev,
-            [shelterTypeId]: parseFloat(value) || 0
+            [shelterTypeId]: numValue
         }));
+
+        // Auto-save to database
+        const financialData = shelterFinancialData[shelterTypeId];
+        if (financialData?.id) {
+            await base44.entities.ShelterFinancialData.update(financialData.id, {
+                warranty_provision: numValue
+            });
+        } else {
+            const newData = await base44.entities.ShelterFinancialData.create({
+                shelter_type_id: shelterTypeId,
+                warranty_provision: numValue
+            });
+            setShelterFinancialData(prev => ({
+                ...prev,
+                [shelterTypeId]: newData
+            }));
+        }
     };
 
-    const handleAirControlShareChange = (shelterTypeId, value) => {
+    const handleAirControlShareChange = async (shelterTypeId, value) => {
+        const numValue = parseFloat(value) || 0;
         setAirControlShares(prev => ({
             ...prev,
-            [shelterTypeId]: parseFloat(value) || 0
+            [shelterTypeId]: numValue
         }));
+
+        // Auto-save to database
+        const financialData = shelterFinancialData[shelterTypeId];
+        if (financialData?.id) {
+            await base44.entities.ShelterFinancialData.update(financialData.id, {
+                air_control_share_percent: numValue
+            });
+        } else {
+            const newData = await base44.entities.ShelterFinancialData.create({
+                shelter_type_id: shelterTypeId,
+                air_control_share_percent: numValue
+            });
+            setShelterFinancialData(prev => ({
+                ...prev,
+                [shelterTypeId]: newData
+            }));
+        }
     };
 
-    const handleAmcoShareChange = (shelterTypeId, value) => {
+    const handleAmcoShareChange = async (shelterTypeId, value) => {
+        const numValue = parseFloat(value) || 0;
         setAmcoShares(prev => ({
             ...prev,
-            [shelterTypeId]: parseFloat(value) || 0
+            [shelterTypeId]: numValue
         }));
+
+        // Auto-save to database
+        const financialData = shelterFinancialData[shelterTypeId];
+        if (financialData?.id) {
+            await base44.entities.ShelterFinancialData.update(financialData.id, {
+                amco_share_percent: numValue
+            });
+        } else {
+            const newData = await base44.entities.ShelterFinancialData.create({
+                shelter_type_id: shelterTypeId,
+                amco_share_percent: numValue
+            });
+            setShelterFinancialData(prev => ({
+                ...prev,
+                [shelterTypeId]: newData
+            }));
+        }
     };
 
     // Helper function to calculate metrics per shelter type
