@@ -24,10 +24,10 @@ export default function JVFinancialResults() {
 
     const loadData = async () => {
         try {
-            const [types, allFinancialData, allBomComponents] = await Promise.all([
+            const [types, allFinancialData, allCalculationResults] = await Promise.all([
                 base44.entities.BusStopType.list(),
                 base44.entities.ShelterFinancialData.list(),
-                base44.entities.BusStopTypeComponent.list()
+                base44.entities.ShelterFinancialResults.list()
             ]);
             
             setShelterTypes(types.reverse());
@@ -36,14 +36,21 @@ export default function JVFinancialResults() {
             const normalized = {};
             types.forEach(type => {
                 const existing = allFinancialData.find(d => d.shelter_type_id === type.id);
-                normalized[type.id] = existing || {
+                
+                // Get latest calculation result for this shelter type
+                const latestCalculation = allCalculationResults
+                    .filter(r => r.shelter_type_id === type.id)
+                    .sort((a, b) => new Date(b.calculation_date) - new Date(a.calculation_date))[0];
+
+                normalized[type.id] = {
                     shelter_type_id: type.id,
                     quantity: 1,
-                    manual_contract_income: 0,
-                    manual_total_cost: 0,
-                    warranty_provision: 0,
-                    air_control_share_percent: 0,
-                    amco_share_percent: 0
+                    manual_contract_income: latestCalculation?.total_contract_income || existing?.manual_contract_income || 0,
+                    manual_total_cost: latestCalculation?.total_cost_breakdown || existing?.manual_total_cost || 0,
+                    warranty_provision: existing?.warranty_provision || 0,
+                    air_control_share_percent: existing?.air_control_share_percent || 0,
+                    amco_share_percent: existing?.amco_share_percent || 0,
+                    id: existing?.id
                 };
             });
 
