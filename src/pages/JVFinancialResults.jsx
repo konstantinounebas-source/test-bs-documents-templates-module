@@ -37,12 +37,21 @@ export default function JVFinancialResults() {
             const types = await base44.entities.BusStopType.list();
             setShelterTypes(types.reverse());
             
-            // Initialize quantities for each shelter type
+            // Initialize quantities, warranty provisions, and shares for each shelter type
             const initialQuantities = {};
+            const initialWarrantyProvisions = {};
+            const initialAirControlShares = {};
+            const initialAmcoShares = {};
             types.forEach(type => {
                 initialQuantities[type.id] = 1;
+                initialWarrantyProvisions[type.id] = 0;
+                initialAirControlShares[type.id] = 0;
+                initialAmcoShares[type.id] = 0;
             });
             setShelterQuantities(initialQuantities);
+            setWarrantyProvisions(initialWarrantyProvisions);
+            setAirControlShares(initialAirControlShares);
+            setAmcoShares(initialAmcoShares);
             
             // Load financial data for all shelter types
             const allFinancialData = await base44.entities.ShelterFinancialData.list();
