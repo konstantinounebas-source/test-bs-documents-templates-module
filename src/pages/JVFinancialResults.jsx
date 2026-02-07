@@ -33,29 +33,7 @@ export default function JVFinancialResults() {
         }
     }, [accessLoading, hasAccess]);
 
-    // Reload data when changing between shelter types to ensure fresh calculations
-    useEffect(() => {
-        if (shelterTypes.length > 0 && shelterFinancialData) {
-            // Force recalculation by updating state
-            const quantities = {};
-            const warranties = {};
-            const airControl = {};
-            const amco = {};
-            
-            shelterTypes.forEach(type => {
-                quantities[type.id] = shelterQuantities[type.id] || 1;
-                const data = shelterFinancialData[type.id];
-                warranties[type.id] = data?.warranty_provision || 0;
-                airControl[type.id] = data?.air_control_share_percent || 0;
-                amco[type.id] = data?.amco_share_percent || 0;
-            });
-            
-            setShelterQuantities(quantities);
-            setWarrantyProvisions(warranties);
-            setAirControlShares(airControl);
-            setAmcoShares(amco);
-        }
-    }, [shelterFinancialData]);
+
 
     const loadData = async () => {
         try {
