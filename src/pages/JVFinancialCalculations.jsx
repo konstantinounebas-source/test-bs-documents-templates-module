@@ -111,12 +111,16 @@ export default function JVFinancialCalculations() {
                                 <SelectTrigger className="w-64">
                                     <SelectValue placeholder="Select a Shelter Type" />
                                 </SelectTrigger>
-                                <SelectContent>
-                                    {shelterTypes.map(type => (
-                                        <SelectItem key={type.id} value={type.id}>
-                                            {type.name}
-                                        </SelectItem>
-                                    ))}
+                                <SelectContent className="max-h-[300px]">
+                                    {shelterTypes.length === 0 ? (
+                                        <div className="p-2 text-sm text-slate-500">No shelter types available</div>
+                                    ) : (
+                                        shelterTypes.map(type => (
+                                            <SelectItem key={type.id} value={type.id}>
+                                                {type.name}
+                                            </SelectItem>
+                                        ))
+                                    )}
                                 </SelectContent>
                             </Select>
                         </div>
