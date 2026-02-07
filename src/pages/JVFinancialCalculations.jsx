@@ -125,21 +125,31 @@ export default function JVFinancialCalculations() {
                             </Select>
                         </div>
                         {bomVersions.length > 0 && (
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">BOM Version</label>
-                                <Select value={selectedBomVersion} onValueChange={setSelectedBomVersion}>
-                                    <SelectTrigger className="w-64">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {bomVersions.map((v) => (
-                                            <SelectItem key={v.version} value={v.version}>
-                                                {v.version} {v.comment && `- ${v.comment}`}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            <>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-2">BOM Version</label>
+                                    <Select value={selectedBomVersion} onValueChange={setSelectedBomVersion}>
+                                        <SelectTrigger className="w-64">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {bomVersions.map((v) => (
+                                                <SelectItem key={v.version} value={v.version}>
+                                                    {v.version} {v.comment && `- ${v.comment}`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => exportBOM(selectedShelterType, selectedBomVersion)}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    Export BOM
+                                </Button>
+                            </>
                         )}
                     </CardContent>
                 </Card>
