@@ -59,10 +59,30 @@ export default function JVFinancialResults() {
             allFinancialData.forEach(data => {
                 financialDataMap[data.shelter_type_id] = data;
             });
+
+            // Create missing ShelterFinancialData records for shelter types
+            for (const type of types) {
+                if (!financialDataMap[type.id]) {
+                    const newData = await base44.entities.ShelterFinancialData.create({
+                        shelter_type_id: type.id,
+                        contract_amount: 0,
+                        approved_variations: [],
+                        potential_variations: [],
+                        non_bom_costs: [],
+                        waste_allowances: [],
+                        accrued_costs: [],
+                        warranty_provision: 0,
+                        air_control_share_percent: 0,
+                        amco_share_percent: 0
+                    });
+                    financialDataMap[type.id] = newData;
+                }
+            }
+
             setShelterFinancialData(financialDataMap);
 
             // Load saved warranty provisions and shares
-            allFinancialData.forEach(data => {
+            Object.values(financialDataMap).forEach(data => {
                 if (data.warranty_provision !== undefined) {
                     initialWarrantyProvisions[data.shelter_type_id] = data.warranty_provision;
                 }
