@@ -11,6 +11,7 @@ import { usePageAccess } from "@/components/lib/usePageAccess";
 import SectionAContractIncome from "@/components/jv-financial/SectionAContractIncome";
 import SectionBCostBreakdown from "@/components/jv-financial/SectionBCostBreakdown";
 import SectionCCostSummary from "@/components/jv-financial/SectionCCostSummary";
+import ExcelJS from 'exceljs';
 
 export default function JVFinancialCalculations() {
      // Check page access first
