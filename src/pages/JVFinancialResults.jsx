@@ -33,6 +33,43 @@ export default function JVFinancialResults() {
         }
     }, [accessLoading, hasAccess]);
 
+    // Reload data every time the page is viewed
+    useEffect(() => {
+        if (!accessLoading && hasAccess && shelterTypes.length > 0) {
+            // Reload financial data to ensure we have the latest
+            const reloadFinancialData = async () => {
+                try {
+                    const allFinancialData = await base44.entities.ShelterFinancialData.list();
+                    const financialDataMap = {};
+                    allFinancialData.forEach(data => {
+                        financialDataMap[data.shelter_type_id] = data;
+                    });
+                    setShelterFinancialData(financialDataMap);
+
+                    // Update states from reloaded data
+                    const warranties = {};
+                    const airControl = {};
+                    const amco = {};
+                    
+                    shelterTypes.forEach(type => {
+                        const data = financialDataMap[type.id];
+                        warranties[type.id] = data?.warranty_provision || 0;
+                        airControl[type.id] = data?.air_control_share_percent || 0;
+                        amco[type.id] = data?.amco_share_percent || 0;
+                    });
+                    
+                    setWarrantyProvisions(warranties);
+                    setAirControlShares(airControl);
+                    setAmcoShares(amco);
+                } catch (error) {
+                    console.error('Failed to reload financial data:', error);
+                }
+            };
+            
+            reloadFinancialData();
+        }
+    }, []);
+
 
 
     const loadData = async () => {
