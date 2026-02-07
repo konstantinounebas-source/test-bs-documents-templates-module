@@ -389,13 +389,20 @@ export default function JVFinancialResults() {
                                         <td className="text-xs font-semibold text-slate-900 px-3 py-2 border border-slate-200 sticky left-0 bg-amber-50 z-10">
                                             Profit Margin (%)
                                         </td>
-                                        {shelterTypes.map(type => (
-                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
-                                                -
-                                            </td>
-                                        ))}
+                                        {shelterTypes.map(type => {
+                                            const metrics = calculateMetrics(type);
+                                            return (
+                                                <td key={type.id} className="text-center text-xs font-medium text-slate-900 px-3 py-2 border border-slate-200">
+                                                    {metrics.profitMargin.toFixed(2)}%
+                                                </td>
+                                            );
+                                        })}
                                         <td className="text-center text-sm font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-amber-100">
-                                            {profitMargin.toFixed(2)}%
+                                            {(() => {
+                                                const totalCost = shelterTypes.reduce((sum, type) => sum + calculateMetrics(type).totalCost, 0);
+                                                const totalNetProfit = shelterTypes.reduce((sum, type) => sum + calculateMetrics(type).netProfit, 0);
+                                                return totalCost > 0 ? ((totalNetProfit / totalCost) * 100).toFixed(2) : '0.00';
+                                            })()}%
                                         </td>
                                     </tr>
 
