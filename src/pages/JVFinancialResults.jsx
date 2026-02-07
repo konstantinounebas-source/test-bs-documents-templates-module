@@ -11,6 +11,7 @@ export default function JVFinancialResults() {
     const [shelterTypes, setShelterTypes] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [shelterFinancialData, setShelterFinancialData] = useState({});
+    const [bomCosts, setBomCosts] = useState({});
     
     // Section A - Financial Results
     const [totalContractIncome, setTotalContractIncome] = useState(0);
@@ -108,6 +109,7 @@ export default function JVFinancialResults() {
             const productMap = {};
             allProducts.forEach(p => { productMap[p.id] = p; });
 
+            const calculatedBomCosts = {};
             for (const type of types) {
                 const bomComponents = await base44.entities.BusStopTypeComponent.filter({
                     bus_stop_type_id: type.id
@@ -123,8 +125,9 @@ export default function JVFinancialResults() {
                     }
                 });
 
-                type.cachedBOMCost = totalBOMCost;
+                calculatedBomCosts[type.id] = totalBOMCost;
             }
+            setBomCosts(calculatedBomCosts);
 
             setShelterFinancialData(financialDataMap);
 
@@ -235,34 +238,6 @@ export default function JVFinancialResults() {
         }
     };
 
-    // Helper function to calculate BOM costs for a shelter type
-    const calculateBOMCosts = async (shelterTypeId) => {
-        try {
-            const bomComponents = await base44.entities.BusStopTypeComponent.filter({
-                bus_stop_type_id: shelterTypeId
-            });
-
-            const allProducts = await base44.entities.Product.list();
-            const productMap = {};
-            allProducts.forEach(p => { productMap[p.id] = p; });
-
-            let totalBOMCost = 0;
-            bomComponents.forEach(comp => {
-                const product = productMap[comp.product_id];
-                if (product) {
-                    const quantity = parseFloat(comp.quantity_required) || 0;
-                    const unitCost = parseFloat(product.unit_cost) || 0;
-                    totalBOMCost += quantity * unitCost;
-                }
-            });
-
-            return totalBOMCost;
-        } catch (error) {
-            console.error('Failed to calculate BOM costs:', error);
-            return 0;
-        }
-    };
-
     // Helper function to calculate metrics per shelter type
     const calculateMetrics = (type) => {
         const financialData = shelterFinancialData[type.id];
@@ -276,7 +251,7 @@ export default function JVFinancialResults() {
             : 0;
 
         // Cost calculation - including BOM costs
-        const bomCost = type.cachedBOMCost || 0;
+        const bomCost = bomCosts[type.id] || 0;
         const nonBomCost = financialData?.non_bom_costs?.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0) || 0;
         const wasteCost = financialData?.waste_allowances?.reduce((sum, w) => {
             const baseCost = parseFloat(w.base_cost) || 0;
