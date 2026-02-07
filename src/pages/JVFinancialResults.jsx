@@ -346,18 +346,22 @@ export default function JVFinancialResults() {
                                             Warranty Provision
                                         </td>
                                         {shelterTypes.map(type => (
-                                            <td key={type.id} className="text-center text-xs text-slate-700 px-3 py-2 border border-slate-200">
-                                                -
+                                            <td key={type.id} className="px-3 py-2 border border-slate-200">
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0.00"
+                                                    value={warrantyProvisions[type.id] || ''}
+                                                    onChange={(e) => handleWarrantyProvisionChange(type.id, e.target.value)}
+                                                    className="text-center h-8 text-sm w-full"
+                                                />
                                             </td>
                                         ))}
-                                        <td className="px-3 py-2 border border-slate-200 bg-slate-50">
-                                            <Input
-                                                type="number"
-                                                placeholder="0.00"
-                                                value={warrantyProvision}
-                                                onChange={(e) => setWarrantyProvision(e.target.value)}
-                                                className="text-center h-8 text-sm w-full font-bold"
-                                            />
+                                        <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
+                                            €{shelterTypes.reduce((sum, type) => {
+                                                const quantity = shelterQuantities[type.id] || 1;
+                                                const warranty = warrantyProvisions[type.id] || 0;
+                                                return sum + (warranty * quantity);
+                                            }, 0).toFixed(2)}
                                         </td>
                                     </tr>
 
