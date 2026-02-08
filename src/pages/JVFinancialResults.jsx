@@ -176,40 +176,33 @@ export default function JVFinancialResults() {
     };
 
     const saveEdit = async (instanceId, fieldName) => {
-        const updates = { [fieldName]: parseFloat(editValue) || 0 };
-        
-        setDataByInstance(prev => ({
-            ...prev,
-            [instanceId]: { ...prev[instanceId], ...updates }
-        }));
-
         try {
-            const data = { ...dataByInstance[instanceId], ...updates };
-            const quantity = data.quantity || 1;
-            const contractIncome = parseFloat(data.manual_contract_income) || 0;
-            const totalCost = parseFloat(data.manual_total_cost) || 0;
+            const newValue = parseFloat(editValue) || 0;
 
-            const grossBalance = contractIncome - totalCost;
-            const warrantyProvision = parseFloat(data.warranty_provision) || 0;
-            const netProfit = (grossBalance - warrantyProvision) * quantity;
-            const totalCostValue = totalCost * quantity;
-            const profitMargin = totalCostValue > 0 ? (netProfit / totalCostValue) * 100 : 0;
+            // Get current data
+            const currentData = dataByInstance[instanceId] || {};
 
-            const airControlShare = parseFloat(data.air_control_share_percent) || 0;
-            const amcoShare = parseFloat(data.amco_share_percent) || 0;
-            const airControlProfit = (netProfit * airControlShare) / 100;
-            const amcoProfit = (netProfit * amcoShare) / 100;
+            // Prepare update
+            const updates = { [fieldName]: newValue };
 
+            // Update local state first
+            setDataByInstance(prev => ({
+                ...prev,
+                [instanceId]: { ...prev[instanceId], ...updates }
+            }));
+
+            // Get existing result
             const existingResults = await base44.entities.ShelterFinancialResults.filter({
                 shelter_instance_id: instanceId
             });
 
+            // Prepare data to save
             const resultData = {
                 shelter_instance_id: instanceId,
-                quantity,
-                warranty_provision: warrantyProvision,
-                air_control_share_percent: airControlShare,
-                amco_share_percent: amcoShare
+                quantity: fieldName === 'quantity' ? newValue : (currentData.quantity || 1),
+                warranty_provision: fieldName === 'warranty_provision' ? newValue : (currentData.warranty_provision || 0),
+                air_control_share_percent: fieldName === 'air_control_share_percent' ? newValue : (currentData.air_control_share_percent || 0),
+                amco_share_percent: fieldName === 'amco_share_percent' ? newValue : (currentData.amco_share_percent || 0)
             };
 
             if (existingResults.length > 0) {
@@ -217,13 +210,15 @@ export default function JVFinancialResults() {
             } else {
                 await base44.entities.ShelterFinancialResults.create(resultData);
             }
-            
+
             toast.success('Saved successfully');
         } catch (error) {
             console.error('Failed to save data:', error);
             toast.error('Failed to save data');
+            // Reload data on error
+            loadData();
         }
-        
+
         cancelEditing();
     };
 
