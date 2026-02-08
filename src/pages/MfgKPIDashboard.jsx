@@ -10,6 +10,8 @@ import DailyMetricValuesViewer from "@/components/manufacturing/metrics/DailyMet
 import KPIDefinitionsTable from "@/components/manufacturing/KPIDefinitionsTable";
 
 export default function MfgKPIDashboardPage() {
+  const [expandedKPIDefinitions, setExpandedKPIDefinitions] = useState(true);
+
   const { data: kpiRuns = [] } = useQuery({
     queryKey: ['Daily_KPI_Run'],
     queryFn: () => base44.entities.Daily_KPI_Run.list('-date')
