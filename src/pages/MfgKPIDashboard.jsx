@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { BarChart3, Lock } from "lucide-react";
 import MetricDefinitionManager from "@/components/manufacturing/metrics/MetricDefinitionManager";
 import DailyMetricValuesViewer from "@/components/manufacturing/metrics/DailyMetricValuesViewer";
+import KPIDefinitionsTable from "@/components/manufacturing/KPIDefinitionsTable";
 
 export default function MfgKPIDashboardPage() {
   const { data: kpiRuns = [] } = useQuery({
@@ -71,6 +72,15 @@ export default function MfgKPIDashboardPage() {
                 )}
               </TableBody>
             </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">KPI Definitions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <KPIDefinitionsTable />
           </CardContent>
         </Card>
 
