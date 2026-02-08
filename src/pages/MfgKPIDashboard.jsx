@@ -79,11 +79,23 @@ export default function MfgKPIDashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">KPI Definitions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <KPIDefinitionsTable />
+          <CardContent className="p-0">
+            <button
+              onClick={() => setExpandedKPIDefinitions(!expandedKPIDefinitions)}
+              className="w-full flex items-center gap-2 px-6 py-4 hover:bg-slate-50 transition-colors"
+            >
+              {expandedKPIDefinitions ? (
+                <ChevronDown className="w-5 h-5 text-slate-600" />
+              ) : (
+                <ChevronRight className="w-5 h-5 text-slate-600" />
+              )}
+              <span className="text-lg font-semibold">KPI Definitions (Read-only)</span>
+            </button>
+            {expandedKPIDefinitions && (
+              <div className="px-6 pb-6">
+                <KPIDefinitionsTable />
+              </div>
+            )}
           </CardContent>
         </Card>
 
