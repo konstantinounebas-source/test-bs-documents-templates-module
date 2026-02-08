@@ -10,11 +10,6 @@ import KPIDefinitionsTable from "@/components/manufacturing/KPIDefinitionsTable"
 export default function MfgKPIDashboardPage() {
   const [expandedKPIDefinitions, setExpandedKPIDefinitions] = useState(true);
 
-  const { data: kpiRuns = [] } = useQuery({
-    queryKey: ['Daily_KPI_Run'],
-    queryFn: () => base44.entities.Daily_KPI_Run.list('-date')
-  });
-
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto">
