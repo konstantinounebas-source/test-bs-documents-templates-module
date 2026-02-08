@@ -50,10 +50,10 @@ export default function DailyMetricValuesViewer() {
   const filteredValues = useMemo(() => {
     return metricValues.filter(mv => {
       const dateMatch = dateRange.includes(mv.date);
-      const deptMatch = !searchDept || mv.department?.toLowerCase().includes(searchDept.toLowerCase());
+      const deptMatch = viewMode === 'daily' ? (!searchDept || mv.department?.toLowerCase().includes(searchDept.toLowerCase())) : true;
       return dateMatch && deptMatch;
     });
-  }, [metricValues, dateRange, searchDept]);
+  }, [metricValues, dateRange, searchDept, viewMode]);
 
   const pivotData = useMemo(() => {
     if (viewMode === 'daily') return null;
