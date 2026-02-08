@@ -56,11 +56,10 @@ export default function DailyMetricValuesViewer() {
 
     const pivot = {};
     filteredValues.forEach(mv => {
-      const key = `${mv.metric_code}_${mv.department}`;
+      const key = mv.metric_code;
       if (!pivot[key]) {
         pivot[key] = {
           metric_code: mv.metric_code,
-          department: mv.department,
           values: {}
         };
       }
