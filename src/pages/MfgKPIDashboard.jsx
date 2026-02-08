@@ -8,7 +8,7 @@ import DailyKPIValuesViewer from "@/components/manufacturing/kpi/DailyKPIValuesV
 import KPIDefinitionsTable from "@/components/manufacturing/KPIDefinitionsTable";
 
 export default function MfgKPIDashboardPage() {
-  const [expandedKPIDefinitions, setExpandedKPIDefinitions] = useState(true);
+  const [expandedKPIDefinitions, setExpandedKPIDefinitions] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
