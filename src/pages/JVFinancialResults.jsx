@@ -47,11 +47,29 @@ export default function JVFinancialResults() {
             const pageWidth = pdf.internal.pageSize.getWidth();
             const pageHeight = pdf.internal.pageSize.getHeight();
             
-            const imgWidth = pageWidth - 20; // 10mm margin on each side
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            // Add title
+            pdf.setFontSize(16);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('Financial Results Table', 10, 15);
             
+            // Add subtitle
+            pdf.setFontSize(10);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text('All shelter instances in columns with financial metrics', 10, 22);
+            
+            // Add date
+            const currentDate = new Date().toLocaleDateString('el-GR', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            pdf.text(`Date: ${currentDate}`, 10, 28);
+            
+            // Add table
+            const imgWidth = pageWidth - 20;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
             const imgData = canvas.toDataURL('image/png');
-            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+            pdf.addImage(imgData, 'PNG', 10, 35, imgWidth, imgHeight);
             
             pdf.save('JV_Financial_Results.pdf');
         } catch (error) {
