@@ -225,7 +225,7 @@ export default function DailyKPIValuesViewer() {
                       <div className="font-mono font-semibold text-blue-700">{kv.kpi_code}</div>
                       <div className="text-xs text-slate-600">{kpiNameMap[kv.kpi_code] || '-'}</div>
                     </TableCell>
-                    <TableCell className="text-right font-semibold">{kv.value?.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-semibold">{kv.value?.toFixed(2)}%</TableCell>
                   </TableRow>
                 ))
               )}
