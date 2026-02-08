@@ -171,12 +171,15 @@ export default function DailyMetricValuesViewer() {
                 </TableRow>
               ) : (
                 filteredValues.map(mv => (
-                  <TableRow key={mv.id} className="hover:bg-slate-50">
-                    <TableCell>{mv.department}</TableCell>
-                    <TableCell className="font-mono font-semibold text-blue-700">{metricNameMap[mv.metric_code] || mv.metric_code}</TableCell>
-                    <TableCell className="text-right font-semibold">{mv.value?.toFixed(2)}</TableCell>
-                  </TableRow>
-                ))
+                   <TableRow key={mv.id} className="hover:bg-slate-50">
+                     <TableCell>{mv.department}</TableCell>
+                     <TableCell>
+                       <div className="font-mono font-semibold text-blue-700">{mv.metric_code}</div>
+                       <div className="text-xs text-slate-600">{metricNameMap[mv.metric_code] || '-'}</div>
+                     </TableCell>
+                     <TableCell className="text-right font-semibold">{mv.value?.toFixed(2)}</TableCell>
+                   </TableRow>
+                 ))
               )}
             </TableBody>
           </Table>
@@ -208,15 +211,18 @@ export default function DailyMetricValuesViewer() {
                       </TableCell>
                     </TableRow>
                     {pivotData.map((row, idx) => (
-                      <TableRow key={idx} className="hover:bg-slate-50">
-                        <TableCell className="sticky left-0 bg-white font-mono font-semibold text-blue-700">{metricNameMap[row.metric_code] || row.metric_code}</TableCell>
-                        {dateRange.map(date => (
-                          <TableCell key={date} className="text-center font-semibold">
-                            {row.values[date] !== undefined ? row.values[date].toFixed(2) : '-'}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
+                       <TableRow key={idx} className="hover:bg-slate-50">
+                         <TableCell className="sticky left-0 bg-white">
+                           <div className="font-mono font-semibold text-blue-700">{row.metric_code}</div>
+                           <div className="text-xs text-slate-600">{metricNameMap[row.metric_code] || '-'}</div>
+                         </TableCell>
+                         {dateRange.map(date => (
+                           <TableCell key={date} className="text-center font-semibold">
+                             {row.values[date] !== undefined ? row.values[date].toFixed(2) : '-'}
+                           </TableCell>
+                         ))}
+                       </TableRow>
+                     ))}
                   </>
                 )}
               </TableBody>
