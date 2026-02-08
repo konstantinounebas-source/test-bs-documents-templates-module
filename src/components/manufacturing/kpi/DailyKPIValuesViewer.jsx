@@ -266,7 +266,7 @@ export default function DailyKPIValuesViewer() {
                         </TableCell>
                         {dateRange.map(date => (
                           <TableCell key={date} className="text-center font-semibold">
-                            {row.values[date] !== undefined ? row.values[date].toFixed(2) : '-'}
+                            {row.values[date] !== undefined ? `${row.values[date].toFixed(2)}%` : '-'}
                           </TableCell>
                         ))}
                       </TableRow>
