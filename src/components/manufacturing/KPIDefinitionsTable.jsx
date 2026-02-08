@@ -19,8 +19,8 @@ export default function KPIDefinitionsTable() {
     return kpiDefinitions.filter(kpi => {
       const searchLower = searchTerm.toLowerCase();
       return (
-        kpi.metric_code?.toLowerCase().includes(searchLower) ||
-        kpi.metric_name?.toLowerCase().includes(searchLower) ||
+        kpi.kpi_code?.toLowerCase().includes(searchLower) ||
+        kpi.kpi_name?.toLowerCase().includes(searchLower) ||
         kpi.description?.toLowerCase().includes(searchLower)
       );
     });
