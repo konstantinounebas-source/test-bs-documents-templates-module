@@ -129,16 +129,15 @@ export default function JVFinancialCalculations() {
             // Contract income from Section A
             const totalContractIncome = sectionATotals.contractIncome || 0;
 
-            // Save manual income and cost to ShelterFinancialData
+            // Save only total cost breakdown to ShelterFinancialData
+            // (warranty, shares, manual income/cost are handled in Financial Results page)
             if (shelterFinData.id) {
                 await base44.entities.ShelterFinancialData.update(shelterFinData.id, {
-                    manual_contract_income: totalContractIncome,
                     manual_total_cost: totalCostBreakdown
                 });
             } else {
                 await base44.entities.ShelterFinancialData.create({
                     shelter_type_id: selectedShelterType,
-                    manual_contract_income: totalContractIncome,
                     manual_total_cost: totalCostBreakdown
                 });
             }
