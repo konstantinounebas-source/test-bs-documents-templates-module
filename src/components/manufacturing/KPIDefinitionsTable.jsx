@@ -7,14 +7,14 @@ import { Loader2, ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 export default function KPIDefinitionsTable() {
-  const [expandedRows, setExpandedRows] = useState({});
+  const [expandedId, setExpandedId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: kpiDefinitions = [], isLoading } = useQuery({
     queryKey: ['MetricDefinition'],
     queryFn: async () => {
       const data = await base44.entities.MetricDefinition.list();
-      return data.filter(item => item.type === 'KPI' || item.category === 'KPI');
+      return data.filter(item => item.metric_code && item.type === 'KPI');
     }
   });
 
@@ -29,36 +29,27 @@ export default function KPIDefinitionsTable() {
     });
   }, [kpiDefinitions, searchTerm]);
 
-  const toggleRow = (kpiId) => {
-    setExpandedRows(prev => ({
-      ...prev,
-      [kpiId]: !prev[kpiId]
-    }));
-  };
-
   if (isLoading) {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input
-            placeholder="Search KPIs by code or name..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9"
-          />
-        </div>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <Input
+          placeholder="Search KPIs by code or name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9"
+        />
       </div>
 
       <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50">
-              <TableHead className="w-12"></TableHead>
+              <TableHead className="w-8"></TableHead>
               <TableHead className="font-semibold">KPI Code</TableHead>
               <TableHead className="font-semibold">KPI Name</TableHead>
               <TableHead className="font-semibold">Applies To</TableHead>
@@ -74,65 +65,30 @@ export default function KPIDefinitionsTable() {
             ) : (
               filteredKPIs.map((kpi) => (
                 <React.Fragment key={kpi.id}>
-                  <TableRow className="hover:bg-slate-50">
-                    <TableCell className="w-12">
-                      <button
-                        onClick={() => toggleRow(kpi.id)}
-                        className="p-1 hover:bg-slate-200 rounded"
-                      >
-                        {expandedRows[kpi.id] ? (
-                          <ChevronDown className="w-4 h-4" />
-                        ) : (
-                          <ChevronRight className="w-4 h-4" />
-                        )}
-                      </button>
+                  <TableRow 
+                    className="hover:bg-slate-50 cursor-pointer"
+                    onClick={() => setExpandedId(expandedId === kpi.id ? null : kpi.id)}
+                  >
+                    <TableCell className="w-8 text-center">
+                      {expandedId === kpi.id ? (
+                        <ChevronDown className="w-4 h-4" />
+                      ) : (
+                        <ChevronRight className="w-4 h-4" />
+                      )}
                     </TableCell>
                     <TableCell className="font-mono font-semibold text-blue-700">{kpi.metric_code}</TableCell>
                     <TableCell className="font-semibold">{kpi.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {kpi.applies_to || 'Day/Department'}
-                      </Badge>
-                    </TableCell>
+                    <TableCell className="text-sm text-slate-600">{kpi.applies_to || '-'}</TableCell>
                   </TableRow>
 
-                  {expandedRows[kpi.id] && (
-                    <TableRow className="bg-slate-50">
-                      <TableCell colSpan={4} className="p-6">
-                        <div className="space-y-4">
+                  {expandedId === kpi.id && (
+                    <TableRow className="bg-slate-50 border-t">
+                      <TableCell colSpan={4} className="p-4">
+                        <div className="space-y-2">
                           <div>
-                            <h4 className="font-semibold text-sm mb-1">Description</h4>
-                            <p className="text-sm text-slate-700">{kpi.description || '-'}</p>
+                            <p className="text-xs font-semibold text-slate-600 uppercase">Description</p>
+                            <p className="text-sm text-slate-800 mt-1">{kpi.description || '-'}</p>
                           </div>
-
-                          {kpi.formula && (
-                            <div>
-                              <h4 className="font-semibold text-sm mb-1">Formula</h4>
-                              <div className="bg-white border border-slate-200 rounded p-3 font-mono text-xs text-slate-700 overflow-auto max-h-24">
-                                {kpi.formula}
-                              </div>
-                            </div>
-                          )}
-
-                          {kpi.depends_on && (
-                            <div>
-                              <h4 className="font-semibold text-sm mb-2">Depends On Metrics</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {typeof kpi.depends_on === 'string' 
-                                  ? kpi.depends_on.split(',').map((dep, idx) => (
-                                      <Badge key={idx} className="bg-blue-100 text-blue-800">
-                                        {dep.trim()}
-                                      </Badge>
-                                    ))
-                                  : kpi.depends_on.map((dep, idx) => (
-                                      <Badge key={idx} className="bg-blue-100 text-blue-800">
-                                        {dep}
-                                      </Badge>
-                                    ))
-                                }
-                              </div>
-                            </div>
-                          )}
                         </div>
                       </TableCell>
                     </TableRow>
