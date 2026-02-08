@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Download, Plus, Save } from 'lucide-react';
+import { Download, Plus, Save, Edit } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -12,6 +12,7 @@ import SectionAContractIncome from "@/components/jv-financial/SectionAContractIn
 import SectionBCostBreakdown from "@/components/jv-financial/SectionBCostBreakdown";
 import SectionCCostSummary from "@/components/jv-financial/SectionCCostSummary";
 import AddShelterInstanceDialog from "@/components/jv-financial/AddShelterInstanceDialog";
+import EditShelterInstanceDialog from "@/components/jv-financial/EditShelterInstanceDialog";
 import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 
@@ -28,6 +29,8 @@ export default function JVFinancialCalculations() {
      const [refreshKey, setRefreshKey] = useState(0);
      const [isSaving, setIsSaving] = useState(false);
      const [showAddDialog, setShowAddDialog] = useState(false);
+     const [showEditDialog, setShowEditDialog] = useState(false);
+     const [editingInstance, setEditingInstance] = useState(null);
 
     useEffect(() => {
         if (!accessLoading && hasAccess) {
@@ -42,6 +45,7 @@ export default function JVFinancialCalculations() {
                 base44.entities.BusStopType.list()
             ]);
             
+            // Show all instances (including inactive) in calculations page
             setShelterInstances(instances.reverse());
             setShelterTypes(types.reverse());
             
@@ -320,7 +324,7 @@ export default function JVFinancialCalculations() {
                                         ) : (
                                             shelterInstances.map(instance => (
                                                 <SelectItem key={instance.id} value={instance.id}>
-                                                    {instance.name}
+                                                    {instance.name} {instance.active === false && '(Inactive)'}
                                                 </SelectItem>
                                             ))
                                         )}
@@ -335,6 +339,20 @@ export default function JVFinancialCalculations() {
                                 <Plus className="w-4 h-4" />
                                 Add Instance
                             </Button>
+                            {selectedInstanceId && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                        const instance = shelterInstances.find(i => i.id === selectedInstanceId);
+                                        setEditingInstance(instance);
+                                        setShowEditDialog(true);
+                                    }}
+                                    className="flex items-center gap-2"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                    Edit Instance
+                                </Button>
+                            )}
                         </div>
 
                         {selectedInstanceId && (
@@ -395,6 +413,15 @@ export default function JVFinancialCalculations() {
                     onAdded={async (newInstance) => {
                         await loadInitialData();
                         setSelectedInstanceId(newInstance.id);
+                    }}
+                />
+
+                <EditShelterInstanceDialog
+                    open={showEditDialog}
+                    onOpenChange={setShowEditDialog}
+                    instance={editingInstance}
+                    onUpdated={async () => {
+                        await loadInitialData();
                     }}
                 />
             </div>
