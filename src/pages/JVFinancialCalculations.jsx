@@ -11,96 +11,136 @@ import { usePageAccess } from "@/components/lib/usePageAccess";
 import SectionAContractIncome from "@/components/jv-financial/SectionAContractIncome";
 import SectionBCostBreakdown from "@/components/jv-financial/SectionBCostBreakdown";
 import SectionCCostSummary from "@/components/jv-financial/SectionCCostSummary";
+import AddShelterInstanceDialog from "@/components/jv-financial/AddShelterInstanceDialog";
 import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 
 export default function JVFinancialCalculations() {
      // Check page access first
      const { hasAccess, isLoading: accessLoading } = usePageAccess('JVFinancialCalculations');
+     const [selectedInstanceId, setSelectedInstanceId] = useState(null);
+     const [shelterInstances, setShelterInstances] = useState([]);
      const [selectedShelterType, setSelectedShelterType] = useState(null);
      const [shelterTypes, setShelterTypes] = useState([]);
+     const [selectedBomId, setSelectedBomId] = useState('');
+     const [availableBoms, setAvailableBoms] = useState([]);
      const [isLoading, setIsLoading] = useState(true);
      const [sectionATotals, setSectionATotals] = useState({ contractIncome: 0 });
      const [sectionBTotals, setSectionBTotals] = useState({ verified: 0, waste: 0, accrued: 0 });
-     const [bomVersions, setBomVersions] = useState([]);
-     const [selectedBomVersion, setSelectedBomVersion] = useState('');
      const [refreshKey, setRefreshKey] = useState(0);
      const [isSaving, setIsSaving] = useState(false);
+     const [showAddDialog, setShowAddDialog] = useState(false);
 
     useEffect(() => {
         if (!accessLoading && hasAccess) {
-            loadShelterTypes();
+            loadInitialData();
         }
     }, [accessLoading, hasAccess]);
 
-    const loadShelterTypes = async () => {
+    const loadInitialData = async () => {
         try {
-            const types = await base44.entities.BusStopType.list();
+            const [instances, types] = await Promise.all([
+                base44.entities.ShelterInstance.list(),
+                base44.entities.BusStopType.list()
+            ]);
+            
+            setShelterInstances(instances.reverse());
             setShelterTypes(types.reverse());
-            if (types.length > 0) {
-                setSelectedShelterType(types[0].id);
+            
+            if (instances.length > 0) {
+                setSelectedInstanceId(instances[0].id);
+                if (instances[0].shelter_type_id) {
+                    setSelectedShelterType(instances[0].shelter_type_id);
+                }
+                if (instances[0].bom_id) {
+                    setSelectedBomId(instances[0].bom_id);
+                }
             }
         } catch (error) {
-            console.error('Failed to load shelter types:', error);
+            console.error('Failed to load initial data:', error);
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
-        if (selectedShelterType) {
-            loadBomVersions();
+        if (selectedInstanceId) {
+            loadInstanceData();
         }
-    }, [selectedShelterType]);
+    }, [selectedInstanceId]);
 
-    const loadBomVersions = async () => {
+    const loadInstanceData = async () => {
         try {
-            const bomComponents = await base44.entities.BusStopTypeComponent.filter({
-                bus_stop_type_id: selectedShelterType
-            });
+            const instances = await base44.entities.ShelterInstance.filter({ id: selectedInstanceId });
+            if (instances.length > 0) {
+                const instance = instances[0];
+                setSelectedShelterType(instance.shelter_type_id || '');
+                setSelectedBomId(instance.bom_id || '');
+                setRefreshKey(prev => prev + 1);
+            }
+        } catch (error) {
+            console.error('Failed to load instance data:', error);
+        }
+    };
 
-            // Group by version (V1, V2, etc.)
-            const versions = {};
-            bomComponents.forEach(comp => {
+    useEffect(() => {
+        loadAvailableBoms();
+    }, []);
+
+    const loadAvailableBoms = async () => {
+        try {
+            const allBomComponents = await base44.entities.BusStopTypeComponent.list();
+            
+            // Group by bus_stop_type_id and version
+            const bomMap = {};
+            allBomComponents.forEach(comp => {
+                const busStopTypeId = comp.bus_stop_type_id;
                 const version = comp.version || 'V1';
-                if (!versions[version]) {
-                    versions[version] = {
+                const bomId = `${busStopTypeId}_${version}`;
+                
+                if (!bomMap[bomId]) {
+                    bomMap[bomId] = {
+                        bomId,
+                        busStopTypeId,
                         version,
-                        components: [],
                         comment: comp.comment || ''
                     };
                 }
-                versions[version].components.push(comp);
             });
 
-            const versionsList = Object.values(versions);
-            setBomVersions(versionsList);
-            if (versionsList.length > 0) {
-                setSelectedBomVersion(versionsList[0].version);
-            }
-            
-            // Trigger refresh of child components
-            setRefreshKey(prev => prev + 1);
+            setAvailableBoms(Object.values(bomMap));
         } catch (error) {
-            console.error('Failed to load BOM versions:', error);
+            console.error('Failed to load available BOMs:', error);
         }
     };
 
     const handleSaveAndRefresh = async () => {
-        if (!selectedShelterType || !selectedBomVersion) {
-            toast.error('Please select a shelter type and BOM version');
+        if (!selectedInstanceId) {
+            toast.error('Please select a shelter instance');
+            return;
+        }
+
+        if (!selectedShelterType || !selectedBomId) {
+            toast.error('Please select both shelter type and BOM');
             return;
         }
 
         setIsSaving(true);
         try {
-            // Financial data contains only input data (variations, costs, etc.)
+            // Update shelter instance allocation
+            await base44.entities.ShelterInstance.update(selectedInstanceId, {
+                shelter_type_id: selectedShelterType,
+                bom_id: selectedBomId
+            });
+
+            // Parse BOM ID to get bus_stop_type_id and version
+            const [bomBusStopTypeId, bomVersion] = selectedBomId.split('_');
 
             // Calculate BOM costs
             const bomComponents = await base44.entities.BusStopTypeComponent.filter({
-                bus_stop_type_id: selectedShelterType
+                bus_stop_type_id: bomBusStopTypeId
             });
-            const filteredBomComponents = bomComponents.filter(c => (c.version || 'V1') === selectedBomVersion);
+            const filteredBomComponents = bomComponents.filter(c => (c.version || 'V1') === bomVersion);
             
             const allProducts = await base44.entities.Product.list();
             const productMap = {};
@@ -125,9 +165,6 @@ export default function JVFinancialCalculations() {
             // Contract income from Section A
             const totalContractIncome = sectionATotals.contractIncome || 0;
 
-            // ShelterFinancialData only stores input data for calculations
-            // Results are saved in ShelterFinancialResults below
-
             // Calculate profits (warranty and profit shares are 0 by default)
             const grossBalance = totalContractIncome - totalCostBreakdown;
             const warrantyProvision = 0;
@@ -139,15 +176,13 @@ export default function JVFinancialCalculations() {
             const airControlProfitAmount = 0;
             const amcoProfitAmount = 0;
 
-            // Check if record exists
+            // Check if record exists for this shelter instance
             const existingRecords = await base44.entities.ShelterFinancialResults.filter({
-                shelter_type_id: selectedShelterType,
-                bom_version: selectedBomVersion
+                shelter_instance_id: selectedInstanceId
             });
 
             const resultData = {
-                shelter_type_id: selectedShelterType,
-                bom_version: selectedBomVersion,
+                shelter_instance_id: selectedInstanceId,
                 calculation_date: new Date().toISOString(),
                 quantity: 1,
                 total_contract_income: totalContractIncome,
@@ -183,24 +218,26 @@ export default function JVFinancialCalculations() {
         }
     };
 
-    const exportBOM = async (shelterTypeId, version) => {
+    const exportBOM = async (bomId) => {
+        if (!bomId) return;
+        
         try {
-            // Get BOM components for the selected shelter type and version
+            const [bomBusStopTypeId, bomVersion] = bomId.split('_');
+            
+            // Get BOM components
             const bomComponents = await base44.entities.BusStopTypeComponent.filter({
-                bus_stop_type_id: shelterTypeId
+                bus_stop_type_id: bomBusStopTypeId
             });
 
-            // Filter by version if specified
-            const filteredComponents = version 
-                ? bomComponents.filter(c => (c.version || 'V1') === version)
-                : bomComponents;
+            // Filter by version
+            const filteredComponents = bomComponents.filter(c => (c.version || 'V1') === bomVersion);
 
             // Get all products and material categories
             const [products, materialCategories, teams, shelterType] = await Promise.all([
                 base44.entities.Product.list(),
                 base44.entities.MaterialCategory.list(),
                 base44.entities.Team.list(),
-                base44.entities.BusStopType.filter({ id: shelterTypeId })
+                base44.entities.BusStopType.filter({ id: bomBusStopTypeId })
             ]);
 
             const productMap = {};
@@ -218,7 +255,7 @@ export default function JVFinancialCalculations() {
 
             // Add title
             worksheet.mergeCells('A1:H1');
-            worksheet.getCell('A1').value = `Bill of Materials - ${shelterType[0]?.code || 'Unknown'} - ${version}`;
+            worksheet.getCell('A1').value = `Bill of Materials - ${shelterType[0]?.code || 'Unknown'} - ${bomVersion}`;
             worksheet.getCell('A1').font = { size: 16, bold: true };
             worksheet.getCell('A1').alignment = { horizontal: 'center' };
 
@@ -299,7 +336,7 @@ export default function JVFinancialCalculations() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `BOM_${shelterType[0]?.code || 'Unknown'}_${version}.xlsx`;
+            a.download = `BOM_${shelterType[0]?.code || 'Unknown'}_${bomVersion}.xlsx`;
             a.click();
             URL.revokeObjectURL(url);
         } catch (error) {
@@ -329,75 +366,118 @@ export default function JVFinancialCalculations() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Select Shelter Type & BOM Version</CardTitle>
-                        <CardDescription>Choose a shelter type and BOM version to view its detailed financial calculations</CardDescription>
+                        <CardTitle>Select Shelter Instance & Allocation</CardTitle>
+                        <CardDescription>Choose a shelter instance and allocate it to a shelter type and BOM</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex gap-4 items-end flex-wrap">
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Shelter Type</label>
-                            <Select value={selectedShelterType || ''} onValueChange={setSelectedShelterType}>
-                                <SelectTrigger className="w-64">
-                                    <SelectValue placeholder="Select a Shelter Type" />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[300px]">
-                                    {shelterTypes.length === 0 ? (
-                                        <div className="p-2 text-sm text-slate-500">No shelter types available</div>
-                                    ) : (
-                                        shelterTypes.map(type => (
-                                            <SelectItem key={type.id} value={type.id}>
-                                                {type.code}
-                                            </SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        {bomVersions.length > 0 && (
-                            <>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-700 mb-2">BOM Version</label>
-                                    <Select value={selectedBomVersion} onValueChange={setSelectedBomVersion}>
-                                        <SelectTrigger className="w-64">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {bomVersions.map((v) => (
-                                                <SelectItem key={v.version} value={v.version}>
-                                                    {v.version} {v.comment && `- ${v.comment}`}
+                    <CardContent className="space-y-4">
+                        <div className="flex gap-4 items-end flex-wrap">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-2">Shelter Instance</label>
+                                <Select value={selectedInstanceId || ''} onValueChange={setSelectedInstanceId}>
+                                    <SelectTrigger className="w-64">
+                                        <SelectValue placeholder="Select Shelter Instance" />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-[300px]">
+                                        {shelterInstances.length === 0 ? (
+                                            <div className="p-2 text-sm text-slate-500">No instances available</div>
+                                        ) : (
+                                            shelterInstances.map(instance => (
+                                                <SelectItem key={instance.id} value={instance.id}>
+                                                    {instance.name}
                                                 </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                            ))
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowAddDialog(true)}
+                                className="flex items-center gap-2"
+                            >
+                                <Plus className="w-4 h-4" />
+                                Add Instance
+                            </Button>
+                        </div>
+
+                        {selectedInstanceId && (
+                            <div className="border-t pt-4">
+                                <h3 className="text-sm font-semibold text-slate-900 mb-3">Allocation</h3>
+                                <div className="flex gap-4 items-end flex-wrap">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">Shelter Type</label>
+                                        <Select value={selectedShelterType || ''} onValueChange={setSelectedShelterType}>
+                                            <SelectTrigger className="w-64">
+                                                <SelectValue placeholder="Select Shelter Type" />
+                                            </SelectTrigger>
+                                            <SelectContent className="max-h-[300px]">
+                                                {shelterTypes.map(type => (
+                                                    <SelectItem key={type.id} value={type.id}>
+                                                        {type.code}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-2">BOM</label>
+                                        <Select value={selectedBomId} onValueChange={setSelectedBomId}>
+                                            <SelectTrigger className="w-64">
+                                                <SelectValue placeholder="Select BOM" />
+                                            </SelectTrigger>
+                                            <SelectContent className="max-h-[300px]">
+                                                {availableBoms.map((bom) => {
+                                                    const busStopType = shelterTypes.find(t => t.id === bom.busStopTypeId);
+                                                    return (
+                                                        <SelectItem key={bom.bomId} value={bom.bomId}>
+                                                            {busStopType?.code || 'Unknown'} - {bom.version} {bom.comment && `(${bom.comment})`}
+                                                        </SelectItem>
+                                                    );
+                                                })}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <Button
+                                        variant="default"
+                                        onClick={handleSaveAndRefresh}
+                                        className="flex items-center gap-2"
+                                        disabled={isSaving || !selectedShelterType || !selectedBomId}
+                                    >
+                                        <Save className="w-4 h-4" />
+                                        Save & Refresh
+                                    </Button>
+                                    {selectedBomId && (
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => exportBOM(selectedBomId)}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            Export BOM
+                                        </Button>
+                                    )}
                                 </div>
-                                <Button
-                                    variant="default"
-                                    onClick={handleSaveAndRefresh}
-                                    className="flex items-center gap-2"
-                                    disabled={isSaving}
-                                >
-                                    <Save className="w-4 h-4" />
-                                    Save & Refresh
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => exportBOM(selectedShelterType, selectedBomVersion)}
-                                    className="flex items-center gap-2"
-                                >
-                                    <Download className="w-4 h-4" />
-                                    Export BOM
-                                </Button>
-                            </>
+                            </div>
                         )}
                     </CardContent>
                 </Card>
 
-                {selectedShelterType && (
+                {selectedInstanceId && selectedShelterType && selectedBomId && (
                     <div className="space-y-6">
-                        <SectionAContractIncome key={`section-a-${refreshKey}`} shelterTypeId={selectedShelterType} onTotalsChange={setSectionATotals} />
+                        <SectionAContractIncome key={`section-a-${refreshKey}`} shelterInstanceId={selectedInstanceId} onTotalsChange={setSectionATotals} />
 
-                        <SectionBCostBreakdown key={`section-b-${refreshKey}`} shelterTypeId={selectedShelterType} onTotalsChange={setSectionBTotals} bomVersions={bomVersions} selectedBomVersion={selectedBomVersion} />
+                        <SectionBCostBreakdown key={`section-b-${refreshKey}`} shelterInstanceId={selectedInstanceId} bomId={selectedBomId} onTotalsChange={setSectionBTotals} />
                     </div>
                 )}
+
+                <AddShelterInstanceDialog 
+                    open={showAddDialog} 
+                    onOpenChange={setShowAddDialog}
+                    onAdded={async (newInstance) => {
+                        await loadInitialData();
+                        setSelectedInstanceId(newInstance.id);
+                    }}
+                />
             </div>
         </div>
     );
