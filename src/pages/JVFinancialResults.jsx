@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from 'lucide-react';
 import { usePageAccess } from "@/components/lib/usePageAccess";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function JVFinancialResults() {
     const { hasAccess, isLoading: accessLoading } = usePageAccess('JVFinancialResults');
     const [shelterInstances, setShelterInstances] = useState([]);
     const [shelterTypes, setShelterTypes] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isExporting, setIsExporting] = useState(false);
+    const tableRef = useRef(null);
     
     // Single source of truth per shelter instance
     const [dataByInstance, setDataByInstance] = useState({});
@@ -24,6 +28,37 @@ export default function JVFinancialResults() {
     const formatPercentage = (value) => {
         const num = parseFloat(value) || 0;
         return `${num.toFixed(1)}%`;
+    };
+
+    const exportToPDF = async () => {
+        if (!tableRef.current) return;
+        
+        setIsExporting(true);
+        try {
+            const canvas = await html2canvas(tableRef.current, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+            
+            // A4 Landscape dimensions in mm
+            const pdf = new jsPDF('landscape', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            
+            const imgWidth = pageWidth - 20; // 10mm margin on each side
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            
+            const imgData = canvas.toDataURL('image/png');
+            pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
+            
+            pdf.save('JV_Financial_Results.pdf');
+        } catch (error) {
+            console.error('Failed to export PDF:', error);
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     useEffect(() => {
@@ -190,8 +225,8 @@ export default function JVFinancialResults() {
                         <h1 className="text-3xl font-bold text-slate-900">JV Financial Results</h1>
                         <p className="text-slate-600 mt-1">Consolidated financial results and profit distribution per shelter instance</p>
                     </div>
-                    <Button className="flex items-center gap-2">
-                        <Download className="w-4 h-4" />
+                    <Button onClick={exportToPDF} disabled={isExporting} className="flex items-center gap-2">
+                        {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                         Export PDF (A4 Landscape)
                     </Button>
                 </div>
@@ -202,7 +237,7 @@ export default function JVFinancialResults() {
                         <CardDescription>All shelter instances in columns with financial metrics</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto" ref={tableRef}>
                             <table className="w-full border-collapse">
                                 <thead>
                                     <tr className="bg-slate-100">
