@@ -15,7 +15,6 @@ export default function JVFinancialResults() {
     const [shelterTypes, setShelterTypes] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isExporting, setIsExporting] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
     const tableRef = useRef(null);
     
     // Single source of truth per shelter instance
@@ -161,61 +160,69 @@ export default function JVFinancialResults() {
 
 
 
-    const updateInstanceData = (instanceId, updates) => {
+    const updateInstanceData = async (instanceId, updates) => {
         setDataByInstance(prev => ({
             ...prev,
             [instanceId]: { ...prev[instanceId], ...updates }
         }));
-    };
 
-    const saveAllChanges = async () => {
-        setIsSaving(true);
         try {
-            const savePromises = shelterInstances.map(async (instance) => {
-                const data = dataByInstance[instance.id];
-                if (!data) return;
+            // Auto-save to ShelterFinancialResults
+            const instance = shelterInstances.find(i => i.id === instanceId);
+            if (!instance) return;
 
-                const quantity = data.quantity || 1;
-                const contractIncome = parseFloat(data.manual_contract_income) || 0;
-                const totalCost = parseFloat(data.manual_total_cost) || 0;
+            // Recalculate and save full results
+            const data = { ...dataByInstance[instanceId], ...updates };
+            const quantity = data.quantity || 1;
+            const contractIncome = parseFloat(data.manual_contract_income) || 0;
+            const totalCost = parseFloat(data.manual_total_cost) || 0;
 
-                const grossBalance = contractIncome - totalCost;
-                const warrantyProvision = parseFloat(data.warranty_provision) || 0;
-                const netProfit = (grossBalance - warrantyProvision) * quantity;
-                const totalCostValue = totalCost * quantity;
-                const profitMargin = totalCostValue > 0 ? (netProfit / totalCostValue) * 100 : 0;
+            const grossBalance = contractIncome - totalCost;
+            const warrantyProvision = parseFloat(data.warranty_provision) || 0;
+            const netProfit = (grossBalance - warrantyProvision) * quantity;
+            const totalCostValue = totalCost * quantity;
+            const profitMargin = totalCostValue > 0 ? (netProfit / totalCostValue) * 100 : 0;
 
-                const airControlShare = parseFloat(data.air_control_share_percent) || 0;
-                const amcoShare = parseFloat(data.amco_share_percent) || 0;
-                const airControlProfit = (netProfit * airControlShare) / 100;
-                const amcoProfit = (netProfit * amcoShare) / 100;
+            const airControlShare = parseFloat(data.air_control_share_percent) || 0;
+            const amcoShare = parseFloat(data.amco_share_percent) || 0;
+            const airControlProfit = (netProfit * airControlShare) / 100;
+            const amcoProfit = (netProfit * amcoShare) / 100;
 
-                const existingResults = await base44.entities.ShelterFinancialResults.filter({
-                    shelter_instance_id: instance.id
-                });
-
-                const resultData = {
-                    shelter_instance_id: instance.id,
-                    quantity,
-                    warranty_provision: warrantyProvision,
-                    air_control_share_percent: airControlShare,
-                    amco_share_percent: amcoShare
-                };
-
-                if (existingResults.length > 0) {
-                    await base44.entities.ShelterFinancialResults.update(existingResults[0].id, resultData);
-                } else {
-                    await base44.entities.ShelterFinancialResults.create(resultData);
-                }
+            const existingResults = await base44.entities.ShelterFinancialResults.filter({
+                shelter_instance_id: instanceId
             });
 
-            await Promise.all(savePromises);
-            toast.success('All changes saved successfully');
+            const resultData = {
+                shelter_instance_id: instanceId,
+                calculation_date: new Date().toISOString(),
+                quantity,
+                total_contract_income: contractIncome,
+                bom_cost: 0,
+                non_bom_cost: 0,
+                waste_allowance_cost: 0,
+                accrued_cost: 0,
+                total_cost_breakdown: totalCost,
+                gross_balance: grossBalance * quantity,
+                warranty_provision: warrantyProvision,
+                warranty_provision_total: warrantyProvision * quantity,
+                net_expected_profit: netProfit,
+                profit_margin_percent: profitMargin,
+                air_control_share_percent: airControlShare,
+                air_control_profit_amount: airControlProfit,
+                amco_share_percent: amcoShare,
+                amco_profit_amount: amcoProfit
+            };
+
+            if (existingResults.length > 0) {
+                await base44.entities.ShelterFinancialResults.update(existingResults[0].id, resultData);
+            } else {
+                await base44.entities.ShelterFinancialResults.create(resultData);
+            }
+            
+            toast.success('Saved successfully');
         } catch (error) {
-            console.error('Failed to save changes:', error);
-            toast.error('Failed to save changes');
-        } finally {
-            setIsSaving(false);
+            console.error('Failed to save data:', error);
+            toast.error('Failed to save data');
         }
     };
 
@@ -270,16 +277,10 @@ export default function JVFinancialResults() {
                         <h1 className="text-3xl font-bold text-slate-900">JV Financial Results</h1>
                         <p className="text-slate-600 mt-1">Consolidated financial results and profit distribution per shelter instance</p>
                     </div>
-                    <div className="flex gap-2">
-                        <Button onClick={saveAllChanges} disabled={isSaving} className="flex items-center gap-2 bg-green-600 hover:bg-green-700">
-                            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                            Save All Changes
-                        </Button>
-                        <Button onClick={exportToPDF} disabled={isExporting} className="flex items-center gap-2">
-                            {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                            Export PDF
-                        </Button>
-                    </div>
+                    <Button onClick={exportToPDF} disabled={isExporting} className="flex items-center gap-2">
+                        {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        Export PDF (A4 Landscape)
+                    </Button>
                 </div>
 
                 <Card>
@@ -340,13 +341,9 @@ export default function JVFinancialResults() {
                                         </td>
                                         {shelterInstances.map(instance => (
                                             <td key={`income-${instance.id}`} className="px-2 py-1.5 border border-slate-200">
-                                                <Input
-                                                    type="number"
-                                                    placeholder="0.00"
-                                                    value={dataByInstance[instance.id]?.manual_contract_income ?? ''}
-                                                    onChange={(e) => updateInstanceData(instance.id, { manual_contract_income: parseFloat(e.target.value) || 0 })}
-                                                    className="text-center h-7 text-xs w-full"
-                                                />
+                                                <div className="text-center font-medium text-slate-900">
+                                                    {formatCurrency(dataByInstance[instance.id]?.manual_contract_income || 0)}
+                                                </div>
                                             </td>
                                         ))}
                                         <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
@@ -360,13 +357,9 @@ export default function JVFinancialResults() {
                                         </td>
                                         {shelterInstances.map(instance => (
                                             <td key={`cost-${instance.id}`} className="px-2 py-1.5 border border-slate-200">
-                                                <Input
-                                                    type="number"
-                                                    placeholder="0.00"
-                                                    value={dataByInstance[instance.id]?.manual_total_cost ?? ''}
-                                                    onChange={(e) => updateInstanceData(instance.id, { manual_total_cost: parseFloat(e.target.value) || 0 })}
-                                                    className="text-center h-7 text-xs w-full"
-                                                />
+                                                <div className="text-center font-medium text-slate-900">
+                                                    {formatCurrency(dataByInstance[instance.id]?.manual_total_cost || 0)}
+                                                </div>
                                             </td>
                                         ))}
                                         <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
