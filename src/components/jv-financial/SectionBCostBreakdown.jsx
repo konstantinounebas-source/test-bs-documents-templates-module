@@ -253,7 +253,8 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                     category_id: a.category || null,
                     description: a.customCategory || null,
                     amount: parseFloat(a.amount) || 0
-                }))
+                })),
+                total_cost_breakdown: totalCostBreakdown
             };
 
             if (financialDataId) {
