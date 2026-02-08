@@ -11,8 +11,8 @@ export default function KPIDefinitionsTable() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const { data: kpiDefinitions = [], isLoading } = useQuery({
-    queryKey: ['MetricDefinition'],
-    queryFn: () => base44.entities.MetricDefinition.list()
+    queryKey: ['KPIDefinition'],
+    queryFn: () => base44.entities.KPIDefinition.list()
   });
 
   const filteredKPIs = useMemo(() => {
