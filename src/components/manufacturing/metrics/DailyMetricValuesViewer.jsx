@@ -153,7 +153,7 @@ export default function DailyMetricValuesViewer() {
               <TableRow className="bg-slate-50">
                 <TableHead className="font-semibold">Department</TableHead>
                 <TableHead className="font-semibold">Metric Code</TableHead>
-                <TableHead className="font-semibold">Bundle ID</TableHead>
+                <TableHead className="font-semibold">Bundle Name</TableHead>
                 <TableHead className="font-semibold text-right">Value</TableHead>
               </TableRow>
             </TableHeader>
@@ -169,7 +169,7 @@ export default function DailyMetricValuesViewer() {
                   <TableRow key={mv.id} className="hover:bg-slate-50">
                     <TableCell>{mv.department}</TableCell>
                     <TableCell className="font-mono font-semibold text-blue-700">{mv.metric_code}</TableCell>
-                    <TableCell className="text-sm text-slate-600 font-mono">{mv.bundle_id || '-'}</TableCell>
+                    <TableCell className="text-sm text-slate-600">{bundleMap[mv.bundle_id] || '-'}</TableCell>
                     <TableCell className="text-right font-semibold">{mv.value?.toFixed(2)}</TableCell>
                   </TableRow>
                 ))
