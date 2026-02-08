@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Download, Plus, Save, Edit } from 'lucide-react';
+import { Download, Plus, Save, Edit, FileText } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -31,6 +31,7 @@ export default function JVFinancialCalculations() {
      const [showAddDialog, setShowAddDialog] = useState(false);
      const [showEditDialog, setShowEditDialog] = useState(false);
      const [editingInstance, setEditingInstance] = useState(null);
+     const [isExportingAll, setIsExportingAll] = useState(false);
 
     useEffect(() => {
         if (!accessLoading && hasAccess) {
@@ -159,6 +160,157 @@ export default function JVFinancialCalculations() {
             toast.error('Failed to save financial results');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const exportAllActiveInstancesPDF = async () => {
+        setIsExportingAll(true);
+        try {
+            // Get all active instances
+            const activeInstances = shelterInstances.filter(inst => inst.active !== false);
+            
+            if (activeInstances.length === 0) {
+                toast.error('No active shelter instances found');
+                return;
+            }
+
+            // Fetch all required data
+            const [allFinancialData, allShelterTypes, allProducts, allCategories, allBOMComponents] = await Promise.all([
+                base44.entities.ShelterFinancialData.list(),
+                base44.entities.BusStopType.list(),
+                base44.entities.Product.list(),
+                base44.entities.MaterialCategory.list(),
+                base44.entities.BusStopTypeComponent.list()
+            ]);
+
+            const productMap = {};
+            allProducts.forEach(p => { productMap[p.id] = p; });
+
+            const categoryMap = {};
+            allCategories.forEach(c => { categoryMap[c.id] = c; });
+
+            const shelterTypeMap = {};
+            allShelterTypes.forEach(t => { shelterTypeMap[t.id] = t; });
+
+            // Create PDF
+            const pdf = new jsPDF('portrait', 'mm', 'a4');
+            let isFirstPage = true;
+
+            for (const instance of activeInstances) {
+                if (!isFirstPage) {
+                    pdf.addPage();
+                }
+                isFirstPage = false;
+
+                const shelterType = shelterTypeMap[instance.shelter_type_id];
+                const financialData = allFinancialData.find(d => d.shelter_instance_id === instance.id);
+
+                // Page title
+                pdf.setFontSize(16);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`Shelter Instance: ${instance.name}`, 10, 15);
+                
+                pdf.setFontSize(12);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text(`Shelter Type: ${shelterType?.code || 'Not allocated'}`, 10, 22);
+                pdf.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 10, 28);
+
+                let yPos = 38;
+
+                // Section A: Contract Income
+                pdf.setFontSize(14);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('SECTION A — Contract Income', 10, yPos);
+                yPos += 8;
+
+                pdf.setFontSize(10);
+                pdf.setFont('helvetica', 'normal');
+                
+                const contractAmount = financialData?.contract_amount || 0;
+                const approvedVars = financialData?.approved_variations || [];
+                const potentialVars = financialData?.potential_variations || [];
+                
+                const approvedTotal = approvedVars.reduce((sum, v) => sum + (v.amount || 0), 0);
+                const potentialTotal = potentialVars.reduce((sum, v) => sum + (v.amount || 0), 0);
+                const totalIncome = contractAmount + approvedTotal;
+
+                pdf.text(`Contract Amount: €${contractAmount.toFixed(2)}`, 15, yPos);
+                yPos += 6;
+                pdf.text(`Approved Variations: €${approvedTotal.toFixed(2)}`, 15, yPos);
+                yPos += 6;
+                pdf.text(`Potential Variations: €${potentialTotal.toFixed(2)}`, 15, yPos);
+                yPos += 6;
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`Total Contract Income: €${totalIncome.toFixed(2)}`, 15, yPos);
+                yPos += 12;
+
+                // Section B: Cost Breakdown
+                pdf.setFontSize(14);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('SECTION B — Cost Breakdown', 10, yPos);
+                yPos += 8;
+
+                pdf.setFontSize(10);
+                pdf.setFont('helvetica', 'normal');
+
+                // BOM Verified Costs
+                let bomCost = 0;
+                if (instance.shelter_type_id) {
+                    const bomComponents = allBOMComponents.filter(c => c.bus_stop_type_id === instance.shelter_type_id);
+                    bomCost = bomComponents.reduce((sum, comp) => {
+                        const product = productMap[comp.product_id];
+                        const quantity = parseFloat(comp.quantity_required) || 0;
+                        const unitCost = parseFloat(product?.unit_cost) || 0;
+                        return sum + (quantity * unitCost);
+                    }, 0);
+                }
+
+                pdf.text(`BOM Verified Costs: €${bomCost.toFixed(2)}`, 15, yPos);
+                yPos += 6;
+
+                const nonBomCosts = financialData?.non_bom_costs || [];
+                const nonBomTotal = nonBomCosts.reduce((sum, c) => sum + (c.amount || 0), 0);
+                pdf.text(`Non-BOM Costs: €${nonBomTotal.toFixed(2)}`, 15, yPos);
+                yPos += 6;
+
+                const wasteAllowances = financialData?.waste_allowances || [];
+                const wasteTotal = wasteAllowances.reduce((sum, w) => {
+                    const baseCost = w.base_cost || 0;
+                    const allowancePercent = w.allowance_percent || 0;
+                    return sum + (baseCost * allowancePercent / 100);
+                }, 0);
+                pdf.text(`Waste Allowance: €${wasteTotal.toFixed(2)}`, 15, yPos);
+                yPos += 6;
+
+                const accruedCosts = financialData?.accrued_costs || [];
+                const accruedTotal = accruedCosts.reduce((sum, c) => sum + (c.amount || 0), 0);
+                pdf.text(`Accrued Costs: €${accruedTotal.toFixed(2)}`, 15, yPos);
+                yPos += 6;
+
+                const totalCost = bomCost + nonBomTotal + wasteTotal + accruedTotal;
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`Total Cost Breakdown: €${totalCost.toFixed(2)}`, 15, yPos);
+                yPos += 12;
+
+                // Summary
+                pdf.setFontSize(14);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('SUMMARY', 10, yPos);
+                yPos += 8;
+
+                pdf.setFontSize(10);
+                pdf.setFont('helvetica', 'normal');
+                const grossBalance = totalIncome - totalCost;
+                pdf.text(`Gross Balance: €${grossBalance.toFixed(2)}`, 15, yPos);
+            }
+
+            pdf.save('JV_Financial_Calculations_All_Instances.pdf');
+            toast.success('PDF exported successfully');
+        } catch (error) {
+            console.error('Failed to export PDF:', error);
+            toast.error('Failed to export PDF');
+        } finally {
+            setIsExportingAll(false);
         }
     };
 
@@ -300,9 +452,19 @@ export default function JVFinancialCalculations() {
     return (
         <div className="min-h-screen bg-slate-50 p-6">
             <div className="max-w-7xl mx-auto space-y-6">
-                <div>
-                    <h1 className="text-3xl font-bold text-slate-900">JV Financial Calculations</h1>
-                    <p className="text-slate-600 mt-1">Detailed calculations for income, costs, and profit margins per Shelter Type with full traceability.</p>
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-900">JV Financial Calculations</h1>
+                        <p className="text-slate-600 mt-1">Detailed calculations for income, costs, and profit margins per Shelter Type with full traceability.</p>
+                    </div>
+                    <Button
+                        onClick={exportAllActiveInstancesPDF}
+                        disabled={isExportingAll}
+                        className="flex items-center gap-2"
+                    >
+                        {isExportingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                        Export All Active Instances (PDF)
+                    </Button>
                 </div>
 
                 <Card>
