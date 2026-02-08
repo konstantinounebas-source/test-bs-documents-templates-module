@@ -26,7 +26,7 @@ export default function DailyMetricValuesViewer() {
   const metricNameMap = useMemo(() => {
     const map = {};
     metricDefinitions.forEach(md => {
-      map[md.metric_code] = md.name || md.metric_code;
+      map[md.metric_code] = md.metric_name || md.metric_code;
     });
     return map;
   }, [metricDefinitions]);

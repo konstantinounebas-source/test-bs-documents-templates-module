@@ -12,7 +12,10 @@ export default function KPIDefinitionsTable() {
 
   const { data: kpiDefinitions = [], isLoading } = useQuery({
     queryKey: ['MetricDefinition'],
-    queryFn: () => base44.entities.MetricDefinition.list()
+    queryFn: async () => {
+      const data = await base44.entities.MetricDefinition.list();
+      return data.filter(item => item.type === 'KPI');
+    }
   });
 
   const filteredKPIs = useMemo(() => {
@@ -20,7 +23,7 @@ export default function KPIDefinitionsTable() {
       const searchLower = searchTerm.toLowerCase();
       return (
         kpi.metric_code?.toLowerCase().includes(searchLower) ||
-        kpi.name?.toLowerCase().includes(searchLower) ||
+        kpi.metric_name?.toLowerCase().includes(searchLower) ||
         kpi.description?.toLowerCase().includes(searchLower)
       );
     });
@@ -74,7 +77,7 @@ export default function KPIDefinitionsTable() {
                       )}
                     </TableCell>
                     <TableCell className="font-mono font-semibold text-blue-700">{kpi.metric_code}</TableCell>
-                    <TableCell className="font-semibold">{kpi.name}</TableCell>
+                    <TableCell className="font-semibold">{kpi.metric_name}</TableCell>
                     <TableCell className="text-sm text-slate-600">{kpi.applies_to || '-'}</TableCell>
                   </TableRow>
 
