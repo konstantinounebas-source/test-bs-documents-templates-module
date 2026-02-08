@@ -163,7 +163,16 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
         setWasteAllowances(wasteAllowances.map(w => {
             if (w.id === id) {
                 const updated = { ...w, [field]: value };
-                if (field === 'baseCost' || field === 'allowancePercent') {
+                
+                // Auto-fill base cost when product is selected
+                if (field === 'product' && value) {
+                    const selectedProduct = products.find(p => p.id === value);
+                    if (selectedProduct && selectedProduct.unit_cost) {
+                        updated.baseCost = selectedProduct.unit_cost;
+                    }
+                }
+                
+                if (field === 'baseCost' || field === 'allowancePercent' || field === 'product') {
                     const base = parseFloat(updated.baseCost) || 0;
                     const percent = parseFloat(updated.allowancePercent) || 0;
                     updated.cost = (base * percent) / 100;
