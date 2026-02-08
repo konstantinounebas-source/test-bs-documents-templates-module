@@ -18,17 +18,6 @@ export default function DailyMetricValuesViewer() {
     queryFn: () => base44.entities.DailyMetricValue.list()
   });
 
-  const { data: bundles = [] } = useQuery({
-    queryKey: ['StandardsBundle'],
-    queryFn: () => base44.entities.StandardsBundle.list()
-  });
-
-  const bundleMap = useMemo(() => {
-    const map = {};
-    bundles.forEach(b => { map[b.id] = b.name; });
-    return map;
-  }, [bundles]);
-
   const dateRange = useMemo(() => {
     if (viewMode === 'daily') {
       return [format(selectedDate, 'yyyy-MM-dd')];
@@ -56,10 +45,11 @@ export default function DailyMetricValuesViewer() {
 
     const pivot = {};
     filteredValues.forEach(mv => {
-      const key = mv.metric_code;
+      const key = `${mv.metric_code}_${mv.department}`;
       if (!pivot[key]) {
         pivot[key] = {
           metric_code: mv.metric_code,
+          department: mv.department,
           values: {}
         };
       }
@@ -152,7 +142,7 @@ export default function DailyMetricValuesViewer() {
               <TableRow className="bg-slate-50">
                 <TableHead className="font-semibold">Department</TableHead>
                 <TableHead className="font-semibold">Metric Code</TableHead>
-                <TableHead className="font-semibold">Bundle Name</TableHead>
+                <TableHead className="font-semibold">Bundle ID</TableHead>
                 <TableHead className="font-semibold text-right">Value</TableHead>
               </TableRow>
             </TableHeader>
@@ -168,7 +158,7 @@ export default function DailyMetricValuesViewer() {
                   <TableRow key={mv.id} className="hover:bg-slate-50">
                     <TableCell>{mv.department}</TableCell>
                     <TableCell className="font-mono font-semibold text-blue-700">{mv.metric_code}</TableCell>
-                    <TableCell className="text-sm text-slate-600">{bundleMap[mv.bundle_id] || '-'}</TableCell>
+                    <TableCell className="text-sm text-slate-600 font-mono">{mv.bundle_id || '-'}</TableCell>
                     <TableCell className="text-right font-semibold">{mv.value?.toFixed(2)}</TableCell>
                   </TableRow>
                 ))
@@ -176,46 +166,41 @@ export default function DailyMetricValuesViewer() {
             </TableBody>
           </Table>
         ) : (
-          <div className="space-y-4">
-            {searchDept && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm font-semibold text-blue-900">Department: <span className="text-blue-700">{searchDept}</span></p>
-              </div>
-            )}
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50">
-                    <TableHead className="font-semibold sticky left-0 bg-slate-50 z-10 min-w-[150px]">Metric Code</TableHead>
-                    {dateRange.map(date => (
-                      <TableHead key={date} className="text-center font-semibold min-w-[80px]">
-                        {format(new Date(date), 'dd/MM')}
-                      </TableHead>
-                    ))}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50">
+                  <TableHead className="font-semibold sticky left-0 bg-slate-50 z-10 min-w-[150px]">Metric Code</TableHead>
+                  <TableHead className="font-semibold sticky left-[150px] bg-slate-50 z-10 min-w-[120px]">Department</TableHead>
+                  {dateRange.map(date => (
+                    <TableHead key={date} className="text-center font-semibold min-w-[80px]">
+                      {format(new Date(date), 'dd/MM')}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {!pivotData || pivotData.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={dateRange.length + 2} className="text-center text-slate-500 py-8">
+                      No metric values for this period
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {!pivotData || pivotData.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={dateRange.length + 1} className="text-center text-slate-500 py-8">
-                        No metric values for this period
-                      </TableCell>
+                ) : (
+                  pivotData.map((row, idx) => (
+                    <TableRow key={idx} className="hover:bg-slate-50">
+                      <TableCell className="sticky left-0 bg-white font-mono font-semibold text-blue-700">{row.metric_code}</TableCell>
+                      <TableCell className="sticky left-[150px] bg-white">{row.department}</TableCell>
+                      {dateRange.map(date => (
+                        <TableCell key={date} className="text-center font-semibold">
+                          {row.values[date] !== undefined ? row.values[date].toFixed(2) : '-'}
+                        </TableCell>
+                      ))}
                     </TableRow>
-                  ) : (
-                    pivotData.map((row, idx) => (
-                      <TableRow key={idx} className="hover:bg-slate-50">
-                        <TableCell className="sticky left-0 bg-white font-mono font-semibold text-blue-700">{row.metric_code}</TableCell>
-                        {dateRange.map(date => (
-                          <TableCell key={date} className="text-center font-semibold">
-                            {row.values[date] !== undefined ? row.values[date].toFixed(2) : '-'}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>
