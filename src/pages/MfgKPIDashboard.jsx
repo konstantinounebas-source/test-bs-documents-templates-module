@@ -7,6 +7,7 @@ import { BarChart3, Lock, ChevronRight, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MetricDefinitionManager from "@/components/manufacturing/metrics/MetricDefinitionManager";
 import DailyMetricValuesViewer from "@/components/manufacturing/metrics/DailyMetricValuesViewer";
+import DailyKPIValuesViewer from "@/components/manufacturing/kpi/DailyKPIValuesViewer";
 import KPIDefinitionsTable from "@/components/manufacturing/KPIDefinitionsTable";
 
 export default function MfgKPIDashboardPage() {
