@@ -128,16 +128,16 @@ export default function JVFinancialCalculations() {
             // ShelterFinancialData only stores input data for calculations
             // Results are saved in ShelterFinancialResults below
 
-            // Calculate profits
+            // Calculate profits (warranty and profit shares are 0 by default)
             const grossBalance = totalContractIncome - totalCostBreakdown;
-            const warrantyProvision = parseFloat(shelterFinData.warranty_provision) || 0;
+            const warrantyProvision = 0;
             const netExpectedProfit = grossBalance - warrantyProvision;
             const profitMarginPercent = totalCostBreakdown > 0 ? (netExpectedProfit / totalCostBreakdown) * 100 : 0;
 
-            const airControlSharePercent = parseFloat(shelterFinData.air_control_share_percent) || 0;
-            const amcoSharePercent = parseFloat(shelterFinData.amco_share_percent) || 0;
-            const airControlProfitAmount = (netExpectedProfit * airControlSharePercent) / 100;
-            const amcoProfitAmount = (netExpectedProfit * amcoSharePercent) / 100;
+            const airControlSharePercent = 0;
+            const amcoSharePercent = 0;
+            const airControlProfitAmount = 0;
+            const amcoProfitAmount = 0;
 
             // Check if record exists
             const existingRecords = await base44.entities.ShelterFinancialResults.filter({
