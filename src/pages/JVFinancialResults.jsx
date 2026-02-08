@@ -58,7 +58,7 @@ export default function JVFinancialResults() {
             pdf.text('All shelter instances in columns with financial metrics', 10, 22);
             
             // Add date
-            const currentDate = new Date().toLocaleDateString('el-GR', { 
+            const currentDate = new Date().toLocaleDateString('en-US', { 
                 year: 'numeric', 
                 month: 'long', 
                 day: 'numeric' 
