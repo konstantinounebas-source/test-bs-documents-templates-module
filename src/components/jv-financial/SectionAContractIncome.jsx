@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { base44 } from '@/api/base44Client';
 
-export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }) {
+export default function SectionAContractIncome({ shelterInstanceId, onTotalsChange }) {
     const [contractAmount, setContractAmount] = useState('');
     const [approvedVariations, setApprovedVariations] = useState([]);
     const [potentialVariations, setPotentialVariations] = useState([]);
@@ -54,16 +54,16 @@ export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }
     const totalContractIncome = (parseFloat(contractAmount) || 0) + totalApprovedVariations + totalPotentialVariations;
 
     useEffect(() => {
-        if (shelterTypeId) {
+        if (shelterInstanceId) {
             setIsLoadingData(true);
             loadSavedData();
         }
-    }, [shelterTypeId]);
+    }, [shelterInstanceId]);
 
     const loadSavedData = async () => {
         try {
             const existing = await base44.entities.ShelterFinancialData.filter({
-                shelter_type_id: shelterTypeId
+                shelter_instance_id: shelterInstanceId
             });
 
             if (existing.length > 0) {
@@ -101,7 +101,7 @@ export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }
     }, [totalContractIncome, onTotalsChange]);
 
     useEffect(() => {
-        if (shelterTypeId && !isLoadingData) {
+        if (shelterInstanceId && !isLoadingData) {
             saveData();
         }
     }, [contractAmount, approvedVariations, potentialVariations]);
@@ -109,7 +109,7 @@ export default function SectionAContractIncome({ shelterTypeId, onTotalsChange }
     const saveData = async () => {
         try {
             const dataToSave = {
-                shelter_type_id: shelterTypeId,
+                shelter_instance_id: shelterInstanceId,
                 contract_amount: parseFloat(contractAmount) || 0,
                 approved_variations: approvedVariations.map(v => ({
                     description: v.description,

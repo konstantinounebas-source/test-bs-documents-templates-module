@@ -12,7 +12,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
-export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, bomVersions = [], selectedBomVersion = '' }) {
+export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId, onTotalsChange }) {
      const [verifiedCosts, setVerifiedCosts] = useState([]);
      const [nonBomCosts, setNonBomCosts] = useState([]);
      const [wasteAllowances, setWasteAllowances] = useState([]);
@@ -25,7 +25,7 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
     useEffect(() => {
         setIsLoadingData(true);
         loadData();
-    }, [shelterTypeId, selectedBomVersion]);
+    }, [shelterInstanceId, shelterTypeId]);
 
     const loadData = async () => {
         try {
@@ -36,9 +36,13 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
             setProducts(productsList);
             setCostCategories(categoriesList);
             
-            // Load BOM costs if shelterTypeId is provided
+            // Load verified costs from shelter type BOM
             if (shelterTypeId) {
                 await loadBomCosts();
+            }
+            
+            // Load saved financial data for this instance
+            if (shelterInstanceId) {
                 await loadSavedFinancialData();
             }
         } catch (error) {
@@ -51,7 +55,7 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
     const loadSavedFinancialData = async () => {
         try {
             const existing = await base44.entities.ShelterFinancialData.filter({
-                shelter_type_id: shelterTypeId
+                shelter_instance_id: shelterInstanceId
             });
 
             if (existing.length > 0) {
@@ -215,7 +219,7 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
 
     // Auto-save data when it changes
     useEffect(() => {
-        if (shelterTypeId && !isLoadingData) {
+        if (shelterInstanceId && !isLoadingData) {
             saveFinancialData();
         }
     }, [nonBomCosts, wasteAllowances, accruedCosts]);
@@ -223,7 +227,7 @@ export default function SectionBCostBreakdown({ shelterTypeId, onTotalsChange, b
     const saveFinancialData = async () => {
         try {
             const dataToSave = {
-                shelter_type_id: shelterTypeId,
+                shelter_instance_id: shelterInstanceId,
                 non_bom_costs: nonBomCosts.map(c => ({
                     description: c.description,
                     amount: parseFloat(c.amount) || 0
