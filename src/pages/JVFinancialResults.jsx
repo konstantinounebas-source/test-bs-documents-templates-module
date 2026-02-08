@@ -308,11 +308,11 @@ export default function JVFinancialResults() {
                                         {shelterInstances.map(instance => {
                                             const shelterType = shelterTypes.find(t => t.id === instance.shelter_type_id);
                                             return (
-                                                <th key={instance.id} className="text-center font-semibold text-slate-700 px-2 py-1.5 border border-slate-200 min-w-[110px] max-w-[110px]">
+                                                <th key={instance.id} className="text-center font-semibold text-slate-700 px-2 py-2 border border-slate-200 min-w-[140px] max-w-[140px]">
                                                     <div className="truncate" title={instance.name}>{instance.name}</div>
                                                     {shelterType && (
-                                                        <div className="text-xs text-slate-500 font-normal truncate" title={shelterType.name}>
-                                                            ({shelterType.name})
+                                                        <div className="text-xs text-slate-500 font-normal whitespace-normal break-words" title={shelterType.code}>
+                                                            ({shelterType.code})
                                                         </div>
                                                     )}
                                                 </th>
