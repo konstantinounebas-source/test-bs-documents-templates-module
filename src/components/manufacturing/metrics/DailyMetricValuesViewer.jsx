@@ -158,15 +158,14 @@ export default function DailyMetricValuesViewer() {
             <TableHeader>
               <TableRow className="bg-slate-50">
                 <TableHead className="font-semibold">Department</TableHead>
-                <TableHead className="font-semibold">Metric Code</TableHead>
-                <TableHead className="font-semibold">Bundle ID</TableHead>
+                <TableHead className="font-semibold">Metric Name</TableHead>
                 <TableHead className="font-semibold text-right">Value</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredValues.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-slate-500 py-8">
+                  <TableCell colSpan={3} className="text-center text-slate-500 py-8">
                     No metric values for this date
                   </TableCell>
                 </TableRow>
@@ -174,8 +173,7 @@ export default function DailyMetricValuesViewer() {
                 filteredValues.map(mv => (
                   <TableRow key={mv.id} className="hover:bg-slate-50">
                     <TableCell>{mv.department}</TableCell>
-                    <TableCell className="font-mono font-semibold text-blue-700">{mv.metric_code}</TableCell>
-                    <TableCell className="text-sm text-slate-600 font-mono">{mv.bundle_id || '-'}</TableCell>
+                    <TableCell className="font-mono font-semibold text-blue-700">{metricNameMap[mv.metric_code] || mv.metric_code}</TableCell>
                     <TableCell className="text-right font-semibold">{mv.value?.toFixed(2)}</TableCell>
                   </TableRow>
                 ))
