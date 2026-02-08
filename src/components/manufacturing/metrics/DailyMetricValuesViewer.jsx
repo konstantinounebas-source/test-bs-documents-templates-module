@@ -13,10 +13,25 @@ export default function DailyMetricValuesViewer() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchDept, setSearchDept] = useState('');
 
-  const { data: metricValues = [], isLoading } = useQuery({
+  const { data: metricValues = [], isLoading: metricsLoading } = useQuery({
     queryKey: ['DailyMetricValue'],
     queryFn: () => base44.entities.DailyMetricValue.list()
   });
+
+  const { data: metricDefinitions = [], isLoading: definitionsLoading } = useQuery({
+    queryKey: ['MetricDefinition'],
+    queryFn: () => base44.entities.MetricDefinition.list()
+  });
+
+  const metricNameMap = useMemo(() => {
+    const map = {};
+    metricDefinitions.forEach(md => {
+      map[md.metric_code] = md.name || md.metric_code;
+    });
+    return map;
+  }, [metricDefinitions]);
+
+  const isLoading = metricsLoading || definitionsLoading;
 
   const dateRange = useMemo(() => {
     if (viewMode === 'daily') {
