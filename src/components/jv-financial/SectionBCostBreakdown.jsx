@@ -75,6 +75,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                     setWasteAllowances(data.waste_allowances.map((item, idx) => ({
                         id: Date.now() + idx + 1000,
                         product: item.product_id,
+                        customProduct: item.custom_product || '',
                         baseCost: item.base_cost,
                         allowancePercent: item.allowance_percent,
                         cost: (item.base_cost * item.allowance_percent) / 100
@@ -85,6 +86,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                     setAccruedCosts(data.accrued_costs.map((item, idx) => ({
                         id: Date.now() + idx + 2000,
                         category: item.category_id,
+                        customCategory: item.custom_category || '',
                         amount: item.amount
                     })));
                 }
@@ -150,7 +152,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
     };
 
     const addWasteAllowance = () => {
-        setWasteAllowances([...wasteAllowances, { id: Date.now(), product: '', baseCost: '', allowancePercent: '', cost: 0 }]);
+        setWasteAllowances([...wasteAllowances, { id: Date.now(), product: '', customProduct: '', baseCost: '', allowancePercent: '', cost: 0 }]);
     };
 
     const removeWasteAllowance = (id) => {
@@ -187,7 +189,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
     };
 
     const addAccruedCost = () => {
-        setAccruedCosts([...accruedCosts, { id: Date.now(), category: '', amount: '' }]);
+        setAccruedCosts([...accruedCosts, { id: Date.now(), category: '', customCategory: '', amount: '' }]);
     };
 
     const removeAccruedCost = (id) => {
@@ -234,11 +236,13 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                 })),
                 waste_allowances: wasteAllowances.map(w => ({
                     product_id: w.product,
+                    custom_product: w.customProduct || '',
                     base_cost: parseFloat(w.baseCost) || 0,
                     allowance_percent: parseFloat(w.allowancePercent) || 0
                 })),
                 accrued_costs: accruedCosts.map(a => ({
                     category_id: a.category,
+                    custom_category: a.customCategory || '',
                     amount: parseFloat(a.amount) || 0
                 }))
             };
@@ -371,18 +375,28 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                     <div className="space-y-3">
                         {wasteAllowances.map((allowance) => (
                             <div key={allowance.id} className="flex gap-3 items-end bg-slate-50 p-3 rounded-lg">
-                                <div className="flex-1">
-                                    <label className="text-xs text-slate-600 mb-1 block">Material / Product</label>
-                                    <Select value={allowance.product} onValueChange={(value) => updateWasteAllowance(allowance.id, 'product', value)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select product" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {products.map(prod => (
-                                                <SelectItem key={prod.id} value={prod.id}>{prod.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                <div className="flex-1 space-y-2">
+                                    <div>
+                                        <label className="text-xs text-slate-600 mb-1 block">Material / Product</label>
+                                        <Select value={allowance.product} onValueChange={(value) => updateWasteAllowance(allowance.id, 'product', value)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select product" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {products.map(prod => (
+                                                    <SelectItem key={prod.id} value={prod.id}>{prod.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-slate-600 mb-1 block">Or enter custom</label>
+                                        <Input
+                                            placeholder="Custom material/product"
+                                            value={allowance.customProduct || ''}
+                                            onChange={(e) => updateWasteAllowance(allowance.id, 'customProduct', e.target.value)}
+                                        />
+                                    </div>
                                 </div>
                                 <div className="w-28">
                                     <label className="text-xs text-slate-600 mb-1 block">Base Cost</label>
@@ -446,18 +460,28 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                     <div className="space-y-3">
                         {accruedCosts.map((cost) => (
                             <div key={cost.id} className="flex gap-3 items-end bg-slate-50 p-3 rounded-lg">
-                                <div className="flex-1">
-                                    <label className="text-xs text-slate-600 mb-1 block">Cost Category</label>
-                                    <Select value={cost.category} onValueChange={(value) => updateAccruedCost(cost.id, 'category', value)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select category" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {costCategories.map(cat => (
-                                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                <div className="flex-1 space-y-2">
+                                    <div>
+                                        <label className="text-xs text-slate-600 mb-1 block">Cost Category</label>
+                                        <Select value={cost.category} onValueChange={(value) => updateAccruedCost(cost.id, 'category', value)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select category" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {costCategories.map(cat => (
+                                                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-slate-600 mb-1 block">Or enter custom</label>
+                                        <Input
+                                            placeholder="Custom category"
+                                            value={cost.customCategory || ''}
+                                            onChange={(e) => updateAccruedCost(cost.id, 'customCategory', e.target.value)}
+                                        />
+                                    </div>
                                 </div>
                                 <div className="w-32">
                                     <label className="text-xs text-slate-600 mb-1 block">Estimated Amount</label>
