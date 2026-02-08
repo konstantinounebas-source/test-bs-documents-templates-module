@@ -121,7 +121,7 @@ export default function JVFinancialCalculations() {
             });
 
             // Calculate costs from Section B
-            const nonBomCost = sectionBTotals.verified || 0;
+            const nonBomCost = sectionBTotals.nonBom || 0;
             const wasteAllowanceCost = sectionBTotals.waste || 0;
             const accruedCost = sectionBTotals.accrued || 0;
             const totalCostBreakdown = bomCost + nonBomCost + wasteAllowanceCost + accruedCost;
