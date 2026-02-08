@@ -19,6 +19,10 @@ export default function JVFinancialResults() {
     
     // Single source of truth per shelter instance
     const [dataByInstance, setDataByInstance] = useState({});
+    
+    // Edit mode tracking: { instanceId-fieldName: value }
+    const [editingCell, setEditingCell] = useState(null);
+    const [editValue, setEditValue] = useState('');
 
     // Formatting helpers
     const formatCurrency = (value) => {
@@ -160,18 +164,26 @@ export default function JVFinancialResults() {
 
 
 
-    const updateInstanceData = async (instanceId, updates) => {
+    const startEditing = (instanceId, fieldName) => {
+        const cellKey = `${instanceId}-${fieldName}`;
+        setEditingCell(cellKey);
+        setEditValue(dataByInstance[instanceId]?.[fieldName] ?? '');
+    };
+
+    const cancelEditing = () => {
+        setEditingCell(null);
+        setEditValue('');
+    };
+
+    const saveEdit = async (instanceId, fieldName) => {
+        const updates = { [fieldName]: parseFloat(editValue) || 0 };
+        
         setDataByInstance(prev => ({
             ...prev,
             [instanceId]: { ...prev[instanceId], ...updates }
         }));
 
         try {
-            // Auto-save to ShelterFinancialResults
-            const instance = shelterInstances.find(i => i.id === instanceId);
-            if (!instance) return;
-
-            // Recalculate and save full results
             const data = { ...dataByInstance[instanceId], ...updates };
             const quantity = data.quantity || 1;
             const contractIncome = parseFloat(data.manual_contract_income) || 0;
@@ -194,23 +206,10 @@ export default function JVFinancialResults() {
 
             const resultData = {
                 shelter_instance_id: instanceId,
-                calculation_date: new Date().toISOString(),
                 quantity,
-                total_contract_income: contractIncome,
-                bom_cost: 0,
-                non_bom_cost: 0,
-                waste_allowance_cost: 0,
-                accrued_cost: 0,
-                total_cost_breakdown: totalCost,
-                gross_balance: grossBalance * quantity,
                 warranty_provision: warrantyProvision,
-                warranty_provision_total: warrantyProvision * quantity,
-                net_expected_profit: netProfit,
-                profit_margin_percent: profitMargin,
                 air_control_share_percent: airControlShare,
-                air_control_profit_amount: airControlProfit,
-                amco_share_percent: amcoShare,
-                amco_profit_amount: amcoProfit
+                amco_share_percent: amcoShare
             };
 
             if (existingResults.length > 0) {
@@ -223,6 +222,16 @@ export default function JVFinancialResults() {
         } catch (error) {
             console.error('Failed to save data:', error);
             toast.error('Failed to save data');
+        }
+        
+        cancelEditing();
+    };
+
+    const handleKeyDown = (e, instanceId, fieldName) => {
+        if (e.key === 'Enter') {
+            saveEdit(instanceId, fieldName);
+        } else if (e.key === 'Escape') {
+            cancelEditing();
         }
     };
 
@@ -312,17 +321,32 @@ export default function JVFinancialResults() {
                                         <td className="font-medium text-slate-700 px-2 py-1.5 border border-slate-200 sticky left-0 bg-white z-10">
                                             Quantity
                                         </td>
-                                        {shelterInstances.map(instance => (
-                                            <td key={`quantity-${instance.id}`} className="px-2 py-1.5 border border-slate-200">
-                                                <Input
-                                                    type="number"
-                                                    placeholder="1"
-                                                    value={dataByInstance[instance.id]?.quantity ?? 1}
-                                                    onChange={(e) => updateInstanceData(instance.id, { quantity: parseFloat(e.target.value) || 1 })}
-                                                    className="text-center h-7 text-xs w-full"
-                                                />
-                                            </td>
-                                        ))}
+                                        {shelterInstances.map(instance => {
+                                            const cellKey = `${instance.id}-quantity`;
+                                            const isEditing = editingCell === cellKey;
+                                            return (
+                                                <td key={cellKey} className="px-2 py-1.5 border border-slate-200">
+                                                    {isEditing ? (
+                                                        <Input
+                                                            type="number"
+                                                            value={editValue}
+                                                            onChange={(e) => setEditValue(e.target.value)}
+                                                            onBlur={() => saveEdit(instance.id, 'quantity')}
+                                                            onKeyDown={(e) => handleKeyDown(e, instance.id, 'quantity')}
+                                                            className="text-center h-7 text-xs w-full"
+                                                            autoFocus
+                                                        />
+                                                    ) : (
+                                                        <div 
+                                                            onClick={() => startEditing(instance.id, 'quantity')}
+                                                            className="text-center cursor-pointer hover:bg-slate-50 h-7 flex items-center justify-center"
+                                                        >
+                                                            {dataByInstance[instance.id]?.quantity ?? 1}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            );
+                                        })}
                                         <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
                                             {shelterInstances.reduce((sum, instance) => sum + (dataByInstance[instance.id]?.quantity || 1), 0)}
                                         </td>
@@ -388,17 +412,32 @@ export default function JVFinancialResults() {
                                         <td className="font-medium text-slate-700 px-2 py-1.5 border border-slate-200 sticky left-0 bg-white z-10">
                                             Warranty Provision
                                         </td>
-                                        {shelterInstances.map(instance => (
-                                            <td key={`warranty-${instance.id}`} className="px-2 py-1.5 border border-slate-200">
-                                                <Input
-                                                    type="number"
-                                                    placeholder="0.00"
-                                                    value={dataByInstance[instance.id]?.warranty_provision ?? ''}
-                                                    onChange={(e) => updateInstanceData(instance.id, { warranty_provision: parseFloat(e.target.value) || 0 })}
-                                                    className="text-center h-7 text-xs w-full"
-                                                />
-                                            </td>
-                                        ))}
+                                        {shelterInstances.map(instance => {
+                                            const cellKey = `${instance.id}-warranty_provision`;
+                                            const isEditing = editingCell === cellKey;
+                                            return (
+                                                <td key={cellKey} className="px-2 py-1.5 border border-slate-200">
+                                                    {isEditing ? (
+                                                        <Input
+                                                            type="number"
+                                                            value={editValue}
+                                                            onChange={(e) => setEditValue(e.target.value)}
+                                                            onBlur={() => saveEdit(instance.id, 'warranty_provision')}
+                                                            onKeyDown={(e) => handleKeyDown(e, instance.id, 'warranty_provision')}
+                                                            className="text-center h-7 text-xs w-full"
+                                                            autoFocus
+                                                        />
+                                                    ) : (
+                                                        <div 
+                                                            onClick={() => startEditing(instance.id, 'warranty_provision')}
+                                                            className="text-center cursor-pointer hover:bg-slate-50 h-7 flex items-center justify-center"
+                                                        >
+                                                            {formatCurrency(dataByInstance[instance.id]?.warranty_provision || 0)}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            );
+                                        })}
                                         <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
                                             {formatCurrency(shelterInstances.reduce((sum, instance) => {
                                                 const data = dataByInstance[instance.id];
@@ -458,17 +497,32 @@ export default function JVFinancialResults() {
                                         <td className="font-medium text-slate-700 px-2 py-1.5 border border-slate-200 sticky left-0 bg-white z-10">
                                             Air Control Share (%)
                                         </td>
-                                        {shelterInstances.map(instance => (
-                                            <td key={`air-${instance.id}`} className="px-2 py-1.5 border border-slate-200">
-                                                <Input
-                                                    type="number"
-                                                    placeholder="0"
-                                                    value={dataByInstance[instance.id]?.air_control_share_percent ?? ''}
-                                                    onChange={(e) => updateInstanceData(instance.id, { air_control_share_percent: parseFloat(e.target.value) || 0 })}
-                                                    className="text-center h-7 text-xs w-full"
-                                                />
-                                            </td>
-                                        ))}
+                                        {shelterInstances.map(instance => {
+                                            const cellKey = `${instance.id}-air_control_share_percent`;
+                                            const isEditing = editingCell === cellKey;
+                                            return (
+                                                <td key={cellKey} className="px-2 py-1.5 border border-slate-200">
+                                                    {isEditing ? (
+                                                        <Input
+                                                            type="number"
+                                                            value={editValue}
+                                                            onChange={(e) => setEditValue(e.target.value)}
+                                                            onBlur={() => saveEdit(instance.id, 'air_control_share_percent')}
+                                                            onKeyDown={(e) => handleKeyDown(e, instance.id, 'air_control_share_percent')}
+                                                            className="text-center h-7 text-xs w-full"
+                                                            autoFocus
+                                                        />
+                                                    ) : (
+                                                        <div 
+                                                            onClick={() => startEditing(instance.id, 'air_control_share_percent')}
+                                                            className="text-center cursor-pointer hover:bg-slate-50 h-7 flex items-center justify-center"
+                                                        >
+                                                            {formatPercentage(dataByInstance[instance.id]?.air_control_share_percent || 0)}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            );
+                                        })}
                                         <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
                                             -
                                         </td>
@@ -495,17 +549,32 @@ export default function JVFinancialResults() {
                                         <td className="font-medium text-slate-700 px-2 py-1.5 border border-slate-200 sticky left-0 bg-white z-10">
                                             Amco Share (%)
                                         </td>
-                                        {shelterInstances.map(instance => (
-                                            <td key={`amco-${instance.id}`} className="px-2 py-1.5 border border-slate-200">
-                                                <Input
-                                                    type="number"
-                                                    placeholder="0"
-                                                    value={dataByInstance[instance.id]?.amco_share_percent ?? ''}
-                                                    onChange={(e) => updateInstanceData(instance.id, { amco_share_percent: parseFloat(e.target.value) || 0 })}
-                                                    className="text-center h-7 text-xs w-full"
-                                                />
-                                            </td>
-                                        ))}
+                                        {shelterInstances.map(instance => {
+                                            const cellKey = `${instance.id}-amco_share_percent`;
+                                            const isEditing = editingCell === cellKey;
+                                            return (
+                                                <td key={cellKey} className="px-2 py-1.5 border border-slate-200">
+                                                    {isEditing ? (
+                                                        <Input
+                                                            type="number"
+                                                            value={editValue}
+                                                            onChange={(e) => setEditValue(e.target.value)}
+                                                            onBlur={() => saveEdit(instance.id, 'amco_share_percent')}
+                                                            onKeyDown={(e) => handleKeyDown(e, instance.id, 'amco_share_percent')}
+                                                            className="text-center h-7 text-xs w-full"
+                                                            autoFocus
+                                                        />
+                                                    ) : (
+                                                        <div 
+                                                            onClick={() => startEditing(instance.id, 'amco_share_percent')}
+                                                            className="text-center cursor-pointer hover:bg-slate-50 h-7 flex items-center justify-center"
+                                                        >
+                                                            {formatPercentage(dataByInstance[instance.id]?.amco_share_percent || 0)}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            );
+                                        })}
                                         <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
                                             -
                                         </td>
