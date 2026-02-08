@@ -73,8 +73,8 @@ export default function KPIDefinitionsTable() {
                         <ChevronRight className="w-4 h-4" />
                       )}
                     </TableCell>
-                    <TableCell className="font-mono font-semibold text-blue-700">{kpi.metric_code}</TableCell>
-                    <TableCell className="font-semibold">{kpi.metric_name}</TableCell>
+                    <TableCell className="font-mono font-semibold text-blue-700">{kpi.kpi_code}</TableCell>
+                    <TableCell className="font-semibold">{kpi.kpi_name}</TableCell>
                     <TableCell className="text-sm text-slate-600">{kpi.applies_to || '-'}</TableCell>
                   </TableRow>
 
