@@ -135,7 +135,7 @@ export default function JVFinancialResults() {
         const warrantyProvision = data.warranty_provision || 0;
         const netProfit = (grossBalance - warrantyProvision) * quantity;
         const totalCostValue = totalCost * quantity;
-        const profitMargin = totalCostValue > 0 ? ((netProfit - totalCostValue) / totalCostValue) * 100 : 0;
+        const profitMargin = totalCostValue > 0 ? (netProfit / totalCostValue) * 100 : 0;
 
         const airControlShare = data.air_control_share_percent || 0;
         const amcoShare = data.amco_share_percent || 0;
@@ -186,7 +186,7 @@ export default function JVFinancialResults() {
         const warranty = (data.warranty_provision || 0) * quantity;
         const netProfit = grossBalance - warranty;
         const totalCostValue = totalCost * quantity;
-        const profitMargin = totalCostValue > 0 ? ((netProfit - totalCostValue) / totalCostValue) * 100 : 0;
+        const profitMargin = totalCostValue > 0 ? (netProfit / totalCostValue) * 100 : 0;
 
         const airControlShare = data.air_control_share_percent || 0;
         const amcoShare = data.amco_share_percent || 0;
@@ -390,7 +390,7 @@ export default function JVFinancialResults() {
                                             {(() => {
                                                 const totalCost = shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.totalCost || 0), 0);
                                                 const totalNetProfit = shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.netProfit || 0), 0);
-                                                return formatPercentage(totalCost > 0 ? (((totalNetProfit - totalCost) / totalCost) * 100) : 0);
+                                                return formatPercentage(totalCost > 0 ? ((totalNetProfit / totalCost) * 100) : 0);
                                             })()}
                                         </td>
                                     </tr>
