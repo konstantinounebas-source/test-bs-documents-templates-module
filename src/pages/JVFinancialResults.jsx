@@ -117,9 +117,8 @@ export default function JVFinancialResults() {
                 base44.entities.ShelterFinancialResults.list()
             ]);
             
-            // Filter only active instances
-            const activeInstances = instances.filter(inst => inst.active !== false);
-            setShelterInstances(activeInstances.reverse());
+            // Show all instances (including inactive) to see all financial data
+            setShelterInstances(instances.reverse());
             setShelterTypes(types);
 
             // Normalize financial data by shelter_instance_id
