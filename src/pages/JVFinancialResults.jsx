@@ -264,20 +264,20 @@ export default function JVFinancialResults() {
                         <CardTitle>Financial Results Table</CardTitle>
                         <CardDescription>All shelter instances in columns with financial metrics</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <div className="overflow-x-auto" ref={tableRef}>
-                            <table className="w-full border-collapse">
+                    <CardContent className="p-0">
+                        <div className="overflow-x-auto max-w-full" ref={tableRef}>
+                            <table className="min-w-full border-collapse" style={{ fontSize: '11px' }}>
                                 <thead>
                                     <tr className="bg-slate-100">
-                                        <th className="text-left text-xs font-semibold text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-slate-100 z-10">
+                                        <th className="text-left font-semibold text-slate-700 px-2 py-1.5 border border-slate-200 sticky left-0 bg-slate-100 z-10 min-w-[160px]">
                                             Metric
                                         </th>
                                         {shelterInstances.map(instance => (
-                                            <th key={instance.id} className="text-center text-xs font-semibold text-slate-700 px-3 py-2 border border-slate-200 min-w-[120px]">
-                                                {instance.name}
+                                            <th key={instance.id} className="text-center font-semibold text-slate-700 px-2 py-1.5 border border-slate-200 min-w-[110px] max-w-[110px]">
+                                                <div className="truncate" title={instance.name}>{instance.name}</div>
                                             </th>
                                         ))}
-                                        <th className="text-center text-xs font-semibold text-slate-700 px-3 py-2 border border-slate-200 bg-slate-200 min-w-[120px]">
+                                        <th className="text-center font-semibold text-slate-700 px-2 py-1.5 border border-slate-200 bg-slate-200 min-w-[110px] max-w-[110px]">
                                             TOTAL
                                         </th>
                                     </tr>
@@ -285,97 +285,97 @@ export default function JVFinancialResults() {
                                 <tbody>
                                     {/* Quantity Row */}
                                     <tr className="bg-white">
-                                        <td className="text-xs font-medium text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-white z-10">
+                                        <td className="font-medium text-slate-700 px-2 py-1.5 border border-slate-200 sticky left-0 bg-white z-10">
                                             Quantity
                                         </td>
                                         {shelterInstances.map(instance => (
-                                            <td key={`quantity-${instance.id}`} className="px-3 py-2 border border-slate-200">
+                                            <td key={`quantity-${instance.id}`} className="px-2 py-1.5 border border-slate-200">
                                                 <Input
                                                     type="number"
                                                     placeholder="1"
                                                     value={dataByInstance[instance.id]?.quantity ?? 1}
                                                     onChange={(e) => updateInstanceData(instance.id, { quantity: parseFloat(e.target.value) || 1 })}
-                                                    className="text-center h-8 text-sm w-full"
+                                                    className="text-center h-7 text-xs w-full"
                                                 />
                                             </td>
                                         ))}
-                                        <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
+                                        <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
                                             {Object.values(dataByInstance).reduce((sum, data) => sum + (data?.quantity || 1), 0)}
                                         </td>
                                     </tr>
 
                                     {/* Section A Metrics */}
                                     <tr className="bg-slate-50">
-                                        <td colSpan={shelterInstances.length + 2} className="text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200">
+                                        <td colSpan={shelterInstances.length + 2} className="font-bold text-slate-900 px-2 py-1.5 border border-slate-200">
                                             SECTION A — Financial Results
                                         </td>
                                     </tr>
 
                                     <tr className="bg-white">
-                                        <td className="text-xs font-medium text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-white z-10">
+                                        <td className="font-medium text-slate-700 px-2 py-1.5 border border-slate-200 sticky left-0 bg-white z-10">
                                             Total Contract Income
                                         </td>
                                         {shelterInstances.map(instance => (
-                                            <td key={`income-${instance.id}`} className="px-3 py-2 border border-slate-200">
-                                                <div className="text-center text-xs font-medium text-slate-900">
+                                            <td key={`income-${instance.id}`} className="px-2 py-1.5 border border-slate-200">
+                                                <div className="text-center font-medium text-slate-900">
                                                     {formatCurrency(dataByInstance[instance.id]?.manual_contract_income || 0)}
                                                 </div>
                                             </td>
                                         ))}
-                                        <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
+                                        <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
                                             {formatCurrency(shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.contractIncome || 0), 0))}
                                         </td>
                                     </tr>
 
                                     <tr className="bg-white">
-                                        <td className="text-xs font-medium text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-white z-10">
+                                        <td className="font-medium text-slate-700 px-2 py-1.5 border border-slate-200 sticky left-0 bg-white z-10">
                                             Total Cost Breakdown
                                         </td>
                                         {shelterInstances.map(instance => (
-                                            <td key={`cost-${instance.id}`} className="px-3 py-2 border border-slate-200">
-                                                <div className="text-center text-xs font-medium text-slate-900">
+                                            <td key={`cost-${instance.id}`} className="px-2 py-1.5 border border-slate-200">
+                                                <div className="text-center font-medium text-slate-900">
                                                     {formatCurrency(dataByInstance[instance.id]?.manual_total_cost || 0)}
                                                 </div>
                                             </td>
                                         ))}
-                                        <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
+                                        <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
                                             {formatCurrency(shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.totalCost || 0), 0))}
                                         </td>
                                     </tr>
 
                                     <tr className="bg-blue-50">
-                                        <td className="text-xs font-semibold text-slate-900 px-3 py-2 border border-slate-200 sticky left-0 bg-blue-50 z-10">
+                                        <td className="font-semibold text-slate-900 px-2 py-1.5 border border-slate-200 sticky left-0 bg-blue-50 z-10">
                                             Gross Balance
                                         </td>
                                         {shelterInstances.map(instance => {
                                             const metrics = calculateMetrics(instance.id);
                                             return (
-                                                <td key={`gross-${instance.id}`} className="text-center text-xs font-medium text-slate-900 px-3 py-2 border border-slate-200">
+                                                <td key={`gross-${instance.id}`} className="text-center font-medium text-slate-900 px-2 py-1.5 border border-slate-200">
                                                     {formatCurrency(metrics?.grossBalance || 0)}
                                                 </td>
                                             );
                                         })}
-                                        <td className="text-center text-sm font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-blue-100">
+                                        <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-blue-100">
                                             {formatCurrency(shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.grossBalance || 0), 0))}
                                         </td>
                                     </tr>
 
                                     <tr className="bg-white">
-                                        <td className="text-xs font-medium text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-white z-10">
+                                        <td className="font-medium text-slate-700 px-2 py-1.5 border border-slate-200 sticky left-0 bg-white z-10">
                                             Warranty Provision
                                         </td>
                                         {shelterInstances.map(instance => (
-                                            <td key={`warranty-${instance.id}`} className="px-3 py-2 border border-slate-200">
+                                            <td key={`warranty-${instance.id}`} className="px-2 py-1.5 border border-slate-200">
                                                 <Input
                                                     type="number"
                                                     placeholder="0.00"
                                                     value={dataByInstance[instance.id]?.warranty_provision ?? ''}
                                                     onChange={(e) => updateInstanceData(instance.id, { warranty_provision: parseFloat(e.target.value) || 0 })}
-                                                    className="text-center h-8 text-sm w-full"
+                                                    className="text-center h-7 text-xs w-full"
                                                 />
                                             </td>
                                         ))}
-                                        <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
+                                        <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
                                             {formatCurrency(shelterInstances.reduce((sum, instance) => {
                                                 const data = dataByInstance[instance.id];
                                                 const warranty = data?.warranty_provision || 0;
@@ -386,35 +386,35 @@ export default function JVFinancialResults() {
                                     </tr>
 
                                     <tr className="bg-green-50">
-                                        <td className="text-xs font-semibold text-slate-900 px-3 py-2 border border-slate-200 sticky left-0 bg-green-50 z-10">
+                                        <td className="font-semibold text-slate-900 px-2 py-1.5 border border-slate-200 sticky left-0 bg-green-50 z-10">
                                             Net Expected Profit
                                         </td>
                                         {shelterInstances.map(instance => {
                                             const metrics = calculateMetrics(instance.id);
                                             return (
-                                                <td key={`netprofit-${instance.id}`} className="text-center text-xs font-medium text-slate-900 px-3 py-2 border border-slate-200">
+                                                <td key={`netprofit-${instance.id}`} className="text-center font-medium text-slate-900 px-2 py-1.5 border border-slate-200">
                                                     {formatCurrency(metrics?.netProfit || 0)}
                                                 </td>
                                             );
                                         })}
-                                        <td className="text-center text-sm font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-green-100">
+                                        <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-green-100">
                                             {formatCurrency(shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.netProfit || 0), 0))}
                                         </td>
                                     </tr>
 
                                     <tr className="bg-amber-50">
-                                        <td className="text-xs font-semibold text-slate-900 px-3 py-2 border border-slate-200 sticky left-0 bg-amber-50 z-10">
+                                        <td className="font-semibold text-slate-900 px-2 py-1.5 border border-slate-200 sticky left-0 bg-amber-50 z-10">
                                             Profit Margin (%)
                                         </td>
                                         {shelterInstances.map(instance => {
                                             const metrics = calculateMetrics(instance.id);
                                             return (
-                                                <td key={`margin-${instance.id}`} className="text-center text-xs font-medium text-slate-900 px-3 py-2 border border-slate-200">
+                                                <td key={`margin-${instance.id}`} className="text-center font-medium text-slate-900 px-2 py-1.5 border border-slate-200">
                                                     {formatPercentage(metrics?.profitMargin || 0)}
                                                 </td>
                                             );
                                         })}
-                                        <td className="text-center text-sm font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-amber-100">
+                                        <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-amber-100">
                                             {(() => {
                                                 const totalCost = shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.totalCost || 0), 0);
                                                 const totalNetProfit = shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.netProfit || 0), 0);
@@ -425,81 +425,81 @@ export default function JVFinancialResults() {
 
                                     {/* Section B Metrics */}
                                     <tr className="bg-slate-50">
-                                        <td colSpan={shelterInstances.length + 2} className="text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200">
+                                        <td colSpan={shelterInstances.length + 2} className="font-bold text-slate-900 px-2 py-1.5 border border-slate-200">
                                             SECTION B — Profit Distribution
                                         </td>
                                     </tr>
 
                                     <tr className="bg-white">
-                                        <td className="text-xs font-medium text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-white z-10">
+                                        <td className="font-medium text-slate-700 px-2 py-1.5 border border-slate-200 sticky left-0 bg-white z-10">
                                             Air Control Share (%)
                                         </td>
                                         {shelterInstances.map(instance => (
-                                            <td key={`air-${instance.id}`} className="px-3 py-2 border border-slate-200">
+                                            <td key={`air-${instance.id}`} className="px-2 py-1.5 border border-slate-200">
                                                 <Input
                                                     type="number"
                                                     placeholder="0"
                                                     value={dataByInstance[instance.id]?.air_control_share_percent ?? ''}
                                                     onChange={(e) => updateInstanceData(instance.id, { air_control_share_percent: parseFloat(e.target.value) || 0 })}
-                                                    className="text-center h-8 text-sm w-full"
+                                                    className="text-center h-7 text-xs w-full"
                                                 />
                                             </td>
                                         ))}
-                                        <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
+                                        <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
                                             -
                                         </td>
                                     </tr>
 
                                     <tr className="bg-blue-50">
-                                        <td className="text-xs font-semibold text-slate-900 px-3 py-2 border border-slate-200 sticky left-0 bg-blue-50 z-10">
+                                        <td className="font-semibold text-slate-900 px-2 py-1.5 border border-slate-200 sticky left-0 bg-blue-50 z-10">
                                             Air Control Profit Amount
                                         </td>
                                         {shelterInstances.map(instance => {
                                             const metrics = calculateMetrics(instance.id);
                                             return (
-                                                <td key={`airprofit-${instance.id}`} className="text-center text-xs font-medium text-blue-600 px-3 py-2 border border-slate-200">
+                                                <td key={`airprofit-${instance.id}`} className="text-center font-medium text-blue-600 px-2 py-1.5 border border-slate-200">
                                                     {formatCurrency(metrics?.airControlProfit || 0)}
                                                 </td>
                                             );
                                         })}
-                                        <td className="text-center text-sm font-bold text-blue-600 px-3 py-2 border border-slate-200 bg-blue-100">
+                                        <td className="text-center font-bold text-blue-600 px-2 py-1.5 border border-slate-200 bg-blue-100">
                                             {formatCurrency(shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.airControlProfit || 0), 0))}
                                         </td>
                                     </tr>
 
                                     <tr className="bg-white">
-                                        <td className="text-xs font-medium text-slate-700 px-3 py-2 border border-slate-200 sticky left-0 bg-white z-10">
+                                        <td className="font-medium text-slate-700 px-2 py-1.5 border border-slate-200 sticky left-0 bg-white z-10">
                                             Amco Share (%)
                                         </td>
                                         {shelterInstances.map(instance => (
-                                            <td key={`amco-${instance.id}`} className="px-3 py-2 border border-slate-200">
+                                            <td key={`amco-${instance.id}`} className="px-2 py-1.5 border border-slate-200">
                                                 <Input
                                                     type="number"
                                                     placeholder="0"
                                                     value={dataByInstance[instance.id]?.amco_share_percent ?? ''}
                                                     onChange={(e) => updateInstanceData(instance.id, { amco_share_percent: parseFloat(e.target.value) || 0 })}
-                                                    className="text-center h-8 text-sm w-full"
+                                                    className="text-center h-7 text-xs w-full"
                                                 />
                                             </td>
                                         ))}
-                                        <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
+                                        <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
                                             -
                                         </td>
                                     </tr>
 
                                     <tr className="bg-purple-50">
-                                        <td className="text-xs font-semibold text-slate-900 px-3 py-2 border border-slate-200 sticky left-0 bg-purple-50 z-10">
+                                        <td className="font-semibold text-slate-900 px-2 py-1.5 border border-slate-200 sticky left-0 bg-purple-50 z-10">
                                             Amco Profit Amount
                                         </td>
                                         {shelterInstances.map(instance => {
                                             const metrics = calculateMetrics(instance.id);
                                             return (
-                                                <td key={`amcoprofit-${instance.id}`} className="text-center text-xs font-medium text-purple-600 px-3 py-2 border border-slate-200">
+                                                <td key={`amcoprofit-${instance.id}`} className="text-center font-medium text-purple-600 px-2 py-1.5 border border-slate-200">
                                                     {formatCurrency(metrics?.amcoProfit || 0)}
                                                 </td>
                                             );
                                         })}
-                                        <td className="text-center text-sm font-bold text-purple-600 px-3 py-2 border border-slate-200 bg-purple-100">
+                                        <td className="text-center font-bold text-purple-600 px-2 py-1.5 border border-slate-200 bg-purple-100">
                                             {formatCurrency(shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.amcoProfit || 0), 0))}
                                         </td>
                                     </tr>
