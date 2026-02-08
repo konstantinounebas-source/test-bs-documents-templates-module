@@ -305,11 +305,19 @@ export default function JVFinancialResults() {
                                         <th className="text-left font-semibold text-slate-700 px-2 py-1.5 border border-slate-200 sticky left-0 bg-slate-100 z-10 min-w-[160px]">
                                             Metric
                                         </th>
-                                        {shelterInstances.map(instance => (
-                                            <th key={instance.id} className="text-center font-semibold text-slate-700 px-2 py-1.5 border border-slate-200 min-w-[110px] max-w-[110px]">
-                                                <div className="truncate" title={instance.name}>{instance.name}</div>
-                                            </th>
-                                        ))}
+                                        {shelterInstances.map(instance => {
+                                            const shelterType = shelterTypes.find(t => t.id === instance.shelter_type_id);
+                                            return (
+                                                <th key={instance.id} className="text-center font-semibold text-slate-700 px-2 py-1.5 border border-slate-200 min-w-[110px] max-w-[110px]">
+                                                    <div className="truncate" title={instance.name}>{instance.name}</div>
+                                                    {shelterType && (
+                                                        <div className="text-xs text-slate-500 font-normal truncate" title={shelterType.name}>
+                                                            ({shelterType.name})
+                                                        </div>
+                                                    )}
+                                                </th>
+                                            );
+                                        })}
                                         <th className="text-center font-semibold text-slate-700 px-2 py-1.5 border border-slate-200 bg-slate-200 min-w-[110px] max-w-[110px]">
                                             TOTAL
                                         </th>
