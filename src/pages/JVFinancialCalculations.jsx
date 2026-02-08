@@ -544,7 +544,7 @@ export default function JVFinancialCalculations() {
                 worksheet.addRow([
                     category?.name || 'N/A',
                     product?.name || 'Unknown',
-                    product?.code || 'N/A',
+                    product?.sku || 'N/A',
                     team?.name || 'N/A',
                     quantity,
                     comp.unit_of_measure || 'pcs',
