@@ -185,8 +185,7 @@ export default function DailyMetricValuesViewer() {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50">
-                  <TableHead className="font-semibold sticky left-0 bg-slate-50 z-10 min-w-[150px]">Metric Code</TableHead>
-                  <TableHead className="font-semibold sticky left-[150px] bg-slate-50 z-10 min-w-[120px]">Department</TableHead>
+                  <TableHead className="font-semibold sticky left-0 bg-slate-50 z-10 min-w-[200px]">Metric Name</TableHead>
                   {dateRange.map(date => (
                     <TableHead key={date} className="text-center font-semibold min-w-[80px]">
                       {format(new Date(date), 'dd/MM')}
@@ -197,22 +196,28 @@ export default function DailyMetricValuesViewer() {
               <TableBody>
                 {!pivotData || pivotData.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={dateRange.length + 2} className="text-center text-slate-500 py-8">
+                    <TableCell colSpan={dateRange.length + 1} className="text-center text-slate-500 py-8">
                       No metric values for this period
                     </TableCell>
                   </TableRow>
                 ) : (
-                  pivotData.map((row, idx) => (
-                    <TableRow key={idx} className="hover:bg-slate-50">
-                      <TableCell className="sticky left-0 bg-white font-mono font-semibold text-blue-700">{row.metric_code}</TableCell>
-                      <TableCell className="sticky left-[150px] bg-white">{row.department}</TableCell>
-                      {dateRange.map(date => (
-                        <TableCell key={date} className="text-center font-semibold">
-                          {row.values[date] !== undefined ? row.values[date].toFixed(2) : '-'}
-                        </TableCell>
-                      ))}
+                  <>
+                    <TableRow className="bg-blue-50">
+                      <TableCell colSpan={dateRange.length + 1} className="font-semibold text-sm text-slate-700 py-2">
+                        Department: {pivotData[0]?.department || '-'}
+                      </TableCell>
                     </TableRow>
-                  ))
+                    {pivotData.map((row, idx) => (
+                      <TableRow key={idx} className="hover:bg-slate-50">
+                        <TableCell className="sticky left-0 bg-white font-mono font-semibold text-blue-700">{metricNameMap[row.metric_code] || row.metric_code}</TableCell>
+                        {dateRange.map(date => (
+                          <TableCell key={date} className="text-center font-semibold">
+                            {row.values[date] !== undefined ? row.values[date].toFixed(2) : '-'}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </>
                 )}
               </TableBody>
             </Table>
