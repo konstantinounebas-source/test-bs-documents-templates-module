@@ -12,10 +12,7 @@ export default function KPIDefinitionsTable() {
 
   const { data: kpiDefinitions = [], isLoading } = useQuery({
     queryKey: ['MetricDefinition'],
-    queryFn: async () => {
-      const data = await base44.entities.MetricDefinition.list();
-      return data.filter(item => item.metric_code && item.type === 'KPI');
-    }
+    queryFn: () => base44.entities.MetricDefinition.list()
   });
 
   const filteredKPIs = useMemo(() => {
