@@ -94,11 +94,7 @@ export default function JVFinancialCalculations() {
 
         setIsSaving(true);
         try {
-            // Get financial data for warranty and profit shares
-            const financialData = await base44.entities.ShelterFinancialData.filter({
-                shelter_type_id: selectedShelterType
-            });
-            const shelterFinData = financialData[0] || {};
+            // Financial data contains only input data (variations, costs, etc.)
 
             // Calculate BOM costs
             const bomComponents = await base44.entities.BusStopTypeComponent.filter({
