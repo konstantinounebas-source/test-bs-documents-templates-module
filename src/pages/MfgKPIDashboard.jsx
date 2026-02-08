@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BarChart3, Lock } from "lucide-react";
+import { BarChart3, Lock, ChevronRight, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import MetricDefinitionManager from "@/components/manufacturing/metrics/MetricDefinitionManager";
 import DailyMetricValuesViewer from "@/components/manufacturing/metrics/DailyMetricValuesViewer";
 import KPIDefinitionsTable from "@/components/manufacturing/KPIDefinitionsTable";
