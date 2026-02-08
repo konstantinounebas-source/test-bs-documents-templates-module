@@ -15,6 +15,17 @@ export default function JVFinancialResults() {
     // Single source of truth per shelter instance
     const [dataByInstance, setDataByInstance] = useState({});
 
+    // Formatting helpers
+    const formatCurrency = (value) => {
+        const num = parseFloat(value) || 0;
+        return `€${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    const formatPercentage = (value) => {
+        const num = parseFloat(value) || 0;
+        return `${num.toFixed(1)}%`;
+    };
+
     useEffect(() => {
         if (!accessLoading && hasAccess) {
             loadData();
@@ -244,12 +255,12 @@ export default function JVFinancialResults() {
                                         {shelterInstances.map(instance => (
                                             <td key={`income-${instance.id}`} className="px-3 py-2 border border-slate-200">
                                                 <div className="text-center text-xs font-medium text-slate-900">
-                                                    €{(parseFloat(dataByInstance[instance.id]?.manual_contract_income) || 0).toFixed(2)}
+                                                    {formatCurrency(dataByInstance[instance.id]?.manual_contract_income || 0)}
                                                 </div>
                                             </td>
                                         ))}
                                         <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
-                                            €{shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.contractIncome || 0), 0).toFixed(2)}
+                                            {formatCurrency(shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.contractIncome || 0), 0))}
                                         </td>
                                     </tr>
 
@@ -260,12 +271,12 @@ export default function JVFinancialResults() {
                                         {shelterInstances.map(instance => (
                                             <td key={`cost-${instance.id}`} className="px-3 py-2 border border-slate-200">
                                                 <div className="text-center text-xs font-medium text-slate-900">
-                                                    €{(parseFloat(dataByInstance[instance.id]?.manual_total_cost) || 0).toFixed(2)}
+                                                    {formatCurrency(dataByInstance[instance.id]?.manual_total_cost || 0)}
                                                 </div>
                                             </td>
                                         ))}
                                         <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
-                                            €{shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.totalCost || 0), 0).toFixed(2)}
+                                            {formatCurrency(shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.totalCost || 0), 0))}
                                         </td>
                                     </tr>
 
@@ -277,12 +288,12 @@ export default function JVFinancialResults() {
                                             const metrics = calculateMetrics(instance.id);
                                             return (
                                                 <td key={`gross-${instance.id}`} className="text-center text-xs font-medium text-slate-900 px-3 py-2 border border-slate-200">
-                                                    €{metrics?.grossBalance.toFixed(2) || '0.00'}
+                                                    {formatCurrency(metrics?.grossBalance || 0)}
                                                 </td>
                                             );
                                         })}
                                         <td className="text-center text-sm font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-blue-100">
-                                            €{shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.grossBalance || 0), 0).toFixed(2)}
+                                            {formatCurrency(shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.grossBalance || 0), 0))}
                                         </td>
                                     </tr>
 
@@ -302,12 +313,12 @@ export default function JVFinancialResults() {
                                             </td>
                                         ))}
                                         <td className="text-center text-xs font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-slate-50">
-                                            €{shelterInstances.reduce((sum, instance) => {
+                                            {formatCurrency(shelterInstances.reduce((sum, instance) => {
                                                 const data = dataByInstance[instance.id];
                                                 const warranty = data?.warranty_provision || 0;
                                                 const quantity = data?.quantity || 1;
                                                 return sum + (warranty * quantity);
-                                            }, 0).toFixed(2)}
+                                            }, 0))}
                                         </td>
                                     </tr>
 
@@ -319,12 +330,12 @@ export default function JVFinancialResults() {
                                             const metrics = calculateMetrics(instance.id);
                                             return (
                                                 <td key={`netprofit-${instance.id}`} className="text-center text-xs font-medium text-slate-900 px-3 py-2 border border-slate-200">
-                                                    €{metrics?.netProfit.toFixed(2) || '0.00'}
+                                                    {formatCurrency(metrics?.netProfit || 0)}
                                                 </td>
                                             );
                                         })}
                                         <td className="text-center text-sm font-bold text-slate-900 px-3 py-2 border border-slate-200 bg-green-100">
-                                            €{shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.netProfit || 0), 0).toFixed(2)}
+                                            {formatCurrency(shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.netProfit || 0), 0))}
                                         </td>
                                     </tr>
 
@@ -336,7 +347,7 @@ export default function JVFinancialResults() {
                                             const metrics = calculateMetrics(instance.id);
                                             return (
                                                 <td key={`margin-${instance.id}`} className="text-center text-xs font-medium text-slate-900 px-3 py-2 border border-slate-200">
-                                                    {metrics?.profitMargin.toFixed(2) || '0.00'}%
+                                                    {formatPercentage(metrics?.profitMargin || 0)}
                                                 </td>
                                             );
                                         })}
@@ -344,8 +355,8 @@ export default function JVFinancialResults() {
                                             {(() => {
                                                 const totalCost = shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.totalCost || 0), 0);
                                                 const totalNetProfit = shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.netProfit || 0), 0);
-                                                return totalCost > 0 ? (((totalNetProfit - totalCost) / totalCost) * 100).toFixed(2) : '0.00';
-                                            })()}%
+                                                return formatPercentage(totalCost > 0 ? (((totalNetProfit - totalCost) / totalCost) * 100) : 0);
+                                            })()}
                                         </td>
                                     </tr>
 
@@ -384,12 +395,12 @@ export default function JVFinancialResults() {
                                             const metrics = calculateMetrics(instance.id);
                                             return (
                                                 <td key={`airprofit-${instance.id}`} className="text-center text-xs font-medium text-blue-600 px-3 py-2 border border-slate-200">
-                                                    €{metrics?.airControlProfit.toFixed(2) || '0.00'}
+                                                    {formatCurrency(metrics?.airControlProfit || 0)}
                                                 </td>
                                             );
                                         })}
                                         <td className="text-center text-sm font-bold text-blue-600 px-3 py-2 border border-slate-200 bg-blue-100">
-                                            €{shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.airControlProfit || 0), 0).toFixed(2)}
+                                            {formatCurrency(shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.airControlProfit || 0), 0))}
                                         </td>
                                     </tr>
 
@@ -421,12 +432,12 @@ export default function JVFinancialResults() {
                                             const metrics = calculateMetrics(instance.id);
                                             return (
                                                 <td key={`amcoprofit-${instance.id}`} className="text-center text-xs font-medium text-purple-600 px-3 py-2 border border-slate-200">
-                                                    €{metrics?.amcoProfit.toFixed(2) || '0.00'}
+                                                    {formatCurrency(metrics?.amcoProfit || 0)}
                                                 </td>
                                             );
                                         })}
                                         <td className="text-center text-sm font-bold text-purple-600 px-3 py-2 border border-slate-200 bg-purple-100">
-                                            €{shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.amcoProfit || 0), 0).toFixed(2)}
+                                            {formatCurrency(shelterInstances.reduce((sum, instance) => sum + (calculateMetrics(instance.id)?.amcoProfit || 0), 0))}
                                         </td>
                                     </tr>
                                 </tbody>
