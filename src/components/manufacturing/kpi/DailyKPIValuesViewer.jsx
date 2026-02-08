@@ -31,7 +31,55 @@ export default function DailyKPIValuesViewer() {
     return map;
   }, [kpiDefinitions]);
 
-  const isLoading = kpisLoading || definitionsLoading;
+  const isLoading = definitionsLoading || metricsLoading;
+
+  // Calculate KPI values from metrics
+  const calculateKPIValue = (formula, metrics) => {
+    try {
+      let expression = formula;
+      metrics.forEach(m => {
+        expression = expression.replace(new RegExp(`\\b${m.metric_code}\\b`, 'g'), m.value);
+      });
+      // eslint-disable-next-line no-eval
+      return eval(expression);
+    } catch {
+      return null;
+    }
+  };
+
+  const kpiValues = useMemo(() => {
+    const calculated = [];
+    const metricsByDateDept = {};
+    
+    // Group metrics by date and department
+    metricValues.forEach(mv => {
+      const key = `${mv.date}_${mv.department}`;
+      if (!metricsByDateDept[key]) {
+        metricsByDateDept[key] = [];
+      }
+      metricsByDateDept[key].push(mv);
+    });
+
+    // Calculate KPIs
+    Object.entries(metricsByDateDept).forEach(([key, metrics]) => {
+      const [date, department] = key.split('_');
+      
+      kpiDefinitions.forEach(kpiDef => {
+        const value = calculateKPIValue(kpiDef.formula, metrics);
+        if (value !== null) {
+          calculated.push({
+            id: `${kpiDef.kpi_code}_${date}_${department}`,
+            date,
+            department,
+            kpi_code: kpiDef.kpi_code,
+            value
+          });
+        }
+      });
+    });
+
+    return calculated;
+  }, [metricValues, kpiDefinitions]);
 
   const dateRange = useMemo(() => {
     if (viewMode === 'daily') {
