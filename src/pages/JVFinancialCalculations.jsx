@@ -720,11 +720,24 @@ export default function JVFinancialCalculations() {
                     </CardContent>
                 </Card>
 
-                {selectedInstanceId && selectedShelterType && (
+                {selectedInstanceId && (
                     <div className="space-y-6">
                         <SectionAContractIncome key={`section-a-${refreshKey}`} shelterInstanceId={selectedInstanceId} onTotalsChange={setSectionATotals} />
 
-                        <SectionBCostBreakdown key={`section-b-${refreshKey}`} shelterInstanceId={selectedInstanceId} shelterTypeId={selectedShelterType} onTotalsChange={setSectionBTotals} />
+                        {selectedShelterType ? (
+                            <SectionBCostBreakdown key={`section-b-${refreshKey}`} shelterInstanceId={selectedInstanceId} shelterTypeId={selectedShelterType} onTotalsChange={setSectionBTotals} />
+                        ) : (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>SECTION B — Cost Breakdown (BOM-driven)</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-center py-8 text-slate-500">
+                                        <p className="text-sm">Please allocate a Shelter Type to view cost breakdown</p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
                 )}
 
