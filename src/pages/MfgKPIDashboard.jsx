@@ -113,6 +113,15 @@ export default function MfgKPIDashboardPage() {
             </div>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">KPI Calculation Values</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DailyKPIValuesViewer />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
