@@ -117,19 +117,18 @@ export default function JVFinancialResults() {
                 base44.entities.ShelterFinancialResults.list()
             ]);
             
-            // Show all instances (including inactive) to see all financial data
-            setShelterInstances(instances.reverse());
+            // Filter only active instances
+            const activeInstances = instances.filter(inst => inst.active !== false);
+            setShelterInstances(activeInstances.reverse());
             setShelterTypes(types);
 
             // Normalize financial data by shelter_instance_id
             const normalized = {};
-            instances.forEach(instance => {
-                const existing = allFinancialData.find(d => d.shelter_instance_id === instance.id);
-                
+            activeInstances.forEach(instance => {
                 // Get latest calculation result for this shelter instance
                 const latestCalculation = allCalculationResults
                     .filter(r => r.shelter_instance_id === instance.id)
-                    .sort((a, b) => new Date(b.calculation_date) - new Date(a.calculation_date))[0];
+                    .sort((a, b) => new Date(b.calculation_date || 0) - new Date(a.calculation_date || 0))[0];
 
                 normalized[instance.id] = {
                     shelter_instance_id: instance.id,
@@ -139,8 +138,7 @@ export default function JVFinancialResults() {
                     manual_total_cost: latestCalculation?.total_cost_breakdown || 0,
                     warranty_provision: latestCalculation?.warranty_provision || 0,
                     air_control_share_percent: latestCalculation?.air_control_share_percent || 0,
-                    amco_share_percent: latestCalculation?.amco_share_percent || 0,
-                    id: existing?.id
+                    amco_share_percent: latestCalculation?.amco_share_percent || 0
                 };
             });
 
