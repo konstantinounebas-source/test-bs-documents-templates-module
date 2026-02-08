@@ -72,6 +72,7 @@ import Home from './pages/Home';
 import InstallationCapacity from './pages/InstallationCapacity';
 import InteractiveForms from './pages/InteractiveForms';
 import JVFinancialCalculations from './pages/JVFinancialCalculations';
+import JVFinancialResults from './pages/JVFinancialResults';
 import Manufacturing from './pages/Manufacturing';
 import MfgConsumables from './pages/MfgConsumables';
 import MfgDailyProduction from './pages/MfgDailyProduction';
@@ -122,7 +123,6 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import JVFinancialResults from './pages/JVFinancialResults';
 import __Layout from './Layout.jsx';
 
 
@@ -152,6 +152,7 @@ export const PAGES = {
     "InstallationCapacity": InstallationCapacity,
     "InteractiveForms": InteractiveForms,
     "JVFinancialCalculations": JVFinancialCalculations,
+    "JVFinancialResults": JVFinancialResults,
     "Manufacturing": Manufacturing,
     "MfgConsumables": MfgConsumables,
     "MfgDailyProduction": MfgDailyProduction,
@@ -202,7 +203,6 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "JVFinancialResults": JVFinancialResults,
 }
 
 export const pagesConfig = {

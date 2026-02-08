@@ -179,30 +179,27 @@ export default function JVFinancialResults() {
         try {
             const newValue = parseFloat(editValue) || 0;
 
-            // Get current data
+            // Get current data BEFORE updating state
             const currentData = dataByInstance[instanceId] || {};
 
-            // Prepare update
-            const updates = { [fieldName]: newValue };
-
-            // Update local state first
-            setDataByInstance(prev => ({
-                ...prev,
-                [instanceId]: { ...prev[instanceId], ...updates }
-            }));
+            // Prepare the complete updated data object
+            const updatedData = {
+                ...currentData,
+                [fieldName]: newValue
+            };
 
             // Get existing result
             const existingResults = await base44.entities.ShelterFinancialResults.filter({
                 shelter_instance_id: instanceId
             });
 
-            // Prepare data to save
+            // Prepare data to save with all current values plus the new one
             const resultData = {
                 shelter_instance_id: instanceId,
-                quantity: fieldName === 'quantity' ? newValue : (currentData.quantity || 1),
-                warranty_provision: fieldName === 'warranty_provision' ? newValue : (currentData.warranty_provision || 0),
-                air_control_share_percent: fieldName === 'air_control_share_percent' ? newValue : (currentData.air_control_share_percent || 0),
-                amco_share_percent: fieldName === 'amco_share_percent' ? newValue : (currentData.amco_share_percent || 0)
+                quantity: updatedData.quantity || 1,
+                warranty_provision: updatedData.warranty_provision || 0,
+                air_control_share_percent: updatedData.air_control_share_percent || 0,
+                amco_share_percent: updatedData.amco_share_percent || 0
             };
 
             if (existingResults.length > 0) {
@@ -210,6 +207,12 @@ export default function JVFinancialResults() {
             } else {
                 await base44.entities.ShelterFinancialResults.create(resultData);
             }
+
+            // Update local state AFTER successful save
+            setDataByInstance(prev => ({
+                ...prev,
+                [instanceId]: updatedData
+            }));
 
             toast.success('Saved successfully');
         } catch (error) {
