@@ -157,10 +157,14 @@ export default function MetricDefinitionManager() {
                   {expandedId === metric.id && (
                     <TableRow className="bg-slate-50 border-t">
                       <TableCell colSpan={4} className="p-4">
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <div>
                             <p className="text-xs font-semibold text-slate-600 uppercase">Description</p>
                             <p className="text-sm text-slate-800 mt-1">{metric.description}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600 uppercase">Calculation</p>
+                            <p className="text-sm font-mono bg-slate-100 text-slate-800 mt-1 p-2 rounded">{metric.formula_full || '-'}</p>
                           </div>
                         </div>
                       </TableCell>
