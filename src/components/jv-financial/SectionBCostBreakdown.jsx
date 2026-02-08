@@ -75,7 +75,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                     setWasteAllowances(data.waste_allowances.map((item, idx) => ({
                         id: Date.now() + idx + 1000,
                         product: item.product_id,
-                        customProduct: item.custom_product || '',
+                        customProduct: item.description || '',
                         baseCost: item.base_cost,
                         allowancePercent: item.allowance_percent,
                         cost: (item.base_cost * item.allowance_percent) / 100
@@ -86,7 +86,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                     setAccruedCosts(data.accrued_costs.map((item, idx) => ({
                         id: Date.now() + idx + 2000,
                         category: item.category_id,
-                        customCategory: item.custom_category || '',
+                        customCategory: item.description || '',
                         amount: item.amount
                     })));
                 }
@@ -244,14 +244,14 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                     amount: parseFloat(c.amount) || 0
                 })),
                 waste_allowances: wasteAllowances.map(w => ({
-                    product_id: w.product,
-                    custom_product: w.customProduct || '',
+                    product_id: w.product || null,
+                    description: w.customProduct || null,
                     base_cost: parseFloat(w.baseCost) || 0,
                     allowance_percent: parseFloat(w.allowancePercent) || 0
                 })),
                 accrued_costs: accruedCosts.map(a => ({
-                    category_id: a.category,
-                    custom_category: a.customCategory || '',
+                    category_id: a.category || null,
+                    description: a.customCategory || null,
                     amount: parseFloat(a.amount) || 0
                 }))
             };
