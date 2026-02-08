@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { FormTemplate } from "@/entities/FormTemplate";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Filter, ChevronDown, Download, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -13,8 +13,6 @@ import TemplateTable from "../components/templates/TemplateTable";
 import TemplateStats from "../components/templates/TemplateStats";
 import ConfigurableStatCard from "../components/templates/ConfigurableStatCard";
 import { logAction } from "@/components/lib/logger";
-import { User } from "@/entities/User";
-import { AppUser } from "@/entities/AppUser";
 import { getCustomFieldLabels } from "@/components/lib/customFieldLabels";
 import { usePageAccess } from "@/components/lib/usePageAccess";
 
@@ -141,7 +139,7 @@ export default function TemplatesPage() {
   const loadTemplates = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await FormTemplate.list("-updated_date");
+      const data = await base44.entities.FormTemplate.list("-updated_date");
       setTemplates(data);
     } catch (error) {
       console.error("Error loading templates:", error);
@@ -157,8 +155,8 @@ export default function TemplatesPage() {
   const loadUsersCache = useCallback(async () => {
     try {
       const [systemUsers, appUsers] = await Promise.all([
-        User.list().catch(() => []),
-        AppUser.list().catch(() => [])
+        base44.entities.User.list().catch(() => []),
+        base44.entities.AppUser.list().catch(() => [])
       ]);
       
       const cache = {};
