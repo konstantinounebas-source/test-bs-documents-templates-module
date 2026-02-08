@@ -18,6 +18,17 @@ export default function DailyMetricValuesViewer() {
     queryFn: () => base44.entities.DailyMetricValue.list()
   });
 
+  const { data: bundles = [] } = useQuery({
+    queryKey: ['StandardsBundle'],
+    queryFn: () => base44.entities.StandardsBundle.list()
+  });
+
+  const bundleMap = useMemo(() => {
+    const map = {};
+    bundles.forEach(b => { map[b.id] = b.name; });
+    return map;
+  }, [bundles]);
+
   const dateRange = useMemo(() => {
     if (viewMode === 'daily') {
       return [format(selectedDate, 'yyyy-MM-dd')];
