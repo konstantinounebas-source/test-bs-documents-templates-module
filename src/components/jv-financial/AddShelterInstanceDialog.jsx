@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 
 export default function AddShelterInstanceDialog({ open, onOpenChange, onAdded }) {
     const [name, setName] = useState('');
+    const [isActive, setIsActive] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
 
     const handleCreate = async () => {
@@ -26,11 +29,13 @@ export default function AddShelterInstanceDialog({ open, onOpenChange, onAdded }
             }
 
             const newInstance = await base44.entities.ShelterInstance.create({
-                name: name.trim()
+                name: name.trim(),
+                active: isActive
             });
 
             toast.success('Shelter instance created successfully');
             setName('');
+            setIsActive(true);
             onOpenChange(false);
             if (onAdded) {
                 onAdded(newInstance);
@@ -67,6 +72,16 @@ export default function AddShelterInstanceDialog({ open, onOpenChange, onAdded }
                         <p className="text-xs text-slate-500 mt-1">
                             Enter a unique label/code for this shelter instance
                         </p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Checkbox
+                            id="active"
+                            checked={isActive}
+                            onCheckedChange={setIsActive}
+                        />
+                        <Label htmlFor="active" className="text-sm font-medium cursor-pointer">
+                            Active
+                        </Label>
                     </div>
                 </div>
                 <DialogFooter>
