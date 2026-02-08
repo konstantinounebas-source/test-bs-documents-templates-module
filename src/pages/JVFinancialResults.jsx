@@ -130,6 +130,13 @@ export default function JVFinancialResults() {
                     .filter(r => r.shelter_instance_id === instance.id)
                     .sort((a, b) => new Date(b.calculation_date || 0) - new Date(a.calculation_date || 0))[0];
 
+                console.log(`Instance ${instance.name} (${instance.id}):`, {
+                    calculationFound: !!latestCalculation,
+                    calculation: latestCalculation,
+                    contractIncome: latestCalculation?.total_contract_income,
+                    totalCost: latestCalculation?.total_cost_breakdown
+                });
+
                 normalized[instance.id] = {
                     shelter_instance_id: instance.id,
                     shelter_type_id: instance.shelter_type_id,
@@ -141,6 +148,9 @@ export default function JVFinancialResults() {
                     amco_share_percent: latestCalculation?.amco_share_percent || 0
                 };
             });
+
+            console.log('All calculation results:', allCalculationResults);
+            console.log('Normalized data:', normalized);
 
             setDataByInstance(normalized);
 
