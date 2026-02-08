@@ -36,11 +36,31 @@ export default function JVFinancialResults() {
         
         setIsExporting(true);
         try {
+            // Replace all inputs with divs for PDF export
+            const inputs = tableRef.current.querySelectorAll('input');
+            const originalInputs = [];
+            
+            inputs.forEach((input) => {
+                const div = document.createElement('div');
+                div.textContent = input.value || input.placeholder;
+                div.style.cssText = 'text-align: center; padding: 4px; font-size: 11px;';
+                originalInputs.push({ input, parent: input.parentNode });
+                input.parentNode.replaceChild(div, input);
+            });
+
             const canvas = await html2canvas(tableRef.current, {
                 scale: 2,
                 useCORS: true,
                 logging: false,
                 backgroundColor: '#ffffff'
+            });
+            
+            // Restore original inputs
+            originalInputs.forEach(({ input, parent }) => {
+                const div = parent.querySelector('div');
+                if (div) {
+                    parent.replaceChild(input, div);
+                }
             });
             
             // A4 Landscape dimensions in mm
