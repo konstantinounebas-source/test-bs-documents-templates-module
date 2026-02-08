@@ -15,6 +15,7 @@ import ConfigurableStatCard from "../components/templates/ConfigurableStatCard";
 import { logAction } from "@/components/lib/logger";
 import { getCustomFieldLabels } from "@/components/lib/customFieldLabels";
 import { usePageAccess } from "@/components/lib/usePageAccess";
+import { toast } from 'sonner';
 
 // ALL available columns for selection
 const ALL_COLUMNS = [
@@ -139,10 +140,11 @@ export default function TemplatesPage() {
   const loadTemplates = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await base44.entities.FormTemplate.list("-updated_date");
-      setTemplates(data);
+      const data = await base44.entities.FormTemplate.list();
+      setTemplates(data.reverse());
     } catch (error) {
       console.error("Error loading templates:", error);
+      toast.error("Failed to load templates");
     }
     setIsLoading(false);
   }, []);
