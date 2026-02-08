@@ -300,7 +300,7 @@ export default function JVFinancialResults() {
                                             </td>
                                         ))}
                                         <td className="text-center font-bold text-slate-900 px-2 py-1.5 border border-slate-200 bg-slate-50">
-                                            {Object.values(dataByInstance).reduce((sum, data) => sum + (data?.quantity || 1), 0)}
+                                            {shelterInstances.reduce((sum, instance) => sum + (dataByInstance[instance.id]?.quantity || 1), 0)}
                                         </td>
                                     </tr>
 
