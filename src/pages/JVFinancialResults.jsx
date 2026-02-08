@@ -7,6 +7,7 @@ import { Download, Loader2 } from 'lucide-react';
 import { usePageAccess } from "@/components/lib/usePageAccess";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { toast } from 'sonner';
 
 export default function JVFinancialResults() {
     const { hasAccess, isLoading: accessLoading } = usePageAccess('JVFinancialResults');
@@ -139,56 +140,63 @@ export default function JVFinancialResults() {
             [instanceId]: { ...prev[instanceId], ...updates }
         }));
 
-        // Auto-save to ShelterFinancialResults
-        const instance = shelterInstances.find(i => i.id === instanceId);
-        if (!instance) return;
+        try {
+            // Auto-save to ShelterFinancialResults
+            const instance = shelterInstances.find(i => i.id === instanceId);
+            if (!instance) return;
 
-        // Recalculate and save full results
-        const data = { ...dataByInstance[instanceId], ...updates };
-        const quantity = data.quantity || 1;
-        const contractIncome = parseFloat(data.manual_contract_income) || 0;
-        const totalCost = parseFloat(data.manual_total_cost) || 0;
+            // Recalculate and save full results
+            const data = { ...dataByInstance[instanceId], ...updates };
+            const quantity = data.quantity || 1;
+            const contractIncome = parseFloat(data.manual_contract_income) || 0;
+            const totalCost = parseFloat(data.manual_total_cost) || 0;
 
-        const grossBalance = contractIncome - totalCost;
-        const warrantyProvision = data.warranty_provision || 0;
-        const netProfit = (grossBalance - warrantyProvision) * quantity;
-        const totalCostValue = totalCost * quantity;
-        const profitMargin = totalCostValue > 0 ? (netProfit / totalCostValue) * 100 : 0;
+            const grossBalance = contractIncome - totalCost;
+            const warrantyProvision = parseFloat(data.warranty_provision) || 0;
+            const netProfit = (grossBalance - warrantyProvision) * quantity;
+            const totalCostValue = totalCost * quantity;
+            const profitMargin = totalCostValue > 0 ? (netProfit / totalCostValue) * 100 : 0;
 
-        const airControlShare = data.air_control_share_percent || 0;
-        const amcoShare = data.amco_share_percent || 0;
-        const airControlProfit = (netProfit * airControlShare) / 100;
-        const amcoProfit = (netProfit * amcoShare) / 100;
+            const airControlShare = parseFloat(data.air_control_share_percent) || 0;
+            const amcoShare = parseFloat(data.amco_share_percent) || 0;
+            const airControlProfit = (netProfit * airControlShare) / 100;
+            const amcoProfit = (netProfit * amcoShare) / 100;
 
-        const existingResults = await base44.entities.ShelterFinancialResults.filter({
-            shelter_instance_id: instanceId
-        });
+            const existingResults = await base44.entities.ShelterFinancialResults.filter({
+                shelter_instance_id: instanceId
+            });
 
-        const resultData = {
-            shelter_instance_id: instanceId,
-            calculation_date: new Date().toISOString(),
-            quantity,
-            total_contract_income: contractIncome,
-            bom_cost: 0,
-            non_bom_cost: 0,
-            waste_allowance_cost: 0,
-            accrued_cost: 0,
-            total_cost_breakdown: totalCost,
-            gross_balance: grossBalance * quantity,
-            warranty_provision: warrantyProvision,
-            warranty_provision_total: warrantyProvision * quantity,
-            net_expected_profit: netProfit,
-            profit_margin_percent: profitMargin,
-            air_control_share_percent: airControlShare,
-            air_control_profit_amount: airControlProfit,
-            amco_share_percent: amcoShare,
-            amco_profit_amount: amcoProfit
-        };
+            const resultData = {
+                shelter_instance_id: instanceId,
+                calculation_date: new Date().toISOString(),
+                quantity,
+                total_contract_income: contractIncome,
+                bom_cost: 0,
+                non_bom_cost: 0,
+                waste_allowance_cost: 0,
+                accrued_cost: 0,
+                total_cost_breakdown: totalCost,
+                gross_balance: grossBalance * quantity,
+                warranty_provision: warrantyProvision,
+                warranty_provision_total: warrantyProvision * quantity,
+                net_expected_profit: netProfit,
+                profit_margin_percent: profitMargin,
+                air_control_share_percent: airControlShare,
+                air_control_profit_amount: airControlProfit,
+                amco_share_percent: amcoShare,
+                amco_profit_amount: amcoProfit
+            };
 
-        if (existingResults.length > 0) {
-            await base44.entities.ShelterFinancialResults.update(existingResults[0].id, resultData);
-        } else {
-            await base44.entities.ShelterFinancialResults.create(resultData);
+            if (existingResults.length > 0) {
+                await base44.entities.ShelterFinancialResults.update(existingResults[0].id, resultData);
+            } else {
+                await base44.entities.ShelterFinancialResults.create(resultData);
+            }
+            
+            toast.success('Saved successfully');
+        } catch (error) {
+            console.error('Failed to save data:', error);
+            toast.error('Failed to save data');
         }
     };
 
