@@ -173,124 +173,277 @@ export default function JVFinancialCalculations() {
                 return;
             }
 
+            const [allFinancialData, allShelterTypes, allProducts, allCategories, allBOMComponents] = await Promise.all([
+                base44.entities.ShelterFinancialData.list(),
+                base44.entities.BusStopType.list(),
+                base44.entities.Product.list(),
+                base44.entities.MaterialCategory.list(),
+                base44.entities.BusStopTypeComponent.list()
+            ]);
+
+            const productMap = {};
+            allProducts.forEach(p => { productMap[p.id] = p; });
+
+            const categoryMap = {};
+            allCategories.forEach(c => { categoryMap[c.id] = c; });
+
+            const shelterTypeMap = {};
+            allShelterTypes.forEach(t => { shelterTypeMap[t.id] = t; });
+
             const pdf = new jsPDF('portrait', 'mm', 'a4');
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
+            const pageHeight = 297;
+            const margin = 10;
+            const maxY = pageHeight - 20;
             let isFirstPage = true;
 
-            // Create temporary container for rendering
-            const tempContainer = document.createElement('div');
-            tempContainer.style.position = 'fixed';
-            tempContainer.style.left = '-9999px';
-            tempContainer.style.top = '0';
-            tempContainer.style.width = '1200px';
-            tempContainer.style.background = 'white';
-            document.body.appendChild(tempContainer);
-
-            for (let i = 0; i < activeInstances.length; i++) {
-                const instance = activeInstances[i];
-                const shelterType = shelterTypes.find(t => t.id === instance.shelter_type_id);
-
-                // Create page content
-                tempContainer.innerHTML = `
-                    <div style="padding: 40px; background: white; font-family: system-ui;">
-                        <div style="margin-bottom: 30px;">
-                            <h1 style="font-size: 24px; font-weight: bold; color: #0f172a; margin-bottom: 10px;">
-                                Shelter Instance: ${instance.name}
-                            </h1>
-                            <p style="font-size: 14px; color: #64748b; margin-bottom: 5px;">
-                                Shelter Type: ${shelterType?.code || 'Not allocated'}
-                            </p>
-                            <p style="font-size: 14px; color: #64748b;">
-                                Date: ${new Date().toLocaleDateString('en-GB')}
-                            </p>
-                        </div>
-                        <div id="sections-container-${instance.id}"></div>
-                    </div>
-                `;
-
-                // Render sections dynamically using React
-                const sectionsContainer = tempContainer.querySelector(`#sections-container-${instance.id}`);
-                const root = await import('react-dom/client').then(m => m.createRoot(sectionsContainer));
-                
-                await new Promise((resolve) => {
-                    root.render(
-                        <>
-                            <SectionAContractIncome 
-                                shelterInstanceId={instance.id} 
-                                onTotalsChange={() => {}}
-                            />
-                            {instance.shelter_type_id && (
-                                <SectionBCostBreakdown 
-                                    shelterInstanceId={instance.id}
-                                    shelterTypeId={instance.shelter_type_id}
-                                    onTotalsChange={() => {}}
-                                />
-                            )}
-                            <SectionCCostSummary 
-                                verifiedCost={0}
-                                wasteAllowanceCost={0}
-                                unfinalisedCost={0}
-                                totalProjectCost={0}
-                            />
-                        </>
-                    );
-                    
-                    // Wait for rendering
-                    setTimeout(resolve, 1500);
-                });
-
-                // Capture screenshot
-                const canvas = await html2canvas(tempContainer, {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff',
-                    windowWidth: 1200
-                });
-
+            for (const instance of activeInstances) {
                 if (!isFirstPage) {
                     pdf.addPage();
                 }
                 isFirstPage = false;
 
-                const imgWidth = pageWidth - 20;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                const imgData = canvas.toDataURL('image/png');
-                
-                // Check if image needs multiple pages
-                let yPosition = 0;
-                let remainingHeight = imgHeight;
-                
-                while (remainingHeight > 0) {
-                    const pageContentHeight = Math.min(remainingHeight, pageHeight - 30);
-                    
-                    pdf.addImage(
-                        imgData, 
-                        'PNG', 
-                        10, 
-                        10, 
-                        imgWidth, 
-                        imgHeight,
-                        undefined,
-                        'FAST',
-                        0,
-                        -yPosition
-                    );
-                    
-                    remainingHeight -= (pageHeight - 30);
-                    yPosition += (pageHeight - 30);
-                    
-                    if (remainingHeight > 0) {
+                const shelterType = shelterTypeMap[instance.shelter_type_id];
+                const financialData = allFinancialData.find(d => d.shelter_instance_id === instance.id);
+
+                let yPos = 15;
+
+                const checkPageBreak = (spaceNeeded) => {
+                    if (yPos + spaceNeeded > maxY) {
                         pdf.addPage();
+                        yPos = 15;
+                        return true;
                     }
+                    return false;
+                };
+
+                // Title
+                pdf.setFontSize(16);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`Shelter Instance: ${instance.name}`, margin, yPos);
+                yPos += 7;
+                
+                pdf.setFontSize(11);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text(`Shelter Type: ${shelterType?.code || 'Not allocated'}`, margin, yPos);
+                yPos += 6;
+                pdf.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, margin, yPos);
+                yPos += 10;
+
+                // SECTION A
+                checkPageBreak(40);
+                pdf.setFontSize(13);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('SECTION A — Contract Income', margin, yPos);
+                yPos += 7;
+
+                pdf.setFontSize(10);
+                pdf.setFont('helvetica', 'normal');
+                
+                const contractAmount = financialData?.contract_amount || 0;
+                const approvedVars = financialData?.approved_variations || [];
+                const potentialVars = financialData?.potential_variations || [];
+                
+                pdf.text(`Contract Amount: €${contractAmount.toFixed(2)}`, margin + 5, yPos);
+                yPos += 6;
+
+                const approvedTotal = approvedVars.reduce((sum, v) => sum + (v.amount || 0), 0);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`Approved Variations: €${approvedTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 5;
+                
+                if (approvedVars.length > 0) {
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    for (const variation of approvedVars) {
+                        checkPageBreak(5);
+                        pdf.text(`  • ${variation.description || 'N/A'}: €${(variation.amount || 0).toFixed(2)}`, margin + 8, yPos);
+                        yPos += 4;
+                    }
+                    yPos += 2;
                 }
 
-                root.unmount();
-            }
+                pdf.setFontSize(10);
+                checkPageBreak(15);
+                const potentialTotal = potentialVars.reduce((sum, v) => sum + (v.amount || 0), 0);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`Potential Variations: €${potentialTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 5;
+                
+                if (potentialVars.length > 0) {
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    for (const variation of potentialVars) {
+                        checkPageBreak(5);
+                        pdf.text(`  • ${variation.description || 'N/A'}: €${(variation.amount || 0).toFixed(2)}`, margin + 8, yPos);
+                        yPos += 4;
+                    }
+                    yPos += 2;
+                }
 
-            // Clean up
-            document.body.removeChild(tempContainer);
+                pdf.setFontSize(10);
+                checkPageBreak(10);
+                const totalIncome = contractAmount + approvedTotal;
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`Total Contract Income: €${totalIncome.toFixed(2)}`, margin + 5, yPos);
+                yPos += 10;
+
+                // SECTION B
+                checkPageBreak(40);
+                pdf.setFontSize(13);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('SECTION B — Cost Breakdown', margin, yPos);
+                yPos += 7;
+
+                pdf.setFontSize(10);
+                pdf.setFont('helvetica', 'normal');
+                
+                let bomCost = 0;
+                const bomCostsByCategory = {};
+                
+                if (instance.shelter_type_id) {
+                    const bomComponents = allBOMComponents.filter(c => c.bus_stop_type_id === instance.shelter_type_id);
+                    bomComponents.forEach(comp => {
+                        const product = productMap[comp.product_id];
+                        const quantity = parseFloat(comp.quantity_required) || 0;
+                        const unitCost = parseFloat(product?.unit_cost) || 0;
+                        const totalCost = quantity * unitCost;
+                        
+                        if (comp.material_category_id) {
+                            const cat = categoryMap[comp.material_category_id];
+                            const catName = cat?.name || 'Unknown';
+                            if (!bomCostsByCategory[catName]) {
+                                bomCostsByCategory[catName] = 0;
+                            }
+                            bomCostsByCategory[catName] += totalCost;
+                        }
+                        bomCost += totalCost;
+                    });
+                }
+
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`1. Verified Costs (from BOM): €${bomCost.toFixed(2)}`, margin + 5, yPos);
+                yPos += 5;
+                
+                if (Object.keys(bomCostsByCategory).length > 0) {
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    for (const [category, cost] of Object.entries(bomCostsByCategory)) {
+                        checkPageBreak(5);
+                        pdf.text(`  • ${category}: €${cost.toFixed(2)}`, margin + 8, yPos);
+                        yPos += 4;
+                    }
+                    yPos += 2;
+                }
+
+                pdf.setFontSize(10);
+                checkPageBreak(15);
+                const nonBomCosts = financialData?.non_bom_costs || [];
+                const nonBomTotal = nonBomCosts.reduce((sum, c) => sum + (c.amount || 0), 0);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`2. Verified Non BOM Costs: €${nonBomTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 5;
+                
+                if (nonBomCosts.length > 0) {
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    for (const cost of nonBomCosts) {
+                        checkPageBreak(5);
+                        pdf.text(`  • ${cost.description || 'N/A'}: €${(cost.amount || 0).toFixed(2)}`, margin + 8, yPos);
+                        yPos += 4;
+                    }
+                    yPos += 2;
+                }
+
+                pdf.setFontSize(10);
+                checkPageBreak(15);
+                const wasteAllowances = financialData?.waste_allowances || [];
+                const wasteTotal = wasteAllowances.reduce((sum, w) => {
+                    const baseCost = w.base_cost || 0;
+                    const allowancePercent = w.allowance_percent || 0;
+                    return sum + (baseCost * allowancePercent / 100);
+                }, 0);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`3. Waste Allowance: €${wasteTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 5;
+                
+                if (wasteAllowances.length > 0) {
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    for (const waste of wasteAllowances) {
+                        checkPageBreak(5);
+                        let productName = 'Custom';
+                        if (waste.product_id) {
+                            const prod = productMap[waste.product_id];
+                            productName = prod?.name || 'Unknown Product';
+                        } else if (waste.description) {
+                            productName = waste.description;
+                        }
+                        const baseCost = waste.base_cost || 0;
+                        const allowancePercent = waste.allowance_percent || 0;
+                        const cost = (baseCost * allowancePercent / 100);
+                        pdf.text(`  • ${productName} (Base: €${baseCost.toFixed(2)}, ${allowancePercent}%): €${cost.toFixed(2)}`, margin + 8, yPos);
+                        yPos += 4;
+                    }
+                    yPos += 2;
+                }
+
+                pdf.setFontSize(10);
+                checkPageBreak(15);
+                const accruedCosts = financialData?.accrued_costs || [];
+                const accruedTotal = accruedCosts.reduce((sum, c) => sum + (c.amount || 0), 0);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`4. Unfinalised / Accrued Costs: €${accruedTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 5;
+                
+                if (accruedCosts.length > 0) {
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    for (const cost of accruedCosts) {
+                        checkPageBreak(5);
+                        let categoryName = 'Custom';
+                        if (cost.category_id) {
+                            const cat = allCategories.find(c => c.id === cost.category_id);
+                            categoryName = cat?.name || 'Unknown Category';
+                        } else if (cost.description) {
+                            categoryName = cost.description;
+                        }
+                        pdf.text(`  • ${categoryName}: €${(cost.amount || 0).toFixed(2)}`, margin + 8, yPos);
+                        yPos += 4;
+                    }
+                    yPos += 2;
+                }
+
+                pdf.setFontSize(10);
+                checkPageBreak(10);
+                const totalCost = bomCost + nonBomTotal + wasteTotal + accruedTotal;
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`Total Cost Breakdown: €${totalCost.toFixed(2)}`, margin + 5, yPos);
+                yPos += 10;
+
+                // SECTION C
+                checkPageBreak(20);
+                pdf.setFontSize(13);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('SECTION C — Cost Summary', margin, yPos);
+                yPos += 7;
+
+                pdf.setFontSize(10);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text(`Total Contract Income: €${totalIncome.toFixed(2)}`, margin + 5, yPos);
+                yPos += 6;
+                pdf.text(`Total Verified Costs: €${bomCost.toFixed(2)}`, margin + 5, yPos);
+                yPos += 6;
+                pdf.text(`Total Waste Allowance: €${wasteTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 6;
+                pdf.text(`Total Unfinalised Costs: €${accruedTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 6;
+                pdf.text(`Total Project Costs: €${totalCost.toFixed(2)}`, margin + 5, yPos);
+                yPos += 8;
+
+                pdf.setFont('helvetica', 'bold');
+                const grossBalance = totalIncome - totalCost;
+                pdf.text(`Gross Balance: €${grossBalance.toFixed(2)}`, margin + 5, yPos);
+            }
 
             pdf.save('JV_Financial_Calculations_All_Instances.pdf');
             toast.success('PDF exported successfully');
