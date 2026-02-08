@@ -21,9 +21,11 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
      const [costCategories, setCostCategories] = useState([]);
      const [isLoadingData, setIsLoadingData] = useState(true);
      const [financialDataId, setFinancialDataId] = useState(null);
+     const [currentInstanceId, setCurrentInstanceId] = useState(null);
 
     useEffect(() => {
         setIsLoadingData(true);
+        setCurrentInstanceId(shelterInstanceId);
         loadData();
     }, [shelterInstanceId, shelterTypeId]);
 
@@ -230,10 +232,10 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
 
     // Auto-save data when it changes
     useEffect(() => {
-        if (shelterInstanceId && !isLoadingData) {
+        if (shelterInstanceId && !isLoadingData && currentInstanceId === shelterInstanceId) {
             saveFinancialData();
         }
-    }, [nonBomCosts, wasteAllowances, accruedCosts]);
+    }, [nonBomCosts, wasteAllowances, accruedCosts, shelterInstanceId]);
 
     const saveFinancialData = async () => {
         try {
