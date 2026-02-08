@@ -194,6 +194,9 @@ export default function JVFinancialCalculations() {
 
             // Create PDF
             const pdf = new jsPDF('portrait', 'mm', 'a4');
+            const pageHeight = 297; // A4 height in mm
+            const margin = 10;
+            const maxY = pageHeight - 20; // Leave margin at bottom
             let isFirstPage = true;
 
             for (const instance of activeInstances) {
@@ -205,23 +208,37 @@ export default function JVFinancialCalculations() {
                 const shelterType = shelterTypeMap[instance.shelter_type_id];
                 const financialData = allFinancialData.find(d => d.shelter_instance_id === instance.id);
 
+                let yPos = 15;
+
+                // Helper function to check if we need a new page
+                const checkPageBreak = (spaceNeeded) => {
+                    if (yPos + spaceNeeded > maxY) {
+                        pdf.addPage();
+                        yPos = 15;
+                        return true;
+                    }
+                    return false;
+                };
+
                 // Page title
                 pdf.setFontSize(16);
                 pdf.setFont('helvetica', 'bold');
-                pdf.text(`Shelter Instance: ${instance.name}`, 10, 15);
+                pdf.text(`Shelter Instance: ${instance.name}`, margin, yPos);
+                yPos += 7;
                 
-                pdf.setFontSize(12);
+                pdf.setFontSize(11);
                 pdf.setFont('helvetica', 'normal');
-                pdf.text(`Shelter Type: ${shelterType?.code || 'Not allocated'}`, 10, 22);
-                pdf.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 10, 28);
+                pdf.text(`Shelter Type: ${shelterType?.code || 'Not allocated'}`, margin, yPos);
+                yPos += 6;
+                pdf.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, margin, yPos);
+                yPos += 10;
 
-                let yPos = 38;
-
-                // Section A: Contract Income
-                pdf.setFontSize(14);
+                // SECTION A: Contract Income
+                checkPageBreak(40);
+                pdf.setFontSize(13);
                 pdf.setFont('helvetica', 'bold');
-                pdf.text('SECTION A — Contract Income', 10, yPos);
-                yPos += 8;
+                pdf.text('SECTION A — Contract Income', margin, yPos);
+                yPos += 7;
 
                 pdf.setFontSize(10);
                 pdf.setFont('helvetica', 'normal');
@@ -230,78 +247,220 @@ export default function JVFinancialCalculations() {
                 const approvedVars = financialData?.approved_variations || [];
                 const potentialVars = financialData?.potential_variations || [];
                 
+                pdf.text(`Contract Amount: €${contractAmount.toFixed(2)}`, margin + 5, yPos);
+                yPos += 6;
+
+                // Approved Variations - detailed
                 const approvedTotal = approvedVars.reduce((sum, v) => sum + (v.amount || 0), 0);
-                const potentialTotal = potentialVars.reduce((sum, v) => sum + (v.amount || 0), 0);
-                const totalIncome = contractAmount + approvedTotal;
-
-                pdf.text(`Contract Amount: €${contractAmount.toFixed(2)}`, 15, yPos);
-                yPos += 6;
-                pdf.text(`Approved Variations: €${approvedTotal.toFixed(2)}`, 15, yPos);
-                yPos += 6;
-                pdf.text(`Potential Variations: €${potentialTotal.toFixed(2)}`, 15, yPos);
-                yPos += 6;
                 pdf.setFont('helvetica', 'bold');
-                pdf.text(`Total Contract Income: €${totalIncome.toFixed(2)}`, 15, yPos);
-                yPos += 12;
-
-                // Section B: Cost Breakdown
-                pdf.setFontSize(14);
-                pdf.setFont('helvetica', 'bold');
-                pdf.text('SECTION B — Cost Breakdown', 10, yPos);
-                yPos += 8;
+                pdf.text(`Approved Variations: €${approvedTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 5;
+                
+                if (approvedVars.length > 0) {
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    for (const variation of approvedVars) {
+                        checkPageBreak(5);
+                        const desc = variation.description || 'N/A';
+                        const amount = (variation.amount || 0).toFixed(2);
+                        pdf.text(`  • ${desc}: €${amount}`, margin + 8, yPos);
+                        yPos += 4;
+                    }
+                    yPos += 2;
+                }
 
                 pdf.setFontSize(10);
-                pdf.setFont('helvetica', 'normal');
+                
+                // Potential Variations - detailed
+                checkPageBreak(15);
+                const potentialTotal = potentialVars.reduce((sum, v) => sum + (v.amount || 0), 0);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`Potential Variations: €${potentialTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 5;
+                
+                if (potentialVars.length > 0) {
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    for (const variation of potentialVars) {
+                        checkPageBreak(5);
+                        const desc = variation.description || 'N/A';
+                        const amount = (variation.amount || 0).toFixed(2);
+                        pdf.text(`  • ${desc}: €${amount}`, margin + 8, yPos);
+                        yPos += 4;
+                    }
+                    yPos += 2;
+                }
 
-                // BOM Verified Costs
+                pdf.setFontSize(10);
+                checkPageBreak(10);
+                const totalIncome = contractAmount + approvedTotal;
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`Total Contract Income: €${totalIncome.toFixed(2)}`, margin + 5, yPos);
+                yPos += 10;
+
+                // SECTION B: Cost Breakdown
+                checkPageBreak(40);
+                pdf.setFontSize(13);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text('SECTION B — Cost Breakdown', margin, yPos);
+                yPos += 7;
+
+                // 1. BOM Verified Costs - detailed by category
+                pdf.setFontSize(10);
+                pdf.setFont('helvetica', 'normal');
+                
                 let bomCost = 0;
+                const bomCostsByCategory = {};
+                
                 if (instance.shelter_type_id) {
                     const bomComponents = allBOMComponents.filter(c => c.bus_stop_type_id === instance.shelter_type_id);
-                    bomCost = bomComponents.reduce((sum, comp) => {
+                    bomComponents.forEach(comp => {
                         const product = productMap[comp.product_id];
                         const quantity = parseFloat(comp.quantity_required) || 0;
                         const unitCost = parseFloat(product?.unit_cost) || 0;
-                        return sum + (quantity * unitCost);
-                    }, 0);
+                        const totalCost = quantity * unitCost;
+                        
+                        if (comp.material_category_id) {
+                            const catName = categoryMap[comp.material_category_id] || 'Unknown';
+                            if (!bomCostsByCategory[catName]) {
+                                bomCostsByCategory[catName] = 0;
+                            }
+                            bomCostsByCategory[catName] += totalCost;
+                        }
+                        bomCost += totalCost;
+                    });
                 }
 
-                pdf.text(`BOM Verified Costs: €${bomCost.toFixed(2)}`, 15, yPos);
-                yPos += 6;
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`1. Verified Costs (from BOM): €${bomCost.toFixed(2)}`, margin + 5, yPos);
+                yPos += 5;
+                
+                if (Object.keys(bomCostsByCategory).length > 0) {
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    for (const [category, cost] of Object.entries(bomCostsByCategory)) {
+                        checkPageBreak(5);
+                        pdf.text(`  • ${category}: €${cost.toFixed(2)}`, margin + 8, yPos);
+                        yPos += 4;
+                    }
+                    yPos += 2;
+                }
 
+                // 2. Non-BOM Costs - detailed
+                pdf.setFontSize(10);
+                checkPageBreak(15);
                 const nonBomCosts = financialData?.non_bom_costs || [];
                 const nonBomTotal = nonBomCosts.reduce((sum, c) => sum + (c.amount || 0), 0);
-                pdf.text(`Non-BOM Costs: €${nonBomTotal.toFixed(2)}`, 15, yPos);
-                yPos += 6;
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`2. Verified Non BOM Costs: €${nonBomTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 5;
+                
+                if (nonBomCosts.length > 0) {
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    for (const cost of nonBomCosts) {
+                        checkPageBreak(5);
+                        const desc = cost.description || 'N/A';
+                        const amount = (cost.amount || 0).toFixed(2);
+                        pdf.text(`  • ${desc}: €${amount}`, margin + 8, yPos);
+                        yPos += 4;
+                    }
+                    yPos += 2;
+                }
 
+                // 3. Waste Allowances - detailed
+                pdf.setFontSize(10);
+                checkPageBreak(15);
                 const wasteAllowances = financialData?.waste_allowances || [];
                 const wasteTotal = wasteAllowances.reduce((sum, w) => {
                     const baseCost = w.base_cost || 0;
                     const allowancePercent = w.allowance_percent || 0;
                     return sum + (baseCost * allowancePercent / 100);
                 }, 0);
-                pdf.text(`Waste Allowance: €${wasteTotal.toFixed(2)}`, 15, yPos);
-                yPos += 6;
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`3. Waste Allowance: €${wasteTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 5;
+                
+                if (wasteAllowances.length > 0) {
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    for (const waste of wasteAllowances) {
+                        checkPageBreak(5);
+                        let productName = 'Custom';
+                        if (waste.product_id) {
+                            const prod = productMap[waste.product_id];
+                            productName = prod?.name || 'Unknown Product';
+                        } else if (waste.description) {
+                            productName = waste.description;
+                        }
+                        const baseCost = waste.base_cost || 0;
+                        const allowancePercent = waste.allowance_percent || 0;
+                        const cost = (baseCost * allowancePercent / 100);
+                        pdf.text(`  • ${productName} (Base: €${baseCost.toFixed(2)}, ${allowancePercent}%): €${cost.toFixed(2)}`, margin + 8, yPos);
+                        yPos += 4;
+                    }
+                    yPos += 2;
+                }
 
+                // 4. Accrued Costs - detailed
+                pdf.setFontSize(10);
+                checkPageBreak(15);
                 const accruedCosts = financialData?.accrued_costs || [];
                 const accruedTotal = accruedCosts.reduce((sum, c) => sum + (c.amount || 0), 0);
-                pdf.text(`Accrued Costs: €${accruedTotal.toFixed(2)}`, 15, yPos);
-                yPos += 6;
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`4. Unfinalised / Accrued Costs: €${accruedTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 5;
+                
+                if (accruedCosts.length > 0) {
+                    pdf.setFontSize(9);
+                    pdf.setFont('helvetica', 'normal');
+                    for (const cost of accruedCosts) {
+                        checkPageBreak(5);
+                        let categoryName = 'Custom';
+                        if (cost.category_id) {
+                            const cat = allCategories.find(c => c.id === cost.category_id);
+                            categoryName = cat?.name || 'Unknown Category';
+                        } else if (cost.description) {
+                            categoryName = cost.description;
+                        }
+                        const amount = (cost.amount || 0).toFixed(2);
+                        pdf.text(`  • ${categoryName}: €${amount}`, margin + 8, yPos);
+                        yPos += 4;
+                    }
+                    yPos += 2;
+                }
 
+                // Total Cost Breakdown
+                pdf.setFontSize(10);
+                checkPageBreak(10);
                 const totalCost = bomCost + nonBomTotal + wasteTotal + accruedTotal;
                 pdf.setFont('helvetica', 'bold');
-                pdf.text(`Total Cost Breakdown: €${totalCost.toFixed(2)}`, 15, yPos);
-                yPos += 12;
+                pdf.text(`Total Cost Breakdown: €${totalCost.toFixed(2)}`, margin + 5, yPos);
+                yPos += 10;
 
-                // Summary
-                pdf.setFontSize(14);
+                // SECTION C: Summary
+                checkPageBreak(20);
+                pdf.setFontSize(13);
                 pdf.setFont('helvetica', 'bold');
-                pdf.text('SUMMARY', 10, yPos);
-                yPos += 8;
+                pdf.text('SECTION C — Cost Summary', margin, yPos);
+                yPos += 7;
 
                 pdf.setFontSize(10);
                 pdf.setFont('helvetica', 'normal');
+                pdf.text(`Total Contract Income: €${totalIncome.toFixed(2)}`, margin + 5, yPos);
+                yPos += 6;
+                pdf.text(`Total Verified Costs: €${bomCost.toFixed(2)}`, margin + 5, yPos);
+                yPos += 6;
+                pdf.text(`Total Waste Allowance: €${wasteTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 6;
+                pdf.text(`Total Unfinalised Costs: €${accruedTotal.toFixed(2)}`, margin + 5, yPos);
+                yPos += 6;
+                pdf.text(`Total Project Costs: €${totalCost.toFixed(2)}`, margin + 5, yPos);
+                yPos += 8;
+
+                pdf.setFont('helvetica', 'bold');
                 const grossBalance = totalIncome - totalCost;
-                pdf.text(`Gross Balance: €${grossBalance.toFixed(2)}`, 15, yPos);
+                pdf.text(`Gross Balance: €${grossBalance.toFixed(2)}`, margin + 5, yPos);
             }
 
             pdf.save('JV_Financial_Calculations_All_Instances.pdf');
