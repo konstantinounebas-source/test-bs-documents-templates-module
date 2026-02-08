@@ -13,14 +13,14 @@ export default function DailyKPIValuesViewer() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchDept, setSearchDept] = useState('');
 
-  const { data: kpiValues = [], isLoading: kpisLoading } = useQuery({
-    queryKey: ['Daily_KPIs'],
-    queryFn: () => base44.entities.Daily_KPIs.list()
-  });
-
   const { data: kpiDefinitions = [], isLoading: definitionsLoading } = useQuery({
     queryKey: ['KPIDefinition'],
     queryFn: () => base44.entities.KPIDefinition.list()
+  });
+
+  const { data: metricValues = [], isLoading: metricsLoading } = useQuery({
+    queryKey: ['DailyMetricValue'],
+    queryFn: () => base44.entities.DailyMetricValue.list()
   });
 
   const kpiNameMap = useMemo(() => {
