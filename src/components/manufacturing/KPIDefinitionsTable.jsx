@@ -81,10 +81,14 @@ export default function KPIDefinitionsTable() {
                   {expandedId === kpi.id && (
                     <TableRow className="bg-slate-50 border-t">
                       <TableCell colSpan={4} className="p-4">
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                           <div>
                             <p className="text-xs font-semibold text-slate-600 uppercase">Description</p>
                             <p className="text-sm text-slate-800 mt-1">{kpi.description || '-'}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-slate-600 uppercase">Calculation</p>
+                            <p className="text-sm font-mono bg-slate-100 text-slate-800 mt-1 p-2 rounded">{kpi.formula || '-'}</p>
                           </div>
                         </div>
                       </TableCell>
