@@ -1057,7 +1057,7 @@ export default function FactoryFinancialCalculations() {
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Επιλέξτε τμήμα" />
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent position="popper" sideOffset={5}>
                                                     {departments.map(dept => (
                                                         <SelectItem key={dept.id} value={dept.id}>
                                                             {dept.department_name}
@@ -1083,7 +1083,7 @@ export default function FactoryFinancialCalculations() {
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Επιλέξτε μέτρηση" />
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent position="popper" sideOffset={5}>
                                                     {dailyMetrics.map(metric => (
                                                         <SelectItem key={metric.id} value={metric.id}>
                                                             {metric.metric_code} - {metric.metric_name}
