@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Plus, Copy, Trash2, DollarSign, TrendingUp, Package, Users, Calendar, Save, Download } from 'lucide-react';
+import { Loader2, Plus, Copy, Trash2, DollarSign, TrendingUp, Package, Users, Calendar, Save, Download, ChevronDown, ChevronRight } from 'lucide-react';
 import { usePageAccess } from "@/components/lib/usePageAccess";
 import { toast } from 'sonner';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
     Select,
     SelectContent,
@@ -68,6 +69,19 @@ export default function FactoryFinancialCalculations() {
     // Reference data from other modules
     const [departments, setDepartments] = useState([]);
     const [busStopTypes, setBusStopTypes] = useState([]);
+    const [dailyMetrics, setDailyMetrics] = useState([]);
+    
+    // Collapsible sections state
+    const [expandedSections, setExpandedSections] = useState({
+        operational: true,
+        fixed: true,
+        personnel: true,
+        bom: true,
+        fixedCosts: true,
+        overhead: true,
+        investment: true,
+        maintenance: true
+    });
 
     useEffect(() => {
         if (!accessLoading && hasAccess) {
@@ -78,12 +92,14 @@ export default function FactoryFinancialCalculations() {
     
     const loadReferenceData = async () => {
         try {
-            const [depts, busTypes] = await Promise.all([
+            const [depts, busTypes, metrics] = await Promise.all([
                 base44.entities.Department.list(),
-                base44.entities.BusStopType.list()
+                base44.entities.BusStopType.list(),
+                base44.entities.MetricDefinition.list()
             ]);
             setDepartments(depts);
             setBusStopTypes(busTypes);
+            setDailyMetrics(metrics);
         } catch (error) {
             console.error('Failed to load reference data:', error);
         }
@@ -283,6 +299,13 @@ export default function FactoryFinancialCalculations() {
             allocation_production_percent: 100,
             allocation_administration_percent: 0
         }]);
+    };
+    
+    const toggleSection = (section) => {
+        setExpandedSections(prev => ({
+            ...prev,
+            [section]: !prev[section]
+        }));
     };
     
     const addBomCostItem = () => {
@@ -823,23 +846,55 @@ export default function FactoryFinancialCalculations() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                {/* Personnel Costs */}
-                                {renderPersonnelCostSection()}
+                                {/* Operational Costs */}
+                                <Collapsible open={expandedSections.operational} onOpenChange={() => toggleSection('operational')}>
+                                    <CollapsibleTrigger asChild>
+                                        <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors">
+                                            <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
+                                                {expandedSections.operational ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                                                Λειτουργικά Κόστη (Operational Costs)
+                                            </h3>
+                                            <span className="text-sm font-semibold text-blue-700">
+                                                {formatCurrency(calculatePersonnelCostTotal() + calculateBomTotal() + calculateCostTotal(overheadCosts) + calculateCostTotal(maintenanceCosts))}
+                                            </span>
+                                        </div>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="space-y-6 mt-4">
+                                        {/* Personnel Costs */}
+                                        {renderPersonnelCostSection()}
 
-                                {/* BOM Costs */}
-                                {renderBomCostSection()}
+                                        {/* BOM Costs */}
+                                        {renderBomCostSection()}
+
+                                        {/* Overhead Costs */}
+                                        {renderCostSection('Γενικά Έξοδα (Overhead Costs)', overheadCosts, setOverheadCosts, 'overhead')}
+
+                                        {/* Maintenance Costs */}
+                                        {renderCostSection('Κόστη Συντήρησης (Maintenance Costs)', maintenanceCosts, setMaintenanceCosts, 'maintenance')}
+                                    </CollapsibleContent>
+                                </Collapsible>
 
                                 {/* Fixed Costs */}
-                                {renderCostSection('Πάγια Κόστη (Fixed Costs)', fixedCosts, setFixedCosts)}
+                                <Collapsible open={expandedSections.fixed} onOpenChange={() => toggleSection('fixed')}>
+                                    <CollapsibleTrigger asChild>
+                                        <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors">
+                                            <h3 className="text-lg font-bold text-purple-900 flex items-center gap-2">
+                                                {expandedSections.fixed ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                                                Πάγια Κόστη (Fixed Costs)
+                                            </h3>
+                                            <span className="text-sm font-semibold text-purple-700">
+                                                {formatCurrency(calculateCostTotal(fixedCosts) + calculateInvestmentTotal())}
+                                            </span>
+                                        </div>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="space-y-6 mt-4">
+                                        {/* Fixed Costs */}
+                                        {renderCostSection('Πάγια Κόστη (Fixed Costs)', fixedCosts, setFixedCosts, 'fixedCosts')}
 
-                                {/* Overhead Costs */}
-                                {renderCostSection('Γενικά Έξοδα (Overhead Costs)', overheadCosts, setOverheadCosts)}
-
-                                {/* Investment Amortization */}
-                                {renderInvestmentAmortizationSection()}
-
-                                {/* Maintenance Costs */}
-                                {renderCostSection('Κόστη Συντήρησης (Maintenance Costs)', maintenanceCosts, setMaintenanceCosts)}
+                                        {/* Investment Amortization */}
+                                        {renderInvestmentAmortizationSection()}
+                                    </CollapsibleContent>
+                                </Collapsible>
                             </CardContent>
                         </Card>
 
@@ -966,57 +1021,78 @@ export default function FactoryFinancialCalculations() {
 
     function renderPersonnelCostSection() {
         return (
-            <div>
-                <div className="flex items-center justify-between mb-3">
-                    <Label className="text-base font-semibold">Κόστος Προσωπικού (Personnel Costs) - από Manufacturing</Label>
-                    <Button size="sm" variant="outline" onClick={addPersonnelCostItem}>
-                        <Plus className="w-4 h-4 mr-1" />
-                        Προσθήκη
-                    </Button>
-                </div>
-                <div className="space-y-3">
-                    {personnelCosts.map((item, idx) => (
-                        <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <Label className="text-xs">Τμήμα (Department)</Label>
-                                    <Select
-                                        value={item.department_id}
-                                        onValueChange={(value) => {
-                                            const updated = [...personnelCosts];
-                                            updated[idx].department_id = value;
-                                            const dept = departments.find(d => d.id === value);
-                                            if (dept) {
-                                                updated[idx].description = `Προσωπικό - ${dept.department_name}`;
-                                            }
-                                            setPersonnelCosts(updated);
-                                        }}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Επιλέξτε τμήμα" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {departments.map(dept => (
-                                                <SelectItem key={dept.id} value={dept.id}>
-                                                    {dept.department_name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <Label className="text-xs">Μέτρηση (Metric)</Label>
-                                    <Input
-                                        placeholder="π.χ. Συνολικοί μισθοί"
-                                        value={item.metric_id}
-                                        onChange={(e) => {
-                                            const updated = [...personnelCosts];
-                                            updated[idx].metric_id = e.target.value;
-                                            setPersonnelCosts(updated);
-                                        }}
-                                    />
-                                </div>
+            <Collapsible open={expandedSections.personnel} onOpenChange={() => toggleSection('personnel')}>
+                <div>
+                    <div className="flex items-center justify-between mb-3">
+                        <CollapsibleTrigger asChild>
+                            <div className="flex items-center gap-2 cursor-pointer hover:text-blue-700 transition-colors">
+                                {expandedSections.personnel ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                <Label className="text-base font-semibold cursor-pointer">Κόστος Προσωπικού (Personnel Costs) - από Manufacturing</Label>
                             </div>
+                        </CollapsibleTrigger>
+                        <Button size="sm" variant="outline" onClick={addPersonnelCostItem}>
+                            <Plus className="w-4 h-4 mr-1" />
+                            Προσθήκη
+                        </Button>
+                    </div>
+                    <CollapsibleContent>
+                        <div className="space-y-3">
+                            {personnelCosts.map((item, idx) => (
+                                <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <Label className="text-xs">Τμήμα (Department)</Label>
+                                            <Select
+                                                value={item.department_id}
+                                                onValueChange={(value) => {
+                                                    const updated = [...personnelCosts];
+                                                    updated[idx].department_id = value;
+                                                    const dept = departments.find(d => d.id === value);
+                                                    if (dept) {
+                                                        updated[idx].description = `Προσωπικό - ${dept.department_name}`;
+                                                    }
+                                                    setPersonnelCosts(updated);
+                                                }}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Επιλέξτε τμήμα" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {departments.map(dept => (
+                                                        <SelectItem key={dept.id} value={dept.id}>
+                                                            {dept.department_name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs">Μέτρηση (Metric)</Label>
+                                            <Select
+                                                value={item.metric_id}
+                                                onValueChange={(value) => {
+                                                    const updated = [...personnelCosts];
+                                                    updated[idx].metric_id = value;
+                                                    const metric = dailyMetrics.find(m => m.id === value);
+                                                    if (metric) {
+                                                        updated[idx].description = `${metric.metric_name}`;
+                                                    }
+                                                    setPersonnelCosts(updated);
+                                                }}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Επιλέξτε μέτρηση" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {dailyMetrics.map(metric => (
+                                                        <SelectItem key={metric.id} value={metric.id}>
+                                                            {metric.metric_code} - {metric.metric_name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
                             <div className="flex items-start gap-2">
                                 <Input
                                     placeholder="Περιγραφή"
@@ -1113,14 +1189,21 @@ export default function FactoryFinancialCalculations() {
 
     function renderBomCostSection() {
         return (
-            <div>
-                <div className="flex items-center justify-between mb-3">
-                    <Label className="text-base font-semibold">Κόστος BOM (Bill of Materials) - από Warehouse</Label>
-                    <Button size="sm" variant="outline" onClick={addBomCostItem}>
-                        <Plus className="w-4 h-4 mr-1" />
-                        Προσθήκη
-                    </Button>
-                </div>
+            <Collapsible open={expandedSections.bom} onOpenChange={() => toggleSection('bom')}>
+                <div>
+                    <div className="flex items-center justify-between mb-3">
+                        <CollapsibleTrigger asChild>
+                            <div className="flex items-center gap-2 cursor-pointer hover:text-blue-700 transition-colors">
+                                {expandedSections.bom ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                <Label className="text-base font-semibold cursor-pointer">Κόστος Υλικών (Bill of Materials) - από Warehouse</Label>
+                            </div>
+                        </CollapsibleTrigger>
+                        <Button size="sm" variant="outline" onClick={addBomCostItem}>
+                            <Plus className="w-4 h-4 mr-1" />
+                            Προσθήκη
+                        </Button>
+                    </div>
+                    <CollapsibleContent>
                 <div className="space-y-2">
                     {bomCosts.map((item, idx) => (
                         <div key={idx} className="p-3 bg-slate-50 rounded-lg space-y-2">
@@ -1192,24 +1275,32 @@ export default function FactoryFinancialCalculations() {
                             </div>
                         </div>
                     ))}
-                </div>
-                <div className="mt-2 text-sm font-medium text-slate-700">
-                    Σύνολο BOM: {formatCurrency(calculateBomTotal())}
-                </div>
-            </div>
-        );
-    }
+                    </CollapsibleContent>
+                    <div className="mt-2 text-sm font-medium text-slate-700">
+                    Σύνολο Υλικών: {formatCurrency(calculateBomTotal())}
+                    </div>
+                    </div>
+                    </Collapsible>
+                    );
+                    }
     
     function renderInvestmentAmortizationSection() {
         return (
-            <div>
-                <div className="flex items-center justify-between mb-3">
-                    <Label className="text-base font-semibold">Απόσβεση Επενδύσεων (Investment Amortization)</Label>
-                    <Button size="sm" variant="outline" onClick={addInvestmentItem}>
-                        <Plus className="w-4 h-4 mr-1" />
-                        Προσθήκη
-                    </Button>
-                </div>
+            <Collapsible open={expandedSections.investment} onOpenChange={() => toggleSection('investment')}>
+                <div>
+                    <div className="flex items-center justify-between mb-3">
+                        <CollapsibleTrigger asChild>
+                            <div className="flex items-center gap-2 cursor-pointer hover:text-purple-700 transition-colors">
+                                {expandedSections.investment ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                <Label className="text-base font-semibold cursor-pointer">Απόσβεση Επενδύσεων (Investment Amortization)</Label>
+                            </div>
+                        </CollapsibleTrigger>
+                        <Button size="sm" variant="outline" onClick={addInvestmentItem}>
+                            <Plus className="w-4 h-4 mr-1" />
+                            Προσθήκη
+                        </Button>
+                    </div>
+                    <CollapsibleContent>
                 <div className="space-y-3">
                     {investmentAmortization.map((item, idx) => (
                         <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
@@ -1285,28 +1376,36 @@ export default function FactoryFinancialCalculations() {
                             </div>
                         </div>
                     ))}
-                </div>
-                <div className="mt-2 text-sm font-medium text-slate-700">
+                    </CollapsibleContent>
+                    <div className="mt-2 text-sm font-medium text-slate-700">
                     Υποσύνολο (Παραγωγή): {formatCurrency(calculateInvestmentTotal())}
-                </div>
-            </div>
-        );
-    }
+                    </div>
+                    </div>
+                    </Collapsible>
+                    );
+                    }
 
-    function renderCostSection(title, costArray, setter) {
+    function renderCostSection(title, costArray, setter, sectionKey) {
         return (
-            <div>
-                <div className="flex items-center justify-between mb-3">
-                    <Label className="text-base font-semibold">{title}</Label>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => addCostItem(setter, costArray)}
-                    >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Προσθήκη
-                    </Button>
-                </div>
+            <Collapsible open={expandedSections[sectionKey]} onOpenChange={() => toggleSection(sectionKey)}>
+                <div>
+                    <div className="flex items-center justify-between mb-3">
+                        <CollapsibleTrigger asChild>
+                            <div className="flex items-center gap-2 cursor-pointer hover:text-blue-700 transition-colors">
+                                {expandedSections[sectionKey] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                <Label className="text-base font-semibold cursor-pointer">{title}</Label>
+                            </div>
+                        </CollapsibleTrigger>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => addCostItem(setter, costArray)}
+                        >
+                            <Plus className="w-4 h-4 mr-1" />
+                            Προσθήκη
+                        </Button>
+                    </div>
+                    <CollapsibleContent>
                 <div className="space-y-3">
                     {costArray.map((item, idx) => (
                         <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
@@ -1374,11 +1473,12 @@ export default function FactoryFinancialCalculations() {
                             </div>
                         </div>
                     ))}
-                </div>
-                <div className="mt-2 text-sm font-medium text-slate-700">
+                    </CollapsibleContent>
+                    <div className="mt-2 text-sm font-medium text-slate-700">
                     Υποσύνολο (Παραγωγή): {formatCurrency(calculateCostTotal(costArray))}
-                </div>
-            </div>
-        );
-    }
+                    </div>
+                    </div>
+                    </Collapsible>
+                    );
+                    }
 }
