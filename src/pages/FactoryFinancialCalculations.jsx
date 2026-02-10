@@ -326,40 +326,62 @@ export default function FactoryFinancialCalculations() {
                     </div>
                 </div>
 
-                {/* Version Selection */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Calendar className="w-5 h-5" />
-                            Επιλογή Έκδοσης
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center gap-4">
-                            <div className="flex-1">
-                                <Label>Έκδοση Δεδομένων</Label>
-                                <Select
-                                    value={selectedRecord?.id || ''}
-                                    onValueChange={(value) => {
-                                        const record = financialRecords.find(r => r.id === value);
-                                        if (record) loadRecordData(record);
-                                    }}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Επιλέξτε έκδοση" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {financialRecords.map(record => (
-                                            <SelectItem key={record.id} value={record.id}>
-                                                {record.factory_name} - {record.version || 'v1.0'} ({new Date(record.created_date).toLocaleDateString('el-GR')})
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+{/* Version Selection */}
+                {financialRecords.length > 0 ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <Calendar className="w-5 h-5" />
+                                Επιλογή Έκδοσης
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center gap-4">
+                                <div className="flex-1">
+                                    <Label>Έκδοση Δεδομένων</Label>
+                                    <Select
+                                        value={selectedRecord?.id || ''}
+                                        onValueChange={(value) => {
+                                            const record = financialRecords.find(r => r.id === value);
+                                            if (record) loadRecordData(record);
+                                        }}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Επιλέξτε έκδοση" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {financialRecords.map(record => (
+                                                <SelectItem key={record.id} value={record.id}>
+                                                    {record.factory_name} - {record.version || 'v1.0'} ({new Date(record.created_date).toLocaleDateString('el-GR')})
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {selectedRecord && (
+                                    <div className="space-y-1">
+                                        <Label className="text-xs text-slate-500">Περίοδος</Label>
+                                        <div className="text-sm font-medium">
+                                            {new Date(selectedRecord.start_date).toLocaleDateString('el-GR')} - {new Date(selectedRecord.end_date).toLocaleDateString('el-GR')}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <Card className="border-dashed">
+                        <CardContent className="flex flex-col items-center justify-center py-12">
+                            <Calendar className="w-12 h-12 text-slate-400 mb-4" />
+                            <h3 className="text-lg font-semibold text-slate-700 mb-2">Δεν υπάρχουν εγγραφές</h3>
+                            <p className="text-slate-500 mb-4 text-center">Δημιουργήστε την πρώτη σας εγγραφή οικονομικών δεδομένων</p>
+                            <Button onClick={() => setShowCreateDialog(true)} className="flex items-center gap-2">
+                                <Plus className="w-4 h-4" />
+                                Δημιουργία Εγγραφής
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
 
                 {selectedRecord && (
                     <>
