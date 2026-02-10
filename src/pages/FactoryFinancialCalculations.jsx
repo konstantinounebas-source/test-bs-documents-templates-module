@@ -1275,6 +1275,7 @@ export default function FactoryFinancialCalculations() {
                             </div>
                         </div>
                     ))}
+                    </div>
                     </CollapsibleContent>
                     <div className="mt-2 text-sm font-medium text-slate-700">
                     Σύνολο Υλικών: {formatCurrency(calculateBomTotal())}
@@ -1376,6 +1377,7 @@ export default function FactoryFinancialCalculations() {
                             </div>
                         </div>
                     ))}
+                    </div>
                     </CollapsibleContent>
                     <div className="mt-2 text-sm font-medium text-slate-700">
                     Υποσύνολο (Παραγωγή): {formatCurrency(calculateInvestmentTotal())}
@@ -1473,6 +1475,7 @@ export default function FactoryFinancialCalculations() {
                             </div>
                         </div>
                     ))}
+                    </div>
                     </CollapsibleContent>
                     <div className="mt-2 text-sm font-medium text-slate-700">
                     Υποσύνολο (Παραγωγή): {formatCurrency(calculateCostTotal(costArray))}
