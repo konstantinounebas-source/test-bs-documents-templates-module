@@ -1,0 +1,578 @@
+import React, { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Plus, Copy, Trash2, DollarSign, TrendingUp, Package, Users, Calendar, Save, Download } from 'lucide-react';
+import { usePageAccess } from "@/components/lib/usePageAccess";
+import { toast } from 'sonner';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+
+export default function FactoryFinancialCalculations() {
+    const { hasAccess, isLoading: accessLoading } = usePageAccess('FactoryFinancialCalculations');
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    
+    // Data states
+    const [financialRecords, setFinancialRecords] = useState([]);
+    const [selectedRecord, setSelectedRecord] = useState(null);
+    const [currentData, setCurrentData] = useState(null);
+    
+    // Clone dialog
+    const [showCloneDialog, setShowCloneDialog] = useState(false);
+    const [cloneVersion, setCloneVersion] = useState('');
+    
+    // Income section
+    const [contractAmount, setContractAmount] = useState(0);
+    const [approvedVariations, setApprovedVariations] = useState([]);
+    const [potentialVariations, setPotentialVariations] = useState([]);
+    
+    // Cost sections
+    const [fixedCosts, setFixedCosts] = useState([]);
+    const [overheadCosts, setOverheadCosts] = useState([]);
+    const [investmentAmortization, setInvestmentAmortization] = useState([]);
+    const [maintenanceCosts, setMaintenanceCosts] = useState([]);
+
+    useEffect(() => {
+        if (!accessLoading && hasAccess) {
+            loadFinancialRecords();
+        }
+    }, [accessLoading, hasAccess]);
+
+    const loadFinancialRecords = async () => {
+        try {
+            const records = await base44.entities.FactoryFinancialData.list('-created_date');
+            setFinancialRecords(records);
+            
+            if (records.length > 0) {
+                loadRecordData(records[0]);
+            } else {
+                setIsLoading(false);
+            }
+        } catch (error) {
+            console.error('Failed to load financial records:', error);
+            toast.error('Σφάλμα φόρτωσης δεδομένων');
+            setIsLoading(false);
+        }
+    };
+
+    const loadRecordData = async (record) => {
+        try {
+            setIsLoading(true);
+            setSelectedRecord(record);
+            setCurrentData(record);
+            
+            // Load income data
+            setContractAmount(record.contract_amount || 0);
+            setApprovedVariations(record.approved_variations || []);
+            setPotentialVariations(record.potential_variations || []);
+            
+            // Load cost data
+            setFixedCosts(record.fixed_costs || []);
+            setOverheadCosts(record.overhead_costs || []);
+            setInvestmentAmortization(record.investment_amortization || []);
+            setMaintenanceCosts(record.maintenance_costs || []);
+            
+        } catch (error) {
+            console.error('Failed to load record data:', error);
+            toast.error('Σφάλμα φόρτωσης δεδομένων εγγραφής');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        if (!selectedRecord) {
+            toast.error('Δεν έχει επιλεγεί εγγραφή');
+            return;
+        }
+
+        try {
+            setIsSaving(true);
+            
+            const updatedData = {
+                contract_amount: contractAmount,
+                approved_variations: approvedVariations,
+                potential_variations: potentialVariations,
+                fixed_costs: fixedCosts,
+                overhead_costs: overheadCosts,
+                investment_amortization: investmentAmortization,
+                maintenance_costs: maintenanceCosts
+            };
+
+            await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
+            
+            toast.success('Τα δεδομένα αποθηκεύτηκαν επιτυχώς');
+            loadFinancialRecords();
+        } catch (error) {
+            console.error('Failed to save data:', error);
+            toast.error('Σφάλμα αποθήκευσης δεδομένων');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleClone = async () => {
+        if (!selectedRecord || !cloneVersion.trim()) {
+            toast.error('Εισάγετε όνομα έκδοσης');
+            return;
+        }
+
+        try {
+            const clonedData = {
+                ...currentData,
+                version: cloneVersion,
+                is_active: true
+            };
+            delete clonedData.id;
+            delete clonedData.created_date;
+            delete clonedData.updated_date;
+            delete clonedData.created_by;
+
+            await base44.entities.FactoryFinancialData.create(clonedData);
+            
+            toast.success('Η εγγραφή κλωνοποιήθηκε επιτυχώς');
+            setShowCloneDialog(false);
+            setCloneVersion('');
+            loadFinancialRecords();
+        } catch (error) {
+            console.error('Failed to clone record:', error);
+            toast.error('Σφάλμα κλωνοποίησης');
+        }
+    };
+
+    const addCostItem = (setter, currentArray) => {
+        setter([...currentArray, {
+            description: '',
+            amount: 0,
+            allocation_production_percent: 100,
+            allocation_administration_percent: 0
+        }]);
+    };
+
+    const updateCostItem = (setter, currentArray, index, field, value) => {
+        const updated = [...currentArray];
+        updated[index] = { ...updated[index], [field]: value };
+        
+        // Auto-calculate complementary allocation
+        if (field === 'allocation_production_percent') {
+            updated[index].allocation_administration_percent = 100 - parseFloat(value || 0);
+        } else if (field === 'allocation_administration_percent') {
+            updated[index].allocation_production_percent = 100 - parseFloat(value || 0);
+        }
+        
+        setter(updated);
+    };
+
+    const removeCostItem = (setter, currentArray, index) => {
+        setter(currentArray.filter((_, i) => i !== index));
+    };
+
+    const addVariation = (setter, currentArray) => {
+        setter([...currentArray, { description: '', amount: 0 }]);
+    };
+
+    const updateVariation = (setter, currentArray, index, field, value) => {
+        const updated = [...currentArray];
+        updated[index] = { ...updated[index], [field]: value };
+        setter(updated);
+    };
+
+    const removeVariation = (setter, currentArray, index) => {
+        setter(currentArray.filter((_, i) => i !== index));
+    };
+
+    // Calculations
+    const calculateTotalIncome = () => {
+        const approved = approvedVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+        const potential = potentialVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+        return parseFloat(contractAmount || 0) + approved + potential;
+    };
+
+    const calculateCostTotal = (costArray) => {
+        return costArray.reduce((sum, item) => {
+            const amount = parseFloat(item.amount) || 0;
+            const productionPercent = parseFloat(item.allocation_production_percent) || 0;
+            return sum + (amount * productionPercent / 100);
+        }, 0);
+    };
+
+    const calculateTotalCosts = () => {
+        return calculateCostTotal(fixedCosts) +
+               calculateCostTotal(overheadCosts) +
+               calculateCostTotal(investmentAmortization) +
+               calculateCostTotal(maintenanceCosts);
+    };
+
+    const formatCurrency = (value) => {
+        return `€${parseFloat(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    };
+
+    if (accessLoading || isLoading) {
+        return (
+            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+        );
+    }
+
+    if (!hasAccess) {
+        return null;
+    }
+
+    return (
+        <div className="min-h-screen bg-slate-50 p-6">
+            <div className="max-w-7xl mx-auto space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-slate-900">Factory Financial Calculations</h1>
+                        <p className="text-slate-600 mt-1">Διαχείριση οικονομικών δεδομένων εργοστασίου</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        {selectedRecord && (
+                            <>
+                                <Button
+                                    onClick={() => setShowCloneDialog(true)}
+                                    variant="outline"
+                                    className="flex items-center gap-2"
+                                >
+                                    <Copy className="w-4 h-4" />
+                                    Κλωνοποίηση
+                                </Button>
+                                <Button
+                                    onClick={handleSave}
+                                    disabled={isSaving}
+                                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                                >
+                                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                    Αποθήκευση
+                                </Button>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {/* Version Selection */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Calendar className="w-5 h-5" />
+                            Επιλογή Έκδοσης
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex items-center gap-4">
+                            <div className="flex-1">
+                                <Label>Έκδοση Δεδομένων</Label>
+                                <Select
+                                    value={selectedRecord?.id || ''}
+                                    onValueChange={(value) => {
+                                        const record = financialRecords.find(r => r.id === value);
+                                        if (record) loadRecordData(record);
+                                    }}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Επιλέξτε έκδοση" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {financialRecords.map(record => (
+                                            <SelectItem key={record.id} value={record.id}>
+                                                {record.factory_name} - {record.version || 'v1.0'} ({new Date(record.created_date).toLocaleDateString('el-GR')})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {selectedRecord && (
+                    <>
+                        {/* SECTION A - Income */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <DollarSign className="w-5 h-5 text-green-600" />
+                                    SECTION A — Έσοδα
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* Contract Amount */}
+                                <div>
+                                    <Label>Contract Amount</Label>
+                                    <Input
+                                        type="number"
+                                        value={contractAmount}
+                                        onChange={(e) => setContractAmount(e.target.value)}
+                                        placeholder="0.00"
+                                    />
+                                </div>
+
+                                {/* Approved Variations */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <Label>Approved Variations</Label>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => addVariation(setApprovedVariations, approvedVariations)}
+                                        >
+                                            <Plus className="w-4 h-4 mr-1" />
+                                            Προσθήκη
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {approvedVariations.map((variation, idx) => (
+                                            <div key={idx} className="flex items-center gap-2">
+                                                <Input
+                                                    placeholder="Περιγραφή"
+                                                    value={variation.description}
+                                                    onChange={(e) => updateVariation(setApprovedVariations, approvedVariations, idx, 'description', e.target.value)}
+                                                    className="flex-1"
+                                                />
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Ποσό"
+                                                    value={variation.amount}
+                                                    onChange={(e) => updateVariation(setApprovedVariations, approvedVariations, idx, 'amount', e.target.value)}
+                                                    className="w-32"
+                                                />
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    onClick={() => removeVariation(setApprovedVariations, approvedVariations, idx)}
+                                                >
+                                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Potential Variations */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <Label>Potential Variations</Label>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => addVariation(setPotentialVariations, potentialVariations)}
+                                        >
+                                            <Plus className="w-4 h-4 mr-1" />
+                                            Προσθήκη
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {potentialVariations.map((variation, idx) => (
+                                            <div key={idx} className="flex items-center gap-2">
+                                                <Input
+                                                    placeholder="Περιγραφή"
+                                                    value={variation.description}
+                                                    onChange={(e) => updateVariation(setPotentialVariations, potentialVariations, idx, 'description', e.target.value)}
+                                                    className="flex-1"
+                                                />
+                                                <Input
+                                                    type="number"
+                                                    placeholder="Ποσό"
+                                                    value={variation.amount}
+                                                    onChange={(e) => updateVariation(setPotentialVariations, potentialVariations, idx, 'amount', e.target.value)}
+                                                    className="w-32"
+                                                />
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    onClick={() => removeVariation(setPotentialVariations, potentialVariations, idx)}
+                                                >
+                                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Total Income */}
+                                <div className="pt-4 border-t">
+                                    <div className="flex items-center justify-between text-lg font-semibold">
+                                        <span>Σύνολο Εσόδων:</span>
+                                        <span className="text-green-600">{formatCurrency(calculateTotalIncome())}</span>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* SECTION B - Costs */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Package className="w-5 h-5 text-orange-600" />
+                                    SECTION B — Κόστη
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* Fixed Costs */}
+                                {renderCostSection('Fixed Costs', fixedCosts, setFixedCosts)}
+                                
+                                {/* Overhead Costs */}
+                                {renderCostSection('Overhead Costs', overheadCosts, setOverheadCosts)}
+                                
+                                {/* Investment Amortization */}
+                                {renderCostSection('Investment Amortization', investmentAmortization, setInvestmentAmortization)}
+                                
+                                {/* Maintenance Costs */}
+                                {renderCostSection('Maintenance Costs', maintenanceCosts, setMaintenanceCosts)}
+                            </CardContent>
+                        </Card>
+
+                        {/* SECTION C - Summary */}
+                        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                                    SECTION C — Περίληψη
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between text-lg">
+                                        <span className="font-medium">Συνολικά Έσοδα:</span>
+                                        <span className="font-semibold text-green-600">{formatCurrency(calculateTotalIncome())}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between text-lg">
+                                        <span className="font-medium">Συνολικά Κόστη (Παραγωγής):</span>
+                                        <span className="font-semibold text-orange-600">{formatCurrency(calculateTotalCosts())}</span>
+                                    </div>
+                                    <div className="pt-4 border-t border-blue-200">
+                                        <div className="flex items-center justify-between text-xl">
+                                            <span className="font-bold">Καθαρό Κέρδος:</span>
+                                            <span className="font-bold text-blue-600">
+                                                {formatCurrency(calculateTotalIncome() - calculateTotalCosts())}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
+            </div>
+
+            {/* Clone Dialog */}
+            <Dialog open={showCloneDialog} onOpenChange={setShowCloneDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Κλωνοποίηση Εγγραφής</DialogTitle>
+                        <DialogDescription>
+                            Δημιουργήστε νέα έκδοση από την τρέχουσα εγγραφή
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div>
+                            <Label>Όνομα Νέας Έκδοσης</Label>
+                            <Input
+                                value={cloneVersion}
+                                onChange={(e) => setCloneVersion(e.target.value)}
+                                placeholder="π.χ. v2.0"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowCloneDialog(false)}>
+                            Ακύρωση
+                        </Button>
+                        <Button onClick={handleClone}>
+                            Κλωνοποίηση
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+
+    function renderCostSection(title, costArray, setter) {
+        return (
+            <div>
+                <div className="flex items-center justify-between mb-3">
+                    <Label className="text-base font-semibold">{title}</Label>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => addCostItem(setter, costArray)}
+                    >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Προσθήκη
+                    </Button>
+                </div>
+                <div className="space-y-3">
+                    {costArray.map((item, idx) => (
+                        <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
+                            <div className="flex items-start gap-2">
+                                <Input
+                                    placeholder="Περιγραφή"
+                                    value={item.description}
+                                    onChange={(e) => updateCostItem(setter, costArray, idx, 'description', e.target.value)}
+                                    className="flex-1"
+                                />
+                                <Input
+                                    type="number"
+                                    placeholder="Ποσό"
+                                    value={item.amount}
+                                    onChange={(e) => updateCostItem(setter, costArray, idx, 'amount', e.target.value)}
+                                    className="w-32"
+                                />
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => removeCostItem(setter, costArray, idx)}
+                                >
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label className="text-xs">Κατανομή Παραγωγής (%)</Label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={item.allocation_production_percent}
+                                        onChange={(e) => updateCostItem(setter, costArray, idx, 'allocation_production_percent', e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-xs">Κατανομή Διοίκησης (%)</Label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={item.allocation_administration_percent}
+                                        onChange={(e) => updateCostItem(setter, costArray, idx, 'allocation_administration_percent', e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-2 text-sm font-medium text-slate-700">
+                    Υποσύνολο (Παραγωγή): {formatCurrency(calculateCostTotal(costArray))}
+                </div>
+            </div>
+        );
+    }
+}

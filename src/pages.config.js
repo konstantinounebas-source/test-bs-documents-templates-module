@@ -123,6 +123,7 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
+import FactoryFinancialCalculations from './pages/FactoryFinancialCalculations';
 import __Layout from './Layout.jsx';
 
 
@@ -203,6 +204,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
+    "FactoryFinancialCalculations": FactoryFinancialCalculations,
 }
 
 export const pagesConfig = {
