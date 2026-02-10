@@ -1180,10 +1180,12 @@ export default function FactoryFinancialCalculations() {
                         </div>
                     ))}
                 </div>
-                <div className="mt-2 text-sm font-medium text-slate-700">
-                    Υποσύνολο (Παραγωγή): {formatCurrency(calculatePersonnelCostTotal())}
+                    </CollapsibleContent>
+                    <div className="mt-2 text-sm font-medium text-slate-700">
+                        Υποσύνολο (Παραγωγή): {formatCurrency(calculatePersonnelCostTotal())}
+                    </div>
                 </div>
-            </div>
+            </Collapsible>
         );
     }
 
