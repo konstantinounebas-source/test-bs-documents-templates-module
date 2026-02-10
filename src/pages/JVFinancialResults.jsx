@@ -139,7 +139,9 @@ export default function JVFinancialResults() {
                 const contractAmount = financialData?.contract_amount || 0;
                 const approvedVariationsTotal = (financialData?.approved_variations || [])
                     .reduce((sum, v) => sum + (v.amount || 0), 0);
-                const totalContractIncome = contractAmount + approvedVariationsTotal;
+                const potentialVariationsTotal = (financialData?.potential_variations || [])
+                    .reduce((sum, v) => sum + (v.amount || 0), 0);
+                const totalContractIncome = contractAmount + approvedVariationsTotal + potentialVariationsTotal;
 
                 normalized[instance.id] = {
                     shelter_instance_id: instance.id,
