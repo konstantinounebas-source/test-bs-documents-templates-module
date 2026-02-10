@@ -64,12 +64,30 @@ export default function FactoryFinancialCalculations() {
     const [overheadCosts, setOverheadCosts] = useState([]);
     const [investmentAmortization, setInvestmentAmortization] = useState([]);
     const [maintenanceCosts, setMaintenanceCosts] = useState([]);
+    
+    // Reference data from other modules
+    const [departments, setDepartments] = useState([]);
+    const [busStopTypes, setBusStopTypes] = useState([]);
 
     useEffect(() => {
         if (!accessLoading && hasAccess) {
             loadFinancialRecords();
+            loadReferenceData();
         }
     }, [accessLoading, hasAccess]);
+    
+    const loadReferenceData = async () => {
+        try {
+            const [depts, busTypes] = await Promise.all([
+                base44.entities.Department.list(),
+                base44.entities.BusStopType.list()
+            ]);
+            setDepartments(depts);
+            setBusStopTypes(busTypes);
+        } catch (error) {
+            console.error('Failed to load reference data:', error);
+        }
+    };
 
     const loadFinancialRecords = async () => {
         try {
@@ -257,9 +275,10 @@ export default function FactoryFinancialCalculations() {
     
     const addPersonnelCostItem = () => {
         setPersonnelCosts([...personnelCosts, {
+            department_id: '',
+            metric_id: '',
             description: '',
-            employee_type: '',
-            amount: 0,
+            calculated_amount: 0,
             frequency_type: 'monthly',
             allocation_production_percent: 100,
             allocation_administration_percent: 0
@@ -268,10 +287,72 @@ export default function FactoryFinancialCalculations() {
     
     const addBomCostItem = () => {
         setBomCosts([...bomCosts, {
+            bus_stop_type_id: '',
             product_identifier: '',
             description: '',
-            total_cost: 0
+            calculated_bom_cost: 0,
+            quantity: 1
         }]);
+    };
+    
+    const addInvestmentItem = () => {
+        setInvestmentAmortization([...investmentAmortization, {
+            description: '',
+            total_investment_amount: 0,
+            project_duration_months: 12,
+            calculated_daily_cost: 0,
+            allocation_production_percent: 100,
+            allocation_administration_percent: 0
+        }]);
+    };
+    
+    const handleBusStopTypeChange = async (idx, busStopTypeId) => {
+        const updated = [...bomCosts];
+        updated[idx].bus_stop_type_id = busStopTypeId;
+        
+        if (busStopTypeId) {
+            const selectedType = busStopTypes.find(t => t.id === busStopTypeId);
+            if (selectedType) {
+                updated[idx].product_identifier = selectedType.type_code || '';
+                updated[idx].description = selectedType.type_name || '';
+                
+                // Fetch BOM cost
+                try {
+                    const components = await base44.entities.BusStopTypeComponent.filter({ bus_stop_type_id: busStopTypeId });
+                    const totalCost = components.reduce((sum, comp) => {
+                        return sum + (parseFloat(comp.total_cost) || 0);
+                    }, 0);
+                    updated[idx].calculated_bom_cost = totalCost;
+                } catch (error) {
+                    console.error('Failed to fetch BOM cost:', error);
+                }
+            }
+        }
+        
+        setBomCosts(updated);
+    };
+    
+    const handleInvestmentChange = (idx, field, value) => {
+        const updated = [...investmentAmortization];
+        updated[idx][field] = value;
+        
+        // Auto-calculate daily cost
+        if (field === 'total_investment_amount' || field === 'project_duration_months') {
+            const totalAmount = parseFloat(updated[idx].total_investment_amount) || 0;
+            const durationMonths = parseFloat(updated[idx].project_duration_months) || 1;
+            const avgDaysPerMonth = avgWorkingDaysPerMonth || 22;
+            const totalDays = durationMonths * avgDaysPerMonth;
+            updated[idx].calculated_daily_cost = totalDays > 0 ? totalAmount / totalDays : 0;
+        }
+        
+        // Auto-calculate complementary allocation
+        if (field === 'allocation_production_percent') {
+            updated[idx].allocation_administration_percent = 100 - parseFloat(value || 0);
+        } else if (field === 'allocation_administration_percent') {
+            updated[idx].allocation_production_percent = 100 - parseFloat(value || 0);
+        }
+        
+        setInvestmentAmortization(updated);
     };
     
     const addSalesRevenueItem = () => {
@@ -346,6 +427,32 @@ export default function FactoryFinancialCalculations() {
         return salesRevenue + parseFloat(contractAmount || 0) + approved + potential;
     };
 
+    const calculatePersonnelCostTotal = () => {
+        return personnelCosts.reduce((sum, item) => {
+            const dailyCost = convertCostToDaily(item.calculated_amount, item.frequency_type);
+            const totalForPeriod = dailyCost * (totalWorkingDays || 0);
+            const productionPercent = parseFloat(item.allocation_production_percent) || 0;
+            return sum + (totalForPeriod * productionPercent / 100);
+        }, 0);
+    };
+    
+    const calculateBomTotal = () => {
+        return bomCosts.reduce((sum, item) => {
+            const cost = parseFloat(item.calculated_bom_cost) || 0;
+            const qty = parseFloat(item.quantity) || 1;
+            return sum + (cost * qty);
+        }, 0);
+    };
+    
+    const calculateInvestmentTotal = () => {
+        return investmentAmortization.reduce((sum, item) => {
+            const dailyCost = parseFloat(item.calculated_daily_cost) || 0;
+            const totalForPeriod = dailyCost * (totalWorkingDays || 0);
+            const productionPercent = parseFloat(item.allocation_production_percent) || 0;
+            return sum + (totalForPeriod * productionPercent / 100);
+        }, 0);
+    };
+    
     const calculateCostTotal = (costArray) => {
         return costArray.reduce((sum, item) => {
             const dailyCost = convertCostToDaily(item.amount, item.frequency_type);
@@ -354,17 +461,13 @@ export default function FactoryFinancialCalculations() {
             return sum + (totalForPeriod * productionPercent / 100);
         }, 0);
     };
-    
-    const calculateBomTotal = () => {
-        return bomCosts.reduce((sum, item) => sum + (parseFloat(item.total_cost) || 0), 0);
-    };
 
     const calculateTotalCosts = () => {
-        return calculateCostTotal(personnelCosts) +
+        return calculatePersonnelCostTotal() +
                calculateBomTotal() +
                calculateCostTotal(fixedCosts) +
                calculateCostTotal(overheadCosts) +
-               calculateCostTotal(investmentAmortization) +
+               calculateInvestmentTotal() +
                calculateCostTotal(maintenanceCosts);
     };
 
@@ -733,7 +836,7 @@ export default function FactoryFinancialCalculations() {
                                 {renderCostSection('Γενικά Έξοδα (Overhead Costs)', overheadCosts, setOverheadCosts)}
 
                                 {/* Investment Amortization */}
-                                {renderCostSection('Απόσβεση Επενδύσεων (Investment Amortization)', investmentAmortization, setInvestmentAmortization)}
+                                {renderInvestmentAmortizationSection()}
 
                                 {/* Maintenance Costs */}
                                 {renderCostSection('Κόστη Συντήρησης (Maintenance Costs)', maintenanceCosts, setMaintenanceCosts)}
@@ -865,7 +968,7 @@ export default function FactoryFinancialCalculations() {
         return (
             <div>
                 <div className="flex items-center justify-between mb-3">
-                    <Label className="text-base font-semibold">Κόστος Προσωπικού (Personnel Costs)</Label>
+                    <Label className="text-base font-semibold">Κόστος Προσωπικού (Personnel Costs) - από Manufacturing</Label>
                     <Button size="sm" variant="outline" onClick={addPersonnelCostItem}>
                         <Plus className="w-4 h-4 mr-1" />
                         Προσθήκη
@@ -874,6 +977,46 @@ export default function FactoryFinancialCalculations() {
                 <div className="space-y-3">
                     {personnelCosts.map((item, idx) => (
                         <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label className="text-xs">Τμήμα (Department)</Label>
+                                    <Select
+                                        value={item.department_id}
+                                        onValueChange={(value) => {
+                                            const updated = [...personnelCosts];
+                                            updated[idx].department_id = value;
+                                            const dept = departments.find(d => d.id === value);
+                                            if (dept) {
+                                                updated[idx].description = `Προσωπικό - ${dept.department_name}`;
+                                            }
+                                            setPersonnelCosts(updated);
+                                        }}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Επιλέξτε τμήμα" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {departments.map(dept => (
+                                                <SelectItem key={dept.id} value={dept.id}>
+                                                    {dept.department_name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label className="text-xs">Μέτρηση (Metric)</Label>
+                                    <Input
+                                        placeholder="π.χ. Συνολικοί μισθοί"
+                                        value={item.metric_id}
+                                        onChange={(e) => {
+                                            const updated = [...personnelCosts];
+                                            updated[idx].metric_id = e.target.value;
+                                            setPersonnelCosts(updated);
+                                        }}
+                                    />
+                                </div>
+                            </div>
                             <div className="flex items-start gap-2">
                                 <Input
                                     placeholder="Περιγραφή"
@@ -886,22 +1029,12 @@ export default function FactoryFinancialCalculations() {
                                     className="flex-1"
                                 />
                                 <Input
-                                    placeholder="Τύπος"
-                                    value={item.employee_type}
-                                    onChange={(e) => {
-                                        const updated = [...personnelCosts];
-                                        updated[idx].employee_type = e.target.value;
-                                        setPersonnelCosts(updated);
-                                    }}
-                                    className="w-40"
-                                />
-                                <Input
                                     type="number"
-                                    placeholder="Ποσό"
-                                    value={item.amount}
+                                    placeholder="Υπολογισμένο Ποσό"
+                                    value={item.calculated_amount}
                                     onChange={(e) => {
                                         const updated = [...personnelCosts];
-                                        updated[idx].amount = e.target.value;
+                                        updated[idx].calculated_amount = e.target.value;
                                         setPersonnelCosts(updated);
                                     }}
                                     className="w-32"
@@ -966,13 +1099,13 @@ export default function FactoryFinancialCalculations() {
                                 </div>
                             </div>
                             <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
-                                <strong>Υπολογισμός:</strong> {formatCurrency(item.amount)} {item.frequency_type === 'monthly' ? `÷ ${avgWorkingDaysPerMonth} ημέρες/μήνα` : item.frequency_type === 'yearly' ? `÷ ${avgWorkingDaysPerYear} ημέρες/έτος` : item.frequency_type === 'one_time' ? `÷ ${totalWorkingDays} ημέρες περιόδου` : ''} = {formatCurrency(convertCostToDaily(item.amount, item.frequency_type))}/ημέρα × {totalWorkingDays} ημέρες × {item.allocation_production_percent}% = {formatCurrency(convertCostToDaily(item.amount, item.frequency_type) * totalWorkingDays * item.allocation_production_percent / 100)}
+                                <strong>Υπολογισμός:</strong> {formatCurrency(item.calculated_amount)} {item.frequency_type === 'monthly' ? `÷ ${avgWorkingDaysPerMonth} ημέρες/μήνα` : item.frequency_type === 'yearly' ? `÷ ${avgWorkingDaysPerYear} ημέρες/έτος` : item.frequency_type === 'one_time' ? `÷ ${totalWorkingDays} ημέρες περιόδου` : ''} = {formatCurrency(convertCostToDaily(item.calculated_amount, item.frequency_type))}/ημέρα × {totalWorkingDays} ημέρες × {item.allocation_production_percent}% = {formatCurrency(convertCostToDaily(item.calculated_amount, item.frequency_type) * totalWorkingDays * item.allocation_production_percent / 100)}
                             </div>
                         </div>
                     ))}
                 </div>
                 <div className="mt-2 text-sm font-medium text-slate-700">
-                    Υποσύνολο (Παραγωγή): {formatCurrency(calculateCostTotal(personnelCosts))}
+                    Υποσύνολο (Παραγωγή): {formatCurrency(calculatePersonnelCostTotal())}
                 </div>
             </div>
         );
@@ -982,7 +1115,7 @@ export default function FactoryFinancialCalculations() {
         return (
             <div>
                 <div className="flex items-center justify-between mb-3">
-                    <Label className="text-base font-semibold">Κόστος BOM (Bill of Materials)</Label>
+                    <Label className="text-base font-semibold">Κόστος BOM (Bill of Materials) - από Warehouse</Label>
                     <Button size="sm" variant="outline" onClick={addBomCostItem}>
                         <Plus className="w-4 h-4 mr-1" />
                         Προσθήκη
@@ -990,50 +1123,171 @@ export default function FactoryFinancialCalculations() {
                 </div>
                 <div className="space-y-2">
                     {bomCosts.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-                            <Input
-                                placeholder="Product ID"
-                                value={item.product_identifier}
-                                onChange={(e) => {
-                                    const updated = [...bomCosts];
-                                    updated[idx].product_identifier = e.target.value;
-                                    setBomCosts(updated);
-                                }}
-                                className="w-32"
-                            />
-                            <Input
-                                placeholder="Περιγραφή"
-                                value={item.description}
-                                onChange={(e) => {
-                                    const updated = [...bomCosts];
-                                    updated[idx].description = e.target.value;
-                                    setBomCosts(updated);
-                                }}
-                                className="flex-1"
-                            />
-                            <Input
-                                type="number"
-                                placeholder="Συνολικό Κόστος"
-                                value={item.total_cost}
-                                onChange={(e) => {
-                                    const updated = [...bomCosts];
-                                    updated[idx].total_cost = e.target.value;
-                                    setBomCosts(updated);
-                                }}
-                                className="w-32"
-                            />
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => setBomCosts(bomCosts.filter((_, i) => i !== idx))}
-                            >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                            </Button>
+                        <div key={idx} className="p-3 bg-slate-50 rounded-lg space-y-2">
+                            <div className="flex items-center gap-2">
+                                <Select
+                                    value={item.bus_stop_type_id}
+                                    onValueChange={(value) => handleBusStopTypeChange(idx, value)}
+                                >
+                                    <SelectTrigger className="w-64">
+                                        <SelectValue placeholder="Επιλέξτε Τύπο Στάσης" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {busStopTypes.map(type => (
+                                            <SelectItem key={type.id} value={type.id}>
+                                                {type.type_code} - {type.type_name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Input
+                                    placeholder="Product ID"
+                                    value={item.product_identifier}
+                                    onChange={(e) => {
+                                        const updated = [...bomCosts];
+                                        updated[idx].product_identifier = e.target.value;
+                                        setBomCosts(updated);
+                                    }}
+                                    className="w-32"
+                                    disabled
+                                />
+                                <Input
+                                    placeholder="Περιγραφή"
+                                    value={item.description}
+                                    onChange={(e) => {
+                                        const updated = [...bomCosts];
+                                        updated[idx].description = e.target.value;
+                                        setBomCosts(updated);
+                                    }}
+                                    className="flex-1"
+                                />
+                                <Input
+                                    type="number"
+                                    placeholder="Ποσότητα"
+                                    value={item.quantity}
+                                    onChange={(e) => {
+                                        const updated = [...bomCosts];
+                                        updated[idx].quantity = e.target.value;
+                                        setBomCosts(updated);
+                                    }}
+                                    className="w-24"
+                                />
+                                <Input
+                                    type="number"
+                                    placeholder="Κόστος BOM"
+                                    value={item.calculated_bom_cost}
+                                    className="w-32 bg-blue-50"
+                                    disabled
+                                />
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => setBomCosts(bomCosts.filter((_, i) => i !== idx))}
+                                >
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                </Button>
+                            </div>
+                            <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
+                                <strong>Υπολογισμός:</strong> {formatCurrency(item.calculated_bom_cost)} × {item.quantity} τεμάχια = {formatCurrency((parseFloat(item.calculated_bom_cost) || 0) * (parseFloat(item.quantity) || 1))}
+                            </div>
                         </div>
                     ))}
                 </div>
                 <div className="mt-2 text-sm font-medium text-slate-700">
                     Σύνολο BOM: {formatCurrency(calculateBomTotal())}
+                </div>
+            </div>
+        );
+    }
+    
+    function renderInvestmentAmortizationSection() {
+        return (
+            <div>
+                <div className="flex items-center justify-between mb-3">
+                    <Label className="text-base font-semibold">Απόσβεση Επενδύσεων (Investment Amortization)</Label>
+                    <Button size="sm" variant="outline" onClick={addInvestmentItem}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Προσθήκη
+                    </Button>
+                </div>
+                <div className="space-y-3">
+                    {investmentAmortization.map((item, idx) => (
+                        <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
+                            <div className="flex items-start gap-2">
+                                <Input
+                                    placeholder="Περιγραφή"
+                                    value={item.description}
+                                    onChange={(e) => handleInvestmentChange(idx, 'description', e.target.value)}
+                                    className="flex-1"
+                                />
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Συνολική Επένδυση</Label>
+                                    <Input
+                                        type="number"
+                                        placeholder="Συνολικό Ποσό"
+                                        value={item.total_investment_amount}
+                                        onChange={(e) => handleInvestmentChange(idx, 'total_investment_amount', e.target.value)}
+                                        className="w-40"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Διάρκεια (μήνες)</Label>
+                                    <Input
+                                        type="number"
+                                        placeholder="Μήνες"
+                                        value={item.project_duration_months}
+                                        onChange={(e) => handleInvestmentChange(idx, 'project_duration_months', e.target.value)}
+                                        className="w-32"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs">Ημερήσιο Κόστος</Label>
+                                    <Input
+                                        type="number"
+                                        placeholder="Auto"
+                                        value={item.calculated_daily_cost}
+                                        className="w-32 bg-blue-50"
+                                        disabled
+                                    />
+                                </div>
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => setInvestmentAmortization(investmentAmortization.filter((_, i) => i !== idx))}
+                                >
+                                    <Trash2 className="w-4 h-4 text-red-500" />
+                                </Button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <Label className="text-xs">Κατανομή Παραγωγής (%)</Label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={item.allocation_production_percent}
+                                        onChange={(e) => handleInvestmentChange(idx, 'allocation_production_percent', e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="text-xs">Κατανομή Διοίκησης (%)</Label>
+                                    <Input
+                                        type="number"
+                                        min="0"
+                                        max="100"
+                                        value={item.allocation_administration_percent}
+                                        onChange={(e) => handleInvestmentChange(idx, 'allocation_administration_percent', e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
+                                <strong>Υπολογισμός:</strong> {formatCurrency(item.total_investment_amount)} ÷ ({item.project_duration_months} μήνες × {avgWorkingDaysPerMonth} ημέρες/μήνα) = {formatCurrency(item.calculated_daily_cost)}/ημέρα × {totalWorkingDays} ημέρες × {item.allocation_production_percent}% = {formatCurrency((parseFloat(item.calculated_daily_cost) || 0) * totalWorkingDays * (parseFloat(item.allocation_production_percent) || 0) / 100)}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-2 text-sm font-medium text-slate-700">
+                    Υποσύνολο (Παραγωγή): {formatCurrency(calculateInvestmentTotal())}
                 </div>
             </div>
         );
