@@ -66,6 +66,7 @@ import DeliveryLogs from './pages/DeliveryLogs';
 import DeliveryReporting from './pages/DeliveryReporting';
 import DeliveryUserGuide from './pages/DeliveryUserGuide';
 import DocumentFieldsDataDefinitions from './pages/DocumentFieldsDataDefinitions';
+import FactoryFinancialCalculations from './pages/FactoryFinancialCalculations';
 import FormRunner from './pages/FormRunner';
 import Holidays from './pages/Holidays';
 import Home from './pages/Home';
@@ -123,7 +124,6 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import FactoryFinancialCalculations from './pages/FactoryFinancialCalculations';
 import __Layout from './Layout.jsx';
 
 
@@ -147,6 +147,7 @@ export const PAGES = {
     "DeliveryReporting": DeliveryReporting,
     "DeliveryUserGuide": DeliveryUserGuide,
     "DocumentFieldsDataDefinitions": DocumentFieldsDataDefinitions,
+    "FactoryFinancialCalculations": FactoryFinancialCalculations,
     "FormRunner": FormRunner,
     "Holidays": Holidays,
     "Home": Home,
@@ -204,7 +205,6 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "FactoryFinancialCalculations": FactoryFinancialCalculations,
 }
 
 export const pagesConfig = {

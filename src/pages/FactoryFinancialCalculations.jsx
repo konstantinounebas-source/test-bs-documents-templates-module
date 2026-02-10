@@ -37,6 +37,15 @@ export default function FactoryFinancialCalculations() {
     const [showCloneDialog, setShowCloneDialog] = useState(false);
     const [cloneVersion, setCloneVersion] = useState('');
     
+    // Create dialog
+    const [showCreateDialog, setShowCreateDialog] = useState(false);
+    const [newRecord, setNewRecord] = useState({
+        factory_name: '',
+        version: 'v1.0',
+        start_date: '',
+        end_date: ''
+    });
+    
     // Income section
     const [contractAmount, setContractAmount] = useState(0);
     const [approvedVariations, setApprovedVariations] = useState([]);
@@ -156,6 +165,47 @@ export default function FactoryFinancialCalculations() {
         }
     };
 
+    const handleCreateNew = async () => {
+        if (!newRecord.factory_name.trim() || !newRecord.start_date || !newRecord.end_date) {
+            toast.error('Συμπληρώστε όλα τα υποχρεωτικά πεδία');
+            return;
+        }
+
+        try {
+            const created = await base44.entities.FactoryFinancialData.create({
+                ...newRecord,
+                contract_amount: 0,
+                approved_variations: [],
+                potential_variations: [],
+                fixed_costs: [],
+                overhead_costs: [],
+                investment_amortization: [],
+                maintenance_costs: [],
+                is_active: true
+            });
+            
+            toast.success('Η εγγραφή δημιουργήθηκε επιτυχώς');
+            setShowCreateDialog(false);
+            setNewRecord({
+                factory_name: '',
+                version: 'v1.0',
+                start_date: '',
+                end_date: ''
+            });
+            await loadFinancialRecords();
+            
+            // Load the newly created record
+            const records = await base44.entities.FactoryFinancialData.list('-created_date');
+            const newlyCreated = records.find(r => r.id === created.id);
+            if (newlyCreated) {
+                loadRecordData(newlyCreated);
+            }
+        } catch (error) {
+            console.error('Failed to create record:', error);
+            toast.error('Σφάλμα δημιουργίας εγγραφής');
+        }
+    };
+
     const addCostItem = (setter, currentArray) => {
         setter([...currentArray, {
             description: '',
@@ -245,6 +295,14 @@ export default function FactoryFinancialCalculations() {
                         <p className="text-slate-600 mt-1">Διαχείριση οικονομικών δεδομένων εργοστασίου</p>
                     </div>
                     <div className="flex items-center gap-3">
+                        <Button
+                            onClick={() => setShowCreateDialog(true)}
+                            variant="outline"
+                            className="flex items-center gap-2"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Νέα Εγγραφή
+                        </Button>
                         {selectedRecord && (
                             <>
                                 <Button
@@ -498,6 +556,62 @@ export default function FactoryFinancialCalculations() {
                         </Button>
                         <Button onClick={handleClone}>
                             Κλωνοποίηση
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Create New Dialog */}
+            <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Δημιουργία Νέας Εγγραφής</DialogTitle>
+                        <DialogDescription>
+                            Δημιουργήστε νέα εγγραφή οικονομικών δεδομένων εργοστασίου
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div>
+                            <Label>Όνομα Εργοστασίου *</Label>
+                            <Input
+                                value={newRecord.factory_name}
+                                onChange={(e) => setNewRecord({ ...newRecord, factory_name: e.target.value })}
+                                placeholder="π.χ. Εργοστάσιο Παραγωγής"
+                            />
+                        </div>
+                        <div>
+                            <Label>Έκδοση</Label>
+                            <Input
+                                value={newRecord.version}
+                                onChange={(e) => setNewRecord({ ...newRecord, version: e.target.value })}
+                                placeholder="v1.0"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label>Ημερομηνία Έναρξης *</Label>
+                                <Input
+                                    type="date"
+                                    value={newRecord.start_date}
+                                    onChange={(e) => setNewRecord({ ...newRecord, start_date: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <Label>Ημερομηνία Λήξης *</Label>
+                                <Input
+                                    type="date"
+                                    value={newRecord.end_date}
+                                    onChange={(e) => setNewRecord({ ...newRecord, end_date: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                            Ακύρωση
+                        </Button>
+                        <Button onClick={handleCreateNew}>
+                            Δημιουργία
                         </Button>
                     </DialogFooter>
                 </DialogContent>
