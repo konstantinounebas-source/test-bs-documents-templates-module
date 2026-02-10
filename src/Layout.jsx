@@ -481,6 +481,13 @@ const allNavigationGroups = [
         icon: FileText,
         description: "Detailed calculations and traceability for each Shelter Type",
         pageKey: "JVFinancialCalculations"
+      },
+      {
+        title: "Factory Financial Calculations",
+        url: createPageUrl("FactoryFinancialCalculations"),
+        icon: FileText,
+        description: "Factory financial data and cost calculations",
+        pageKey: "FactoryFinancialCalculations"
       }
     ]
   },

@@ -69,6 +69,7 @@ const ALL_PAGES = [
 
   { key: 'JVFinancialResults', label: 'JV Financial Results', module: 'Shelter Financial Performance' },
   { key: 'JVFinancialCalculations', label: 'JV Financial Calculations', module: 'Shelter Financial Performance' },
+  { key: 'FactoryFinancialCalculations', label: 'Factory Financial Calculations', module: 'Shelter Financial Performance' },
 
   { key: 'ModulesDocumentation', label: 'Modules Documentation', module: 'System Management' },
   { key: 'Users', label: 'Users', module: 'System Management' },
