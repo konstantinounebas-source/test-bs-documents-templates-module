@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { BusStopType } from "@/entities/BusStopType";
 import { BusStopTypeComponent } from "@/entities/BusStopTypeComponent";
@@ -77,6 +76,17 @@ export default function BusStopTypesBOMPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
+      <style>{`
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        input[type="number"] {
+          -moz-appearance: textfield;
+          appearance: textfield;
+        }
+      `}</style>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
