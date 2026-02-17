@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -416,7 +417,9 @@ export default function PurchaseOrdersPage() {
         unit_cost: item.unit_cost,
         total_cost: item.total_cost,
         expected_receipt_date: item.expected_receipt_date || '',
-        bundle_quantity: item.bundle_quantity || null
+        bundle_quantity: item.bundle_quantity || null,
+        vendor_product_code: item.vendor_product_code || '',
+        cost_entry_method: item.cost_entry_method || 'total_cost' // New field
       })),
       notes: po.notes || ''
     });
@@ -443,7 +446,8 @@ export default function PurchaseOrdersPage() {
           total_cost: 0,
           expected_receipt_date: prev.expected_delivery_date || '',
           bundle_quantity: null,
-          vendor_product_code: ''
+          vendor_product_code: '',
+          cost_entry_method: 'total_cost' // New field
         }
       ]
     }));
@@ -473,37 +477,47 @@ export default function PurchaseOrdersPage() {
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...formData.items];
-    newItems[index] = {
-      ...newItems[index],
-      [field]: value
-    };
+    const item = { ...newItems[index], [field]: value }; // Create a copy of the item and apply the change
 
+    const qty = parseFloat(item.quantity_ordered) || 0;
+    let unitCost = parseFloat(item.unit_cost) || 0; // Use current item.unit_cost
+    let totalCost = parseFloat(item.total_cost) || 0; // Use current item.total_cost
+    
+    // If product_id changes, try to pre-fill from productVendors
     if (field === 'product_id' && value && formData.vendor_id) {
       const pv = productVendors.find(
         pv => pv.product_id === value && pv.vendor_id === formData.vendor_id && pv.is_active
       );
       if (pv) {
-        newItems[index].unit_cost = pv.unit_cost;
-        newItems[index].vendor_product_code = pv.vendor_product_code;
+        item.vendor_product_code = pv.vendor_product_code;
+        if (pv.unit_cost !== undefined) {
+          // If productVendor has a unit_cost, set it and recalculate total.
+          item.unit_cost = pv.unit_cost;
+          item.total_cost = qty * (pv.unit_cost || 0); // Always calculate total based on PV unit cost
+        }
       }
     }
 
+    // Update bundle_quantity related flag
     if (field === 'bundle_quantity') {
       const bundleQty = parseFloat(value) || null;
-      newItems[index].is_bundle = bundleQty && bundleQty > 1;
+      item.is_bundle = bundleQty && bundleQty > 1;
     }
+    
+    // Core cost calculation logic
+    if (['quantity_ordered', 'unit_cost', 'total_cost', 'cost_entry_method'].includes(field)) {
+        // Update local variables based on the changed field, if applicable
+        if (field === 'unit_cost') unitCost = parseFloat(value) || 0;
+        if (field === 'total_cost') totalCost = parseFloat(value) || 0;
 
-    if (field === 'quantity_ordered' || field === 'unit_cost' || field === 'bundle_quantity') {
-      const qty = parseFloat(newItems[index].quantity_ordered) || 0;
-      const cost = parseFloat(newItems[index].unit_cost) || 0;
-      newItems[index].total_cost = qty * cost;
-    } else if (field === 'total_cost') {
-      const total = parseFloat(value) || 0;
-      const qty = parseFloat(newItems[index].quantity_ordered) || 0;
-      newItems[index].total_cost = total;
-      newItems[index].unit_cost = qty > 0 ? parseFloat((total / qty).toFixed(3)) : 0;
+        if (item.cost_entry_method === 'unit_cost') {
+            item.total_cost = qty * unitCost;
+        } else { // item.cost_entry_method === 'total_cost'
+            item.unit_cost = qty > 0 ? parseFloat((totalCost / qty).toFixed(3)) : 0;
+        }
     }
-
+    
+    newItems[index] = item;
     setFormData(prev => ({
       ...prev,
       items: newItems
@@ -987,15 +1001,16 @@ export default function PurchaseOrdersPage() {
                                       if (purchase) {
                                         handleItemChange(index, 'unit_cost', purchase.unit_cost);
                                         handleItemChange(index, 'vendor_product_code', purchase.vendor_product_code || '');
+                                        handleItemChange(index, 'cost_entry_method', 'unit_cost');
                                       }
                                     }
                                   }}
                                 >
                                   <SelectTrigger className="text-xs h-auto min-h-[36px] py-1">
-                                    <SelectValue placeholder="Νέα / Παλιά Αγορά" />
+                                    <SelectValue placeholder="New / Old Purchase" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="new">-- Νέα Αγορά --</SelectItem>
+                                    <SelectItem value="new">-- New Purchase --</SelectItem>
                                     {previousPurchases.map((p) => (
                                       <SelectItem key={p.id} value={p.id}>
                                         <div className="flex flex-col py-1 min-w-0">
@@ -1003,7 +1018,7 @@ export default function PurchaseOrdersPage() {
                                             {formatDate(p.created_date)} - €{p.unit_cost?.toFixed(4)}
                                           </div>
                                           <div className="text-xs text-slate-600 truncate">
-                                            {p.vendor_product_code && `Κωδ: ${p.vendor_product_code}`}
+                                            {p.vendor_product_code && `Code: ${p.vendor_product_code}`}
                                           </div>
                                         </div>
                                       </SelectItem>
@@ -1012,15 +1027,15 @@ export default function PurchaseOrdersPage() {
                                 </Select>
                               ) : (
                                 <div className="h-[36px] flex items-center px-3 text-xs text-slate-400 border rounded-md bg-slate-50">
-                                  Νέα Αγορά
+                                  New Purchase
                                 </div>
                               )}
                             </div>
                           </div>
 
-                          {/* Γραμμή 2: Υπόλοιπα πεδία */}
-                          <div className="grid grid-cols-9 gap-2">
-                            <div>
+                          {/* New Row 2: Qty, Unit, Pcs/Qty, Vendor Product Code, Expected Receipt */}
+                          <div className="grid grid-cols-12 gap-2">
+                            <div className="col-span-2">
                               <Label className="text-xs mb-1">Qty *</Label>
                               <Input
                                 type="number"
@@ -1034,7 +1049,7 @@ export default function PurchaseOrdersPage() {
                                 className="text-sm"
                               />
                             </div>
-                            <div>
+                            <div className="col-span-2">
                               <Label className="text-xs mb-1">Unit</Label>
                               <Select
                                 value={item.input_unit_of_measure || ''}
@@ -1046,49 +1061,34 @@ export default function PurchaseOrdersPage() {
                                 <SelectContent>
                                   {(() => {
                                     const product = products.find(p => p.id === item.product_id);
-                                    if (product?.unit_of_measure === 'kg') {
-                                      return (
-                                        <>
-                                          <SelectItem value={null}>-</SelectItem>
-                                          <SelectItem value="g">g</SelectItem>
-                                          <SelectItem value="kg">kg</SelectItem>
-                                          <SelectItem value="ton">ton</SelectItem>
-                                        </>
-                                      );
-                                    } else if (product?.unit_of_measure === 'liter') {
-                                      return (
-                                        <>
-                                          <SelectItem value={null}>-</SelectItem>
-                                          <SelectItem value="ml">ml</SelectItem>
-                                          <SelectItem value="liter">L</SelectItem>
-                                        </>
-                                      );
-                                    } else if (product?.unit_of_measure === 'meter') {
-                                      return (
-                                        <>
-                                          <SelectItem value={null}>-</SelectItem>
-                                          <SelectItem value="mm">mm</SelectItem>
-                                          <SelectItem value="cm">cm</SelectItem>
-                                          <SelectItem value="meter">m</SelectItem>
-                                        </>
-                                      );
-                                    } else if (product?.unit_of_measure === 'piece') {
-                                      return (
-                                        <>
-                                          <SelectItem value={null}>-</SelectItem>
-                                          <SelectItem value="piece">pcs</SelectItem>
-                                          <SelectItem value="box">box</SelectItem>
-                                          <SelectItem value="pallet">pallet</SelectItem>
-                                        </>
-                                      );
+                                    if (!product) return <SelectItem value={null}>-</SelectItem>; 
+                                    const uom = product.unit_of_measure;
+                                    const options = [];
+                                    options.push(<SelectItem key="null" value={null}>-</SelectItem>);
+                                    if (uom === 'kg') {
+                                      options.push(<SelectItem key="g" value="g">g</SelectItem>);
+                                      options.push(<SelectItem key="kg" value="kg">kg</SelectItem>);
+                                      options.push(<SelectItem key="ton" value="ton">ton</SelectItem>);
+                                    } else if (uom === 'liter') {
+                                      options.push(<SelectItem key="ml" value="ml">ml</SelectItem>);
+                                      options.push(<SelectItem key="liter" value="liter">L</SelectItem>);
+                                    } else if (uom === 'meter') {
+                                      options.push(<SelectItem key="mm" value="mm">mm</SelectItem>);
+                                      options.push(<SelectItem key="cm" value="cm">cm</SelectItem>);
+                                      options.push(<SelectItem key="meter" value="meter">m</SelectItem>);
+                                    } else if (uom === 'piece') {
+                                      options.push(<SelectItem key="piece" value="piece">pcs</SelectItem>);
+                                      options.push(<SelectItem key="box" value="box">box</SelectItem>);
+                                      options.push(<SelectItem key="pallet" value="pallet">pallet</SelectItem>);
                                     } else {
-                                      return <SelectItem value={null}>{product?.unit_of_measure || '-'}</SelectItem>;
+                                      options.push(<SelectItem key={uom} value={uom}>{uom}</SelectItem>);
                                     }
+                                    return options;
                                   })()}
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div>
+                            <div className="col-span-2">
                               <Label className="text-xs mb-1">Pcs/Qty</Label>
                               <Input
                                 type="number"
@@ -1101,7 +1101,45 @@ export default function PurchaseOrdersPage() {
                                 className="text-xs"
                               />
                             </div>
-                            <div className="col-span-2">
+                            <div className="col-span-3">
+                              <Label className="text-xs mb-1">Vendor Product Code</Label>
+                              <Input
+                                type="text"
+                                value={item.vendor_product_code || ''}
+                                onChange={(e) => handleItemChange(index, 'vendor_product_code', e.target.value)}
+                                placeholder="Vendor's Code"
+                                className="text-sm"
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <Label className="text-xs mb-1">Expected Receipt</Label>
+                              <Input
+                                type="date"
+                                value={item.expected_receipt_date || ''}
+                                onChange={(e) => handleItemChange(index, 'expected_receipt_date', e.target.value)}
+                                className="text-sm"
+                              />
+                            </div>
+                          </div>
+
+                          {/* New Row 3: Cost Entry Method, Unit Cost, Cost/Pcs, Total */}
+                          <div className="grid grid-cols-12 gap-2">
+                            <div className="col-span-3">
+                              <Label className="text-xs mb-1">Cost Entry</Label>
+                              <Select
+                                value={item.cost_entry_method || 'total_cost'}
+                                onValueChange={(val) => handleItemChange(index, 'cost_entry_method', val)}
+                              >
+                                <SelectTrigger className="text-xs h-9">
+                                  <SelectValue placeholder="Entry Method" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="unit_cost">Unit Cost</SelectItem>
+                                  <SelectItem value="total_cost">Total Cost</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="col-span-3">
                               <Label className="text-xs mb-1">Unit Cost (€) *</Label>
                               <Input
                                 type="number"
@@ -1111,16 +1149,17 @@ export default function PurchaseOrdersPage() {
                                 onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value)}
                                 required
                                 className="text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                disabled={item.cost_entry_method === 'total_cost'}
                               />
                             </div>
-                            <div>
+                            <div className="col-span-3">
                               <Label className="text-xs mb-1">Cost/Pcs</Label>
                               <div className="h-9 flex items-center px-3 text-xs text-slate-600 border rounded-md bg-slate-50">
-                                {item.bundle_quantity && item.unit_cost ? 
+                                {item.bundle_quantity && item.bundle_quantity > 0 && item.unit_cost ?
                                   `€${(item.unit_cost / item.bundle_quantity).toFixed(4)}` : '-'}
                               </div>
                             </div>
-                            <div>
+                            <div className="col-span-3">
                               <Label className="text-xs mb-1">Total (€)</Label>
                               <Input
                                 type="number"
@@ -1129,15 +1168,7 @@ export default function PurchaseOrdersPage() {
                                 value={item.total_cost || 0}
                                 onChange={(e) => handleItemChange(index, 'total_cost', e.target.value)}
                                 className="text-sm font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              />
-                            </div>
-                            <div className="col-span-2">
-                              <Label className="text-xs mb-1">Expected Receipt</Label>
-                              <Input
-                                type="date"
-                                value={item.expected_receipt_date || ''}
-                                onChange={(e) => handleItemChange(index, 'expected_receipt_date', e.target.value)}
-                                className="text-sm"
+                                disabled={item.cost_entry_method === 'unit_cost'}
                               />
                             </div>
                           </div>
@@ -1355,15 +1386,16 @@ export default function PurchaseOrdersPage() {
                                       if (purchase) {
                                         handleItemChange(index, 'unit_cost', purchase.unit_cost);
                                         handleItemChange(index, 'vendor_product_code', purchase.vendor_product_code || '');
+                                        handleItemChange(index, 'cost_entry_method', 'unit_cost');
                                       }
                                     }
                                   }}
                                 >
                                   <SelectTrigger className="text-xs h-auto min-h-[36px] py-1">
-                                    <SelectValue placeholder="Νέα / Παλιά Αγορά" />
+                                    <SelectValue placeholder="New / Old Purchase" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="new">-- Νέα Αγορά --</SelectItem>
+                                    <SelectItem value="new">-- New Purchase --</SelectItem>
                                     {previousPurchases.map((p) => (
                                       <SelectItem key={p.id} value={p.id}>
                                         <div className="flex flex-col py-1 min-w-0">
@@ -1371,7 +1403,7 @@ export default function PurchaseOrdersPage() {
                                             {formatDate(p.created_date)} - €{p.unit_cost?.toFixed(4)}
                                           </div>
                                           <div className="text-xs text-slate-600 truncate">
-                                            {p.vendor_product_code && `Κωδ: ${p.vendor_product_code}`}
+                                            {p.vendor_product_code && `Code: ${p.vendor_product_code}`}
                                           </div>
                                         </div>
                                       </SelectItem>
@@ -1380,15 +1412,15 @@ export default function PurchaseOrdersPage() {
                                 </Select>
                               ) : (
                                 <div className="h-[36px] flex items-center px-3 text-xs text-slate-400 border rounded-md bg-slate-50">
-                                  Νέα Αγορά
+                                  New Purchase
                                 </div>
                               )}
                             </div>
                           </div>
 
-                          {/* Γραμμή 2: Υπόλοιπα πεδία */}
-                          <div className="grid grid-cols-9 gap-2">
-                            <div>
+                          {/* New Row 2: Qty, Unit, Pcs/Qty, Vendor Product Code, Expected Receipt */}
+                          <div className="grid grid-cols-12 gap-2">
+                            <div className="col-span-2">
                               <Label className="text-xs mb-1">Qty *</Label>
                               <Input
                                 type="number"
@@ -1402,7 +1434,7 @@ export default function PurchaseOrdersPage() {
                                 className="text-sm"
                               />
                             </div>
-                            <div>
+                            <div className="col-span-2">
                               <Label className="text-xs mb-1">Unit</Label>
                               <Select
                                 value={item.input_unit_of_measure || ''}
@@ -1414,49 +1446,34 @@ export default function PurchaseOrdersPage() {
                                 <SelectContent>
                                   {(() => {
                                     const product = products.find(p => p.id === item.product_id);
-                                    if (product?.unit_of_measure === 'kg') {
-                                      return (
-                                        <>
-                                          <SelectItem value={null}>-</SelectItem>
-                                          <SelectItem value="g">g</SelectItem>
-                                          <SelectItem value="kg">kg</SelectItem>
-                                          <SelectItem value="ton">ton</SelectItem>
-                                        </>
-                                      );
-                                    } else if (product?.unit_of_measure === 'liter') {
-                                      return (
-                                        <>
-                                          <SelectItem value={null}>-</SelectItem>
-                                          <SelectItem value="ml">ml</SelectItem>
-                                          <SelectItem value="liter">L</SelectItem>
-                                        </>
-                                      );
-                                    } else if (product?.unit_of_measure === 'meter') {
-                                      return (
-                                        <>
-                                          <SelectItem value={null}>-</SelectItem>
-                                          <SelectItem value="mm">mm</SelectItem>
-                                          <SelectItem value="cm">cm</SelectItem>
-                                          <SelectItem value="meter">m</SelectItem>
-                                        </>
-                                      );
-                                    } else if (product?.unit_of_measure === 'piece') {
-                                      return (
-                                        <>
-                                          <SelectItem value={null}>-</SelectItem>
-                                          <SelectItem value="piece">pcs</SelectItem>
-                                          <SelectItem value="box">box</SelectItem>
-                                          <SelectItem value="pallet">pallet</SelectItem>
-                                        </>
-                                      );
+                                    if (!product) return <SelectItem value={null}>-</SelectItem>; 
+                                    const uom = product.unit_of_measure;
+                                    const options = [];
+                                    options.push(<SelectItem key="null" value={null}>-</SelectItem>);
+                                    if (uom === 'kg') {
+                                      options.push(<SelectItem key="g" value="g">g</SelectItem>);
+                                      options.push(<SelectItem key="kg" value="kg">kg</SelectItem>);
+                                      options.push(<SelectItem key="ton" value="ton">ton</SelectItem>);
+                                    } else if (uom === 'liter') {
+                                      options.push(<SelectItem key="ml" value="ml">ml</SelectItem>);
+                                      options.push(<SelectItem key="liter" value="liter">L</SelectItem>);
+                                    } else if (uom === 'meter') {
+                                      options.push(<SelectItem key="mm" value="mm">mm</SelectItem>);
+                                      options.push(<SelectItem key="cm" value="cm">cm</SelectItem>);
+                                      options.push(<SelectItem key="meter" value="meter">m</SelectItem>);
+                                    } else if (uom === 'piece') {
+                                      options.push(<SelectItem key="piece" value="piece">pcs</SelectItem>);
+                                      options.push(<SelectItem key="box" value="box">box</SelectItem>);
+                                      options.push(<SelectItem key="pallet" value="pallet">pallet</SelectItem>);
                                     } else {
-                                      return <SelectItem value={null}>{product?.unit_of_measure || '-'}</SelectItem>;
+                                      options.push(<SelectItem key={uom} value={uom}>{uom}</SelectItem>);
                                     }
+                                    return options;
                                   })()}
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div>
+                            <div className="col-span-2">
                               <Label className="text-xs mb-1">Pcs/Qty</Label>
                               <Input
                                 type="number"
@@ -1469,7 +1486,45 @@ export default function PurchaseOrdersPage() {
                                 className="text-xs"
                               />
                             </div>
-                            <div className="col-span-2">
+                            <div className="col-span-3">
+                              <Label className="text-xs mb-1">Vendor Product Code</Label>
+                              <Input
+                                type="text"
+                                value={item.vendor_product_code || ''}
+                                onChange={(e) => handleItemChange(index, 'vendor_product_code', e.target.value)}
+                                placeholder="Vendor's Code"
+                                className="text-sm"
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <Label className="text-xs mb-1">Expected Receipt</Label>
+                              <Input
+                                type="date"
+                                value={item.expected_receipt_date || ''}
+                                onChange={(e) => handleItemChange(index, 'expected_receipt_date', e.target.value)}
+                                className="text-sm"
+                              />
+                            </div>
+                          </div>
+
+                          {/* New Row 3: Cost Entry Method, Unit Cost, Cost/Pcs, Total */}
+                          <div className="grid grid-cols-12 gap-2">
+                            <div className="col-span-3">
+                              <Label className="text-xs mb-1">Cost Entry</Label>
+                              <Select
+                                value={item.cost_entry_method || 'total_cost'}
+                                onValueChange={(val) => handleItemChange(index, 'cost_entry_method', val)}
+                              >
+                                <SelectTrigger className="text-xs h-9">
+                                  <SelectValue placeholder="Entry Method" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="unit_cost">Unit Cost</SelectItem>
+                                  <SelectItem value="total_cost">Total Cost</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="col-span-3">
                               <Label className="text-xs mb-1">Unit Cost (€) *</Label>
                               <Input
                                 type="number"
@@ -1479,16 +1534,17 @@ export default function PurchaseOrdersPage() {
                                 onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value)}
                                 required
                                 className="text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                disabled={item.cost_entry_method === 'total_cost'}
                               />
                             </div>
-                            <div>
+                            <div className="col-span-3">
                               <Label className="text-xs mb-1">Cost/Pcs</Label>
                               <div className="h-9 flex items-center px-3 text-xs text-slate-600 border rounded-md bg-slate-50">
-                                {item.bundle_quantity && item.unit_cost ? 
+                                {item.bundle_quantity && item.bundle_quantity > 0 && item.unit_cost ?
                                   `€${(item.unit_cost / item.bundle_quantity).toFixed(4)}` : '-'}
                               </div>
                             </div>
-                            <div>
+                            <div className="col-span-3">
                               <Label className="text-xs mb-1">Total (€)</Label>
                               <Input
                                 type="number"
@@ -1497,15 +1553,7 @@ export default function PurchaseOrdersPage() {
                                 value={item.total_cost || 0}
                                 onChange={(e) => handleItemChange(index, 'total_cost', e.target.value)}
                                 className="text-sm font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              />
-                            </div>
-                            <div className="col-span-2">
-                              <Label className="text-xs mb-1">Expected Receipt</Label>
-                              <Input
-                                type="date"
-                                value={item.expected_receipt_date || ''}
-                                onChange={(e) => handleItemChange(index, 'expected_receipt_date', e.target.value)}
-                                className="text-sm"
+                                disabled={item.cost_entry_method === 'unit_cost'}
                               />
                             </div>
                           </div>
