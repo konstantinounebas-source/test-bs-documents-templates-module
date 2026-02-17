@@ -297,15 +297,15 @@ export default function BarcodeInputStepper({
   const getStepsForMovementType = () => {
     if (formData.movementType === "IN") {
       if (formData.associateWithPO) {
-        return [1, 2, 5, 6]; // Skip vendor/company steps if PO is selected
+        return [1, 2, 5, 6, 7]; // Skip vendor/company steps if PO is selected, add summary
       }
-      return [1, 2, 3, 4, 5, 6]; // All steps for IN without PO
+      return [1, 2, 3, 4, 5, 6, 7]; // All steps for IN without PO, add summary
     } else if (formData.movementType === "OUT") {
-      return [1, 2, 3, 5, 6]; // No invoice/company for OUT
+      return [1, 2, 3, 5, 6, 7]; // No invoice/company for OUT, add summary
     } else if (formData.movementType === "TRANSFER" || formData.movementType === "ADJUSTMENT") {
-      return [1, 2, 5, 6]; // No vendor/company for TRANSFER/ADJUSTMENT
+      return [1, 2, 5, 6, 7]; // No vendor/company for TRANSFER/ADJUSTMENT, add summary
     }
-    return [1, 2, 5, 6];
+    return [1, 2, 5, 6, 7];
   };
 
   const getAvailablePOs = () => {
@@ -899,6 +899,187 @@ export default function BarcodeInputStepper({
           </div>
         );
 
+      case 7:
+        return (
+          <div className="space-y-4">
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <h4 className="text-base font-bold text-green-900 mb-3">Σύνοψη Κίνησης</h4>
+              
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-slate-600 font-medium">Προϊόν:</p>
+                    <p className="font-semibold text-slate-900">{matchedProduct?.name}</p>
+                    <p className="text-xs text-slate-600 font-mono">SKU: {matchedProduct?.sku}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-600 font-medium">Τύπος Κίνησης:</p>
+                    <Badge className={
+                      formData.movementType === 'IN' ? 'bg-green-600' :
+                      formData.movementType === 'OUT' ? 'bg-red-600' :
+                      formData.movementType === 'TRANSFER' ? 'bg-blue-600' :
+                      'bg-orange-600'
+                    }>
+                      {formData.movementType}
+                    </Badge>
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  {formData.fromLocation && (
+                    <div>
+                      <p className="text-slate-600 font-medium">Από Θέση:</p>
+                      <p className="font-semibold text-slate-900">{formData.fromLocation}</p>
+                    </div>
+                  )}
+                  {formData.toLocation && (
+                    <div>
+                      <p className="text-slate-600 font-medium">Θέση Αποθήκης:</p>
+                      <p className="font-semibold text-slate-900">{formData.toLocation}</p>
+                    </div>
+                  )}
+                </div>
+
+                {formData.movementType === "IN" && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2 text-sm">
+                      {formData.selectedPO && (
+                        <div>
+                          <p className="text-slate-600 font-medium">Purchase Order:</p>
+                          <p className="font-semibold text-slate-900">
+                            {purchaseOrders.find(po => po.id === formData.selectedPO)?.po_number || '-'}
+                          </p>
+                        </div>
+                      )}
+                      {formData.selectedVendor && (
+                        <div>
+                          <p className="text-slate-600 font-medium">Προμηθευτής:</p>
+                          <p className="font-semibold text-slate-900">
+                            {vendors.find(v => v.id === formData.selectedVendor)?.name || '-'}
+                          </p>
+                        </div>
+                      )}
+                      {formData.vendorProductCode && (
+                        <div>
+                          <p className="text-slate-600 font-medium">Κωδικός Προμηθευτή:</p>
+                          <p className="font-semibold text-slate-900">{formData.vendorProductCode}</p>
+                        </div>
+                      )}
+                      {formData.selectedCompany && (
+                        <div>
+                          <p className="text-slate-600 font-medium">Εταιρεία:</p>
+                          <p className="font-semibold text-slate-900">
+                            {companies.find(c => c.id === formData.selectedCompany)?.name || '-'}
+                          </p>
+                        </div>
+                      )}
+                      {formData.selectedInvoiceCategory && (
+                        <div>
+                          <p className="text-slate-600 font-medium">Κατηγορία Τιμολόγησης:</p>
+                          <p className="font-semibold text-slate-900">
+                            {invoiceCategories.find(ic => ic.id === formData.selectedInvoiceCategory)?.name || '-'}
+                          </p>
+                        </div>
+                      )}
+                      {formData.invoiceNumber && (
+                        <div>
+                          <p className="text-slate-600 font-medium">Αριθμός Τιμολογίου:</p>
+                          <p className="font-semibold text-slate-900">{formData.invoiceNumber}</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {formData.movementType === "OUT" && formData.chargedToPerson && (
+                  <>
+                    <Separator />
+                    <div className="text-sm">
+                      <p className="text-slate-600 font-medium">Χρέωση σε:</p>
+                      <p className="font-semibold text-slate-900">
+                        {systemUsers.find(u => u.id === formData.chargedToPerson || u.email === formData.chargedToPerson)?.full_name ||
+                         appUsers.find(u => u.id === formData.chargedToPerson)?.full_name ||
+                         formData.chargedToPerson}
+                      </p>
+                    </div>
+                  </>
+                )}
+
+                <Separator />
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-slate-600 font-medium">Ποσότητα:</p>
+                    <p className="font-bold text-lg text-slate-900">{formData.quantity} {formData.inputUnitSubtype || matchedProduct?.unit_of_measure}</p>
+                  </div>
+                  {formData.movementType === "IN" && formData.unitCost && (
+                    <div>
+                      <p className="text-slate-600 font-medium">Κόστος Μονάδας:</p>
+                      <p className="font-bold text-lg text-green-900">€{parseFloat(formData.unitCost).toFixed(4)}</p>
+                    </div>
+                  )}
+                </div>
+
+                {formData.bundleQuantity && parseFloat(formData.bundleQuantity) > 0 && (
+                  <div className="text-sm">
+                    <p className="text-slate-600 font-medium">Pcs/Qty:</p>
+                    <p className="font-semibold text-slate-900">{formData.bundleQuantity} τεμάχια</p>
+                    {formData.unitCost && (
+                      <p className="text-xs text-slate-600 mt-1">
+                        Κόστος/τεμάχιο: €{(parseFloat(formData.unitCost) / parseFloat(formData.bundleQuantity)).toFixed(4)}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {formData.movementType === "IN" && formData.costInputMethod === 'total' && formData.totalItemCost && (
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-sm">
+                    <p className="text-slate-600">Συνολικό Κόστος Προϊόντος: <strong>€{parseFloat(formData.totalItemCost).toFixed(2)}</strong></p>
+                    {formData.discount !== "0" && parseFloat(formData.discount) > 0 && (
+                      <p className="text-slate-600">Έκπτωση: <strong>{formData.discount}%</strong></p>
+                    )}
+                  </div>
+                )}
+
+                {formData.waybillNumber && (
+                  <div className="text-sm">
+                    <p className="text-slate-600 font-medium">Waybill:</p>
+                    <p className="font-semibold text-slate-900">{formData.waybillNumber}</p>
+                  </div>
+                )}
+
+                {formData.notes && (
+                  <div className="text-sm">
+                    <p className="text-slate-600 font-medium">Σημειώσεις:</p>
+                    <p className="font-semibold text-slate-900">{formData.notes}</p>
+                  </div>
+                )}
+
+                {uploadedPhotos.length > 0 && (
+                  <div className="text-sm">
+                    <p className="text-slate-600 font-medium">Φωτογραφίες:</p>
+                    <p className="font-semibold text-green-600">{uploadedPhotos.length} φωτογραφία/ες επισυνάπτονται</p>
+                  </div>
+                )}
+
+                <div className="pt-3 border-t">
+                  <p className="text-xs text-slate-500">
+                    Ποσότητα στη βασική μονάδα ({matchedProduct?.unit_of_measure}): <strong>{(() => {
+                      const qty = parseFloat(formData.quantity) || 0;
+                      const convRate = parseFloat(formData.conversionRate) || 1;
+                      const bundleQty = parseFloat(formData.bundleQuantity) || null;
+                      return bundleQty ? (qty * convRate * bundleQty).toFixed(2) : (qty * convRate).toFixed(2);
+                    })()}</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -918,6 +1099,7 @@ export default function BarcodeInputStepper({
       case 4: return "Τιμολόγιο & Εταιρεία";
       case 5: return "Ποσότητα & Κόστος";
       case 6: return "Πρόσθετα";
+      case 7: return "Σύνοψη & Επιβεβαίωση";
       default: return `Βήμα ${step}`;
     }
   };
