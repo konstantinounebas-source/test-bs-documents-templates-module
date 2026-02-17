@@ -590,12 +590,23 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     <div className="col-span-2">
                       <Label>Προμηθευτής *</Label>
                       <div className="flex gap-2">
-                        <Input
-                          value={formData.reference_id ? (localVendors.find(v => v.id === formData.reference_id)?.name || '') : ''}
-                          readOnly
-                          placeholder="Επιλέξτε προμηθευτή..."
-                          className={validationErrors.reference_id ? 'border-red-500' : ''}
-                        />
+                        <div className={`flex-1 ${validationErrors.reference_id ? 'border-2 border-red-500 rounded-md' : ''}`}>
+                          <VendorSearchCombobox
+                            vendors={localVendors}
+                            vendorProductIds={vendorProductIds}
+                            value={formData.reference_id}
+                            onValueChange={(val) => {
+                              setFormData({
+                                ...formData,
+                                reference_type: 'Vendor',
+                                reference_id: val
+                              });
+                              if (validationErrors.reference_id) {
+                                setValidationErrors({ ...validationErrors, reference_id: undefined });
+                              }
+                            }}
+                          />
+                        </div>
                         <Button
                           type="button"
                           variant="outline"
