@@ -471,6 +471,11 @@ export default function PurchaseOrdersPage() {
       const qty = parseFloat(newItems[index].quantity_ordered) || 0;
       const cost = parseFloat(newItems[index].unit_cost) || 0;
       newItems[index].total_cost = qty * cost;
+    } else if (field === 'total_cost') {
+      const total = parseFloat(value) || 0;
+      const qty = parseFloat(newItems[index].quantity_ordered) || 0;
+      newItems[index].total_cost = total;
+      newItems[index].unit_cost = qty > 0 ? total / qty : 0;
     }
 
     setFormData(prev => ({
@@ -1072,9 +1077,14 @@ export default function PurchaseOrdersPage() {
                             </div>
                             <div>
                               <Label className="text-xs mb-1">Total (€)</Label>
-                              <div className="h-9 flex items-center px-3 text-sm font-semibold border rounded-md bg-slate-50">
-                                {(item.total_cost || 0).toFixed(2)}
-                              </div>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={(item.total_cost || 0).toFixed(2)}
+                                onChange={(e) => handleItemChange(index, 'total_cost', e.target.value)}
+                                className="text-sm font-semibold"
+                              />
                             </div>
                             <div className="col-span-2">
                               <Label className="text-xs mb-1">Expected Receipt</Label>
@@ -1435,9 +1445,14 @@ export default function PurchaseOrdersPage() {
                             </div>
                             <div>
                               <Label className="text-xs mb-1">Total (€)</Label>
-                              <div className="h-9 flex items-center px-3 text-sm font-semibold border rounded-md bg-slate-50">
-                                {(item.total_cost || 0).toFixed(2)}
-                              </div>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={(item.total_cost || 0).toFixed(2)}
+                                onChange={(e) => handleItemChange(index, 'total_cost', e.target.value)}
+                                className="text-sm font-semibold"
+                              />
                             </div>
                             <div className="col-span-2">
                               <Label className="text-xs mb-1">Expected Receipt</Label>
