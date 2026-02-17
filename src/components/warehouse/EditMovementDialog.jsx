@@ -10,6 +10,7 @@ import VendorSearchCombobox from "@/components/warehouse/VendorSearchCombobox";
 import CreateEditVendorDialog from "@/components/warehouse/CreateEditVendorDialog";
 import PreviousPurchasesSelector from "@/components/warehouse/PreviousPurchasesSelector";
 import { base44 } from "@/api/base44Client";
+import { resolveVendorId } from "@/components/warehouse/resolveVendor";
 
 export default function EditMovementDialog({ open, onClose, movement, onSave, vendors = [], productVendors = [], products = [], categories = [], companies = [], purchaseOrders = [] }) {
   const [formData, setFormData] = useState({
@@ -35,47 +36,30 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   const [invoiceCategories, setInvoiceCategories] = useState([]);
   const [validationErrors, setValidationErrors] = useState({});
 
-  // Helper function to recalculate stock for a product from all movements
   const recalculateStockForProduct = async (productId) => {
     try {
-      // Get all movements for this product
       const allMovements = await base44.entities.StockMovement.filter({ product_id: productId });
-      
-      // Get all stock items for this product
       const stockItems = await base44.entities.StockItem.filter({ product_id: productId });
-      
-      // Group movements by location
       const locationStocks = {};
       
       allMovements.forEach(mov => {
-        const baseQty = mov.base_quantity || 
-          (mov.quantity * (mov.conversion_rate || 1) * (mov.bundle_quantity || 1));
-
+        const baseQty = mov.base_quantity || (mov.quantity * (mov.conversion_rate || 1) * (mov.bundle_quantity || 1));
         if (mov.movement_type === 'IN' && mov.to_location) {
           locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
         } else if (mov.movement_type === 'OUT' && mov.from_location) {
           locationStocks[mov.from_location] = (locationStocks[mov.from_location] || 0) - baseQty;
         } else if (mov.movement_type === 'TRANSFER') {
-          if (mov.from_location) {
-            locationStocks[mov.from_location] = (locationStocks[mov.from_location] || 0) - baseQty;
-          }
-          if (mov.to_location) {
-            locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
-          }
+          if (mov.from_location) locationStocks[mov.from_location] = (locationStocks[mov.from_location] || 0) - baseQty;
+          if (mov.to_location) locationStocks[mov.to_location] = (locationStocks[mov.to_location] || 0) + baseQty;
         } else if (mov.movement_type === 'ADJUSTMENT') {
-          // ADJUSTMENT can be positive or negative
           const location = mov.to_location || mov.from_location;
-          if (location) {
-            locationStocks[location] = (locationStocks[location] || 0) + baseQty;
-          }
+          if (location) locationStocks[location] = (locationStocks[location] || 0) + baseQty;
         }
       });
       
-      // Update all stock items
       for (const location in locationStocks) {
         const existingStock = stockItems.find(si => si.warehouse_location === location);
         const correctQuantity = Math.max(0, locationStocks[location]);
-        
         if (existingStock) {
           await base44.entities.StockItem.update(existingStock.id, {
             quantity_on_hand: correctQuantity,
@@ -96,20 +80,16 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     }
   };
 
-  useEffect(() => {
-    setLocalVendors(vendors);
-  }, [vendors]);
+  useEffect(() => { setLocalVendors(vendors); }, [vendors]);
 
   useEffect(() => {
-    if (open) {
-      loadInvoiceCategories();
-    }
+    if (open) loadInvoiceCategories();
   }, [open]);
 
   const loadInvoiceCategories = async () => {
     try {
-      const invoiceCatsData = await base44.entities.InvoiceCategory.filter({ is_active: true });
-      setInvoiceCategories(invoiceCatsData);
+      const data = await base44.entities.InvoiceCategory.filter({ is_active: true });
+      setInvoiceCategories(data);
     } catch (error) {
       console.error("Error loading invoice categories:", error);
     }
@@ -119,33 +99,21 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     if (!movement || !open) return;
     
     const currentProduct = products.find(p => p.id === movement.product_id);
-    
     let conversionRate = '';
     let vendorUnitCost = movement.unit_cost || '';
     let vendorProdCode = movement.vendor_product_code || '';
     let inputUnitSubtype = movement.input_unit_of_measure || currentProduct?.unit_of_measure || 'piece';
 
-    // Extract PO ID and initial vendor ID
+    // Resolve vendor using shared utility
+    const initialVendorId = resolveVendorId(movement, purchaseOrders, productVendors);
+
+    // Resolve PO id
     let poId = '';
-    let initialVendorId = '';
-    
-    // Priority: movement.vendor_id > PO vendor > reference vendor > Invoice with po_number
-    if (movement.vendor_id) {
-      initialVendorId = movement.vendor_id;
-    } else if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
+    if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
       poId = movement.reference_id;
-      const po = purchaseOrders.find(p => p.id === movement.reference_id);
-      if (po && po.vendor_id) {
-        initialVendorId = po.vendor_id;
-      }
-    } else if (movement.reference_type === 'Vendor' && movement.reference_id) {
-      initialVendorId = movement.reference_id;
-    } else if (movement.reference_type === 'Invoice' && movement.po_number) {
+    } else if (movement.po_number) {
       const po = purchaseOrders.find(p => p.po_number === movement.po_number);
-      if (po) {
-        poId = po.id;
-        initialVendorId = po.vendor_id;
-      }
+      if (po) poId = po.id;
     }
 
     if (initialVendorId && movement.product_id) {
@@ -153,32 +121,22 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         pv => pv.product_id === movement.product_id && pv.vendor_id === initialVendorId
       );
       if (pv) {
-        if (pv.conversion_rate) {
-          conversionRate = String(pv.conversion_rate);
-        } else if (pv.bundle_quantity) {
-          conversionRate = String(pv.bundle_quantity);
-        }
-        if (!vendorUnitCost && pv.unit_cost) {
-          vendorUnitCost = String(pv.unit_cost);
-        }
-        if (!vendorProdCode && pv.vendor_product_code) {
-          vendorProdCode = pv.vendor_product_code;
-        }
+        if (pv.conversion_rate) conversionRate = String(pv.conversion_rate);
+        else if (pv.bundle_quantity) conversionRate = String(pv.bundle_quantity);
+        if (!vendorUnitCost && pv.unit_cost) vendorUnitCost = String(pv.unit_cost);
+        if (!vendorProdCode && pv.vendor_product_code) vendorProdCode = pv.vendor_product_code;
       }
     }
 
-    // For OUT movements without unit_cost, use product's current unit_cost
     if (movement.movement_type === 'OUT' && (!vendorUnitCost || parseFloat(vendorUnitCost) === 0)) {
-      if (currentProduct && currentProduct.unit_cost) {
-        vendorUnitCost = String(currentProduct.unit_cost);
-      }
+      if (currentProduct?.unit_cost) vendorUnitCost = String(currentProduct.unit_cost);
     }
 
     setFormData({
       notes: movement.notes || '',
       waybill_number: movement.waybill_number || '',
       reference_type: movement.reference_type || (initialVendorId ? 'Vendor' : ''),
-      reference_id: initialVendorId,
+      reference_id: initialVendorId || '',
       unit_cost: vendorUnitCost,
       input_unit_subtype: inputUnitSubtype,
       conversion_rate: conversionRate || '1',
@@ -196,19 +154,14 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     });
   }, [movement, productVendors, products, open, purchaseOrders]);
 
-  // Calculate unit cost when using total cost method
   useEffect(() => {
     if (formData.cost_input_method === 'total') {
       const qty = parseFloat(formData.quantity) || 0;
       const totalCost = parseFloat(formData.total_item_cost) || 0;
       const discountVal = parseFloat(formData.discount) || 0;
-      
       if (qty > 0 && totalCost > 0) {
         const adjustedTotalCost = totalCost * (1 - discountVal / 100);
-        setFormData(prev => ({
-          ...prev,
-          unit_cost: String((adjustedTotalCost / qty).toFixed(4))
-        }));
+        setFormData(prev => ({ ...prev, unit_cost: String((adjustedTotalCost / qty).toFixed(4)) }));
       }
     }
   }, [formData.cost_input_method, formData.total_item_cost, formData.discount, formData.quantity]);
@@ -216,53 +169,34 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validation for IN movements
     const errors = {};
     if (isInMovement) {
-      if (!formData.quantity || parseFloat(formData.quantity) <= 0) {
-        errors.quantity = 'Η ποσότητα είναι υποχρεωτική';
-      }
-      if (!formData.conversion_rate || parseFloat(formData.conversion_rate) <= 0) {
-        errors.conversion_rate = 'Ο συντελεστής μετατροπής είναι υποχρεωτικός';
-      }
-      if (!formData.reference_id) {
-        errors.reference_id = 'Ο προμηθευτής είναι υποχρεωτικός';
-      }
+      if (!formData.quantity || parseFloat(formData.quantity) <= 0) errors.quantity = 'Η ποσότητα είναι υποχρεωτική';
+      if (!formData.conversion_rate || parseFloat(formData.conversion_rate) <= 0) errors.conversion_rate = 'Ο συντελεστής μετατροπής είναι υποχρεωτικός';
+      if (!formData.reference_id) errors.reference_id = 'Ο προμηθευτής είναι υποχρεωτικός';
       if (formData.cost_input_method === 'unit') {
-        if (!formData.unit_cost || parseFloat(formData.unit_cost) <= 0) {
-          errors.unit_cost = 'Το κόστος ανά μονάδα είναι υποχρεωτικό';
-        }
+        if (!formData.unit_cost || parseFloat(formData.unit_cost) <= 0) errors.unit_cost = 'Το κόστος ανά μονάδα είναι υποχρεωτικό';
       } else {
-        if (!formData.total_item_cost || parseFloat(formData.total_item_cost) <= 0) {
-          errors.total_item_cost = 'Το συνολικό κόστος είναι υποχρεωτικό';
-        }
+        if (!formData.total_item_cost || parseFloat(formData.total_item_cost) <= 0) errors.total_item_cost = 'Το συνολικό κόστος είναι υποχρεωτικό';
       }
     }
     
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
-      return;
-    }
-    
+    if (Object.keys(errors).length > 0) { setValidationErrors(errors); return; }
     setValidationErrors({});
     setIsSaving(true);
+
     try {
       const quantity = parseFloat(formData.quantity) || 0;
       const conversionRate = parseFloat(formData.conversion_rate) || 1;
       const unitCost = parseFloat(formData.unit_cost) || 0;
-
       const bundleQty = parseFloat(formData.bundle_quantity) || null;
-      // Calculate base quantity: quantity * conversion_rate * bundle_quantity (if exists)
       const baseQuantity = bundleQty ? quantity * conversionRate * bundleQty : quantity * conversionRate;
-      // Calculate base unit cost: if bundle exists, divide by both conversion and bundle
       const baseUnitCost = isInMovement && unitCost > 0 && conversionRate > 0
         ? (bundleQty ? unitCost / conversionRate / bundleQty : unitCost / conversionRate)
         : undefined;
 
-      // Determine reference_type and reference_id based on PO or Vendor selection
       let referenceType = null;
       let referenceId = null;
-
       if (formData.po_id) {
         referenceType = 'PurchaseOrder';
         referenceId = formData.po_id;
@@ -271,7 +205,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         referenceId = formData.reference_id;
       }
 
-      // Prepare update data with quantity and unit_cost as numbers
       const updateData = {
         notes: formData.notes,
         waybill_number: formData.waybill_number,
@@ -286,135 +219,37 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
         invoice_category_id: formData.invoice_category_id || null
       };
 
-      // Only add unit_cost and base_unit_cost for IN movements
       if (isInMovement) {
         updateData.unit_cost = unitCost;
         updateData.base_unit_cost = baseUnitCost;
-        // For IN movements, total_value is base_quantity * base_unit_cost
-        if (baseUnitCost && baseUnitCost > 0) {
-          updateData.total_value = baseQuantity * baseUnitCost;
-        }
+        if (baseUnitCost && baseUnitCost > 0) updateData.total_value = baseQuantity * baseUnitCost;
       } else {
-        // For OUT movements, calculate total_value based on base_quantity and product unit_cost
-        if (product && product.unit_cost) {
-          updateData.total_value = baseQuantity * product.unit_cost;
-        }
+        if (product?.unit_cost) updateData.total_value = baseQuantity * product.unit_cost;
       }
-      
-      console.log('Saving movement with data:', updateData);
 
-      // Execute all operations in parallel for maximum speed
-      const parallelOperations = [];
+      const parallelOperations = [onSave(movement.id, updateData)];
       
-      // 1. Save movement
-      parallelOperations.push(onSave(movement.id, updateData));
-      
-      // 2. Update product company_id if changed
       const currentProduct = products.find(p => p.id === movement.product_id);
       if (currentProduct && formData.company_id !== currentProduct.company_id) {
-        parallelOperations.push(
-          base44.entities.Product.update(movement.product_id, {
-            company_id: formData.company_id || null
-          })
-        );
+        parallelOperations.push(base44.entities.Product.update(movement.product_id, { company_id: formData.company_id || null }));
       }
 
-      // 3. Update ProductVendor if IN movement
-      if (movement.movement_type === 'IN' && formData.reference_id && unitCost) {
-        if (!isNaN(unitCost) && unitCost > 0) {
-          parallelOperations.push(
-            (async () => {
-              const existingPVs = await base44.entities.ProductVendor.filter({
-                product_id: movement.product_id,
-                vendor_id: formData.reference_id
-              });
-
-              const pvData = {
-                unit_cost: unitCost,
-                is_active: true,
-                conversion_rate: conversionRate,
-                vendor_product_code: formData.vendor_product_code || null
-              };
-
-              if (existingPVs.length === 0) {
-                return base44.entities.ProductVendor.create({
-                  product_id: movement.product_id,
-                  vendor_id: formData.reference_id,
-                  is_preferred: false,
-                  ...pvData
-                });
-              } else {
-                return base44.entities.ProductVendor.update(existingPVs[0].id, pvData);
-              }
-            })()
-          );
-        }
+      if (movement.movement_type === 'IN' && formData.reference_id && unitCost > 0) {
+        parallelOperations.push((async () => {
+          const existingPVs = await base44.entities.ProductVendor.filter({
+            product_id: movement.product_id, vendor_id: formData.reference_id
+          });
+          const pvData = { unit_cost: unitCost, is_active: true, conversion_rate: conversionRate, vendor_product_code: formData.vendor_product_code || null };
+          if (existingPVs.length === 0) {
+            return base44.entities.ProductVendor.create({ product_id: movement.product_id, vendor_id: formData.reference_id, is_preferred: false, ...pvData });
+          } else {
+            return base44.entities.ProductVendor.update(existingPVs[0].id, pvData);
+          }
+        })());
       }
 
-      // 4. Update PO status if PO was selected
-      if (formData.po_id) {
-        parallelOperations.push(
-          (async () => {
-            const [poList, poMovements] = await Promise.all([
-              base44.entities.PurchaseOrder.filter({ id: formData.po_id }),
-              base44.entities.StockMovement.filter({
-                reference_type: 'PurchaseOrder',
-                reference_id: formData.po_id,
-                movement_type: 'IN'
-              })
-            ]);
-            
-            if (poList && poList.length > 0) {
-              const poData = poList[0];
-
-              const receivedByProduct = {};
-              poMovements.forEach(m => {
-                if (!receivedByProduct[m.product_id]) {
-                  receivedByProduct[m.product_id] = 0;
-                }
-                receivedByProduct[m.product_id] += m.quantity || 0;
-              });
-
-              let allItemsReceived = true;
-              let anyItemReceived = false;
-
-              if (poData.items && poData.items.length > 0) {
-                for (const item of poData.items) {
-                  const ordered = item.quantity_ordered || 0;
-                  const received = receivedByProduct[item.product_id] || 0;
-
-                  if (received > 0) {
-                    anyItemReceived = true;
-                  }
-                  if (received < ordered) {
-                    allItemsReceived = false;
-                  }
-                }
-              }
-
-              let newStatus = 'Confirmed';
-              if (allItemsReceived && poData.items && poData.items.length > 0) {
-                newStatus = 'Received';
-              } else if (anyItemReceived) {
-                newStatus = 'Partially Received';
-              }
-
-              if (poData.status !== newStatus) {
-                return base44.entities.PurchaseOrder.update(formData.po_id, {
-                  status: newStatus
-                });
-              }
-            }
-          })()
-        );
-      }
-
-      // Execute all operations in parallel
       await Promise.all(parallelOperations);
-      
-      // Recalculate stock after all updates
       await recalculateStockForProduct(movement.product_id);
-      
       onClose();
     } catch (error) {
       console.error("Error saving movement:", error);
@@ -427,35 +262,24 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     setEditingVendor(null);
     const vendorsData = await base44.entities.Vendor.filter({ is_active: true });
     setLocalVendors(vendorsData);
-    
-    // If a new vendor was created/updated, set it as selected
-    if (newVendor && newVendor.id) {
-      setFormData(prev => ({
-        ...prev,
-        reference_id: newVendor.id,
-        reference_type: 'Vendor'
-      }));
+    if (newVendor?.id) {
+      setFormData(prev => ({ ...prev, reference_id: newVendor.id, reference_type: 'Vendor' }));
     }
   };
 
   const handleEditVendor = () => {
     if (formData.reference_id) {
-      const vendor = localVendors.find(v => v.id === formData.reference_id);
-      setEditingVendor(vendor);
-      setShowCreateVendorDialog(true);
+      setEditingVendor(localVendors.find(v => v.id === formData.reference_id));
     } else {
-      // No vendor selected - open dialog to create new
       setEditingVendor(null);
-      setShowCreateVendorDialog(true);
     }
+    setShowCreateVendorDialog(true);
   };
 
   if (!movement) return null;
 
   const isInMovement = movement.movement_type === 'IN';
   const product = products.find(p => p.id === movement.product_id);
-  const category = product ? categories.find(c => c.id === product.category_id) : null;
-  const company = product ? companies.find(c => c.id === product.company_id) : null;
   const vendorProductIds = productVendors
     .filter(pv => pv.product_id === movement.product_id && pv.is_active)
     .map(pv => pv.vendor_id);
@@ -479,19 +303,11 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                 <Package className="w-6 h-6 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-base text-blue-900">{product?.name || 'N/A'}</p>
-                    </div>
+                    <p className="font-bold text-base text-blue-900">{product?.name || 'N/A'}</p>
                     <Badge className="bg-blue-600 text-white flex-shrink-0">Matched ✓</Badge>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-blue-700 font-mono">
-                      <span className="font-semibold">SKU:</span> {product?.sku || 'N/A'}
-                    </p>
-                    <p className="text-sm text-blue-600">
-                      <span className="font-semibold">Βασική Μονάδα:</span> {product?.unit_of_measure || 'N/A'}
-                    </p>
-                  </div>
+                  <p className="text-sm text-blue-700 font-mono"><span className="font-semibold">SKU:</span> {product?.sku || 'N/A'}</p>
+                  <p className="text-sm text-blue-600"><span className="font-semibold">Βασική Μονάδα:</span> {product?.unit_of_measure || 'N/A'}</p>
                 </div>
               </div>
             </div>
@@ -520,17 +336,10 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                   }}
                 />
 
-                {/* Warehouse Location */}
                 {formData.warehouse_location && (
                   <div className="border-t pt-4">
-                    <Label htmlFor="warehouse_location">Θέση Αποθήκης</Label>
-                    <Input
-                      id="warehouse_location"
-                      value={formData.warehouse_location || ''}
-                      onChange={(e) => setFormData({ ...formData, warehouse_location: e.target.value })}
-                      placeholder="π.χ. Ράφι A1"
-                      disabled
-                    />
+                    <Label>Θέση Αποθήκης</Label>
+                    <Input value={formData.warehouse_location || ''} disabled />
                     <p className="text-xs text-slate-500 mt-1">Θέση κατά τη δημιουργία της κίνησης</p>
                   </div>
                 )}
@@ -539,13 +348,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                 <div className="grid grid-cols-2 gap-3 border-t pt-4">
                   <div>
                     <Label>Εταιρεία *</Label>
-                    <Select 
-                      value={formData.company_id || 'none'} 
-                      onValueChange={(val) => setFormData({ ...formData, company_id: val === 'none' ? '' : val })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Επιλέξτε εταιρεία" />
-                      </SelectTrigger>
+                    <Select value={formData.company_id || 'none'} onValueChange={(val) => setFormData({ ...formData, company_id: val === 'none' ? '' : val })}>
+                      <SelectTrigger><SelectValue placeholder="Επιλέξτε εταιρεία" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
                         {companies.filter(c => c.id && c.is_active !== false).map(comp => (
@@ -555,23 +359,16 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     </Select>
                   </div>
                   <div>
-                    <Label htmlFor="invoice_category">Κατηγορία Τιμολόγησης *</Label>
-                    <Select 
-                      value={formData.invoice_category_id || 'none'} 
-                      onValueChange={(val) => setFormData({ ...formData, invoice_category_id: val === 'none' ? '' : val })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Επιλέξτε κατηγορία" />
-                      </SelectTrigger>
+                    <Label>Κατηγορία Τιμολόγησης *</Label>
+                    <Select value={formData.invoice_category_id || 'none'} onValueChange={(val) => setFormData({ ...formData, invoice_category_id: val === 'none' ? '' : val })}>
+                      <SelectTrigger><SelectValue placeholder="Επιλέξτε κατηγορία" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
                         {invoiceCategories.map(ic => (
                           <SelectItem key={ic.id} value={ic.id}>
                             <div>
                               <div className="font-medium">{ic.name}</div>
-                              {ic.description && (
-                                <div className="text-xs text-slate-500">{ic.description}</div>
-                              )}
+                              {ic.description && <div className="text-xs text-slate-500">{ic.description}</div>}
                             </div>
                           </SelectItem>
                         ))}
@@ -593,71 +390,37 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                             vendorProductIds={vendorProductIds}
                             value={formData.reference_id}
                             onValueChange={(val) => {
-                              setFormData({
-                                ...formData,
-                                reference_type: 'Vendor',
-                                reference_id: val
-                              });
-                              if (validationErrors.reference_id) {
-                                setValidationErrors({ ...validationErrors, reference_id: undefined });
-                              }
+                              setFormData({ ...formData, reference_type: 'Vendor', reference_id: val });
+                              if (validationErrors.reference_id) setValidationErrors({ ...validationErrors, reference_id: undefined });
                             }}
                           />
                         </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={handleEditVendor}
-                          title={formData.reference_id ? "Επεξεργασία προμηθευτή" : "Προσθήκη νέου προμηθευτή"}
-                        >
+                        <Button type="button" variant="outline" size="icon" onClick={handleEditVendor}>
                           <Pencil className="w-4 h-4" />
                         </Button>
                       </div>
-                      {validationErrors.reference_id && (
-                        <p className="text-xs text-red-600 mt-1">{validationErrors.reference_id}</p>
-                      )}
+                      {validationErrors.reference_id && <p className="text-xs text-red-600 mt-1">{validationErrors.reference_id}</p>}
                     </div>
-
                     <div>
-                      <Label htmlFor="vendor_product_code">Κωδικός Προϊόντος Προμηθευτή *</Label>
-                      <Input
-                        id="vendor_product_code"
-                        value={formData.vendor_product_code}
-                        onChange={(e) => setFormData({ ...formData, vendor_product_code: e.target.value })}
-                        placeholder="Κωδικός προμηθευτή"
-                      />
+                      <Label>Κωδικός Προϊόντος Προμηθευτή *</Label>
+                      <Input value={formData.vendor_product_code} onChange={(e) => setFormData({ ...formData, vendor_product_code: e.target.value })} placeholder="Κωδικός προμηθευτή" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <Label htmlFor="invoice-number">Αριθμός Τιμολογίου</Label>
-                      <Input
-                        id="invoice-number"
-                        value={formData.invoice_number || ''}
-                        onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })}
-                        placeholder="π.χ. INV-2025-001"
-                      />
+                      <Label>Αριθμός Τιμολογίου</Label>
+                      <Input value={formData.invoice_number || ''} onChange={(e) => setFormData({ ...formData, invoice_number: e.target.value })} placeholder="π.χ. INV-2025-001" />
                     </div>
                     <div>
-                      <Label htmlFor="po-number">Αριθμός PO</Label>
-                      <Select
-                        value={formData.po_id || 'none'}
-                        onValueChange={(val) => setFormData({ ...formData, po_id: val === 'none' ? '' : val })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Επιλέξτε PO" />
-                        </SelectTrigger>
+                      <Label>Αριθμός PO</Label>
+                      <Select value={formData.po_id || 'none'} onValueChange={(val) => setFormData({ ...formData, po_id: val === 'none' ? '' : val })}>
+                        <SelectTrigger><SelectValue placeholder="Επιλέξτε PO" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="none">-- Χωρίς PO --</SelectItem>
                           {purchaseOrders
                             .filter(po => po.items && po.items.some(item => item.product_id === movement.product_id))
-                            .map(po => (
-                              <SelectItem key={po.id} value={po.id}>
-                                {po.po_number}
-                              </SelectItem>
-                            ))}
+                            .map(po => <SelectItem key={po.id} value={po.id}>{po.po_number}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -670,106 +433,47 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                   
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <Label htmlFor="quantity">Ποσότητα *</Label>
-                      <Input
-                        id="quantity"
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        value={formData.quantity}
-                        onChange={(e) => {
-                          setFormData({ ...formData, quantity: e.target.value });
-                          if (validationErrors.quantity) {
-                            setValidationErrors({ ...validationErrors, quantity: undefined });
-                          }
-                        }}
-                        placeholder="0.00"
-                        required
-                        className={validationErrors.quantity ? 'border-red-500 focus-visible:ring-red-500' : ''}
-                      />
-                      {validationErrors.quantity && (
-                        <p className="text-xs text-red-600 mt-1">{validationErrors.quantity}</p>
-                      )}
+                      <Label>Ποσότητα *</Label>
+                      <Input type="number" step="0.01" min="0.01" value={formData.quantity}
+                        onChange={(e) => { setFormData({ ...formData, quantity: e.target.value }); if (validationErrors.quantity) setValidationErrors({ ...validationErrors, quantity: undefined }); }}
+                        className={validationErrors.quantity ? 'border-red-500' : ''} />
+                      {validationErrors.quantity && <p className="text-xs text-red-600 mt-1">{validationErrors.quantity}</p>}
                     </div>
-
                     <div>
-                      <Label htmlFor="input_unit_subtype">Μονάδα Εισαγ.</Label>
-                      <Select
-                        value={formData.input_unit_subtype || product?.unit_of_measure}
+                      <Label>Μονάδα Εισαγ.</Label>
+                      <Select value={formData.input_unit_subtype || product?.unit_of_measure}
                         onValueChange={(val) => {
-                          let newConversionRate = formData.conversion_rate;
+                          let newConvRate = formData.conversion_rate;
                           if (product?.unit_of_measure === 'kg') {
-                            if (val === 'g') newConversionRate = '0.001';
-                            else if (val === 'kg') newConversionRate = '1';
-                            else if (val === 'ton') newConversionRate = '1000';
+                            if (val === 'g') newConvRate = '0.001';
+                            else if (val === 'kg') newConvRate = '1';
+                            else if (val === 'ton') newConvRate = '1000';
                           } else if (product?.unit_of_measure === 'liter') {
-                            if (val === 'ml') newConversionRate = '0.001';
-                            else if (val === 'liter') newConversionRate = '1';
+                            if (val === 'ml') newConvRate = '0.001';
+                            else if (val === 'liter') newConvRate = '1';
                           } else if (product?.unit_of_measure === 'meter') {
-                            if (val === 'cm') newConversionRate = '0.01';
-                            else if (val === 'mm') newConversionRate = '0.001';
-                            else if (val === 'meter') newConversionRate = '1';
+                            if (val === 'cm') newConvRate = '0.01';
+                            else if (val === 'mm') newConvRate = '0.001';
+                            else if (val === 'meter') newConvRate = '1';
                           } else if (product?.unit_of_measure === 'piece') {
-                            if (val === 'piece' || val === 'box' || val === 'pallet') {
-                              setFormData({ ...formData, input_unit_subtype: val, conversion_rate: '1' });
-                              return;
-                            }
+                            setFormData({ ...formData, input_unit_subtype: val, conversion_rate: '1' }); return;
                           }
-                          setFormData({ ...formData, input_unit_subtype: val, conversion_rate: newConversionRate });
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Επιλέξτε υπομονάδα" />
-                        </SelectTrigger>
+                          setFormData({ ...formData, input_unit_subtype: val, conversion_rate: newConvRate });
+                        }}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {product?.unit_of_measure === 'kg' && (
-                            <>
-                              <SelectItem value="g">Γραμμάρια (g)</SelectItem>
-                              <SelectItem value="kg">Κιλά (kg)</SelectItem>
-                              <SelectItem value="ton">Τόνοι (ton)</SelectItem>
-                            </>
-                          )}
-                          {product?.unit_of_measure === 'liter' && (
-                            <>
-                              <SelectItem value="ml">Χιλιοστόλιτρα (ml)</SelectItem>
-                              <SelectItem value="liter">Λίτρα (L)</SelectItem>
-                            </>
-                          )}
-                          {product?.unit_of_measure === 'meter' && (
-                            <>
-                              <SelectItem value="mm">Χιλιοστόμετρα (mm)</SelectItem>
-                              <SelectItem value="cm">Εκατοστόμετρα (cm)</SelectItem>
-                              <SelectItem value="meter">Μέτρα (m)</SelectItem>
-                            </>
-                          )}
-                          {product?.unit_of_measure === 'piece' && (
-                            <>
-                              <SelectItem value="piece">Τεμάχια</SelectItem>
-                              <SelectItem value="box">Κουτιά</SelectItem>
-                              <SelectItem value="pallet">Παλέτες</SelectItem>
-                            </>
-                          )}
-                          {!['kg', 'liter', 'meter', 'piece'].includes(product?.unit_of_measure) && (
-                            <SelectItem value={product?.unit_of_measure}>{product?.unit_of_measure}</SelectItem>
-                          )}
+                          {product?.unit_of_measure === 'kg' && (<><SelectItem value="g">Γραμμάρια (g)</SelectItem><SelectItem value="kg">Κιλά (kg)</SelectItem><SelectItem value="ton">Τόνοι (ton)</SelectItem></>)}
+                          {product?.unit_of_measure === 'liter' && (<><SelectItem value="ml">Χιλιοστόλιτρα (ml)</SelectItem><SelectItem value="liter">Λίτρα (L)</SelectItem></>)}
+                          {product?.unit_of_measure === 'meter' && (<><SelectItem value="mm">Χιλιοστόμετρα (mm)</SelectItem><SelectItem value="cm">Εκατοστόμετρα (cm)</SelectItem><SelectItem value="meter">Μέτρα (m)</SelectItem></>)}
+                          {product?.unit_of_measure === 'piece' && (<><SelectItem value="piece">Τεμάχια</SelectItem><SelectItem value="box">Κουτιά</SelectItem><SelectItem value="pallet">Παλέτες</SelectItem></>)}
+                          {!['kg', 'liter', 'meter', 'piece'].includes(product?.unit_of_measure) && (<SelectItem value={product?.unit_of_measure}>{product?.unit_of_measure}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
-
                     <div>
-                      <Label htmlFor="bundle_qty">Pcs/Qty</Label>
-                      <Input
-                        id="bundle_qty"
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={formData.bundle_quantity || ''}
-                        onChange={(e) => setFormData({ ...formData, bundle_quantity: e.target.value })}
-                        placeholder="π.χ. 100"
-                      />
-                      <p className="text-xs text-slate-500 mt-1">
-                        Τεμάχια ανά μονάδα εισαγωγής
-                      </p>
+                      <Label>Pcs/Qty</Label>
+                      <Input type="number" min="1" step="1" value={formData.bundle_quantity || ''} onChange={(e) => setFormData({ ...formData, bundle_quantity: e.target.value })} placeholder="π.χ. 100" />
+                      <p className="text-xs text-slate-500 mt-1">Τεμάχια ανά μονάδα εισαγωγής</p>
                     </div>
                   </div>
 
@@ -779,304 +483,116 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                       <div className="flex items-center h-10 px-3 bg-slate-100 rounded-md border">
                         <span className="text-sm font-medium">€{costPerBaseUnit}</span>
                       </div>
-                      <p className="text-xs text-slate-500 mt-1">
-                        Υπολογιζόμενο κόστος βασικής μονάδας
-                      </p>
                     </div>
                   )}
-                  </div>
+                </div>
 
-                  <div className="space-y-1">
-                    <p className="text-xs text-slate-500">
-                      Ποσότητα στην βασική μονάδα: {(() => {
-                        const qty = parseFloat(formData.quantity) || 0;
-                        const convRate = parseFloat(formData.conversion_rate) || 1;
-                        const bundleQty = parseFloat(formData.bundle_quantity) || null;
-                        return bundleQty ? (qty * convRate * bundleQty).toFixed(2) : (qty * convRate).toFixed(2);
-                      })()} {product?.unit_of_measure || 'μονάδες'}
-                    </p>
-                    {formData.bundle_quantity && unitCost > 0 && (
-                      <p className="text-xs text-green-600 font-medium">
-                        Κόστος ανά τεμάχιο: €{(() => {
-                          const convRate = parseFloat(formData.conversion_rate) || 1;
-                          const bundleQty = parseFloat(formData.bundle_quantity) || 1;
-                          return (unitCost / convRate / bundleQty).toFixed(4);
-                        })()}
-                      </p>
-                    )}
-                  </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-slate-500">
+                    Ποσότητα στην βασική μονάδα: {(() => {
+                      const qty = parseFloat(formData.quantity) || 0;
+                      const convRate = parseFloat(formData.conversion_rate) || 1;
+                      const bQty = parseFloat(formData.bundle_quantity) || null;
+                      return bQty ? (qty * convRate * bQty).toFixed(2) : (qty * convRate).toFixed(2);
+                    })()} {product?.unit_of_measure || 'μονάδες'}
+                  </p>
+                </div>
 
+                <div>
+                  <Label>Μέθοδος Εισαγωγής Κόστους</Label>
+                  <Select value={formData.cost_input_method} onValueChange={(val) => setFormData(prev => ({ ...prev, cost_input_method: val, total_item_cost: val === 'unit' ? '' : prev.total_item_cost, discount: val === 'unit' ? '0' : prev.discount, unit_cost: val === 'unit' ? prev.unit_cost : '' }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unit">Ανά Μονάδα</SelectItem>
+                      <SelectItem value="total">Συνολικό Κόστος + Έκπτωση</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.cost_input_method === 'unit' ? (
                   <div>
-                    <Label>Μέθοδος Εισαγωγής Κόστους</Label>
-                    <Select 
-                      value={formData.cost_input_method} 
-                      onValueChange={(val) => {
-                        setFormData(prev => ({
-                          ...prev,
-                          cost_input_method: val,
-                          total_item_cost: val === 'unit' ? '' : prev.total_item_cost,
-                          discount: val === 'unit' ? '0' : prev.discount,
-                          unit_cost: val === 'unit' ? prev.unit_cost : ''
-                        }));
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="unit">Ανά Μονάδα</SelectItem>
-                        <SelectItem value="total">Συνολικό Κόστος + Έκπτωση</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label>Κόστος ανά μονάδα (€) *</Label>
+                    <Input type="number" step="0.0001" min="0" value={formData.unit_cost}
+                      onChange={(e) => { setFormData({ ...formData, unit_cost: e.target.value }); if (validationErrors.unit_cost) setValidationErrors({ ...validationErrors, unit_cost: undefined }); }}
+                      className={validationErrors.unit_cost ? 'border-red-500' : ''} />
+                    {validationErrors.unit_cost ? <p className="text-xs text-red-600 mt-1">{validationErrors.unit_cost}</p> : <p className="text-xs text-slate-500 mt-1">Κόστος ανά {product?.unit_of_measure || 'μονάδα'}</p>}
                   </div>
-
-                  {formData.cost_input_method === 'unit' ? (
+                ) : (
+                  <>
                     <div>
-                      <Label htmlFor="unit_cost">Κόστος ανά μονάδα (€) *</Label>
-                      <Input
-                        id="unit_cost"
-                        type="number"
-                        step="0.0001"
-                        min="0"
-                        value={formData.unit_cost}
-                        onChange={(e) => {
-                          setFormData({ ...formData, unit_cost: e.target.value });
-                          if (validationErrors.unit_cost) {
-                            setValidationErrors({ ...validationErrors, unit_cost: undefined });
-                          }
-                        }}
-                        placeholder="0.0000"
-                        className={validationErrors.unit_cost ? 'border-red-500 focus-visible:ring-red-500' : ''}
-                      />
-                      {validationErrors.unit_cost ? (
-                        <p className="text-xs text-red-600 mt-1">{validationErrors.unit_cost}</p>
-                      ) : (
-                        <p className="text-xs text-slate-500 mt-1">
-                          Κόστος ανά {product?.unit_of_measure || 'μονάδα'}
-                        </p>
-                      )}
+                      <Label>Συνολικό Κόστος Προϊόντος (€) *</Label>
+                      <Input type="number" step="0.01" min="0" value={formData.total_item_cost}
+                        onChange={(e) => { setFormData({ ...formData, total_item_cost: e.target.value }); if (validationErrors.total_item_cost) setValidationErrors({ ...validationErrors, total_item_cost: undefined }); }}
+                        className={validationErrors.total_item_cost ? 'border-red-500' : ''} />
+                      {validationErrors.total_item_cost && <p className="text-xs text-red-600 mt-1">{validationErrors.total_item_cost}</p>}
                     </div>
-                  ) : (
-                    <>
-                      <div>
-                        <Label htmlFor="total_item_cost">Συνολικό Κόστος Προϊόντος (€) *</Label>
-                        <Input
-                          id="total_item_cost"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={formData.total_item_cost}
-                          onChange={(e) => {
-                            setFormData({ ...formData, total_item_cost: e.target.value });
-                            if (validationErrors.total_item_cost) {
-                              setValidationErrors({ ...validationErrors, total_item_cost: undefined });
-                            }
-                          }}
-                          placeholder="0.00"
-                          className={validationErrors.total_item_cost ? 'border-red-500 focus-visible:ring-red-500' : ''}
-                        />
-                        {validationErrors.total_item_cost ? (
-                          <p className="text-xs text-red-600 mt-1">{validationErrors.total_item_cost}</p>
-                        ) : (
-                          <p className="text-xs text-slate-500 mt-1">
-                            Το συνολικό κόστος για {formData.quantity || 0} {product?.unit_of_measure || 'μονάδες'} πριν την έκπτωση
-                          </p>
-                        )}
+                    <div>
+                      <Label>Έκπτωση (%)</Label>
+                      <Input type="number" step="0.1" min="0" max="100" value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: e.target.value })} />
+                    </div>
+                    {formData.unit_cost && (
+                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-sm text-blue-900"><strong>Υπολογιζόμενο Κόστος ανά Μονάδα:</strong> €{parseFloat(formData.unit_cost).toFixed(4)}</p>
                       </div>
-                      <div>
-                        <Label htmlFor="discount">Έκπτωση (%)</Label>
-                        <Input
-                          id="discount"
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                          value={formData.discount}
-                          onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
-                          placeholder="0"
-                        />
-                        <p className="text-xs text-slate-500 mt-1">
-                          Ποσοστό έκπτωσης επί του συνολικού κόστους
-                        </p>
-                      </div>
-                      {formData.unit_cost && (
-                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <p className="text-sm text-blue-900">
-                            <strong>Υπολογιζόμενο Κόστος ανά Μονάδα:</strong> €{parseFloat(formData.unit_cost).toFixed(4)}
-                          </p>
-                        </div>
-                      )}
-                    </>
                     )}
+                  </>
+                )}
 
-                  {/* Additional Details */}
-                  <div className="space-y-3 border-t pt-4">
-                    <p className="text-sm font-semibold text-slate-700">Πρόσθετα Στοιχεία</p>
-
-                    <div>
-                      <Label htmlFor="waybill">Αριθμός Waybill</Label>
-                      <Input
-                        id="waybill"
-                        value={formData.waybill_number}
-                        onChange={(e) => setFormData({ ...formData, waybill_number: e.target.value })}
-                        placeholder="π.χ. WB-2025-001"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="notes">Σημειώσεις</Label>
-                      <Textarea
-                        id="notes"
-                        value={formData.notes}
-                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                        placeholder="Προσθέστε σημειώσεις..."
-                        rows={4}
-                      />
-                    </div>
+                <div className="space-y-3 border-t pt-4">
+                  <p className="text-sm font-semibold text-slate-700">Πρόσθετα Στοιχεία</p>
+                  <div>
+                    <Label>Αριθμός Waybill</Label>
+                    <Input value={formData.waybill_number} onChange={(e) => setFormData({ ...formData, waybill_number: e.target.value })} placeholder="π.χ. WB-2025-001" />
                   </div>
-                </>
-              )}
+                  <div>
+                    <Label>Σημειώσεις</Label>
+                    <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={4} />
+                  </div>
+                </div>
+              </>
+            )}
 
-              {/* Common fields for all movement types */}
-              {!isInMovement && (
+            {!isInMovement && (
               <div className="space-y-3">
                 <div className="space-y-3 border-t pt-4">
                   <p className="text-sm font-semibold text-slate-700">Ποσότητα & Μονάδες</p>
-                  
                   <div className="grid grid-cols-3 gap-3">
                     <div>
-                      <Label htmlFor="quantity-common">Ποσότητα *</Label>
-                      <Input
-                        id="quantity-common"
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        value={formData.quantity}
-                        onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                        placeholder="0.00"
-                      />
+                      <Label>Ποσότητα *</Label>
+                      <Input type="number" step="0.01" min="0.01" value={formData.quantity} onChange={(e) => setFormData({ ...formData, quantity: e.target.value })} />
                     </div>
-
                     <div>
-                      <Label htmlFor="input_unit_subtype_out">Μονάδα Εισαγ.</Label>
-                      <Select
-                        value={formData.input_unit_subtype || product?.unit_of_measure}
-                        onValueChange={(val) => {
-                          let newConversionRate = formData.conversion_rate;
-                          if (product?.unit_of_measure === 'kg') {
-                            if (val === 'g') newConversionRate = '0.001';
-                            else if (val === 'kg') newConversionRate = '1';
-                            else if (val === 'ton') newConversionRate = '1000';
-                          } else if (product?.unit_of_measure === 'liter') {
-                            if (val === 'ml') newConversionRate = '0.001';
-                            else if (val === 'liter') newConversionRate = '1';
-                          } else if (product?.unit_of_measure === 'meter') {
-                            if (val === 'cm') newConversionRate = '0.01';
-                            else if (val === 'mm') newConversionRate = '0.001';
-                            else if (val === 'meter') newConversionRate = '1';
-                          } else if (product?.unit_of_measure === 'piece') {
-                            if (val === 'piece' || val === 'box' || val === 'pallet') {
-                              setFormData({ ...formData, input_unit_subtype: val, conversion_rate: '1' });
-                              return;
-                            }
-                          }
-                          setFormData({ ...formData, input_unit_subtype: val, conversion_rate: newConversionRate });
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Επιλέξτε υπομονάδα" />
-                        </SelectTrigger>
+                      <Label>Μονάδα Εισαγ.</Label>
+                      <Select value={formData.input_unit_subtype || product?.unit_of_measure} onValueChange={(val) => setFormData({ ...formData, input_unit_subtype: val })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {product?.unit_of_measure === 'kg' && (
-                            <>
-                              <SelectItem value="g">Γραμμάρια (g)</SelectItem>
-                              <SelectItem value="kg">Κιλά (kg)</SelectItem>
-                              <SelectItem value="ton">Τόνοι (ton)</SelectItem>
-                            </>
-                          )}
-                          {product?.unit_of_measure === 'liter' && (
-                            <>
-                              <SelectItem value="ml">Χιλιοστόλιτρα (ml)</SelectItem>
-                              <SelectItem value="liter">Λίτρα (L)</SelectItem>
-                            </>
-                          )}
-                          {product?.unit_of_measure === 'meter' && (
-                            <>
-                              <SelectItem value="mm">Χιλιοστόμετρα (mm)</SelectItem>
-                              <SelectItem value="cm">Εκατοστόμετρα (cm)</SelectItem>
-                              <SelectItem value="meter">Μέτρα (m)</SelectItem>
-                            </>
-                          )}
-                          {product?.unit_of_measure === 'piece' && (
-                            <>
-                              <SelectItem value="piece">Τεμάχια</SelectItem>
-                              <SelectItem value="box">Κουτιά</SelectItem>
-                              <SelectItem value="pallet">Παλέτες</SelectItem>
-                            </>
-                          )}
-                          {!['kg', 'liter', 'meter', 'piece'].includes(product?.unit_of_measure) && (
-                            <SelectItem value={product?.unit_of_measure}>{product?.unit_of_measure}</SelectItem>
-                          )}
+                          {product?.unit_of_measure === 'kg' && (<><SelectItem value="g">Γραμμάρια (g)</SelectItem><SelectItem value="kg">Κιλά (kg)</SelectItem><SelectItem value="ton">Τόνοι (ton)</SelectItem></>)}
+                          {product?.unit_of_measure === 'liter' && (<><SelectItem value="ml">Χιλιοστόλιτρα (ml)</SelectItem><SelectItem value="liter">Λίτρα (L)</SelectItem></>)}
+                          {product?.unit_of_measure === 'meter' && (<><SelectItem value="mm">Χιλιοστόμετρα (mm)</SelectItem><SelectItem value="cm">Εκατοστόμετρα (cm)</SelectItem><SelectItem value="meter">Μέτρα (m)</SelectItem></>)}
+                          {product?.unit_of_measure === 'piece' && (<><SelectItem value="piece">Τεμάχια</SelectItem><SelectItem value="box">Κουτιά</SelectItem><SelectItem value="pallet">Παλέτες</SelectItem></>)}
+                          {!['kg', 'liter', 'meter', 'piece'].includes(product?.unit_of_measure) && (<SelectItem value={product?.unit_of_measure}>{product?.unit_of_measure}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
-
                     <div>
-                      <Label htmlFor="bundle_qty_out">Pcs/Qty</Label>
-                      <Input
-                        id="bundle_qty_out"
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={formData.bundle_quantity || ''}
-                        onChange={(e) => setFormData({ ...formData, bundle_quantity: e.target.value })}
-                        placeholder="π.χ. 100"
-                      />
-                      <p className="text-xs text-slate-500 mt-1">
-                        Τεμάχια ανά μονάδα εισαγωγής
-                      </p>
+                      <Label>Pcs/Qty</Label>
+                      <Input type="number" min="1" step="1" value={formData.bundle_quantity || ''} onChange={(e) => setFormData({ ...formData, bundle_quantity: e.target.value })} placeholder="π.χ. 100" />
                     </div>
                   </div>
-
-                  <div className="space-y-1">
-                    <p className="text-xs text-slate-500">
-                      Ποσότητα στην βασική μονάδα ({product?.unit_of_measure}): {(() => {
-                        const qty = parseFloat(formData.quantity) || 0;
-                        const convRate = parseFloat(formData.conversion_rate) || 1;
-                        const bundleQty = parseFloat(formData.bundle_quantity) || null;
-                        return bundleQty ? (qty * convRate * bundleQty).toFixed(2) : (qty * convRate).toFixed(2);
-                      })()}
-                    </p>
-                  </div>
                 </div>
-
                 <div>
-                  <Label htmlFor="waybill-common">Αριθμός Waybill</Label>
-                  <Input
-                    id="waybill-common"
-                    value={formData.waybill_number}
-                    onChange={(e) => setFormData({ ...formData, waybill_number: e.target.value })}
-                    placeholder="π.χ. WB-2025-001"
-                  />
+                  <Label>Αριθμός Waybill</Label>
+                  <Input value={formData.waybill_number} onChange={(e) => setFormData({ ...formData, waybill_number: e.target.value })} placeholder="π.χ. WB-2025-001" />
                 </div>
-
                 <div>
-                  <Label htmlFor="notes-common">Σημειώσεις</Label>
-                  <Textarea
-                    id="notes-common"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Προσθέστε σημειώσεις..."
-                    rows={4}
-                  />
+                  <Label>Σημειώσεις</Label>
+                  <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={4} />
                 </div>
               </div>
             )}
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
-                Ακύρωση
-              </Button>
+              <Button type="button" variant="outline" onClick={onClose}>Ακύρωση</Button>
               <Button type="submit" disabled={isSaving}>
                 {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Αποθήκευση
@@ -1088,10 +604,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
       <CreateEditVendorDialog
         open={showCreateVendorDialog}
-        onClose={() => {
-          setShowCreateVendorDialog(false);
-          setEditingVendor(null);
-        }}
+        onClose={() => { setShowCreateVendorDialog(false); setEditingVendor(null); }}
         vendor={editingVendor}
         onVendorSaved={handleVendorCreated}
       />
