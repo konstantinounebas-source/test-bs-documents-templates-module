@@ -45,6 +45,7 @@ const formatLocalDateTime = (dateString) => {
 
 export default function StockMovementsTable({ movements, products, users, isLoading, onView, onEdit, onViewProductMovements, allMovements }) {
   const [sortConfig, setSortConfig] = useState({ key: 'created_date', direction: 'desc' });
+  const [productSortConfig, setProductSortConfig] = useState({ key: null, direction: 'asc' });
 
   const getProductInfo = (productId) => {
     const product = products.find(p => p.id === productId);
@@ -95,6 +96,16 @@ export default function StockMovementsTable({ movements, products, users, isLoad
       direction = 'desc';
     }
     setSortConfig({ key, direction });
+    setProductSortConfig({ key: null, direction: 'asc' });
+  };
+
+  const handleProductSort = (key) => {
+    let direction = 'asc';
+    if (productSortConfig.key === key && productSortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setProductSortConfig({ key, direction });
+    setSortConfig({ key: null, direction: 'asc' });
   };
 
   const sortedMovements = [...movements].sort((a, b) => {
@@ -103,6 +114,25 @@ export default function StockMovementsTable({ movements, products, users, isLoad
       const dateB = new Date(b.created_date).getTime();
       return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
     }
+    
+    if (productSortConfig.key === 'product') {
+      const productA = getProductInfo(a.product_id);
+      const productB = getProductInfo(b.product_id);
+      const nameCompare = productA.name.localeCompare(productB.name);
+      return productSortConfig.direction === 'asc' ? nameCompare : -nameCompare;
+    }
+    
+    if (productSortConfig.key === 'type') {
+      const typeCompare = (a.movement_type || '').localeCompare(b.movement_type || '');
+      return productSortConfig.direction === 'asc' ? typeCompare : -typeCompare;
+    }
+    
+    if (productSortConfig.key === 'quantity') {
+      const qtyA = calculateDisplayQuantity(a);
+      const qtyB = calculateDisplayQuantity(b);
+      return productSortConfig.direction === 'asc' ? qtyA - qtyB : qtyB - qtyA;
+    }
+    
     return 0;
   });
 
@@ -148,9 +178,24 @@ export default function StockMovementsTable({ movements, products, users, isLoad
                 )}
               </Button>
             </TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Product</TableHead>
-            <TableHead className="text-right">Quantity</TableHead>
+            <TableHead>
+              <Button variant="ghost" onClick={() => handleProductSort('type')} className="font-semibold px-0 h-auto">
+                Type
+                <ArrowUpDown className={`ml-2 h-4 w-4 ${productSortConfig.key === 'type' ? '' : 'text-gray-400'} ${productSortConfig.key === 'type' && productSortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+              </Button>
+            </TableHead>
+            <TableHead>
+              <Button variant="ghost" onClick={() => handleProductSort('product')} className="font-semibold px-0 h-auto">
+                Product
+                <ArrowUpDown className={`ml-2 h-4 w-4 ${productSortConfig.key === 'product' ? '' : 'text-gray-400'} ${productSortConfig.key === 'product' && productSortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+              </Button>
+            </TableHead>
+            <TableHead className="text-right">
+              <Button variant="ghost" onClick={() => handleProductSort('quantity')} className="font-semibold px-0 h-auto">
+                Quantity
+                <ArrowUpDown className={`ml-2 h-4 w-4 ${productSortConfig.key === 'quantity' ? '' : 'text-gray-400'} ${productSortConfig.key === 'quantity' && productSortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+              </Button>
+            </TableHead>
             <TableHead className="text-right">Stock After</TableHead>
             <TableHead className="text-right">Total Value</TableHead>
             <TableHead>From</TableHead>

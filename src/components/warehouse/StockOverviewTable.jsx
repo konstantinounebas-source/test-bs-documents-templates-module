@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, AlertTriangle, MapPin, ChevronDown, ChevronRight, Star, DollarSign, Eye } from "lucide-react";
+import { Edit, AlertTriangle, MapPin, ChevronDown, ChevronRight, Star, DollarSign, Eye, ArrowUpDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import ViewProductDialog from "./ViewProductDialog";
@@ -12,6 +12,7 @@ const StockOverviewTable = memo(function StockOverviewTable({ products, categori
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   const calculateDisplayQuantity = (movement) => {
     if (movement.base_quantity && movement.base_quantity > 0) {
@@ -72,6 +73,39 @@ const StockOverviewTable = memo(function StockOverviewTable({ products, categori
         quantity_reserved: 0
       }));
   };
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedProducts = React.useMemo(() => {
+    if (!sortConfig.key) return products;
+    
+    return [...products].sort((a, b) => {
+      let aVal = a[sortConfig.key];
+      let bVal = b[sortConfig.key];
+      
+      if (sortConfig.key === 'category_id') {
+        aVal = getCategoryName(a.category_id);
+        bVal = getCategoryName(b.category_id);
+      }
+      
+      if (aVal === null || aVal === undefined) aVal = '';
+      if (bVal === null || bVal === undefined) bVal = '';
+      
+      if (typeof aVal === 'string') {
+        return sortConfig.direction === 'asc' 
+          ? aVal.localeCompare(bVal) 
+          : bVal.localeCompare(aVal);
+      }
+      
+      return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+  }, [products, sortConfig]);
 
   const getCategoryName = (categoryId) => {
     const category = categories.find(c => c.id === categoryId);
@@ -184,14 +218,49 @@ const StockOverviewTable = memo(function StockOverviewTable({ products, categori
           <TableHeader>
             <TableRow className="bg-slate-50">
               <TableHead className="w-10"></TableHead>
-              <TableHead>SKU</TableHead>
-              <TableHead>Product Name</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort('sku')} className="font-semibold px-0 h-auto">
+                  SKU
+                  <ArrowUpDown className={`ml-2 h-4 w-4 ${sortConfig.key === 'sku' ? '' : 'text-gray-400'} ${sortConfig.key === 'sku' && sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort('name')} className="font-semibold px-0 h-auto">
+                  Product Name
+                  <ArrowUpDown className={`ml-2 h-4 w-4 ${sortConfig.key === 'name' ? '' : 'text-gray-400'} ${sortConfig.key === 'name' && sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+                </Button>
+              </TableHead>
               <TableHead>Description</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Total On Hand</TableHead>
-              <TableHead>Reserved</TableHead>
-              <TableHead>Available</TableHead>
-              <TableHead>Minimum Stock</TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort('category_id')} className="font-semibold px-0 h-auto">
+                  Category
+                  <ArrowUpDown className={`ml-2 h-4 w-4 ${sortConfig.key === 'category_id' ? '' : 'text-gray-400'} ${sortConfig.key === 'category_id' && sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort('total')} className="font-semibold px-0 h-auto">
+                  Total On Hand
+                  <ArrowUpDown className={`ml-2 h-4 w-4 ${sortConfig.key === 'total' ? '' : 'text-gray-400'} ${sortConfig.key === 'total' && sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort('reserved')} className="font-semibold px-0 h-auto">
+                  Reserved
+                  <ArrowUpDown className={`ml-2 h-4 w-4 ${sortConfig.key === 'reserved' ? '' : 'text-gray-400'} ${sortConfig.key === 'reserved' && sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort('available')} className="font-semibold px-0 h-auto">
+                  Available
+                  <ArrowUpDown className={`ml-2 h-4 w-4 ${sortConfig.key === 'available' ? '' : 'text-gray-400'} ${sortConfig.key === 'available' && sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button variant="ghost" onClick={() => handleSort('minimum_stock')} className="font-semibold px-0 h-auto">
+                  Minimum Stock
+                  <ArrowUpDown className={`ml-2 h-4 w-4 ${sortConfig.key === 'minimum_stock' ? '' : 'text-gray-400'} ${sortConfig.key === 'minimum_stock' && sortConfig.direction === 'desc' ? 'rotate-180' : ''}`} />
+                </Button>
+              </TableHead>
               <TableHead>Unit Cost</TableHead>
               <TableHead>Total Value</TableHead>
               <TableHead>Status</TableHead>
@@ -199,7 +268,7 @@ const StockOverviewTable = memo(function StockOverviewTable({ products, categori
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product) => {
+            {sortedProducts.map((product) => {
               const isNegative = product.available < 0;
               const isLowStock = product.available < (product.minimum_stock || 0) && product.available >= 0;
               const isOutOfStock = product.available === 0;
