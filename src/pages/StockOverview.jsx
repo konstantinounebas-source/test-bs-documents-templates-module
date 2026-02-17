@@ -40,6 +40,12 @@ export default function StockOverviewPage() {
     staleTime: 2 * 60 * 1000,
   });
 
+  const { data: stockMovements = [] } = useQuery({
+    queryKey: ['stockMovements'],
+    queryFn: () => base44.entities.StockMovement.list("-created_date", 50000),
+    staleTime: 2 * 60 * 1000,
+  });
+
   const { data: productVendors = [] } = useQuery({
     queryKey: ['productVendors'],
     queryFn: () => base44.entities.ProductVendor.list(),
@@ -88,10 +94,26 @@ export default function StockOverviewPage() {
   };
 
   const getStockForProduct = (productId) => {
+    // Calculate stock from movements (single source of truth)
+    const productMovements = stockMovements.filter(m => m.product_id === productId);
+    
+    let total = 0;
+    for (const movement of productMovements) {
+      const baseQty = movement.base_quantity || 0;
+      
+      if (movement.movement_type === 'IN' || movement.movement_type === 'ADJUSTMENT') {
+        total += baseQty;
+      } else if (movement.movement_type === 'OUT') {
+        total -= baseQty;
+      }
+      // TRANSFER doesn't affect total stock
+    }
+    
+    // Reserved stock from StockItems
     const items = stockByProductId[productId] || [];
-    const total = items.reduce((sum, item) => sum + (item.quantity_on_hand || 0), 0);
     const reserved = items.reduce((sum, item) => sum + (item.quantity_reserved || 0), 0);
     const available = total - reserved;
+    
     return { total, reserved, available, items };
   };
 
