@@ -280,6 +280,10 @@ export default function StockOverviewPage() {
             <h1 className="text-3xl font-bold text-slate-900">Stock Overview</h1>
             <p className="text-slate-600 mt-1">Real-time inventory levels and stock locations</p>
           </div>
+          <Button onClick={exportToExcel} className="bg-green-600 hover:bg-green-700 text-white">
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            Export to Excel
+          </Button>
         </div>
 
         {/* Stats - Only for active products */}
