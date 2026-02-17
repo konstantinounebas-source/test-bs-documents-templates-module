@@ -475,7 +475,7 @@ export default function PurchaseOrdersPage() {
       const total = parseFloat(value) || 0;
       const qty = parseFloat(newItems[index].quantity_ordered) || 0;
       newItems[index].total_cost = total;
-      newItems[index].unit_cost = qty > 0 ? total / qty : 0;
+      newItems[index].unit_cost = qty > 0 ? parseFloat((total / qty).toFixed(3)) : 0;
     }
 
     setFormData(prev => ({
