@@ -44,6 +44,7 @@ export default function StockMovementsPage() {
   const [itemsPerPage, setItemsPerPage] = useState("20");
   const [isFixingCosts, setIsFixingCosts] = useState(false);
   const [totalMovementsCount, setTotalMovementsCount] = useState(0);
+  const [allMovementsForStock, setAllMovementsForStock] = useState([]);
 
   useEffect(() => {
     loadData();
@@ -61,7 +62,7 @@ export default function StockMovementsPage() {
       // Load movements + other data in parallel
       const [
         movementsData,
-        allMovementsCount,
+        allMovementsData,
         productsData,
         locationsData,
         systemUsers,
@@ -72,7 +73,7 @@ export default function StockMovementsPage() {
         companiesData
       ] = await Promise.all([
         base44.entities.StockMovement.list("-created_date", limit, skip),
-        base44.entities.StockMovement.list().then(all => all.length),
+        base44.entities.StockMovement.list("-created_date", 50000),
         base44.entities.Product.list(),
         base44.entities.WarehouseLocation.list(),
         base44.entities.User.list().catch(() => []),
@@ -83,7 +84,8 @@ export default function StockMovementsPage() {
         base44.entities.Company.filter({ is_active: true })
       ]);
       
-      setTotalMovementsCount(allMovementsCount);
+      setTotalMovementsCount(allMovementsData.length);
+      setAllMovementsForStock(allMovementsData);
       setMovements(movementsData);
       setProducts(productsData);
       setLocations(locationsData);
@@ -477,7 +479,7 @@ export default function StockMovementsPage() {
              onView={handleView}
              onEdit={handleEdit}
              onViewProductMovements={handleViewProductMovements}
-             allMovements={movements}
+             allMovements={allMovementsForStock}
             />
             
             <PaginationControls
