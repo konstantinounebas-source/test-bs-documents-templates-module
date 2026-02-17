@@ -43,7 +43,7 @@ const formatLocalDateTime = (dateString) => {
   }
 };
 
-export default function StockMovementsTable({ movements, products, users, isLoading, onView, onEdit, onViewProductMovements }) {
+export default function StockMovementsTable({ movements, products, users, isLoading, onView, onEdit, onViewProductMovements, allMovements }) {
   const [sortConfig, setSortConfig] = useState({ key: 'created_date', direction: 'desc' });
 
   const getProductInfo = (productId) => {
@@ -106,6 +106,32 @@ export default function StockMovementsTable({ movements, products, users, isLoad
     return 0;
   });
 
+  // Calculate stock after each movement
+  const calculateStockAfterMovement = (movement) => {
+    const movementDate = new Date(movement.created_date);
+    const productId = movement.product_id;
+    
+    // Get all movements for this product up to and including this movement
+    const movementsUpToThis = (allMovements || movements)
+      .filter(m => m.product_id === productId && new Date(m.created_date) <= movementDate)
+      .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+    
+    let runningStock = 0;
+    
+    for (const m of movementsUpToThis) {
+      const qty = calculateDisplayQuantity(m);
+      
+      if (m.movement_type === 'IN' || m.movement_type === 'ADJUSTMENT') {
+        runningStock += qty;
+      } else if (m.movement_type === 'OUT') {
+        runningStock -= qty;
+      }
+      // TRANSFER doesn't affect total stock
+    }
+    
+    return runningStock;
+  };
+
   return (
     <div className="overflow-x-auto">
       <Table>
@@ -125,6 +151,7 @@ export default function StockMovementsTable({ movements, products, users, isLoad
             <TableHead>Type</TableHead>
             <TableHead>Product</TableHead>
             <TableHead className="text-right">Quantity</TableHead>
+            <TableHead className="text-right">Stock After</TableHead>
             <TableHead className="text-right">Total Value</TableHead>
             <TableHead>From</TableHead>
             <TableHead>To</TableHead>
@@ -138,7 +165,7 @@ export default function StockMovementsTable({ movements, products, users, isLoad
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={12} className="h-24 text-center">
+              <TableCell colSpan={13} className="h-24 text-center">
                 <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-400" />
               </TableCell>
             </TableRow>
@@ -146,6 +173,7 @@ export default function StockMovementsTable({ movements, products, users, isLoad
             sortedMovements.map((movement) => {
               const product = getProductInfo(movement.product_id);
               const formattedDateTime = formatLocalDateTime(movement.created_date);
+              const stockAfter = calculateStockAfterMovement(movement);
 
               return (
                 <TableRow key={movement.id} className="hover:bg-slate-50">
@@ -173,6 +201,11 @@ export default function StockMovementsTable({ movements, products, users, isLoad
                       'text-slate-900'
                     }>
                       {calculateDisplayQuantity(movement)} {product.unit_of_measure}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right font-bold">
+                    <span className={stockAfter < 0 ? 'text-red-600' : 'text-slate-900'}>
+                      {stockAfter.toFixed(2)} {product.unit_of_measure}
                     </span>
                   </TableCell>
                   <TableCell className="text-right font-semibold">
@@ -240,7 +273,7 @@ export default function StockMovementsTable({ movements, products, users, isLoad
             })
           ) : (
             <TableRow>
-              <TableCell colSpan={12} className="h-24 text-center">
+              <TableCell colSpan={13} className="h-24 text-center">
                 <p className="text-slate-500">No stock movements found.</p>
               </TableCell>
             </TableRow>

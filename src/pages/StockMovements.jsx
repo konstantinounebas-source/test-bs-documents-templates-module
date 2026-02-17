@@ -477,6 +477,7 @@ export default function StockMovementsPage() {
              onView={handleView}
              onEdit={handleEdit}
              onViewProductMovements={handleViewProductMovements}
+             allMovements={movements}
             />
             
             <PaginationControls
