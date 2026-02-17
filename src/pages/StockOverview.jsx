@@ -93,18 +93,36 @@ export default function StockOverviewPage() {
     queryClient.invalidateQueries({ queryKey: ['stockItems'] });
   };
 
+  const calculateDisplayQuantity = (movement) => {
+    // If base_quantity exists and is valid, use it
+    if (movement.base_quantity && movement.base_quantity > 0) {
+      return movement.base_quantity;
+    }
+    
+    // Otherwise, calculate it from quantity, conversion_rate, and bundle_quantity
+    const quantity = parseFloat(movement.quantity) || 0;
+    const conversionRate = parseFloat(movement.conversion_rate) || 1;
+    const bundleQuantity = parseFloat(movement.bundle_quantity) || null;
+    
+    if (bundleQuantity) {
+      return quantity * conversionRate * bundleQuantity;
+    }
+    
+    return quantity * conversionRate;
+  };
+
   const getStockForProduct = (productId) => {
     // Calculate stock from movements (single source of truth)
     const productMovements = stockMovements.filter(m => m.product_id === productId);
     
     let total = 0;
     for (const movement of productMovements) {
-      const baseQty = movement.base_quantity || 0;
+      const qty = calculateDisplayQuantity(movement);
       
       if (movement.movement_type === 'IN' || movement.movement_type === 'ADJUSTMENT') {
-        total += baseQty;
+        total += qty;
       } else if (movement.movement_type === 'OUT') {
-        total -= baseQty;
+        total -= qty;
       }
       // TRANSFER doesn't affect total stock
     }
