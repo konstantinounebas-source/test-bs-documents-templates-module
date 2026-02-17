@@ -8,39 +8,48 @@ import { Separator } from "@/components/ui/separator";
 const formatLocalDateTime = (dateString) => {
   try {
     if (!dateString) return 'N/A';
-    
-    // Force UTC interpretation by adding Z if not present
     let utcDateString = dateString;
     if (!dateString.endsWith('Z') && !dateString.includes('+')) {
-      // Remove any existing timezone info and add Z
       utcDateString = dateString.replace(/[+-]\d{2}:\d{2}$/, '') + 'Z';
     }
-    
     const utcDate = new Date(utcDateString);
-    
-    // Check if date is valid
-    if (isNaN(utcDate.getTime())) {
-      console.error('Invalid date:', dateString);
-      return 'Invalid Date';
-    }
-    
+    if (isNaN(utcDate.getTime())) return 'Invalid Date';
     return utcDate.toLocaleString('en-GB', {
       timeZone: 'Europe/Athens',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
     });
   } catch (error) {
-    console.error('Date formatting error:', error);
     return 'Invalid Date';
   }
 };
 
-export default function ViewMovementDialog({ open, onClose, movement, product, users, vendors = [], purchaseOrders = [] }) {
+const resolveVendorId = (movement, purchaseOrders, productVendors) => {
+  // 1. Direct vendor_id
+  if (movement.vendor_id) return movement.vendor_id;
+  // 2. reference_type = 'Vendor'
+  if (movement.reference_type === 'Vendor' && movement.reference_id) return movement.reference_id;
+  // 3. reference_type = 'PurchaseOrder'
+  if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
+    const po = purchaseOrders.find(p => p.id === movement.reference_id);
+    if (po?.vendor_id) return po.vendor_id;
+  }
+  // 4. Has po_number (e.g. Invoice with PO)
+  if (movement.po_number) {
+    const po = purchaseOrders.find(p => p.po_number === movement.po_number);
+    if (po?.vendor_id) return po.vendor_id;
+  }
+  // 5. Fallback: vendor_product_code via productVendors
+  if (movement.vendor_product_code && movement.product_id) {
+    const pv = productVendors.find(
+      pv => pv.product_id === movement.product_id && pv.vendor_product_code === movement.vendor_product_code
+    );
+    if (pv?.vendor_id) return pv.vendor_id;
+  }
+  return null;
+};
+
+export default function ViewMovementDialog({ open, onClose, movement, product, users, vendors = [], purchaseOrders = [], productVendors = [] }) {
   if (!movement) return null;
 
   const getUserName = (identifier) => {
@@ -55,23 +64,7 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
     return vendor?.name || null;
   };
 
-  // Determine vendor from movement (including via PO or Invoice)
-  let resolvedVendorId = null;
-  if (movement.vendor_id) {
-    resolvedVendorId = movement.vendor_id;
-  } else if (movement.reference_type === 'Vendor' && movement.reference_id) {
-    resolvedVendorId = movement.reference_id;
-  } else if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
-    const po = purchaseOrders.find(p => p.id === movement.reference_id);
-    if (po && po.vendor_id) {
-      resolvedVendorId = po.vendor_id;
-    }
-  } else if (movement.reference_type === 'Invoice' && movement.po_number) {
-    const po = purchaseOrders.find(p => p.po_number === movement.po_number);
-    if (po && po.vendor_id) {
-      resolvedVendorId = po.vendor_id;
-    }
-  }
+  const resolvedVendorId = resolveVendorId(movement, purchaseOrders, productVendors);
   const vendorName = getVendorName(resolvedVendorId);
 
   const movementTypeColors = {
@@ -89,7 +82,6 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Movement Info */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-slate-500">Type</Label>
@@ -105,7 +97,6 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
 
           <Separator />
 
-          {/* Product Info */}
           <div>
             <Label className="text-slate-500">Product</Label>
             <div className="mt-1">
@@ -129,24 +120,10 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
                 </p>
               </div>
             )}
-            {!movement.base_quantity && movement.conversion_rate && movement.conversion_rate !== 1 && (
-              <div>
-                <Label className="text-slate-500">Base Quantity</Label>
-                <p className="text-lg font-semibold mt-1 text-blue-600">
-                  {(() => {
-                    const qty = parseFloat(movement.quantity) || 0;
-                    const convRate = parseFloat(movement.conversion_rate) || 1;
-                    const bundleQty = parseFloat(movement.bundle_quantity) || null;
-                    return bundleQty ? (qty * convRate * bundleQty).toFixed(2) : (qty * convRate).toFixed(2);
-                  })()} {product?.unit_of_measure || ''}
-                </p>
-              </div>
-            )}
           </div>
 
           <Separator />
 
-          {/* Location Info */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-slate-500">From Location</Label>
@@ -160,7 +137,6 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
 
           <Separator />
 
-          {/* Personnel Info */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-slate-500">Performed By</Label>
@@ -176,7 +152,6 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
 
           <Separator />
 
-          {/* Vendor Info */}
           {vendorName && (
             <>
               <div>
@@ -187,7 +162,6 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
             </>
           )}
 
-          {/* Cost Info for IN movements */}
           {movement.movement_type === 'IN' && (movement.unit_cost || movement.base_unit_cost) && (
             <>
               <div className="grid grid-cols-2 gap-4">
@@ -212,7 +186,6 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
             </>
           )}
 
-          {/* Additional Info */}
           {movement.waybill_number && (
             <div>
               <Label className="text-slate-500">Waybill Number</Label>
@@ -254,12 +227,8 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
               <Label className="text-slate-500">Photos</Label>
               <div className="grid grid-cols-2 gap-4 mt-2">
                 {movement.photos.map((photo, index) => (
-                  <img
-                    key={index}
-                    src={photo.url}
-                    alt={photo.filename}
-                    className="rounded-lg border border-slate-200 w-full h-auto object-cover"
-                  />
+                  <img key={index} src={photo.url} alt={photo.filename}
+                    className="rounded-lg border border-slate-200 w-full h-auto object-cover" />
                 ))}
               </div>
             </div>
