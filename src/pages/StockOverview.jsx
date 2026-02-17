@@ -352,6 +352,7 @@ export default function StockOverviewPage() {
             products={paginatedProducts}
             categories={categories}
             vendors={vendors}
+            stockMovements={stockMovements}
             isLoading={isLoading}
             onDataUpdated={loadAllData}
           />

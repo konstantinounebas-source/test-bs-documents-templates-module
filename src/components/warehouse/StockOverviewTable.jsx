@@ -8,10 +8,70 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import ViewProductDialog from "./ViewProductDialog";
 
-const StockOverviewTable = memo(function StockOverviewTable({ products, categories, vendors, isLoading, onDataUpdated }) {
+const StockOverviewTable = memo(function StockOverviewTable({ products, categories, vendors, stockMovements, isLoading, onDataUpdated }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [showViewDialog, setShowViewDialog] = useState(false);
+
+  const calculateDisplayQuantity = (movement) => {
+    if (movement.base_quantity && movement.base_quantity > 0) {
+      return movement.base_quantity;
+    }
+    
+    const quantity = parseFloat(movement.quantity) || 0;
+    const conversionRate = parseFloat(movement.conversion_rate) || 1;
+    const bundleQuantity = parseFloat(movement.bundle_quantity) || null;
+    
+    if (bundleQuantity) {
+      return quantity * conversionRate * bundleQuantity;
+    }
+    
+    return quantity * conversionRate;
+  };
+
+  const getStockByLocation = (productId) => {
+    const productMovements = (stockMovements || []).filter(m => m.product_id === productId);
+    const locationStocks = {};
+    
+    for (const movement of productMovements) {
+      const qty = calculateDisplayQuantity(movement);
+      let location = null;
+      
+      if (movement.movement_type === 'IN') {
+        location = movement.to_location;
+        if (location) {
+          locationStocks[location] = (locationStocks[location] || 0) + qty;
+        }
+      } else if (movement.movement_type === 'OUT') {
+        location = movement.from_location;
+        if (location) {
+          locationStocks[location] = (locationStocks[location] || 0) - qty;
+        }
+      } else if (movement.movement_type === 'TRANSFER') {
+        const fromLoc = movement.from_location;
+        const toLoc = movement.to_location;
+        if (fromLoc) {
+          locationStocks[fromLoc] = (locationStocks[fromLoc] || 0) - qty;
+        }
+        if (toLoc) {
+          locationStocks[toLoc] = (locationStocks[toLoc] || 0) + qty;
+        }
+      } else if (movement.movement_type === 'ADJUSTMENT') {
+        location = movement.to_location;
+        if (location) {
+          locationStocks[location] = (locationStocks[location] || 0) + qty;
+        }
+      }
+    }
+    
+    return Object.entries(locationStocks)
+      .filter(([_, qty]) => qty !== 0)
+      .map(([location, quantity]) => ({
+        warehouse_location: location,
+        quantity_on_hand: quantity,
+        quantity_reserved: 0
+      }));
+  };
 
   const getCategoryName = (categoryId) => {
     const category = categories.find(c => c.id === categoryId);
@@ -144,7 +204,8 @@ const StockOverviewTable = memo(function StockOverviewTable({ products, categori
               const isLowStock = product.available < (product.minimum_stock || 0) && product.available >= 0;
               const isOutOfStock = product.available === 0;
               const isExpanded = expandedRows.has(product.id);
-              const hasMultipleLocations = product.items && product.items.length > 1;
+              const locationStock = getStockByLocation(product.id);
+              const hasMultipleLocations = locationStock.length > 0;
               const hasVendors = product.productVendors && product.productVendors.length > 0;
               const canExpand = hasMultipleLocations || hasVendors;
               
@@ -236,7 +297,7 @@ const StockOverviewTable = memo(function StockOverviewTable({ products, categori
                                 Stock by Location:
                               </div>
                               <div className="space-y-2">
-                                {product.items.map((item, idx) => {
+                                {locationStock.map((item, idx) => {
                                   const itemAvailable = (item.quantity_on_hand || 0) - (item.quantity_reserved || 0);
                                   return (
                                     <div 
@@ -252,7 +313,13 @@ const StockOverviewTable = memo(function StockOverviewTable({ products, categori
                                       <div className="flex items-center gap-6 text-sm">
                                         <div>
                                           <span className="text-slate-600">On Hand: </span>
-                                          <span className="font-semibold">{item.quantity_on_hand || 0}</span>
+                                          <span className={
+                                            item.quantity_on_hand < 0 
+                                              ? "font-bold text-red-600" 
+                                              : "font-semibold"
+                                          }>
+                                            {item.quantity_on_hand?.toFixed(2) || 0}
+                                          </span>
                                         </div>
                                         <div>
                                           <span className="text-slate-600">Reserved: </span>
@@ -265,7 +332,7 @@ const StockOverviewTable = memo(function StockOverviewTable({ products, categori
                                               ? "font-bold text-red-600" 
                                               : "font-semibold text-green-600"
                                           }>
-                                            {itemAvailable}
+                                            {itemAvailable?.toFixed(2)}
                                           </span>
                                         </div>
                                       </div>
