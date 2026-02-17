@@ -204,12 +204,15 @@ export default function StockMovementsTable({ movements, products, users, isLoad
                     </span>
                   </TableCell>
                   <TableCell className="text-right font-bold">
-                    <span className={stockAfter < 0 ? 'text-red-600' : 'text-slate-900'}>
-                      {stockAfter.toFixed(2)} {product.unit_of_measure}
-                    </span>
+                    <div className={stockAfter < 0 ? 'text-red-600' : 'text-slate-900'}>
+                      <div>{stockAfter.toFixed(2)}</div>
+                      <div className="text-xs font-normal text-slate-500">{product.unit_of_measure}</div>
+                    </div>
                   </TableCell>
                   <TableCell className="text-right font-semibold">
-                    {movement.total_value && parseFloat(movement.total_value) > 0 ? (
+                    {movement.movement_type === 'OUT' || movement.movement_type === 'TRANSFER' ? (
+                      <span className="text-slate-400">-</span>
+                    ) : movement.total_value && parseFloat(movement.total_value) > 0 ? (
                       <span className="text-blue-600">
                         €{parseFloat(movement.total_value).toFixed(2)}
                       </span>
