@@ -74,6 +74,9 @@ export default function BarcodeInputStepper({
 
   useEffect(() => {
     if (open) {
+      // Determine default inputUnitSubtype based on product's unit_of_measure
+      const defaultInputUnitSubtype = matchedProduct?.unit_of_measure === 'piece' || matchedProduct?.unit_of_measure === 'box' || matchedProduct?.unit_of_measure === 'pallet' ? 'piece' : matchedProduct?.unit_of_measure;
+
       setCurrentStep(1);
       setFormData({
         movementType: initialMovementType,
@@ -93,14 +96,14 @@ export default function BarcodeInputStepper({
         unitCost: "",
         totalItemCost: "",
         discount: "0",
-        bundleQuantity: "",
-        inputUnitSubtype: "",
+        bundleQuantity: "1",
+        inputUnitSubtype: defaultInputUnitSubtype || "",
         conversionRate: "1",
         notes: "",
       });
       setPOItemInfo(null);
     }
-  }, [open, initialMovementType]);
+  }, [open, initialMovementType, matchedProduct]);
 
   useEffect(() => {
     if (formData.selectedPO && matchedProduct && formData.movementType === "IN") {
@@ -733,7 +736,8 @@ export default function BarcodeInputStepper({
                   value={formData.inputUnitSubtype || ''}
                   onValueChange={(val) => {
                     handleFormChange('inputUnitSubtype', val);
-                    if (val === 'piece') {
+                    // Reset bundleQuantity to '1' if the selected unit is not 'box'
+                    if (val !== 'box') {
                       handleFormChange('bundleQuantity', '1');
                     }
                   }}
@@ -780,6 +784,7 @@ export default function BarcodeInputStepper({
                   onChange={(e) => handleFormChange('bundleQuantity', e.target.value)}
                   placeholder="π.χ. 100"
                   className="h-11"
+                  disabled={formData.inputUnitSubtype !== 'box'}
                 />
                 {formData.unitCost && formData.bundleQuantity && parseFloat(formData.bundleQuantity) > 0 && (
                   <p className="text-xs text-slate-700 mt-1">
