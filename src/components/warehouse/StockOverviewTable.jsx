@@ -140,7 +140,8 @@ const StockOverviewTable = memo(function StockOverviewTable({ products, categori
           </TableHeader>
           <TableBody>
             {products.map((product) => {
-              const isLowStock = product.available < (product.minimum_stock || 0);
+              const isNegative = product.available < 0;
+              const isLowStock = product.available < (product.minimum_stock || 0) && product.available >= 0;
               const isOutOfStock = product.available === 0;
               const isExpanded = expandedRows.has(product.id);
               const hasMultipleLocations = product.items && product.items.length > 1;
@@ -175,7 +176,13 @@ const StockOverviewTable = memo(function StockOverviewTable({ products, categori
                     <TableCell>{product.total} {product.unit_of_measure}</TableCell>
                     <TableCell className="text-orange-600">{product.reserved} {product.unit_of_measure}</TableCell>
                     <TableCell>
-                      <span className={isLowStock ? 'text-red-600 font-semibold' : 'text-green-600 font-semibold'}>
+                      <span className={
+                        product.available < 0 
+                          ? 'text-red-600 font-bold' 
+                          : isLowStock 
+                            ? 'text-red-600 font-semibold' 
+                            : 'text-green-600 font-semibold'
+                      }>
                         {product.available} {product.unit_of_measure}
                       </span>
                     </TableCell>
@@ -183,7 +190,12 @@ const StockOverviewTable = memo(function StockOverviewTable({ products, categori
                     <TableCell>{renderUnitCost(product)}</TableCell>
                     <TableCell>{renderTotalValue(product)}</TableCell>
                     <TableCell>
-                      {isOutOfStock ? (
+                      {isNegative ? (
+                        <Badge className="bg-red-600 text-white">
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          Negative Stock
+                        </Badge>
+                      ) : isOutOfStock ? (
                         <Badge className="bg-red-100 text-red-800">
                           <AlertTriangle className="w-3 h-3 mr-1" />
                           Out of Stock
@@ -248,7 +260,13 @@ const StockOverviewTable = memo(function StockOverviewTable({ products, categori
                                         </div>
                                         <div>
                                           <span className="text-slate-600">Available: </span>
-                                          <span className="font-semibold text-green-600">{itemAvailable}</span>
+                                          <span className={
+                                            itemAvailable < 0 
+                                              ? "font-bold text-red-600" 
+                                              : "font-semibold text-green-600"
+                                          }>
+                                            {itemAvailable}
+                                          </span>
                                         </div>
                                       </div>
                                     </div>
