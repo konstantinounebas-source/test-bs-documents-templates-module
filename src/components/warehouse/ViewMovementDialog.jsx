@@ -40,7 +40,7 @@ const formatLocalDateTime = (dateString) => {
   }
 };
 
-export default function ViewMovementDialog({ open, onClose, movement, product, users, vendors = [] }) {
+export default function ViewMovementDialog({ open, onClose, movement, product, users, vendors = [], purchaseOrders = [] }) {
   if (!movement) return null;
 
   const getUserName = (identifier) => {
@@ -55,12 +55,19 @@ export default function ViewMovementDialog({ open, onClose, movement, product, u
     return vendor?.name || null;
   };
 
-  // Determine vendor from movement
-  const vendorName = movement.vendor_id 
-    ? getVendorName(movement.vendor_id)
-    : (movement.reference_type === 'Vendor' && movement.reference_id)
-      ? getVendorName(movement.reference_id)
-      : null;
+  // Determine vendor from movement (including via PO)
+  let resolvedVendorId = null;
+  if (movement.vendor_id) {
+    resolvedVendorId = movement.vendor_id;
+  } else if (movement.reference_type === 'Vendor' && movement.reference_id) {
+    resolvedVendorId = movement.reference_id;
+  } else if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
+    const po = purchaseOrders.find(p => p.id === movement.reference_id);
+    if (po && po.vendor_id) {
+      resolvedVendorId = po.vendor_id;
+    }
+  }
+  const vendorName = getVendorName(resolvedVendorId);
 
   const movementTypeColors = {
     IN: 'bg-green-100 text-green-800',

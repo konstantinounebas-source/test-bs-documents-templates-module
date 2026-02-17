@@ -26,6 +26,7 @@ export default function StockMovementsPage() {
   const [productVendors, setProductVendors] = useState([]);
   const [categories, setCategories] = useState([]);
   const [companies, setCompanies] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -70,7 +71,8 @@ export default function StockMovementsPage() {
         vendorsData,
         pvData,
         categoriesData,
-        companiesData
+        companiesData,
+        purchaseOrdersData
       ] = await Promise.all([
         base44.entities.StockMovement.list("-created_date", limit, skip),
         base44.entities.StockMovement.list("-created_date", 50000),
@@ -81,7 +83,8 @@ export default function StockMovementsPage() {
         base44.entities.Vendor.filter({ is_active: true }),
         base44.entities.ProductVendor.list().catch(() => []),
         base44.entities.ProductCategory.filter({ is_active: true }),
-        base44.entities.Company.filter({ is_active: true })
+        base44.entities.Company.filter({ is_active: true }),
+        base44.entities.PurchaseOrder.list().catch(() => [])
       ]);
       
       setTotalMovementsCount(allMovementsData.length);
@@ -101,6 +104,7 @@ export default function StockMovementsPage() {
       setProductVendors(pvData);
       setCategories(categoriesData);
       setCompanies(companiesData);
+      setPurchaseOrders(purchaseOrdersData);
       
     } catch (error) {
       console.error("Error loading data:", error);
@@ -509,6 +513,7 @@ export default function StockMovementsPage() {
         product={selectedMovement ? products.find(p => p.id === selectedMovement.product_id) : null}
         users={users}
         vendors={vendors}
+        purchaseOrders={purchaseOrders}
       />
 
       <EditMovementDialog
@@ -523,6 +528,7 @@ export default function StockMovementsPage() {
         productVendors={productVendors}
         categories={categories}
         companies={companies}
+        purchaseOrders={purchaseOrders}
         onSave={handleSaveEdit}
       />
 

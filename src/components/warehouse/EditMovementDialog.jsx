@@ -11,7 +11,7 @@ import CreateEditVendorDialog from "@/components/warehouse/CreateEditVendorDialo
 import PreviousPurchasesSelector from "@/components/warehouse/PreviousPurchasesSelector";
 import { base44 } from "@/api/base44Client";
 
-export default function EditMovementDialog({ open, onClose, movement, onSave, vendors = [], productVendors = [], products = [], categories = [], companies = [] }) {
+export default function EditMovementDialog({ open, onClose, movement, onSave, vendors = [], productVendors = [], products = [], categories = [], companies = [], purchaseOrders = [] }) {
   const [formData, setFormData] = useState({
     notes: '',
     waybill_number: '',
@@ -136,24 +136,26 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     let vendorProdCode = movement.vendor_product_code || '';
     let inputUnitSubtype = movement.input_unit_of_measure || currentProduct?.unit_of_measure || 'piece';
 
-    // Extract PO ID and vendor ID
+    // Extract PO ID and initial vendor ID
     let poId = '';
-    let vendorId = '';
+    let initialVendorId = '';
     
-    if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
+    // Priority: movement.vendor_id > PO vendor > reference vendor
+    if (movement.vendor_id) {
+      initialVendorId = movement.vendor_id;
+    } else if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
       poId = movement.reference_id;
-      // Get vendor from PO using the purchaseOrders state
       const po = purchaseOrders.find(p => p.id === movement.reference_id);
-      if (po) {
-        vendorId = po.vendor_id;
+      if (po && po.vendor_id) {
+        initialVendorId = po.vendor_id;
       }
     } else if (movement.reference_type === 'Vendor' && movement.reference_id) {
-      vendorId = movement.reference_id;
+      initialVendorId = movement.reference_id;
     }
 
-    if (vendorId && movement.product_id) {
+    if (initialVendorId && movement.product_id) {
       const pv = productVendors.find(
-        pv => pv.product_id === movement.product_id && pv.vendor_id === vendorId
+        pv => pv.product_id === movement.product_id && pv.vendor_id === initialVendorId
       );
       if (pv) {
         if (pv.conversion_rate) {
@@ -180,8 +182,8 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     setFormData({
       notes: movement.notes || '',
       waybill_number: movement.waybill_number || '',
-      reference_type: movement.reference_type || '',
-      reference_id: vendorId,
+      reference_type: movement.reference_type || (initialVendorId ? 'Vendor' : ''),
+      reference_id: initialVendorId,
       unit_cost: vendorUnitCost,
       input_unit_subtype: inputUnitSubtype,
       conversion_rate: conversionRate || '1',
