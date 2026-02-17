@@ -75,7 +75,8 @@ export default function BOMManager({ busStopTypes, components, products, selecte
   };
 
   const handleAddComponent = () => {
-    setTypeComponents([...typeComponents, {
+    // Add new component at the beginning (index 0)
+    setTypeComponents([{
       id: null,
       product_id: '',
       quantity_required: "1",
@@ -85,7 +86,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
       material_category_id: '',
       is_optional: false,
       notes: ''
-    }]);
+    }, ...typeComponents]);
   };
 
   const handleUpdateComponent = (componentToUpdate, field, value) => {
@@ -482,6 +483,17 @@ export default function BOMManager({ busStopTypes, components, products, selecte
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Add Component Button at Top */}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAddComponent}
+                className="w-full"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Component
+              </Button>
+
               {typeComponents.length === 0 ? (
                 <p className="text-sm text-slate-500 text-center py-8">
                   No components added yet. Click "Add Component" to start building the BOM.
@@ -688,16 +700,6 @@ export default function BOMManager({ busStopTypes, components, products, selecte
                   )}
                 </>
               )}
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleAddComponent}
-                className="w-full"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Component
-              </Button>
               </CardContent>
               </Card>
         </>
