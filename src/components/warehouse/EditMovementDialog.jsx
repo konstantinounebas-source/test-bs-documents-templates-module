@@ -34,7 +34,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   const [localVendors, setLocalVendors] = useState(vendors);
   const [invoiceCategories, setInvoiceCategories] = useState([]);
   const [validationErrors, setValidationErrors] = useState({});
-  const [purchaseOrders, setPurchaseOrders] = useState([]);
 
   // Helper function to recalculate stock for a product from all movements
   const recalculateStockForProduct = async (productId) => {
@@ -104,7 +103,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   useEffect(() => {
     if (open) {
       loadInvoiceCategories();
-      loadPurchaseOrders();
     }
   }, [open]);
 
@@ -114,15 +112,6 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       setInvoiceCategories(invoiceCatsData);
     } catch (error) {
       console.error("Error loading invoice categories:", error);
-    }
-  };
-
-  const loadPurchaseOrders = async () => {
-    try {
-      const pos = await base44.entities.PurchaseOrder.list();
-      setPurchaseOrders(pos);
-    } catch (error) {
-      console.error("Error loading purchase orders:", error);
     }
   };
 
