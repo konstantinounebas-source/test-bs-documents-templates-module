@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, ArrowLeft, Loader2, CheckCircle, Package, Plus, X, Upload, ImageIcon, ShoppingCart, TrendingUp, TrendingDown, Move, Activity, Calculator } from "lucide-react";
+import { ArrowRight, ArrowLeft, Loader2, CheckCircle, Package, Plus, X, Upload, ImageIcon, ShoppingCart, TrendingUp, TrendingDown, Move, Activity, Calculator, Edit } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import PreviousPurchasesSelector from "./PreviousPurchasesSelector";
-import VendorSearchCombobox from "./VendorSearchCombobox";
+
 import CreateEditVendorDialog from "./CreateEditVendorDialog";
 import PersonSearchCombobox from "./PersonSearchCombobox";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +70,7 @@ export default function BarcodeInputStepper({
 
   const [poItemInfo, setPOItemInfo] = useState(null);
   const [showCreateVendorDialog, setShowCreateVendorDialog] = useState(false);
+  const [editingVendor, setEditingVendor] = useState(null);
 
   useEffect(() => {
     if (open) {
@@ -292,6 +293,17 @@ export default function BarcodeInputStepper({
     await loadData();
     setFormData(prev => ({ ...prev, selectedVendor: newVendor.id }));
     setShowCreateVendorDialog(false);
+    setEditingVendor(null);
+  };
+
+  const handleEditVendor = () => {
+    if (formData.selectedVendor) {
+      const vendor = vendors.find(v => v.id === formData.selectedVendor);
+      if (vendor) {
+        setEditingVendor(vendor);
+        setShowCreateVendorDialog(true);
+      }
+    }
   };
 
   const getStepsForMovementType = () => {
@@ -334,12 +346,22 @@ export default function BarcodeInputStepper({
         return (
           <div className="space-y-4">
             <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <Label className="text-xs mb-1 block text-blue-700">Προϊόν</Label>
-              <p className="font-bold text-lg text-blue-900">{matchedProduct?.name}</p>
-              <p className="text-sm text-blue-700 font-mono mt-1">SKU: {matchedProduct?.sku}</p>
-              <p className="text-sm text-blue-600 mt-1">
-                Διαθέσιμο Απόθεμα: {getProductStock(matchedProduct?.id)} {matchedProduct?.unit_of_measure}
-              </p>
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <Label className="text-xs mb-1 block text-blue-700">Προϊόν</Label>
+                  <p className="font-bold text-lg text-blue-900">{matchedProduct?.name}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-blue-600 font-medium">SKU</p>
+                  <p className="text-sm text-blue-900 font-mono font-bold">{matchedProduct?.sku}</p>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-blue-200">
+                <p className="text-xs text-blue-600 font-medium mb-1">Τρέχον Απόθεμα</p>
+                <p className="text-lg font-bold text-blue-900">
+                  {getProductStock(matchedProduct?.id)} {matchedProduct?.unit_of_measure}
+                </p>
+              </div>
             </div>
 
             <div>
@@ -508,20 +530,59 @@ export default function BarcodeInputStepper({
                   <Label>Προμηθευτής *</Label>
                   <div className="flex gap-2">
                     <div className="flex-1">
-                      <VendorSearchCombobox
-                        vendors={vendors}
-                        vendorProductIds={productVendors
-                          .filter(pv => pv.product_id === matchedProduct?.id && pv.is_active)
-                          .map(pv => pv.vendor_id)}
-                        value={formData.selectedVendor}
-                        onValueChange={(val) => handleFormChange('selectedVendor', val)}
-                      />
+                      <Select 
+                        value={formData.selectedVendor || 'none'} 
+                        onValueChange={(val) => handleFormChange('selectedVendor', val === 'none' ? '' : val)}
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Επιλέξτε προμηθευτή" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">-- Επιλέξτε Προμηθευτή --</SelectItem>
+                          {vendors
+                            .filter(v => v.is_active)
+                            .sort((a, b) => {
+                              const aIsPreferred = productVendors.some(
+                                pv => pv.product_id === matchedProduct?.id && pv.vendor_id === a.id && pv.is_active
+                              );
+                              const bIsPreferred = productVendors.some(
+                                pv => pv.product_id === matchedProduct?.id && pv.vendor_id === b.id && pv.is_active
+                              );
+                              if (aIsPreferred && !bIsPreferred) return -1;
+                              if (!aIsPreferred && bIsPreferred) return 1;
+                              return (a.name || '').localeCompare(b.name || '');
+                            })
+                            .map(vendor => {
+                              const isPreferred = productVendors.some(
+                                pv => pv.product_id === matchedProduct?.id && pv.vendor_id === vendor.id && pv.is_active
+                              );
+                              return (
+                                <SelectItem key={vendor.id} value={vendor.id}>
+                                  {isPreferred ? '⭐ ' : ''}{vendor.name} {vendor.code ? `(${vendor.code})` : ''}
+                                </SelectItem>
+                              );
+                            })}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
-                      onClick={() => setShowCreateVendorDialog(true)}
+                      onClick={handleEditVendor}
+                      disabled={!formData.selectedVendor}
+                      title="Επεξεργασία προμηθευτή"
+                    >
+                      <Package className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        setEditingVendor(null);
+                        setShowCreateVendorDialog(true);
+                      }}
                       title="Προσθήκη νέου προμηθευτή"
                     >
                       <Plus className="w-4 h-4" />
@@ -1177,8 +1238,12 @@ export default function BarcodeInputStepper({
 
       <CreateEditVendorDialog
         open={showCreateVendorDialog}
-        onClose={() => setShowCreateVendorDialog(false)}
+        onClose={() => {
+          setShowCreateVendorDialog(false);
+          setEditingVendor(null);
+        }}
         onVendorSaved={handleVendorCreated}
+        vendor={editingVendor}
       />
     </>
   );
