@@ -80,6 +80,7 @@ export default function BarcodeScannerPage() {
   const [showPOSelectionDialog, setShowPOSelectionDialog] = useState(false);
   const [selectedPOForBulkReceive, setSelectedPOForBulkReceive] = useState(null);
   const [poItemsToReceive, setPOItemsToReceive] = useState([]);
+  const [showPOSummary, setShowPOSummary] = useState(false);
 
   // Bulk invoice entry state
   const [showBulkInvoiceDialog, setShowBulkInvoiceDialog] = useState(false);
@@ -89,6 +90,7 @@ export default function BarcodeScannerPage() {
   const [bulkInvoiceItems, setBulkInvoiceItems] = useState([]);
   const [showCreateProductFromBulk, setShowCreateProductFromBulk] = useState(false);
   const [showCreateVendorFromBulk, setShowCreateVendorFromBulk] = useState(false);
+  const [showBulkInvoiceSummary, setShowBulkInvoiceSummary] = useState(false);
 
   // Camera scanning state
   const [showCamera, setShowCamera] = useState(false);
@@ -942,7 +944,7 @@ export default function BarcodeScannerPage() {
     }
   };
 
-  const handleBulkReceiveFromPO = async () => {
+  const handleProceedToPOSummary = () => {
     const selectedItems = poItemsToReceive.filter(item => item.selected && item.quantity_to_receive > 0);
     
     if (selectedItems.length === 0) {
@@ -954,6 +956,32 @@ export default function BarcodeScannerPage() {
       setScanResult({ type: 'error', message: 'Please select a warehouse location' });
       return;
     }
+
+    // Validate all required fields for selected items
+    for (let i = 0; i < poItemsToReceive.length; i++) {
+      const item = poItemsToReceive[i];
+      if (item.selected) {
+        if (!item.vendor_product_code || !item.vendor_product_code.trim()) {
+          setScanResult({ type: 'error', message: `Παρακαλώ εισάγετε Κωδικό Προμηθευτή για το προϊόν #${i + 1}` });
+          return;
+        }
+        if (!item.company_id) {
+          setScanResult({ type: 'error', message: `Παρακαλώ επιλέξτε Εταιρεία για το προϊόν #${i + 1}` });
+          return;
+        }
+        if (!item.invoice_category_id) {
+          setScanResult({ type: 'error', message: `Παρακαλώ επιλέξτε Κατηγορία Τιμολόγησης για το προϊόν #${i + 1}` });
+          return;
+        }
+      }
+    }
+
+    setScanResult(null);
+    setShowPOSummary(true);
+  };
+
+  const handleBulkReceiveFromPO = async () => {
+    const selectedItems = poItemsToReceive.filter(item => item.selected && item.quantity_to_receive > 0);
 
     setIsProcessing(true);
     try {
@@ -1044,6 +1072,7 @@ export default function BarcodeScannerPage() {
 
       // Close dialog immediately and load data in background
       setShowPOSelectionDialog(false);
+      setShowPOSummary(false);
       setSelectedPOForBulkReceive(null);
       setPOItemsToReceive([]);
       setToLocation("");
@@ -1204,7 +1233,7 @@ export default function BarcodeScannerPage() {
     }));
   };
 
-  const handleSubmitBulkInvoice = async () => {
+  const handleProceedToBulkInvoiceSummary = () => {
     if (!bulkInvoiceVendor) {
       setScanResult({ type: 'error', message: 'Παρακαλώ επιλέξτε προμηθευτή' });
       return;
@@ -1236,6 +1265,11 @@ export default function BarcodeScannerPage() {
       }
     }
 
+    setScanResult(null);
+    setShowBulkInvoiceSummary(true);
+  };
+
+  const handleSubmitBulkInvoice = async () => {
     setIsProcessing(true);
     try {
       for (const item of bulkInvoiceItems) {
@@ -1333,6 +1367,7 @@ export default function BarcodeScannerPage() {
       });
 
       setShowBulkInvoiceDialog(false);
+      setShowBulkInvoiceSummary(false);
       setBulkInvoiceVendor("");
       setBulkInvoiceNumber("");
       setBulkInvoiceWaybill("");
@@ -2003,37 +2038,130 @@ export default function BarcodeScannerPage() {
                 })}
               </div>
 
-              <div className="flex justify-end gap-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowPOSelectionDialog(false);
-                    setSelectedPOForBulkReceive(null);
-                    setPOItemsToReceive([]);
-                    setToLocation("");
-                    setUploadedPhotos([]);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleBulkReceiveFromPO}
-                  disabled={isProcessing || !toLocation || !poItemsToReceive.some(item => item.selected)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Upload className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Receive Selected Items
-                    </>
-                  )}
-                </Button>
-              </div>
+              {!showPOSummary ? (
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowPOSelectionDialog(false);
+                      setSelectedPOForBulkReceive(null);
+                      setPOItemsToReceive([]);
+                      setToLocation("");
+                      setUploadedPhotos([]);
+                      setShowPOSummary(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleProceedToPOSummary}
+                    disabled={!toLocation || !poItemsToReceive.some(item => item.selected)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                    Συνέχεια στη Σύνοψη
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <Separator />
+                  <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <h4 className="text-base font-bold text-green-900 mb-3">Σύνοψη Παραλαβής από PO</h4>
+                    
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-slate-600 font-medium">PO Number:</p>
+                          <p className="font-semibold text-slate-900">{selectedPOForBulkReceive?.po_number}</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-600 font-medium">Προμηθευτής:</p>
+                          <p className="font-semibold text-slate-900">
+                            {vendors.find(v => v.id === selectedPOForBulkReceive?.vendor_id)?.name || 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      <div className="text-sm">
+                        <p className="text-slate-600 font-medium mb-2">Θέση Αποθήκης:</p>
+                        <p className="font-semibold text-slate-900">{toLocation}</p>
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                        <p className="text-slate-600 font-medium mb-2 text-sm">Προϊόντα προς Παραλαβή ({poItemsToReceive.filter(i => i.selected).length}):</p>
+                        <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                          {poItemsToReceive.filter(item => item.selected).map((item, idx) => {
+                            const product = products.find(p => p.id === item.product_id);
+                            return (
+                              <div key={idx} className="p-2 bg-white rounded border border-slate-200 text-sm">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-slate-900">{product?.name || 'Unknown'}</p>
+                                    <p className="text-xs text-slate-600">SKU: {product?.sku}</p>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className="font-bold text-green-700">{item.quantity_to_receive} τεμ.</p>
+                                    <p className="text-xs text-slate-600">€{((item.unit_cost || 0) * item.quantity_to_receive).toFixed(2)}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {uploadedPhotos.length > 0 && (
+                        <div className="text-sm">
+                          <p className="text-slate-600 font-medium">Φωτογραφίες:</p>
+                          <p className="font-semibold text-green-600">{uploadedPhotos.length} φωτογραφία/ες επισυνάπτονται</p>
+                        </div>
+                      )}
+
+                      <div className="pt-2 border-t">
+                        <p className="text-sm text-slate-600">
+                          Συνολικό Κόστος: <strong className="text-lg text-green-900">
+                            €{poItemsToReceive
+                              .filter(i => i.selected)
+                              .reduce((sum, item) => sum + ((item.unit_cost || 0) * item.quantity_to_receive), 0)
+                              .toFixed(2)}
+                          </strong>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between gap-3 pt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowPOSummary(false)}
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Πίσω
+                    </Button>
+                    <Button
+                      onClick={handleBulkReceiveFromPO}
+                      disabled={isProcessing}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Upload className="w-4 h-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          Επιβεβαίωση & Ολοκλήρωση
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </DialogContent>
@@ -2393,37 +2521,137 @@ export default function BarcodeScannerPage() {
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setShowBulkInvoiceDialog(false);
-                  setBulkInvoiceVendor("");
-                  setBulkInvoiceNumber("");
-                  setBulkInvoiceWaybill("");
-                  setBulkInvoiceItems([]);
-                }}
-              >
-                Ακύρωση
-              </Button>
-              <Button
-                onClick={handleSubmitBulkInvoice}
-                disabled={isProcessing || bulkInvoiceItems.length === 0}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                {isProcessing ? (
-                  <>
-                    <Upload className="w-4 h-4 mr-2 animate-spin" />
-                    Επεξεργασία...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Καταχώρηση Τιμολογίου
-                  </>
-                )}
-              </Button>
-            </div>
+            {!showBulkInvoiceSummary ? (
+              <div className="flex justify-end gap-3 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowBulkInvoiceDialog(false);
+                    setBulkInvoiceVendor("");
+                    setBulkInvoiceNumber("");
+                    setBulkInvoiceWaybill("");
+                    setBulkInvoiceItems([]);
+                    setShowBulkInvoiceSummary(false);
+                  }}
+                >
+                  Ακύρωση
+                </Button>
+                <Button
+                  onClick={handleProceedToBulkInvoiceSummary}
+                  disabled={bulkInvoiceItems.length === 0}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <ArrowRight className="w-4 h-4 mr-2" />
+                  Συνέχεια στη Σύνοψη
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Separator />
+                <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                  <h4 className="text-base font-bold text-green-900 mb-3">Σύνοψη Μαζικής Καταχώρησης</h4>
+                  
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-slate-600 font-medium">Προμηθευτής:</p>
+                        <p className="font-semibold text-slate-900">
+                          {vendors.find(v => v.id === bulkInvoiceVendor)?.name || '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-slate-600 font-medium">Αριθμός Τιμολογίου:</p>
+                        <p className="font-semibold text-slate-900">{bulkInvoiceNumber}</p>
+                      </div>
+                    </div>
+
+                    {bulkInvoiceWaybill && (
+                      <div className="text-sm">
+                        <p className="text-slate-600 font-medium">Αριθμός Waybill:</p>
+                        <p className="font-semibold text-slate-900">{bulkInvoiceWaybill}</p>
+                      </div>
+                    )}
+
+                    <Separator />
+
+                    <div>
+                      <p className="text-slate-600 font-medium mb-2 text-sm">Προϊόντα ({bulkInvoiceItems.length}):</p>
+                      <div className="space-y-2 max-h-[250px] overflow-y-auto">
+                        {bulkInvoiceItems.map((item, idx) => {
+                          const product = products.find(p => p.id === item.product_id);
+                          const unitCost = parseFloat(item.unit_cost) || 0;
+                          const qty = parseFloat(item.quantity) || 0;
+                          const totalCost = item.cost_input_method === 'total' && item.total_item_cost
+                            ? (parseFloat(item.total_item_cost) * (1 - (parseFloat(item.discount) || 0) / 100)).toFixed(2)
+                            : (qty * unitCost).toFixed(2);
+                          
+                          return (
+                            <div key={idx} className="p-2 bg-white rounded border border-slate-200 text-sm">
+                              <div className="flex justify-between items-start mb-1">
+                                <div className="flex-1">
+                                  <p className="font-semibold text-slate-900">{product?.name || 'Unknown'}</p>
+                                  <p className="text-xs text-slate-600">SKU: {product?.sku}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-bold text-green-700">{item.quantity} τεμ.</p>
+                                  <p className="text-xs text-slate-600">€{totalCost}</p>
+                                </div>
+                              </div>
+                              <div className="text-xs text-slate-600 mt-1">
+                                <p>Θέση: {item.warehouse_location}</p>
+                                <p>Εταιρεία: {companies.find(c => c.id === item.company_id)?.name || '-'}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t">
+                      <p className="text-sm text-slate-600">
+                        Συνολικό Κόστος: <strong className="text-lg text-green-900">
+                          €{bulkInvoiceItems.reduce((sum, item) => {
+                            const qty = parseFloat(item.quantity) || 0;
+                            const unitCost = parseFloat(item.unit_cost) || 0;
+                            const totalCost = item.cost_input_method === 'total' && item.total_item_cost
+                              ? parseFloat(item.total_item_cost) * (1 - (parseFloat(item.discount) || 0) / 100)
+                              : qty * unitCost;
+                            return sum + totalCost;
+                          }, 0).toFixed(2)}
+                        </strong>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowBulkInvoiceSummary(false)}
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Πίσω
+                  </Button>
+                  <Button
+                    onClick={handleSubmitBulkInvoice}
+                    disabled={isProcessing}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Upload className="w-4 h-4 mr-2 animate-spin" />
+                        Επεξεργασία...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Επιβεβαίωση & Ολοκλήρωση
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
