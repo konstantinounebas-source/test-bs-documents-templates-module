@@ -1060,12 +1060,12 @@ export default function PurchaseOrdersPage() {
                               <Label className="text-xs mb-1">Unit Cost (€) *</Label>
                               <Input
                                 type="number"
-                                step="0.01"
+                                step="0.001"
                                 min="0"
                                 value={item.unit_cost}
                                 onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value)}
                                 required
-                                className="text-sm"
+                                className="text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
                             </div>
                             <div>
@@ -1079,11 +1079,11 @@ export default function PurchaseOrdersPage() {
                               <Label className="text-xs mb-1">Total (€)</Label>
                               <Input
                                 type="number"
-                                step="0.01"
+                                step="any"
                                 min="0"
-                                value={(item.total_cost || 0).toFixed(2)}
+                                value={item.total_cost || 0}
                                 onChange={(e) => handleItemChange(index, 'total_cost', e.target.value)}
-                                className="text-sm font-semibold"
+                                className="text-sm font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
                             </div>
                             <div className="col-span-2">
@@ -1428,12 +1428,12 @@ export default function PurchaseOrdersPage() {
                               <Label className="text-xs mb-1">Unit Cost (€) *</Label>
                               <Input
                                 type="number"
-                                step="0.01"
+                                step="0.001"
                                 min="0"
                                 value={item.unit_cost}
                                 onChange={(e) => handleItemChange(index, 'unit_cost', e.target.value)}
                                 required
-                                className="text-sm"
+                                className="text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
                             </div>
                             <div>
@@ -1447,11 +1447,11 @@ export default function PurchaseOrdersPage() {
                               <Label className="text-xs mb-1">Total (€)</Label>
                               <Input
                                 type="number"
-                                step="0.01"
+                                step="any"
                                 min="0"
-                                value={(item.total_cost || 0).toFixed(2)}
+                                value={item.total_cost || 0}
                                 onChange={(e) => handleItemChange(index, 'total_cost', e.target.value)}
-                                className="text-sm font-semibold"
+                                className="text-sm font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                               />
                             </div>
                             <div className="col-span-2">
