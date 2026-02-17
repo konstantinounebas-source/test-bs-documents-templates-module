@@ -1630,14 +1630,15 @@ export default function BarcodeScannerPage() {
               </div>
             )}
 
-            {getOpenPOs().length === 0 && (
-              <div className="p-4 bg-white rounded-lg border border-slate-200 text-center">
-                <ShoppingCart className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                <p className="text-sm text-slate-600">No open purchase orders</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              {getOpenPOs().length === 0 && (
+                <div className="p-4 bg-white rounded-lg border border-slate-200 text-center">
+                  <ShoppingCart className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                  <p className="text-sm text-slate-600">No open purchase orders</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Recent Scans - Improved */}
         {recentScans.length > 0 && (
