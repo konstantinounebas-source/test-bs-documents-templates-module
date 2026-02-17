@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Package, Badge } from "lucide-react";
+import { Loader2, Plus, Package, Badge, Pencil } from "lucide-react";
 import VendorSearchCombobox from "@/components/warehouse/VendorSearchCombobox";
 import CreateEditVendorDialog from "@/components/warehouse/CreateEditVendorDialog";
 import PreviousPurchasesSelector from "@/components/warehouse/PreviousPurchasesSelector";
@@ -30,6 +30,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
   });
   const [isSaving, setIsSaving] = useState(false);
   const [showCreateVendorDialog, setShowCreateVendorDialog] = useState(false);
+  const [editingVendor, setEditingVendor] = useState(null);
   const [localVendors, setLocalVendors] = useState(vendors);
   const [invoiceCategories, setInvoiceCategories] = useState([]);
   const [validationErrors, setValidationErrors] = useState({});
@@ -424,10 +425,32 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     setIsSaving(false);
   };
 
-  const handleVendorCreated = async () => {
+  const handleVendorCreated = async (newVendor) => {
     setShowCreateVendorDialog(false);
+    setEditingVendor(null);
     const vendorsData = await base44.entities.Vendor.filter({ is_active: true });
     setLocalVendors(vendorsData);
+    
+    // If a new vendor was created/updated, set it as selected
+    if (newVendor && newVendor.id) {
+      setFormData(prev => ({
+        ...prev,
+        reference_id: newVendor.id,
+        reference_type: 'Vendor'
+      }));
+    }
+  };
+
+  const handleEditVendor = () => {
+    if (formData.reference_id) {
+      const vendor = localVendors.find(v => v.id === formData.reference_id);
+      setEditingVendor(vendor);
+      setShowCreateVendorDialog(true);
+    } else {
+      // No vendor selected - open dialog to create new
+      setEditingVendor(null);
+      setShowCreateVendorDialog(true);
+    }
   };
 
   if (!movement) return null;
@@ -567,31 +590,20 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
                     <div className="col-span-2">
                       <Label>Προμηθευτής *</Label>
                       <div className="flex gap-2">
-                        <div className={`flex-1 ${validationErrors.reference_id ? 'border-2 border-red-500 rounded-md' : ''}`}>
-                          <VendorSearchCombobox
-                            vendors={localVendors}
-                            vendorProductIds={vendorProductIds}
-                            value={formData.reference_id}
-                            onValueChange={(val) => {
-                              setFormData({
-                                ...formData,
-                                reference_type: 'Vendor',
-                                reference_id: val
-                              });
-                              if (validationErrors.reference_id) {
-                                setValidationErrors({ ...validationErrors, reference_id: undefined });
-                              }
-                            }}
-                          />
-                        </div>
+                        <Input
+                          value={formData.reference_id ? (localVendors.find(v => v.id === formData.reference_id)?.name || '') : ''}
+                          readOnly
+                          placeholder="Επιλέξτε προμηθευτή..."
+                          className={validationErrors.reference_id ? 'border-red-500' : ''}
+                        />
                         <Button
                           type="button"
                           variant="outline"
                           size="icon"
-                          onClick={() => setShowCreateVendorDialog(true)}
-                          title="Προσθήκη νέου προμηθευτή"
+                          onClick={handleEditVendor}
+                          title={formData.reference_id ? "Επεξεργασία προμηθευτή" : "Προσθήκη νέου προμηθευτή"}
                         >
-                          <Plus className="w-4 h-4" />
+                          <Pencil className="w-4 h-4" />
                         </Button>
                       </div>
                       {validationErrors.reference_id && (
@@ -1068,7 +1080,11 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
 
       <CreateEditVendorDialog
         open={showCreateVendorDialog}
-        onClose={() => setShowCreateVendorDialog(false)}
+        onClose={() => {
+          setShowCreateVendorDialog(false);
+          setEditingVendor(null);
+        }}
+        vendor={editingVendor}
         onVendorSaved={handleVendorCreated}
       />
     </>
