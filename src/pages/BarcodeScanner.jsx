@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +25,7 @@ import PersonSearchCombobox from "../components/warehouse/PersonSearchCombobox";
 import VendorSearchCombobox from "../components/warehouse/VendorSearchCombobox";
 import ProductSearchCombobox from "../components/warehouse/ProductSearchCombobox";
 import PreviousPurchasesSelector from "../components/warehouse/PreviousPurchasesSelector";
+import BarcodeInputStepper from "../components/warehouse/BarcodeInputStepper";
 
 // Helper function to introduce a delay
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -97,6 +97,10 @@ export default function BarcodeScannerPage() {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const scanIntervalRef = useRef(null);
+
+  // Main menu state
+  const [inputMode, setInputMode] = useState(null); // "barcode", "search", "po"
+  const [showStepperDialog, setShowStepperDialog] = useState(false);
 
   // Helper to format dates in Cyprus/Athens timezone
   const formatLocalTime = (date) => {
@@ -505,47 +509,26 @@ export default function BarcodeScannerPage() {
         message: `✓ Product found: ${product.name} (matched by ${matchedField}: "${barcode}" → SKU: ${product.sku})` 
       });
       saveRecentScan(product.sku);
+      
+      // Open stepper dialog after scanning
+      setShowStepperDialog(true);
     } else {
       setMatchedProduct(null);
       setScanResult({ type: 'error', message: `No product found with code: "${barcode}"` });
     }
   };
 
-  const handleManualSearch = async (e) => {
-    e.preventDefault();
-    if (!scannedBarcode.trim()) {
-      setScanResult({ type: 'error', message: 'Please enter a barcode, QR code, or SKU' });
-      return;
-    }
-
-    const searchCode = scannedBarcode.trim();
-    const product = products.find(
-      p => p.barcode === searchCode || 
-           p.qr_code === searchCode ||
-           p.sku === searchCode
-    );
-
+  const handleManualSearch = async (productId) => {
+    const product = products.find(p => p.id === productId);
     if (product) {
       setMatchedProduct(product);
-      
-      // Determine which field matched
-      let matchedField = '';
-      if (product.sku === searchCode) {
-        matchedField = 'SKU';
-      } else if (product.barcode === searchCode) {
-        matchedField = 'Barcode';
-      } else if (product.qr_code === searchCode) {
-        matchedField = 'QR Code';
-      }
-      
+      setScannedBarcode(product.sku);
       setScanResult({ 
         type: 'success', 
-        message: `✓ Product found: ${product.name} (matched by ${matchedField}: "${searchCode}" → SKU: ${product.sku})` 
+        message: `✓ Product selected: ${product.name}` 
       });
       saveRecentScan(product.sku);
-    } else {
-      setMatchedProduct(null);
-      setScanResult({ type: 'error', message: `No product found with code: "${searchCode}"` });
+      setShowStepperDialog(true);
     }
   };
 
@@ -601,7 +584,29 @@ export default function BarcodeScannerPage() {
     setUploadedPhotos(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleStockMovement = async () => {
+  const handleStockMovementFromStepper = async (stepperFormData) => {
+    // This function receives form data from the stepper and processes the movement
+    const movementType = stepperFormData.movementType;
+    const quantity = stepperFormData.quantity;
+    const fromLocation = stepperFormData.fromLocation;
+    const toLocation = stepperFormData.toLocation;
+    const selectedPO = stepperFormData.selectedPO;
+    const invoiceNumber = stepperFormData.invoiceNumber;
+    const waybillNumber = stepperFormData.waybillNumber;
+    const chargedToPerson = stepperFormData.chargedToPerson;
+    const selectedVendor = stepperFormData.selectedVendor;
+    const selectedCompany = stepperFormData.selectedCompany;
+    const vendorProductCode = stepperFormData.vendorProductCode;
+    const selectedInvoiceCategory = stepperFormData.selectedInvoiceCategory;
+    const costInputMethod = stepperFormData.costInputMethod;
+    const unitCost = stepperFormData.unitCost;
+    const totalItemCost = stepperFormData.totalItemCost;
+    const discount = stepperFormData.discount;
+    const bundleQuantity = stepperFormData.bundleQuantity;
+    const inputUnitSubtype = stepperFormData.inputUnitSubtype;
+    const conversionRate = stepperFormData.conversionRate;
+    const notes = stepperFormData.notes;
+
     if (!matchedProduct) {
       setScanResult({ type: 'error', message: 'Please scan a product first' });
       return;
@@ -894,27 +899,9 @@ export default function BarcodeScannerPage() {
       // Reset form with default cost method to "total"
       setScannedBarcode("");
       setMatchedProduct(null);
-      setQuantity("1");
-      setFromLocation("");
-      setToLocation("");
-      setSelectedPO("");
-      setInvoiceNumber("");
-      setWaybillNumber("");
-      setChargedToPerson("");
-      setSelectedVendor("");
-      setSelectedCompany("");
-      setVendorProductCode("");
-      setSelectedInvoiceCategory("");
-      setCostInputMethod("total"); // Reset to "total"
-      setUnitCost("");
-      setTotalItemCost("");
-      setDiscount("0");
-      setBundleQuantity("");
-      setInputUnitSubtype("");
-      setConversionRate("1");
-      setNotes("");
-      setPOItemInfo(null);
       setUploadedPhotos([]);
+      setShowStepperDialog(false);
+      setInputMode(null);
 
       // Load data in background without blocking
       loadData();
@@ -928,13 +915,12 @@ export default function BarcodeScannerPage() {
 
   const handleQuickTest = (sampleSku) => {
     setScannedBarcode(sampleSku);
-    setTimeout(() => {
-      const product = products.find(p => p.sku === sampleSku);
-      if (product) {
-        setMatchedProduct(product);
-        setScanResult({ type: 'success', message: `✓ Product found: ${product.name}` });
-      }
-    }, 100);
+    const product = products.find(p => p.sku === sampleSku);
+    if (product) {
+      setMatchedProduct(product);
+      setScanResult({ type: 'success', message: `✓ Product found: ${product.name}` });
+      setShowStepperDialog(true);
+    }
   };
 
   const handleQuickTestPO = (poId) => {
@@ -1361,20 +1347,12 @@ export default function BarcodeScannerPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-6">
-      <div className="max-w-5xl mx-auto space-y-4">
+      <div className="max-w-4xl mx-auto space-y-4">
         {/* Header */}
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Barcode Scanner</h1>
-          <p className="text-sm md:text-base text-slate-600">Scan products for quick stock operations</p>
+          <p className="text-sm md:text-base text-slate-600">Επιλέξτε τρόπο εισαγωγής κίνησης αποθέματος</p>
         </div>
-
-        {/* Info Alert */}
-        <Alert className="border-blue-200 bg-blue-50">
-          <Info className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-sm text-blue-800">
-            <strong>How to use:</strong> Click "Scan with Camera" to use your device camera, or manually enter a barcode/QR/SKU and search.
-          </AlertDescription>
-        </Alert>
 
         {cameraError && (
           <Alert className="border-orange-200 bg-orange-50">
@@ -1385,907 +1363,184 @@ export default function BarcodeScannerPage() {
           </Alert>
         )}
 
-        {/* Main Scanning Card */}
-        <Card className="border-slate-200">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <ScanBarcode className="w-5 h-5" />
-              Scan Product
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleOpenBulkInvoice}
-                size="lg"
-                variant="outline"
-                className="flex-1 border-green-600 text-green-700 hover:bg-green-50 text-sm md:text-base"
-              >
-                <Plus className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                Bulk Invoice Entry
-              </Button>
-              <Button 
-                onClick={startCamera}
-                size="lg"
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-sm md:text-base"
-              >
-                <Camera className="w-4 h-4 md:w-5 md:h-5 mr-2" />
-                Scan with Camera
-              </Button>
-            </div>
-
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 right-0 flex items-center">
-                <div className="w-full border-t border-slate-300"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-slate-500">Or enter manually</span>
-              </div>
-            </div>
-
-            <form onSubmit={handleManualSearch} className="space-y-3">
-              <div>
-                <Label htmlFor="barcode" className="text-sm md:text-base">Barcode / QR Code / SKU</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    id="barcode"
-                    value={scannedBarcode}
-                    onChange={(e) => setScannedBarcode(e.target.value)}
-                    placeholder="Type code here..."
-                    className="flex-1 text-base h-11 md:h-12"
-                  />
-                  <Button 
-                    type="submit" 
-                    size="lg"
-                    variant="outline"
-                    disabled={!scannedBarcode.trim()}
-                    className="px-4 md:px-6 h-11 md:h-12"
-                  >
-                    <ScanBarcode className="w-4 h-4 md:w-5 md:h-5 md:mr-2" />
-                    <span className="hidden md:inline">Search</span>
-                  </Button>
-                </div>
-              </div>
-            </form>
-
-            {scanResult && (
-              <Alert className={
-                scanResult.type === 'success' 
-                  ? 'border-green-200 bg-green-50' 
-                  : 'border-red-200 bg-red-50'
-              }>
-                {scanResult.type === 'success' ? (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                ) : (
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
-                )}
-                <AlertDescription className={`text-sm ${
-                  scanResult.type === 'success' ? 'text-green-800' : 'text-red-800'
-                }`}>
-                  {scanResult.message}
-                </AlertDescription>
-              </Alert>
+        {scanResult && (
+          <Alert className={
+            scanResult.type === 'success' 
+              ? 'border-green-200 bg-green-50' 
+              : 'border-red-200 bg-red-50'
+          }>
+            {scanResult.type === 'success' ? (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            ) : (
+              <AlertTriangle className="h-4 w-4 text-red-600" />
             )}
+            <AlertDescription className={`text-sm ${
+              scanResult.type === 'success' ? 'text-green-800' : 'text-red-800'
+            }`}>
+              {scanResult.message}
+            </AlertDescription>
+          </Alert>
+        )}
 
-            {matchedProduct && (
-              <>
-                <Separator />
+        {/* Main Input Options */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-blue-200 hover:border-blue-400 hover:shadow-lg transition-all cursor-pointer" onClick={startCamera}>
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ScanBarcode className="w-8 h-8 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Scan Barcode</h3>
+              <p className="text-sm text-slate-600">Χρήση κάμερας για σάρωση barcode/QR</p>
+            </CardContent>
+          </Card>
 
-                {/* Product Info - Compact */}
-                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="flex items-start gap-3">
-                    <Package className="w-6 h-6 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-lg text-blue-900 break-words">{matchedProduct.name}</p>
-                          {matchedProduct.description && (
-                            <p className="text-sm text-blue-700 mt-1 break-words">{matchedProduct.description}</p>
-                          )}
-                        </div>
-                        <Badge className="bg-blue-600 text-white flex-shrink-0">Matched ✓</Badge>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm text-blue-700 font-mono">
-                          <span className="font-semibold">SKU:</span> {matchedProduct.sku}
-                        </p>
-                        <p className="text-sm text-blue-600">
-                          <span className="font-semibold">Current Stock:</span> {getProductStock(matchedProduct.id)} {matchedProduct.unit_of_measure}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+          <Card className="border-green-200 hover:border-green-400 hover:shadow-lg transition-all cursor-pointer" onClick={() => setInputMode('search')}>
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Package className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Επιλογή Προϊόντος</h3>
+              <p className="text-sm text-slate-600">Αναζήτηση από υπάρχοντα προϊόντα</p>
+            </CardContent>
+          </Card>
 
-                <div className="space-y-4">
-                  {/* Conditional Fields based on Movement Type */}
-                  {(movementType === "TRANSFER" || movementType === "OUT") && (
-                    <div className="space-y-2">
-                      <Label>Από Θέση *</Label>
-                      <Select value={fromLocation || 'none'} onValueChange={(val) => setFromLocation(val === 'none' ? '' : val)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Επιλέξτε θέση" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">-- Επιλέξτε --</SelectItem>
-                          {getAvailableLocationsForProduct().filter(locName => locName && locName.trim() !== '').map(locName => (
-                            <SelectItem key={locName} value={locName}>
-                              {locName} ({getAvailableStockAtLocation(matchedProduct.id, locName)} διαθέσιμα)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
+          <Card className="border-purple-200 hover:border-purple-400 hover:shadow-lg transition-all cursor-pointer" onClick={() => setInputMode('po')}>
+            <CardContent className="p-8 text-center">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShoppingCart className="w-8 h-8 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Από PO</h3>
+              <p className="text-sm text-slate-600">Παραλαβή από Purchase Order</p>
+            </CardContent>
+          </Card>
+        </div>
 
-                  {/* Movement Type & Warehouse Location */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>Τύπος Κίνησης *</Label>
-                      <Select value={movementType} onValueChange={handleMovementTypeChange}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="IN">
-                            <div className="flex items-center gap-2">
-                              <TrendingUp className="w-4 h-4 text-green-600" />
-                              <span>Εισαγωγή (IN)</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="OUT">
-                            <div className="flex items-center gap-2">
-                              <TrendingDown className="w-4 h-4 text-red-600" />
-                              <span>Εξαγωγή (OUT)</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="TRANSFER">
-                            <div className="flex items-center gap-2">
-                              <Move className="w-4 h-4 text-blue-600" />
-                              <span>Μεταφορά (TRANSFER)</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="ADJUSTMENT">
-                            <div className="flex items-center gap-2">
-                              <Activity className="w-4 h-4 text-orange-600" />
-                              <span>Διόρθωση (ADJUSTMENT)</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {(movementType === "TRANSFER" || movementType === "IN" || movementType === "ADJUSTMENT") && (
-                      <div>
-                        <Label>Θέση Αποθήκης *</Label>
-                        <Select value={toLocation || 'none'} onValueChange={(val) => setToLocation(val === 'none' ? '' : val)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Επιλέξτε θέση" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">-- Επιλέξτε --</SelectItem>
-                            {locations.filter(loc => loc.id && loc.name && loc.name.trim() !== '' && loc.name !== fromLocation).map(loc => (
-                              <SelectItem key={loc.id} value={loc.name}>
-                                {loc.name} {loc.warehouse && `- ${loc.warehouse}`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Company & Invoice Category */}
-                  {movementType === "IN" && (
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <Label>Εταιρεία *</Label>
-                        <Select value={selectedCompany || 'none'} onValueChange={(val) => setSelectedCompany(val === 'none' ? '' : val)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Επιλέξτε εταιρεία" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">-- Χωρίς Εταιρεία --</SelectItem>
-                            {companies.map(comp => (
-                              <SelectItem key={comp.id} value={comp.id}>{comp.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label>Κατηγορία Τιμολόγησης *</Label>
-                        <Select value={selectedInvoiceCategory || 'none'} onValueChange={(val) => setSelectedInvoiceCategory(val === 'none' ? '' : val)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Επιλέξτε κατηγορία" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">-- Χωρίς Κατηγορία --</SelectItem>
-                            {invoiceCategories.map(ic => (
-                              <SelectItem key={ic.id} value={ic.id}>
-                                <div>
-                                  <div className="font-medium">{ic.name}</div>
-                                  {ic.description && (
-                                    <div className="text-xs text-slate-500">{ic.description}</div>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
-
-                  {movementType === "IN" && (
-                    <>
-                      <Separator />
-
-                      <PreviousPurchasesSelector
-                        productId={matchedProduct?.id}
-                        vendors={vendors}
-                        companies={companies}
-                        invoiceCategories={invoiceCategories}
-                        onSelect={(data) => {
-                          if (data) {
-                            setSelectedVendor(data.vendor_id || '');
-                            setUnitCost(data.unit_cost ? String(data.unit_cost) : '');
-                            setBundleQuantity(data.bundle_quantity ? String(data.bundle_quantity) : '');
-                            setConversionRate(data.conversion_rate ? String(data.conversion_rate) : (data.bundle_quantity ? String(data.bundle_quantity) : '1'));
-                            setInputUnitSubtype(data.input_unit_of_measure || '');
-                            setVendorProductCode(data.vendor_product_code || '');
-                            setSelectedInvoiceCategory(data.invoice_category_id || '');
-                            setSelectedCompany(data.company_id || '');
-                          }
-                        }}
-                      />
-
-                      <Separator />
-
-                      {/* Vendor Information Section */}
-                      <div className="space-y-3">
-                        <p className="text-sm font-semibold text-slate-700">Στοιχεία Προμηθευτή</p>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label>Προμηθευτής *</Label>
-                            <div className="flex gap-2">
-                              <div className="flex-1">
-                                <VendorSearchCombobox
-                                  vendors={vendors}
-                                  vendorProductIds={productVendors
-                                    .filter(pv => pv.product_id === matchedProduct?.id && pv.is_active)
-                                    .map(pv => pv.vendor_id)}
-                                  value={selectedVendor}
-                                  onValueChange={setSelectedVendor}
-                                />
-                              </div>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={() => setShowCreateVendorDialog(true)}
-                                title="Add new vendor"
-                              >
-                                <Plus className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-
-                          <div>
-                            <Label>Κωδικός Προϊόντος Προμηθευτή *</Label>
-                            <Input
-                              value={vendorProductCode}
-                              onChange={(e) => setVendorProductCode(e.target.value)}
-                              placeholder="Κωδικός προμηθευτή"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <Label htmlFor="invoice-number">Αριθμός Τιμολογίου</Label>
-                            <Input
-                              id="invoice-number"
-                              value={invoiceNumber}
-                              onChange={(e) => setInvoiceNumber(e.target.value)}
-                              placeholder="π.χ. INV-2025-001"
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="po-select">Ανοικτά PO</Label>
-                            <Select value={selectedPO || 'none'} onValueChange={(val) => setSelectedPO(val === 'none' ? '' : val)}>
-                              <SelectTrigger id="po-select">
-                                <SelectValue placeholder="Επιλέξτε PO" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">-- Χωρίς PO --</SelectItem>
-                                {purchaseOrders
-                                  .filter(po => {
-                                    if (!matchedProduct) return true;
-                                    return po.items.some(item => item.product_id === matchedProduct.id && (item.quantity_ordered - (item.quantity_received || 0)) > 0);
-                                  })
-                                  .map(po => {
-                                    const vendor = vendors.find(v => v.id === po.vendor_id);
-                                    const totalRemaining = po.items.reduce((sum, item) => 
-                                      sum + (item.quantity_ordered - (item.quantity_received || 0)), 0
-                                    );
-                                    return (
-                                      <SelectItem key={po.id} value={po.id}>
-                                        {po.po_number} - {vendor?.name || 'N/A'} ({totalRemaining} items)
-                                      </SelectItem>
-                                    );
-                                  })}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      {/* Quantity & Cost Section */}
-                      <div className="space-y-3">
-                        <p className="text-sm font-semibold text-slate-700">Ποσότητα & Κόστος</p>
-
-                        <div className="grid grid-cols-3 gap-3">
-                          <div>
-                            <Label>Ποσότητα *</Label>
-                            <Input
-                              id="quantity"
-                              type="text"
-                              inputMode="numeric"
-                              value={quantity}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (value === '' || /^\d+$/.test(value)) {
-                                  setQuantity(value);
-                                }
-                              }}
-                              onBlur={(e) => {
-                                const val = parseInt(e.target.value);
-                                if (isNaN(val) || val < 1) {
-                                  setQuantity("1");
-                                }
-                              }}
-                              onFocus={(e) => e.target.select()}
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Μονάδα Εισαγ.</Label>
-                            <Select 
-                              value={inputUnitSubtype || ''} 
-                              onValueChange={(val) => {
-                                setInputUnitSubtype(val);
-                                if (val === 'piece') {
-                                  setBundleQuantity('1');
-                                }
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="-" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {(() => {
-                                  if (matchedProduct?.unit_of_measure === 'kg') {
-                                    return (
-                                      <>
-                                        <SelectItem value={null}>-</SelectItem>
-                                        <SelectItem value="g">g</SelectItem>
-                                        <SelectItem value="kg">kg</SelectItem>
-                                        <SelectItem value="ton">ton</SelectItem>
-                                      </>
-                                    );
-                                  } else if (matchedProduct?.unit_of_measure === 'liter') {
-                                    return (
-                                      <>
-                                        <SelectItem value={null}>-</SelectItem>
-                                        <SelectItem value="ml">ml</SelectItem>
-                                        <SelectItem value="liter">L</SelectItem>
-                                      </>
-                                    );
-                                  } else if (matchedProduct?.unit_of_measure === 'meter') {
-                                    return (
-                                      <>
-                                        <SelectItem value={null}>-</SelectItem>
-                                        <SelectItem value="mm">mm</SelectItem>
-                                        <SelectItem value="cm">cm</SelectItem>
-                                        <SelectItem value="meter">m</SelectItem>
-                                      </>
-                                    );
-                                  } else if (matchedProduct?.unit_of_measure === 'piece') {
-                                    return (
-                                      <>
-                                        <SelectItem value={null}>-</SelectItem>
-                                        <SelectItem value="piece">pcs</SelectItem>
-                                        <SelectItem value="box">box</SelectItem>
-                                        <SelectItem value="pallet">pallet</SelectItem>
-                                      </>
-                                    );
-                                  } else {
-                                    return <SelectItem value={null}>{matchedProduct?.unit_of_measure || '-'}</SelectItem>;
-                                  }
-                                })()}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div>
-                            <Label>Pcs/Qty</Label>
-                            <Input
-                              type="number"
-                              min="1"
-                              step="1"
-                              value={bundleQuantity || ''}
-                              onChange={(e) => setBundleQuantity(e.target.value)}
-                              placeholder="π.χ. 100 τεμ."
-                            />
-                            {unitCost && bundleQuantity && parseFloat(bundleQuantity) > 0 && (
-                              <p className="text-xs text-slate-700 mt-1">
-                                <strong>Κόστος ανά τεμάχιο:</strong> €{(parseFloat(unitCost) / parseFloat(bundleQuantity)).toFixed(4)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div>
-                          <Label>Μέθοδος Εισαγωγής Κόστους</Label>
-                          <Select 
-                            value={costInputMethod} 
-                            onValueChange={(val) => {
-                              setCostInputMethod(val);
-                              if (val === 'unit') {
-                                setTotalItemCost("");
-                                setDiscount("0");
-                              } else {
-                                setUnitCost("");
-                              }
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="unit">Ανά Μονάδα</SelectItem>
-                              <SelectItem value="total">Συνολικό Κόστος + Έκπτωση</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        {costInputMethod === 'unit' ? (
-                          <div>
-                            <Label>Κόστος ανά μονάδα (€) *</Label>
-                            <Input
-                              type="number"
-                              step="0.0001"
-                              min="0"
-                              value={unitCost}
-                              onChange={(e) => setUnitCost(e.target.value)}
-                              placeholder="0.0000"
-                            />
-                            <p className="text-xs text-slate-500 mt-1">
-                              Κόστος ανά {matchedProduct.unit_of_measure}
-                            </p>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <Label>Συνολικό Κόστος Προϊόντος (€) *</Label>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                  value={totalItemCost}
-                                  onChange={(e) => setTotalItemCost(e.target.value)}
-                                  placeholder="0.00"
-                                />
-                                <p className="text-xs text-slate-500 mt-1">
-                                  Το συνολικό κόστος πριν την έκπτωση
-                                </p>
-                              </div>
-                              <div>
-                                <Label>Έκπτωση (%)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.1"
-                                  min="0"
-                                  max="100"
-                                  value={discount}
-                                  onChange={(e) => setDiscount(e.target.value)}
-                                  placeholder="0"
-                                />
-                                <p className="text-xs text-slate-500 mt-1">
-                                  Ποσοστό έκπτωσης επί του συνολικού κόστους
-                                </p>
-                              </div>
-                            </div>
-                            {unitCost && (
-                              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                <p className="text-sm text-blue-900">
-                                  <strong>Υπολογιζόμενο Κόστος ανά Μονάδα:</strong> €{parseFloat(unitCost).toFixed(4)}
-                                </p>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-
-                        <Separator />
-
-                        {/* Additional Details Section */}
-                        <div className="space-y-3">
-                          <p className="text-sm font-semibold text-slate-700">Πρόσθετα Στοιχεία</p>
-
-                          <div>
-                            <Label htmlFor="waybill-in">Αριθμός Waybill</Label>
-                            <Input
-                              id="waybill-in"
-                              value={waybillNumber}
-                              onChange={(e) => setWaybillNumber(e.target.value)}
-                              placeholder="π.χ. WB-2025-001"
-                            />
-                          </div>
-                        </div>
-                    </>
-                  )}
-
-                  {movementType === "OUT" && (
-                    <>
-                      <div className="space-y-3">
-                        <p className="text-sm font-semibold text-slate-700">Ποσότητα & Μονάδες</p>
-                        
-                        <div className="grid grid-cols-3 gap-3">
-                          <div>
-                            <Label>Ποσότητα *</Label>
-                            <Input
-                              id="quantity-out"
-                              type="text"
-                              inputMode="numeric"
-                              value={quantity}
-                              onChange={(e) => {
-                                const value = e.target.value;
-                                if (value === '' || /^\d+$/.test(value)) {
-                                  setQuantity(value);
-                                }
-                              }}
-                              onBlur={(e) => {
-                                const val = parseInt(e.target.value);
-                                if (isNaN(val) || val < 1) {
-                                  setQuantity("1");
-                                }
-                              }}
-                              onFocus={(e) => e.target.select()}
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Μονάδα Εισαγ.</Label>
-                            <Select
-                              value={inputUnitSubtype || matchedProduct?.unit_of_measure}
-                              onValueChange={(val) => {
-                                let newConversionRate = '1';
-                                if (matchedProduct?.unit_of_measure === 'kg') {
-                                  if (val === 'g') newConversionRate = '0.001';
-                                  else if (val === 'kg') newConversionRate = '1';
-                                  else if (val === 'ton') newConversionRate = '1000';
-                                } else if (matchedProduct?.unit_of_measure === 'liter') {
-                                  if (val === 'ml') newConversionRate = '0.001';
-                                  else if (val === 'liter') newConversionRate = '1';
-                                } else if (matchedProduct?.unit_of_measure === 'meter') {
-                                  if (val === 'cm') newConversionRate = '0.01';
-                                  else if (val === 'mm') newConversionRate = '0.001';
-                                  else if (val === 'meter') newConversionRate = '1';
-                                } else if (matchedProduct?.unit_of_measure === 'piece') {
-                                  if (val === 'piece') {
-                                    newConversionRate = '1';
-                                    setBundleQuantity('1');
-                                  }
-                                }
-                                setInputUnitSubtype(val);
-                                setConversionRate(newConversionRate);
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Επιλέξτε" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {matchedProduct?.unit_of_measure === 'kg' && (
-                                  <>
-                                    <SelectItem value="g">g</SelectItem>
-                                    <SelectItem value="kg">kg</SelectItem>
-                                    <SelectItem value="ton">ton</SelectItem>
-                                  </>
-                                )}
-                                {matchedProduct?.unit_of_measure === 'liter' && (
-                                  <>
-                                    <SelectItem value="ml">ml</SelectItem>
-                                    <SelectItem value="liter">L</SelectItem>
-                                  </>
-                                )}
-                                {matchedProduct?.unit_of_measure === 'meter' && (
-                                  <>
-                                    <SelectItem value="mm">mm</SelectItem>
-                                    <SelectItem value="cm">cm</SelectItem>
-                                    <SelectItem value="meter">m</SelectItem>
-                                  </>
-                                )}
-                                {matchedProduct?.unit_of_measure === 'piece' && (
-                                  <>
-                                    <SelectItem value="piece">pcs</SelectItem>
-                                    <SelectItem value="box">box</SelectItem>
-                                    <SelectItem value="pallet">pallet</SelectItem>
-                                  </>
-                                )}
-                                {!['kg', 'liter', 'meter', 'piece'].includes(matchedProduct?.unit_of_measure) && (
-                                  <SelectItem value={matchedProduct?.unit_of_measure}>{matchedProduct?.unit_of_measure}</SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div>
-                            <Label>Pcs/Qty</Label>
-                            <Input
-                              type="number"
-                              min="1"
-                              step="1"
-                              value={bundleQuantity || ''}
-                              onChange={(e) => setBundleQuantity(e.target.value)}
-                              placeholder="π.χ. 100"
-                            />
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-slate-500">
-                          Ποσότητα στη βασική μονάδα ({matchedProduct?.unit_of_measure}): {(() => {
-                            const qty = parseFloat(quantity) || 0;
-                            const convRate = parseFloat(conversionRate) || 1;
-                            const bundleQty = parseFloat(bundleQuantity) || null;
-                            return bundleQty ? (qty * convRate * bundleQty).toFixed(2) : (qty * convRate).toFixed(2);
-                          })()}
-                        </p>
-                      </div>
-
-                      <div>
-                        <Label>Χρέωση σε Άτομο *</Label>
-                        <PersonSearchCombobox
-                          systemUsers={systemUsers}
-                          appUsers={appUsers}
-                          value={chargedToPerson}
-                          onValueChange={setChargedToPerson}
-                        />
-                      </div>
-
-                      <div>
-                        <Label htmlFor="waybill">Αριθμός Waybill (προαιρετικό)</Label>
-                        <Input
-                          id="waybill"
-                          value={waybillNumber}
-                          onChange={(e) => setWaybillNumber(e.target.value)}
-                          placeholder="π.χ. WB-2025-001"
-                        />
-                      </div>
-                    </>
-                  )}
-
-                  {(movementType === "ADJUSTMENT" || movementType === "TRANSFER") && (
-                    <div className="space-y-3">
-                      <p className="text-sm font-semibold text-slate-700">Ποσότητα & Μονάδες</p>
-                      
-                      <div className="grid grid-cols-3 gap-3">
-                        <div>
-                          <Label>Ποσότητα *</Label>
-                          <Input
-                            id="quantity-other"
-                            type="text"
-                            inputMode="numeric"
-                            value={quantity}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              if (value === '' || /^\d+$/.test(value)) {
-                                setQuantity(value);
-                              }
-                            }}
-                            onBlur={(e) => {
-                              const val = parseInt(e.target.value);
-                              if (isNaN(val) || val < 1) {
-                                setQuantity("1");
-                              }
-                            }}
-                            onFocus={(e) => e.target.select()}
-                          />
-                        </div>
-
-                        <div>
-                          <Label>Μονάδα Εισαγ.</Label>
-                          <Select
-                            value={inputUnitSubtype || matchedProduct?.unit_of_measure}
-                            onValueChange={(val) => {
-                              let newConversionRate = '1';
-                              if (matchedProduct?.unit_of_measure === 'kg') {
-                                if (val === 'g') newConversionRate = '0.001';
-                                else if (val === 'kg') newConversionRate = '1';
-                                else if (val === 'ton') newConversionRate = '1000';
-                              } else if (matchedProduct?.unit_of_measure === 'liter') {
-                                if (val === 'ml') newConversionRate = '0.001';
-                                else if (val === 'liter') newConversionRate = '1';
-                              } else if (matchedProduct?.unit_of_measure === 'meter') {
-                                if (val === 'cm') newConversionRate = '0.01';
-                                else if (val === 'mm') newConversionRate = '0.001';
-                                else if (val === 'meter') newConversionRate = '1';
-                              } else if (matchedProduct?.unit_of_measure === 'piece') {
-                                if (val === 'piece') {
-                                  newConversionRate = '1';
-                                  setBundleQuantity('1');
-                                }
-                              }
-                              setInputUnitSubtype(val);
-                              setConversionRate(newConversionRate);
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Επιλέξτε" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {matchedProduct?.unit_of_measure === 'kg' && (
-                                <>
-                                  <SelectItem value="g">g</SelectItem>
-                                  <SelectItem value="kg">kg</SelectItem>
-                                  <SelectItem value="ton">ton</SelectItem>
-                                </>
-                              )}
-                              {matchedProduct?.unit_of_measure === 'liter' && (
-                                <>
-                                  <SelectItem value="ml">ml</SelectItem>
-                                  <SelectItem value="liter">L</SelectItem>
-                                </>
-                              )}
-                              {matchedProduct?.unit_of_measure === 'meter' && (
-                                <>
-                                  <SelectItem value="mm">mm</SelectItem>
-                                  <SelectItem value="cm">cm</SelectItem>
-                                  <SelectItem value="meter">m</SelectItem>
-                                </>
-                              )}
-                              {matchedProduct?.unit_of_measure === 'piece' && (
-                                <>
-                                  <SelectItem value="piece">pcs</SelectItem>
-                                  <SelectItem value="box">box</SelectItem>
-                                  <SelectItem value="pallet">pallet</SelectItem>
-                                </>
-                              )}
-                              {!['kg', 'liter', 'meter', 'piece'].includes(matchedProduct?.unit_of_measure) && (
-                                <SelectItem value={matchedProduct?.unit_of_measure}>{matchedProduct?.unit_of_measure}</SelectItem>
-                              )}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label>Pcs/Qty</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            step="1"
-                            value={bundleQuantity || ''}
-                            onChange={(e) => setBundleQuantity(e.target.value)}
-                            placeholder="π.χ. 100"
-                          />
-                        </div>
-                      </div>
-
-                      <p className="text-xs text-slate-500">
-                        Ποσότητα στη βασική μονάδα ({matchedProduct?.unit_of_measure}): {(() => {
-                          const qty = parseFloat(quantity) || 0;
-                          const convRate = parseFloat(conversionRate) || 1;
-                          const bundleQty = parseFloat(bundleQuantity) || null;
-                          return bundleQty ? (qty * convRate * bundleQty).toFixed(2) : (qty * convRate).toFixed(2);
-                        })()}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Photo Upload Section */}
-                  <div className="space-y-2">
-                    <Label>Φωτογραφίες (προαιρετικό)</Label>
-                    <div className="flex gap-2">
-                      <input
-                        ref={photoInputRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => photoInputRef.current?.click()}
-                        disabled={isUploadingPhoto}
-                        className="w-full"
-                      >
-                        {isUploadingPhoto ? (
-                          <>
-                            <Upload className="w-4 h-4 mr-2 animate-spin" />
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <ImageIcon className="w-4 h-4 mr-2" />
-                            Upload Photos
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                    {uploadedPhotos.length > 0 && (
-                      <div className="grid grid-cols-3 gap-2 mt-2">
-                        {uploadedPhotos.map((photo, index) => (
-                          <div key={index} className="relative group">
-                            <img 
-                              src={photo.url} 
-                              alt={photo.filename}
-                              className="w-full h-24 object-cover rounded-lg border border-slate-200"
-                            />
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => removePhoto(index)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label>Σημειώσεις (προαιρετικό)</Label>
-                    <Input
-                      id="notes"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Προσθέστε επιπλέον σημειώσεις..."
-                    />
-                  </div>
-                </div>
-
-                <Button 
-                  onClick={handleStockMovement} 
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  size="lg"
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? (
-                    <>Επεξεργασία...</>
-                  ) : (
-                    <>
-                      <ArrowRight className="w-5 h-5 mr-2" />
-                      Επεξεργασία Κίνησης Αποθέματος
-                    </>
-                  )}
-                </Button>
-              </>
-            )}
+        <Card className="border-orange-200">
+          <CardContent className="p-6 text-center">
+            <Button 
+              onClick={handleOpenBulkInvoice}
+              size="lg"
+              variant="outline"
+              className="border-orange-600 text-orange-700 hover:bg-orange-50"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Μαζική Καταχώρηση Τιμολογίου
+            </Button>
           </CardContent>
         </Card>
 
+        {/* Product Search Dialog */}
+        {inputMode === 'search' && (
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  Επιλέξτε Προϊόν
+                </span>
+                <Button variant="ghost" size="icon" onClick={() => setInputMode(null)}>
+                  <X className="w-5 h-5" />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div>
+                <Label>Αναζήτηση Προϊόντος</Label>
+                <ProductSearchCombobox
+                  products={products.filter(p => p.is_active)}
+                  vendorProductIds={[]}
+                  value=""
+                  onValueChange={handleManualSearch}
+                  placeholder="Αναζητήστε προϊόν..."
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* PO Selection Dialog */}
+        {inputMode === 'po' && (
+          <Card className="border-slate-200">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5" />
+                  Επιλέξτε Purchase Order
+                </span>
+                <Button variant="ghost" size="icon" onClick={() => setInputMode(null)}>
+                  <X className="w-5 h-5" />
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {getOpenPOs().length === 0 ? (
+                  <p className="text-sm text-slate-500 text-center py-8">Δεν υπάρχουν ανοικτά PO</p>
+                ) : (
+                  getOpenPOs().map((po) => {
+                    const vendor = vendors.find(v => v.id === po.vendor_id);
+                    const totalRemaining = po.items.reduce((sum, item) => 
+                      sum + (item.quantity_ordered - (item.quantity_received || 0)), 0
+                    );
+                    const totalOrdered = po.items.reduce((sum, item) => sum + item.quantity_ordered, 0);
+                    const totalReceived = po.items.reduce((sum, item) => sum + (item.quantity_received || 0), 0);
+                    const percentReceived = totalOrdered > 0 ? Math.round((totalReceived / totalOrdered) * 100) : 0;
+                    
+                    return (
+                      <div
+                        key={po.id}
+                        className="border border-slate-200 rounded-lg p-3 hover:border-blue-300 hover:bg-blue-50/50 transition-all cursor-pointer"
+                        onClick={() => handleQuickTestPO(po.id)}
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="font-semibold text-sm text-slate-900">
+                              PO #{po.po_number}
+                            </div>
+                            <div className="text-xs text-slate-600 truncate">{vendor?.name || 'N/A'}</div>
+                          </div>
+                          <Badge variant="outline" className="text-xs whitespace-nowrap">
+                            {po.status}
+                          </Badge>
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-slate-600">Progress:</span>
+                            <span className="font-semibold">{percentReceived}%</span>
+                          </div>
+                          <div className="w-full bg-slate-200 rounded-full h-1.5">
+                            <div 
+                              className="bg-blue-600 h-1.5 rounded-full transition-all"
+                              style={{ width: `${percentReceived}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-slate-600 pt-1">
+                            <span>{totalReceived} / {totalOrdered} items received</span>
+                            <span className="font-semibold text-orange-600">{totalRemaining} remaining</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Quick Test Section - Improved */}
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-base md:text-lg flex items-center gap-2">
-              <Zap className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
-              Quick Access - Products & Open POs
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Recent Products */}
-            {getQuickTestProducts().length > 0 && (
+        {!inputMode && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                <Zap className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+                Quick Access - Products & Open POs
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Recent Products */}
+              {getQuickTestProducts().length > 0 && (
               <div className="p-3 md:p-4 bg-white rounded-lg border border-slate-200">
                 <p className="text-xs md:text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
                   <Package className="w-4 h-4" />
@@ -3171,6 +2426,44 @@ export default function BarcodeScannerPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Barcode Input Stepper Dialog */}
+      <BarcodeInputStepper
+        open={showStepperDialog}
+        onClose={() => {
+          setShowStepperDialog(false);
+          setMatchedProduct(null);
+          setScannedBarcode("");
+          setUploadedPhotos([]);
+        }}
+        matchedProduct={matchedProduct}
+        movementType={movementType}
+        onMovementSubmit={handleStockMovementFromStepper}
+        isProcessing={isProcessing}
+        scanResult={scanResult}
+        products={products}
+        stockItems={stockItems}
+        locations={locations}
+        purchaseOrders={purchaseOrders}
+        systemUsers={systemUsers}
+        appUsers={appUsers}
+        vendors={vendors}
+        productVendors={productVendors}
+        companies={companies}
+        invoiceCategories={invoiceCategories}
+        currentUser={currentUser}
+        scannedBarcode={scannedBarcode}
+        getAvailableStockAtLocation={getAvailableStockAtLocation}
+        getAvailableLocationsForProduct={getAvailableLocationsForProduct}
+        handlePhotoUpload={handlePhotoUpload}
+        removePhoto={removePhoto}
+        uploadedPhotos={uploadedPhotos}
+        isUploadingPhoto={isUploadingPhoto}
+        photoInputRef={photoInputRef}
+        setScanResult={setScanResult}
+        loadData={loadData}
+        getProductStock={getProductStock}
+      />
 
       {/* Create Vendor Dialog */}
       <CreateEditVendorDialog
