@@ -479,6 +479,8 @@ export default function StockMovementsPage() {
              movements={paginatedMovements}
              products={products}
              users={users}
+             vendors={vendors}
+             purchaseOrders={purchaseOrders}
              isLoading={isLoading}
              onView={handleView}
              onEdit={handleEdit}

@@ -43,7 +43,7 @@ const formatLocalDateTime = (dateString) => {
   }
 };
 
-export default function StockMovementsTable({ movements, products, users, isLoading, onView, onEdit, onViewProductMovements, allMovements }) {
+export default function StockMovementsTable({ movements, products, users, vendors = [], purchaseOrders = [], isLoading, onView, onEdit, onViewProductMovements, allMovements }) {
   const [sortConfig, setSortConfig] = useState({ key: 'created_date', direction: 'desc' });
   const [productSortConfig, setProductSortConfig] = useState({ key: null, direction: 'asc' });
 
