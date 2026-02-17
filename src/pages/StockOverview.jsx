@@ -206,6 +206,38 @@ export default function StockOverviewPage() {
 
   const { totalValue, lowStockCount, outOfStockCount } = stats;
 
+  const exportToExcel = () => {
+    const getCategoryName = (id) => categories.find(c => c.id === id)?.name || '-';
+    const getCompanyName = (id) => companies.find(c => c.id === id)?.name || '-';
+    const getPreferredVendorName = (pvList) => {
+      const preferred = pvList?.find(pv => pv.is_preferred);
+      if (preferred) return vendors.find(v => v.id === preferred.vendor_id)?.name || '-';
+      if (pvList?.length > 0) return vendors.find(v => v.id === pvList[0].vendor_id)?.name || '-';
+      return '-';
+    };
+
+    const rows = filteredProducts.map(p => ({
+      'SKU': p.sku || '',
+      'Product Name': p.name || '',
+      'Category': getCategoryName(p.category_id),
+      'Company': getCompanyName(p.company_id),
+      'Unit of Measure': p.unit_of_measure || '',
+      'Total Stock': p.total ?? 0,
+      'Available Stock': p.available ?? 0,
+      'Reserved Stock': p.reserved ?? 0,
+      'Minimum Stock': p.minimum_stock ?? 0,
+      'Unit Cost (€)': p.unit_cost ?? 0,
+      'Total Value (€)': ((p.available ?? 0) * (p.unit_cost ?? 0)).toFixed(2),
+      'Preferred Vendor': getPreferredVendorName(p.productVendors),
+      'Status': p.available === 0 ? 'Out of Stock' : p.available < (p.minimum_stock || 0) ? 'Low Stock' : 'OK',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Stock Overview');
+    XLSX.writeFile(wb, `stock_overview_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
