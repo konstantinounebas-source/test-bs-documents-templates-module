@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Eye, Send, CheckCircle, XCircle, Loader2, Trash2, Edit, ChevronDown, ChevronRight, Package, Star, Printer, FileDown } from "lucide-react";
+import { Plus, Search, Eye, Send, CheckCircle, XCircle, Loader2, Trash2, Edit, ChevronDown, ChevronRight, Package, Star, Printer, FileDown, ScrollText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -148,6 +148,26 @@ function PurchaseOrdersTable({
                             </DropdownMenuItem>
                           )}
                           {po.status === 'Draft' && (
+                            <>
+                              <DropdownMenuItem onClick={() => handleChangeStatus(po, 'Approved by Koulis')}>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Approve by Koulis
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleChangeStatus(po, 'Approved by Nikolas')}>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Approve by Nikolas
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleChangeStatus(po, 'Sent')}>
+                                <Send className="w-4 h-4 mr-2" />
+                                Mark as Sent
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleChangeStatus(po, 'Canceled')}>
+                                <XCircle className="w-4 h-4 mr-2" />
+                                Cancel Order
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {(po.status === 'Approved by Koulis' || po.status === 'Approved by Nikolas') && (
                             <>
                               <DropdownMenuItem onClick={() => handleChangeStatus(po, 'Sent')}>
                                 <Send className="w-4 h-4 mr-2" />
@@ -316,6 +336,12 @@ export default function PurchaseOrdersPage() {
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list().catch(() => []),
     staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: statusLogs = [] } = useQuery({
+    queryKey: ['purchaseOrderStatusLogs'],
+    queryFn: () => base44.entities.PurchaseOrderStatusLog.list("-created_date"),
+    staleTime: 2 * 60 * 1000,
   });
 
   // Process POs with received quantities - memoized
@@ -541,8 +567,21 @@ export default function PurchaseOrdersPage() {
 
   const handleChangeStatus = async (po, newStatus) => {
     try {
+      const currentUser = await base44.auth.me();
+      
+      // Update PO status
       await base44.entities.PurchaseOrder.update(po.id, { status: newStatus });
+      
+      // Log status change
+      await base44.entities.PurchaseOrderStatusLog.create({
+        purchase_order_id: po.id,
+        old_status: po.status,
+        new_status: newStatus,
+        changed_by: currentUser.email
+      });
+      
       loadAllData();
+      queryClient.invalidateQueries({ queryKey: ['purchaseOrderStatusLogs'] });
     } catch (error) {
       console.error("Error updating status:", error);
       alert("Failed to update status");
@@ -607,6 +646,8 @@ export default function PurchaseOrdersPage() {
   const getStatusBadge = (status) => {
     const colors = {
       'Draft': 'bg-slate-100 text-slate-800',
+      'Approved by Koulis': 'bg-indigo-100 text-indigo-800',
+      'Approved by Nikolas': 'bg-cyan-100 text-cyan-800',
       'Sent': 'bg-blue-100 text-blue-800',
       'Confirmed': 'bg-green-100 text-green-800',
       'Partially Received': 'bg-yellow-100 text-yellow-800',
@@ -614,6 +655,10 @@ export default function PurchaseOrdersPage() {
       'Canceled': 'bg-red-100 text-red-800'
     };
     return <Badge className={colors[status] || 'bg-slate-100 text-slate-800'}>{status}</Badge>;
+  };
+
+  const getStatusLogsForPO = (poId) => {
+    return statusLogs.filter(log => log.purchase_order_id === poId);
   };
 
   const togglePOExpand = (poId) => {
@@ -1636,6 +1681,50 @@ export default function PurchaseOrdersPage() {
                   <Label className="text-slate-600">Notes</Label>
                   <p className="mt-1 text-slate-700">{selectedPO.notes}</p>
                 </div>
+              )}
+
+              {getStatusLogsForPO(selectedPO.id).length > 0 && (
+                <>
+                  <Separator />
+                  <div>
+                    <h4 className="text-lg font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                      <ScrollText className="w-5 h-5" />
+                      Status Change History
+                    </h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date/Time</TableHead>
+                          <TableHead>Old Status</TableHead>
+                          <TableHead>New Status</TableHead>
+                          <TableHead>Changed By</TableHead>
+                          <TableHead>Notes</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {getStatusLogsForPO(selectedPO.id).map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell className="text-sm">
+                              {format(new Date(log.created_date), 'dd/MM/yyyy HH:mm')}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {log.old_status ? getStatusBadge(log.old_status) : '-'}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {getStatusBadge(log.new_status)}
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              {getUserName(log.changed_by)}
+                            </TableCell>
+                            <TableCell className="text-sm text-slate-600">
+                              {log.notes || '-'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
               )}
 
               {getMovementsForPO(selectedPO.id).length > 0 && (
