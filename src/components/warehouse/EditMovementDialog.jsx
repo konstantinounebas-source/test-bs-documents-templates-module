@@ -129,7 +129,7 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
     let poId = '';
     let initialVendorId = '';
     
-    // Priority: movement.vendor_id > PO vendor > reference vendor
+    // Priority: movement.vendor_id > PO vendor > reference vendor > Invoice with po_number
     if (movement.vendor_id) {
       initialVendorId = movement.vendor_id;
     } else if (movement.reference_type === 'PurchaseOrder' && movement.reference_id) {
@@ -140,6 +140,12 @@ export default function EditMovementDialog({ open, onClose, movement, onSave, ve
       }
     } else if (movement.reference_type === 'Vendor' && movement.reference_id) {
       initialVendorId = movement.reference_id;
+    } else if (movement.reference_type === 'Invoice' && movement.po_number) {
+      const po = purchaseOrders.find(p => p.po_number === movement.po_number);
+      if (po) {
+        poId = po.id;
+        initialVendorId = po.vendor_id;
+      }
     }
 
     if (initialVendorId && movement.product_id) {
