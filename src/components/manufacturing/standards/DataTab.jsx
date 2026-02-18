@@ -322,49 +322,58 @@ export default function DataTab({ bundle, isEditable }) {
                   No data. Click "Add Row" to start.
                 </TableCell>
               </TableRow>
+            ) : displayRows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={operationColumns.length + 3} className="text-center text-slate-500 py-8">
+                  No rows match the filter.
+                </TableCell>
+              </TableRow>
             ) : (
-              gridRows.map((row, index) => (
-                <TableRow key={index} className="hover:bg-slate-50">
-                  <TableCell className="sticky left-0 bg-white hover:bg-slate-50">
-                    <Input
-                      value={row.item_code}
-                      onChange={(e) => updateCell(index, 'item_code', e.target.value)}
-                      disabled={!isEditable}
-                      placeholder="Item code"
-                      className="font-medium"
-                    />
-                  </TableCell>
-                  {operationColumns.map(col => (
-                    <TableCell key={col.operation}>
+              displayRows.map((row) => {
+                const index = row._originalIndex;
+                return (
+                  <TableRow key={index} className="hover:bg-slate-50">
+                    <TableCell className="sticky left-0 bg-white hover:bg-slate-50">
                       <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={row[col.operation] || ''}
-                        onChange={(e) => updateCell(index, col.operation, e.target.value)}
+                        value={row.item_code}
+                        onChange={(e) => updateCell(index, 'item_code', e.target.value)}
                         disabled={!isEditable}
-                        placeholder="-"
-                        className="min-w-[110px] text-center font-mono"
+                        placeholder="Item code"
+                        className="font-medium"
                       />
                     </TableCell>
-                  ))}
-                  <TableCell>
-                    <Input
-                      value={row.notes || ''}
-                      onChange={(e) => updateCell(index, 'notes', e.target.value)}
-                      disabled={!isEditable}
-                      placeholder="Optional notes"
-                    />
-                  </TableCell>
-                  {isEditable && (
+                    {operationColumns.map(col => (
+                      <TableCell key={col.operation}>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={row[col.operation] || ''}
+                          onChange={(e) => updateCell(index, col.operation, e.target.value)}
+                          disabled={!isEditable}
+                          placeholder="-"
+                          className="min-w-[110px] text-center font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        />
+                      </TableCell>
+                    ))}
                     <TableCell>
-                      <Button onClick={() => deleteRow(index)} variant="ghost" size="icon">
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </Button>
+                      <Input
+                        value={row.notes || ''}
+                        onChange={(e) => updateCell(index, 'notes', e.target.value)}
+                        disabled={!isEditable}
+                        placeholder="Optional notes"
+                      />
                     </TableCell>
-                  )}
-                </TableRow>
-              ))
+                    {isEditable && (
+                      <TableCell>
+                        <Button onClick={() => deleteRow(index)} variant="ghost" size="icon">
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
