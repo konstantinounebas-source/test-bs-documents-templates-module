@@ -172,6 +172,27 @@ export default function DataTab({ bundle, isEditable }) {
     }
   });
 
+  // Sorted & filtered view (display only - does not reorder gridRows state)
+  const displayRows = useMemo(() => {
+    let rows = gridRows.map((row, originalIndex) => ({ ...row, _originalIndex: originalIndex }));
+
+    // Filter by item code
+    if (itemCodeFilter.trim()) {
+      rows = rows.filter(r => r.item_code?.toLowerCase().includes(itemCodeFilter.toLowerCase()));
+    }
+
+    // Sort
+    if (sortBy === 'name_asc') rows.sort((a, b) => (a.item_code || '').localeCompare(b.item_code || ''));
+    else if (sortBy === 'name_desc') rows.sort((a, b) => (b.item_code || '').localeCompare(a.item_code || ''));
+    else if (sortBy === 'mins_asc' || sortBy === 'mins_desc') {
+      const getTotal = (row) => operationColumns.reduce((sum, col) => sum + (parseFloat(row[col.operation]) || 0), 0);
+      if (sortBy === 'mins_asc') rows.sort((a, b) => getTotal(a) - getTotal(b));
+      else rows.sort((a, b) => getTotal(b) - getTotal(a));
+    }
+
+    return rows;
+  }, [gridRows, sortBy, itemCodeFilter, operationColumns]);
+
   const addRow = () => {
     setGridRows([...gridRows, { item_code: '', notes: '' }]);
   };
