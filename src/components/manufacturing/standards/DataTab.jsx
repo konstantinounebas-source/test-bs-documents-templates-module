@@ -12,6 +12,8 @@ import { exportDataTabToExcel } from './shared/exportToExcel';
 export default function DataTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
   const [gridRows, setGridRows] = useState([]);
+  const [sortBy, setSortBy] = useState('none'); // 'none' | 'name_asc' | 'name_desc' | 'mins_asc' | 'mins_desc'
+  const [itemCodeFilter, setItemCodeFilter] = useState('');
 
   // Fetch operations from Step 1 - dynamically build columns
   const { data: allOperations = [], isLoading: operationsLoading } = useQuery({
