@@ -240,6 +240,32 @@ export default function DataTab({ bundle, isEditable }) {
         </div>
       )}
 
+      {/* Sort & Filter toolbar */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-[180px] max-w-xs">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder="Filter by Item Code..."
+            value={itemCodeFilter}
+            onChange={e => setItemCodeFilter(e.target.value)}
+            className="pl-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
+        </div>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-[220px]">
+            <ArrowUpDown className="w-4 h-4 mr-2 text-slate-400" />
+            <SelectValue placeholder="Sort by..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">No Sort</SelectItem>
+            <SelectItem value="name_asc">Item Code A → Z</SelectItem>
+            <SelectItem value="name_desc">Item Code Z → A</SelectItem>
+            <SelectItem value="mins_asc">Total Minutes ↑ (Low first)</SelectItem>
+            <SelectItem value="mins_desc">Total Minutes ↓ (High first)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Standard Minutes Grid (Excel-like)</h3>
         <div className="flex gap-2">
