@@ -362,10 +362,18 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
           {/* Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Target className="w-4 h-4 text-green-600" />
-                Daily Targets — {selectedDate}
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Target className="w-4 h-4 text-green-600" />
+                  Daily Targets — {selectedDate}
+                </CardTitle>
+                {targetTypesInStandards.length > 0 && (
+                  <Button size="sm" variant="outline" onClick={() => setShowImportDialog(true)}>
+                    <Download className="w-4 h-4 mr-1" />
+                    Import from Standards
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="p-0">
               <Table>
