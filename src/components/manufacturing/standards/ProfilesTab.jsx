@@ -28,6 +28,18 @@ export default function ProfilesTab({ bundle, isEditable }) {
   const [formDescription, setFormDescription] = useState('');
   const [formOperations, setFormOperations] = useState([]);
 
+  // Fetch departments to resolve bundle department id
+  const { data: allDepartments = [] } = useQuery({
+    queryKey: ['Department'],
+    queryFn: () => base44.entities.Department.filter({ is_active: true })
+  });
+
+  const bundleDepartmentId = useMemo(() => {
+    if (!bundle?.department) return null;
+    const dept = allDepartments.find(d => d.name === bundle.department);
+    return dept?.id || null;
+  }, [bundle, allDepartments]);
+
   // Fetch Operations (active, max 10)
   const { data: allOperations = [], isLoading: opsLoading } = useQuery({
     queryKey: ['Operation'],
@@ -36,15 +48,15 @@ export default function ProfilesTab({ bundle, isEditable }) {
 
   const operations = useMemo(() => {
     return allOperations
-      .filter(op => op.is_allowed !== false)
       .filter(op => {
-        if (!bundle?.department_id) return true;
+        if (op.is_allowed === false) return false;
         if (!op.department_ids || op.department_ids.length === 0) return true;
-        return op.department_ids.includes(bundle.department_id);
+        if (!bundleDepartmentId) return true;
+        return op.department_ids.includes(bundleDepartmentId);
       })
       .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
       .slice(0, 10);
-  }, [allOperations, bundle?.department_id]);
+  }, [allOperations, bundleDepartmentId]);
 
   // Fetch Operation Profiles for this department
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
