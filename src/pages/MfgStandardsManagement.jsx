@@ -320,12 +320,15 @@ export default function MfgStandardsManagementPage() {
               <Select 
                 value={selectedBundleId} 
                 onValueChange={setSelectedBundleId}
-                disabled={!selectedDepartment}
+                disabled={!selectedDepartment || bundlesLoading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select version" />
+                  <SelectValue placeholder={bundlesLoading ? "Loading versions..." : "Select version"} />
                 </SelectTrigger>
                 <SelectContent>
+                  {bundles.length === 0 && !bundlesLoading && selectedDepartment && (
+                    <div className="p-2 text-sm text-slate-500">No versions found for this department</div>
+                  )}
                   {bundles.map(bundle => (
                     <SelectItem key={bundle.id} value={bundle.id}>
                       v{bundle.version_no} - {bundle.status}
