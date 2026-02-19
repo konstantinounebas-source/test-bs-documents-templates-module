@@ -256,12 +256,59 @@ export default function TeamTimePersonsTab({ batchId }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Team Time - Persons</h3>
-        <Button onClick={handleOpenAddDialog} variant="outline" size="sm">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Person Time
-        </Button>
+      <h3 className="text-lg font-semibold">Team Time - Persons</h3>
+
+      {/* Inline Add Form */}
+      <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex-1 min-w-[160px]">
+            <Label className="text-xs text-slate-600 mb-1 block">Person Name *</Label>
+            <Input
+              placeholder="Select or type below"
+              value={inlineForm.person_name}
+              onChange={(e) => setInlineForm({ ...inlineForm, person_name: e.target.value })}
+              list="inline-person-list"
+            />
+            <datalist id="inline-person-list">
+              {persons.map(p => <option key={p.id} value={p.name} />)}
+            </datalist>
+          </div>
+          <div className="w-28">
+            <Label className="text-xs text-slate-600 mb-1 block">From Time *</Label>
+            <Input
+              type="time"
+              value={inlineForm.from_time}
+              onChange={(e) => setInlineForm({ ...inlineForm, from_time: e.target.value })}
+            />
+          </div>
+          <div className="w-28">
+            <Label className="text-xs text-slate-600 mb-1 block">To Time *</Label>
+            <Input
+              type="time"
+              value={inlineForm.to_time}
+              onChange={(e) => setInlineForm({ ...inlineForm, to_time: e.target.value })}
+            />
+          </div>
+          <div className="w-32">
+            <Label className="text-xs text-slate-600 mb-1 block">Break (min)</Label>
+            <Input
+              type="number"
+              min="0"
+              value={inlineForm.break_time_minutes}
+              onChange={(e) => setInlineForm({ ...inlineForm, break_time_minutes: Number(e.target.value) })}
+            />
+          </div>
+          <div className="w-28">
+            <Label className="text-xs text-slate-600 mb-1 block">Available</Label>
+            <div className="h-9 flex items-center px-3 border rounded-md bg-white text-sm text-slate-600">
+              {calculateInlineAvailableTime()} min
+            </div>
+          </div>
+          <Button onClick={handleInlineAdd} disabled={createMutation.isPending} className="h-9">
+            {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
+            Add
+          </Button>
+        </div>
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
