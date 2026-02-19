@@ -204,11 +204,20 @@ export default function MfgStandardsManagementPage() {
     }
   };
 
+  // Helper: delete records in small sequential batches to avoid rate limits
+  const deleteInBatches = async (entity, records, batchSize = 5) => {
+    for (let i = 0; i < records.length; i += batchSize) {
+      const batch = records.slice(i, i + batchSize);
+      await Promise.all(batch.map(r => entity.delete(r.id)));
+      if (i + batchSize < records.length) await new Promise(res => setTimeout(res, 300));
+    }
+  };
+
   // Delete bundle mutation (DRAFT only)
   const deleteBundleMutation = useMutation({
     mutationFn: async () => {
       if (!currentBundle || currentBundle.status !== 'DRAFT') throw new Error('Only DRAFT bundles can be deleted');
-      // Delete all associated data
+      // Fetch all associated data
       const [stdLines, qcLines, profileLines, targetLines, consumablesLines, targetTypes] = await Promise.all([
         base44.entities.StdSetLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.QCSetLines.filter({ bundle_id: currentBundle.id }),
@@ -217,14 +226,13 @@ export default function MfgStandardsManagementPage() {
         base44.entities.ConsumablesStandardsLines.filter({ bundle_id: currentBundle.id }),
         base44.entities.TargetType.filter({ bundle_id: currentBundle.id })
       ]);
-      await Promise.all([
-        ...stdLines.map(l => base44.entities.StdSetLines.delete(l.id)),
-        ...qcLines.map(l => base44.entities.QCSetLines.delete(l.id)),
-        ...profileLines.map(l => base44.entities.ProfileSetLines.delete(l.id)),
-        ...targetLines.map(l => base44.entities.DailyTargetLines.delete(l.id)),
-        ...consumablesLines.map(l => base44.entities.ConsumablesStandardsLines.delete(l.id)),
-        ...targetTypes.map(l => base44.entities.TargetType.delete(l.id))
-      ]);
+      // Delete sequentially in batches to avoid rate limits
+      await deleteInBatches(base44.entities.StdSetLines, stdLines);
+      await deleteInBatches(base44.entities.QCSetLines, qcLines);
+      await deleteInBatches(base44.entities.ProfileSetLines, profileLines);
+      await deleteInBatches(base44.entities.DailyTargetLines, targetLines);
+      await deleteInBatches(base44.entities.ConsumablesStandardsLines, consumablesLines);
+      await deleteInBatches(base44.entities.TargetType, targetTypes);
       await base44.entities.StandardsBundle.delete(currentBundle.id);
     },
     onSuccess: () => {
