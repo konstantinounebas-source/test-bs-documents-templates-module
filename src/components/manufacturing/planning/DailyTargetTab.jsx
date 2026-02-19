@@ -510,7 +510,7 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
                 <SelectContent>
                   {targetTypesInStandards.map(t => {
                     const lines = stdDailyTargetLines.filter(l => l.target_type === t);
-                    const totalMin = lines.reduce((s, l) => s + ((l.per_piece_min || 0) * (l.target_qty || 0)), 0);
+                    const totalMin = lines.reduce((s, l) => s + (l.item_total_min || 0), 0);
                     return (
                       <SelectItem key={t} value={t}>
                         {t} ({lines.length} items, {totalMin.toFixed(0)} min)
