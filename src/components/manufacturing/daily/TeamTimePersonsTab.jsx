@@ -116,21 +116,32 @@ export default function TeamTimePersonsTab({ batchId }) {
   };
 
   const handleInlineAdd = () => {
-    if (!inlineForm.person_name || !inlineForm.from_time || !inlineForm.to_time) {
-      toast.error('Person name and time range are required');
+    if (!inlineForm.person_names || inlineForm.person_names.length === 0 || !inlineForm.from_time || !inlineForm.to_time) {
+      toast.error('Select at least one person and set time range');
       return;
     }
-    if (lines.some(line => line.person_name === inlineForm.person_name)) {
-      toast.error('This person is already added for this batch');
+    const existingNames = lines.map(l => l.person_name);
+    const duplicates = inlineForm.person_names.filter(n => existingNames.includes(n));
+    if (duplicates.length > 0) {
+      toast.error(`Already added: ${duplicates.join(', ')}`);
       return;
     }
-    createMutation.mutate(inlineForm, {
-      onSuccess: () => {
+    const records = inlineForm.person_names.map(person_name => ({
+      ...inlineForm,
+      person_name
+    }));
+    const addNext = (index) => {
+      if (index >= records.length) {
         const activeBreakTimes = breakTimes.filter(b => b.is_active !== false);
         const defaultBreak = activeBreakTimes.length > 0 ? activeBreakTimes[0].duration_minutes || 45 : 45;
-        setInlineForm({ person_name: '', from_time: '07:00', to_time: '15:30', break_time_minutes: defaultBreak, notes: '' });
+        setInlineForm({ person_names: [], from_time: '07:00', to_time: '15:30', break_time_minutes: defaultBreak, notes: '' });
+        return;
       }
-    });
+      createMutation.mutate(records[index], {
+        onSuccess: () => addNext(index + 1)
+      });
+    };
+    addNext(0);
   };
 
   const handleEdit = (line) => {
