@@ -15,23 +15,35 @@ export default function DataTab({ bundle, isEditable }) {
   const [sortBy, setSortBy] = useState('none'); // 'none' | 'name_asc' | 'name_desc' | 'mins_asc' | 'mins_desc'
   const [itemCodeFilter, setItemCodeFilter] = useState('');
 
+  // Fetch departments to get bundle's department id
+  const { data: allDepartments = [] } = useQuery({
+    queryKey: ['Department'],
+    queryFn: () => base44.entities.Department.filter({ is_active: true })
+  });
+
+  const bundleDepartmentId = useMemo(() => {
+    if (!bundle?.department) return null;
+    const dept = allDepartments.find(d => d.name === bundle.department);
+    return dept?.id || null;
+  }, [bundle, allDepartments]);
+
   // Fetch operations from Step 1 - dynamically build columns
   const { data: allOperations = [], isLoading: operationsLoading } = useQuery({
     queryKey: ['Operation'],
     queryFn: () => base44.entities.Operation.filter({ is_active: true })
   });
 
-  // Filter operations by department: show only ops that have no dept restriction OR include this bundle's dept
-  const departmentOperations = useMemo(() => {
-    if (!bundle?.department_id) return allOperations;
+  // Filter operations by department: include if department_ids is empty/missing OR includes this bundle's department
+  const filteredOperations = useMemo(() => {
     return allOperations.filter(op => {
       if (!op.department_ids || op.department_ids.length === 0) return true;
-      return op.department_ids.includes(bundle.department_id);
+      if (!bundleDepartmentId) return true;
+      return op.department_ids.includes(bundleDepartmentId);
     });
-  }, [allOperations, bundle?.department_id]);
+  }, [allOperations, bundleDepartmentId]);
 
   const operationColumns = useMemo(() => {
-    const sorted = [...departmentOperations]
+    const sorted = [...filteredOperations]
       .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
     
     return sorted.slice(0, 10).map(op => ({ 
@@ -39,10 +51,10 @@ export default function DataTab({ bundle, isEditable }) {
       operation: op.name, 
       label: `${op.name} (min)` 
     }));
-  }, [departmentOperations]);
+  }, [filteredOperations]);
 
-  const hasMoreThan10 = departmentOperations.length > 10;
-  const hasNoOperations = departmentOperations.length === 0;
+  const hasMoreThan10 = filteredOperations.length > 10;
+  const hasNoOperations = filteredOperations.length === 0;
 
   // Fetch lines for this bundle - CRITICAL: Use bundle.id as primary key
   const { data: lines = [], isLoading, refetch } = useQuery({
