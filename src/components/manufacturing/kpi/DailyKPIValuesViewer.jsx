@@ -191,19 +191,26 @@ export default function DailyKPIValuesViewer() {
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
-
-          {viewMode === 'daily' && (
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <Input
-                placeholder="Filter by department..."
-                value={searchDept}
-                onChange={(e) => setSearchDept(e.target.value)}
-                className="pl-9 w-48"
-              />
-            </div>
-          )}
         </div>
+      </div>
+
+      {/* Department tabs */}
+      <div className="flex gap-1 flex-wrap border-b pb-2">
+        <button
+          onClick={() => setSelectedDept('ALL')}
+          className={`px-3 py-1.5 rounded-t text-sm font-medium transition-colors ${selectedDept === 'ALL' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+        >
+          All Departments
+        </button>
+        {departments.map(d => (
+          <button
+            key={d.id}
+            onClick={() => setSelectedDept(d.name)}
+            className={`px-3 py-1.5 rounded-t text-sm font-medium transition-colors ${selectedDept === d.name ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+          >
+            {d.name}
+          </button>
+        ))}
       </div>
 
       <div className="border rounded-lg overflow-auto bg-white shadow-sm">
