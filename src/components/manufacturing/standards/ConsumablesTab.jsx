@@ -128,6 +128,33 @@ export default function ConsumablesTab({ bundle, isEditable }) {
     }
   });
 
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: async (data) => {
+      await base44.entities.ConsumablesStandardsLines.update(editingId, {
+        ...data
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ConsumablesStandardsLines'] });
+      setShowAddDialog(false);
+      setEditingId(null);
+      setFormData({
+        consumable: '',
+        department: '',
+        rate_type: 'unit',
+        item_code: '',
+        operation: '',
+        rate_value: '',
+        notes: ''
+      });
+      toast.success('Consumable line updated');
+    },
+    onError: (error) => {
+      toast.error('Failed to update: ' + error.message);
+    }
+  });
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
