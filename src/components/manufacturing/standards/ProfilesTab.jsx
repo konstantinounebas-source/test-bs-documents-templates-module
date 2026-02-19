@@ -37,9 +37,14 @@ export default function ProfilesTab({ bundle, isEditable }) {
   const operations = useMemo(() => {
     return allOperations
       .filter(op => op.is_allowed !== false)
+      .filter(op => {
+        if (!bundle?.department_id) return true;
+        if (!op.department_ids || op.department_ids.length === 0) return true;
+        return op.department_ids.includes(bundle.department_id);
+      })
       .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
       .slice(0, 10);
-  }, [allOperations]);
+  }, [allOperations, bundle?.department_id]);
 
   // Fetch Operation Profiles for this department
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
