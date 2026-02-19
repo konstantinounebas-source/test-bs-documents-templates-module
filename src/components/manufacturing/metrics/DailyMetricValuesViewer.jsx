@@ -14,25 +14,6 @@ export default function DailyMetricValuesViewer() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedDept, setSelectedDept] = useState('ALL');
 
-  const { data: metricValues = [], isLoading: metricsLoading } = useQuery({
-    queryKey: ['DailyMetricValue', dateRange],
-    queryFn: () => base44.entities.DailyMetricValue.filter({ date: dateRange[0] }, undefined, 500),
-    enabled: viewMode === 'daily' && dateRange.length === 1
-  });
-
-  const { data: metricValuesRange = [], isLoading: metricsRangeLoading } = useQuery({
-    queryKey: ['DailyMetricValueRange', dateRange],
-    queryFn: async () => {
-      const results = await Promise.all(
-        dateRange.map(d => base44.entities.DailyMetricValue.filter({ date: d }))
-      );
-      return results.flat();
-    },
-    enabled: viewMode !== 'daily' && dateRange.length > 1
-  });
-
-  const allMetricValues = viewMode === 'daily' ? metricValues : metricValuesRange;
-
   const { data: metricDefinitions = [], isLoading: definitionsLoading } = useQuery({
     queryKey: ['MetricDefinition'],
     queryFn: () => base44.entities.MetricDefinition.list()
@@ -51,8 +32,6 @@ export default function DailyMetricValuesViewer() {
     });
     return map;
   }, [metricDefinitions]);
-
-  const isLoading = metricsLoading || metricsRangeLoading || definitionsLoading;
 
   const dateRange = useMemo(() => {
     if (viewMode === 'daily') {
