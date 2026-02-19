@@ -204,6 +204,38 @@ export default function MfgStandardsManagementPage() {
     }
   };
 
+  // Delete bundle mutation (DRAFT only)
+  const deleteBundleMutation = useMutation({
+    mutationFn: async () => {
+      if (!currentBundle || currentBundle.status !== 'DRAFT') throw new Error('Only DRAFT bundles can be deleted');
+      // Delete all associated data
+      const [stdLines, qcLines, profileLines, targetLines, consumablesLines, targetTypes] = await Promise.all([
+        base44.entities.StdSetLines.filter({ bundle_id: currentBundle.id }),
+        base44.entities.QCSetLines.filter({ bundle_id: currentBundle.id }),
+        base44.entities.ProfileSetLines.filter({ bundle_id: currentBundle.id }),
+        base44.entities.DailyTargetLines.filter({ bundle_id: currentBundle.id }),
+        base44.entities.ConsumablesStandardsLines.filter({ bundle_id: currentBundle.id }),
+        base44.entities.TargetType.filter({ bundle_id: currentBundle.id })
+      ]);
+      await Promise.all([
+        ...stdLines.map(l => base44.entities.StdSetLines.delete(l.id)),
+        ...qcLines.map(l => base44.entities.QCSetLines.delete(l.id)),
+        ...profileLines.map(l => base44.entities.ProfileSetLines.delete(l.id)),
+        ...targetLines.map(l => base44.entities.DailyTargetLines.delete(l.id)),
+        ...consumablesLines.map(l => base44.entities.ConsumablesStandardsLines.delete(l.id)),
+        ...targetTypes.map(l => base44.entities.TargetType.delete(l.id))
+      ]);
+      await base44.entities.StandardsBundle.delete(currentBundle.id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['StandardsBundle'] });
+      setCurrentBundle(null);
+      setSelectedBundleId('');
+      toast.success('Bundle deleted');
+    },
+    onError: (error) => toast.error('Failed to delete: ' + error.message)
+  });
+
   const isEditable = currentBundle && currentBundle.status === 'DRAFT';
   const isReadOnly = currentBundle && (currentBundle.status === 'ACTIVE' || currentBundle.status === 'ARCHIVED');
 
