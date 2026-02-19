@@ -25,6 +25,10 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
   const [editingId, setEditingId] = useState(null);
   const [editingRow, setEditingRow] = useState({});
 
+  // Import from Standards dialog
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importTargetType, setImportTargetType] = useState('');
+
   // ---------- data fetching ----------
   const { data: allOperations = [] } = useQuery({
     queryKey: ['Operation'],
