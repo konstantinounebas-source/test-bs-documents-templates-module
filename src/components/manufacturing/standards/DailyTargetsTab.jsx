@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, AlertCircle, X, Info } from "lucide-react";
+import { Plus, Trash2, AlertCircle, X, Info, Search, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { buildItemOperationMap, computeOpsPerPiece, getOperationBreakdown } from './shared/calculateOperationsTime';
 
