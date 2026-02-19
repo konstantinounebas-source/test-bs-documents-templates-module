@@ -100,6 +100,19 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
     };
   };
 
+  // ---------- Standards Daily Target Lines (for import) ----------
+  const { data: stdDailyTargetLines = [] } = useQuery({
+    queryKey: ['DailyTargetLines', selectedBundle?.id],
+    queryFn: () => base44.entities.DailyTargetLines.filter({ bundle_id: selectedBundle.id }),
+    enabled: !!selectedBundle?.id,
+    staleTime: 0
+  });
+
+  const targetTypesInStandards = useMemo(
+    () => [...new Set(stdDailyTargetLines.map(l => l.target_type).filter(Boolean))].sort(),
+    [stdDailyTargetLines]
+  );
+
   // ---------- TGT_TIME metric update ----------
   const saveTGTTimeMetric = async (date, dept, bundleId, allTargets) => {
     try {
