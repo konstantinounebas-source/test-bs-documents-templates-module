@@ -14,6 +14,7 @@ import { useBundleItemCodes } from './useBundleItemCodes';
 export default function ConsumablesTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [searchFilter, setSearchFilter] = useState('');
   const [formData, setFormData] = useState({
     consumable: '',
