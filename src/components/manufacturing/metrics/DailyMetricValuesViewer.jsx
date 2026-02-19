@@ -3,12 +3,13 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 
 export default function DailyMetricValuesViewer() {
+  const [isExpanded, setIsExpanded] = useState(true);
   const [viewMode, setViewMode] = useState('daily');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedDept, setSelectedDept] = useState('ALL');
