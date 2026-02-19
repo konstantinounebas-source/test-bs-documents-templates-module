@@ -46,10 +46,19 @@ export default function MfgStandardsManagementPage() {
   }, [departments, selectedDepartment]);
 
   // Fetch bundles for selected department
-  const { data: bundles = [] } = useQuery({
+  const { data: bundles = [], isLoading: bundlesLoading } = useQuery({
     queryKey: ['StandardsBundle', selectedDepartmentObj?.id],
-    queryFn: () => base44.entities.StandardsBundle.filter({ department_id: selectedDepartmentObj?.id }, '-created_date'),
-    enabled: !!selectedDepartmentObj?.id
+    queryFn: async () => {
+      if (!selectedDepartmentObj?.id) return [];
+      try {
+        return await base44.entities.StandardsBundle.filter({ department_id: selectedDepartmentObj.id }, '-created_date');
+      } catch (error) {
+        console.error('Error fetching bundles:', error);
+        return [];
+      }
+    },
+    enabled: !!selectedDepartmentObj?.id,
+    retry: 1
   });
 
   // Create bundle mutation
