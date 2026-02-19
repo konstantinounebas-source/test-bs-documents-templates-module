@@ -295,8 +295,8 @@ export default function ConsumablesTab({ bundle, isEditable }) {
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Add Consumable Standard</DialogTitle>
-            <DialogDescription>Define a consumable standard for this bundle</DialogDescription>
+            <DialogTitle>{editingId ? 'Edit Consumable Standard' : 'Add Consumable Standard'}</DialogTitle>
+            <DialogDescription>{editingId ? 'Update consumable standard' : 'Define a consumable standard for this bundle'}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4 max-h-[500px] overflow-auto">
