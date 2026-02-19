@@ -2,21 +2,24 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, CalendarDays, AlertCircle } from "lucide-react";
+import { ArrowLeft, CalendarDays, AlertCircle, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import ScheduledDataTab from "@/components/manufacturing/planning/ScheduledDataTab";
+import DailyTargetTab from "@/components/manufacturing/planning/DailyTargetTab";
 
 export default function MfgPlanningWizard() {
   const navigate = useNavigate();
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedBundleId, setSelectedBundleId] = useState('');
   const [selectedBundle, setSelectedBundle] = useState(null);
+  const [activeTab, setActiveTab] = useState('scheduled');
 
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
