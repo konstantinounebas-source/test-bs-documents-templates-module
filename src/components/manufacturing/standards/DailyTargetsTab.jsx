@@ -54,11 +54,17 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     enabled: !!bundle
   });
 
-  // Fetch Operation Profiles
-  const { data: operationProfiles = [] } = useQuery({
+  // Fetch Operation Profiles (all)
+  const { data: allOperationProfiles = [] } = useQuery({
     queryKey: ['OperationProfileName'],
     queryFn: () => base44.entities.OperationProfileName.filter({ is_active: true })
   });
+
+  // Filter operation profiles by current bundle's department
+  const operationProfiles = useMemo(() => {
+    if (!bundle?.department_id) return allOperationProfiles;
+    return allOperationProfiles.filter(p => p.department === bundle.department_id);
+  }, [allOperationProfiles, bundle?.department_id]);
 
   // Profiles now store operations_required directly - no need for ProfileSetLines
 
