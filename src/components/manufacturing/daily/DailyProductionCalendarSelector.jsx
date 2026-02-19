@@ -100,6 +100,7 @@ export default function DailyProductionCalendarSelector({
             {calendarDays.map((day, index) => {
               const dateStr = format(day, 'yyyy-MM-dd');
               const hasBatch = datesWithBatches.has(dateStr);
+              const hasPlanning = datesWithPlanning.has(dateStr);
               const isSelected = selectedDate === dateStr;
               const isToday = isSameDay(day, new Date());
               
@@ -115,8 +116,11 @@ export default function DailyProductionCalendarSelector({
                     `}
                   >
                     <div className="text-sm">{format(day, 'd')}</div>
-                    {hasBatch && (
-                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-green-500 rounded-full" />
+                    {(hasBatch || hasPlanning) && (
+                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+                        {hasPlanning && <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />}
+                        {hasBatch && <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />}
+                      </div>
                     )}
                   </button>
                 </div>
