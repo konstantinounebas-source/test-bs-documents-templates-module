@@ -321,12 +321,29 @@ export default function MfgStandardsManagementPage() {
                     {currentBundle.status}
                   </Badge>
                 </div>
-                {isReadOnly && (
-                  <Button onClick={() => setShowCloneDialog(true)} variant="outline" size="sm">
-                    <Copy className="w-4 h-4 mr-2" />
-                    Clone to New Version
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {isEditable && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => {
+                        if (confirm(`Delete DRAFT v${currentBundle.version_no} and all its data? This cannot be undone.`)) {
+                          deleteBundleMutation.mutate();
+                        }
+                      }}
+                      disabled={deleteBundleMutation.isPending}
+                    >
+                      {deleteBundleMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4 mr-2" />}
+                      Delete Draft
+                    </Button>
+                  )}
+                  {isReadOnly && (
+                    <Button onClick={() => setShowCloneDialog(true)} variant="outline" size="sm">
+                      <Copy className="w-4 h-4 mr-2" />
+                      Clone to New Version
+                    </Button>
+                  )}
+                </div>
               </AlertDescription>
             </Alert>
           )}
