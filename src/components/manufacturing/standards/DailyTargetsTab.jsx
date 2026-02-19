@@ -494,19 +494,50 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
             </div>
 
             <div>
-              <Label>Item Codes (Multi-Select) *</Label>
-              <Select onValueChange={handleAddItemCode}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select items to add" />
-                </SelectTrigger>
-                <SelectContent>
-                  {filteredAvailableItems.map(item => (
-                    <SelectItem key={item.value} value={item.value} disabled={item.disabled || selectedItemCodes.includes(item.value)}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Item Codes (Multi-Select) *</Label>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="showAssigned2" checked={showAssigned} onCheckedChange={setShowAssigned} />
+                  <Label htmlFor="showAssigned2" className="text-xs font-normal cursor-pointer">Show assigned items</Label>
+                </div>
+              </div>
+              {/* Search + multi-select list */}
+              <div className="border rounded-md">
+                <div className="flex items-center border-b px-3 py-1.5 gap-2">
+                  <Search className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <input
+                    className="flex-1 text-sm outline-none bg-transparent placeholder:text-slate-400"
+                    placeholder="Search item codes..."
+                    value={itemSearch}
+                    onChange={e => setItemSearch(e.target.value)}
+                  />
+                </div>
+                <div className="max-h-40 overflow-y-auto">
+                  {filteredAvailableItems.length === 0 && (
+                    <p className="text-xs text-slate-400 px-3 py-2">No items found</p>
+                  )}
+                  {filteredAvailableItems.map(item => {
+                    const isSelected = selectedItemCodes.includes(item.value);
+                    const isDisabled = item.disabled;
+                    return (
+                      <div
+                        key={item.value}
+                        className={`flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer select-none
+                          ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50'}
+                          ${isSelected ? 'bg-blue-50' : ''}`}
+                        onClick={() => {
+                          if (isDisabled) return;
+                          if (isSelected) handleRemoveItemCode(item.value);
+                          else handleAddItemCode(item.value);
+                        }}
+                      >
+                        <Checkbox checked={isSelected} disabled={isDisabled} className="pointer-events-none" />
+                        <span className={isDisabled ? 'text-slate-400' : ''}>{item.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             {/* Selected Items with Quantities */}
