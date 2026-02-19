@@ -14,6 +14,34 @@ export default function DailyMetricValuesViewer() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedDept, setSelectedDept] = useState('ALL');
 
+  const dateRange = useMemo(() => {
+    if (viewMode === 'daily') {
+      return [format(selectedDate, 'yyyy-MM-dd')];
+    } else if (viewMode === 'weekly') {
+      const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
+      const end = endOfWeek(selectedDate, { weekStartsOn: 1 });
+      return eachDayOfInterval({ start, end }).map(d => format(d, 'yyyy-MM-dd'));
+    } else {
+      const start = startOfMonth(selectedDate);
+      const end = endOfMonth(selectedDate);
+      return eachDayOfInterval({ start, end }).map(d => format(d, 'yyyy-MM-dd'));
+    }
+  }, [viewMode, selectedDate]);
+
+  const { data: metricValuesByDate = [], isLoading: metricsLoading } = useQuery({
+    queryKey: ['DailyMetricValue', viewMode, dateRange[0], dateRange[dateRange.length - 1]],
+    queryFn: async () => {
+      if (viewMode === 'daily') {
+        return base44.entities.DailyMetricValue.filter({ date: dateRange[0] });
+      } else {
+        const results = await Promise.all(
+          dateRange.map(d => base44.entities.DailyMetricValue.filter({ date: d }))
+        );
+        return results.flat();
+      }
+    }
+  });
+
   const { data: metricDefinitions = [], isLoading: definitionsLoading } = useQuery({
     queryKey: ['MetricDefinition'],
     queryFn: () => base44.entities.MetricDefinition.list()
