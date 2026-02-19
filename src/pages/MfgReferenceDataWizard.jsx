@@ -59,26 +59,28 @@ export default function MfgReferenceDataWizard() {
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities[currentEntity].create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries([currentEntity]);
+      queryClient.invalidateQueries({ queryKey: [currentEntity] });
       setFormData({ name: "", description: "", duration_minutes: "", is_active: true });
       setEditingItem(null);
+      setSelectedDeptIds([]);
       toast.success("Item created successfully");
     },
-    onError: () => {
-      toast.error("Failed to create item");
+    onError: (error) => {
+      toast.error("Failed to create item: " + error.message);
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities[currentEntity].update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries([currentEntity]);
+      queryClient.invalidateQueries({ queryKey: [currentEntity] });
       setFormData({ name: "", description: "", duration_minutes: "", is_active: true });
       setEditingItem(null);
+      setSelectedDeptIds([]);
       toast.success("Item updated successfully");
     },
-    onError: () => {
-      toast.error("Failed to update item");
+    onError: (error) => {
+      toast.error("Failed to update item: " + error.message);
     }
   });
 
