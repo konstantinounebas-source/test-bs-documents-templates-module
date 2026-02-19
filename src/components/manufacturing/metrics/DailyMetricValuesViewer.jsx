@@ -52,7 +52,7 @@ export default function DailyMetricValuesViewer() {
     return map;
   }, [metricDefinitions]);
 
-  const isLoading = metricsLoading || definitionsLoading;
+  const isLoading = metricsLoading || metricsRangeLoading || definitionsLoading;
 
   const dateRange = useMemo(() => {
     if (viewMode === 'daily') {
