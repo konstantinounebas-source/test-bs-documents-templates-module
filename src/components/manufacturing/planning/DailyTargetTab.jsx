@@ -203,6 +203,49 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
     onError: (err) => toast.error('Failed: ' + err.message)
   });
 
+  // ---------- import from standards ----------
+  const importMutation = useMutation({
+    mutationFn: async ({ date, targetType }) => {
+      const lines = stdDailyTargetLines.filter(l => l.target_type === targetType);
+      if (lines.length === 0) throw new Error('No lines found for this Target Type');
+
+      // Delete existing targets for this date first
+      const existingForDate = targets.filter(t => t.date === date);
+      await Promise.all(existingForDate.map(t => base44.entities.TargetDaily.delete(t.id)));
+
+      // Create new targets from standards lines
+      const created = await Promise.all(lines.map(line => {
+        const profile = allProfiles.find(p => p.id === line.operation_profile_id);
+        return base44.entities.TargetDaily.create({
+          bundle_id: selectedBundle.id,
+          date,
+          department: selectedDepartment,
+          item_code: line.item_code,
+          operation_profile: profile?.name || line.operation_profile || '',
+          operation_profile_id: line.operation_profile_id,
+          target_qty: line.target_qty,
+          profile_time_min_pc: line.per_piece_min || 0,
+          target_time_min: (line.per_piece_min || 0) * (line.target_qty || 0)
+        });
+      }));
+      return created;
+    },
+    onSuccess: async (_, { date }) => {
+      await queryClient.invalidateQueries({ queryKey: ['TargetDaily'] });
+      const fresh = await base44.entities.TargetDaily.filter({ department: selectedDepartment, bundle_id: selectedBundle.id });
+      await saveTGTTimeMetric(date, selectedDepartment, selectedBundle.id, fresh);
+      setShowImportDialog(false);
+      setImportTargetType('');
+      toast.success('Targets imported from Standards');
+    },
+    onError: (err) => toast.error('Import failed: ' + err.message)
+  });
+
+  const handleImport = () => {
+    if (!importTargetType) { toast.error('Select a Target Type'); return; }
+    importMutation.mutate({ date: selectedDate, targetType: importTargetType });
+  };
+
   // ---------- handlers ----------
   const handleAdd = () => {
     if (!newRow.item_code || !newRow.operation_profile_id || !newRow.target_qty) {
