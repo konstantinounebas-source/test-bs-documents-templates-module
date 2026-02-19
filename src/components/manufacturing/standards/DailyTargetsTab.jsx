@@ -113,10 +113,14 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     });
   }, [itemCodesFromData, itemsUsedInFormTargetType]);
 
-  // Filter available items - remove already-selected in current form and items in the same target type
+  // Filter available items - remove already-selected in current form and apply search
   const filteredAvailableItems = useMemo(() => {
-    return availableItemCodes.filter(item => !selectedItemCodes.includes(item.value));
-  }, [availableItemCodes, selectedItemCodes]);
+    return availableItemCodes.filter(item => {
+      if (!showAssigned && item.disabled) return false;
+      if (itemSearch && !item.value.toLowerCase().includes(itemSearch.toLowerCase())) return false;
+      return true;
+    });
+  }, [availableItemCodes, selectedItemCodes, showAssigned, itemSearch]);
 
   // Filtered daily targets
   const filteredDailyTargets = useMemo(() => {
