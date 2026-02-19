@@ -94,32 +94,28 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     return computeOpsPerPiece(itemCode, profile, operations, itemOperationMap);
   };
 
-  // Assigned items map: item_code -> true
-  const assignedItems = useMemo(() => {
-    const map = {};
-    dailyTargets.forEach(dt => {
-      map[dt.item_code] = true;
-    });
-    return map;
-  }, [dailyTargets]);
+  // Items already used in the current target type (for the form)
+  const itemsUsedInFormTargetType = useMemo(() => {
+    if (!formTargetType) return new Set();
+    return new Set(dailyTargets.filter(dt => dt.target_type === formTargetType).map(dt => dt.item_code));
+  }, [dailyTargets, formTargetType]);
 
-  // Item codes available for selection
+  // All items available - only disable if already selected in the SAME target type
   const availableItemCodes = useMemo(() => {
     return itemCodesFromData.map(ic => {
-      const isAssigned = assignedItems[ic];
+      const alreadyInType = itemsUsedInFormTargetType.has(ic);
       return {
         value: ic,
-        label: isAssigned ? `${ic} (Already Assigned)` : ic,
-        disabled: isAssigned
+        label: alreadyInType ? `${ic} (Already in this type)` : ic,
+        disabled: alreadyInType
       };
     });
-  }, [itemCodesFromData, assignedItems]);
+  }, [itemCodesFromData, itemsUsedInFormTargetType]);
 
-  // Filter available items
+  // Filter available items - remove already-selected in current form and items in the same target type
   const filteredAvailableItems = useMemo(() => {
-    if (showAssigned) return availableItemCodes;
-    return availableItemCodes.filter(item => !item.disabled);
-  }, [availableItemCodes, showAssigned]);
+    return availableItemCodes.filter(item => !selectedItemCodes.includes(item.value));
+  }, [availableItemCodes, selectedItemCodes]);
 
   // Filtered daily targets
   const filteredDailyTargets = useMemo(() => {
