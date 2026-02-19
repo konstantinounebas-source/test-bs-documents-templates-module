@@ -489,6 +489,56 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
           </Card>
         </>
       )}
+
+      {/* Import from Standards Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Import from Standards</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-slate-600">
+              Select a Target Type defined in the Standards bundle. All existing targets for <strong>{selectedDate}</strong> will be replaced.
+            </p>
+            <div className="space-y-2">
+              <Label>Target Type</Label>
+              <Select value={importTargetType} onValueChange={setImportTargetType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Target Type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {targetTypesInStandards.map(t => {
+                    const lines = stdDailyTargetLines.filter(l => l.target_type === t);
+                    const totalMin = lines.reduce((s, l) => s + ((l.per_piece_min || 0) * (l.target_qty || 0)), 0);
+                    return (
+                      <SelectItem key={t} value={t}>
+                        {t} ({lines.length} items, {totalMin.toFixed(0)} min)
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+            {importTargetType && (
+              <div className="bg-slate-50 rounded-lg p-3 text-sm space-y-1">
+                {stdDailyTargetLines.filter(l => l.target_type === importTargetType).map(l => (
+                  <div key={l.id} className="flex justify-between">
+                    <span className="font-mono text-slate-700">{l.item_code}</span>
+                    <span className="text-slate-500">qty: {l.target_qty} × {(l.per_piece_min || 0).toFixed(2)} min/pc = <strong>{((l.per_piece_min || 0) * (l.target_qty || 0)).toFixed(1)} min</strong></span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowImportDialog(false)}>Cancel</Button>
+            <Button onClick={handleImport} disabled={importMutation.isPending || !importTargetType}>
+              {importMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <Download className="w-4 h-4 mr-1" />}
+              Import
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
