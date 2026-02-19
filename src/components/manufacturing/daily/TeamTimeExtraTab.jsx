@@ -254,6 +254,24 @@ export default function TeamTimeExtraTab({ batchId }) {
     addNext(0);
   };
 
+  const handleEditStart = (line) => {
+    setEditingId(line.id);
+    setEditForm({
+      person_name: line.person_name,
+      charge_dept: line.charge_dept,
+      work_type: line.work_type,
+      duration_min: line.duration_min
+    });
+  };
+
+  const handleEditSave = () => {
+    if (!editForm.person_name || !editForm.charge_dept || !editForm.work_type || !editForm.duration_min) {
+      toast.error('All fields are required');
+      return;
+    }
+    updateMutation.mutate({ id: editingId, data: { ...editForm, duration_min: parseFloat(editForm.duration_min) } });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
