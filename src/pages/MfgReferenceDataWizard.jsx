@@ -21,7 +21,7 @@ export default function MfgReferenceDataWizard() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("departments");
   const [editingItem, setEditingItem] = useState(null);
-  const [formData, setFormData] = useState({ name: "", description: "", duration_minutes: "", is_active: true, department_ids: [] });
+  const [formData, setFormData] = useState({ name: "", description: "", duration_minutes: "", is_active: true });
 
   const tabs = [
     { id: "departments", label: "Departments", entity: "Department", icon: Building2 },
@@ -123,12 +123,6 @@ export default function MfgReferenceDataWizard() {
     setEditingItem(null);
     setFormData({ name: "", description: "", duration_minutes: "", is_active: true });
   };
-
-  // Fetch departments for operations tab
-  const { data: allDepartments = [] } = useQuery({
-    queryKey: ['Department'],
-    queryFn: () => base44.entities.Department.filter({ is_active: true })
-  });
 
   const canProceed = () => {
     const hasDepartments = queryClient.getQueryData(['Department'])?.length > 0;
