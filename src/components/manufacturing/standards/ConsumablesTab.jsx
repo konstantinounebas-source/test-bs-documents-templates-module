@@ -224,7 +224,7 @@ export default function ConsumablesTab({ bundle, isEditable }) {
           </div>
         </div>
         {isEditable && (
-          <Button onClick={() => setShowAddDialog(true)} variant="outline" size="sm">
+          <Button onClick={() => { setEditingId(null); setFormData({ consumable: '', department: '', rate_type: 'unit', item_code: '', operation: '', rate_value: '', notes: '' }); setShowAddDialog(true); }} variant="outline" size="sm">
             <Plus className="w-4 h-4 mr-2" />
             Add Consumable
           </Button>
