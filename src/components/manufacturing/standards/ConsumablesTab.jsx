@@ -265,7 +265,15 @@ export default function ConsumablesTab({ bundle, isEditable }) {
                   <TableCell>{line.unit}</TableCell>
                   <TableCell>{line.notes || '-'}</TableCell>
                   {isEditable && (
-                    <TableCell>
+                    <TableCell className="flex gap-2">
+                      <Button
+                        onClick={() => handleEdit(line)}
+                        variant="ghost"
+                        size="icon"
+                        disabled={updateMutation.isPending}
+                      >
+                        <Edit className="w-4 h-4 text-blue-500" />
+                      </Button>
                       <Button
                         onClick={() => deleteMutation.mutate(line.id)}
                         variant="ghost"
