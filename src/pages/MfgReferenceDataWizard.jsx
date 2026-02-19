@@ -123,7 +123,7 @@ export default function MfgReferenceDataWizard() {
       duration_minutes: item.duration_minutes || "",
       is_active: item.is_active !== false
     });
-    if (activeTab === 'operations') {
+    if (activeTab === 'operations' || activeTab === 'qc_types' || activeTab === 'qc_levels') {
       setSelectedDeptIds(item.department_ids || []);
     }
   };
