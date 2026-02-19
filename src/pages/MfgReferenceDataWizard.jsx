@@ -87,11 +87,11 @@ export default function MfgReferenceDataWizard() {
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities[currentEntity].delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries([currentEntity]);
+      queryClient.invalidateQueries({ queryKey: [currentEntity] });
       toast.success("Item deleted successfully");
     },
-    onError: () => {
-      toast.error("Failed to delete item");
+    onError: (error) => {
+      toast.error("Failed to delete item: " + error.message);
     }
   });
 
