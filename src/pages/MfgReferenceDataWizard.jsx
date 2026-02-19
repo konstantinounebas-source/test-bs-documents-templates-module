@@ -318,6 +318,7 @@ export default function MfgReferenceDataWizard() {
                               <TableRow>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Description</TableHead>
+                                {tab.id === 'operations' && <TableHead>Departments</TableHead>}
                                 <TableHead>Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                               </TableRow>
@@ -327,6 +328,20 @@ export default function MfgReferenceDataWizard() {
                                 <TableRow key={item.id}>
                                   <TableCell className="font-medium">{item.name}</TableCell>
                                   <TableCell className="text-slate-600">{item.description || '-'}</TableCell>
+                                  {tab.id === 'operations' && (
+                                    <TableCell>
+                                      {item.department_ids && item.department_ids.length > 0 ? (
+                                        <div className="flex flex-wrap gap-1">
+                                          {item.department_ids.map(dId => {
+                                            const dept = allDepartments.find(d => d.id === dId);
+                                            return dept ? <Badge key={dId} variant="outline" className="text-xs">{dept.name}</Badge> : null;
+                                          })}
+                                        </div>
+                                      ) : (
+                                        <span className="text-xs text-slate-400">All departments</span>
+                                      )}
+                                    </TableCell>
+                                  )}
                                   <TableCell>
                                     {item.is_active !== false ? (
                                       <Badge className="bg-green-100 text-green-700">Active</Badge>
