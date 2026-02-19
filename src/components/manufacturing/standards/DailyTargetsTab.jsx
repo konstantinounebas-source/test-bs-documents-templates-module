@@ -23,6 +23,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   const [newTypeName, setNewTypeName] = useState('');
   const [showAddTargetDialog, setShowAddTargetDialog] = useState(false);
   const [showAssigned, setShowAssigned] = useState(false);
+  const [itemSearch, setItemSearch] = useState('');
   const [filterItemCode, setFilterItemCode] = useState('');
   const [filterTargetType, setFilterTargetType] = useState('');
   const [showBreakdownDialog, setShowBreakdownDialog] = useState(false);
