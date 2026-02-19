@@ -32,7 +32,7 @@ export default function ConsumablesTab({ bundle, isEditable }) {
     queryFn: () => base44.entities.Department.list()
   });
 
-  // Fetch reference data (max 10 allowed)
+  // Fetch reference data
   const { data: allConsumables = [] } = useQuery({
     queryKey: ['Consumable'],
     queryFn: () => base44.entities.Consumable.list()
@@ -52,18 +52,32 @@ export default function ConsumablesTab({ bundle, isEditable }) {
     queryKey: ['Unit'],
     queryFn: () => base44.entities.Unit.list()
   });
+
+  const { data: allRateTypes = [] } = useQuery({
+    queryKey: ['Rate_Type'],
+    queryFn: () => base44.entities.Rate_Type.list()
+  });
+  const rateTypes = allRateTypes.filter(rt => rt.is_active).slice(0, 10);
   const units = allUnits.filter(u => u.is_active);
+
+  // Fetch item codes from DATA tab
+  const { data: itemCodes = [] } = useBundleItemCodes(bundle?.id);
+
+  // Fetch lines
+  const { data: lines = [], isLoading } = useQuery({
+    queryKey: ['ConsumablesStandardsLines', bundle.id],
+    queryFn: () => base44.entities.ConsumablesStandardsLines.filter({ bundle_id: bundle.id }),
+    enabled: !!bundle
+  });
 
   // Filter consumables by department
   const filteredConsumables = useMemo(() => {
     if (!formData.department) return [];
-    const dept = allDepartments.find(d => d.id === formData.department);
-    if (!dept) return [];
     return allConsumables.filter(c => 
       c.is_active && 
       (!c.department_ids || c.department_ids.length === 0 || c.department_ids.includes(formData.department))
     ).slice(0, 10);
-  }, [allConsumables, allDepartments, formData.department]);
+  }, [allConsumables, formData.department]);
 
   // Filter operations by department
   const filteredOperations = useMemo(() => {
@@ -79,16 +93,6 @@ export default function ConsumablesTab({ bundle, isEditable }) {
     if (!formData.consumable) return null;
     return allProducts.find(p => p.name === formData.consumable);
   }, [formData.consumable, allProducts]);
-
-  // Fetch item codes from DATA tab (master list)
-  const { data: itemCodes = [] } = useBundleItemCodes(bundle?.id);
-
-  // Fetch lines
-  const { data: lines = [], isLoading } = useQuery({
-    queryKey: ['ConsumablesStandardsLines', bundle.id],
-    queryFn: () => base44.entities.ConsumablesStandardsLines.filter({ bundle_id: bundle.id }),
-    enabled: !!bundle
-  });
 
   // Filtered lines
   const filteredLines = useMemo(() => {
@@ -244,36 +248,56 @@ export default function ConsumablesTab({ bundle, isEditable }) {
           <div className="space-y-4 py-4 max-h-[500px] overflow-auto">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Consumable *</Label>
-                <Select value={formData.consumable} onValueChange={(v) => setFormData({ ...formData, consumable: v })}>
+                <Label>Department *</Label>
+                <Select value={formData.department} onValueChange={(v) => setFormData({ ...formData, department: v, consumable: '', operation: '' })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    {consumables.map(c => (
-                      <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                    {allDepartments.filter(d => d.is_active).map(d => (
+                      <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
-                <Label>Department *</Label>
-                <Input
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <Label>Rate Type *</Label>
-                <Select value={formData.rate_type} onValueChange={(v) => setFormData({ ...formData, rate_type: v })}>
+                <Label>Consumable *</Label>
+                <Select value={formData.consumable} onValueChange={(v) => setFormData({ ...formData, consumable: v })}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select" />
+                    <SelectValue placeholder={formData.department ? "Select" : "Select department first"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {rateTypes.map(rt => (
-                      <SelectItem key={rt.id} value={rt.name}>{rt.name}</SelectItem>
+                    {filteredConsumables.map(c => (
+                      <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedConsumableProduct && (
+                <>
+                  <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                    <p className="text-xs font-semibold text-blue-900">Unit of Measure</p>
+                    <p className="text-sm text-blue-800">{selectedConsumableProduct.unit_of_measure}</p>
+                  </div>
+                  <div className="bg-blue-50 p-3 rounded border border-blue-200">
+                    <p className="text-xs font-semibold text-blue-900">Unit Cost</p>
+                    <p className="text-sm text-blue-800">{selectedConsumableProduct.unit_cost || 'N/A'}</p>
+                  </div>
+                </>
+              )}
+
+              <div>
+                <Label>Operation</Label>
+                <Select value={formData.operation} onValueChange={(v) => setFormData({ ...formData, operation: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={formData.department ? "Select from available" : "Select department first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>-- None --</SelectItem>
+                    {filteredOperations.map(op => (
+                      <SelectItem key={op.id} value={op.name}>{op.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -295,12 +319,17 @@ export default function ConsumablesTab({ bundle, isEditable }) {
               </div>
 
               <div>
-                <Label>Operation</Label>
-                <Input
-                  value={formData.operation}
-                  onChange={(e) => setFormData({ ...formData, operation: e.target.value })}
-                  placeholder="Optional"
-                />
+                <Label>Rate Type *</Label>
+                <Select value={formData.rate_type} onValueChange={(v) => setFormData({ ...formData, rate_type: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rateTypes.map(rt => (
+                      <SelectItem key={rt.id} value={rt.name}>{rt.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -311,6 +340,7 @@ export default function ConsumablesTab({ bundle, isEditable }) {
                   min="0"
                   value={formData.rate_value}
                   onChange={(e) => setFormData({ ...formData, rate_value: e.target.value })}
+                  placeholder="e.g. 1 or 50%"
                 />
               </div>
 
