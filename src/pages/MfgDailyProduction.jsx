@@ -35,11 +35,13 @@ export default function MfgDailyProduction() {
   });
 
   const { data: batchHeaders = [] } = useQuery({
-    queryKey: ['BatchHeader'],
-    queryFn: () => base44.entities.BatchHeader.list('-created_date', 20)
+    queryKey: ['BatchHeader', selectedDepartment],
+    queryFn: () => selectedDepartment
+      ? base44.entities.BatchHeader.filter({ department: selectedDepartment })
+      : [],
+    enabled: !!selectedDepartment,
+    staleTime: 0
   });
-
-
 
   const handleBatchSelect = (batch) => {
     setSelectedBatch(batch);
