@@ -205,6 +205,20 @@ export default function TeamTimeExtraTab({ batchId }) {
     onError: () => toast.error('Failed to add extra time')
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Team_Time_Extra.update(id, data),
+    onSuccess: async () => {
+      await saveNETimeMetric();
+      await saveODTimeMetric();
+      await saveSUPTimeMetric();
+      await saveNATTimeMetric();
+      queryClient.invalidateQueries(['Team_Time_Extra']);
+      setEditingId(null);
+      toast.success('Extra time updated');
+    },
+    onError: () => toast.error('Failed to update extra time')
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Team_Time_Extra.delete(id),
     onSuccess: async () => {
