@@ -18,11 +18,10 @@ export default function ConsumablesTab({ bundle, isEditable }) {
   const [formData, setFormData] = useState({
     consumable: '',
     department: '',
-    rate_type: '',
+    rate_type: 'unit',
     item_code: '',
     operation: '',
     rate_value: '',
-    unit: '',
     notes: ''
   });
 
