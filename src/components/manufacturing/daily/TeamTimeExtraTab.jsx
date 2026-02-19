@@ -248,12 +248,93 @@ export default function TeamTimeExtraTab({ batchId }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Team Time - Extra</h3>
-        <Button onClick={() => setShowAddDialog(true)} variant="outline" size="sm">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Extra Time
-        </Button>
+      <h3 className="text-lg font-semibold">Team Time - Extra</h3>
+
+      {/* Inline Add Form */}
+      <div className="border rounded-lg p-4 bg-slate-50">
+        <div className="flex flex-wrap gap-3 items-end">
+          <div className="flex-1 min-w-[200px]">
+            <Label className="text-xs text-slate-600 mb-1 block">Person Name(s) *</Label>
+            <Popover open={openPersonSelect} onOpenChange={setOpenPersonSelect}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" className="w-full justify-between font-normal bg-white">
+                  {formData.person_names.length > 0
+                    ? formData.person_names.join(', ')
+                    : 'Select person(s)...'}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search person..." />
+                  <CommandEmpty>No person found.</CommandEmpty>
+                  <CommandGroup className="max-h-60 overflow-auto">
+                    {persons.map(p => (
+                      <CommandItem
+                        key={p.id}
+                        value={p.name}
+                        onSelect={() => {
+                          setFormData(prev => ({
+                            ...prev,
+                            person_names: prev.person_names.includes(p.name)
+                              ? prev.person_names.filter(n => n !== p.name)
+                              : [...prev.person_names, p.name]
+                          }));
+                        }}
+                      >
+                        <Check className={cn('mr-2 h-4 w-4', formData.person_names.includes(p.name) ? 'opacity-100' : 'opacity-0')} />
+                        {p.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="w-40">
+            <Label className="text-xs text-slate-600 mb-1 block">Charge Dept *</Label>
+            <Select value={formData.charge_dept} onValueChange={(v) => setFormData({ ...formData, charge_dept: v })}>
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Select dept" />
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map(d => (
+                  <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="w-48">
+            <Label className="text-xs text-slate-600 mb-1 block">Work Type *</Label>
+            <Select value={formData.work_type} onValueChange={(v) => setFormData({ ...formData, work_type: v })}>
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                {workTypes.map(w => (
+                  <SelectItem key={w.id} value={w.name}>{w.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="w-32">
+            <Label className="text-xs text-slate-600 mb-1 block">Duration (min) *</Label>
+            <Input
+              type="number"
+              className="bg-white"
+              value={formData.duration_min}
+              onChange={(e) => setFormData({ ...formData, duration_min: e.target.value })}
+            />
+          </div>
+
+          <Button onClick={handleAdd} disabled={createMutation.isPending} className="h-9">
+            {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4 mr-1" />}
+            Add
+          </Button>
+        </div>
       </div>
 
       <div className="border rounded-lg overflow-auto">
@@ -297,77 +378,6 @@ export default function TeamTimeExtraTab({ batchId }) {
           </TableBody>
         </Table>
       </div>
-
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Team Time - Extra</DialogTitle>
-            <DialogDescription>Record extra time worked by a team member</DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div>
-              <Label>Person Name *</Label>
-              <Input
-                list="persons-list"
-                value={formData.person_name}
-                onChange={(e) => setFormData({ ...formData, person_name: e.target.value })}
-                placeholder="Type or select person name"
-              />
-              <datalist id="persons-list">
-                {persons.map(p => (
-                  <option key={p.id} value={p.name} />
-                ))}
-              </datalist>
-            </div>
-
-            <div>
-              <Label>Charge Dept *</Label>
-              <Select value={formData.charge_dept} onValueChange={(v) => setFormData({ ...formData, charge_dept: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map(d => (
-                    <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Work Type *</Label>
-              <Select value={formData.work_type} onValueChange={(v) => setFormData({ ...formData, work_type: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select work type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {workTypes.map(w => (
-                    <SelectItem key={w.id} value={w.name}>{w.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Duration (min) *</Label>
-              <Input
-                type="number"
-                value={formData.duration_min}
-                onChange={(e) => setFormData({ ...formData, duration_min: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={createMutation.isPending}>
-              {createMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-              Add
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
