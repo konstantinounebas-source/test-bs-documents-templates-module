@@ -35,7 +35,7 @@ export default function MfgReferenceDataWizard() {
   const tabs = [
     { id: "departments", label: "Departments", entity: "Department", icon: Building2 },
     { id: "operations", label: "Operations", entity: "Operation", icon: Wrench },
-    { id: "qc_types", label: "QC Types", entity: "QC_Type", icon: AlertTriangle },
+    { id: "qc_types", label: "QC Types", entity: "QCType", icon: AlertTriangle },
     { id: "qc_levels", label: "QC Levels", entity: "QCLevel", icon: AlertTriangle },
     { id: "consumables", label: "Consumables", entity: "Consumable", icon: Package, customComponent: true },
     { id: "work_types", label: "Work Types", entity: "Work_Type", icon: Briefcase },
