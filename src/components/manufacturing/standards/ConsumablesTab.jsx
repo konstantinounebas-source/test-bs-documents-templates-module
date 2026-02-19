@@ -190,7 +190,7 @@ export default function ConsumablesTab({ bundle, isEditable }) {
             <TableRow>
               <TableHead>Consumable</TableHead>
               <TableHead>Department</TableHead>
-              <TableHead>Rate Type</TableHead>
+              <TableHead>Rate Type (Unit/Percentage)</TableHead>
               <TableHead>Item Code</TableHead>
               <TableHead>Operation</TableHead>
               <TableHead>Rate Value</TableHead>
