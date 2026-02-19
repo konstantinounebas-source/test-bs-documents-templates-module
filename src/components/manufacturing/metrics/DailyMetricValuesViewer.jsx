@@ -154,7 +154,7 @@ export default function DailyMetricValuesViewer() {
         </div>
       </div>
 
-      {isExpanded && <>
+      {isExpanded && <div className="space-y-3 mt-3">
       {/* Department tabs */}
       <div className="flex gap-1 flex-wrap border-b pb-2 mt-3">
         <button
