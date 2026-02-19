@@ -15,13 +15,21 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import PersonManagement from "@/components/manufacturing/PersonManagement";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function MfgReferenceDataWizard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("departments");
   const [editingItem, setEditingItem] = useState(null);
-  const [formData, setFormData] = useState({ name: "", description: "", duration_minutes: "", is_active: true, department_ids: [] });
+  const [formData, setFormData] = useState({ name: "", description: "", duration_minutes: "", is_active: true });
+  const [selectedDeptIds, setSelectedDeptIds] = useState([]);
+
+  // Fetch departments for Operations tab
+  const { data: allDepartments = [] } = useQuery({
+    queryKey: ['Department'],
+    queryFn: () => base44.entities.Department.filter({ is_active: true })
+  });
 
   const tabs = [
     { id: "departments", label: "Departments", entity: "Department", icon: Building2 },
@@ -96,10 +104,14 @@ export default function MfgReferenceDataWizard() {
       return;
     }
 
+    const dataToSave = { ...formData };
+    if (activeTab === 'operations') {
+      dataToSave.department_ids = selectedDeptIds;
+    }
     if (editingItem) {
-      updateMutation.mutate({ id: editingItem.id, data: formData });
+      updateMutation.mutate({ id: editingItem.id, data: dataToSave });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(dataToSave);
     }
   };
 
@@ -109,9 +121,11 @@ export default function MfgReferenceDataWizard() {
       name: item.name,
       description: item.description || "",
       duration_minutes: item.duration_minutes || "",
-      is_active: item.is_active !== false,
-      department_ids: item.department_ids || []
+      is_active: item.is_active !== false
     });
+    if (activeTab === 'operations') {
+      setSelectedDeptIds(item.department_ids || []);
+    }
   };
 
   const handleDelete = (id) => {
@@ -122,14 +136,8 @@ export default function MfgReferenceDataWizard() {
 
   const handleCancel = () => {
     setEditingItem(null);
-    setFormData({ name: "", description: "", duration_minutes: "", is_active: true, department_ids: [] });
+    setFormData({ name: "", description: "", duration_minutes: "", is_active: true });
   };
-
-  // Fetch departments for operations tab
-  const { data: allDepartments = [] } = useQuery({
-    queryKey: ['Department'],
-    queryFn: () => base44.entities.Department.filter({ is_active: true })
-  });
 
   const canProceed = () => {
     const hasDepartments = queryClient.getQueryData(['Department'])?.length > 0;
@@ -237,35 +245,6 @@ export default function MfgReferenceDataWizard() {
                                placeholder="e.g., 15"
                                required={activeTab === 'break_times'}
                              />
-                           </div>
-                         )}
-                         {activeTab === 'operations' && (
-                           <div>
-                             <Label>Departments (leave empty = applies to all)</Label>
-                             <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
-                               {allDepartments.length === 0 ? (
-                                 <p className="text-xs text-slate-400">No departments found. Add departments first.</p>
-                               ) : (
-                                 allDepartments.map(dept => (
-                                   <div key={dept.id} className="flex items-center gap-2">
-                                     <Checkbox
-                                       id={`dept-${dept.id}`}
-                                       checked={(formData.department_ids || []).includes(dept.id)}
-                                       onCheckedChange={(checked) => {
-                                         const current = formData.department_ids || [];
-                                         setFormData({
-                                           ...formData,
-                                           department_ids: checked
-                                             ? [...current, dept.id]
-                                             : current.filter(id => id !== dept.id)
-                                         });
-                                       }}
-                                     />
-                                     <Label htmlFor={`dept-${dept.id}`} className="font-normal cursor-pointer">{dept.name}</Label>
-                                   </div>
-                                 ))
-                               )}
-                             </div>
                            </div>
                          )}
                         <div className="flex items-center space-x-2">
