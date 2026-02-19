@@ -94,15 +94,19 @@ export default function MfgStandardsManagementPage() {
         base44.entities.ConsumablesStandardsLines.filter({ bundle_id: currentBundle.id })
       ]);
 
-      // Create cloned lines
-      await Promise.all([
-        ...stdLines.map(l => base44.entities.StdSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
-        ...qcLines.map(l => base44.entities.QCSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
-        ...profileLines.map(l => base44.entities.ProfileSetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
-        ...targetTypes.map(l => base44.entities.TargetType.create({ ...l, id: undefined, bundle_id: newBundle.id })),
-        ...targetLines.map(l => base44.entities.DailyTargetLines.create({ ...l, id: undefined, bundle_id: newBundle.id })),
-        ...consumablesLines.map(l => base44.entities.ConsumablesStandardsLines.create({ ...l, id: undefined, bundle_id: newBundle.id }))
-      ]);
+      // Create cloned lines using bulkCreate to avoid rate limits
+      const cloneLines = (entity, lines) => {
+        if (!lines.length) return Promise.resolve();
+        const mapped = lines.map(({ id, created_date, updated_date, created_by, ...rest }) => ({ ...rest, bundle_id: newBundle.id }));
+        return entity.bulkCreate(mapped);
+      };
+
+      await cloneLines(base44.entities.StdSetLines, stdLines);
+      await cloneLines(base44.entities.QCSetLines, qcLines);
+      await cloneLines(base44.entities.ProfileSetLines, profileLines);
+      await cloneLines(base44.entities.TargetType, targetTypes);
+      await cloneLines(base44.entities.DailyTargetLines, targetLines);
+      await cloneLines(base44.entities.ConsumablesStandardsLines, consumablesLines);
 
       return newBundle;
     },
