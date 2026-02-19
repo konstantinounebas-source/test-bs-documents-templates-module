@@ -114,11 +114,10 @@ export default function ConsumablesTab({ bundle, isEditable }) {
       setFormData({
         consumable: '',
         department: '',
-        rate_type: '',
+        rate_type: 'unit',
         item_code: '',
         operation: '',
         rate_value: '',
-        unit: '',
         notes: ''
       });
       toast.success('Consumable line added');
