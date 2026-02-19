@@ -489,10 +489,6 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
             </div>
 
             <div>
-              <div className="flex items-center space-x-2 mb-2">
-                <Checkbox id="showAssigned" checked={showAssigned} onCheckedChange={setShowAssigned} />
-                <Label htmlFor="showAssigned" className="text-sm">Show assigned items</Label>
-              </div>
               <Label>Item Codes (Multi-Select) *</Label>
               <Select onValueChange={handleAddItemCode}>
                 <SelectTrigger>
