@@ -189,6 +189,8 @@ export default function MfgStandardsManagementPage() {
     await queryClient.invalidateQueries({ queryKey: ['TargetType'] });
     await queryClient.invalidateQueries({ queryKey: ['DailyTargetLines'] });
     await queryClient.invalidateQueries({ queryKey: ['ConsumablesStandardsLines'] });
+     await queryClient.invalidateQueries({ queryKey: ['OperationProfileName'] });
+
     
     // Set bundle and reset to first tab
     setCurrentBundle(bundle);
