@@ -525,7 +525,7 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
                 {stdDailyTargetLines.filter(l => l.target_type === importTargetType).map(l => (
                   <div key={l.id} className="flex justify-between">
                     <span className="font-mono text-slate-700">{l.item_code}</span>
-                    <span className="text-slate-500">qty: {l.target_qty} × {(l.per_piece_min || 0).toFixed(2)} min/pc = <strong>{((l.per_piece_min || 0) * (l.target_qty || 0)).toFixed(1)} min</strong></span>
+                    <span className="text-slate-500">qty: {l.target_qty} × {(l.per_piece_total_min || 0).toFixed(2)} min/pc = <strong>{(l.item_total_min || 0).toFixed(1)} min</strong></span>
                   </div>
                 ))}
               </div>
