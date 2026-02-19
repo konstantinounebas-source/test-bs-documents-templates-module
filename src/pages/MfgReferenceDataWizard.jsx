@@ -35,7 +35,7 @@ export default function MfgReferenceDataWizard() {
   const tabs = [
     { id: "departments", label: "Departments", entity: "Department", icon: Building2 },
     { id: "operations", label: "Operations", entity: "Operation", icon: Wrench },
-    { id: "qc_types", label: "QC Types", entity: "QCType", icon: AlertTriangle },
+    { id: "qc_types", label: "QC Types", entity: "QC_Type", icon: AlertTriangle },
     { id: "qc_levels", label: "QC Levels", entity: "QCLevel", icon: AlertTriangle },
     { id: "consumables", label: "Consumables", entity: "Consumable", icon: Package, customComponent: true },
     { id: "work_types", label: "Work Types", entity: "Work_Type", icon: Briefcase },
@@ -59,39 +59,37 @@ export default function MfgReferenceDataWizard() {
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities[currentEntity].create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [currentEntity] });
+      queryClient.invalidateQueries([currentEntity]);
       setFormData({ name: "", description: "", duration_minutes: "", is_active: true });
       setEditingItem(null);
-      setSelectedDeptIds([]);
       toast.success("Item created successfully");
     },
-    onError: (error) => {
-      toast.error("Failed to create item: " + error.message);
+    onError: () => {
+      toast.error("Failed to create item");
     }
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities[currentEntity].update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [currentEntity] });
+      queryClient.invalidateQueries([currentEntity]);
       setFormData({ name: "", description: "", duration_minutes: "", is_active: true });
       setEditingItem(null);
-      setSelectedDeptIds([]);
       toast.success("Item updated successfully");
     },
-    onError: (error) => {
-      toast.error("Failed to update item: " + error.message);
+    onError: () => {
+      toast.error("Failed to update item");
     }
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities[currentEntity].delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [currentEntity] });
+      queryClient.invalidateQueries([currentEntity]);
       toast.success("Item deleted successfully");
     },
-    onError: (error) => {
-      toast.error("Failed to delete item: " + error.message);
+    onError: () => {
+      toast.error("Failed to delete item");
     }
   });
 
@@ -109,7 +107,7 @@ export default function MfgReferenceDataWizard() {
 
     const dataToSave = { ...formData };
     if (activeTab === 'operations' || activeTab === 'qc_types' || activeTab === 'qc_levels') {
-      dataToSave.department_ids = selectedDeptIds.length > 0 ? selectedDeptIds : undefined;
+      dataToSave.department_ids = selectedDeptIds;
     }
     if (editingItem) {
       updateMutation.mutate({ id: editingItem.id, data: dataToSave });

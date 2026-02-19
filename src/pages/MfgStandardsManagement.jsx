@@ -40,60 +40,40 @@ export default function MfgStandardsManagementPage() {
     queryFn: () => base44.entities.Department.filter({ is_active: true })
   });
 
+  // Fetch bundles for selected department
+  const { data: bundles = [] } = useQuery({
+    queryKey: ['StandardsBundle', selectedDepartment],
+    queryFn: () => base44.entities.StandardsBundle.filter({ department: selectedDepartment }, '-created_date'),
+    enabled: !!selectedDepartment
+  });
+
   // Find the department object for selected department name
   const selectedDepartmentObj = useMemo(() => {
     return departments.find(d => d.name === selectedDepartment) || null;
   }, [departments, selectedDepartment]);
 
-  // Fetch bundles for selected department
-  const { data: bundles = [], isLoading: bundlesLoading } = useQuery({
-    queryKey: ['StandardsBundle', selectedDepartmentObj?.id],
-    queryFn: async () => {
-      if (!selectedDepartmentObj?.id) return [];
-      try {
-        return await base44.entities.StandardsBundle.filter({ department_id: selectedDepartmentObj.id }, '-created_date');
-      } catch (error) {
-        console.error('Error fetching bundles:', error);
-        return [];
-      }
-    },
-    enabled: !!selectedDepartmentObj?.id,
-    retry: 1
-  });
-
   // Create bundle mutation
   const createBundleMutation = useMutation({
     mutationFn: async (data) => {
-      if (!selectedDepartmentObj?.id) {
-        throw new Error('Department ID is missing. Please select a department first.');
-      }
-      if (!data.version_no || !data.version_no.trim()) {
-        throw new Error('Version number is required');
-      }
       const bundle = await base44.entities.StandardsBundle.create({
         version_no: data.version_no,
         department: selectedDepartment,
-        department_id: selectedDepartmentObj.id,
+        department_id: selectedDepartmentObj?.id || '',
         status: 'DRAFT',
-        notes: data.notes || ''
+        notes: data.notes
       });
       return bundle;
     },
     onSuccess: (bundle) => {
       queryClient.invalidateQueries({ queryKey: ['StandardsBundle'] });
       setSelectedBundleId(bundle.id);
-      const bundleWithDept = {
-        ...bundle,
-        department_id: selectedDepartmentObj?.id
-      };
-      setCurrentBundle(bundleWithDept);
+      setCurrentBundle(bundle);
       setShowCreateDialog(false);
       setCreateForm({ version_no: '', notes: '' });
       toast.success('Bundle created successfully');
     },
     onError: (error) => {
-      console.error('Create bundle error:', error);
-      toast.error('Failed to create bundle: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to create bundle: ' + error.message);
     }
   });
 
@@ -209,8 +189,6 @@ export default function MfgStandardsManagementPage() {
     await queryClient.invalidateQueries({ queryKey: ['TargetType'] });
     await queryClient.invalidateQueries({ queryKey: ['DailyTargetLines'] });
     await queryClient.invalidateQueries({ queryKey: ['ConsumablesStandardsLines'] });
-     await queryClient.invalidateQueries({ queryKey: ['OperationProfileName'] });
-
     
     // Set bundle and reset to first tab
     setCurrentBundle(bundle);
@@ -320,15 +298,12 @@ export default function MfgStandardsManagementPage() {
               <Select 
                 value={selectedBundleId} 
                 onValueChange={setSelectedBundleId}
-                disabled={!selectedDepartment || bundlesLoading}
+                disabled={!selectedDepartment}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={bundlesLoading ? "Loading versions..." : "Select version"} />
+                  <SelectValue placeholder="Select version" />
                 </SelectTrigger>
                 <SelectContent>
-                  {bundles.length === 0 && !bundlesLoading && selectedDepartment && (
-                    <div className="p-2 text-sm text-slate-500">No versions found for this department</div>
-                  )}
                   {bundles.map(bundle => (
                     <SelectItem key={bundle.id} value={bundle.id}>
                       v{bundle.version_no} - {bundle.status}
