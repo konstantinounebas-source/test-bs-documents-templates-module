@@ -254,7 +254,7 @@ export default function MfgReferenceDataWizard() {
                              />
                            </div>
                          )}
-                         {activeTab === 'operations' && (
+                         {(activeTab === 'operations' || activeTab === 'qc_types' || activeTab === 'qc_levels') && (
                            <div>
                              <Label>Departments <span className="text-slate-400 font-normal text-xs">(leave empty = applies to all departments)</span></Label>
                              <div className="border rounded-lg p-3 mt-1 flex flex-wrap gap-3 max-h-32 overflow-y-auto">
