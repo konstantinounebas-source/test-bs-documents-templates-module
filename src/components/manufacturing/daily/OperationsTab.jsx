@@ -105,8 +105,19 @@ export default function OperationsTab({ batchId, department }) {
   }, [formData.operation_profile_id, profileNames, operations]);
 
   // Auto-fill from scheduled data (seed only, once)
-  useMemo(() => {
-    if (!batchId || !batchHeader || lines.length > 0 || scheduledData.length === 0) return;
+  const autoFillDoneRef = React.useRef(false);
+  React.useEffect(() => {
+    // Guard: only run when all data is ready, lines are empty, and we haven't already run
+    if (autoFillDoneRef.current) return;
+    if (!batchId || !batchHeader || scheduledData.length === 0) return;
+    if (profileNames.length === 0 || operations.length === 0) return;
+    if (isLoading) return; // wait until lines are fully loaded
+    if (lines.length > 0) {
+      autoFillDoneRef.current = true; // already has data, skip
+      return;
+    }
+
+    autoFillDoneRef.current = true;
 
     const autoFillPromises = [];
 
@@ -114,7 +125,8 @@ export default function OperationsTab({ batchId, department }) {
       const profile = profileNames.find(p => p.id === sd.operation_profile_id);
       if (!profile || !profile.operations_required) return;
 
-      const groupId = `schedule-${sd.item_code}-${Date.now()}`;
+      // Use stable groupId based on scheduled data ID - no Date.now()
+      const groupId = `schedule-${sd.id}`;
       
       profile.operations_required.forEach(opId => {
         const operation = operations.find(op => op.id === opId);
@@ -155,7 +167,7 @@ export default function OperationsTab({ batchId, department }) {
           // Silent fail
         });
     }
-  }, [batchId, batchHeader, lines.length, scheduledData, profileNames, operations, stdSetLines, queryClient]);
+  }, [batchId, batchHeader, isLoading, lines.length, scheduledData, profileNames, operations, stdSetLines, queryClient]);
 
   // Group operations by item_code and profile_group_id
   const groupedOperations = useMemo(() => {
