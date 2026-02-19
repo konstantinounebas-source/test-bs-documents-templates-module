@@ -114,14 +114,34 @@ export default function MfgPlanningWizard() {
               <Alert>
                 <AlertCircle className="w-4 h-4" />
                 <AlertDescription>
-                  Please select a department and active standards bundle to begin scheduling data.
+                  Please select a department and active standards bundle to begin.
                 </AlertDescription>
               </Alert>
             ) : (
-              <ScheduledDataTab 
-                selectedDepartment={selectedDepartment} 
-                selectedBundle={selectedBundle}
-              />
+              <Tabs value={activeTab} onValueChange={setActiveTab}>
+                <TabsList className="mb-4">
+                  <TabsTrigger value="scheduled">
+                    <CalendarDays className="w-4 h-4 mr-2" />
+                    Scheduled Data
+                  </TabsTrigger>
+                  <TabsTrigger value="targets">
+                    <Target className="w-4 h-4 mr-2" />
+                    Daily Targets
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="scheduled">
+                  <ScheduledDataTab 
+                    selectedDepartment={selectedDepartment} 
+                    selectedBundle={selectedBundle}
+                  />
+                </TabsContent>
+                <TabsContent value="targets">
+                  <DailyTargetTab
+                    selectedDepartment={selectedDepartment}
+                    selectedBundle={selectedBundle}
+                  />
+                </TabsContent>
+              </Tabs>
             )}
           </CardContent>
         </Card>
