@@ -55,30 +55,36 @@ export default function MfgStandardsManagementPage() {
   // Create bundle mutation
   const createBundleMutation = useMutation({
     mutationFn: async (data) => {
+      if (!selectedDepartmentObj?.id) {
+        throw new Error('Department ID is missing. Please select a department first.');
+      }
+      if (!data.version_no || !data.version_no.trim()) {
+        throw new Error('Version number is required');
+      }
       const bundle = await base44.entities.StandardsBundle.create({
         version_no: data.version_no,
         department: selectedDepartment,
-        department_id: selectedDepartmentObj?.id || '',
+        department_id: selectedDepartmentObj.id,
         status: 'DRAFT',
-        notes: data.notes
+        notes: data.notes || ''
       });
       return bundle;
     },
     onSuccess: (bundle) => {
       queryClient.invalidateQueries({ queryKey: ['StandardsBundle'] });
       setSelectedBundleId(bundle.id);
-      // Ensure bundle has department_id from selectedDepartmentObj
-     const bundleWithDept = {
-       ...bundle,
-       department_id: selectedDepartmentObj?.id
-     };
-     setCurrentBundle(bundleWithDept);
+      const bundleWithDept = {
+        ...bundle,
+        department_id: selectedDepartmentObj?.id
+      };
+      setCurrentBundle(bundleWithDept);
       setShowCreateDialog(false);
       setCreateForm({ version_no: '', notes: '' });
       toast.success('Bundle created successfully');
     },
     onError: (error) => {
-      toast.error('Failed to create bundle: ' + error.message);
+      console.error('Create bundle error:', error);
+      toast.error('Failed to create bundle: ' + (error.message || 'Unknown error'));
     }
   });
 
