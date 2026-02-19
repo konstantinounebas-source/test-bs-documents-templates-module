@@ -102,7 +102,7 @@ export default function DailyProductionCalendarSelector({
                   >
                     <div className="text-sm">{format(day, 'd')}</div>
                     {hasBatch && (
-                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-green-500 rounded-full" />
                     )}
                   </button>
                 </div>
