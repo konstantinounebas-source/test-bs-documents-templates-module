@@ -104,10 +104,10 @@ export default function DailyKPIValuesViewer() {
   const filteredValues = useMemo(() => {
     return kpiValues.filter(kv => {
       const dateMatch = dateRange.includes(kv.date);
-      const deptMatch = viewMode === 'daily' ? (!searchDept || kv.department?.toLowerCase().includes(searchDept.toLowerCase())) : true;
+      const deptMatch = selectedDept === 'ALL' || kv.department === selectedDept;
       return dateMatch && deptMatch;
     });
-  }, [kpiValues, dateRange, searchDept, viewMode]);
+  }, [kpiValues, dateRange, selectedDept]);
 
   const pivotData = useMemo(() => {
     if (viewMode === 'daily') return null;
