@@ -208,7 +208,9 @@ export default function MfgReferenceDataWizard() {
 
               {tabs.map(tab => (
                 <TabsContent key={tab.id} value={tab.id} className="mt-6 space-y-6">
-                  {tab.customComponent && tab.id === "persons" ? (
+                  {tab.customComponent && tab.id === "consumables" ? (
+                    <ConsumablesReferenceTab departments={allDepartments} />
+                  ) : tab.customComponent && tab.id === "persons" ? (
                     <PersonManagement />
                   ) : (
                     <>
