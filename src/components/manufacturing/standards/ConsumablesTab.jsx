@@ -142,13 +142,14 @@ export default function ConsumablesTab({ bundle, isEditable }) {
   });
 
   const handleAdd = () => {
-    if (!formData.consumable || !formData.department || !formData.rate_type || !formData.rate_value || !formData.unit) {
+    if (!formData.consumable || !formData.department || !formData.rate_value) {
       toast.error('Please fill required fields');
       return;
     }
     createMutation.mutate({
       ...formData,
-      rate_value: parseFloat(formData.rate_value)
+      rate_value: parseFloat(formData.rate_value),
+      unit: selectedConsumableProduct?.unit_of_measure || ''
     });
   };
 
