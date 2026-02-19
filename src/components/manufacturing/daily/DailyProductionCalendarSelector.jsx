@@ -25,6 +25,14 @@ export default function DailyProductionCalendarSelector({
     staleTime: 0
   });
 
+  // Fetch scheduled data to mark days with planning
+  const { data: scheduledData = [] } = useQuery({
+    queryKey: ['ScheduledData', selectedDepartment],
+    queryFn: () => base44.entities.ScheduledData.filter({ department_id: selectedDepartment }),
+    enabled: !!selectedDepartment,
+    staleTime: 0
+  });
+
   // Use prop or fetched data
   const batchHeaders = propBatchHeaders || fetchedBatchHeaders;
 
@@ -33,6 +41,12 @@ export default function DailyProductionCalendarSelector({
     if (!batchHeaders || batchHeaders.length === 0) return new Set();
     return new Set(batchHeaders.map(b => b.date).filter(Boolean));
   }, [batchHeaders]);
+
+  // Get dates with planning (scheduled data)
+  const datesWithPlanning = useMemo(() => {
+    if (!scheduledData || scheduledData.length === 0) return new Set();
+    return new Set(scheduledData.map(s => s.date).filter(Boolean));
+  }, [scheduledData]);
 
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
