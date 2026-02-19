@@ -21,6 +21,8 @@ export default function TeamTimeExtraTab({ batchId }) {
     work_type: '',
     duration_min: ''
   });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
