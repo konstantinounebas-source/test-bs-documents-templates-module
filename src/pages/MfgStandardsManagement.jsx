@@ -47,12 +47,18 @@ export default function MfgStandardsManagementPage() {
     enabled: !!selectedDepartment
   });
 
+  // Find the department object for selected department name
+  const selectedDepartmentObj = useMemo(() => {
+    return departments.find(d => d.name === selectedDepartment) || null;
+  }, [departments, selectedDepartment]);
+
   // Create bundle mutation
   const createBundleMutation = useMutation({
     mutationFn: async (data) => {
       const bundle = await base44.entities.StandardsBundle.create({
         version_no: data.version_no,
         department: selectedDepartment,
+        department_id: selectedDepartmentObj?.id || '',
         status: 'DRAFT',
         notes: data.notes
       });
