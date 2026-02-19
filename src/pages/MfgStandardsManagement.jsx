@@ -86,6 +86,7 @@ export default function MfgStandardsManagementPage() {
       const newBundle = await base44.entities.StandardsBundle.create({
         version_no: newVersionNo,
         department: currentBundle.department,
+        department_id: currentBundle.department_id || '',
         status: 'DRAFT',
         notes: notes || `Cloned from ${currentBundle.version_no}`
       });
