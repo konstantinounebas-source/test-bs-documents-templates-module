@@ -324,9 +324,8 @@ export default function ConsumablesTab({ bundle, isEditable }) {
                     <SelectValue placeholder="Select" />
                   </SelectTrigger>
                   <SelectContent>
-                    {rateTypes.map(rt => (
-                      <SelectItem key={rt.id} value={rt.name}>{rt.name}</SelectItem>
-                    ))}
+                    <SelectItem value="unit">Unit {selectedConsumableProduct && `(${selectedConsumableProduct.unit_of_measure})`}</SelectItem>
+                    <SelectItem value="percentage">Percentage (%)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -339,22 +338,8 @@ export default function ConsumablesTab({ bundle, isEditable }) {
                   min="0"
                   value={formData.rate_value}
                   onChange={(e) => setFormData({ ...formData, rate_value: e.target.value })}
-                  placeholder="e.g. 1 or 50%"
+                  placeholder={formData.rate_type === 'percentage' ? "e.g. 50" : "e.g. 1.5"}
                 />
-              </div>
-
-              <div>
-                <Label>Unit *</Label>
-                <Select value={formData.unit} onValueChange={(v) => setFormData({ ...formData, unit: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {units.map(u => (
-                      <SelectItem key={u.id} value={u.name}>{u.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 
