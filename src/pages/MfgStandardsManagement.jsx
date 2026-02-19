@@ -67,7 +67,12 @@ export default function MfgStandardsManagementPage() {
     onSuccess: (bundle) => {
       queryClient.invalidateQueries({ queryKey: ['StandardsBundle'] });
       setSelectedBundleId(bundle.id);
-      setCurrentBundle(bundle);
+      // Ensure bundle has department_id from selectedDepartmentObj
+     const bundleWithDept = {
+       ...bundle,
+       department_id: selectedDepartmentObj?.id
+     };
+     setCurrentBundle(bundleWithDept);
       setShowCreateDialog(false);
       setCreateForm({ version_no: '', notes: '' });
       toast.success('Bundle created successfully');
