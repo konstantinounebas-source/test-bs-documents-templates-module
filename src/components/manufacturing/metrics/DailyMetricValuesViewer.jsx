@@ -11,7 +11,7 @@ import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMo
 export default function DailyMetricValuesViewer() {
   const [viewMode, setViewMode] = useState('daily');
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [searchDept, setSearchDept] = useState('');
+  const [selectedDept, setSelectedDept] = useState('ALL');
 
   const { data: metricValues = [], isLoading: metricsLoading } = useQuery({
     queryKey: ['DailyMetricValue'],

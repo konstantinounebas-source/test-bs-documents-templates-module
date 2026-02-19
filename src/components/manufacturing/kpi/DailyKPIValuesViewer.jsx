@@ -11,7 +11,7 @@ import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMo
 export default function DailyKPIValuesViewer() {
   const [viewMode, setViewMode] = useState('daily');
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [searchDept, setSearchDept] = useState('');
+  const [selectedDept, setSelectedDept] = useState('ALL');
 
   const { data: kpiDefinitions = [], isLoading: definitionsLoading } = useQuery({
     queryKey: ['KPIDefinition'],
