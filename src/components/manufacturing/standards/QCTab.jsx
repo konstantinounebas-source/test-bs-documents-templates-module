@@ -29,25 +29,38 @@ export default function QCTab({ bundle, isEditable }) {
   const [searchFilter, setSearchFilter] = useState('');
   const [quickFilter, setQuickFilter] = useState('all');
 
+  // Fetch departments to resolve bundle department id
+  const { data: allDepartments = [] } = useQuery({
+    queryKey: ['Department'],
+    queryFn: () => base44.entities.Department.filter({ is_active: true })
+  });
+
+  const bundleDepartmentId = useMemo(() => {
+    if (!bundle?.department) return null;
+    const dept = allDepartments.find(d => d.name === bundle.department);
+    return dept?.id || null;
+  }, [bundle, allDepartments]);
+
   // Fetch operations (max 10)
   const { data: allOperations = [] } = useQuery({
     queryKey: ['Operation'],
     queryFn: async () => {
       const ops = await base44.entities.Operation.filter({ is_active: true });
-      console.log("OPS_RAW", ops?.length, ops?.map(o => ({ id: o.id, name: o.name, is_active: o.is_active, is_allowed: o.is_allowed })));
       return ops;
     }
   });
   
-  const operations = allOperations
-    .filter(op => op.is_allowed !== false)
-    .filter(op => {
-      if (!bundle?.department_id) return true;
-      if (!op.department_ids || op.department_ids.length === 0) return true;
-      return op.department_ids.includes(bundle.department_id);
-    })
-    .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
-    .slice(0, 10);
+  const operations = useMemo(() => {
+    return allOperations
+      .filter(op => {
+        if (op.is_allowed === false) return false;
+        if (!op.department_ids || op.department_ids.length === 0) return true;
+        if (!bundleDepartmentId) return true;
+        return op.department_ids.includes(bundleDepartmentId);
+      })
+      .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+      .slice(0, 10);
+  }, [allOperations, bundleDepartmentId]);
   
   const operationOptions = operations.map(o => ({ value: String(o.id), label: o.name, name: o.name }));
   console.log("OPS_OPTIONS", operationOptions.length, operationOptions);
