@@ -374,7 +374,7 @@ export default function TemplatesPage() {
                    <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
                    <DropdownMenuSeparator />
                    {COLUMN_CATEGORIES.map((category, index) => (
-                     <React.Fragment key={category.label}>
+                     <div key={category.label}>
                        {index > 0 && <DropdownMenuSeparator />}
                        <DropdownMenuLabel className="text-slate-500 font-semibold">{category.label}</DropdownMenuLabel>
                        {category.keys.map(key => {
@@ -396,7 +396,7 @@ export default function TemplatesPage() {
                            </DropdownMenuCheckboxItem>
                          );
                        })}
-                     </React.Fragment>
+                     </div>
                    ))}
                  </DropdownMenuContent>
               </DropdownMenu>
