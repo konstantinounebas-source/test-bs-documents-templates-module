@@ -262,7 +262,7 @@ export default function ConsumablesTab({ bundle, isEditable }) {
                   <TableCell>{line.item_code || '-'}</TableCell>
                   <TableCell>{line.operation || '-'}</TableCell>
                   <TableCell>{line.rate_value}</TableCell>
-                  <TableCell>{line.unit}</TableCell>
+                  <TableCell>{line.rate_type === 'percentage' ? '%' : line.unit}</TableCell>
                   <TableCell>{line.notes || '-'}</TableCell>
                   {isEditable && (
                     <TableCell className="flex gap-2">
