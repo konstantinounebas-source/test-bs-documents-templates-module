@@ -217,14 +217,25 @@ export default function TeamTimeExtraTab({ batchId }) {
   });
 
   const handleAdd = () => {
-    if (!formData.person_name || !formData.charge_dept || !formData.work_type || !formData.duration_min) {
+    if (!formData.person_names || formData.person_names.length === 0 || !formData.charge_dept || !formData.work_type || !formData.duration_min) {
       toast.error('All fields are required');
       return;
     }
-    createMutation.mutate({
-      ...formData,
-      duration_min: parseFloat(formData.duration_min)
-    });
+    const addNext = (index) => {
+      if (index >= formData.person_names.length) {
+        setFormData({ person_names: [], charge_dept: '', work_type: '', duration_min: '' });
+        return;
+      }
+      createMutation.mutate({
+        person_name: formData.person_names[index],
+        charge_dept: formData.charge_dept,
+        work_type: formData.work_type,
+        duration_min: parseFloat(formData.duration_min)
+      }, {
+        onSuccess: () => addNext(index + 1)
+      });
+    };
+    addNext(0);
   };
 
   if (isLoading) {
