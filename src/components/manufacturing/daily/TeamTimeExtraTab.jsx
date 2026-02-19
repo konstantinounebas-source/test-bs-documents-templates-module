@@ -392,20 +392,81 @@ export default function TeamTimeExtraTab({ batchId }) {
             ) : (
               lines.map(line => (
                 <TableRow key={line.id}>
-                  <TableCell className="font-medium">{line.person_name}</TableCell>
-                  <TableCell>{line.charge_dept}</TableCell>
-                  <TableCell>{line.work_type}</TableCell>
-                  <TableCell>{line.duration_min}</TableCell>
-                  <TableCell>
-                    <Button
-                      onClick={() => deleteMutation.mutate(line.id)}
-                      variant="ghost"
-                      size="icon"
-                      disabled={deleteMutation.isPending}
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </TableCell>
+                  {editingId === line.id ? (
+                    <>
+                      <TableCell>
+                        <Input
+                          list={`person-edit-list-${line.id}`}
+                          value={editForm.person_name}
+                          onChange={(e) => setEditForm({ ...editForm, person_name: e.target.value })}
+                          className="h-8 text-sm"
+                        />
+                        <datalist id={`person-edit-list-${line.id}`}>
+                          {persons.map(p => <option key={p.id} value={p.name} />)}
+                        </datalist>
+                      </TableCell>
+                      <TableCell>
+                        <Select value={editForm.charge_dept} onValueChange={(v) => setEditForm({ ...editForm, charge_dept: v })}>
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Select value={editForm.work_type} onValueChange={(v) => setEditForm({ ...editForm, work_type: v })}>
+                          <SelectTrigger className="h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {workTypes.map(w => <SelectItem key={w.id} value={w.name}>{w.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          value={editForm.duration_min}
+                          onChange={(e) => setEditForm({ ...editForm, duration_min: e.target.value })}
+                          className="h-8 text-sm w-24"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={handleEditSave} disabled={updateMutation.isPending}>
+                            {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 text-green-600" />}
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setEditingId(null)}>
+                            <X className="w-4 h-4 text-slate-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </>
+                  ) : (
+                    <>
+                      <TableCell className="font-medium">{line.person_name}</TableCell>
+                      <TableCell>{line.charge_dept}</TableCell>
+                      <TableCell>{line.work_type}</TableCell>
+                      <TableCell>{line.duration_min}</TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditStart(line)}>
+                            <Pencil className="w-4 h-4 text-blue-500" />
+                          </Button>
+                          <Button
+                            onClick={() => deleteMutation.mutate(line.id)}
+                            variant="ghost"
+                            size="icon"
+                            disabled={deleteMutation.isPending}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </>
+                  )}
                 </TableRow>
               ))
             )}
