@@ -252,7 +252,7 @@ export default function DailyMetricValuesViewer() {
           </div>
         )}
       </div>
-      </> }
+      </div>}
     </div>
   );
 }
