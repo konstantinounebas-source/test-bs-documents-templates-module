@@ -104,18 +104,29 @@ export default function TeamTimePersonsTab({ batchId }) {
       toast.error('Person name and time range are required');
       return;
     }
-
-    // Check for duplicate person (only when adding, not when editing)
-    if (!editingLine && lines.some(line => line.person_name === formData.person_name)) {
-      toast.error('This person is already added for this batch');
-      return;
-    }
-
     if (editingLine) {
       updateMutation.mutate({ id: editingLine.id, data: formData });
     } else {
       createMutation.mutate(formData);
     }
+  };
+
+  const handleInlineAdd = () => {
+    if (!inlineForm.person_name || !inlineForm.from_time || !inlineForm.to_time) {
+      toast.error('Person name and time range are required');
+      return;
+    }
+    if (lines.some(line => line.person_name === inlineForm.person_name)) {
+      toast.error('This person is already added for this batch');
+      return;
+    }
+    createMutation.mutate(inlineForm, {
+      onSuccess: () => {
+        const activeBreakTimes = breakTimes.filter(b => b.is_active !== false);
+        const defaultBreak = activeBreakTimes.length > 0 ? activeBreakTimes[0].duration_minutes || 45 : 45;
+        setInlineForm({ person_name: '', from_time: '07:00', to_time: '15:30', break_time_minutes: defaultBreak, notes: '' });
+      }
+    });
   };
 
   const handleEdit = (line) => {
@@ -130,26 +141,20 @@ export default function TeamTimePersonsTab({ batchId }) {
     setShowAddDialog(true);
   };
 
-  const handleOpenAddDialog = () => {
-    const activeBreakTimes = breakTimes.filter(b => b.is_active !== false);
-    const defaultBreak = activeBreakTimes.length > 0 ? activeBreakTimes[0].duration_minutes || 0 : 0;
-    setFormData({
-      person_name: '',
-      from_time: '07:00',
-      to_time: '15:30',
-      break_time_minutes: defaultBreak,
-      notes: ''
-    });
-    setEditingLine(null);
-    setShowAddDialog(true);
-  };
-
   const calculateAvailableTime = () => {
     if (!formData.from_time || !formData.to_time) return 0;
     const [fromH, fromM] = formData.from_time.split(':').map(Number);
     const [toH, toM] = formData.to_time.split(':').map(Number);
     const totalMin = (toH * 60 + toM) - (fromH * 60 + fromM);
     return Math.max(0, totalMin - (formData.break_time_minutes || 0));
+  };
+
+  const calculateInlineAvailableTime = () => {
+    if (!inlineForm.from_time || !inlineForm.to_time) return 0;
+    const [fromH, fromM] = inlineForm.from_time.split(':').map(Number);
+    const [toH, toM] = inlineForm.to_time.split(':').map(Number);
+    const totalMin = (toH * 60 + toM) - (fromH * 60 + fromM);
+    return Math.max(0, totalMin - (inlineForm.break_time_minutes || 0));
   };
 
   const resetForm = () => {
