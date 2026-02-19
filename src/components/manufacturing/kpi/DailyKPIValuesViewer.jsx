@@ -202,8 +202,9 @@ export default function DailyKPIValuesViewer() {
         </div>
       </div>
 
+      {isExpanded && <>
       {/* Department tabs */}
-      <div className="flex gap-1 flex-wrap border-b pb-2">
+      <div className="flex gap-1 flex-wrap border-b pb-2 mt-3">
         <button
           onClick={() => setSelectedDept('ALL')}
           className={`px-3 py-1.5 rounded-t text-sm font-medium transition-colors ${selectedDept === 'ALL' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
