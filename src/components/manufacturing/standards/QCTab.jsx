@@ -41,6 +41,11 @@ export default function QCTab({ bundle, isEditable }) {
   
   const operations = allOperations
     .filter(op => op.is_allowed !== false)
+    .filter(op => {
+      if (!bundle?.department_id) return true;
+      if (!op.department_ids || op.department_ids.length === 0) return true;
+      return op.department_ids.includes(bundle.department_id);
+    })
     .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
     .slice(0, 10);
   
