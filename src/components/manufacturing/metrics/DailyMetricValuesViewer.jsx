@@ -61,22 +61,10 @@ export default function DailyMetricValuesViewer() {
     return map;
   }, [metricDefinitions]);
 
-  const dateRange = useMemo(() => {
-    if (viewMode === 'daily') {
-      return [format(selectedDate, 'yyyy-MM-dd')];
-    } else if (viewMode === 'weekly') {
-      const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
-      const end = endOfWeek(selectedDate, { weekStartsOn: 1 });
-      return eachDayOfInterval({ start, end }).map(d => format(d, 'yyyy-MM-dd'));
-    } else {
-      const start = startOfMonth(selectedDate);
-      const end = endOfMonth(selectedDate);
-      return eachDayOfInterval({ start, end }).map(d => format(d, 'yyyy-MM-dd'));
-    }
-  }, [viewMode, selectedDate]);
+  const isLoading = metricsLoading || definitionsLoading;
 
   const filteredValues = useMemo(() => {
-    return allMetricValues.filter(mv => {
+    return metricValuesByDate.filter(mv => {
       const dateMatch = dateRange.includes(mv.date);
       const deptMatch = selectedDept === 'ALL' || mv.department === selectedDept;
       return dateMatch && deptMatch;
