@@ -409,9 +409,9 @@ export default function ConsumablesTab({ bundle, isEditable }) {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={createMutation.isPending}>
-              {createMutation.isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Plus className="w-4 h-4 mr-2" />}
-              Add
+            <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>
+              {(createMutation.isPending || updateMutation.isPending) ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : (editingId ? null : <Plus className="w-4 h-4 mr-2" />)}
+              {editingId ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>
         </DialogContent>
