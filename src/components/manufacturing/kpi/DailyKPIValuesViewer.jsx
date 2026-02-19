@@ -23,6 +23,12 @@ export default function DailyKPIValuesViewer() {
     queryFn: () => base44.entities.DailyMetricValue.list()
   });
 
+  const { data: departments = [] } = useQuery({
+    queryKey: ['Department'],
+    queryFn: () => base44.entities.Department.list(),
+    staleTime: Infinity
+  });
+
   const kpiNameMap = useMemo(() => {
     const map = {};
     kpiDefinitions.forEach(kd => {
