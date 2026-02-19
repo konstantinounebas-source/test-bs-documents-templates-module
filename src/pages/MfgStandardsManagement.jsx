@@ -40,17 +40,17 @@ export default function MfgStandardsManagementPage() {
     queryFn: () => base44.entities.Department.filter({ is_active: true })
   });
 
-  // Fetch bundles for selected department
-  const { data: bundles = [] } = useQuery({
-    queryKey: ['StandardsBundle', selectedDepartment],
-    queryFn: () => base44.entities.StandardsBundle.filter({ department: selectedDepartment }, '-created_date'),
-    enabled: !!selectedDepartment
-  });
-
   // Find the department object for selected department name
   const selectedDepartmentObj = useMemo(() => {
     return departments.find(d => d.name === selectedDepartment) || null;
   }, [departments, selectedDepartment]);
+
+  // Fetch bundles for selected department
+  const { data: bundles = [] } = useQuery({
+    queryKey: ['StandardsBundle', selectedDepartmentObj?.id],
+    queryFn: () => base44.entities.StandardsBundle.filter({ department_id: selectedDepartmentObj?.id }, '-created_date'),
+    enabled: !!selectedDepartmentObj?.id
+  });
 
   // Create bundle mutation
   const createBundleMutation = useMutation({
