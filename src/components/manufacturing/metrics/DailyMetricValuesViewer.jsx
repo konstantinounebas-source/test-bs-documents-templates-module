@@ -23,6 +23,12 @@ export default function DailyMetricValuesViewer() {
     queryFn: () => base44.entities.MetricDefinition.list()
   });
 
+  const { data: departments = [] } = useQuery({
+    queryKey: ['Department'],
+    queryFn: () => base44.entities.Department.list(),
+    staleTime: Infinity
+  });
+
   const metricNameMap = useMemo(() => {
     const map = {};
     metricDefinitions.forEach(md => {
