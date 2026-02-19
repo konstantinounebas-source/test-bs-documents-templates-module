@@ -169,16 +169,35 @@ export default function ConsumablesTab({ bundle, isEditable }) {
     }
   });
 
-  const handleAdd = () => {
+  const handleSave = () => {
     if (!formData.consumable || !formData.department || !formData.rate_value) {
       toast.error('Please fill required fields');
       return;
     }
-    createMutation.mutate({
+    const data = {
       ...formData,
       rate_value: parseFloat(formData.rate_value),
       unit: selectedConsumableProduct?.unit_of_measure || ''
+    };
+    if (editingId) {
+      updateMutation.mutate(data);
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const handleEdit = (line) => {
+    setEditingId(line.id);
+    setFormData({
+      consumable: line.consumable,
+      department: line.department,
+      rate_type: line.rate_type || 'unit',
+      item_code: line.item_code || '',
+      operation: line.operation || '',
+      rate_value: line.rate_value.toString(),
+      notes: line.notes || ''
     });
+    setShowAddDialog(true);
   };
 
   if (isLoading) {
