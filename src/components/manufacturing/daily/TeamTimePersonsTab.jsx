@@ -15,6 +15,13 @@ export default function TeamTimePersonsTab({ batchId }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingLine, setEditingLine] = useState(null);
+  const [inlineForm, setInlineForm] = useState({
+    person_name: '',
+    from_time: '07:00',
+    to_time: '15:30',
+    break_time_minutes: 45,
+    notes: ''
+  });
   const [formData, setFormData] = useState({
     person_name: '',
     from_time: '07:00',
