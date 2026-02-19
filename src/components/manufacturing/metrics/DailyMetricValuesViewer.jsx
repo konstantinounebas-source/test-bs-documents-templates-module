@@ -118,9 +118,16 @@ export default function DailyMetricValuesViewer() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center flex-wrap gap-4">
-        <h3 className="text-lg font-semibold">Daily Metric Values</h3>
+    <div className="space-y-0">
+      {/* Expandable Header */}
+      <div
+        className="flex justify-between items-center flex-wrap gap-4 cursor-pointer select-none bg-slate-50 border rounded-lg px-4 py-3 hover:bg-slate-100 transition-colors"
+        onClick={() => setIsExpanded(p => !p)}
+      >
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          {isExpanded ? <ChevronUp className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500" />}
+          Daily Metric Values
+        </h3>
         <div className="flex gap-2 items-center flex-wrap">
           <Select value={viewMode} onValueChange={setViewMode}>
             <SelectTrigger className="w-32">
