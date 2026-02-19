@@ -16,6 +16,7 @@ import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import PersonManagement from "@/components/manufacturing/PersonManagement";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ConsumablesReferenceTab from "@/components/manufacturing/ConsumablesReferenceTab";
 
 export default function MfgReferenceDataWizard() {
   const navigate = useNavigate();
