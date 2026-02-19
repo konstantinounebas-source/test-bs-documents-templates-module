@@ -276,17 +276,43 @@ export default function TeamTimePersonsTab({ batchId }) {
       {/* Inline Add Form */}
       <div className="border rounded-lg p-4 bg-slate-50 space-y-3">
         <div className="flex flex-wrap gap-3 items-end">
-          <div className="flex-1 min-w-[160px]">
-            <Label className="text-xs text-slate-600 mb-1 block">Person Name *</Label>
-            <Input
-              placeholder="Select or type below"
-              value={inlineForm.person_name}
-              onChange={(e) => setInlineForm({ ...inlineForm, person_name: e.target.value })}
-              list="inline-person-list"
-            />
-            <datalist id="inline-person-list">
-              {persons.map(p => <option key={p.id} value={p.name} />)}
-            </datalist>
+          <div className="flex-1 min-w-[200px]">
+            <Label className="text-xs text-slate-600 mb-1 block">Person Name(s) *</Label>
+            <Popover open={openPersonSelect} onOpenChange={setOpenPersonSelect}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" className="w-full justify-between font-normal bg-white">
+                  {inlineForm.person_names.length > 0
+                    ? inlineForm.person_names.join(', ')
+                    : 'Select person(s)...'}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search person..." />
+                  <CommandEmpty>No person found.</CommandEmpty>
+                  <CommandGroup className="max-h-60 overflow-auto">
+                    {persons.map(p => (
+                      <CommandItem
+                        key={p.id}
+                        value={p.name}
+                        onSelect={() => {
+                          setInlineForm(prev => ({
+                            ...prev,
+                            person_names: prev.person_names.includes(p.name)
+                              ? prev.person_names.filter(n => n !== p.name)
+                              : [...prev.person_names, p.name]
+                          }));
+                        }}
+                      >
+                        <Check className={cn('mr-2 h-4 w-4', inlineForm.person_names.includes(p.name) ? 'opacity-100' : 'opacity-0')} />
+                        {p.name}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="w-28">
             <Label className="text-xs text-slate-600 mb-1 block">From Time *</Label>
