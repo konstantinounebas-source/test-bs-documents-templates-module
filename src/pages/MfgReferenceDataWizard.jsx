@@ -254,6 +254,27 @@ export default function MfgReferenceDataWizard() {
                              />
                            </div>
                          )}
+                         {activeTab === 'operations' && (
+                           <div>
+                             <Label>Departments <span className="text-slate-400 font-normal text-xs">(leave empty = applies to all departments)</span></Label>
+                             <div className="border rounded-lg p-3 mt-1 flex flex-wrap gap-3 max-h-32 overflow-y-auto">
+                               {allDepartments.length === 0 ? (
+                                 <p className="text-xs text-slate-400">No departments defined yet</p>
+                               ) : allDepartments.map(dept => (
+                                 <label key={dept.id} className="flex items-center gap-1.5 cursor-pointer text-sm">
+                                   <Checkbox
+                                     checked={selectedDeptIds.includes(dept.id)}
+                                     onCheckedChange={() => toggleDeptSelection(dept.id)}
+                                   />
+                                   {dept.name}
+                                 </label>
+                               ))}
+                             </div>
+                             {selectedDeptIds.length > 0 && (
+                               <p className="text-xs text-blue-600 mt-1">Assigned to {selectedDeptIds.length} department(s)</p>
+                             )}
+                           </div>
+                         )}
                         <div className="flex items-center space-x-2">
                           <Checkbox
                             id="is_active"
