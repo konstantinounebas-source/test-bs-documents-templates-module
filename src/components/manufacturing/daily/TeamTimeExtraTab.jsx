@@ -198,8 +198,6 @@ export default function TeamTimeExtraTab({ batchId }) {
       await saveSUPTimeMetric();
       await saveNATTimeMetric();
       queryClient.invalidateQueries(['Team_Time_Extra']);
-      setShowAddDialog(false);
-      setFormData({ person_name: '', charge_dept: '', work_type: '', duration_min: '' });
       toast.success('Extra time added');
     },
     onError: () => toast.error('Failed to add extra time')
