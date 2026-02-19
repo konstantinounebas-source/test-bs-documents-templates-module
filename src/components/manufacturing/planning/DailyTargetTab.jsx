@@ -216,16 +216,17 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
       // Create new targets from standards lines
       const created = await Promise.all(lines.map(line => {
         const profile = allProfiles.find(p => p.id === line.operation_profile_id);
+        const perPc = line.per_piece_total_min || 0;
         return base44.entities.TargetDaily.create({
           bundle_id: selectedBundle.id,
           date,
           department: selectedDepartment,
           item_code: line.item_code,
-          operation_profile: profile?.name || line.operation_profile || '',
+          operation_profile: profile?.name || '',
           operation_profile_id: line.operation_profile_id,
           target_qty: line.target_qty,
-          profile_time_min_pc: line.per_piece_min || 0,
-          target_time_min: (line.per_piece_min || 0) * (line.target_qty || 0)
+          profile_time_min_pc: perPc,
+          target_time_min: perPc * (line.target_qty || 0)
         });
       }));
       return created;
