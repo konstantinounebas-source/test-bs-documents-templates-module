@@ -26,24 +26,59 @@ export default function ConsumablesTab({ bundle, isEditable }) {
     notes: ''
   });
 
+  // Fetch departments
+  const { data: allDepartments = [] } = useQuery({
+    queryKey: ['Department'],
+    queryFn: () => base44.entities.Department.list()
+  });
+
   // Fetch reference data (max 10 allowed)
   const { data: allConsumables = [] } = useQuery({
     queryKey: ['Consumable'],
     queryFn: () => base44.entities.Consumable.list()
   });
-  const consumables = allConsumables.filter(c => c.is_active).slice(0, 10);
+
+  const { data: allOperations = [] } = useQuery({
+    queryKey: ['Operation'],
+    queryFn: () => base44.entities.Operation.list()
+  });
+
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ['Product'],
+    queryFn: () => base44.entities.Product.list()
+  });
 
   const { data: allUnits = [] } = useQuery({
     queryKey: ['Unit'],
     queryFn: () => base44.entities.Unit.list()
   });
-  const units = allUnits.filter(u => u.is_active).slice(0, 10);
+  const units = allUnits.filter(u => u.is_active);
 
-  const { data: allRateTypes = [] } = useQuery({
-    queryKey: ['Rate_Type'],
-    queryFn: () => base44.entities.Rate_Type.list()
-  });
-  const rateTypes = allRateTypes.filter(rt => rt.is_active).slice(0, 10);
+  // Filter consumables by department
+  const filteredConsumables = useMemo(() => {
+    if (!formData.department) return [];
+    const dept = allDepartments.find(d => d.id === formData.department);
+    if (!dept) return [];
+    return allConsumables.filter(c => 
+      c.is_active && 
+      (!c.department_ids || c.department_ids.length === 0 || c.department_ids.includes(formData.department))
+    ).slice(0, 10);
+  }, [allConsumables, allDepartments, formData.department]);
+
+  // Filter operations by department
+  const filteredOperations = useMemo(() => {
+    if (!formData.department) return [];
+    return allOperations.filter(o =>
+      o.is_active &&
+      (!o.department_ids || o.department_ids.length === 0 || o.department_ids.includes(formData.department))
+    ).slice(0, 10);
+  }, [allOperations, formData.department]);
+
+  // Get product details for selected consumable
+  const selectedConsumableProduct = useMemo(() => {
+    if (!formData.consumable) return null;
+    return allProducts.find(p => p.name === formData.consumable);
+  }, [formData.consumable, allProducts]);
 
   // Fetch item codes from DATA tab (master list)
   const { data: itemCodes = [] } = useBundleItemCodes(bundle?.id);
