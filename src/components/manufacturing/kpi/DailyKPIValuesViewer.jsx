@@ -300,7 +300,7 @@ export default function DailyKPIValuesViewer() {
           </div>
         )}
       </div>
-      </>}
+      </div>}
     </div>
   );
 }
