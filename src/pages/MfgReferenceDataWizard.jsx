@@ -109,7 +109,7 @@ export default function MfgReferenceDataWizard() {
 
     const dataToSave = { ...formData };
     if (activeTab === 'operations' || activeTab === 'qc_types' || activeTab === 'qc_levels') {
-      dataToSave.department_ids = selectedDeptIds;
+      dataToSave.department_ids = selectedDeptIds.length > 0 ? selectedDeptIds : undefined;
     }
     if (editingItem) {
       updateMutation.mutate({ id: editingItem.id, data: dataToSave });
