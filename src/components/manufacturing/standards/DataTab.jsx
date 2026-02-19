@@ -21,8 +21,17 @@ export default function DataTab({ bundle, isEditable }) {
     queryFn: () => base44.entities.Operation.filter({ is_active: true })
   });
 
+  // Filter operations by department: show only ops that have no dept restriction OR include this bundle's dept
+  const departmentOperations = useMemo(() => {
+    if (!bundle?.department_id) return allOperations;
+    return allOperations.filter(op => {
+      if (!op.department_ids || op.department_ids.length === 0) return true;
+      return op.department_ids.includes(bundle.department_id);
+    });
+  }, [allOperations, bundle?.department_id]);
+
   const operationColumns = useMemo(() => {
-    const sorted = [...allOperations]
+    const sorted = [...departmentOperations]
       .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
     
     return sorted.slice(0, 10).map(op => ({ 
@@ -30,10 +39,10 @@ export default function DataTab({ bundle, isEditable }) {
       operation: op.name, 
       label: `${op.name} (min)` 
     }));
-  }, [allOperations]);
+  }, [departmentOperations]);
 
-  const hasMoreThan10 = allOperations.length > 10;
-  const hasNoOperations = allOperations.length === 0;
+  const hasMoreThan10 = departmentOperations.length > 10;
+  const hasNoOperations = departmentOperations.length === 0;
 
   // Fetch lines for this bundle - CRITICAL: Use bundle.id as primary key
   const { data: lines = [], isLoading, refetch } = useQuery({
