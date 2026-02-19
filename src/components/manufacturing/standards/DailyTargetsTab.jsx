@@ -205,13 +205,11 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     toast.success('Target Type added to list');
   };
 
-  const handleRemoveTargetType = (typeName) => {
-    // Check if any targets use this type
-    const used = dailyTargets.some(dt => dt.target_type === typeName);
-    if (used) {
-      toast.error('Cannot remove: Target Type is in use');
-      return;
-    }
+  const handleRemoveTargetType = async (typeName) => {
+    // Delete only lines that belong to this bundle
+    const linesInThisBundle = dailyTargets.filter(dt => dt.target_type === typeName);
+    await Promise.all(linesInThisBundle.map(dt => base44.entities.DailyTargetLines.delete(dt.id)));
+    queryClient.invalidateQueries(['DailyTargetLines']);
     setTargetTypesList(targetTypesList.filter(t => t !== typeName));
     toast.success('Target Type removed');
   };
