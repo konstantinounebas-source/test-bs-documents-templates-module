@@ -69,7 +69,7 @@ export default function DailyMetricValuesViewer() {
       const deptMatch = selectedDept === 'ALL' || mv.department === selectedDept;
       return dateMatch && deptMatch;
     });
-  }, [allMetricValues, dateRange, selectedDept]);
+  }, [metricValuesByDate, dateRange, selectedDept]);
 
   const pivotData = useMemo(() => {
     if (viewMode === 'daily') return null;
