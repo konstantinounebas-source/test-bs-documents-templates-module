@@ -116,20 +116,29 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     return dayHeaders.find(h => h.date === selectedDate) || null;
   }, [dayHeaders, selectedDate]);
 
-  // Get source bundle for current day (resolve from currentDayHeader.source_bundle_id)
+  // Get source bundle for current day:
+  // Priority: 1) DailyStandardsAssignment, 2) ScheduledDayHeader.source_bundle_id, 3) ACTIVE bundle
   const sourceBundleForDay = useMemo(() => {
-    if (!selectedDate || !currentDayHeader) return selectedBundle;
-    
-    const foundBundle = allBundles.find(b => String(b.id) === String(currentDayHeader.source_bundle_id));
-    
-    if (foundBundle) {
-      return foundBundle;
+    if (!selectedDate) return selectedBundle;
+
+    // 1. DailyStandardsAssignment
+    const dailyAssignment = dailyStandardsAssignments.find(
+      a => a.assignment_date === selectedDate && a.department_id === selectedDepartment
+    );
+    if (dailyAssignment?.standards_bundle_id) {
+      const found = allBundles.find(b => String(b.id) === String(dailyAssignment.standards_bundle_id));
+      if (found) return found;
     }
-    
-    // Log warning if bundle not found
-    console.warn(`⚠️ Source bundle not found for day ${selectedDate}: stored ID = ${currentDayHeader.source_bundle_id}`);
+
+    // 2. ScheduledDayHeader
+    if (currentDayHeader?.source_bundle_id) {
+      const found = allBundles.find(b => String(b.id) === String(currentDayHeader.source_bundle_id));
+      if (found) return found;
+    }
+
+    // 3. Fallback to active/default bundle
     return selectedBundle;
-  }, [selectedDate, currentDayHeader, allBundles, selectedBundle]);
+  }, [selectedDate, selectedDepartment, dailyStandardsAssignments, currentDayHeader, allBundles, selectedBundle]);
 
   // Fetch item codes from DATA tab of source bundle for selected day (or default to selected bundle)
   const activeBundleIdForCalculations = sourceBundleForDay?.id || selectedBundle?.id;
