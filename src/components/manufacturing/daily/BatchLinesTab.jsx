@@ -264,16 +264,40 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
         qcType = scheduledItem.qc_type;
         qcLevel = scheduledItem.qc_level;
       } else {
-        // Fallback to bundle data
+        // Fallback to bundle data - get all QC lines for this item
         const itemQCLines = qcSetLines.filter(l => l.item_code === batchLine.item_code && l.qc_type && l.level);
         if (itemQCLines.length === 0) {
           await deleteQCInitialStock(batchLine.item_code);
           return;
         }
         
-        // Use first QC line from bundle
-        qcType = itemQCLines[0].qc_type;
-        qcLevel = itemQCLines[0].level;
+        // Use all QC lines from bundle
+        for (const qcLine of itemQCLines) {
+          const existingQC = await base44.entities.QC_Initial_Stock.filter({
+            batch_header_id: batchId,
+            item_code: batchLine.item_code,
+            qc_type: qcLine.qc_type,
+            qc_level: qcLine.level
+          });
+
+          const qtyAffected = batchLine.qty_processed;
+
+          if (existingQC.length > 0) {
+            await base44.entities.QC_Initial_Stock.update(existingQC[0].id, {
+              qty_affected: qtyAffected
+            });
+          } else {
+            await base44.entities.QC_Initial_Stock.create({
+              batch_header_id: batchId,
+              item_code: batchLine.item_code,
+              qc_type: qcLine.qc_type,
+              qc_level: qcLine.level,
+              qty_affected: qtyAffected
+            });
+          }
+        }
+        queryClient.invalidateQueries(['QC_Initial_Stock']);
+        return;
       }
 
       const existingQC = await base44.entities.QC_Initial_Stock.filter({
