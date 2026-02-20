@@ -65,6 +65,14 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     staleTime: 0
   });
 
+  // Fetch DailyStandardsAssignment for this department
+  const { data: dailyStandardsAssignments = [] } = useQuery({
+    queryKey: ['DailyStandardsAssignment', selectedDepartment],
+    queryFn: () => base44.entities.DailyStandardsAssignment.filter({ department_id: selectedDepartment }),
+    enabled: !!selectedDepartment,
+    staleTime: 0
+  });
+
   // Auto-select active bundle when department changes or bundles load
   useEffect(() => {
     if (!selectedDepartment) {
