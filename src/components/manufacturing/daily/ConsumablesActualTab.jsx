@@ -159,9 +159,9 @@ export default function ConsumablesActualTab({ batchId }) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Consumables_Actual.update(id, data),
+    mutationFn: ({ id, data }) => base44.entities.ConsumablesActual.update(id, data),
     onSuccess: async () => {
-      await queryClient.invalidateQueries(['Consumables_Actual', batchId]);
+      await queryClient.invalidateQueries(['ConsumablesActual', batchId]);
       setEditingId(null);
       toast.success('Updated');
       // Save metrics after update
