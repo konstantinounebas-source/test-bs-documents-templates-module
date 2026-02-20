@@ -183,7 +183,7 @@ export default function ConsumablesActualTab({ batchId }) {
   // ── Save EXP_CONS and ACT_CONS metrics → CONS_U is computed in DailyKPIValuesViewer
   const saveConsumablesMetrics = async () => {
     if (!batchHeader) return;
-    const allLines = await base44.entities.Consumables_Actual.filter({ batch_header_id: batchId });
+    const allLines = await base44.entities.ConsumablesActual.filter({ batch_header_id: batchId });
 
     const expCons = allLines.reduce((sum, l) => sum + (l.expected_qty || 0), 0);
     const actCons = allLines.reduce((sum, l) => sum + (l.actual_qty || 0), 0);
