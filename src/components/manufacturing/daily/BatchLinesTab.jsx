@@ -283,28 +283,38 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
   const createOrUpdateOperations = async (batchLine) => {
     try {
       // Hard guard: Do not create/update if conditions are not met
-      if (!selectedBundle || !batchLine.item_code || (batchLine.qty_processed || 0) <= 0) {
+      if (!batchLine.item_code || (batchLine.qty_processed || 0) <= 0) {
         await deleteOperations(batchLine.item_code);
         return;
       }
       
-      // Get relevant Profile records for this item code
-      const itemProfileLines = profileSetLines.filter(l => l.item_code === batchLine.item_code);
-      if (itemProfileLines.length === 0) {
+      // Get scheduled data for this item code to get operation_profile_id
+      const scheduledItem = scheduledData.find(sd => sd.item_code === batchLine.item_code);
+      if (!scheduledItem || !scheduledItem.operation_profile_id) {
         await deleteOperations(batchLine.item_code);
         return;
       }
 
-      // Get or create Operations records
-      for (const profileLine of itemProfileLines) {
+      // Get profile operations
+      const profile = profileNames.find(p => p.id === scheduledItem.operation_profile_id);
+      if (!profile || !profile.operations_required || profile.operations_required.length === 0) {
+        await deleteOperations(batchLine.item_code);
+        return;
+      }
+
+      // Get or create Operations records for each operation in profile
+      for (const opId of profile.operations_required) {
+        const operation = operations.find(op => op.id === opId);
+        if (!operation) continue;
+
         const existingOps = await base44.entities.Operations.filter({
           batch_header_id: batchId,
           item_code: batchLine.item_code,
-          operation: profileLine.profile_name
+          operation: operation.name
         });
 
         const qtyOperation = batchLine.qty_processed;
-        const stdMinPC = profileLine.profile_time_min_pc || 0;
+        const stdMinPC = scheduledItem.ops_per_piece_min || 0;
         const operationTimeMin = qtyOperation * stdMinPC;
 
         if (existingOps.length > 0) {
@@ -320,7 +330,7 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
           await base44.entities.Operations.create({
             batch_header_id: batchId,
             item_code: batchLine.item_code,
-            operation: profileLine.profile_name,
+            operation: operation.name,
             qty_operation: qtyOperation,
             std_min_pc_lookup: stdMinPC,
             operation_time_min: operationTimeMin,
