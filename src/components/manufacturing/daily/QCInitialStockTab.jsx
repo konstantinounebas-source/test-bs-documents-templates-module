@@ -111,8 +111,17 @@ export default function QCInitialStockTab({ batchId, department }) {
   });
 
   // Auto-fill QC initial stock from scheduled data (only on initial load)
-  useMemo(() => {
-    if (!batchId || lines.length > 0 || scheduledData.length === 0) return;
+  const autoFillDoneRef = React.useRef(false);
+  React.useEffect(() => {
+    if (autoFillDoneRef.current) return;
+    if (!batchId || !scheduledData || scheduledData.length === 0) return;
+    if (isLoading) return;
+    if (lines.length > 0) {
+      autoFillDoneRef.current = true;
+      return;
+    }
+
+    autoFillDoneRef.current = true;
 
     // Create QC records from scheduled data that have QC qty
     const autoFillLines = scheduledData
@@ -136,7 +145,7 @@ export default function QCInitialStockTab({ batchId, department }) {
     }).catch(() => {
       // Silent fail on auto-fill
     });
-  }, [batchId, lines.length, scheduledData, queryClient]);
+  }, [batchId, isLoading, lines.length, scheduledData, queryClient]);
 
   // Add QC per-piece to each line
   const linesWithQCPerPiece = useMemo(() => {
