@@ -194,7 +194,7 @@ export default function MfgDailyProduction() {
 
                 <div className="mt-6">
                   <TabsContent value="batch_lines">
-                    <BatchLinesTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                    <BatchLinesTab batchId={selectedBatch?.id} department={selectedBatch?.department} selectedBundle={selectedBundle} />
                   </TabsContent>
 
                   <TabsContent value="qc_initial">
