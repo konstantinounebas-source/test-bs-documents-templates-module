@@ -442,18 +442,18 @@ const allNavigationGroups = [
         pageKey: "MfgStandardsManagement"
       },
       {
-        title: "Planning Wizard",
-        url: createPageUrl("MfgPlanningWizard"),
-        icon: CalendarIcon,
-        description: "Guided setup for targets and scheduling",
-        pageKey: "MfgPlanningWizard"
-      },
-      {
         title: "Daily Standards Assignment",
         url: createPageUrl("MfgDailyStandardsAssignment"),
         icon: CalendarDays,
         description: "Assign standards bundles per department per day",
         pageKey: "MfgDailyStandardsAssignment"
+      },
+      {
+        title: "Planning Wizard",
+        url: createPageUrl("MfgPlanningWizard"),
+        icon: CalendarIcon,
+        description: "Guided setup for targets and scheduling",
+        pageKey: "MfgPlanningWizard"
       },
       {
         title: "Daily Production Entry",
