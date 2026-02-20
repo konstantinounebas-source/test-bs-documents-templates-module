@@ -144,7 +144,7 @@ export default function ConsumablesActualTab({ batchId }) {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Consumables_Actual.create({
+    mutationFn: (data) => base44.entities.ConsumablesActual.create({
       batch_header_id: batchId,
       department: batchHeader?.department || '',
       ...data
