@@ -75,6 +75,22 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
     staleTime: 30 * 1000
   });
 
+   // Fetch QC and Profile set lines from selected bundle
+   const { data: qcSetLines = [] } = useQuery({
+     queryKey: ['QC_Set_Lines', selectedBundle?.id],
+     queryFn: () => selectedBundle?.qc_set_id ? base44.entities.QC_Set_Lines.filter({ qc_set_id: selectedBundle.qc_set_id }) : [],
+     enabled: !!selectedBundle?.qc_set_id,
+     staleTime: Infinity
+   });
+
+   const { data: profileSetLines = [] } = useQuery({
+     queryKey: ['Profile_Set_Lines', selectedBundle?.id],
+     queryFn: () => selectedBundle?.profile_set_id ? base44.entities.Profile_Set_Lines.filter({ profile_set_id: selectedBundle.profile_set_id }) : [],
+     enabled: !!selectedBundle?.profile_set_id,
+     staleTime: Infinity
+   });
+
+
   // Auto-fill batch lines from scheduled data (only on initial load)
   useMemo(() => {
     if (!batchId || lines.length > 0 || scheduledData.length === 0) return;
