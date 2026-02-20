@@ -234,13 +234,35 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
     }
   };
 
+  const deleteQCInitialStock = async (itemCode) => {
+    try {
+      const existingQCs = await base44.entities.QC_Initial_Stock.filter({
+        batch_header_id: batchId,
+        item_code: itemCode
+      });
+      if (existingQCs.length > 0) {
+        await Promise.all(existingQCs.map(qc => base44.entities.QC_Initial_Stock.delete(qc.id)));
+        queryClient.invalidateQueries(['QC_Initial_Stock']);
+      }
+    } catch (error) {
+      console.error('Failed to delete QC Initial Stock:', error);
+    }
+  };
+
   const createOrUpdateQCInitialStock = async (batchLine) => {
     try {
-      if (!selectedBundle || !batchLine.item_code || !batchLine.qty_processed) return;
+      // Hard guard: Do not create/update if conditions are not met
+      if (!selectedBundle || !batchLine.item_code || (batchLine.qty_processed || 0) <= 0) {
+        await deleteQCInitialStock(batchLine.item_code);
+        return;
+      }
       
       // Get relevant QC records for this item code
       const itemQCLines = qcSetLines.filter(l => l.item_code === batchLine.item_code && l.qc_type && l.level);
-      if (itemQCLines.length === 0) return;
+      if (itemQCLines.length === 0) {
+        await deleteQCInitialStock(batchLine.item_code);
+        return;
+      }
 
       // Get or create QC Initial Stock records
       for (const qcLine of itemQCLines) {
