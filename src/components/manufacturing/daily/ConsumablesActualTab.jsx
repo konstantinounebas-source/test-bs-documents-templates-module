@@ -52,8 +52,8 @@ export default function ConsumablesActualTab({ batchId }) {
 
   // ── Load existing actual consumables
   const { data: lines = [], isLoading } = useQuery({
-    queryKey: ['Consumables_Actual', batchId],
-    queryFn: () => base44.entities.Consumables_Actual.filter({ batch_header_id: batchId }),
+    queryKey: ['ConsumablesActual', batchId],
+    queryFn: () => base44.entities.ConsumablesActual.filter({ batch_header_id: batchId }),
     enabled: !!batchId
   });
 
