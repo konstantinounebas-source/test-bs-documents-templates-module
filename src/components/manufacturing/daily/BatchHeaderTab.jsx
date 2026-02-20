@@ -109,20 +109,34 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
     migrateOldData();
   }, [queryClient]);
 
-  // Determine which bundle to use (from scheduled day or active bundle)
+  // Fetch daily standards assignments for this department
+  const { data: dailyAssignments = [] } = useQuery({
+    queryKey: ['DailyStandardsAssignment', selectedDepartment],
+    queryFn: () => base44.entities.DailyStandardsAssignment.filter({ department_id: selectedDepartment }),
+    enabled: !!selectedDepartment,
+    staleTime: 0
+  });
+
+  // Determine which bundle to use: DailyStandardsAssignment > ScheduledDayHeader > ACTIVE bundle
   const defaultBundleId = useMemo(() => {
     if (!selectedDate || !selectedDepartment) return '';
 
-    // Check if there's a scheduled day for this date
+    // 1. Check DailyStandardsAssignment for this date & department
+    const dailyAssignment = dailyAssignments.find(a => a.assignment_date === selectedDate && a.department_id === selectedDepartment);
+    if (dailyAssignment?.standards_bundle_id) {
+      return dailyAssignment.standards_bundle_id;
+    }
+
+    // 2. Fallback: check ScheduledDayHeader
     const scheduledDay = scheduledDayHeaders.find(h => h.date === selectedDate);
     if (scheduledDay && scheduledDay.source_bundle_id) {
       return scheduledDay.source_bundle_id;
     }
 
-    // Fallback to active bundle
+    // 3. Fallback to active bundle
     const activeBundle = allBundles.find(b => b.status === 'ACTIVE');
     return activeBundle ? activeBundle.id : '';
-  }, [selectedDate, selectedDepartment, scheduledDayHeaders, allBundles]);
+  }, [selectedDate, selectedDepartment, dailyAssignments, scheduledDayHeaders, allBundles]);
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
