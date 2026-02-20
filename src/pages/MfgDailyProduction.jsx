@@ -10,15 +10,15 @@ import { ArrowLeft, ClipboardList, Plus, Edit2, Trash2, Save, Loader2, Clock } f
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import DailyProductionCalendarSelector from "../components/manufacturing/daily/DailyProductionCalendarSelector";
-import BatchHeaderTab from "../components/manufacturing/daily/BatchHeaderTab";
-import BatchLinesTab from "../components/manufacturing/daily/BatchLinesTab";
-import QCInitialStockTab from "../components/manufacturing/daily/QCInitialStockTab";
-import OperationsTab from "../components/manufacturing/daily/OperationsTab";
-import TeamTimePersonsTab from "../components/manufacturing/daily/TeamTimePersonsTab";
-import TeamTimeExtraTab from "../components/manufacturing/daily/TeamTimeExtraTab";
-import HelpInTab from "../components/manufacturing/daily/HelpInTab";
-import ConsumablesActualTab from "../components/manufacturing/daily/ConsumablesActualTab";
+import DailyProductionCalendarSelector from "@/components/manufacturing/daily/DailyProductionCalendarSelector";
+import BatchHeaderTab from "@/components/manufacturing/daily/BatchHeaderTab";
+import BatchLinesTab from "@/components/manufacturing/daily/BatchLinesTab";
+import QCInitialStockTab from "@/components/manufacturing/daily/QCInitialStockTab";
+import OperationsTab from "@/components/manufacturing/daily/OperationsTab";
+import TeamTimePersonsTab from "@/components/manufacturing/daily/TeamTimePersonsTab";
+import TeamTimeExtraTab from "@/components/manufacturing/daily/TeamTimeExtraTab";
+import HelpInTab from "@/components/manufacturing/daily/HelpInTab";
+import ConsumablesActualTab from "@/components/manufacturing/daily/ConsumablesActualTab";
 
 export default function MfgDailyProduction() {
   const navigate = useNavigate();
