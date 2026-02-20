@@ -43,6 +43,17 @@ export default function MfgDailyProduction() {
     staleTime: 0
   });
 
+  const { data: allBundles = [] } = useQuery({
+    queryKey: ['StandardsBundle-All'],
+    queryFn: () => base44.entities.StandardsBundle.list(),
+    staleTime: 0
+  });
+
+  const selectedBundle = useMemo(() => {
+    if (!selectedBatch?.bundle_id) return null;
+    return allBundles.find(b => b.id === selectedBatch.bundle_id) || null;
+  }, [selectedBatch, allBundles]);
+
   const handleBatchSelect = (batch) => {
     setSelectedBatch(batch);
     setActiveTab('batch_lines');
