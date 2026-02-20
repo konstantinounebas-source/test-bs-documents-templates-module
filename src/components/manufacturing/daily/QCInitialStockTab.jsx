@@ -110,43 +110,6 @@ export default function QCInitialStockTab({ batchId, department }) {
     staleTime: Infinity
   });
 
-  // Auto-fill QC initial stock from scheduled data (only on initial load)
-  const autoFillDoneRef = React.useRef(false);
-  React.useEffect(() => {
-    if (autoFillDoneRef.current) return;
-    if (!batchId || !scheduledData || scheduledData.length === 0) return;
-    if (isLoading) return;
-    if (lines.length > 0) {
-      autoFillDoneRef.current = true;
-      return;
-    }
-
-    autoFillDoneRef.current = true;
-
-    // Create QC records from scheduled data that have QC qty
-    const autoFillLines = scheduledData
-      .filter(sd => sd.qc_qty && sd.qc_qty > 0)
-      .map(sd => ({
-        batch_header_id: batchId,
-        item_code: sd.item_code,
-        qc_type: sd.qc_type || '',
-        qc_level: sd.qc_level || '',
-        qty_affected: sd.qc_qty
-      }));
-
-    if (autoFillLines.length === 0) return;
-
-    // Create all lines
-    Promise.all(autoFillLines.map(line =>
-      base44.entities.QC_Initial_Stock.create(line)
-    )).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['QC_Initial_Stock', batchId] });
-      toast.success(`Auto-filled ${autoFillLines.length} QC records from schedule`);
-    }).catch(() => {
-      // Silent fail on auto-fill
-    });
-  }, [batchId, isLoading, lines.length, scheduledData, queryClient]);
-
   // Add QC per-piece to each line
   const linesWithQCPerPiece = useMemo(() => {
     console.log('=== QC PER-PIECE DEBUG ===');
