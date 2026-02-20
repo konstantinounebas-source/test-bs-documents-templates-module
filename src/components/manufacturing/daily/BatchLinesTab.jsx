@@ -117,10 +117,22 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
   }), [lines]);
 
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.Batch_Lines.create({
-      batch_header_id: batchId,
-      ...data
-    }),
+    mutationFn: async (data) => {
+      const newLine = await base44.entities.Batch_Lines.create({
+        batch_header_id: batchId,
+        ...data
+      });
+      
+      // Create QC and Operations if qty_processed > 0
+      if (Number(data.qty_processed) > 0) {
+        await Promise.all([
+          createOrUpdateQCInitialStock(data),
+          createOrUpdateOperations(data)
+        ]);
+      }
+      
+      return newLine;
+    },
     onSuccess: async () => {
       await saveACTQtyMetric();
       await saveSchQtyMetric();
