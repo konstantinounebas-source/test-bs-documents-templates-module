@@ -368,6 +368,29 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
     }
   };
 
+  const onSaveQtyProcessed = async (lineId, newQtyProcessed, allData) => {
+    // Update the batch line itself
+    await updateMutation.mutateAsync({
+      id: lineId,
+      data: allData
+    });
+
+    const updatedLine = { ...allData, id: lineId };
+
+    if (Number(newQtyProcessed) > 0) {
+      await Promise.all([
+        createOrUpdateQCInitialStock(updatedLine),
+        createOrUpdateOperations(updatedLine)
+      ]);
+    } else {
+      // If qty_processed is 0 or less, ensure QC and Operations are deleted
+      await Promise.all([
+        deleteQCInitialStock(updatedLine.item_code),
+        deleteOperations(updatedLine.item_code)
+      ]);
+    }
+  };
+
   const handleAdd = () => {
     if (!formData.item_code) {
       toast.error('Item code is required');
@@ -383,7 +406,7 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
     };
 
     if (editingLine) {
-      updateMutation.mutate({ id: editingLine.id, data });
+      onSaveQtyProcessed(editingLine.id, data.qty_processed, data);
     } else {
       createMutation.mutate(data);
     }
