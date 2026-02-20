@@ -161,9 +161,6 @@ export default function MfgDailyStandardsAssignment() {
                   Changes here are the only way to override the bundle for a given date.
                 </p>
               </div>
-              <Button variant="outline" onClick={() => navigate(createPageUrl("Manufacturing"))}>
-                ← Back
-              </Button>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
