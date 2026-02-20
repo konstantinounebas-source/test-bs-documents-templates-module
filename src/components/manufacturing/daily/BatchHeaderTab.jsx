@@ -413,22 +413,12 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
               />
             </div>
             <div>
-              <Label>Standards Bundle *</Label>
-              <Select
-                value={formData.bundle_id}
-                onValueChange={(value) => setFormData({ ...formData, bundle_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select bundle" />
-                </SelectTrigger>
-                <SelectContent>
-                  {allBundles.map(b => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.version_no || b.version || '?'} ({b.status})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Standards Bundle</Label>
+              <div className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-700">
+                {defaultBundleId && allBundles.find(b => b.id === defaultBundleId)
+                  ? `${allBundles.find(b => b.id === defaultBundleId).version_no || allBundles.find(b => b.id === defaultBundleId).version} (${allBundles.find(b => b.id === defaultBundleId).status})`
+                  : 'No bundle assigned for this date'}
+              </div>
             </div>
             <div>
               <Label>Notes (Optional)</Label>
