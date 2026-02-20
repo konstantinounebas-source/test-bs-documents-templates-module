@@ -124,6 +124,7 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
+import MfgDailyStandardsAssignment from './pages/MfgDailyStandardsAssignment';
 import __Layout from './Layout.jsx';
 
 
@@ -205,6 +206,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
+    "MfgDailyStandardsAssignment": MfgDailyStandardsAssignment,
 }
 
 export const pagesConfig = {
