@@ -33,7 +33,7 @@ function useBatchItemCodes(batchId, department) {
   });
 }
 
-export default function BatchLinesTab({ batchId, department }) {
+export default function BatchLinesTab({ batchId, department, selectedBundle }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingLine, setEditingLine] = useState(null);
