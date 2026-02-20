@@ -146,12 +146,7 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Batch_Lines.update(id, data),
-    onSuccess: async (result, variables) => {
-      const updatedLine = await base44.entities.Batch_Lines.filter({ id: variables.id });
-      if (updatedLine.length > 0) {
-        await createOrUpdateQCInitialStock(updatedLine[0]);
-        await createOrUpdateOperations(updatedLine[0]);
-      }
+    onSuccess: async () => {
       await saveACTQtyMetric();
       await saveSchQtyMetric();
       queryClient.invalidateQueries(['Batch_Lines']);
