@@ -49,10 +49,34 @@ export default function MfgDailyProduction() {
     staleTime: 0
   });
 
+  const { data: dailyStandardsAssignments = [] } = useQuery({
+    queryKey: ['DailyStandardsAssignment', selectedDepartment],
+    queryFn: () => base44.entities.DailyStandardsAssignment.filter({ department_id: selectedDepartment }),
+    enabled: !!selectedDepartment,
+    staleTime: 0
+  });
+
+  // Resolve the effective bundle: DailyStandardsAssignment > BatchHeader.bundle_id
   const selectedBundle = useMemo(() => {
-    if (!selectedBatch?.bundle_id) return null;
-    return allBundles.find(b => b.id === selectedBatch.bundle_id) || null;
-  }, [selectedBatch, allBundles]);
+    if (!selectedBatch) return null;
+    const batchDate = selectedBatch.date;
+    const dept = selectedBatch.department;
+
+    // 1. Check DailyStandardsAssignment
+    const dailyAssignment = dailyStandardsAssignments.find(
+      a => a.assignment_date === batchDate && a.department_id === dept
+    );
+    if (dailyAssignment?.standards_bundle_id) {
+      const found = allBundles.find(b => b.id === dailyAssignment.standards_bundle_id);
+      if (found) return found;
+    }
+
+    // 2. Fallback to batch's own bundle_id
+    if (selectedBatch.bundle_id) {
+      return allBundles.find(b => b.id === selectedBatch.bundle_id) || null;
+    }
+    return null;
+  }, [selectedBatch, allBundles, dailyStandardsAssignments]);
 
   const handleBatchSelect = (batch) => {
     setSelectedBatch(batch);
