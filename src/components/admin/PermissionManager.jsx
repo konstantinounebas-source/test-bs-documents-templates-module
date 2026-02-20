@@ -64,6 +64,7 @@ const ALL_PAGES = [
   { key: 'MfgReferenceDataWizard', label: 'Reference Data Setup', module: 'Manufacturing Production' },
   { key: 'MfgStandardsManagement', label: 'Standards Management', module: 'Manufacturing Production' },
   { key: 'MfgPlanningWizard', label: 'Planning Wizard', module: 'Manufacturing Production' },
+  { key: 'MfgDailyStandardsAssignment', label: 'Daily Standards Assignment', module: 'Manufacturing Production' },
   { key: 'MfgDailyProduction', label: 'Daily Production Entry', module: 'Manufacturing Production' },
   { key: 'MfgKPIDashboard', label: 'KPI Dashboard', module: 'Manufacturing Production' },
 
