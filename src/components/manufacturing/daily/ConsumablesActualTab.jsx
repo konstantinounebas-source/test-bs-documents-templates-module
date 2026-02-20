@@ -120,7 +120,7 @@ export default function ConsumablesActualTab({ batchId }) {
       if (expectedRows.length === 0) throw new Error('No matching standards found for current operations.');
 
       const promises = expectedRows.map(row =>
-        base44.entities.Consumables_Actual.create({
+        base44.entities.ConsumablesActual.create({
           batch_header_id: batchId,
           department: batchHeader?.department || '',
           consumable: row.consumable,
