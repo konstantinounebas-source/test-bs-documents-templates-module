@@ -298,13 +298,35 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
     }
   };
 
+  const deleteOperations = async (itemCode) => {
+    try {
+      const existingOps = await base44.entities.Operations.filter({
+        batch_header_id: batchId,
+        item_code: itemCode
+      });
+      if (existingOps.length > 0) {
+        await Promise.all(existingOps.map(op => base44.entities.Operations.delete(op.id)));
+        queryClient.invalidateQueries(['Operations']);
+      }
+    } catch (error) {
+      console.error('Failed to delete Operations:', error);
+    }
+  };
+
   const createOrUpdateOperations = async (batchLine) => {
     try {
-      if (!selectedBundle || !batchLine.item_code || !batchLine.qty_processed) return;
+      // Hard guard: Do not create/update if conditions are not met
+      if (!selectedBundle || !batchLine.item_code || (batchLine.qty_processed || 0) <= 0) {
+        await deleteOperations(batchLine.item_code);
+        return;
+      }
       
       // Get relevant Profile records for this item code
       const itemProfileLines = profileSetLines.filter(l => l.item_code === batchLine.item_code);
-      if (itemProfileLines.length === 0) return;
+      if (itemProfileLines.length === 0) {
+        await deleteOperations(batchLine.item_code);
+        return;
+      }
 
       // Get or create Operations records
       for (const profileLine of itemProfileLines) {
