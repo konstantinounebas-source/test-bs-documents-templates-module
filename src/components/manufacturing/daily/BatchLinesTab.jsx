@@ -90,31 +90,6 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
     staleTime: Infinity
   });
 
-  // Auto-fill batch lines from scheduled data (only on initial load)
-  useMemo(() => {
-    if (!batchId || lines.length > 0 || scheduledData.length === 0) return;
-
-    // Create batch lines from scheduled data
-    const autoFillLines = scheduledData.map(sd => ({
-      batch_header_id: batchId,
-      item_code: sd.item_code,
-      scheduled_qty: sd.ops_qty,
-      qty_processed: 0,
-      qty_out_good: 0,
-      qty_scrap: 0
-    }));
-
-    // Create all lines
-    Promise.all(autoFillLines.map(line =>
-      base44.entities.Batch_Lines.create(line)
-    )).then(() => {
-      queryClient.invalidateQueries({ queryKey: ['Batch_Lines', batchId] });
-      toast.success(`Auto-filled ${autoFillLines.length} batch lines from schedule`);
-    }).catch(() => {
-      // Silent fail on auto-fill
-    });
-  }, [batchId, lines.length, scheduledData, queryClient]);
-
   const filteredLines = useMemo(() => {
     if (!searchFilter) return lines;
     const term = searchFilter.toLowerCase();
