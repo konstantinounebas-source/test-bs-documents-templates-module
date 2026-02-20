@@ -392,7 +392,10 @@ export default function OperationsTab({ batchId, department }) {
         sl.operation === operation.name
       );
 
-      const stdMinPc = stdLine?.std_min_per_pc || 0;
+      let stdMinPc = stdLine?.std_min_per_pc || 0;
+      if (stdMinPc === 0 && operation?.std_min_per_pc) {
+        stdMinPc = operation.std_min_per_pc;
+      }
       const opTime = parseFloat(qty) * stdMinPc;
 
       return base44.entities.Operations.create({
