@@ -300,6 +300,7 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
 
 
   const handleCreateBatch = (dateStr) => {
+    setSelectedDate(dateStr);
     setShowCreateDialog(true);
     setFormData({
       date: dateStr,
