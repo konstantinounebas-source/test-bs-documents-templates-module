@@ -1179,35 +1179,23 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
           {/* Source Bundle for Day */}
           <Card className="bg-amber-50 border-amber-200">
             <CardContent className="pt-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm font-semibold text-amber-900 mb-1">Source Bundle (for this day)</p>
-                  {sourceBundleForDay ? (
-                    <>
-                      <p className="text-base font-medium">
-                        v{sourceBundleForDay.version || '?'} - {sourceBundleForDay.name} ({sourceBundleForDay.status})
-                      </p>
-                      {currentDayHeader && currentDayHeader.source_bundle_id !== selectedBundle?.id && (
-                        <p className="text-xs text-amber-700 mt-1">⚠️ Different from default bundle</p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-base font-medium text-red-600">
-                      ❌ Stored source bundle not found (id: {currentDayHeader?.source_bundle_id})
-                    </p>
-                  )}
-                </div>
-                <Button 
-                  onClick={() => {
-                    // Always use the current day's source_bundle_id
-                    setTempSourceBundleId(currentDayHeader?.source_bundle_id || selectedBundle?.id || '');
-                    setEditingDaySourceBundle(true);
-                  }} 
-                  size="sm"
-                  variant="outline"
-                >
-                  Edit Source Bundle
-                </Button>
+              <div className="flex items-center gap-3 flex-wrap">
+                <p className="text-sm font-semibold text-amber-900">Source Bundle (for this day):</p>
+                {sourceBundleForDay ? (
+                  <>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                      📦 {sourceBundleForDay.version_no} ({sourceBundleForDay.status})
+                    </span>
+                    {sourceBundleForDay.id !== selectedBundle?.id && (
+                      <span className="text-xs text-amber-700">⚠️ Different from default bundle</span>
+                    )}
+                    <span className="text-xs text-slate-500 ml-1">
+                      — To change, use <a href="#" className="underline text-indigo-600" onClick={e => { e.preventDefault(); }}>Daily Standards Assignment</a>
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-sm text-red-600">❌ No bundle found for this date</span>
+                )}
               </div>
             </CardContent>
           </Card>
