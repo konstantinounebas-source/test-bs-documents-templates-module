@@ -230,6 +230,97 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
     }
   };
 
+   const createOrUpdateQCInitialStock = async (batchLine) => {
+     try {
+       if (!selectedBundle || !batchLine.item_code || !batchLine.qty_processed) return;
+       
+       // Get relevant QC records for this item code
+       const itemQCLines = qcSetLines.filter(l => l.item_code === batchLine.item_code);
+       if (itemQCLines.length === 0) return;
+
+       // Get or create QC Initial Stock records
+       for (const qcLine of itemQCLines) {
+         const existingQC = await base44.entities.QC_Initial_Stock.filter({
+           batch_header_id: batchId,
+           item_code: batchLine.item_code,
+           qc_type: qcLine.qc_type,
+           qc_level: qcLine.level
+         });
+
+         const qtyAffected = (batchLine.qty_processed * qcLine.remake_percent) / 100;
+
+         if (existingQC.length > 0) {
+           // Update existing record
+           await base44.entities.QC_Initial_Stock.update(existingQC[0].id, {
+             qty_affected: qtyAffected
+           });
+         } else {
+           // Create new record
+           await base44.entities.QC_Initial_Stock.create({
+             batch_header_id: batchId,
+             item_code: batchLine.item_code,
+             qc_type: qcLine.qc_type,
+             qc_level: qcLine.level,
+             qty_affected: qtyAffected
+           });
+         }
+       }
+
+       queryClient.invalidateQueries(['QC_Initial_Stock']);
+     } catch (error) {
+       console.error('Failed to create/update QC Initial Stock:', error);
+     }
+   };
+
+   const createOrUpdateOperations = async (batchLine) => {
+     try {
+       if (!selectedBundle || !batchLine.item_code || !batchLine.qty_processed) return;
+       
+       // Get relevant Profile records for this item code
+       const itemProfileLines = profileSetLines.filter(l => l.item_code === batchLine.item_code);
+       if (itemProfileLines.length === 0) return;
+
+       // Get or create Operations records
+       for (const profileLine of itemProfileLines) {
+         const existingOps = await base44.entities.Operations.filter({
+           batch_header_id: batchId,
+           item_code: batchLine.item_code,
+           operation: profileLine.profile_name
+         });
+
+         const qtyOperation = batchLine.qty_processed;
+         const stdMinPC = profileLine.profile_time_min_pc || 0;
+         const operationTimeMin = qtyOperation * stdMinPC;
+
+         if (existingOps.length > 0) {
+           // Update existing record
+           await base44.entities.Operations.update(existingOps[0].id, {
+             qty_operation: qtyOperation,
+             std_min_pc_lookup: stdMinPC,
+             operation_time_min: operationTimeMin,
+             source_type: 'SCHEDULE'
+           });
+         } else {
+           // Create new record
+           await base44.entities.Operations.create({
+             batch_header_id: batchId,
+             item_code: batchLine.item_code,
+             operation: profileLine.profile_name,
+             qty_operation: qtyOperation,
+             std_min_pc_lookup: stdMinPC,
+             operation_time_min: operationTimeMin,
+             source_type: 'SCHEDULE'
+           });
+         }
+       }
+
+       queryClient.invalidateQueries(['Operations']);
+     } catch (error) {
+       console.error('Failed to create/update Operations:', error);
+     }
+   };
+
+
   const handleAdd = () => {
     if (!formData.item_code) {
       toast.error('Item code is required');
