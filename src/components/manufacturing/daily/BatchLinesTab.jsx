@@ -239,7 +239,7 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
       if (!selectedBundle || !batchLine.item_code || !batchLine.qty_processed) return;
       
       // Get relevant QC records for this item code
-      const itemQCLines = qcSetLines.filter(l => l.item_code === batchLine.item_code);
+      const itemQCLines = qcSetLines.filter(l => l.item_code === batchLine.item_code && l.qc_type && l.level);
       if (itemQCLines.length === 0) return;
 
       // Get or create QC Initial Stock records
@@ -251,7 +251,7 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
           qc_level: qcLine.level
         });
 
-        const qtyAffected = (batchLine.qty_processed * qcLine.remake_percent) / 100;
+        const qtyAffected = (batchLine.qty_processed * (qcLine.remake_percent || 0)) / 100;
 
         if (existingQC.length > 0) {
           // Update existing record
