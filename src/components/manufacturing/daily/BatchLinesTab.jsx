@@ -75,22 +75,6 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
     staleTime: 30 * 1000
   });
 
-   // Fetch QC and Profile set lines from selected bundle
-   const { data: qcSetLines = [] } = useQuery({
-     queryKey: ['QC_Set_Lines', selectedBundle?.id],
-     queryFn: () => selectedBundle?.qc_set_id ? base44.entities.QC_Set_Lines.filter({ qc_set_id: selectedBundle.qc_set_id }) : [],
-     enabled: !!selectedBundle?.qc_set_id,
-     staleTime: Infinity
-   });
-
-   const { data: profileSetLines = [] } = useQuery({
-     queryKey: ['Profile_Set_Lines', selectedBundle?.id],
-     queryFn: () => selectedBundle?.profile_set_id ? base44.entities.Profile_Set_Lines.filter({ profile_set_id: selectedBundle.profile_set_id }) : [],
-     enabled: !!selectedBundle?.profile_set_id,
-     staleTime: Infinity
-   });
-
-
   // Auto-fill batch lines from scheduled data (only on initial load)
   useMemo(() => {
     if (!batchId || lines.length > 0 || scheduledData.length === 0) return;
@@ -147,7 +131,17 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Batch_Lines.update(id, data),
-    onSuccess: async () => {
+    onSuccess: async (_, { id, data }) => {
+      // Find the updated batch line to get its merged data
+      const updatedLine = lines.find(l => l.id === id);
+      const mergedLine = updatedLine ? { ...updatedLine, ...data } : null;
+      
+      // If qty_processed changed, create/update QC and Operations records
+      if (mergedLine && selectedBundle) {
+        await createOrUpdateQCInitialStock(mergedLine);
+        await createOrUpdateOperations(mergedLine);
+      }
+      
       await saveACTQtyMetric();
       await saveSchQtyMetric();
       queryClient.invalidateQueries(['Batch_Lines']);
@@ -227,6 +221,84 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
       queryClient.invalidateQueries(['DailyMetricValue']);
     } catch (error) {
       console.error('Failed to save SCH_QTY metric:', error);
+    }
+  };
+
+  const createOrUpdateQCInitialStock = async (batchLine) => {
+    try {
+      if (!selectedBundle || !batchLine.qty_processed) return;
+
+      // Fetch QC_Set_Lines from the bundle
+      const qcSetLines = await base44.entities.QC_Set_Lines.filter({
+        qc_set_id: selectedBundle.qc_set_id,
+        item_code: batchLine.item_code
+      });
+
+      // Delete existing QC records for this batch line
+      const existingQCRecords = await base44.entities.QC_Initial_Stock.filter({
+        batch_header_id: batchId,
+        item_code: batchLine.item_code
+      });
+      
+      for (const record of existingQCRecords) {
+        await base44.entities.QC_Initial_Stock.delete(record.id);
+      }
+
+      // Create new QC records based on QC_Set_Lines, scaling by qty_processed
+      for (const qcLine of qcSetLines) {
+        const qtyAffected = (batchLine.qty_processed || 0);
+        await base44.entities.QC_Initial_Stock.create({
+          batch_header_id: batchId,
+          item_code: batchLine.item_code,
+          qc_type: qcLine.qc_type,
+          qc_level: qcLine.level,
+          qty_affected: qtyAffected
+        });
+      }
+
+      queryClient.invalidateQueries(['QC_Initial_Stock']);
+    } catch (error) {
+      console.error('Failed to create/update QC Initial Stock:', error);
+    }
+  };
+
+  const createOrUpdateOperations = async (batchLine) => {
+    try {
+      if (!selectedBundle || !batchLine.qty_processed) return;
+
+      // Fetch Profile_Set_Lines from the bundle
+      const profileSetLines = await base44.entities.Profile_Set_Lines.filter({
+        profile_set_id: selectedBundle.profile_set_id,
+        item_code: batchLine.item_code
+      });
+
+      // Delete existing Operations records for this batch line
+      const existingOpsRecords = await base44.entities.Operations.filter({
+        batch_header_id: batchId,
+        item_code: batchLine.item_code,
+        source_type: 'SCHEDULE'
+      });
+      
+      for (const record of existingOpsRecords) {
+        await base44.entities.Operations.delete(record.id);
+      }
+
+      // Create new Operations records based on Profile_Set_Lines, scaling by qty_processed
+      for (const profileLine of profileSetLines) {
+        const qtyOperation = (batchLine.qty_processed || 0);
+        await base44.entities.Operations.create({
+          batch_header_id: batchId,
+          item_code: batchLine.item_code,
+          operation: profileLine.profile_name,
+          qty_operation: qtyOperation,
+          source_type: 'SCHEDULE',
+          operation_profile_id: profileLine.id
+        });
+      }
+
+      queryClient.invalidateQueries(['Operations']);
+    } catch (error) {
+      console.error('Failed to create/update Operations:', error);
     }
   };
 
@@ -318,7 +390,7 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
             <div className="text-lg font-bold text-purple-900">{totals.qty_processed.toFixed(2)}</div>
           </div>
           <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <div className="text-xs font-medium text-green-900">Total Qty Out Good</div>
+            <div className="text-xs font-medium text-green-900">Total Qty Good</div>
             <div className="text-lg font-bold text-green-900">{totals.qty_out_good.toFixed(2)}</div>
           </div>
           <div className="bg-red-50 border border-red-200 rounded-lg p-3">
@@ -326,137 +398,156 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
             <div className="text-lg font-bold text-red-900">{totals.qty_scrap.toFixed(2)}</div>
           </div>
         </div>
+      </div>
 
-        <div className="border rounded-lg overflow-auto">
+      <Card>
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Item Code</TableHead>
-                <TableHead>Scheduled Qty</TableHead>
-                <TableHead>Qty Processed</TableHead>
-                <TableHead>Qty Out Good</TableHead>
-                <TableHead>Qty Scrap</TableHead>
-                <TableHead>Actions</TableHead>
+              <TableRow className="bg-slate-50">
+                <TableHead className="font-semibold text-slate-900">Item Code</TableHead>
+                <TableHead className="text-right font-semibold text-slate-900">Scheduled Qty</TableHead>
+                <TableHead className="text-right font-semibold text-slate-900">Qty Processed</TableHead>
+                <TableHead className="text-right font-semibold text-slate-900">Qty Out Good</TableHead>
+                <TableHead className="text-right font-semibold text-slate-900">Qty Scrap</TableHead>
+                <TableHead className="text-center font-semibold text-slate-900">Actions</TableHead>
               </TableRow>
             </TableHeader>
-          <TableBody>
-            {filteredLines.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-slate-500">
-                  {searchFilter ? 'No matching batch lines found' : 'No batch lines defined. Click "Add Line" to start.'}
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredLines.map(line => (
-                <TableRow key={line.id}>
-                  <TableCell className="font-medium">{line.item_code}</TableCell>
-                  <TableCell>{line.scheduled_qty || 0}</TableCell>
-                  <TableCell>{line.qty_processed || 0}</TableCell>
-                  <TableCell>{line.qty_out_good || 0}</TableCell>
-                  <TableCell>{line.qty_scrap || 0}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(line)}>
+            <TableBody>
+              {filteredLines.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan="6" className="text-center py-4 text-slate-500">
+                    No batch lines found. Click "Add Line" to create one.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredLines.map((line) => (
+                  <TableRow key={line.id} className="hover:bg-slate-50">
+                    <TableCell className="font-medium">{line.item_code}</TableCell>
+                    <TableCell className="text-right">{(line.scheduled_qty || 0).toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-semibold">{(line.qty_processed || 0).toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-green-700 font-semibold">{(line.qty_out_good || 0).toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-red-700 font-semibold">{(line.qty_scrap || 0).toFixed(2)}</TableCell>
+                    <TableCell className="text-center flex gap-1 justify-center">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleEdit(line)}
+                        disabled={createMutation.isPending || updateMutation.isPending || deleteMutation.isPending}
+                      >
                         <Edit2 className="w-4 h-4" />
                       </Button>
                       <Button
-                        onClick={() => deleteMutation.mutate(line.id)}
+                        size="sm"
                         variant="ghost"
-                        size="icon"
-                        disabled={deleteMutation.isPending}
+                        onClick={() => deleteMutation.mutate(line.id)}
+                        disabled={createMutation.isPending || updateMutation.isPending || deleteMutation.isPending}
                       >
                         <Trash2 className="w-4 h-4 text-red-500" />
                       </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-        </div>
-      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-      <Dialog open={showAddDialog} onOpenChange={(open) => {
-        if (!open) resetForm();
-        setShowAddDialog(open);
-      }}>
-        <DialogContent>
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{editingLine ? 'Edit Batch Line' : 'Add Batch Line'}</DialogTitle>
             <DialogDescription>
-              {editingLine ? 'Update production quantities for this item' : 'Add production quantities for an item'}
+              {editingLine ? 'Update the batch line details' : 'Create a new batch line'}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4">
             <div>
-              <Label>Item Code *</Label>
-              <Select value={formData.item_code} onValueChange={(v) => setFormData({ ...formData, item_code: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select item code from standards" />
+              <Label htmlFor="item_code" className="text-sm font-medium">Item Code</Label>
+              <Select 
+                value={formData.item_code} 
+                onValueChange={(value) => setFormData({ ...formData, item_code: value })}
+                disabled={!!editingLine}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select item code" />
                 </SelectTrigger>
                 <SelectContent>
-                  {itemCodes.map(code => (
-                    <SelectItem key={code} value={code}>{code}</SelectItem>
+                  {itemCodes.map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {code}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Scheduled Qty</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.scheduled_qty}
-                  onChange={(e) => setFormData({ ...formData, scheduled_qty: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Qty Processed</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.qty_processed}
-                  onChange={(e) => setFormData({ ...formData, qty_processed: e.target.value })}
-                />
-              </div>
+            <div>
+              <Label htmlFor="scheduled_qty" className="text-sm font-medium">Scheduled Qty</Label>
+              <Input
+                id="scheduled_qty"
+                type="number"
+                step="0.01"
+                value={formData.scheduled_qty}
+                onChange={(e) => setFormData({ ...formData, scheduled_qty: e.target.value })}
+                className="mt-1"
+                placeholder="0"
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Qty Out Good</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.qty_out_good}
-                  onChange={(e) => setFormData({ ...formData, qty_out_good: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Qty Scrap</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.qty_scrap}
-                  onChange={(e) => setFormData({ ...formData, qty_scrap: e.target.value })}
-                />
-              </div>
+            <div>
+              <Label htmlFor="qty_processed" className="text-sm font-medium">Qty Processed</Label>
+              <Input
+                id="qty_processed"
+                type="number"
+                step="0.01"
+                value={formData.qty_processed}
+                onChange={(e) => setFormData({ ...formData, qty_processed: e.target.value })}
+                className="mt-1"
+                placeholder="0"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="qty_out_good" className="text-sm font-medium">Qty Out Good</Label>
+              <Input
+                id="qty_out_good"
+                type="number"
+                step="0.01"
+                value={formData.qty_out_good}
+                onChange={(e) => setFormData({ ...formData, qty_out_good: e.target.value })}
+                className="mt-1"
+                placeholder="0"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="qty_scrap" className="text-sm font-medium">Qty Scrap</Label>
+              <Input
+                id="qty_scrap"
+                type="number"
+                step="0.01"
+                value={formData.qty_scrap}
+                onChange={(e) => setFormData({ ...formData, qty_scrap: e.target.value })}
+                className="mt-1"
+                placeholder="0"
+              />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={resetForm}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={createMutation.isPending || updateMutation.isPending}>
+            <Button variant="outline" onClick={resetForm} disabled={createMutation.isPending || updateMutation.isPending}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleAdd}
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
               {createMutation.isPending || updateMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : editingLine ? (
-                <Edit2 className="w-4 h-4 mr-2" />
-              ) : (
-                <Plus className="w-4 h-4 mr-2" />
-              )}
+              ) : null}
               {editingLine ? 'Update' : 'Add'}
             </Button>
           </DialogFooter>
