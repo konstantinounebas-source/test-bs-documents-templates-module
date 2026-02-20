@@ -150,7 +150,7 @@ export default function ConsumablesActualTab({ batchId }) {
       ...data
     }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['Consumables_Actual', batchId]);
+      queryClient.invalidateQueries(['ConsumablesActual', batchId]);
       setShowAddDialog(false);
       setFormData({ consumable: '', item_code: '', operation: '', actual_qty: '', unit: '', notes: '' });
       toast.success('Consumable added');
