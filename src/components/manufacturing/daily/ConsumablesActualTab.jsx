@@ -137,7 +137,7 @@ export default function ConsumablesActualTab({ batchId }) {
       await Promise.all(promises);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['Consumables_Actual', batchId]);
+      queryClient.invalidateQueries(['ConsumablesActual', batchId]);
       toast.success(`Auto-generated ${expectedRows.length} consumable rows from standards`);
     },
     onError: (err) => toast.error(err.message || 'Failed to auto-generate consumables')
