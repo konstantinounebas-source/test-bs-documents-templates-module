@@ -171,9 +171,9 @@ export default function ConsumablesActualTab({ batchId }) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.Consumables_Actual.delete(id),
+    mutationFn: (id) => base44.entities.ConsumablesActual.delete(id),
     onSuccess: async () => {
-      await queryClient.invalidateQueries(['Consumables_Actual', batchId]);
+      await queryClient.invalidateQueries(['ConsumablesActual', batchId]);
       toast.success('Deleted');
       if (batchHeader) await saveConsumablesMetrics();
     },
