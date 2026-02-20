@@ -90,6 +90,19 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
     staleTime: Infinity
   });
 
+  // Fetch profile names and operations for scheduled data lookup
+  const { data: profileNames = [] } = useQuery({
+    queryKey: ['OperationProfileName'],
+    queryFn: () => base44.entities.OperationProfileName.list(),
+    staleTime: Infinity
+  });
+
+  const { data: operations = [] } = useQuery({
+    queryKey: ['Operation'],
+    queryFn: () => base44.entities.Operation.list(),
+    staleTime: Infinity
+  });
+
   const filteredLines = useMemo(() => {
     if (!searchFilter) return lines;
     const term = searchFilter.toLowerCase();
