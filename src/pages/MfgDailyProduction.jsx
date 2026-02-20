@@ -88,7 +88,7 @@ export default function MfgDailyProduction() {
     queryClient.invalidateQueries(['Team_Time_Persons']);
     queryClient.invalidateQueries(['Team_Time_Extra']);
     queryClient.invalidateQueries(['Help_In']);
-    queryClient.invalidateQueries(['Consumables_Actual']);
+    queryClient.invalidateQueries(['ConsumablesActual']);
     toast.success('Batch selected');
   };
 
