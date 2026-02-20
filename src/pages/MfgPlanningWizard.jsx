@@ -66,16 +66,6 @@ export default function MfgPlanningWizard() {
                   page.
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => navigate(createPageUrl("MfgDailyStandardsAssignment"))}>
-                  <Layers className="w-4 h-4 mr-2" />
-                  Manage Assignments
-                </Button>
-                <Button variant="outline" onClick={handleBack}>
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-              </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
