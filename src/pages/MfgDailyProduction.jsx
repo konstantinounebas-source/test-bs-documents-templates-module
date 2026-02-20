@@ -114,9 +114,20 @@ export default function MfgDailyProduction() {
           <CardHeader>
             <CardTitle>Production Data Entry</CardTitle>
             {selectedBatch && (
-              <p className="text-sm text-slate-600 mt-1">
-                Selected Batch: {selectedBatch.date} - {selectedBatch.department}
-              </p>
+              <div className="flex items-center gap-4 flex-wrap mt-1">
+                <p className="text-sm text-slate-600">
+                  Selected Batch: {selectedBatch.date} - {selectedBatch.department}
+                </p>
+                {selectedBundle ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                    📦 Bundle: {selectedBundle.version_no} ({selectedBundle.status})
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                    ⚠ No bundle assigned
+                  </span>
+                )}
+              </div>
             )}
           </CardHeader>
           <CardContent className="space-y-6">
