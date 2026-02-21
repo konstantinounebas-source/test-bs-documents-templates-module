@@ -217,6 +217,9 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
     }
   };
 
+  // --- REMOVED: createOrUpdateOperations and deleteOperations ---
+  // Operations are now managed ONLY via the Sync button in OperationsTab
+
   const deleteQCInitialStock = async (itemCode) => {
     try {
       const existingQCs = await base44.entities.QC_Initial_Stock.filter({
