@@ -350,25 +350,55 @@ export default function QCInitialStockTab({ batchId, department }) {
     setIsSyncing(false);
   };
 
-  const handleAdd = () => {
-    if (!formData.item_code || !formData.qc_type || !formData.qc_level || !formData.qty_affected) {
-      toast.error('All fields are required');
+  const handleAdd = async () => {
+    if (!formData.qc_type || !formData.qc_level) {
+      toast.error('QC Type and QC Level are required');
       return;
     }
-    if (isQtyOverLimit(formData.qty_affected)) {
-      toast.error(`Qty exceeds qty processed (${selectedItemQtyProcessed})`);
+    if (selectedItems.size === 0) {
+      toast.error('Select at least one item code');
       return;
     }
 
-    const data = {
-      ...formData,
-      qty_affected: parseFloat(formData.qty_affected)
-    };
+    // Validate all quantities
+    const selectedArray = Array.from(selectedItems);
+    for (const itemCode of selectedArray) {
+      const qty = itemQuantities[itemCode];
+      if (!qty || parseFloat(qty) === 0) {
+        toast.error(`Quantity required for ${itemCode}`);
+        return;
+      }
+      if (isQtyOverLimit(itemCode, qty)) {
+        const bl = batchLines.find(l => l.item_code === itemCode);
+        toast.error(`${itemCode}: Qty exceeds qty processed (${bl?.qty_processed})`);
+        return;
+      }
+    }
 
     if (editingLine) {
+      // For editing, just update the one line
+      const data = {
+        qc_type: formData.qc_type,
+        qc_level: formData.qc_level,
+        qty_affected: parseFloat(itemQuantities[editingLine.item_code])
+      };
       updateMutation.mutate({ id: editingLine.id, data });
     } else {
-      createMutation.mutate(data);
+      // Create multiple records at once
+      for (const itemCode of selectedArray) {
+        await base44.entities.QC_Initial_Stock.create({
+          batch_header_id: batchId,
+          item_code: itemCode,
+          qc_type: formData.qc_type,
+          qc_level: formData.qc_level,
+          qty_affected: parseFloat(itemQuantities[itemCode])
+        });
+      }
+      await queryClient.invalidateQueries({ queryKey: ['QC_Initial_Stock', batchId] });
+      await queryClient.refetchQueries({ queryKey: ['QC_Initial_Stock', batchId] });
+      await saveQCTimeMetric();
+      resetForm();
+      toast.success(`✓ QC Initial Stock added for ${selectedArray.length} item(s)`);
     }
   };
 
