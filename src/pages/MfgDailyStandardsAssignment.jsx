@@ -26,8 +26,16 @@ import {
 export default function MfgDailyStandardsAssignment() {
   const queryClient = useQueryClient();
 
+  // Read URL params (date, department) — coming from Daily Production "Go to Schedule"
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlDate = urlParams.get('date') || '';
+  const urlDept = urlParams.get('department') || '';
+
   const [viewMode, setViewMode] = useState("week");
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(() => {
+    if (urlDate) { try { return parseISO(urlDate); } catch { /* ignore */ } }
+    return new Date();
+  });
   const [editDialog, setEditDialog] = useState(null); // { date, department_id, assignment? }
   const [selectedBundleId, setSelectedBundleId] = useState("");
 
