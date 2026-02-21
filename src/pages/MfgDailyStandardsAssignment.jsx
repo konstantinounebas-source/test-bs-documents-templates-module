@@ -577,10 +577,6 @@ export default function MfgDailyStandardsAssignment() {
                 <span className="w-3 h-3 rounded bg-amber-100 border border-amber-300 inline-block" />
                 Other status bundle
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-orange-500 inline-block" />
-                Targets set
-              </span>
               <span className="flex items-center gap-1 text-slate-400">— = No assignment (will use department's ACTIVE bundle)</span>
             </div>
           </CardContent>
