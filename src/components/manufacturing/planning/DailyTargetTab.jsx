@@ -21,7 +21,7 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState('');
   // inline row state: { item_code, operation_profile_id, target_qty }
-  const [newRow, setNewRow] = useState({ item_code: '', operation_profile_id: '', target_qty: '' });
+  const [newRow, setNewRow] = useState({ item_code: '', operation_profile_id: '', target_qty: '', target_type: '' });
   const [editingId, setEditingId] = useState(null);
   const [editingRow, setEditingRow] = useState({});
 
