@@ -391,6 +391,156 @@ export default function MfgDailyStandardsAssignment() {
         </Card>
       </div>
 
+      {/* Bulk Assign Dialog */}
+      <Dialog open={bulkDialog} onOpenChange={setBulkDialog}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-indigo-600" />
+              Bulk Standards Assignment
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Start Date</Label>
+                <Input type="date" value={bulkStartDate} onChange={e => setBulkStartDate(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label>End Date</Label>
+                <Input type="date" value={bulkEndDate} onChange={e => setBulkEndDate(e.target.value)} className="mt-1" />
+              </div>
+            </div>
+            <div>
+              <Label className="mb-2 block">Departments & Bundles</Label>
+              <div className="border rounded-lg divide-y max-h-[320px] overflow-y-auto">
+                {departments.map(dept => {
+                  const enabled = !!bulkDeptEnabled[dept.name];
+                  const deptBundles = allBundles.filter(b => b.department === dept.name);
+                  return (
+                    <div key={dept.id} className={`p-3 flex items-center gap-3 ${enabled ? "bg-indigo-50" : "bg-white"}`}>
+                      <Checkbox
+                        checked={enabled}
+                        onCheckedChange={v => setBulkDeptEnabled(prev => ({ ...prev, [dept.name]: !!v }))}
+                      />
+                      <span className="font-medium text-sm w-32 flex-shrink-0">{dept.name}</span>
+                      <Select
+                        value={bulkSelections[dept.name] || ""}
+                        onValueChange={v => setBulkSelections(prev => ({ ...prev, [dept.name]: v }))}
+                        disabled={!enabled}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select bundle..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {deptBundles.map(b => (
+                            <SelectItem key={b.id} value={b.id}>
+                              v{b.version_no} ({b.status})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <p className="text-xs text-slate-500">
+              This will assign the selected bundle to every day in the date range for each checked department (overwriting existing assignments).
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDialog(false)}>Cancel</Button>
+            <Button onClick={handleBulkSave} disabled={isBulkSaving} className="bg-indigo-600 hover:bg-indigo-700">
+              {isBulkSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Save Bulk Assignment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Set Daily Targets Dialog */}
+      <Dialog open={targetDialog} onOpenChange={setTargetDialog}>
+        <DialogContent className="sm:max-w-[560px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-amber-600" />
+              Set Daily Targets
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Date</Label>
+                <Input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label>Department</Label>
+                <Select value={targetDept} onValueChange={v => { setTargetDept(v); setTargetBundleId(""); }}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select department..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map(d => (
+                      <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {targetDept && (
+              <div>
+                <Label>Standards Bundle (source of target lines)</Label>
+                <Select value={targetBundleId} onValueChange={setTargetBundleId}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select bundle..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bundlesForTargetDept.map(b => (
+                      <SelectItem key={b.id} value={b.id}>v{b.version_no} ({b.status})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {targetBundleId && (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50">
+                      <TableHead>Item Code</TableHead>
+                      <TableHead>Target Type</TableHead>
+                      <TableHead className="text-right">Qty</TableHead>
+                      <TableHead className="text-right">Time (min)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {targetLinesForBundle.length === 0 ? (
+                      <TableRow><TableCell colSpan={4} className="text-center text-slate-400 py-4">No target lines in this bundle</TableCell></TableRow>
+                    ) : targetLinesForBundle.map(l => (
+                      <TableRow key={l.id}>
+                        <TableCell className="font-medium">{l.item_code}</TableCell>
+                        <TableCell>{l.target_type}</TableCell>
+                        <TableCell className="text-right">{l.target_qty}</TableCell>
+                        <TableCell className="text-right">{l.item_total_min?.toFixed(1)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+            <p className="text-xs text-slate-500">
+              This will replace existing targets for the selected date & department with the lines from the chosen bundle.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTargetDialog(false)}>Cancel</Button>
+            <Button onClick={handleSaveTargets} disabled={isSavingTargets || !targetBundleId} className="bg-amber-600 hover:bg-amber-700">
+              {isSavingTargets ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Apply Targets"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Dialog */}
       <Dialog open={!!editDialog} onOpenChange={() => setEditDialog(null)}>
         <DialogContent className="sm:max-w-[480px]">
