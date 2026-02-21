@@ -102,7 +102,7 @@ export default function QCInitialStockTab({ batchId, department }) {
     refetchOnWindowFocus: false
   });
 
-  const [isSyncing, setIsSyncing] = useState(false);
+
 
   // qty_processed for item in dialog
   const selectedItemQtyProcessed = useMemo(() => {
