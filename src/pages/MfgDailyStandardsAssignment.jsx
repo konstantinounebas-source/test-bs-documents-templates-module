@@ -46,6 +46,14 @@ export default function MfgDailyStandardsAssignment() {
   const [targetBundleId, setTargetBundleId] = useState("");
   const [isSavingTargets, setIsSavingTargets] = useState(false);
 
+  // Bulk targets state
+  const [bulkTargetDialog, setBulkTargetDialog] = useState(false);
+  const [bulkTargetStartDate, setBulkTargetStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [bulkTargetEndDate, setBulkTargetEndDate] = useState(format(addDays(new Date(), 6), "yyyy-MM-dd"));
+  const [bulkTargetSelections, setBulkTargetSelections] = useState({}); // { dept_name: bundle_id }
+  const [bulkTargetDeptEnabled, setBulkTargetDeptEnabled] = useState({}); // { dept_name: bool }
+  const [isBulkTargetSaving, setIsBulkTargetSaving] = useState(false);
+
   // Fetch departments
   const { data: departments = [] } = useQuery({
     queryKey: ["Department"],
