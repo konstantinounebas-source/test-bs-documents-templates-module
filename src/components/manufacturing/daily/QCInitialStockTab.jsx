@@ -64,14 +64,12 @@ export default function QCInitialStockTab({ batchId, department }) {
     queryKey: ['BatchHeader', batchId],
     queryFn: async () => {
       const result = await base44.entities.BatchHeader.filter({ id: batchId });
-      console.log('=== BATCH HEADER FETCH ===');
-      console.log('Batch ID:', batchId);
-      console.log('Result:', result);
-      console.log('Bundle ID from result:', result?.[0]?.bundle_id);
       return result;
     },
     enabled: !!batchId,
-    select: (data) => data?.[0]
+    select: (data) => data?.[0],
+    staleTime: Infinity,
+    refetchOnWindowFocus: false
   });
 
   // Fetch scheduled data for auto-filling QC records
@@ -82,14 +80,16 @@ export default function QCInitialStockTab({ batchId, department }) {
       department_id: batchHeader.department
     }),
     enabled: !!batchHeader?.date && !!batchHeader?.department,
-    staleTime: 5 * 60 * 1000
+    staleTime: Infinity,
+    refetchOnWindowFocus: false
   });
 
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['QC_Initial_Stock', batchId],
     queryFn: () => base44.entities.QC_Initial_Stock.filter({ batch_header_id: batchId }),
     enabled: !!batchId,
-    staleTime: 30 * 1000
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   // Fetch batch lines for qty_processed validation
@@ -97,7 +97,8 @@ export default function QCInitialStockTab({ batchId, department }) {
     queryKey: ['Batch_Lines', batchId],
     queryFn: () => base44.entities.Batch_Lines.filter({ batch_header_id: batchId }),
     enabled: !!batchId,
-    staleTime: 30 * 1000
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
