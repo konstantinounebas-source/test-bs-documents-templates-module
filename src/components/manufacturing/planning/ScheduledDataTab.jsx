@@ -98,6 +98,13 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     }
   }, [selectedDepartment, allBundles]);
 
+  // Load date from URL params if provided
+  useEffect(() => {
+    if (urlSelectedDate) {
+      setSelectedDate(urlSelectedDate);
+    }
+  }, [urlSelectedDate]);
+
   // Fetch scheduled data lines
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['ScheduledData', selectedDepartment],
