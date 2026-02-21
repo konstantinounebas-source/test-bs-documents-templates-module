@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft, CalendarDays, AlertCircle, Target, Layers } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -16,6 +16,7 @@ import DailyTargetTab from "@/components/manufacturing/planning/DailyTargetTab";
 
 export default function MfgPlanningWizard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedBundle, setSelectedBundle] = useState(null);
   const [activeTab, setActiveTab] = useState('scheduled');
