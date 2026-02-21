@@ -67,14 +67,17 @@ export default function OperationsTab({ batchId, department }) {
     queryKey: ['BatchHeader', batchId],
     queryFn: () => base44.entities.BatchHeader.filter({ id: batchId }),
     enabled: !!batchId,
-    select: (data) => data?.[0]
+    select: (data) => data?.[0],
+    staleTime: Infinity,
+    refetchOnWindowFocus: false
   });
 
   const { data: stdSetLines = [] } = useQuery({
     queryKey: ['StdSetLines', batchHeader?.bundle_id],
     queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: batchHeader.bundle_id }),
     enabled: !!batchHeader?.bundle_id,
-    staleTime: Infinity
+    staleTime: Infinity,
+    refetchOnWindowFocus: false
   });
 
   const { data: scheduledData = [] } = useQuery({
@@ -84,7 +87,8 @@ export default function OperationsTab({ batchId, department }) {
       department_id: batchHeader.department
     }),
     enabled: !!batchHeader?.date && !!batchHeader?.department,
-    staleTime: Infinity
+    staleTime: Infinity,
+    refetchOnWindowFocus: false
   });
 
   const { data: lines = [], isLoading } = useQuery({
