@@ -448,6 +448,10 @@ export default function OperationsTab({ batchId, department }) {
             />
           </div>
         </div>
+        <Button onClick={handleSyncFromBatchLines} variant="outline" size="sm" disabled={syncingFromBatchLines}>
+          {syncingFromBatchLines ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+          Sync from Batch Lines
+        </Button>
         <Button onClick={() => setShowAddDialog(true)} variant="outline" size="sm" disabled={!hasItemCodes}>
           <Plus className="w-4 h-4 mr-2" />
           Add Operations
