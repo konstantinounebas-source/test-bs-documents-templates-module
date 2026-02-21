@@ -490,17 +490,14 @@ export default function MfgDailyStandardsAssignment() {
                                   </SelectContent>
                                 </Select>
                                 {inlineEditBundleId && (
-                                  <Select value={inlineEditTargetType} onValueChange={setInlineEditTargetType}>
-                                    <SelectTrigger className="h-7 text-xs min-w-[120px]">
-                                      <SelectValue placeholder="Type..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {targetTypesForBundle.map(t => (
-                                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                )}
+                                   <Input 
+                                     type="text"
+                                     placeholder="Target type..." 
+                                     value={inlineEditTargetType} 
+                                     onChange={e => setInlineEditTargetType(e.target.value)}
+                                     className="h-7 text-xs min-w-[120px]"
+                                   />
+                                 )}
                                 <div className="flex gap-1 justify-center">
                                   <Button
                                     size="sm"
