@@ -349,6 +349,16 @@ export default function OperationsTab({ batchId, department }) {
       return;
     }
 
+    // Validate: no operation qty can exceed qty_processed for this item
+    if (selectedItemQtyProcessed !== null) {
+      const overLimit = selectedOps.find(([_, qty]) => qty > selectedItemQtyProcessed);
+      if (overLimit) {
+        const opName = operations.find(o => o.id === overLimit[0])?.name || overLimit[0];
+        toast.error(`Qty for "${opName}" (${overLimit[1]}) exceeds qty processed (${selectedItemQtyProcessed})`);
+        return;
+      }
+    }
+
     const groupId = editingGroupId || `manual-${Date.now()}`;
     
     if (editingGroupId) {
