@@ -26,16 +26,8 @@ import {
 export default function MfgDailyStandardsAssignment() {
   const queryClient = useQueryClient();
 
-  // Read URL params (date, department) — coming from Daily Production "Go to Schedule"
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlDate = urlParams.get('date') || '';
-  const urlDept = urlParams.get('department') || '';
-
   const [viewMode, setViewMode] = useState("week");
-  const [currentDate, setCurrentDate] = useState(() => {
-    if (urlDate) { try { return parseISO(urlDate); } catch { /* ignore */ } }
-    return new Date();
-  });
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [editDialog, setEditDialog] = useState(null); // { date, department_id, assignment? }
   const [selectedBundleId, setSelectedBundleId] = useState("");
 
@@ -347,10 +339,9 @@ export default function MfgDailyStandardsAssignment() {
                         const key = `${dateStr}|${dept.name}`;
                         const assignment = assignmentMap[key];
                         const bundle = assignment ? bundleById[assignment.standards_bundle_id] : null;
-                        const isHighlighted = dateStr === urlDate && dept.name === urlDept;
 
                         return (
-                          <TableCell key={dateStr} className={`text-center p-2 ${isHighlighted ? "bg-blue-50 ring-2 ring-inset ring-blue-400" : ""}`}>
+                          <TableCell key={dateStr} className="text-center p-2">
                             <div className="flex flex-col items-center gap-1">
                               {bundle ? (
                                 <Badge
