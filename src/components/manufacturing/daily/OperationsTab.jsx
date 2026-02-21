@@ -628,7 +628,7 @@ export default function OperationsTab({ batchId, department }) {
             <TableRow className="bg-slate-50">
               <TableHead className="font-semibold w-12"></TableHead>
               <TableHead className="font-semibold w-32">Item Code</TableHead>
-              <TableHead className="font-semibold">Profile</TableHead>
+              <TableHead className="font-semibold">Profile / Operation</TableHead>
               <TableHead className="font-semibold w-32 text-right">Qty</TableHead>
               <TableHead className="font-semibold w-32 text-right">Remake Qty</TableHead>
               <TableHead className="font-semibold w-40 text-right">Total Time (min)</TableHead>
