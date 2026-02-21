@@ -452,10 +452,16 @@ export default function QCInitialStockTab({ batchId, department }) {
             />
           </div>
         </div>
-        <Button onClick={() => setShowAddDialog(true)} variant="outline" size="sm" disabled={!hasItemCodes}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add QC Stock
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleSyncFromBatchLines} variant="outline" size="sm" disabled={isSyncing}>
+            {isSyncing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+            Sync from Schedule
+          </Button>
+          <Button onClick={() => setShowAddDialog(true)} variant="outline" size="sm" disabled={!hasItemCodes}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add QC Stock
+          </Button>
+        </div>
       </div>
 
       {filteredLines.length > 0 && (
