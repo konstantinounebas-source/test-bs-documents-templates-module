@@ -41,6 +41,7 @@ export default function OperationsTab({ batchId, department }) {
   const [selectedOperations, setSelectedOperations] = useState({});
   const [expandedItems, setExpandedItems] = useState({});
   const [editingRemakeQty, setEditingRemakeQty] = useState({});
+  const [syncingFromBatchLines, setSyncingFromBatchLines] = useState(false);
   const [formData, setFormData] = useState({
     item_code: '',
     operation_profile_id: '',
