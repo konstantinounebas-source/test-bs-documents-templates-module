@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Plus, Trash2, Loader2, Search, AlertCircle, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Loader2, Search, AlertCircle, Edit2, RefreshCw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
@@ -102,7 +102,7 @@ export default function QCInitialStockTab({ batchId, department }) {
     refetchOnWindowFocus: false
   });
 
-
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // qty_processed for item in dialog
   const selectedItemQtyProcessed = useMemo(() => {
