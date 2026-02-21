@@ -19,9 +19,10 @@ import { buildItemOperationMap, computeOpsPerPiece, getOperationBreakdown, parse
 import { exportScheduledDataToExcel } from '../standards/shared/exportToExcel';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 
-export default function ScheduledDataTab({ selectedDepartment, selectedBundle: initialSelectedBundle }) {
+export default function ScheduledDataTab({ selectedDepartment, selectedBundle: initialSelectedBundle, selectedDate: urlSelectedDate }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // State
   const [currentMonth, setCurrentMonth] = useState(new Date());
