@@ -24,13 +24,27 @@ import {
 } from "date-fns";
 
 export default function MfgDailyStandardsAssignment() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [viewMode, setViewMode] = useState("week"); // "day" | "week" | "month"
+  const [viewMode, setViewMode] = useState("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [editDialog, setEditDialog] = useState(null); // { date, department_id, assignment? }
   const [selectedBundleId, setSelectedBundleId] = useState("");
+
+  // Bulk assignment state
+  const [bulkDialog, setBulkDialog] = useState(false);
+  const [bulkStartDate, setBulkStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [bulkEndDate, setBulkEndDate] = useState(format(addDays(new Date(), 6), "yyyy-MM-dd"));
+  const [bulkSelections, setBulkSelections] = useState({}); // { dept_name: bundle_id }
+  const [bulkDeptEnabled, setBulkDeptEnabled] = useState({}); // { dept_name: bool }
+  const [isBulkSaving, setIsBulkSaving] = useState(false);
+
+  // Target assignment state
+  const [targetDialog, setTargetDialog] = useState(false);
+  const [targetDate, setTargetDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [targetDept, setTargetDept] = useState("");
+  const [targetBundleId, setTargetBundleId] = useState("");
+  const [isSavingTargets, setIsSavingTargets] = useState(false);
 
   // Fetch departments
   const { data: departments = [] } = useQuery({
