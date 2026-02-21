@@ -472,9 +472,6 @@ export default function MfgDailyStandardsAssignment() {
                         const bundle = assignment ? bundleById[assignment.standards_bundle_id] : null;
                         const isEditing = inlineEditKey === key;
                         const deptBundles = allBundles.filter(b => b.department === dept.name);
-                        const targetTypesForBundle = inlineEditBundleId 
-                          ? [...new Set(allDailyTargetLines.filter(l => l.bundle_id === inlineEditBundleId).map(l => l.target_type))]
-                          : [];
 
                         return (
                           <TableCell key={dateStr} className="text-center p-2">
