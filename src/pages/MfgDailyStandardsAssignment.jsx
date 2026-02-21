@@ -582,7 +582,7 @@ export default function MfgDailyStandardsAssignment() {
             </div>
 
             {/* Legend */}
-            <div className="flex gap-4 text-xs text-slate-500">
+            <div className="flex gap-4 text-xs text-slate-500 flex-wrap">
               <span className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded bg-green-100 border border-green-300 inline-block" />
                 ACTIVE bundle
@@ -590,6 +590,10 @@ export default function MfgDailyStandardsAssignment() {
               <span className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded bg-amber-100 border border-amber-300 inline-block" />
                 Other status bundle
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-orange-500 inline-block" />
+                Targets set
               </span>
               <span className="flex items-center gap-1 text-slate-400">— = No assignment (will use department's ACTIVE bundle)</span>
             </div>
