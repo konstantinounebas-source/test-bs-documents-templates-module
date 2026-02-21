@@ -468,28 +468,43 @@ export default function MfgDailyStandardsAssignment() {
                         const bundle = assignment ? bundleById[assignment.standards_bundle_id] : null;
                         const isEditing = inlineEditKey === key;
                         const deptBundles = allBundles.filter(b => b.department === dept.name);
+                        const targetTypesForBundle = inlineEditBundleId 
+                          ? [...new Set(allDailyTargetLines.filter(l => l.bundle_id === inlineEditBundleId).map(l => l.target_type))]
+                          : [];
 
                         return (
                           <TableCell key={dateStr} className="text-center p-2">
                             {isEditing ? (
                               <div className="flex flex-col gap-2 items-center">
-                                <Select value={inlineEditBundleId} onValueChange={setInlineEditBundleId}>
+                                <Select value={inlineEditBundleId} onValueChange={v => { setInlineEditBundleId(v); setInlineEditTargetType(""); }}>
                                   <SelectTrigger className="h-7 text-xs min-w-[120px]">
-                                    <SelectValue placeholder="Select..." />
+                                    <SelectValue placeholder="Bundle..." />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {deptBundles.map(b => (
                                       <SelectItem key={b.id} value={b.id}>
-                                        v{b.version_no} ({b.status})
+                                        v{b.version_no}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>
+                                {inlineEditBundleId && (
+                                  <Select value={inlineEditTargetType} onValueChange={setInlineEditTargetType}>
+                                    <SelectTrigger className="h-7 text-xs min-w-[120px]">
+                                      <SelectValue placeholder="Type..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {targetTypesForBundle.map(t => (
+                                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
                                 <div className="flex gap-1 justify-center">
                                   <Button
                                     size="sm"
                                     className="h-5 px-2 text-xs"
-                                    onClick={() => handleInlineSave(dateStr, dept.name, inlineEditBundleId)}
+                                    onClick={() => handleInlineSave(dateStr, dept.name, inlineEditBundleId, inlineEditTargetType)}
                                     disabled={isInlineSaving}
                                   >
                                     {isInlineSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
@@ -508,16 +523,23 @@ export default function MfgDailyStandardsAssignment() {
                             ) : (
                               <div className="flex flex-col items-center gap-1">
                                 {bundle ? (
-                                  <Badge
-                                    variant="outline"
-                                    className={`text-xs ${
-                                      bundle.status === "ACTIVE"
-                                        ? "bg-green-50 text-green-700 border-green-200"
-                                        : "bg-amber-50 text-amber-700 border-amber-200"
-                                    }`}
-                                  >
-                                    v{bundle.version_no}
-                                  </Badge>
+                                  <>
+                                    <Badge
+                                      variant="outline"
+                                      className={`text-xs ${
+                                        bundle.status === "ACTIVE"
+                                          ? "bg-green-50 text-green-700 border-green-200"
+                                          : "bg-amber-50 text-amber-700 border-amber-200"
+                                      }`}
+                                    >
+                                      v{bundle.version_no}
+                                    </Badge>
+                                    {assignment?.target_type && (
+                                      <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                        {assignment.target_type}
+                                      </Badge>
+                                    )}
+                                  </>
                                 ) : (
                                   <span className="text-xs text-slate-400">—</span>
                                 )}
