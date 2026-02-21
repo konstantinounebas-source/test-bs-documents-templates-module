@@ -135,6 +135,45 @@ export default function MfgDailyStandardsAssignment() {
     return format(currentDate, "MMMM yyyy");
   }, [viewMode, currentDate]);
 
+  const openInlineEdit = (date, department_id) => {
+    const key = `${date}|${department_id}`;
+    const existing = assignmentMap[key];
+    setInlineEditKey(key);
+    setInlineEditBundleId(existing?.standards_bundle_id || "");
+  };
+
+  const closeInlineEdit = () => {
+    setInlineEditKey(null);
+    setInlineEditBundleId("");
+  };
+
+  const handleInlineSave = async (date, department_id, bundleId) => {
+    if (!bundleId) { toast.error("Please select a bundle"); return; }
+    setIsInlineSaving(true);
+    try {
+      const key = `${date}|${department_id}`;
+      const existing = assignmentMap[key];
+      if (existing) {
+        await base44.entities.DailyStandardsAssignment.update(existing.id, {
+          standards_bundle_id: bundleId
+        });
+      } else {
+        await base44.entities.DailyStandardsAssignment.create({
+          assignment_date: date,
+          department_id,
+          standards_bundle_id: bundleId
+        });
+      }
+      queryClient.invalidateQueries(["DailyStandardsAssignment"]);
+      toast.success("Assignment saved");
+      closeInlineEdit();
+    } catch (e) {
+      toast.error("Error saving assignment");
+    } finally {
+      setIsInlineSaving(false);
+    }
+  };
+
   const openEdit = (date, department_id) => {
     const key = `${date}|${department_id}`;
     const existing = assignmentMap[key];
