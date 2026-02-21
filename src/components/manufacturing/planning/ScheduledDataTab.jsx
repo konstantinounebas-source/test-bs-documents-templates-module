@@ -1158,6 +1158,7 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
             {calendarDays.map((day, index) => {
               const dateStr = format(day, 'yyyy-MM-dd');
               const hasRecords = datesWithRecords.has(dateStr);
+              const hasTargets = datesWithTargets.has(dateStr);
               const isSelected = selectedDate === dateStr;
               const isToday = isSameDay(day, new Date());
               
@@ -1173,9 +1174,14 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
                   `}
                 >
                   <div className="text-sm">{format(day, 'd')}</div>
-                  {hasRecords && (
-                    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-blue-600 rounded-full" />
-                  )}
+                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
+                    {hasRecords && (
+                      <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
+                    )}
+                    {hasTargets && (
+                      <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
+                    )}
+                  </div>
                 </button>
               );
             })}
