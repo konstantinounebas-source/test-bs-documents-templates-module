@@ -13,10 +13,10 @@ import { Plus, Save, Edit2, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import DailyProductionCalendarSelector from './DailyProductionCalendarSelector';
 
-export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDepartment: propDepartment, onBatchSelect, onBatchCreated, hideHeader = false }) {
+export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDepartment: propDepartment, onBatchSelect, onBatchCreated, hideHeader = false, autoOpenDate = null, onAutoOpenHandled }) {
   const queryClient = useQueryClient();
   const [selectedDepartment, setSelectedDepartment] = useState(propDepartment || '');
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState(autoOpenDate || '');
   const [editingBatch, setEditingBatch] = useState(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
