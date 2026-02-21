@@ -264,9 +264,7 @@ export default function MfgDailyStandardsAssignment() {
     if (!bulkTargetStartDate || !bulkTargetEndDate) { toast.error("Select start and end dates"); return; }
     const enabledDepts = Object.entries(bulkTargetDeptEnabled).filter(([, v]) => v).map(([k]) => k);
     if (enabledDepts.length === 0) { toast.error("Select at least one department"); return; }
-    const deptsMissingBundle = enabledDepts.filter(d => !bulkTargetSelections[d]);
-    if (deptsMissingBundle.length > 0) { toast.error("Select bundle for all enabled departments"); return; }
-    const deptsMissingTargetType = enabledDepts.filter(d => !bulkTargetTypeSelections[d]);
+    const deptsMissingTargetType = enabledDepts.filter(d => !bulkTargetSelections[d]);
     if (deptsMissingTargetType.length > 0) { toast.error("Select Target Type for all enabled departments"); return; }
 
     const start = parseISO(bulkTargetStartDate);
@@ -275,42 +273,14 @@ export default function MfgDailyStandardsAssignment() {
 
     setIsSavingBulkTargets(true);
     try {
-      // Process all depts and days in parallel
       const allOps = [];
       for (const deptName of enabledDepts) {
-        const bundleId = bulkTargetSelections[deptName];
-        const targetType = bulkTargetTypeSelections[deptName];
-        const targetLines = allDailyTargetLines.filter(l => l.bundle_id === bundleId && l.target_type === targetType);
-        if (targetLines.length === 0) {
-          toast.error(`No target lines found for bundle and target type in ${deptName}`);
-          setIsSavingBulkTargets(false);
-          return;
-        }
-
+        const targetType = bulkTargetSelections[deptName];
+        
         for (const day of days) {
           const dateStr = format(day, "yyyy-MM-dd");
           allOps.push(
             (async () => {
-              const existing = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
-              const toDelete = existing.map(t => base44.entities.TargetDaily.delete(t.id));
-              await Promise.all(toDelete);
-              
-              const toCreate = targetLines.map(l => ({
-                bundle_id: bundleId,
-                date: dateStr,
-                department: deptName,
-                item_code: l.item_code,
-                target_profile: l.target_type,
-                operation_profile: l.operation_profile_id,
-                target_qty: l.target_qty,
-                profile_time_min_pc: l.per_piece_total_min,
-                target_time_min: l.item_total_min
-              }));
-              if (toCreate.length > 0) {
-                await base44.entities.TargetDaily.bulkCreate(toCreate);
-              }
-
-              // Also update DailyStandardsAssignment with target_type
               const assignmentKey = `${dateStr}|${deptName}`;
               const existingAssignment = assignmentMap[assignmentKey];
               if (existingAssignment) {
@@ -318,27 +288,29 @@ export default function MfgDailyStandardsAssignment() {
                   target_type: targetType 
                 });
               } else {
-                await base44.entities.DailyStandardsAssignment.create({
-                  assignment_date: dateStr,
-                  department_id: deptName,
-                  standards_bundle_id: bundleId,
-                  target_type: targetType
-                });
+                // Need at least a bundle to create an assignment
+                const activeBundleForDept = allBundles.find(b => b.department === deptName && b.status === "ACTIVE");
+                if (activeBundleForDept) {
+                  await base44.entities.DailyStandardsAssignment.create({
+                    assignment_date: dateStr,
+                    department_id: deptName,
+                    standards_bundle_id: activeBundleForDept.id,
+                    target_type: targetType
+                  });
+                }
               }
             })()
           );
         }
       }
       await Promise.all(allOps);
-      queryClient.invalidateQueries(["TargetDaily"]);
       queryClient.invalidateQueries(["DailyStandardsAssignment"]);
-      toast.success("Bulk targets saved");
+      toast.success("Bulk target types saved");
       setBulkTargetDialog(false);
       setBulkTargetSelections({});
-      setBulkTargetTypeSelections({});
       setBulkTargetDeptEnabled({});
     } catch (e) {
-      toast.error("Error saving bulk targets");
+      toast.error("Error saving bulk target types");
     } finally {
       setIsSavingBulkTargets(false);
     }
