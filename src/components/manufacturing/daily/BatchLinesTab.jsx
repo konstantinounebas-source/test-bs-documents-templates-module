@@ -114,12 +114,9 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
         ...data
       });
       
-      // Create QC and Operations if qty_processed > 0
+      // Only create QC (not Operations - those are done via Sync button)
       if (Number(data.qty_processed) > 0) {
-        await Promise.all([
-          createOrUpdateQCInitialStock(data),
-          createOrUpdateOperations(data)
-        ]);
+        await createOrUpdateQCInitialStock(data);
       }
       
       return newLine;
