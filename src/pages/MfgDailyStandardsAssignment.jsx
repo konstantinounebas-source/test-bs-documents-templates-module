@@ -523,8 +523,75 @@ export default function MfgDailyStandardsAssignment() {
         </DialogContent>
       </Dialog>
 
-      {/* Set Daily Targets Dialog */}
-      <Dialog open={targetDialog} onOpenChange={setTargetDialog}>
+      {/* Bulk Set Daily Targets Dialog */}
+       <Dialog open={bulkTargetDialog} onOpenChange={setBulkTargetDialog}>
+         <DialogContent className="sm:max-w-[600px]">
+           <DialogHeader>
+             <DialogTitle className="flex items-center gap-2">
+               <Target className="w-4 h-4 text-amber-600" />
+               Bulk Set Daily Targets
+             </DialogTitle>
+           </DialogHeader>
+           <div className="space-y-4 py-2">
+             <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <Label>Start Date</Label>
+                 <Input type="date" value={bulkTargetStartDate} onChange={e => setBulkTargetStartDate(e.target.value)} className="mt-1" />
+               </div>
+               <div>
+                 <Label>End Date</Label>
+                 <Input type="date" value={bulkTargetEndDate} onChange={e => setBulkTargetEndDate(e.target.value)} className="mt-1" />
+               </div>
+             </div>
+             <div>
+               <Label className="mb-2 block">Departments & Target Bundles</Label>
+               <div className="border rounded-lg divide-y max-h-[320px] overflow-y-auto">
+                 {departments.map(dept => {
+                   const enabled = !!bulkTargetDeptEnabled[dept.name];
+                   const deptBundles = allBundles.filter(b => b.department === dept.name);
+                   return (
+                     <div key={dept.id} className={`p-3 flex items-center gap-3 ${enabled ? "bg-amber-50" : "bg-white"}`}>
+                       <Checkbox
+                         checked={enabled}
+                         onCheckedChange={v => setBulkTargetDeptEnabled(prev => ({ ...prev, [dept.name]: !!v }))}
+                       />
+                       <span className="font-medium text-sm w-32 flex-shrink-0">{dept.name}</span>
+                       <Select
+                         value={bulkTargetSelections[dept.name] || ""}
+                         onValueChange={v => setBulkTargetSelections(prev => ({ ...prev, [dept.name]: v }))}
+                         disabled={!enabled}
+                       >
+                         <SelectTrigger className="flex-1">
+                           <SelectValue placeholder="Select bundle..." />
+                         </SelectTrigger>
+                         <SelectContent>
+                           {deptBundles.map(b => (
+                             <SelectItem key={b.id} value={b.id}>
+                               v{b.version_no} ({b.status})
+                             </SelectItem>
+                           ))}
+                         </SelectContent>
+                       </Select>
+                     </div>
+                   );
+                 })}
+               </div>
+             </div>
+             <p className="text-xs text-slate-500">
+               This will import and apply target lines from the selected bundles to every day in the date range for each checked department (overwriting existing targets).
+             </p>
+           </div>
+           <DialogFooter>
+             <Button variant="outline" onClick={() => setBulkTargetDialog(false)}>Cancel</Button>
+             <Button onClick={handleBulkSaveTargets} disabled={isSavingBulkTargets} className="bg-amber-600 hover:bg-amber-700">
+               {isSavingBulkTargets ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Apply Targets"}
+             </Button>
+           </DialogFooter>
+         </DialogContent>
+       </Dialog>
+
+       {/* Set Daily Targets Dialog (single date) */}
+       <Dialog open={targetDialog} onOpenChange={setTargetDialog}>
         <DialogContent className="sm:max-w-[560px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
