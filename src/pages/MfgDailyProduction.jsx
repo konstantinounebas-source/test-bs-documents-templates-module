@@ -85,6 +85,20 @@ export default function MfgDailyProduction() {
     return null;
   }, [selectedBatch, allBundles, dailyStandardsAssignments]);
 
+  // When coming from schedule with a date+dept, auto-select existing batch or flag to open create dialog
+  useEffect(() => {
+    if (urlDate && urlDept && batchHeaders.length >= 0) {
+      const existingBatch = batchHeaders.find(b => b.date === urlDate && b.department === urlDept);
+      if (existingBatch) {
+        handleBatchSelect(existingBatch);
+        setPendingAutoOpen(false);
+      } else {
+        // No batch yet - signal BatchHeaderTab to open create dialog
+        setPendingAutoOpen(true);
+      }
+    }
+  }, [batchHeaders, urlDate, urlDept]);
+
   const handleBatchSelect = (batch) => {
     setSelectedBatch(batch);
     setActiveTab('batch_lines');
