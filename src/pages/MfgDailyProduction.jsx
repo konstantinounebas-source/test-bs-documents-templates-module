@@ -168,7 +168,7 @@ export default function MfgDailyProduction() {
                <Button
                  variant="outline"
                  size="sm"
-                 onClick={() => navigate(createPageUrl("ScheduledData") + `?date=${selectedBatch.date}&department=${encodeURIComponent(selectedBatch.department)}`)}
+                 onClick={() => navigate(createPageUrl("MfgPlanningWizard") + `?date=${selectedBatch.date}&department=${encodeURIComponent(selectedBatch.department)}`)}
                  className="bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
                >
                  <Clock className="w-3.5 h-3.5 mr-1.5" />

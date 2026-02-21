@@ -77,7 +77,6 @@ import JVFinancialResults from './pages/JVFinancialResults';
 import Manufacturing from './pages/Manufacturing';
 import MfgConsumables from './pages/MfgConsumables';
 import MfgDailyProduction from './pages/MfgDailyProduction';
-import MfgDailyStandardsAssignment from './pages/MfgDailyStandardsAssignment';
 import MfgKPIDashboard from './pages/MfgKPIDashboard';
 import MfgKPIDefinitions from './pages/MfgKPIDefinitions';
 import MfgPlanning from './pages/MfgPlanning';
@@ -125,6 +124,7 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
+import MfgDailyStandardsAssignment from './pages/MfgDailyStandardsAssignment';
 import __Layout from './Layout.jsx';
 
 
@@ -159,7 +159,6 @@ export const PAGES = {
     "Manufacturing": Manufacturing,
     "MfgConsumables": MfgConsumables,
     "MfgDailyProduction": MfgDailyProduction,
-    "MfgDailyStandardsAssignment": MfgDailyStandardsAssignment,
     "MfgKPIDashboard": MfgKPIDashboard,
     "MfgKPIDefinitions": MfgKPIDefinitions,
     "MfgPlanning": MfgPlanning,
@@ -207,6 +206,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
+    "MfgDailyStandardsAssignment": MfgDailyStandardsAssignment,
 }
 
 export const pagesConfig = {
