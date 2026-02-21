@@ -677,7 +677,17 @@ export default function OperationsTab({ batchId, department }) {
                         )}
                       </TableCell>
                       <TableCell className="font-bold w-32">{group.item_code}</TableCell>
-                      <TableCell className="text-slate-500 text-sm">{group.subGroups.length} profile(s)</TableCell>
+                      <TableCell className="text-slate-500 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span>{group.subGroups.length} profile(s)</span>
+                          {/* Show warning if any subgroup is manual with zero time */}
+                          {group.subGroups.some(sg => sg.entry_source === 'MANUAL' && sg.total_time === 0) && (
+                            <span title="Contains manual entry with no operations" className="text-red-500">
+                              <AlertCircle className="w-4 h-4" />
+                            </span>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="font-mono font-bold text-right">
                         {group.subGroups.reduce((sum, sg) => sum + sg.operations.reduce((s, o) => s + (o.qty_operation || 0), 0), 0).toFixed(2)}
                       </TableCell>
