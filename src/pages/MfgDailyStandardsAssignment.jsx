@@ -269,6 +269,8 @@ export default function MfgDailyStandardsAssignment() {
     if (enabledDepts.length === 0) { toast.error("Select at least one department"); return; }
     const deptsMissingBundle = enabledDepts.filter(d => !bulkTargetSelections[d]);
     if (deptsMissingBundle.length > 0) { toast.error("Select bundle for all enabled departments"); return; }
+    const deptsMissingTargetType = enabledDepts.filter(d => !bulkTargetTypeSelections[d]);
+    if (deptsMissingTargetType.length > 0) { toast.error("Select Target Type for all enabled departments"); return; }
 
     const start = parseISO(bulkTargetStartDate);
     const end = parseISO(bulkTargetEndDate);
@@ -278,9 +280,10 @@ export default function MfgDailyStandardsAssignment() {
     try {
       for (const deptName of enabledDepts) {
         const bundleId = bulkTargetSelections[deptName];
-        const targetLines = allDailyTargetLines.filter(l => l.bundle_id === bundleId);
+        const targetType = bulkTargetTypeSelections[deptName];
+        const targetLines = allDailyTargetLines.filter(l => l.bundle_id === bundleId && l.target_type === targetType);
         if (targetLines.length === 0) {
-          toast.error(`No target lines found for bundle in ${deptName}`);
+          toast.error(`No target lines found for bundle and target type in ${deptName}`);
           setIsSavingBulkTargets(false);
           return;
         }
@@ -311,6 +314,7 @@ export default function MfgDailyStandardsAssignment() {
       toast.success("Bulk targets saved");
       setBulkTargetDialog(false);
       setBulkTargetSelections({});
+      setBulkTargetTypeSelections({});
       setBulkTargetDeptEnabled({});
     } catch (e) {
       toast.error("Error saving bulk targets");
