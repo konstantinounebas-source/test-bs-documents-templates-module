@@ -308,46 +308,123 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
         return;
       }
 
+      const qty = batchLine.qty_processed;
       const scheduledItem = scheduledData.find(sd => sd.item_code === batchLine.item_code);
 
       if (scheduledItem && scheduledItem.operation_profile_id) {
-        // Has schedule entry with profile → create individual operations with times
-        const profile = profileNames.find(p => p.id === scheduledItem.operation_profile_id);
-        const operationsToCreate = (profile?.operations_required || []).map(opId => {
-          const operation = operations.find(op => op.id === opId);
-          return operation ? {
-            name: operation.name,
-            stdMinPC: scheduledItem.ops_per_piece_min || 0
-          } : null;
-        }).filter(Boolean);
+        // Has schedule entry with profile → use ProfileSetLines (bundle_id + item_code) to find active operations
+        // Then use StdSetLines for per-operation std_min_per_pc
+        const batchHdr = await base44.entities.BatchHeader.filter({ id: batchId });
+        const bundleId = batchHdr?.[0]?.bundle_id;
 
-        for (const opData of operationsToCreate) {
-          const existing = await base44.entities.Operations.filter({
-            batch_header_id: batchId,
-            item_code: batchLine.item_code,
-            operation: opData.name
+        // Get profile line for this item_code to know which operations are active (yn flags)
+        const profileLines = bundleId
+          ? await base44.entities.Profile_Set_Lines.filter({ bundle_id: bundleId, item_code: batchLine.item_code })
+          : [];
+
+        // Get std lines for this bundle + item_code for per-operation times
+        const stdLines = bundleId
+          ? await base44.entities.Std_Set_Lines.filter({ bundle_id: bundleId, item_code: batchLine.item_code })
+          : [];
+        // Also get general std lines (no item_code) as fallback
+        const stdLinesGeneral = bundleId
+          ? await base44.entities.Std_Set_Lines.filter({ bundle_id: bundleId })
+          : [];
+
+        // Map of operation name → std_min_per_pc
+        const stdMap = {};
+        [...stdLinesGeneral, ...stdLines].forEach(sl => {
+          if (sl.operation) stdMap[sl.operation] = sl.std_min_per_pc || 0;
+        });
+
+        // The yn-flag → operation name mapping
+        const ynOpMap = {
+          sanding_yn: 'Sanding',
+          masking_yn: 'Masking',
+          zink_yn: 'Zink',
+          repair_yn: 'Repair',
+          remake_yn: 'Remake',
+          hanging_yn: 'Hanging',
+          unhanging_yn: 'Unhanging',
+          oven_clean_yn: 'Oven Clean',
+          other_yn: 'Other'
+        };
+
+        // Collect active operations from the profile line
+        const profileLine = profileLines[0];
+        let activeOps = [];
+        if (profileLine) {
+          Object.entries(ynOpMap).forEach(([flag, opName]) => {
+            if (profileLine[flag] === true) {
+              activeOps.push(opName);
+            }
           });
-          const qtyOperation = batchLine.qty_processed;
-          const operationTimeMin = qtyOperation * opData.stdMinPC;
-          if (existing.length > 0) {
-            await base44.entities.Operations.update(existing[0].id, {
-              qty_operation: qtyOperation,
-              std_min_pc_lookup: opData.stdMinPC,
+        }
+
+        // Fallback: if no profile line found, use operations_required from OperationProfileName
+        if (activeOps.length === 0) {
+          const profile = profileNames.find(p => p.id === scheduledItem.operation_profile_id);
+          const opDefs = operations; // base44.entities.Operation list
+          (profile?.operations_required || []).forEach(opId => {
+            const op = opDefs.find(o => o.id === opId);
+            if (op) activeOps.push(op.name);
+          });
+        }
+
+        // Fetch existing operations for this batch+item to upsert
+        const existingOps = await base44.entities.Operations.filter({
+          batch_header_id: batchId,
+          item_code: batchLine.item_code
+        });
+        const existingMap = {};
+        existingOps.forEach(op => { if (op.operation) existingMap[op.operation] = op; });
+
+        // Delete operations no longer in active list
+        const toDelete = existingOps.filter(op => op.operation && !activeOps.includes(op.operation));
+        await Promise.all(toDelete.map(op => base44.entities.Operations.delete(op.id)));
+
+        // Upsert each active operation
+        for (const opName of activeOps) {
+          const stdMinPC = stdMap[opName] || 0;
+          const operationTimeMin = qty * stdMinPC;
+          if (existingMap[opName]) {
+            await base44.entities.Operations.update(existingMap[opName].id, {
+              qty_operation: qty,
+              std_min_pc_lookup: stdMinPC,
               operation_time_min: operationTimeMin,
+              operation_profile_id: scheduledItem.operation_profile_id,
               source_type: 'SCHEDULE'
             });
           } else {
             await base44.entities.Operations.create({
               batch_header_id: batchId,
               item_code: batchLine.item_code,
-              operation: opData.name,
-              qty_operation: qtyOperation,
-              std_min_pc_lookup: opData.stdMinPC,
+              operation: opName,
+              qty_operation: qty,
+              std_min_pc_lookup: stdMinPC,
               operation_time_min: operationTimeMin,
+              operation_profile_id: scheduledItem.operation_profile_id,
               source_type: 'SCHEDULE'
             });
           }
         }
+
+        // If no active ops found at all, create a single manual entry
+        if (activeOps.length === 0) {
+          if (existingOps.length > 0) {
+            await base44.entities.Operations.update(existingOps[0].id, { qty_operation: qty });
+          } else {
+            await base44.entities.Operations.create({
+              batch_header_id: batchId,
+              item_code: batchLine.item_code,
+              operation: '',
+              qty_operation: qty,
+              operation_profile_id: scheduledItem.operation_profile_id,
+              source_type: 'SCHEDULE'
+            });
+          }
+        }
+
       } else {
         // No schedule entry → create 1 record with item_code + qty, rest empty
         const existing = await base44.entities.Operations.filter({
@@ -356,14 +433,14 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
         });
         if (existing.length > 0) {
           await base44.entities.Operations.update(existing[0].id, {
-            qty_operation: batchLine.qty_processed
+            qty_operation: qty
           });
         } else {
           await base44.entities.Operations.create({
             batch_header_id: batchId,
             item_code: batchLine.item_code,
             operation: '',
-            qty_operation: batchLine.qty_processed,
+            qty_operation: qty,
             source_type: 'MANUAL'
           });
         }
