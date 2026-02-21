@@ -838,14 +838,6 @@ export default function OperationsTab({ batchId, department }) {
                         const qty = selectedOperations[op.id] || 0;
                         const opTime = qty * stdMinPc;
 
-                        console.log('Looking for std time:', {
-                          item_code: formData.item_code,
-                          operation: op.name,
-                          found: !!stdLine,
-                          stdMinPc,
-                          stdLine
-                        });
-
                         return (
                           <div key={op.id} className="flex items-center gap-3 p-3 bg-white rounded border">
                             <Checkbox
