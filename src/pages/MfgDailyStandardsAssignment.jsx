@@ -89,12 +89,7 @@ export default function MfgDailyStandardsAssignment() {
     staleTime: 0
   });
 
-  // Fetch all targets for calendar indicators
-  const { data: allTargets = [] } = useQuery({
-    queryKey: ["TargetDaily"],
-    queryFn: () => base44.entities.TargetDaily.list(),
-    staleTime: 0
-  });
+
 
   // Compute visible days based on view mode
   const visibleDays = useMemo(() => {
