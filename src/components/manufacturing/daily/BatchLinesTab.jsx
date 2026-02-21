@@ -250,78 +250,33 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
 
   const createOrUpdateQCInitialStock = async (batchLine) => {
     try {
-      // Hard guard: Do not create/update if conditions are not met
       if (!batchLine.item_code || (batchLine.qty_processed || 0) <= 0) {
         await deleteQCInitialStock(batchLine.item_code);
         return;
       }
-      
-      // Try to get qc_type, qc_level from scheduled data first
-      let qcType, qcLevel;
+
       const scheduledItem = scheduledData.find(sd => sd.item_code === batchLine.item_code);
-      
-      if (scheduledItem && scheduledItem.qc_type && scheduledItem.qc_level) {
-        qcType = scheduledItem.qc_type;
-        qcLevel = scheduledItem.qc_level;
-      } else {
-        // Fallback to bundle data - get all QC lines for this item
-        const itemQCLines = qcSetLines.filter(l => l.item_code === batchLine.item_code && l.qc_type && l.level);
-        if (itemQCLines.length === 0) {
-          await deleteQCInitialStock(batchLine.item_code);
-          return;
-        }
-        
-        // Use all QC lines from bundle
-        for (const qcLine of itemQCLines) {
-          const existingQC = await base44.entities.QC_Initial_Stock.filter({
-            batch_header_id: batchId,
-            item_code: batchLine.item_code,
-            qc_type: qcLine.qc_type,
-            qc_level: qcLine.level
-          });
-
-          const qtyAffected = batchLine.qty_processed;
-
-          if (existingQC.length > 0) {
-            await base44.entities.QC_Initial_Stock.update(existingQC[0].id, {
-              qty_affected: qtyAffected
-            });
-          } else {
-            await base44.entities.QC_Initial_Stock.create({
-              batch_header_id: batchId,
-              item_code: batchLine.item_code,
-              qc_type: qcLine.qc_type,
-              qc_level: qcLine.level,
-              qty_affected: qtyAffected
-            });
-          }
-        }
-        queryClient.invalidateQueries(['QC_Initial_Stock']);
-        return;
-      }
+      const qcType = (scheduledItem?.qc_type) || null;
+      const qcLevel = (scheduledItem?.qc_level) || null;
 
       const existingQC = await base44.entities.QC_Initial_Stock.filter({
         batch_header_id: batchId,
-        item_code: batchLine.item_code,
-        qc_type: qcType,
-        qc_level: qcLevel
+        item_code: batchLine.item_code
       });
 
-      const qtyAffected = batchLine.qty_processed;
-
       if (existingQC.length > 0) {
-        // Update existing record
         await base44.entities.QC_Initial_Stock.update(existingQC[0].id, {
-          qty_affected: qtyAffected
+          qty_affected: batchLine.qty_processed,
+          ...(qcType && { qc_type: qcType }),
+          ...(qcLevel && { qc_level: qcLevel })
         });
       } else {
-        // Create new record
         await base44.entities.QC_Initial_Stock.create({
           batch_header_id: batchId,
           item_code: batchLine.item_code,
-          qc_type: qcType,
-          qc_level: qcLevel,
-          qty_affected: qtyAffected
+          qty_affected: batchLine.qty_processed,
+          ...(qcType && { qc_type: qcType }),
+          ...(qcLevel && { qc_level: qcLevel })
         });
       }
 
