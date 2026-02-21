@@ -164,7 +164,7 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
       await queryClient.invalidateQueries({ queryKey: ['TargetDaily'] });
       const fresh = await base44.entities.TargetDaily.filter({ department: selectedDepartment, bundle_id: selectedBundle.id });
       await saveTGTTimeMetric(selectedDate, selectedDepartment, selectedBundle.id, fresh);
-      setNewRow({ item_code: '', operation_profile_id: '', target_qty: '' });
+      setNewRow({ item_code: '', operation_profile_id: '', target_qty: '', target_type: '' });
       toast.success('Target added');
     },
     onError: (err) => toast.error('Failed: ' + err.message)
