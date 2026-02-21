@@ -461,88 +461,61 @@ export default function OperationsTab({ batchId, department }) {
         return stdMap[`${itemCode}|${opName}`] ?? stdMap[`|${opName}`] ?? 0;
       };
 
-      // 3. Process each batch line
+      // 3. Process each batch line — clean sync: delete all existing ops first, then recreate
       for (const bl of processedLines) {
         const qty = bl.qty_processed;
         const scheduledItem = schedDataAll.find(sd => sd.item_code === bl.item_code);
 
-        // Get existing operations for this batch+item
+        // Delete ALL existing operations for this batch+item to avoid duplicates
         const existingOps = await base44.entities.Operations.filter({
           batch_header_id: batchId,
           item_code: bl.item_code
         });
-        const existingMap = {};
-        existingOps.forEach(op => { if (op.operation) existingMap[op.operation] = op; });
+        await Promise.all(existingOps.map(op => base44.entities.Operations.delete(op.id)));
 
         if (scheduledItem?.operation_profile_id) {
-          // Get operations from OperationProfileName.operations_required
           const profile = allProfileNames.find(p => p.id === scheduledItem.operation_profile_id);
           const activeOps = (profile?.operations_required || [])
             .map(opId => allOperations.find(o => o.id === opId))
             .filter(Boolean)
             .map(o => o.name);
 
-          // Delete ops no longer in active list
-          const toDelete = existingOps.filter(op => op.operation && !activeOps.includes(op.operation));
-          await Promise.all(toDelete.map(op => base44.entities.Operations.delete(op.id)));
-
           if (activeOps.length > 0) {
+            const groupId = `sync-${batchId}-${bl.item_code}-${Date.now()}`;
             for (const opName of activeOps) {
               const stdMinPC = getStdMin(bl.item_code, opName);
-              const operationTimeMin = qty * stdMinPC;
-              if (existingMap[opName]) {
-                await base44.entities.Operations.update(existingMap[opName].id, {
-                  qty_operation: qty,
-                  std_min_pc_lookup: stdMinPC,
-                  operation_time_min: operationTimeMin,
-                  operation_profile_id: scheduledItem.operation_profile_id,
-                  source_type: 'SCHEDULE'
-                });
-              } else {
-                await base44.entities.Operations.create({
-                  batch_header_id: batchId,
-                  item_code: bl.item_code,
-                  operation: opName,
-                  qty_operation: qty,
-                  std_min_pc_lookup: stdMinPC,
-                  operation_time_min: operationTimeMin,
-                  operation_profile_id: scheduledItem.operation_profile_id,
-                  source_type: 'SCHEDULE'
-                });
-              }
-            }
-          } else {
-            // Profile exists but no operations_required → single entry
-            if (existingOps.length > 0) {
-              await base44.entities.Operations.update(existingOps[0].id, {
-                qty_operation: qty,
-                operation_profile_id: scheduledItem.operation_profile_id,
-                source_type: 'SCHEDULE'
-              });
-            } else {
               await base44.entities.Operations.create({
                 batch_header_id: batchId,
                 item_code: bl.item_code,
-                operation: '',
+                operation: opName,
                 qty_operation: qty,
+                std_min_pc_lookup: stdMinPC,
+                operation_time_min: qty * stdMinPC,
                 operation_profile_id: scheduledItem.operation_profile_id,
+                profile_group_id: groupId,
                 source_type: 'SCHEDULE'
               });
             }
-          }
-        } else {
-          // No schedule with profile → single manual entry
-          if (existingOps.length > 0) {
-            await base44.entities.Operations.update(existingOps[0].id, { qty_operation: qty });
           } else {
+            // Profile exists but no operations_required
             await base44.entities.Operations.create({
               batch_header_id: batchId,
               item_code: bl.item_code,
               operation: '',
               qty_operation: qty,
-              source_type: 'MANUAL'
+              operation_profile_id: scheduledItem.operation_profile_id,
+              source_type: 'SCHEDULE'
             });
           }
+        } else {
+          // No schedule → single manual entry
+          await base44.entities.Operations.create({
+            batch_header_id: batchId,
+            item_code: bl.item_code,
+            operation: '',
+            qty_operation: qty,
+            source_type: 'MANUAL'
+          });
         }
       }
 
