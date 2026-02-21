@@ -668,75 +668,100 @@ export default function OperationsTab({ batchId, department }) {
                       <TableCell className="font-mono font-bold text-right">{group.total_time.toFixed(2)}</TableCell>
                       <TableCell className="text-center"></TableCell>
                     </TableRow>
-                    {expandedItems[group.item_code] && group.subGroups.map(subGroup => (
-                      <React.Fragment key={subGroup.profile_group_id}>
-                        <TableRow className="bg-purple-50">
-                          <TableCell className="w-12"></TableCell>
-                          <TableCell className="font-semibold text-purple-800 pl-6">
-                            {subGroup.profile_name}
-                          </TableCell>
-                          <TableCell className="font-mono font-semibold text-right text-purple-900">
-                            {subGroup.operations.reduce((s, o) => s + (o.qty_operation || 0), 0).toFixed(2)}
-                          </TableCell>
-                          <TableCell className="font-mono font-semibold text-right text-orange-700">
-                            {subGroup.operations.filter(o => (o.operation || '').toLowerCase().trim() === 'remake').reduce((s, o) => s + (o.qty_operation || 0), 0).toFixed(2)}
-                          </TableCell>
-                          <TableCell className="font-mono font-semibold text-right text-purple-900">{subGroup.total_time.toFixed(2)}</TableCell>
-                          <TableCell className="text-center">
-                            <div className="flex gap-1 justify-center">
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEdit(subGroup.profile_group_id);
-                                }}
-                                className="h-8 w-8"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteMutation.mutate(subGroup.profile_group_id);
-                                }}
-                                variant="ghost"
-                                size="icon"
-                                disabled={deleteMutation.isPending}
-                                className="h-8 w-8"
-                              >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                        {subGroup.operations.map(op => {
-                        return (
+                    {expandedItems[group.item_code] && group.subGroups.map(subGroup => {
+                     const isManual = subGroup.profile_name === 'Manual Entry';
+                     const hasZeroTime = subGroup.total_time === 0;
+                     return (
+                     <React.Fragment key={subGroup.profile_group_id}>
+                       {/* Subgroup header row */}
+                       <TableRow className={isManual && hasZeroTime ? "bg-red-50" : "bg-purple-50"}>
+                         <TableCell className="w-12"></TableCell>
+                         <TableCell className="w-32 pl-6">
+                           <div className="flex items-center gap-2">
+                             <span className={`font-semibold ${isManual && hasZeroTime ? 'text-red-700' : 'text-purple-800'}`}>
+                               {subGroup.profile_name}
+                             </span>
+                             {isManual && hasZeroTime && (
+                               <span title="No operations entered - please add operations manually" className="text-red-500">
+                                 <AlertCircle className="w-4 h-4" />
+                               </span>
+                             )}
+                           </div>
+                           {isManual && hasZeroTime && (
+                             <p className="text-xs text-red-600 mt-0.5">⚠ No operations — edit to add</p>
+                           )}
+                         </TableCell>
+                         <TableCell></TableCell>
+                         <TableCell className="font-mono font-semibold text-right text-purple-900">
+                           {subGroup.operations.reduce((s, o) => s + (o.qty_operation || 0), 0).toFixed(2)}
+                         </TableCell>
+                         <TableCell className="font-mono font-semibold text-right text-orange-700">
+                           {subGroup.operations.filter(o => (o.operation || '').toLowerCase().trim() === 'remake').reduce((s, o) => s + (o.qty_operation || 0), 0).toFixed(2)}
+                         </TableCell>
+                         <TableCell className={`font-mono font-semibold text-right ${isManual && hasZeroTime ? 'text-red-700' : 'text-purple-900'}`}>
+                           {subGroup.total_time.toFixed(2)}
+                         </TableCell>
+                         <TableCell className="text-center">
+                           <div className="flex gap-1 justify-center">
+                             <Button 
+                               variant="ghost" 
+                               size="icon" 
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 handleEdit(subGroup.profile_group_id);
+                               }}
+                               className="h-8 w-8"
+                             >
+                               <Edit2 className="w-4 h-4" />
+                             </Button>
+                             <Button
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 deleteMutation.mutate(subGroup.profile_group_id);
+                               }}
+                               variant="ghost"
+                               size="icon"
+                               disabled={deleteMutation.isPending}
+                               className="h-8 w-8"
+                             >
+                               <Trash2 className="w-4 h-4 text-red-500" />
+                             </Button>
+                           </div>
+                         </TableCell>
+                       </TableRow>
+                       {/* Operation detail rows */}
+                       {subGroup.operations.map(op => (
                          <TableRow key={op.id} className="hover:bg-slate-50">
                            <TableCell className="w-12"></TableCell>
-                           <TableCell className="pl-12 text-slate-700">
-                             <span className="text-slate-400">↳</span> {op.operation || <span className="italic text-slate-400">—</span>}
+                           <TableCell className="w-32"></TableCell>
+                           <TableCell className="pl-4 text-slate-700">
+                             <span className="text-slate-400">↳</span>{' '}
+                             {op.operation ? (
+                               <span>{op.operation}</span>
+                             ) : (
+                               <span className="italic text-slate-400">—</span>
+                             )}
                              <span className="text-xs text-slate-400 ml-2">
                                (std: {op.std_min_pc_lookup?.toFixed(3) || '0.000'} min/pc)
                              </span>
                            </TableCell>
-                            <TableCell className="font-mono text-sm text-slate-600 text-right">
-                              <span className="font-semibold">{op.qty_operation}</span>
-                            </TableCell>
-                            <TableCell className="font-mono text-sm text-orange-700 text-right">
-                              {(op.operation || '').toLowerCase().trim() === 'remake' ? (
-                                <span className="font-semibold">{op.qty_operation || 0}</span>
-                              ) : (
-                                <span className="text-slate-300">-</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="font-mono text-sm font-medium text-right">{op.operation_time_min?.toFixed(2) || '0.00'}</TableCell>
-                            <TableCell className="text-center"></TableCell>
-                          </TableRow>
-                        );
-                        })}
-                      </React.Fragment>
-                    ))}
+                           <TableCell className="font-mono text-sm text-slate-600 text-right">
+                             <span className="font-semibold">{op.qty_operation}</span>
+                           </TableCell>
+                           <TableCell className="font-mono text-sm text-orange-700 text-right">
+                             {(op.operation || '').toLowerCase().trim() === 'remake' ? (
+                               <span className="font-semibold">{op.qty_operation || 0}</span>
+                             ) : (
+                               <span className="text-slate-300">-</span>
+                             )}
+                           </TableCell>
+                           <TableCell className="font-mono text-sm font-medium text-right">{op.operation_time_min?.toFixed(2) || '0.00'}</TableCell>
+                           <TableCell className="text-center"></TableCell>
+                         </TableRow>
+                       ))}
+                     </React.Fragment>
+                     );
+                    })}
                   </React.Fragment>
                 ))}
               </>
