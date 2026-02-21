@@ -562,7 +562,10 @@ export default function MfgDailyStandardsAssignment() {
                                   <span className="text-xs text-slate-400">—</span>
                                 )}
                                 {targetsMap[key] && (
-                                  <div className="w-2 h-2 rounded-full bg-orange-500" title="Targets set for this date"></div>
+                                  <>
+                                    <div className="w-2 h-2 rounded-full bg-orange-500" title="Targets set for this date"></div>
+                                    <span className="text-xs text-orange-600">{targetsMap[key]}</span>
+                                  </>
                                 )}
                                 <Button
                                   variant="ghost"
