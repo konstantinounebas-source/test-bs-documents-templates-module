@@ -31,6 +31,11 @@ export default function MfgDailyStandardsAssignment() {
   const [editDialog, setEditDialog] = useState(null); // { date, department_id, assignment? }
   const [selectedBundleId, setSelectedBundleId] = useState("");
 
+  // Inline editing state
+  const [inlineEditKey, setInlineEditKey] = useState(null); // "date|dept"
+  const [inlineEditBundleId, setInlineEditBundleId] = useState("");
+  const [isInlineSaving, setIsInlineSaving] = useState(false);
+
   // Bulk assignment state
   const [bulkDialog, setBulkDialog] = useState(false);
   const [bulkStartDate, setBulkStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
