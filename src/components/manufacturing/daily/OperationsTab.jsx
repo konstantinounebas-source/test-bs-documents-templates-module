@@ -133,9 +133,11 @@ export default function OperationsTab({ batchId, department }) {
         const profile = groupOps[0].operation_profile_id 
           ? profileNames.find(p => p.id === groupOps[0].operation_profile_id) 
           : null;
+        // Use a consistent group key: profile_group_id if set, else the op id
+        const groupKey = groupOps[0].profile_group_id || groupOps[0].id;
         
         return {
-          profile_group_id: pgId,
+          profile_group_id: groupKey,
           profile_name: profile?.name || 'Manual Entry',
           operations: groupOps,
           total_time: totalTime
