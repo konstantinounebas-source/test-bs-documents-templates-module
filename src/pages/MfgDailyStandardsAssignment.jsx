@@ -576,17 +576,54 @@ export default function MfgDailyStandardsAssignment() {
                    );
                  })}
                </div>
-             </div>
-             <p className="text-xs text-slate-500">
-               This will import and apply target lines from the selected bundles to every day in the date range for each checked department (overwriting existing targets).
-             </p>
-           </div>
-           <DialogFooter>
-             <Button variant="outline" onClick={() => setBulkTargetDialog(false)}>Cancel</Button>
-             <Button onClick={handleBulkSaveTargets} disabled={isSavingBulkTargets} className="bg-amber-600 hover:bg-amber-700">
-               {isSavingBulkTargets ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Apply Targets"}
-             </Button>
-           </DialogFooter>
+               </div>
+
+               {/* Preview target lines for each selected bundle */}
+               {Object.entries(bulkTargetSelections).filter(([dept, bundleId]) => bundleId && bulkTargetDeptEnabled[dept]).map(([dept, bundleId]) => {
+                 const targetLines = allDailyTargetLines.filter(l => l.bundle_id === bundleId);
+                 return (
+                   <div key={dept} className="border-t pt-3 mt-3">
+                     <p className="text-xs font-semibold text-slate-700 mb-2">{dept} - Target Lines Preview</p>
+                     {targetLines.length === 0 ? (
+                       <p className="text-xs text-slate-400">No target lines in this bundle</p>
+                     ) : (
+                       <div className="border rounded-lg overflow-hidden max-h-[150px] overflow-y-auto">
+                         <Table className="text-xs">
+                           <TableHeader>
+                             <TableRow className="bg-slate-50">
+                               <TableHead className="text-xs">Item Code</TableHead>
+                               <TableHead className="text-xs">Target Type</TableHead>
+                               <TableHead className="text-right text-xs">Qty</TableHead>
+                               <TableHead className="text-right text-xs">Time (min)</TableHead>
+                             </TableRow>
+                           </TableHeader>
+                           <TableBody>
+                             {targetLines.map(l => (
+                               <TableRow key={l.id}>
+                                 <TableCell className="text-xs">{l.item_code}</TableCell>
+                                 <TableCell className="text-xs">{l.target_type}</TableCell>
+                                 <TableCell className="text-right text-xs">{l.target_qty}</TableCell>
+                                 <TableCell className="text-right text-xs">{l.item_total_min?.toFixed(1)}</TableCell>
+                               </TableRow>
+                             ))}
+                           </TableBody>
+                         </Table>
+                       </div>
+                     )}
+                   </div>
+                 );
+               })}
+
+               <p className="text-xs text-slate-500">
+                 This will import and apply target lines from the selected bundles to every day in the date range for each checked department (overwriting existing targets).
+               </p>
+               </div>
+               <DialogFooter>
+               <Button variant="outline" onClick={() => setBulkTargetDialog(false)}>Cancel</Button>
+               <Button onClick={handleBulkSaveTargets} disabled={isSavingBulkTargets} className="bg-amber-600 hover:bg-amber-700">
+                 {isSavingBulkTargets ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Apply Targets"}
+               </Button>
+               </DialogFooter>
          </DialogContent>
        </Dialog>
 
