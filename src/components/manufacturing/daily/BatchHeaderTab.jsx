@@ -140,18 +140,21 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
 
   // Auto-open create dialog when autoOpenDate is set and bundle data is ready
   React.useEffect(() => {
-    if (autoOpenDate && propDepartment && !showCreateDialog) {
+    if (autoOpenDate && propDepartment) {
       setSelectedDate(autoOpenDate);
-      setFormData({
+      setFormData(prev => ({
+        ...prev,
         date: autoOpenDate,
         department: propDepartment,
         bundle_id: defaultBundleId || '',
         notes: ''
-      });
-      setShowCreateDialog(true);
-      if (onAutoOpenHandled) onAutoOpenHandled();
+      }));
+      if (!showCreateDialog) {
+        setShowCreateDialog(true);
+        if (onAutoOpenHandled) onAutoOpenHandled();
+      }
     }
-  }, [autoOpenDate, propDepartment, defaultBundleId]);
+  }, [autoOpenDate, propDepartment, defaultBundleId, showCreateDialog]);
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
