@@ -1207,6 +1207,15 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
             <h4 className="text-base font-semibold">Scheduled Data - {selectedDate}</h4>
             
             <div className="flex gap-2">
+              <Button
+                onClick={() => navigate(createPageUrl("MfgDailyProduction") + `?date=${selectedDate}&department=${encodeURIComponent(selectedDepartment)}`)}
+                variant="outline"
+                size="sm"
+                className="bg-green-50 border-green-300 text-green-700 hover:bg-green-100"
+              >
+                <ClipboardList className="w-4 h-4 mr-2" />
+                Go to Daily
+              </Button>
               <Button 
                 onClick={() => exportScheduledDataToExcel(filteredLines, getProfileName, selectedDate, selectedBundle?.name)}
                 variant="outline" 
