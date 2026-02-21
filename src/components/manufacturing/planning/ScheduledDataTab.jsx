@@ -228,11 +228,19 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     staleTime: 0
   });
 
-  // Fetch daily target lines
+  // Fetch daily target lines (template definitions)
   const { data: dailyTargetLines = [] } = useQuery({
     queryKey: ['DailyTargetLines', selectedBundle?.id],
     queryFn: () => base44.entities.DailyTargetLines.filter({ bundle_id: selectedBundle.id }),
     enabled: !!selectedBundle,
+    staleTime: 0
+  });
+
+  // Fetch actual targets for calendar indicators
+  const { data: allTargetDaily = [] } = useQuery({
+    queryKey: ['TargetDaily', selectedDepartment],
+    queryFn: () => base44.entities.TargetDaily.filter({ department: selectedDepartment }),
+    enabled: !!selectedDepartment,
     staleTime: 0
   });
 
