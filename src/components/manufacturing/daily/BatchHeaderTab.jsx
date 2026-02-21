@@ -34,6 +34,21 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
     }
   }, [propDepartment]);
 
+  // Auto-open create dialog when autoOpenDate is set and bundle data is ready
+  React.useEffect(() => {
+    if (autoOpenDate && propDepartment && defaultBundleId !== undefined && !showCreateDialog) {
+      setSelectedDate(autoOpenDate);
+      setFormData({
+        date: autoOpenDate,
+        department: propDepartment,
+        bundle_id: defaultBundleId,
+        notes: ''
+      });
+      setShowCreateDialog(true);
+      if (onAutoOpenHandled) onAutoOpenHandled();
+    }
+  }, [autoOpenDate, propDepartment, defaultBundleId]);
+
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
     queryFn: () => base44.entities.Department.list(),
