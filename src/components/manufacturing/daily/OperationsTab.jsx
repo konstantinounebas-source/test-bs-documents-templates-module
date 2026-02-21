@@ -902,6 +902,7 @@ export default function OperationsTab({ batchId, department }) {
                                 type="number"
                                 step="0.01"
                                 min="0"
+                                max={selectedItemQtyProcessed ?? undefined}
                                 value={selectedOperations[op.id] || ''}
                                 onChange={(e) => {
                                   const val = e.target.value;
@@ -914,8 +915,11 @@ export default function OperationsTab({ batchId, department }) {
                                 }}
                                 disabled={!selectedOperations[op.id]}
                                 placeholder="Qty"
-                                className="w-24 h-9"
+                                className={`w-24 h-9 ${selectedItemQtyProcessed !== null && (selectedOperations[op.id] || 0) > selectedItemQtyProcessed ? 'border-red-500 bg-red-50' : ''}`}
                               />
+                              {selectedItemQtyProcessed !== null && (selectedOperations[op.id] || 0) > selectedItemQtyProcessed && (
+                                <span className="text-xs text-red-500">max {selectedItemQtyProcessed}</span>
+                              )}
                               <span className="text-xs text-slate-500 w-32">
                                 {stdMinPc.toFixed(3)} min/pc
                               </span>
