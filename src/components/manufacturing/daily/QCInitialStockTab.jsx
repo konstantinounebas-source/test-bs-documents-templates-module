@@ -568,20 +568,6 @@ export default function QCInitialStockTab({ batchId, department }) {
 
           <div className="space-y-4 py-4">
             <div>
-              <Label>Item Code *{selectedItemQtyProcessed !== null && <span className="text-slate-500 font-normal ml-2">(Qty Processed: <strong>{selectedItemQtyProcessed}</strong>)</span>}</Label>
-              <Select value={formData.item_code} onValueChange={(v) => setFormData({ ...formData, item_code: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select item code from standards" />
-                </SelectTrigger>
-                <SelectContent>
-                  {itemCodes.map(code => (
-                    <SelectItem key={code} value={code}>{code}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
               <Label>QC Type *</Label>
               <Select value={formData.qc_type} onValueChange={(v) => setFormData({ ...formData, qc_type: v })}>
                 <SelectTrigger>
@@ -595,35 +581,114 @@ export default function QCInitialStockTab({ batchId, department }) {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>QC Level *</Label>
+              <Select value={formData.qc_level} onValueChange={(v) => setFormData({ ...formData, qc_level: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {qcLevels.map(ql => (
+                    <SelectItem key={ql.id} value={ql.name}>{ql.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {!editingLine && (
               <div>
-                <Label>QC Level *</Label>
-                <Select value={formData.qc_level} onValueChange={(v) => setFormData({ ...formData, qc_level: v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {qcLevels.map(ql => (
-                      <SelectItem key={ql.id} value={ql.name}>{ql.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Item Codes * (Select Multiple)</Label>
+                <div className="border rounded-lg p-3 max-h-64 overflow-y-auto space-y-2 bg-slate-50">
+                  {itemCodes.map(code => {
+                    const bl = batchLines.find(l => l.item_code === code);
+                    const isSelected = selectedItems.has(code);
+                    return (
+                      <div key={code} className="flex items-center gap-3 p-2 bg-white rounded border hover:bg-slate-50 cursor-pointer">
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleItemSelection(code)}
+                          id={`item-${code}`}
+                        />
+                        <label htmlFor={`item-${code}`} className="flex-1 cursor-pointer text-sm font-medium">
+                          {code}
+                        </label>
+                        <span className="text-xs text-slate-500">Processed: {bl?.qty_processed || 0}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
+            )}
+
+            {selectedItems.size > 0 && !editingLine && (
+              <div>
+                <Label>Quantities Affected *</Label>
+                <div className="border rounded-lg overflow-auto bg-white">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 border-b">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold">Item Code</th>
+                        <th className="px-3 py-2 text-left font-semibold">Qty Processed</th>
+                        <th className="px-3 py-2 text-left font-semibold">Qty Affected</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from(selectedItems).map(itemCode => {
+                        const bl = batchLines.find(l => l.item_code === itemCode);
+                        const qty = itemQuantities[itemCode];
+                        const isOverLimit = isQtyOverLimit(itemCode, qty);
+                        return (
+                          <tr key={itemCode} className="border-b hover:bg-slate-50">
+                            <td className="px-3 py-2 font-medium">{itemCode}</td>
+                            <td className="px-3 py-2">{bl?.qty_processed || 0}</td>
+                            <td className="px-3 py-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={qty || ''}
+                                onChange={(e) => setItemQuantities(prev => ({ ...prev, [itemCode]: e.target.value }))}
+                                className={`w-24 h-8 ${isOverLimit ? 'border-red-500 bg-red-50' : ''}`}
+                                placeholder="Qty"
+                              />
+                              {isOverLimit && (
+                                <p className="text-xs text-red-500 mt-1">Exceeds processed qty ({bl?.qty_processed})</p>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {editingLine && (
+              <div>
+                <Label>Item Code</Label>
+                <div className="px-3 py-2 bg-slate-100 rounded border text-sm font-medium">{editingLine.item_code}</div>
+              </div>
+            )}
+
+            {editingLine && (
               <div>
                 <Label>Qty Affected *</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  max={selectedItemQtyProcessed ?? undefined}
-                  value={formData.qty_affected}
-                  onChange={(e) => setFormData({ ...formData, qty_affected: e.target.value })}
-                  className={isQtyOverLimit(formData.qty_affected) ? 'border-red-500 bg-red-50' : ''}
-                />
-                {isQtyOverLimit(formData.qty_affected) && (
-                  <p className="text-xs text-red-500 mt-1">Exceeds qty processed ({selectedItemQtyProcessed})</p>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={itemQuantities[editingLine.item_code] || ''}
+                    onChange={(e) => setItemQuantities(prev => ({ ...prev, [editingLine.item_code]: e.target.value }))}
+                    className={isQtyOverLimit(editingLine.item_code, itemQuantities[editingLine.item_code]) ? 'border-red-500 bg-red-50' : ''}
+                  />
+                </div>
+                {isQtyOverLimit(editingLine.item_code, itemQuantities[editingLine.item_code]) && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Exceeds qty processed ({batchLines.find(l => l.item_code === editingLine.item_code)?.qty_processed || 0})
+                  </p>
                 )}
               </div>
-            </div>
+            )}
           </div>
 
           <DialogFooter>
