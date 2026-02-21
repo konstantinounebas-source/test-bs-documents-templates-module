@@ -91,14 +91,16 @@ export default function OperationsTab({ batchId, department }) {
     queryKey: ['Operations', batchId],
     queryFn: () => base44.entities.Operations.filter({ batch_header_id: batchId }),
     enabled: !!batchId,
-    staleTime: 30 * 1000
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   const { data: batchLines = [] } = useQuery({
     queryKey: ['Batch_Lines', batchId],
     queryFn: () => base44.entities.Batch_Lines.filter({ batch_header_id: batchId }),
     enabled: !!batchId,
-    staleTime: 30 * 1000
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   // qty_processed for the currently selected item code in the dialog
