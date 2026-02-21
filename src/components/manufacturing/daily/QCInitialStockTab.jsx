@@ -121,50 +121,16 @@ export default function QCInitialStockTab({ batchId, department }) {
 
   // Add QC per-piece to each line
   const linesWithQCPerPiece = useMemo(() => {
-    console.log('=== QC PER-PIECE DEBUG ===');
-    console.log('Total qcSetLines:', qcSetLines.length);
-    console.log('QC Set Lines:', qcSetLines);
-    console.log('Lines to process:', lines);
-    
     return lines.map(line => {
-      const trimmedItemCode = (line.item_code || '').trim();
-      
-      console.log(`\n--- Processing line: ${line.item_code} ---`);
-      console.log('  QC Type:', line.qc_type);
-      console.log('  QC Level:', line.qc_level);
-      
-      const qcRule = qcSetLines.find(
-        ql => {
-          const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
-          const qlQcType = ql.data?.qc_type || ql.qc_type;
-          const qlQcLevel = ql.data?.qc_level || ql.qc_level;
-          
-          return qlItemCode === trimmedItemCode.toLowerCase() &&
-                 qlQcType === line.qc_type &&
-                 qlQcLevel === line.qc_level;
-        }
-      );
-      
-      console.log('  Matching rule found:', qcRule);
-      
-      let qcPerPiece = 0;
-      if (qcRule) {
-        const extraTime = qcRule.data?.calculated_extra_time_min || qcRule.calculated_extra_time_min || qcRule.calculated_extra_time;
-        if (extraTime) {
-          qcPerPiece = parseFloat(extraTime);
-          console.log('  ✅ QC Per-piece:', qcPerPiece);
-        } else {
-          console.log('  ❌ No calculated_extra_time found in rule');
-          console.log('  Rule data:', qcRule);
-        }
-      } else {
-        console.log('  ❌ No matching rule found');
-      }
-      
-      return {
-        ...line,
-        qcPerPiece: qcPerPiece.toFixed(2)
-      };
+      const trimmedItemCode = (line.item_code || '').trim().toLowerCase();
+      const qcRule = qcSetLines.find(ql => {
+        const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
+        const qlQcType = ql.data?.qc_type || ql.qc_type;
+        const qlQcLevel = ql.data?.qc_level || ql.qc_level;
+        return qlItemCode === trimmedItemCode && qlQcType === line.qc_type && qlQcLevel === line.qc_level;
+      });
+      const extraTime = qcRule?.calculated_extra_time_min ?? qcRule?.calculated_extra_time ?? 0;
+      return { ...line, qcPerPiece: parseFloat(extraTime || 0).toFixed(2) };
     });
   }, [lines, qcSetLines]);
 
