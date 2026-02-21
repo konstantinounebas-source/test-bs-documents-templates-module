@@ -138,6 +138,21 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
     return activeBundle ? activeBundle.id : '';
   }, [selectedDate, selectedDepartment, dailyAssignments, scheduledDayHeaders, allBundles]);
 
+  // Auto-open create dialog when autoOpenDate is set and bundle data is ready
+  React.useEffect(() => {
+    if (autoOpenDate && propDepartment && !showCreateDialog) {
+      setSelectedDate(autoOpenDate);
+      setFormData({
+        date: autoOpenDate,
+        department: propDepartment,
+        bundle_id: defaultBundleId || '',
+        notes: ''
+      });
+      setShowCreateDialog(true);
+      if (onAutoOpenHandled) onAutoOpenHandled();
+    }
+  }, [autoOpenDate, propDepartment, defaultBundleId]);
+
   const createMutation = useMutation({
     mutationFn: async (data) => {
       // Check if scheduled data exists
