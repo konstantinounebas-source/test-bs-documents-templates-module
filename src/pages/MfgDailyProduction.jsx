@@ -153,7 +153,7 @@ export default function MfgDailyProduction() {
           {selectedBatch && (
             <Button
               variant="outline"
-              onClick={() => navigate(createPageUrl("MfgPlanningWizard") + `?date=${selectedBatch.date}&department=${encodeURIComponent(selectedBatch.department)}`)}
+              onClick={() => navigate(createPageUrl("MfgDailyStandardsAssignment") + `?date=${selectedBatch.date}&department=${encodeURIComponent(selectedBatch.department)}`)}
               className="bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
