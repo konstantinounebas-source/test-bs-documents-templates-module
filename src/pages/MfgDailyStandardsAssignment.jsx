@@ -405,10 +405,6 @@ export default function MfgDailyStandardsAssignment() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setBulkTargetDialog(true)} className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50">
-                    <Target className="w-4 h-4" />
-                    Set Daily Targets
-                  </Button>
                 <Button onClick={() => setBulkDialog(true)} className="gap-2 bg-indigo-600 hover:bg-indigo-700">
                   <Zap className="w-4 h-4" />
                   Bulk Assign
