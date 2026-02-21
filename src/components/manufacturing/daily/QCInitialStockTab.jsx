@@ -92,6 +92,23 @@ export default function QCInitialStockTab({ batchId, department }) {
     staleTime: 30 * 1000
   });
 
+  // Fetch batch lines for qty_processed validation
+  const { data: batchLines = [] } = useQuery({
+    queryKey: ['Batch_Lines', batchId],
+    queryFn: () => base44.entities.Batch_Lines.filter({ batch_header_id: batchId }),
+    enabled: !!batchId,
+    staleTime: 30 * 1000
+  });
+
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // qty_processed for item in dialog
+  const selectedItemQtyProcessed = useMemo(() => {
+    if (!formData.item_code) return null;
+    const bl = batchLines.find(l => l.item_code === formData.item_code);
+    return bl?.qty_processed ?? null;
+  }, [formData.item_code, batchLines]);
+
   // Fetch QC rules from bundle for calculated extra time
   const { data: qcSetLines = [] } = useQuery({
     queryKey: ['QCSetLines', batchHeader?.bundle_id],
