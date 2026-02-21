@@ -34,6 +34,7 @@ export default function MfgDailyStandardsAssignment() {
   // Inline editing state
   const [inlineEditKey, setInlineEditKey] = useState(null); // "date|dept"
   const [inlineEditBundleId, setInlineEditBundleId] = useState("");
+  const [inlineEditTargetType, setInlineEditTargetType] = useState("");
   const [isInlineSaving, setIsInlineSaving] = useState(false);
 
   // Bulk assignment state
