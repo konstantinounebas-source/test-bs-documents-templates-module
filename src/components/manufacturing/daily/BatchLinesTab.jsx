@@ -379,10 +379,30 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
           await deleteOperations(batchLine.item_code);
           return;
         }
-        operationsToCreate = itemProfileLines.map(profileLine => ({
-          name: profileLine.profile_name,
-          stdMinPC: profileLine.profile_time_min_pc || 0
-        }));
+        // For each profile line, find the OperationProfileName and get its individual operations
+        for (const profileLine of itemProfileLines) {
+          const profileObj = profileNames.find(p => p.name === profileLine.profile_name);
+          if (profileObj && profileObj.operations_required && profileObj.operations_required.length > 0) {
+            const ops = profileObj.operations_required.map(opId => {
+              const operation = operations.find(op => op.id === opId);
+              return operation ? {
+                name: operation.name,
+                stdMinPC: profileLine.profile_time_min_pc || 0
+              } : null;
+            }).filter(Boolean);
+            operationsToCreate.push(...ops);
+          } else {
+            // Fallback: use profile name as single operation
+            operationsToCreate.push({
+              name: profileLine.profile_name,
+              stdMinPC: profileLine.profile_time_min_pc || 0
+            });
+          }
+        }
+        if (operationsToCreate.length === 0) {
+          await deleteOperations(batchLine.item_code);
+          return;
+        }
       }
 
       // Create/update operations
