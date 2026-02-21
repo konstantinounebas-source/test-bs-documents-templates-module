@@ -330,6 +330,61 @@ export default function QCInitialStockTab({ batchId, department }) {
     onError: () => toast.error('Failed to delete QC initial stock')
   });
 
+  // Qty validation helper
+  const isQtyOverLimit = (qty) => selectedItemQtyProcessed !== null && parseFloat(qty) > selectedItemQtyProcessed;
+
+  const handleSyncFromBatchLines = async () => {
+    if (!batchId || !batchHeader) return;
+    setIsSyncing(true);
+    try {
+      // Only sync item codes that appear in ScheduledData with a qc_type set
+      const schedItemsWithQC = scheduledData.filter(sd => sd.qc_type && sd.qc_qty > 0);
+
+      if (schedItemsWithQC.length === 0) {
+        toast.info('No scheduled QC entries found for this batch');
+        setIsSyncing(false);
+        return;
+      }
+
+      let created = 0;
+      let skipped = 0;
+
+      for (const sd of schedItemsWithQC) {
+        // Check if a QC record already exists for this item+qc_type combination
+        const existing = lines.filter(l => l.item_code === sd.item_code && l.qc_type === sd.qc_type);
+        if (existing.length > 0) {
+          skipped++;
+          continue;
+        }
+
+        // Use qty_processed from batch line as qty_affected; fallback to qc_qty from schedule
+        const bl = batchLines.find(l => l.item_code === sd.item_code);
+        const qty = bl?.qty_processed ?? sd.qc_qty ?? 0;
+
+        await base44.entities.QC_Initial_Stock.create({
+          batch_header_id: batchId,
+          item_code: sd.item_code,
+          qc_type: sd.qc_type,
+          qc_level: sd.qc_level || '',
+          qty_affected: qty
+        });
+        created++;
+      }
+
+      await saveQCTimeMetric();
+      queryClient.invalidateQueries(['QC_Initial_Stock']);
+
+      if (created > 0) {
+        toast.success(`Synced ${created} QC record(s)${skipped > 0 ? ` (${skipped} skipped - already exist)` : ''}`);
+      } else {
+        toast.info(`All QC records already exist (${skipped} skipped)`);
+      }
+    } catch (err) {
+      toast.error('Sync failed');
+    }
+    setIsSyncing(false);
+  };
+
   const handleAdd = () => {
     if (!formData.item_code || !formData.qc_type || !formData.qc_level || !formData.qty_affected) {
       toast.error('All fields are required');
