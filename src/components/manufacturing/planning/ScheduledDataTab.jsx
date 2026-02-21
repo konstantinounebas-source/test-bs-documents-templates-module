@@ -21,6 +21,7 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 
 export default function ScheduledDataTab({ selectedDepartment, selectedBundle: initialSelectedBundle }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   
   // State
   const [currentMonth, setCurrentMonth] = useState(new Date());
