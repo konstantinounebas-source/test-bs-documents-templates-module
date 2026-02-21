@@ -366,12 +366,29 @@ export default function MfgDailyStandardsAssignment() {
               if (toCreate.length > 0) {
                 await base44.entities.TargetDaily.bulkCreate(toCreate);
               }
+
+              // Also update DailyStandardsAssignment with target_type
+              const assignmentKey = `${dateStr}|${deptName}`;
+              const existingAssignment = assignmentMap[assignmentKey];
+              if (existingAssignment) {
+                await base44.entities.DailyStandardsAssignment.update(existingAssignment.id, { 
+                  target_type: targetType 
+                });
+              } else {
+                await base44.entities.DailyStandardsAssignment.create({
+                  assignment_date: dateStr,
+                  department_id: deptName,
+                  standards_bundle_id: bundleId,
+                  target_type: targetType
+                });
+              }
             })()
           );
         }
       }
       await Promise.all(allOps);
       queryClient.invalidateQueries(["TargetDaily"]);
+      queryClient.invalidateQueries(["DailyStandardsAssignment"]);
       toast.success("Bulk targets saved");
       setBulkTargetDialog(false);
       setBulkTargetSelections({});
