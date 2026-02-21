@@ -138,6 +138,7 @@ export default function MfgPlanningWizard() {
                   <ScheduledDataTab
                     selectedDepartment={selectedDepartment}
                     selectedBundle={selectedBundle}
+                    selectedDate={selectedDate}
                   />
                 </TabsContent>
                 <TabsContent value="targets">
