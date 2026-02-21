@@ -18,6 +18,7 @@ export default function MfgPlanningWizard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedDepartment, setSelectedDepartment] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
   const [selectedBundle, setSelectedBundle] = useState(null);
   const [activeTab, setActiveTab] = useState('scheduled');
 
