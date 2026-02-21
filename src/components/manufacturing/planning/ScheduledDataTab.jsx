@@ -406,9 +406,9 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
 
   // Get dates with targets for calendar indicators
   const datesWithTargets = useMemo(() => {
-    if (!dailyTargetLines || dailyTargetLines.length === 0) return new Set();
-    return new Set(dailyTargetLines.map(t => t.date).filter(Boolean));
-  }, [dailyTargetLines]);
+    if (!allTargetDaily || allTargetDaily.length === 0) return new Set();
+    return new Set(allTargetDaily.map(t => t.date).filter(Boolean));
+  }, [allTargetDaily]);
 
   // Calendar navigation
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
