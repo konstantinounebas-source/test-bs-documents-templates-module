@@ -161,20 +161,29 @@ export default function MfgDailyProduction() {
           <CardHeader>
             <CardTitle>Production Data Entry</CardTitle>
             {selectedBatch && (
-              <div className="flex items-center gap-4 flex-wrap mt-1">
-                <p className="text-sm text-slate-600">
-                  Selected Batch: {selectedBatch.date} - {selectedBatch.department}
-                </p>
-                {selectedBundle ? (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">
-                    📦 Bundle: {selectedBundle.version_no} ({selectedBundle.status})
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
-                    ⚠ No bundle assigned
-                  </span>
-                )}
-              </div>
+             <div className="flex items-center gap-3 flex-wrap mt-1">
+               <p className="text-sm text-slate-600">
+                 Selected Batch: {selectedBatch.date} - {selectedBatch.department}
+               </p>
+               <Button
+                 variant="outline"
+                 size="sm"
+                 onClick={() => navigate(createPageUrl("ScheduledData") + `?date=${selectedBatch.date}&department=${encodeURIComponent(selectedBatch.department)}`)}
+                 className="bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
+               >
+                 <Clock className="w-3.5 h-3.5 mr-1.5" />
+                 View Schedule
+               </Button>
+               {selectedBundle ? (
+                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                   📦 Bundle: {selectedBundle.version_no} ({selectedBundle.status})
+                 </span>
+               ) : (
+                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                   ⚠ No bundle assigned
+                 </span>
+               )}
+             </div>
             )}
           </CardHeader>
           <CardContent className="space-y-6">
