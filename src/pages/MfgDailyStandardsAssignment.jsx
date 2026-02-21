@@ -612,14 +612,15 @@ export default function MfgDailyStandardsAssignment() {
                </div>
                </div>
 
-               {/* Preview target lines for each selected bundle */}
-               {Object.entries(bulkTargetSelections).filter(([dept, bundleId]) => bundleId && bulkTargetDeptEnabled[dept]).map(([dept, bundleId]) => {
-                 const targetLines = allDailyTargetLines.filter(l => l.bundle_id === bundleId);
+               {/* Preview target lines for each selected bundle & target type */}
+               {Object.entries(bulkTargetSelections).filter(([dept, bundleId]) => bundleId && bulkTargetDeptEnabled[dept] && bulkTargetTypeSelections[dept]).map(([dept, bundleId]) => {
+                 const targetType = bulkTargetTypeSelections[dept];
+                 const targetLines = allDailyTargetLines.filter(l => l.bundle_id === bundleId && l.target_type === targetType);
                  return (
                    <div key={dept} className="border-t pt-3 mt-3">
-                     <p className="text-xs font-semibold text-slate-700 mb-2">{dept} - Target Lines Preview</p>
+                     <p className="text-xs font-semibold text-slate-700 mb-2">{dept} - {targetType} - Target Lines Preview</p>
                      {targetLines.length === 0 ? (
-                       <p className="text-xs text-slate-400">No target lines in this bundle</p>
+                       <p className="text-xs text-slate-400">No target lines for this bundle and type</p>
                      ) : (
                        <div className="border rounded-lg overflow-hidden max-h-[150px] overflow-y-auto">
                          <Table className="text-xs">
