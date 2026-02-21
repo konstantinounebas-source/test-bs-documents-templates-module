@@ -175,15 +175,6 @@ export default function MfgDailyProduction() {
                 <p className="text-sm text-slate-600">
                   Selected Batch: {selectedBatch.date} - {selectedBatch.department}
                 </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate(createPageUrl("MfgPlanningWizard") + `?date=${selectedBatch.date}&department=${encodeURIComponent(selectedBatch.department)}`)}
-                  className="bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100 h-7 text-xs"
-                >
-                  <ArrowLeft className="w-3 h-3 mr-1" />
-                  Go to Schedule
-                </Button>
                 {selectedBundle ? (
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">
                     📦 Bundle: {selectedBundle.version_no} ({selectedBundle.status})
