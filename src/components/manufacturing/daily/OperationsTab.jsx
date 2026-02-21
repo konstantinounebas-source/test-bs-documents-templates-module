@@ -285,7 +285,11 @@ export default function OperationsTab({ batchId, department }) {
 
   const deleteMutation = useMutation({
     mutationFn: async (profile_group_id) => {
-      const opsToDelete = lines.filter(l => l.profile_group_id === profile_group_id);
+      // Match by profile_group_id OR by the op's own id (for ops without a group)
+      const opsToDelete = lines.filter(l => 
+        (l.profile_group_id && l.profile_group_id === profile_group_id) ||
+        (!l.profile_group_id && l.id === profile_group_id)
+      );
       await Promise.all(opsToDelete.map(op => base44.entities.Operations.delete(op.id)));
     },
     onSuccess: async () => {
