@@ -208,6 +208,8 @@ export default function MfgDailyProduction() {
                 onBatchSelect={handleBatchSelect}
                 onBatchCreated={handleBatchCreated}
                 hideHeader={true}
+                autoOpenDate={pendingAutoOpen ? urlDate : null}
+                onAutoOpenHandled={() => setPendingAutoOpen(false)}
               />
             )}
 
