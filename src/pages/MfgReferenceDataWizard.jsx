@@ -39,12 +39,7 @@ export default function MfgReferenceDataWizard() {
     { id: "qc_levels", label: "QC Levels", entity: "QCLevel", icon: AlertTriangle },
     { id: "consumables", label: "Consumables", entity: "Consumable", icon: Package, customComponent: true },
     { id: "work_types", label: "Work Types", entity: "Work_Type", icon: Briefcase },
-    { id: "units", label: "Units", entity: "Unit", icon: Ruler },
-    { id: "rate_types", label: "Rate Types", entity: "Rate_Type", icon: Tag },
-    { id: "entry_types", label: "Entry Types", entity: "Entry_Type", icon: FileText },
     { id: "break_times", label: "Break Times", entity: "BreakTime", icon: Clock },
-    { id: "target_profiles", label: "Target Profiles", entity: "Target_Profile_Name", icon: Target },
-    { id: "operation_profiles", label: "Operation Profiles", entity: "Operation_Profile_Name", icon: FileCheck },
     { id: "persons", label: "Persons", entity: "Person", icon: Users, customComponent: true }
   ];
 
