@@ -374,7 +374,10 @@ export default function OperationsTab({ batchId, department }) {
   };
 
   const handleEdit = (profile_group_id) => {
-    const groupOps = lines.filter(l => l.profile_group_id === profile_group_id);
+    const groupOps = lines.filter(l => 
+      (l.profile_group_id && l.profile_group_id === profile_group_id) ||
+      (!l.profile_group_id && l.id === profile_group_id)
+    );
     if (groupOps.length === 0) return;
 
     const firstOp = groupOps[0];
