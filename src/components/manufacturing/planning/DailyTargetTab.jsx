@@ -249,8 +249,8 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
 
   // ---------- handlers ----------
   const handleAdd = () => {
-    if (!newRow.item_code || !newRow.operation_profile_id || !newRow.target_qty) {
-      toast.error('Fill Item Code, Profile and Target Qty');
+    if (!newRow.item_code || !newRow.operation_profile_id || !newRow.target_qty || !newRow.target_type) {
+      toast.error('Fill Item Code, Profile, Target Type and Target Qty');
       return;
     }
     if (!selectedDate) {
