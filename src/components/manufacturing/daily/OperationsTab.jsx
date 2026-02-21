@@ -397,7 +397,6 @@ export default function OperationsTab({ batchId, department }) {
     setShowAddDialog(false);
   };
 
-  // handleSyncFromBatchLines defined below (state declared at top)
   const handleSyncFromBatchLines = async () => {
     setSyncingFromBatchLines(true);
     try {
