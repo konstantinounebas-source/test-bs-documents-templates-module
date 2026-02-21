@@ -390,6 +390,10 @@ export default function QCInitialStockTab({ batchId, department }) {
       toast.error('All fields are required');
       return;
     }
+    if (isQtyOverLimit(formData.qty_affected)) {
+      toast.error(`Qty exceeds qty processed (${selectedItemQtyProcessed})`);
+      return;
+    }
 
     const data = {
       ...formData,
