@@ -35,15 +35,21 @@ export default function MfgPlanningWizard() {
     staleTime: 0
   });
 
-  // Load department from URL params on mount
+  // Load department and date from URL params on mount
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const deptParam = params.get('department');
+    const dateParam = params.get('date');
+    
     if (deptParam && departments.length > 0) {
       const dept = departments.find(d => d.name === deptParam);
       if (dept) {
         setSelectedDepartment(dept.name);
       }
+    }
+    
+    if (dateParam) {
+      setSelectedDate(dateParam);
     }
   }, [location.search, departments]);
 
