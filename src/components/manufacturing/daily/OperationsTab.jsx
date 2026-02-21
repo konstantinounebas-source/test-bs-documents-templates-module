@@ -550,7 +550,8 @@ export default function OperationsTab({ batchId, department }) {
         }
       }
 
-      await queryClient.invalidateQueries(['Operations']);
+      await queryClient.invalidateQueries({ queryKey: ['Operations', batchId] });
+      await queryClient.refetchQueries({ queryKey: ['Operations', batchId] });
       await saveOpTimeMetric();
       toast.success(`✓ Synced ${processedLines.length} item(s) from Batch Lines`);
     } catch (error) {
