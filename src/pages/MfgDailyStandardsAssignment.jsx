@@ -167,6 +167,92 @@ export default function MfgDailyStandardsAssignment() {
     return allBundles.filter(b => b.department === editDialog.department_id);
   }, [allBundles, editDialog]);
 
+  // Bulk save handler
+  const handleBulkSave = async () => {
+    if (!bulkStartDate || !bulkEndDate) { toast.error("Select start and end dates"); return; }
+    const enabledDepts = Object.entries(bulkDeptEnabled).filter(([, v]) => v).map(([k]) => k);
+    if (enabledDepts.length === 0) { toast.error("Select at least one department"); return; }
+
+    const start = parseISO(bulkStartDate);
+    const end = parseISO(bulkEndDate);
+    const days = eachDayOfInterval({ start, end });
+
+    setIsBulkSaving(true);
+    try {
+      for (const dept of enabledDepts) {
+        const bundleId = bulkSelections[dept];
+        if (!bundleId) continue;
+        for (const day of days) {
+          const dateStr = format(day, "yyyy-MM-dd");
+          const key = `${dateStr}|${dept}`;
+          const existing = assignmentMap[key];
+          if (existing) {
+            await base44.entities.DailyStandardsAssignment.update(existing.id, { standards_bundle_id: bundleId });
+          } else {
+            await base44.entities.DailyStandardsAssignment.create({
+              assignment_date: dateStr,
+              department_id: dept,
+              standards_bundle_id: bundleId
+            });
+          }
+        }
+      }
+      queryClient.invalidateQueries(["DailyStandardsAssignment"]);
+      toast.success("Bulk assignment saved");
+      setBulkDialog(false);
+    } catch (e) {
+      toast.error("Error saving bulk assignment");
+    } finally {
+      setIsBulkSaving(false);
+    }
+  };
+
+  // Target lines for the selected bundle in target dialog
+  const targetLinesForBundle = useMemo(() => {
+    if (!targetBundleId) return [];
+    return allDailyTargetLines.filter(l => l.bundle_id === targetBundleId);
+  }, [targetBundleId, allDailyTargetLines]);
+
+  // Save targets handler
+  const handleSaveTargets = async () => {
+    if (!targetDate || !targetDept || !targetBundleId) { toast.error("Fill all fields"); return; }
+    if (targetLinesForBundle.length === 0) { toast.error("No target lines found for this bundle"); return; }
+
+    setIsSavingTargets(true);
+    try {
+      // Delete existing targets for this date+dept
+      const existing = await base44.entities.TargetDaily.filter({ date: targetDate, department: targetDept });
+      for (const t of existing) {
+        await base44.entities.TargetDaily.delete(t.id);
+      }
+      // Create new ones from DailyTargetLines
+      const toCreate = targetLinesForBundle.map(l => ({
+        bundle_id: targetBundleId,
+        date: targetDate,
+        department: targetDept,
+        item_code: l.item_code,
+        target_profile: l.target_type,
+        operation_profile: l.operation_profile_id,
+        target_qty: l.target_qty,
+        profile_time_min_pc: l.per_piece_total_min,
+        target_time_min: l.item_total_min
+      }));
+      await base44.entities.TargetDaily.bulkCreate(toCreate);
+      queryClient.invalidateQueries(["TargetDaily"]);
+      toast.success(`${toCreate.length} target lines saved for ${targetDate}`);
+      setTargetDialog(false);
+    } catch (e) {
+      toast.error("Error saving targets");
+    } finally {
+      setIsSavingTargets(false);
+    }
+  };
+
+  const bundlesForTargetDept = useMemo(() => {
+    if (!targetDept) return [];
+    return allBundles.filter(b => b.department === targetDept);
+  }, [allBundles, targetDept]);
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-full mx-auto space-y-6">
