@@ -144,21 +144,22 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
 
   // ---------- mutations ----------
   const createMutation = useMutation({
-    mutationFn: async (row) => {
-      const { profile_time_min_pc, target_time_min } = calcTimes(row.item_code, row.operation_profile_id, row.target_qty);
-      const profile = allProfiles.find(p => p.id === row.operation_profile_id);
-      return base44.entities.TargetDaily.create({
-        bundle_id: selectedBundle.id,
-        date: selectedDate,
-        department: selectedDepartment,
-        item_code: row.item_code,
-        operation_profile: profile?.name || '',
-        operation_profile_id: row.operation_profile_id,
-        target_qty: parseFloat(row.target_qty),
-        profile_time_min_pc,
-        target_time_min
-      });
-    },
+     mutationFn: async (row) => {
+       const { profile_time_min_pc, target_time_min } = calcTimes(row.item_code, row.operation_profile_id, row.target_qty);
+       const profile = allProfiles.find(p => p.id === row.operation_profile_id);
+       return base44.entities.TargetDaily.create({
+         bundle_id: selectedBundle.id,
+         date: selectedDate,
+         department: selectedDepartment,
+         item_code: row.item_code,
+         operation_profile: profile?.name || '',
+         operation_profile_id: row.operation_profile_id,
+         target_profile: row.target_type,
+         target_qty: parseFloat(row.target_qty),
+         profile_time_min_pc,
+         target_time_min
+       });
+     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['TargetDaily'] });
       const fresh = await base44.entities.TargetDaily.filter({ department: selectedDepartment, bundle_id: selectedBundle.id });
