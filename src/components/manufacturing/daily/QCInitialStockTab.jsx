@@ -256,8 +256,9 @@ export default function QCInitialStockTab({ batchId, department }) {
       ...data
     }),
     onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['QC_Initial_Stock', batchId] });
+      await queryClient.refetchQueries({ queryKey: ['QC_Initial_Stock', batchId] });
       await saveQCTimeMetric();
-      queryClient.invalidateQueries(['QC_Initial_Stock']);
       setShowAddDialog(false);
       setFormData({ item_code: '', qc_type: '', qc_level: '', qty_affected: '' });
       toast.success('✓ QC Initial Stock added');
@@ -268,8 +269,9 @@ export default function QCInitialStockTab({ batchId, department }) {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.QC_Initial_Stock.update(id, data),
     onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['QC_Initial_Stock', batchId] });
+      await queryClient.refetchQueries({ queryKey: ['QC_Initial_Stock', batchId] });
       await saveQCTimeMetric();
-      queryClient.invalidateQueries(['QC_Initial_Stock']);
       setShowAddDialog(false);
       setEditingLine(null);
       setFormData({ item_code: '', qc_type: '', qc_level: '', qty_affected: '' });
@@ -281,8 +283,9 @@ export default function QCInitialStockTab({ batchId, department }) {
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.QC_Initial_Stock.delete(id),
     onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['QC_Initial_Stock', batchId] });
+      await queryClient.refetchQueries({ queryKey: ['QC_Initial_Stock', batchId] });
       await saveQCTimeMetric();
-      queryClient.invalidateQueries(['QC_Initial_Stock']);
       toast.success('QC initial stock deleted');
     },
     onError: () => toast.error('Failed to delete QC initial stock')
