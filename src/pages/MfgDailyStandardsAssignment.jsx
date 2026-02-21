@@ -150,21 +150,24 @@ export default function MfgDailyStandardsAssignment() {
     setInlineEditTargetType("");
   };
 
-  const handleInlineSave = async (date, department_id, bundleId) => {
+  const handleInlineSave = async (date, department_id, bundleId, targetType) => {
     if (!bundleId) { toast.error("Please select a bundle"); return; }
+    if (!targetType) { toast.error("Please select a target type"); return; }
     setIsInlineSaving(true);
     try {
       const key = `${date}|${department_id}`;
       const existing = assignmentMap[key];
+      const updateData = {
+        standards_bundle_id: bundleId,
+        target_type: targetType
+      };
       if (existing) {
-        await base44.entities.DailyStandardsAssignment.update(existing.id, {
-          standards_bundle_id: bundleId
-        });
+        await base44.entities.DailyStandardsAssignment.update(existing.id, updateData);
       } else {
         await base44.entities.DailyStandardsAssignment.create({
           assignment_date: date,
           department_id,
-          standards_bundle_id: bundleId
+          ...updateData
         });
       }
       queryClient.invalidateQueries(["DailyStandardsAssignment"]);
