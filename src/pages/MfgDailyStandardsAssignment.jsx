@@ -141,11 +141,13 @@ export default function MfgDailyStandardsAssignment() {
     const existing = assignmentMap[key];
     setInlineEditKey(key);
     setInlineEditBundleId(existing?.standards_bundle_id || "");
+    setInlineEditTargetType(existing?.target_type || "");
   };
 
   const closeInlineEdit = () => {
     setInlineEditKey(null);
     setInlineEditBundleId("");
+    setInlineEditTargetType("");
   };
 
   const handleInlineSave = async (date, department_id, bundleId) => {
