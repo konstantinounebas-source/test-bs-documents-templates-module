@@ -548,8 +548,6 @@ export default function OperationsTab({ batchId, department }) {
     setSyncingFromBatchLines(false);
   };
 
-  // handleSyncFromBatchLines end
-
   const totalOperationsTime = useMemo(() => {
     return lines.reduce((sum, op) => sum + (op.operation_time_min || 0), 0);
   }, [lines]);
