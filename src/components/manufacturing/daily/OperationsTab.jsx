@@ -721,14 +721,6 @@ export default function OperationsTab({ batchId, department }) {
                           </TableCell>
                         </TableRow>
                         {subGroup.operations.map(op => {
-                        console.log('Operation:', {
-                          operation: op.operation,
-                          qty: op.qty_operation,
-                          remake_qty: op.remake_qty,
-                          std_min_pc: op.std_min_pc_lookup,
-                          time_min: op.operation_time_min,
-                          calculated: (op.qty_operation || 0) * (op.std_min_pc_lookup || 0)
-                        });
                         return (
                          <TableRow key={op.id} className="hover:bg-slate-50">
                            <TableCell className="w-12"></TableCell>
