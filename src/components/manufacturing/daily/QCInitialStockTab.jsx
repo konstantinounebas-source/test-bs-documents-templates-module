@@ -260,8 +260,7 @@ export default function QCInitialStockTab({ batchId, department }) {
       await queryClient.invalidateQueries({ queryKey: ['QC_Initial_Stock', batchId] });
       await queryClient.refetchQueries({ queryKey: ['QC_Initial_Stock', batchId] });
       await saveQCTimeMetric();
-      setShowAddDialog(false);
-      setFormData({ item_code: '', qc_type: '', qc_level: '', qty_affected: '' });
+      resetForm();
       toast.success('✓ QC Initial Stock added');
     },
     onError: () => toast.error('Failed to add QC initial stock')
