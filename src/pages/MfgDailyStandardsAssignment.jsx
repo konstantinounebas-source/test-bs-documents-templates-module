@@ -453,33 +453,71 @@ export default function MfgDailyStandardsAssignment() {
                         const key = `${dateStr}|${dept.name}`;
                         const assignment = assignmentMap[key];
                         const bundle = assignment ? bundleById[assignment.standards_bundle_id] : null;
+                        const isEditing = inlineEditKey === key;
+                        const deptBundles = allBundles.filter(b => b.department === dept.name);
 
                         return (
                           <TableCell key={dateStr} className="text-center p-2">
-                            <div className="flex flex-col items-center gap-1">
-                              {bundle ? (
-                                <Badge
-                                  variant="outline"
-                                  className={`text-xs ${
-                                    bundle.status === "ACTIVE"
-                                      ? "bg-green-50 text-green-700 border-green-200"
-                                      : "bg-amber-50 text-amber-700 border-amber-200"
-                                  }`}
+                            {isEditing ? (
+                              <div className="flex flex-col gap-2 items-center">
+                                <Select value={inlineEditBundleId} onValueChange={setInlineEditBundleId}>
+                                  <SelectTrigger className="h-7 text-xs min-w-[120px]">
+                                    <SelectValue placeholder="Select..." />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {deptBundles.map(b => (
+                                      <SelectItem key={b.id} value={b.id}>
+                                        v{b.version_no} ({b.status})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <div className="flex gap-1 justify-center">
+                                  <Button
+                                    size="sm"
+                                    className="h-5 px-2 text-xs"
+                                    onClick={() => handleInlineSave(dateStr, dept.name, inlineEditBundleId)}
+                                    disabled={isInlineSaving}
+                                  >
+                                    {isInlineSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save"}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-5 px-2 text-xs"
+                                    onClick={closeInlineEdit}
+                                    disabled={isInlineSaving}
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-1">
+                                {bundle ? (
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-xs ${
+                                      bundle.status === "ACTIVE"
+                                        ? "bg-green-50 text-green-700 border-green-200"
+                                        : "bg-amber-50 text-amber-700 border-amber-200"
+                                    }`}
+                                  >
+                                    v{bundle.version_no}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-xs text-slate-400">—</span>
+                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0 text-slate-400 hover:text-indigo-600"
+                                  onClick={() => openInlineEdit(dateStr, dept.name)}
                                 >
-                                  v{bundle.version_no}
-                                </Badge>
-                              ) : (
-                                <span className="text-xs text-slate-400">—</span>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0 text-slate-400 hover:text-indigo-600"
-                                onClick={() => openEdit(dateStr, dept.name)}
-                              >
-                                <Edit2 className="w-3 h-3" />
-                              </Button>
-                            </div>
+                                  <Edit2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            )}
                           </TableCell>
                         );
                       })}
