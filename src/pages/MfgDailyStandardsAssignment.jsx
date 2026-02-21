@@ -550,33 +550,62 @@ export default function MfgDailyStandardsAssignment() {
              </div>
              <div>
                <Label className="mb-2 block">Departments & Target Bundles</Label>
-               <div className="border rounded-lg divide-y max-h-[320px] overflow-y-auto">
+               <div className="border rounded-lg divide-y max-h-[400px] overflow-y-auto">
                  {departments.map(dept => {
                    const enabled = !!bulkTargetDeptEnabled[dept.name];
                    const deptBundles = allBundles.filter(b => b.department === dept.name);
+                   const selectedBundleId = bulkTargetSelections[dept.name];
+                   const targetTypesForBundle = selectedBundleId 
+                     ? [...new Set(allDailyTargetLines.filter(l => l.bundle_id === selectedBundleId).map(l => l.target_type))]
+                     : [];
                    return (
-                     <div key={dept.id} className={`p-3 flex items-center gap-3 ${enabled ? "bg-amber-50" : "bg-white"}`}>
-                       <Checkbox
-                         checked={enabled}
-                         onCheckedChange={v => setBulkTargetDeptEnabled(prev => ({ ...prev, [dept.name]: !!v }))}
-                       />
-                       <span className="font-medium text-sm w-32 flex-shrink-0">{dept.name}</span>
-                       <Select
-                         value={bulkTargetSelections[dept.name] || ""}
-                         onValueChange={v => setBulkTargetSelections(prev => ({ ...prev, [dept.name]: v }))}
-                         disabled={!enabled}
-                       >
-                         <SelectTrigger className="flex-1">
-                           <SelectValue placeholder="Select bundle..." />
-                         </SelectTrigger>
-                         <SelectContent>
-                           {deptBundles.map(b => (
-                             <SelectItem key={b.id} value={b.id}>
-                               v{b.version_no} ({b.status})
-                             </SelectItem>
-                           ))}
-                         </SelectContent>
-                       </Select>
+                     <div key={dept.id} className={`p-3 space-y-2 ${enabled ? "bg-amber-50" : "bg-white"}`}>
+                       <div className="flex items-center gap-3">
+                         <Checkbox
+                           checked={enabled}
+                           onCheckedChange={v => setBulkTargetDeptEnabled(prev => ({ ...prev, [dept.name]: !!v }))}
+                         />
+                         <span className="font-medium text-sm w-32 flex-shrink-0">{dept.name}</span>
+                       </div>
+                       <div className="flex gap-2 ml-6">
+                         <Select
+                           value={bulkTargetSelections[dept.name] || ""}
+                           onValueChange={v => {
+                             setBulkTargetSelections(prev => ({ ...prev, [dept.name]: v }));
+                             setBulkTargetTypeSelections(prev => ({ ...prev, [dept.name]: "" }));
+                           }}
+                           disabled={!enabled}
+                         >
+                           <SelectTrigger className="flex-1">
+                             <SelectValue placeholder="Select bundle..." />
+                           </SelectTrigger>
+                           <SelectContent>
+                             {deptBundles.map(b => (
+                               <SelectItem key={b.id} value={b.id}>
+                                 v{b.version_no} ({b.status})
+                               </SelectItem>
+                             ))}
+                           </SelectContent>
+                         </Select>
+                         {selectedBundleId && (
+                           <Select
+                             value={bulkTargetTypeSelections[dept.name] || ""}
+                             onValueChange={v => setBulkTargetTypeSelections(prev => ({ ...prev, [dept.name]: v }))}
+                             disabled={!enabled || targetTypesForBundle.length === 0}
+                           >
+                             <SelectTrigger className="flex-1">
+                               <SelectValue placeholder="Select type..." />
+                             </SelectTrigger>
+                             <SelectContent>
+                               {targetTypesForBundle.map(t => (
+                                 <SelectItem key={t} value={t}>
+                                   {t}
+                                 </SelectItem>
+                               ))}
+                             </SelectContent>
+                           </Select>
+                         )}
+                       </div>
                      </div>
                    );
                  })}
