@@ -372,18 +372,35 @@ export default function QCInitialStockTab({ batchId, department }) {
   const handleEdit = (line) => {
     setEditingLine(line);
     setFormData({
-      item_code: line.item_code,
       qc_type: line.qc_type,
-      qc_level: line.qc_level,
-      qty_affected: line.qty_affected || ''
+      qc_level: line.qc_level
     });
+    setSelectedItems(new Set([line.item_code]));
+    setItemQuantities({ [line.item_code]: line.qty_affected });
     setShowAddDialog(true);
   };
 
   const resetForm = () => {
-    setFormData({ item_code: '', qc_type: '', qc_level: '', qty_affected: '' });
+    setFormData({ qc_type: '', qc_level: '' });
+    setSelectedItems(new Set());
+    setItemQuantities({});
     setEditingLine(null);
     setShowAddDialog(false);
+  };
+
+  const toggleItemSelection = (itemCode) => {
+    const newSet = new Set(selectedItems);
+    if (newSet.has(itemCode)) {
+      newSet.delete(itemCode);
+      const newQtys = { ...itemQuantities };
+      delete newQtys[itemCode];
+      setItemQuantities(newQtys);
+    } else {
+      newSet.add(itemCode);
+      const bl = batchLines.find(l => l.item_code === itemCode);
+      setItemQuantities(prev => ({ ...prev, [itemCode]: bl?.qty_processed || '' }));
+    }
+    setSelectedItems(newSet);
   };
 
   if (isLoading) {
