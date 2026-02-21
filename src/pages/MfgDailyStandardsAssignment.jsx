@@ -261,6 +261,63 @@ export default function MfgDailyStandardsAssignment() {
     return allBundles.filter(b => b.department === targetDept);
   }, [allBundles, targetDept]);
 
+  // Bulk target save handler
+  const handleBulkSaveTargets = async () => {
+    if (!bulkTargetStartDate || !bulkTargetEndDate) { toast.error("Select start and end dates"); return; }
+    const enabledDepts = Object.entries(bulkTargetDeptEnabled).filter(([, v]) => v).map(([k]) => k);
+    if (enabledDepts.length === 0) { toast.error("Select at least one department"); return; }
+    const deptsMissingBundle = enabledDepts.filter(d => !bulkTargetSelections[d]);
+    if (deptsMissingBundle.length > 0) { toast.error("Select bundle for all enabled departments"); return; }
+
+    const start = parseISO(bulkTargetStartDate);
+    const end = parseISO(bulkTargetEndDate);
+    const days = eachDayOfInterval({ start, end });
+
+    setIsSavingBulkTargets(true);
+    try {
+      for (const deptName of enabledDepts) {
+        const bundleId = bulkTargetSelections[deptName];
+        const targetLines = allDailyTargetLines.filter(l => l.bundle_id === bundleId);
+        if (targetLines.length === 0) {
+          toast.error(`No target lines found for bundle in ${deptName}`);
+          setIsSavingBulkTargets(false);
+          return;
+        }
+
+        for (const day of days) {
+          const dateStr = format(day, "yyyy-MM-dd");
+          // Delete existing targets
+          const existing = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
+          for (const t of existing) {
+            await base44.entities.TargetDaily.delete(t.id);
+          }
+          // Create new ones
+          const toCreate = targetLines.map(l => ({
+            bundle_id: bundleId,
+            date: dateStr,
+            department: deptName,
+            item_code: l.item_code,
+            target_profile: l.target_type,
+            operation_profile: l.operation_profile_id,
+            target_qty: l.target_qty,
+            profile_time_min_pc: l.per_piece_total_min,
+            target_time_min: l.item_total_min
+          }));
+          await base44.entities.TargetDaily.bulkCreate(toCreate);
+        }
+      }
+      queryClient.invalidateQueries(["TargetDaily"]);
+      toast.success("Bulk targets saved");
+      setBulkTargetDialog(false);
+      setBulkTargetSelections({});
+      setBulkTargetDeptEnabled({});
+    } catch (e) {
+      toast.error("Error saving bulk targets");
+    } finally {
+      setIsSavingBulkTargets(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 p-6">
       <div className="max-w-full mx-auto space-y-6">
