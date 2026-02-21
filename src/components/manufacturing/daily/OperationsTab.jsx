@@ -135,10 +135,29 @@ export default function OperationsTab({ batchId, department }) {
           : null;
         // Use a consistent group key: profile_group_id if set, else the op id
         const groupKey = groupOps[0].profile_group_id || groupOps[0].id;
+        const sourceType = groupOps[0].source_type || 'MANUAL';
         
+        // Determine display name:
+        // - If profile exists → show profile name + badge (SCHEDULE or MANUAL)
+        // - If no profile and source is SCHEDULE → "Scheduled Entry"
+        // - Otherwise → "Manual Entry"
+        let displayName;
+        let entrySource; // 'SCHEDULE' | 'MANUAL'
+        if (profile) {
+          displayName = profile.name;
+          entrySource = sourceType === 'SCHEDULE' ? 'SCHEDULE' : 'MANUAL';
+        } else if (sourceType === 'SCHEDULE') {
+          displayName = 'Scheduled Entry';
+          entrySource = 'SCHEDULE';
+        } else {
+          displayName = 'Manual Entry';
+          entrySource = 'MANUAL';
+        }
+
         return {
           profile_group_id: groupKey,
-          profile_name: profile?.name || 'Manual Entry',
+          profile_name: displayName,
+          entry_source: entrySource,
           operations: groupOps,
           total_time: totalTime
         };
