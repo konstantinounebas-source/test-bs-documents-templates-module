@@ -347,9 +347,10 @@ export default function MfgDailyStandardsAssignment() {
                         const key = `${dateStr}|${dept.name}`;
                         const assignment = assignmentMap[key];
                         const bundle = assignment ? bundleById[assignment.standards_bundle_id] : null;
+                        const isHighlighted = dateStr === urlDate && dept.name === urlDept;
 
                         return (
-                          <TableCell key={dateStr} className="text-center p-2">
+                          <TableCell key={dateStr} className={`text-center p-2 ${isHighlighted ? "bg-blue-50 ring-2 ring-inset ring-blue-400" : ""}`}>
                             <div className="flex flex-col items-center gap-1">
                               {bundle ? (
                                 <Badge
