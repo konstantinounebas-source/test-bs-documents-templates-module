@@ -396,6 +396,158 @@ export default function OperationsTab({ batchId, department }) {
     setShowAddDialog(false);
   };
 
+  const [syncingFromBatchLines, setSyncingFromBatchLines] = useState(false);
+
+  const handleSyncFromBatchLines = async () => {
+    setSyncingFromBatchLines(true);
+    try {
+      // 1. Get all batch lines for this batch with qty_processed > 0
+      const allBatchLines = await base44.entities.Batch_Lines.filter({ batch_header_id: batchId });
+      const processedLines = allBatchLines.filter(bl => (bl.qty_processed || 0) > 0);
+
+      if (processedLines.length === 0) {
+        toast.info('No batch lines with qty processed > 0 found');
+        setSyncingFromBatchLines(false);
+        return;
+      }
+
+      const batchHdr = batchHeader;
+      const bundleId = batchHdr?.bundle_id;
+
+      // 2. Get std lines and profile lines for the bundle
+      const [stdLinesAll, profileLinesAll, schedDataAll] = await Promise.all([
+        bundleId ? base44.entities.Std_Set_Lines.filter({ bundle_id: bundleId }) : Promise.resolve([]),
+        bundleId ? base44.entities.Profile_Set_Lines.filter({ bundle_id: bundleId }) : Promise.resolve([]),
+        (batchHdr?.date && batchHdr?.department)
+          ? base44.entities.ScheduledData.filter({ date: batchHdr.date, department_id: batchHdr.department })
+          : Promise.resolve([])
+      ]);
+
+      // Build std map: item_code+operation → std_min_per_pc (item-specific overrides general)
+      const stdMap = {};
+      stdLinesAll.forEach(sl => {
+        const key = `${sl.item_code || ''}|${sl.operation}`;
+        stdMap[key] = sl.std_min_per_pc || 0;
+      });
+      const getStdMin = (itemCode, opName) => {
+        return stdMap[`${itemCode}|${opName}`] ?? stdMap[`|${opName}`] ?? 0;
+      };
+
+      const ynOpMap = {
+        sanding_yn: 'Sanding',
+        masking_yn: 'Masking',
+        zink_yn: 'Zink',
+        repair_yn: 'Repair',
+        remake_yn: 'Remake',
+        hanging_yn: 'Hanging',
+        unhanging_yn: 'Unhanging',
+        oven_clean_yn: 'Oven Clean',
+        other_yn: 'Other'
+      };
+
+      // 3. Process each batch line
+      for (const bl of processedLines) {
+        const qty = bl.qty_processed;
+        const scheduledItem = schedDataAll.find(sd => sd.item_code === bl.item_code);
+
+        // Get existing operations for this batch+item
+        const existingOps = await base44.entities.Operations.filter({
+          batch_header_id: batchId,
+          item_code: bl.item_code
+        });
+        const existingMap = {};
+        existingOps.forEach(op => { if (op.operation) existingMap[op.operation] = op; });
+
+        if (scheduledItem?.operation_profile_id) {
+          // Has schedule with profile → use ProfileSetLines yn flags
+          const profileLine = profileLinesAll.find(pl => pl.item_code === bl.item_code);
+          let activeOps = [];
+
+          if (profileLine) {
+            Object.entries(ynOpMap).forEach(([flag, opName]) => {
+              if (profileLine[flag] === true) activeOps.push(opName);
+            });
+          }
+
+          // Fallback to operations_required on OperationProfileName
+          if (activeOps.length === 0) {
+            const profile = profileNames.find(p => p.id === scheduledItem.operation_profile_id);
+            (profile?.operations_required || []).forEach(opId => {
+              const op = operations.find(o => o.id === opId);
+              if (op) activeOps.push(op.name);
+            });
+          }
+
+          // Delete ops no longer in active list
+          const toDelete = existingOps.filter(op => op.operation && !activeOps.includes(op.operation));
+          await Promise.all(toDelete.map(op => base44.entities.Operations.delete(op.id)));
+
+          for (const opName of activeOps) {
+            const stdMinPC = getStdMin(bl.item_code, opName);
+            const operationTimeMin = qty * stdMinPC;
+            if (existingMap[opName]) {
+              await base44.entities.Operations.update(existingMap[opName].id, {
+                qty_operation: qty,
+                std_min_pc_lookup: stdMinPC,
+                operation_time_min: operationTimeMin,
+                operation_profile_id: scheduledItem.operation_profile_id,
+                source_type: 'SCHEDULE'
+              });
+            } else {
+              await base44.entities.Operations.create({
+                batch_header_id: batchId,
+                item_code: bl.item_code,
+                operation: opName,
+                qty_operation: qty,
+                std_min_pc_lookup: stdMinPC,
+                operation_time_min: operationTimeMin,
+                operation_profile_id: scheduledItem.operation_profile_id,
+                source_type: 'SCHEDULE'
+              });
+            }
+          }
+
+          // Fallback single entry if no active ops
+          if (activeOps.length === 0) {
+            if (existingOps.length > 0) {
+              await base44.entities.Operations.update(existingOps[0].id, { qty_operation: qty, operation_profile_id: scheduledItem.operation_profile_id, source_type: 'SCHEDULE' });
+            } else {
+              await base44.entities.Operations.create({
+                batch_header_id: batchId,
+                item_code: bl.item_code,
+                operation: '',
+                qty_operation: qty,
+                operation_profile_id: scheduledItem.operation_profile_id,
+                source_type: 'SCHEDULE'
+              });
+            }
+          }
+        } else {
+          // No schedule → single manual entry
+          if (existingOps.length > 0) {
+            await base44.entities.Operations.update(existingOps[0].id, { qty_operation: qty });
+          } else {
+            await base44.entities.Operations.create({
+              batch_header_id: batchId,
+              item_code: bl.item_code,
+              operation: '',
+              qty_operation: qty,
+              source_type: 'MANUAL'
+            });
+          }
+        }
+      }
+
+      await queryClient.invalidateQueries(['Operations']);
+      await saveOpTimeMetric();
+      toast.success(`✓ Synced ${processedLines.length} item(s) from Batch Lines`);
+    } catch (error) {
+      console.error('Sync failed:', error);
+      toast.error('Sync failed');
+    }
+    setSyncingFromBatchLines(false);
+  };
+
   const totalOperationsTime = useMemo(() => {
     return lines.reduce((sum, op) => sum + (op.operation_time_min || 0), 0);
   }, [lines]);
