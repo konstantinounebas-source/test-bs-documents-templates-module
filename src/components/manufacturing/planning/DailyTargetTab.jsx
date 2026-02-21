@@ -462,10 +462,16 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <Select value={newRow.operation_profile_id} onValueChange={v => setNewRow(r => ({ ...r, operation_profile_id: v }))}>
-                        <SelectTrigger className="h-8"><SelectValue placeholder="Profile" /></SelectTrigger>
-                        <SelectContent>{profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-                      </Select>
+                      <div className="space-y-1">
+                        <Select value={newRow.operation_profile_id} onValueChange={v => setNewRow(r => ({ ...r, operation_profile_id: v }))}>
+                          <SelectTrigger className="h-8"><SelectValue placeholder="Profile" /></SelectTrigger>
+                          <SelectContent>{profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <Select value={newRow.target_type} onValueChange={v => setNewRow(r => ({ ...r, target_type: v }))}>
+                          <SelectTrigger className="h-8"><SelectValue placeholder="Target Type" /></SelectTrigger>
+                          <SelectContent>{targetTypesInStandards.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Input type="number" placeholder="Qty" className="h-8 w-24 text-right"
