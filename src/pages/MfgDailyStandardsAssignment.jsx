@@ -322,6 +322,8 @@ export default function MfgDailyStandardsAssignment() {
 
     setIsSavingBulkTargets(true);
     try {
+      // Process all depts and days in parallel
+      const allOps = [];
       for (const deptName of enabledDepts) {
         const bundleId = bulkTargetSelections[deptName];
         const targetType = bulkTargetTypeSelections[deptName];
@@ -334,26 +336,31 @@ export default function MfgDailyStandardsAssignment() {
 
         for (const day of days) {
           const dateStr = format(day, "yyyy-MM-dd");
-          // Delete existing targets
-          const existing = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
-          for (const t of existing) {
-            await base44.entities.TargetDaily.delete(t.id);
-          }
-          // Create new ones
-          const toCreate = targetLines.map(l => ({
-            bundle_id: bundleId,
-            date: dateStr,
-            department: deptName,
-            item_code: l.item_code,
-            target_profile: l.target_type,
-            operation_profile: l.operation_profile_id,
-            target_qty: l.target_qty,
-            profile_time_min_pc: l.per_piece_total_min,
-            target_time_min: l.item_total_min
-          }));
-          await base44.entities.TargetDaily.bulkCreate(toCreate);
+          allOps.push(
+            (async () => {
+              const existing = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
+              const toDelete = existing.map(t => base44.entities.TargetDaily.delete(t.id));
+              await Promise.all(toDelete);
+              
+              const toCreate = targetLines.map(l => ({
+                bundle_id: bundleId,
+                date: dateStr,
+                department: deptName,
+                item_code: l.item_code,
+                target_profile: l.target_type,
+                operation_profile: l.operation_profile_id,
+                target_qty: l.target_qty,
+                profile_time_min_pc: l.per_piece_total_min,
+                target_time_min: l.item_total_min
+              }));
+              if (toCreate.length > 0) {
+                await base44.entities.TargetDaily.bulkCreate(toCreate);
+              }
+            })()
+          );
         }
       }
+      await Promise.all(allOps);
       queryClient.invalidateQueries(["TargetDaily"]);
       toast.success("Bulk targets saved");
       setBulkTargetDialog(false);
