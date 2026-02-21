@@ -37,11 +37,11 @@ export default function QCInitialStockTab({ batchId, department }) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingLine, setEditingLine] = useState(null);
   const [searchFilter, setSearchFilter] = useState('');
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [itemQuantities, setItemQuantities] = useState({});
   const [formData, setFormData] = useState({
-    item_code: '',
     qc_type: '',
-    qc_level: '',
-    qty_affected: ''
+    qc_level: ''
   });
 
   const { data: itemCodes = [], isLoading: itemCodesLoading } = useBatchItemCodes(batchId, department);
