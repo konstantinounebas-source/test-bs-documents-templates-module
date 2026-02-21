@@ -731,14 +731,14 @@ export default function OperationsTab({ batchId, department }) {
                           calculated: (op.qty_operation || 0) * (op.std_min_pc_lookup || 0)
                         });
                         return (
-                          <TableRow key={op.id} className="hover:bg-slate-50">
-                            <TableCell className="w-12"></TableCell>
-                            <TableCell className="pl-12 text-slate-700">
-                              <span className="text-slate-400">↳</span> {op.operation}
-                              <span className="text-xs text-slate-400 ml-2">
-                                (std: {op.std_min_pc_lookup?.toFixed(3) || '0.000'} min/pc)
-                              </span>
-                            </TableCell>
+                         <TableRow key={op.id} className="hover:bg-slate-50">
+                           <TableCell className="w-12"></TableCell>
+                           <TableCell className="pl-12 text-slate-700">
+                             <span className="text-slate-400">↳</span> {op.operation || <span className="italic text-slate-400">—</span>}
+                             <span className="text-xs text-slate-400 ml-2">
+                               (std: {op.std_min_pc_lookup?.toFixed(3) || '0.000'} min/pc)
+                             </span>
+                           </TableCell>
                             <TableCell className="font-mono text-sm text-slate-600 text-right">
                               <span className="font-semibold">{op.qty_operation}</span>
                             </TableCell>
