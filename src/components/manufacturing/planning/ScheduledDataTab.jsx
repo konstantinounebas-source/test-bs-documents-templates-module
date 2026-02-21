@@ -396,6 +396,12 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     return new Set(lines.map(l => l.date).filter(Boolean));
   }, [lines]);
 
+  // Get dates with targets for calendar indicators
+  const datesWithTargets = useMemo(() => {
+    if (!dailyTargetLines || dailyTargetLines.length === 0) return new Set();
+    return new Set(dailyTargetLines.map(t => t.date).filter(Boolean));
+  }, [dailyTargetLines]);
+
   // Calendar navigation
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
