@@ -312,6 +312,14 @@ export default function QCInitialStockTab({ batchId, department }) {
       let skipped = 0;
 
       for (const sd of schedItemsWithQC) {
+        const bl = batchLines.find(l => l.item_code === sd.item_code);
+        
+        // Skip items with qty_processed = 0
+        if (!bl || bl.qty_processed === 0 || bl.qty_processed === null) {
+          skipped++;
+          continue;
+        }
+
         // Check if a QC record already exists for this item+qc_type combination
         const existing = lines.filter(l => l.item_code === sd.item_code && l.qc_type === sd.qc_type);
         if (existing.length > 0) {
@@ -319,9 +327,7 @@ export default function QCInitialStockTab({ batchId, department }) {
           continue;
         }
 
-        // Use qty_processed from batch line as qty_affected; fallback to qc_qty from schedule
-        const bl = batchLines.find(l => l.item_code === sd.item_code);
-        const qty = bl?.qty_processed ?? sd.qc_qty ?? 0;
+        const qty = bl.qty_processed;
 
         await base44.entities.QC_Initial_Stock.create({
           batch_header_id: batchId,
@@ -338,7 +344,7 @@ export default function QCInitialStockTab({ batchId, department }) {
       await saveQCTimeMetric();
 
       if (created > 0) {
-        toast.success(`Synced ${created} QC record(s)${skipped > 0 ? ` (${skipped} skipped - already exist)` : ''}`);
+        toast.success(`Synced ${created} QC record(s)${skipped > 0 ? ` (${skipped} skipped)` : ''}`);
       } else {
         toast.info(`All QC records already exist (${skipped} skipped)`);
       }
