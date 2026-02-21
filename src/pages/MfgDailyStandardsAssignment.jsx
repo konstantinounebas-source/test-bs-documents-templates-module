@@ -127,6 +127,15 @@ export default function MfgDailyStandardsAssignment() {
     return map;
   }, [allBundles]);
 
+  // Build lookup: "date|department" => has targets
+  const targetsMap = useMemo(() => {
+    const map = {};
+    allTargets.forEach(t => {
+      map[`${t.date}|${t.department}`] = true;
+    });
+    return map;
+  }, [allTargets]);
+
   const navigate_period = (dir) => {
     if (viewMode === "day") setCurrentDate(prev => dir > 0 ? addDays(prev, 1) : subDays(prev, 1));
     else if (viewMode === "week") setCurrentDate(prev => dir > 0 ? addWeeks(prev, 1) : subWeeks(prev, 1));
