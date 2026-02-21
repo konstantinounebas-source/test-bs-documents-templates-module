@@ -693,7 +693,7 @@ export default function QCInitialStockTab({ batchId, department }) {
 
           <DialogFooter>
             <Button variant="outline" onClick={resetForm}>Cancel</Button>
-            <Button onClick={handleAdd} disabled={createMutation.isPending || updateMutation.isPending}>
+            <Button onClick={handleAdd} disabled={createMutation.isPending || updateMutation.isPending || selectedItems.size === 0}>
               {createMutation.isPending || updateMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : editingLine ? (
@@ -701,7 +701,7 @@ export default function QCInitialStockTab({ batchId, department }) {
               ) : (
                 <Plus className="w-4 h-4 mr-2" />
               )}
-              {editingLine ? 'Update' : 'Add'}
+              {editingLine ? 'Update' : `Add (${selectedItems.size})`}
             </Button>
           </DialogFooter>
         </DialogContent>
