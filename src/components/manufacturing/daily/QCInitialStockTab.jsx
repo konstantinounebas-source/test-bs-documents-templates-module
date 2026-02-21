@@ -552,7 +552,7 @@ export default function QCInitialStockTab({ batchId, department }) {
 
           <div className="space-y-4 py-4">
             <div>
-              <Label>Item Code *</Label>
+              <Label>Item Code *{selectedItemQtyProcessed !== null && <span className="text-slate-500 font-normal ml-2">(Qty Processed: <strong>{selectedItemQtyProcessed}</strong>)</span>}</Label>
               <Select value={formData.item_code} onValueChange={(v) => setFormData({ ...formData, item_code: v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select item code from standards" />
