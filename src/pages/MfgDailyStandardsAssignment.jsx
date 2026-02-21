@@ -127,11 +127,13 @@ export default function MfgDailyStandardsAssignment() {
     return map;
   }, [allBundles]);
 
-  // Build lookup: "date|department" => has targets
+  // Build lookup: "date|department" => target_type from TargetDaily
   const targetsMap = useMemo(() => {
     const map = {};
     allTargets.forEach(t => {
-      map[`${t.date}|${t.department}`] = true;
+      if (!map[`${t.date}|${t.department}`]) {
+        map[`${t.date}|${t.department}`] = t.target_profile; // Use target_profile as target_type
+      }
     });
     return map;
   }, [allTargets]);
