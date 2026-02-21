@@ -332,8 +332,9 @@ export default function QCInitialStockTab({ batchId, department }) {
         created++;
       }
 
+      await queryClient.invalidateQueries({ queryKey: ['QC_Initial_Stock', batchId] });
+      await queryClient.refetchQueries({ queryKey: ['QC_Initial_Stock', batchId] });
       await saveQCTimeMetric();
-      queryClient.invalidateQueries(['QC_Initial_Stock']);
 
       if (created > 0) {
         toast.success(`Synced ${created} QC record(s)${skipped > 0 ? ` (${skipped} skipped - already exist)` : ''}`);
