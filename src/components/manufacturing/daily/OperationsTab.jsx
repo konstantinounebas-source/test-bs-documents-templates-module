@@ -688,25 +688,34 @@ export default function OperationsTab({ batchId, department }) {
                       <TableCell className="text-center"></TableCell>
                     </TableRow>
                     {expandedItems[group.item_code] && group.subGroups.map(subGroup => {
-                     const isManual = subGroup.profile_name === 'Manual Entry';
+                     const isManual = subGroup.entry_source === 'MANUAL';
                      const hasZeroTime = subGroup.total_time === 0;
+                     const showWarning = isManual && hasZeroTime;
                      return (
                      <React.Fragment key={subGroup.profile_group_id}>
                        {/* Subgroup header row */}
-                       <TableRow className={isManual && hasZeroTime ? "bg-red-50" : "bg-purple-50"}>
+                       <TableRow className={showWarning ? "bg-red-50" : "bg-purple-50"}>
                          <TableCell className="w-12"></TableCell>
                          <TableCell className="w-32 pl-6">
-                           <div className="flex items-center gap-2">
-                             <span className={`font-semibold ${isManual && hasZeroTime ? 'text-red-700' : 'text-purple-800'}`}>
+                           <div className="flex items-center gap-2 flex-wrap">
+                             <span className={`font-semibold ${showWarning ? 'text-red-700' : 'text-purple-800'}`}>
                                {subGroup.profile_name}
                              </span>
-                             {isManual && hasZeroTime && (
+                             {/* Source badge */}
+                             <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                               subGroup.entry_source === 'SCHEDULE'
+                                 ? 'bg-blue-100 text-blue-700'
+                                 : 'bg-slate-200 text-slate-600'
+                             }`}>
+                               {subGroup.entry_source === 'SCHEDULE' ? 'Scheduled' : 'Manual'}
+                             </span>
+                             {showWarning && (
                                <span title="No operations entered - please add operations manually" className="text-red-500">
                                  <AlertCircle className="w-4 h-4" />
                                </span>
                              )}
                            </div>
-                           {isManual && hasZeroTime && (
+                           {showWarning && (
                              <p className="text-xs text-red-600 mt-0.5">⚠ No operations — edit to add</p>
                            )}
                          </TableCell>
