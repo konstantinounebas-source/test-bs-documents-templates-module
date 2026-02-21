@@ -598,9 +598,14 @@ export default function QCInitialStockTab({ batchId, department }) {
                 <Input
                   type="number"
                   step="0.01"
+                  max={selectedItemQtyProcessed ?? undefined}
                   value={formData.qty_affected}
                   onChange={(e) => setFormData({ ...formData, qty_affected: e.target.value })}
+                  className={isQtyOverLimit(formData.qty_affected) ? 'border-red-500 bg-red-50' : ''}
                 />
+                {isQtyOverLimit(formData.qty_affected) && (
+                  <p className="text-xs text-red-500 mt-1">Exceeds qty processed ({selectedItemQtyProcessed})</p>
+                )}
               </div>
             </div>
           </div>
