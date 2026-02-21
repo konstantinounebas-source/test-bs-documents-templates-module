@@ -25,8 +25,15 @@ export default function MfgDailyProduction() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("batch_lines");
   const [selectedBatch, setSelectedBatch] = useState(null);
-  const [selectedDepartment, setSelectedDepartment] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
+  const [pendingAutoOpen, setPendingAutoOpen] = useState(false);
+
+  // Read URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlDate = urlParams.get('date') || '';
+  const urlDept = urlParams.get('department') || '';
+
+  const [selectedDepartment, setSelectedDepartment] = useState(urlDept);
+  const [selectedDate, setSelectedDate] = useState(urlDate);
 
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
