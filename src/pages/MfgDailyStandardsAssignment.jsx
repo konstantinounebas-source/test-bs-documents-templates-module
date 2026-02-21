@@ -74,12 +74,7 @@ export default function MfgDailyStandardsAssignment() {
     staleTime: 0
   });
 
-  // Fetch daily target lines for target dialog
-  const { data: allDailyTargetLines = [] } = useQuery({
-    queryKey: ["DailyTargetLines"],
-    queryFn: () => base44.entities.DailyTargetLines.list(),
-    staleTime: 0
-  });
+
 
 
 
