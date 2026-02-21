@@ -404,7 +404,8 @@ export default function OperationsTab({ batchId, department }) {
 
     try {
       await Promise.all(createPromises);
-      await queryClient.invalidateQueries(['Operations']);
+      await queryClient.invalidateQueries({ queryKey: ['Operations', batchId] });
+      await queryClient.refetchQueries({ queryKey: ['Operations', batchId] });
       await saveOpTimeMetric();
       
       // Reset form but keep dialog open for adding more
