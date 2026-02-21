@@ -194,9 +194,18 @@ export default function OperationsTab({ batchId, department }) {
   }, [lines, profileNames]);
 
   const filteredGroups = useMemo(() => {
-    if (!searchFilter) return groupedOperations;
-    const term = searchFilter.toLowerCase();
-    return groupedOperations.filter(g => g.item_code?.toLowerCase().includes(term));
+    let groups = searchFilter 
+      ? groupedOperations.filter(g => g.item_code?.toLowerCase().includes(searchFilter.toLowerCase()))
+      : groupedOperations;
+    
+    // Sort: warnings first, then by item code
+    return groups.sort((a, b) => {
+      const aHasWarning = a.subGroups.some(sg => sg.entry_source === 'MANUAL' && sg.total_time === 0);
+      const bHasWarning = b.subGroups.some(sg => sg.entry_source === 'MANUAL' && sg.total_time === 0);
+      
+      if (aHasWarning !== bHasWarning) return aHasWarning ? -1 : 1;
+      return (a.item_code || '').localeCompare(b.item_code || '');
+    });
   }, [groupedOperations, searchFilter]);
 
   const saveOpTimeMetric = async () => {
