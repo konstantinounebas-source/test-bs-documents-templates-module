@@ -34,6 +34,18 @@ export default function MfgPlanningWizard() {
     staleTime: 0
   });
 
+  // Load department from URL params on mount
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const deptParam = params.get('department');
+    if (deptParam && departments.length > 0) {
+      const dept = departments.find(d => d.name === deptParam);
+      if (dept) {
+        setSelectedDepartment(dept.name);
+      }
+    }
+  }, [location.search, departments]);
+
   // Auto-select bundle: prefer ACTIVE, else first available
   useEffect(() => {
     if (!selectedDepartment) { setSelectedBundle(null); return; }
