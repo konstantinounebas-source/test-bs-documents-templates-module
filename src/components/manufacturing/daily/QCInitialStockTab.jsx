@@ -291,8 +291,11 @@ export default function QCInitialStockTab({ batchId, department }) {
     onError: () => toast.error('Failed to delete QC initial stock')
   });
 
-  // Qty validation helper
-  const isQtyOverLimit = (qty) => selectedItemQtyProcessed !== null && parseFloat(qty) > selectedItemQtyProcessed;
+  // Qty validation helper for an item
+  const isQtyOverLimit = (itemCode, qty) => {
+    const bl = batchLines.find(l => l.item_code === itemCode);
+    return bl && parseFloat(qty) > bl.qty_processed;
+  };
 
   const handleSyncFromBatchLines = async () => {
     if (!batchId || !batchHeader) return;
