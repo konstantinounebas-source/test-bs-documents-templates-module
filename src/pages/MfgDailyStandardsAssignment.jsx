@@ -276,6 +276,18 @@ export default function MfgDailyStandardsAssignment() {
     return allDailyTargetLines.filter(l => l.bundle_id === targetBundleId);
   }, [targetBundleId, allDailyTargetLines]);
 
+  // Helper: save TGT_TIME metric for a date+dept
+  const saveTGTTimeMetric = async (date, dept, bundleId, targetLines) => {
+    const total = targetLines.reduce((s, t) => s + (t.target_time_min || t.item_total_min || 0), 0);
+    const existing = await base44.entities.DailyMetricValue.filter({ metric_code: 'TGT_TIME', date, department: dept });
+    if (existing.length > 0) {
+      await base44.entities.DailyMetricValue.update(existing[0].id, { value: total });
+    } else {
+      await base44.entities.DailyMetricValue.create({ metric_code: 'TGT_TIME', date, department: dept, bundle_id: bundleId, value: total });
+    }
+    queryClient.invalidateQueries(["DailyMetricValue"]);
+  };
+
   // Save targets handler
   const handleSaveTargets = async () => {
     if (!targetDate || !targetDept || !targetBundleId) { toast.error("Fill all fields"); return; }
@@ -301,6 +313,8 @@ export default function MfgDailyStandardsAssignment() {
         target_time_min: l.item_total_min
       }));
       await base44.entities.TargetDaily.bulkCreate(toCreate);
+      // Update TGT_TIME metric
+      await saveTGTTimeMetric(targetDate, targetDept, targetBundleId, toCreate);
       queryClient.invalidateQueries(["TargetDaily"]);
       toast.success(`${toCreate.length} target lines saved for ${targetDate}`);
       setTargetDialog(false);
