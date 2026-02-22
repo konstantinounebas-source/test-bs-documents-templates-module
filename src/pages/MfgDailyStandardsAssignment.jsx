@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Edit2, ChevronLeft, ChevronRight, Layers, Zap, Target, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Layers, Zap, Target, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   format,
