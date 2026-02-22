@@ -244,6 +244,21 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     staleTime: 0
   });
 
+  // Fetch DailyMetricValue TGT_TIME for the selected date/department (for compare display)
+  const { data: tgtTimeMetric } = useQuery({
+    queryKey: ['DailyMetricValue_TGT_TIME', selectedDepartment, selectedDate],
+    queryFn: async () => {
+      const results = await base44.entities.DailyMetricValue.filter({
+        metric_code: 'TGT_TIME',
+        date: selectedDate,
+        department: selectedDepartment
+      });
+      return results[0] || null;
+    },
+    enabled: !!selectedDepartment && !!selectedDate,
+    staleTime: 0
+  });
+
   // Get unique target types from DailyTargetLines
   const targetTypes = useMemo(() => {
     const uniqueTypes = [...new Set(dailyTargetLines.map(t => t.target_type).filter(Boolean))];
