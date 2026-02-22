@@ -968,67 +968,7 @@ export default function MfgDailyStandardsAssignment() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
-      <Dialog open={!!editDialog} onOpenChange={() => setEditDialog(null)}>
-        <DialogContent className="sm:max-w-[480px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Edit2 className="w-4 h-4 text-indigo-600" />
-              Assign Standards Bundle
-            </DialogTitle>
-          </DialogHeader>
-          {editDialog && (
-            <div className="space-y-4 py-2">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-slate-500">Date:</span>
-                  <p className="font-semibold">{editDialog.date}</p>
-                </div>
-                <div>
-                  <span className="text-slate-500">Department:</span>
-                  <p className="font-semibold">{editDialog.department_id}</p>
-                </div>
-              </div>
-              <div>
-                <Label>Standards Bundle</Label>
-                <Select value={selectedBundleId} onValueChange={setSelectedBundleId}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select a bundle..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {bundlesForEditDept.map(b => (
-                      <SelectItem key={b.id} value={b.id}>
-                        v{b.version_no}
-                        <span className={`ml-2 text-xs font-medium ${b.status === "ACTIVE" ? "text-green-600" : "text-amber-600"}`}>
-                          ({b.status})
-                        </span>
-                      </SelectItem>
-                    ))}
-                    {bundlesForEditDept.length === 0 && (
-                      <SelectItem value="_none" disabled>No bundles for this department</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-              {editDialog.assignment && (
-                <p className="text-xs text-slate-500">
-                  This will update the existing assignment for this date/department.
-                </p>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialog(null)}>Cancel</Button>
-            <Button
-              onClick={handleSave}
-              disabled={saveMutation.isPending || !selectedBundleId}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              {saveMutation.isPending ? "Saving..." : "Save Assignment"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 }
