@@ -29,7 +29,7 @@ export default function MfgDailyStandardsAssignment() {
   const [viewMode, setViewMode] = useState("week");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [editDialog, setEditDialog] = useState(null); // { date, department_id, assignment? }
-  const [selectedBundleId, setSelectedBundleId] = useState("");
+
 
   // Inline editing state
   const [inlineEditKey, setInlineEditKey] = useState(null); // "date|dept"
