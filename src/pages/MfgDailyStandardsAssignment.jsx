@@ -335,7 +335,7 @@ export default function MfgDailyStandardsAssignment() {
     return allBundles.filter(b => b.department === targetDept);
   }, [allBundles, targetDept]);
 
-  // Bulk target save handler
+  // Bulk target save handler - first checks for conflicts
   const handleBulkSaveTargets = async () => {
     if (!bulkTargetStartDate || !bulkTargetEndDate) { toast.error("Select start and end dates"); return; }
     const enabledDepts = Object.entries(bulkTargetDeptEnabled).filter(([, v]) => v).map(([k]) => k);
@@ -345,22 +345,55 @@ export default function MfgDailyStandardsAssignment() {
     const deptsMissingTargetType = enabledDepts.filter(d => !bulkTargetTypeSelections[d]);
     if (deptsMissingTargetType.length > 0) { toast.error("Select Target Type for all enabled departments"); return; }
 
+    // Validate target lines exist for all depts
+    for (const deptName of enabledDepts) {
+      const bundleId = bulkTargetSelections[deptName];
+      const targetType = bulkTargetTypeSelections[deptName];
+      const lines = allDailyTargetLines.filter(l => l.bundle_id === bundleId && l.target_type === targetType);
+      if (lines.length === 0) {
+        toast.error(`No target lines found for bundle/target type in ${deptName}`);
+        return;
+      }
+    }
+
     const start = parseISO(bulkTargetStartDate);
     const end = parseISO(bulkTargetEndDate);
     const days = eachDayOfInterval({ start, end });
 
+    // Check for existing TargetDaily records in this range
+    const conflicts = [];
+    for (const deptName of enabledDepts) {
+      for (const day of days) {
+        const dateStr = format(day, "yyyy-MM-dd");
+        const existing = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
+        if (existing.length > 0) {
+          conflicts.push(`${dateStr} — ${deptName}`);
+        }
+      }
+    }
+
+    const payload = { enabledDepts, days };
+
+    if (conflicts.length > 0) {
+      // Show conflict dialog
+      setConflictDates(conflicts);
+      setPendingBulkPayload(payload);
+      setConflictDialog(true);
+    } else {
+      await executeBulkSaveTargets(payload);
+    }
+  };
+
+  // The actual execution after conflict confirmation
+  const executeBulkSaveTargets = async (payload) => {
+    const { enabledDepts, days } = payload;
+    setConflictDialog(false);
     setIsSavingBulkTargets(true);
     try {
-      // Process sequentially to avoid rate limiting
       for (const deptName of enabledDepts) {
         const bundleId = bulkTargetSelections[deptName];
         const targetType = bulkTargetTypeSelections[deptName];
         const targetLines = allDailyTargetLines.filter(l => l.bundle_id === bundleId && l.target_type === targetType);
-        if (targetLines.length === 0) {
-          toast.error(`No target lines found for bundle and target type in ${deptName}`);
-          setIsSavingBulkTargets(false);
-          return;
-        }
 
         for (const day of days) {
           const dateStr = format(day, "yyyy-MM-dd");
@@ -408,11 +441,12 @@ export default function MfgDailyStandardsAssignment() {
       queryClient.invalidateQueries(["TargetDaily"]);
       queryClient.invalidateQueries(["DailyStandardsAssignment"]);
       queryClient.invalidateQueries(["DailyMetricValue"]);
-      toast.success("Bulk targets saved");
+      toast.success("Bulk targets saved successfully");
       setBulkTargetDialog(false);
       setBulkTargetSelections({});
       setBulkTargetTypeSelections({});
       setBulkTargetDeptEnabled({});
+      setPendingBulkPayload(null);
     } catch (e) {
       toast.error("Error saving bulk targets: " + e.message);
     } finally {
