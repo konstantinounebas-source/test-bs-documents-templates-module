@@ -937,6 +937,42 @@ export default function MfgDailyStandardsAssignment() {
         </DialogContent>
       </Dialog>
 
+      {/* Conflict Confirmation Dialog */}
+      <Dialog open={conflictDialog} onOpenChange={setConflictDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-700">
+              ⚠️ Existing Targets Found
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <p className="text-sm text-slate-600">
+              The following dates already have targets recorded. Do you want to overwrite them?
+            </p>
+            <div className="border rounded-lg bg-amber-50 p-3 max-h-[200px] overflow-y-auto space-y-1">
+              {conflictDates.map((c, i) => (
+                <p key={i} className="text-xs font-mono text-amber-800">{c}</p>
+              ))}
+            </div>
+            <p className="text-xs text-slate-500">
+              Clicking "Overwrite" will delete existing targets for these dates and replace them with the new ones.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setConflictDialog(false); setPendingBulkPayload(null); }}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => executeBulkSaveTargets(pendingBulkPayload)}
+              disabled={isSavingBulkTargets}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              {isSavingBulkTargets ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Overwrite"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Edit Dialog */}
       <Dialog open={!!editDialog} onOpenChange={() => setEditDialog(null)}>
         <DialogContent className="sm:max-w-[480px]">
