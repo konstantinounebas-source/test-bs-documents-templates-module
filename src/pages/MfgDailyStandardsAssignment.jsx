@@ -610,7 +610,7 @@ export default function MfgDailyStandardsAssignment() {
                                   className="h-6 w-6 p-0 text-slate-400 hover:text-indigo-600"
                                   onClick={() => openInlineEdit(dateStr, dept.name)}
                                 >
-                                  <Edit2 className="w-3 h-3" />
+                                  <Pencil className="w-3 h-3" />
                                 </Button>
                               </div>
                             )}
