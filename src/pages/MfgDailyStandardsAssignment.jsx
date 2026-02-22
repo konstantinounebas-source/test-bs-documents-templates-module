@@ -45,11 +45,19 @@ export default function MfgDailyStandardsAssignment() {
   const [bulkDeptEnabled, setBulkDeptEnabled] = useState({}); // { dept_name: bool }
   const [isBulkSaving, setIsBulkSaving] = useState(false);
 
+  // Target assignment state
+  const [targetDialog, setTargetDialog] = useState(false);
+  const [targetDate, setTargetDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [targetDept, setTargetDept] = useState("");
+  const [targetBundleId, setTargetBundleId] = useState("");
+  const [isSavingTargets, setIsSavingTargets] = useState(false);
+
   // Bulk target assignment state
   const [bulkTargetDialog, setBulkTargetDialog] = useState(false);
   const [bulkTargetStartDate, setBulkTargetStartDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [bulkTargetEndDate, setBulkTargetEndDate] = useState(format(addDays(new Date(), 6), "yyyy-MM-dd"));
-  const [bulkTargetSelections, setBulkTargetSelections] = useState({}); // { dept_name: target_type }
+  const [bulkTargetSelections, setBulkTargetSelections] = useState({}); // { dept_name: bundle_id }
+  const [bulkTargetTypeSelections, setBulkTargetTypeSelections] = useState({}); // { dept_name: target_type }
   const [bulkTargetDeptEnabled, setBulkTargetDeptEnabled] = useState({}); // { dept_name: bool }
   const [isSavingBulkTargets, setIsSavingBulkTargets] = useState(false);
 
@@ -74,7 +82,12 @@ export default function MfgDailyStandardsAssignment() {
     staleTime: 0
   });
 
-
+  // Fetch daily target lines for target dialog
+  const { data: allDailyTargetLines = [] } = useQuery({
+    queryKey: ["DailyTargetLines"],
+    queryFn: () => base44.entities.DailyTargetLines.list(),
+    staleTime: 0
+  });
 
 
 
@@ -257,14 +270,60 @@ export default function MfgDailyStandardsAssignment() {
     }
   };
 
+  // Target lines for the selected bundle in target dialog
+  const targetLinesForBundle = useMemo(() => {
+    if (!targetBundleId) return [];
+    return allDailyTargetLines.filter(l => l.bundle_id === targetBundleId);
+  }, [targetBundleId, allDailyTargetLines]);
 
+  // Save targets handler
+  const handleSaveTargets = async () => {
+    if (!targetDate || !targetDept || !targetBundleId) { toast.error("Fill all fields"); return; }
+    if (targetLinesForBundle.length === 0) { toast.error("No target lines found for this bundle"); return; }
+
+    setIsSavingTargets(true);
+    try {
+      // Delete existing targets for this date+dept
+      const existing = await base44.entities.TargetDaily.filter({ date: targetDate, department: targetDept });
+      for (const t of existing) {
+        await base44.entities.TargetDaily.delete(t.id);
+      }
+      // Create new ones from DailyTargetLines
+      const toCreate = targetLinesForBundle.map(l => ({
+        bundle_id: targetBundleId,
+        date: targetDate,
+        department: targetDept,
+        item_code: l.item_code,
+        target_profile: l.target_type,
+        operation_profile: l.operation_profile_id,
+        target_qty: l.target_qty,
+        profile_time_min_pc: l.per_piece_total_min,
+        target_time_min: l.item_total_min
+      }));
+      await base44.entities.TargetDaily.bulkCreate(toCreate);
+      queryClient.invalidateQueries(["TargetDaily"]);
+      toast.success(`${toCreate.length} target lines saved for ${targetDate}`);
+      setTargetDialog(false);
+    } catch (e) {
+      toast.error("Error saving targets");
+    } finally {
+      setIsSavingTargets(false);
+    }
+  };
+
+  const bundlesForTargetDept = useMemo(() => {
+    if (!targetDept) return [];
+    return allBundles.filter(b => b.department === targetDept);
+  }, [allBundles, targetDept]);
 
   // Bulk target save handler
   const handleBulkSaveTargets = async () => {
     if (!bulkTargetStartDate || !bulkTargetEndDate) { toast.error("Select start and end dates"); return; }
     const enabledDepts = Object.entries(bulkTargetDeptEnabled).filter(([, v]) => v).map(([k]) => k);
     if (enabledDepts.length === 0) { toast.error("Select at least one department"); return; }
-    const deptsMissingTargetType = enabledDepts.filter(d => !bulkTargetSelections[d]);
+    const deptsMissingBundle = enabledDepts.filter(d => !bulkTargetSelections[d]);
+    if (deptsMissingBundle.length > 0) { toast.error("Select bundle for all enabled departments"); return; }
+    const deptsMissingTargetType = enabledDepts.filter(d => !bulkTargetTypeSelections[d]);
     if (deptsMissingTargetType.length > 0) { toast.error("Select Target Type for all enabled departments"); return; }
 
     const start = parseISO(bulkTargetStartDate);
@@ -273,14 +332,42 @@ export default function MfgDailyStandardsAssignment() {
 
     setIsSavingBulkTargets(true);
     try {
+      // Process all depts and days in parallel
       const allOps = [];
       for (const deptName of enabledDepts) {
-        const targetType = bulkTargetSelections[deptName];
-        
+        const bundleId = bulkTargetSelections[deptName];
+        const targetType = bulkTargetTypeSelections[deptName];
+        const targetLines = allDailyTargetLines.filter(l => l.bundle_id === bundleId && l.target_type === targetType);
+        if (targetLines.length === 0) {
+          toast.error(`No target lines found for bundle and target type in ${deptName}`);
+          setIsSavingBulkTargets(false);
+          return;
+        }
+
         for (const day of days) {
           const dateStr = format(day, "yyyy-MM-dd");
           allOps.push(
             (async () => {
+              const existing = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
+              const toDelete = existing.map(t => base44.entities.TargetDaily.delete(t.id));
+              await Promise.all(toDelete);
+              
+              const toCreate = targetLines.map(l => ({
+                bundle_id: bundleId,
+                date: dateStr,
+                department: deptName,
+                item_code: l.item_code,
+                target_profile: l.target_type,
+                operation_profile: l.operation_profile_id,
+                target_qty: l.target_qty,
+                profile_time_min_pc: l.per_piece_total_min,
+                target_time_min: l.item_total_min
+              }));
+              if (toCreate.length > 0) {
+                await base44.entities.TargetDaily.bulkCreate(toCreate);
+              }
+
+              // Also update DailyStandardsAssignment with target_type
               const assignmentKey = `${dateStr}|${deptName}`;
               const existingAssignment = assignmentMap[assignmentKey];
               if (existingAssignment) {
@@ -288,29 +375,27 @@ export default function MfgDailyStandardsAssignment() {
                   target_type: targetType 
                 });
               } else {
-                // Need at least a bundle to create an assignment
-                const activeBundleForDept = allBundles.find(b => b.department === deptName && b.status === "ACTIVE");
-                if (activeBundleForDept) {
-                  await base44.entities.DailyStandardsAssignment.create({
-                    assignment_date: dateStr,
-                    department_id: deptName,
-                    standards_bundle_id: activeBundleForDept.id,
-                    target_type: targetType
-                  });
-                }
+                await base44.entities.DailyStandardsAssignment.create({
+                  assignment_date: dateStr,
+                  department_id: deptName,
+                  standards_bundle_id: bundleId,
+                  target_type: targetType
+                });
               }
             })()
           );
         }
       }
       await Promise.all(allOps);
+      queryClient.invalidateQueries(["TargetDaily"]);
       queryClient.invalidateQueries(["DailyStandardsAssignment"]);
-      toast.success("Bulk target types saved");
+      toast.success("Bulk targets saved");
       setBulkTargetDialog(false);
       setBulkTargetSelections({});
+      setBulkTargetTypeSelections({});
       setBulkTargetDeptEnabled({});
     } catch (e) {
-      toast.error("Error saving bulk target types");
+      toast.error("Error saving bulk targets");
     } finally {
       setIsSavingBulkTargets(false);
     }
@@ -333,6 +418,10 @@ export default function MfgDailyStandardsAssignment() {
                 </p>
               </div>
               <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setBulkTargetDialog(true)} className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50">
+                    <Target className="w-4 h-4" />
+                    Set Daily Targets
+                  </Button>
                 <Button onClick={() => setBulkDialog(true)} className="gap-2 bg-indigo-600 hover:bg-indigo-700">
                   <Zap className="w-4 h-4" />
                   Bulk Assign
@@ -400,6 +489,9 @@ export default function MfgDailyStandardsAssignment() {
                         const bundle = assignment ? bundleById[assignment.standards_bundle_id] : null;
                         const isEditing = inlineEditKey === key;
                         const deptBundles = allBundles.filter(b => b.department === dept.name);
+                        const targetTypesForBundle = inlineEditBundleId 
+                          ? [...new Set(allDailyTargetLines.filter(l => l.bundle_id === inlineEditBundleId).map(l => l.target_type))]
+                          : [];
 
                         return (
                           <TableCell key={dateStr} className="text-center p-2">
@@ -418,14 +510,17 @@ export default function MfgDailyStandardsAssignment() {
                                   </SelectContent>
                                 </Select>
                                 {inlineEditBundleId && (
-                                   <Input 
-                                     type="text"
-                                     placeholder="Target type..." 
-                                     value={inlineEditTargetType} 
-                                     onChange={e => setInlineEditTargetType(e.target.value)}
-                                     className="h-7 text-xs min-w-[120px]"
-                                   />
-                                 )}
+                                  <Select value={inlineEditTargetType} onValueChange={setInlineEditTargetType}>
+                                    <SelectTrigger className="h-7 text-xs min-w-[120px]">
+                                      <SelectValue placeholder="Type..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {targetTypesForBundle.map(t => (
+                                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
                                 <div className="flex gap-1 justify-center">
                                   <Button
                                     size="sm"
@@ -572,13 +667,13 @@ export default function MfgDailyStandardsAssignment() {
         </DialogContent>
       </Dialog>
 
-      {/* Bulk Set Target Types Dialog */}
+      {/* Bulk Set Daily Targets Dialog */}
        <Dialog open={bulkTargetDialog} onOpenChange={setBulkTargetDialog}>
-         <DialogContent className="sm:max-w-[500px]">
+         <DialogContent className="sm:max-w-[600px]">
            <DialogHeader>
              <DialogTitle className="flex items-center gap-2">
                <Target className="w-4 h-4 text-amber-600" />
-               Bulk Set Target Types
+               Bulk Set Daily Targets
              </DialogTitle>
            </DialogHeader>
            <div className="space-y-4 py-2">
@@ -593,44 +688,201 @@ export default function MfgDailyStandardsAssignment() {
                </div>
              </div>
              <div>
-               <Label className="mb-2 block">Departments & Target Types</Label>
-               <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
+               <Label className="mb-2 block">Departments & Target Bundles</Label>
+               <div className="border rounded-lg divide-y max-h-[400px] overflow-y-auto">
                  {departments.map(dept => {
                    const enabled = !!bulkTargetDeptEnabled[dept.name];
+                   const deptBundles = allBundles.filter(b => b.department === dept.name);
+                   const selectedBundleId = bulkTargetSelections[dept.name];
+                   const targetTypesForBundle = selectedBundleId 
+                     ? [...new Set(allDailyTargetLines.filter(l => l.bundle_id === selectedBundleId).map(l => l.target_type))]
+                     : [];
                    return (
-                     <div key={dept.id} className={`p-3 flex items-center gap-3 ${enabled ? "bg-amber-50" : "bg-white"}`}>
-                       <Checkbox
-                         checked={enabled}
-                         onCheckedChange={v => setBulkTargetDeptEnabled(prev => ({ ...prev, [dept.name]: !!v }))}
-                       />
-                       <span className="font-medium text-sm w-32 flex-shrink-0">{dept.name}</span>
-                       <Input
-                         type="text"
-                         placeholder="Target type..."
-                         value={bulkTargetSelections[dept.name] || ""}
-                         onChange={e => setBulkTargetSelections(prev => ({ ...prev, [dept.name]: e.target.value }))}
-                         disabled={!enabled}
-                         className="flex-1"
-                       />
+                     <div key={dept.id} className={`p-3 space-y-2 ${enabled ? "bg-amber-50" : "bg-white"}`}>
+                       <div className="flex items-center gap-3">
+                         <Checkbox
+                           checked={enabled}
+                           onCheckedChange={v => setBulkTargetDeptEnabled(prev => ({ ...prev, [dept.name]: !!v }))}
+                         />
+                         <span className="font-medium text-sm w-32 flex-shrink-0">{dept.name}</span>
+                       </div>
+                       <div className="flex gap-2 ml-6">
+                         <Select
+                           value={bulkTargetSelections[dept.name] || ""}
+                           onValueChange={v => {
+                             setBulkTargetSelections(prev => ({ ...prev, [dept.name]: v }));
+                             setBulkTargetTypeSelections(prev => ({ ...prev, [dept.name]: "" }));
+                           }}
+                           disabled={!enabled}
+                         >
+                           <SelectTrigger className="flex-1">
+                             <SelectValue placeholder="Select bundle..." />
+                           </SelectTrigger>
+                           <SelectContent>
+                             {deptBundles.map(b => (
+                               <SelectItem key={b.id} value={b.id}>
+                                 v{b.version_no} ({b.status})
+                               </SelectItem>
+                             ))}
+                           </SelectContent>
+                         </Select>
+                         {selectedBundleId && (
+                           <Select
+                             value={bulkTargetTypeSelections[dept.name] || ""}
+                             onValueChange={v => setBulkTargetTypeSelections(prev => ({ ...prev, [dept.name]: v }))}
+                             disabled={!enabled || targetTypesForBundle.length === 0}
+                           >
+                             <SelectTrigger className="flex-1">
+                               <SelectValue placeholder="Select type..." />
+                             </SelectTrigger>
+                             <SelectContent>
+                               {targetTypesForBundle.map(t => (
+                                 <SelectItem key={t} value={t}>
+                                   {t}
+                                 </SelectItem>
+                               ))}
+                             </SelectContent>
+                           </Select>
+                         )}
+                       </div>
                      </div>
                    );
                  })}
                </div>
-             </div>
-             <p className="text-xs text-slate-500">
-               This will set the target type for every day in the date range for each checked department.
-             </p>
-           </div>
-           <DialogFooter>
-             <Button variant="outline" onClick={() => setBulkTargetDialog(false)}>Cancel</Button>
-             <Button onClick={handleBulkSaveTargets} disabled={isSavingBulkTargets} className="bg-amber-600 hover:bg-amber-700">
-               {isSavingBulkTargets ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Apply Target Types"}
-             </Button>
-           </DialogFooter>
+               </div>
+
+               {/* Preview target lines for each selected bundle & target type */}
+               {Object.entries(bulkTargetSelections).filter(([dept, bundleId]) => bundleId && bulkTargetDeptEnabled[dept] && bulkTargetTypeSelections[dept]).map(([dept, bundleId]) => {
+                 const targetType = bulkTargetTypeSelections[dept];
+                 const targetLines = allDailyTargetLines.filter(l => l.bundle_id === bundleId && l.target_type === targetType);
+                 return (
+                   <div key={dept} className="border-t pt-3 mt-3">
+                     <p className="text-xs font-semibold text-slate-700 mb-2">{dept} - {targetType} - Target Lines Preview</p>
+                     {targetLines.length === 0 ? (
+                       <p className="text-xs text-slate-400">No target lines for this bundle and type</p>
+                     ) : (
+                       <div className="border rounded-lg overflow-hidden max-h-[150px] overflow-y-auto">
+                         <Table className="text-xs">
+                           <TableHeader>
+                             <TableRow className="bg-slate-50">
+                               <TableHead className="text-xs">Item Code</TableHead>
+                               <TableHead className="text-xs">Target Type</TableHead>
+                               <TableHead className="text-right text-xs">Qty</TableHead>
+                               <TableHead className="text-right text-xs">Time (min)</TableHead>
+                             </TableRow>
+                           </TableHeader>
+                           <TableBody>
+                             {targetLines.map(l => (
+                               <TableRow key={l.id}>
+                                 <TableCell className="text-xs">{l.item_code}</TableCell>
+                                 <TableCell className="text-xs">{l.target_type}</TableCell>
+                                 <TableCell className="text-right text-xs">{l.target_qty}</TableCell>
+                                 <TableCell className="text-right text-xs">{l.item_total_min?.toFixed(1)}</TableCell>
+                               </TableRow>
+                             ))}
+                           </TableBody>
+                         </Table>
+                       </div>
+                     )}
+                   </div>
+                 );
+               })}
+
+               <p className="text-xs text-slate-500">
+                 This will import and apply target lines from the selected bundles to every day in the date range for each checked department (overwriting existing targets).
+               </p>
+               </div>
+               <DialogFooter>
+               <Button variant="outline" onClick={() => setBulkTargetDialog(false)}>Cancel</Button>
+               <Button onClick={handleBulkSaveTargets} disabled={isSavingBulkTargets} className="bg-amber-600 hover:bg-amber-700">
+                 {isSavingBulkTargets ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Apply Targets"}
+               </Button>
+               </DialogFooter>
          </DialogContent>
        </Dialog>
 
-
+       {/* Set Daily Targets Dialog (single date) */}
+       <Dialog open={targetDialog} onOpenChange={setTargetDialog}>
+        <DialogContent className="sm:max-w-[560px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-amber-600" />
+              Set Daily Targets
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Date</Label>
+                <Input type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label>Department</Label>
+                <Select value={targetDept} onValueChange={v => { setTargetDept(v); setTargetBundleId(""); }}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select department..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map(d => (
+                      <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {targetDept && (
+              <div>
+                <Label>Standards Bundle (source of target lines)</Label>
+                <Select value={targetBundleId} onValueChange={setTargetBundleId}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select bundle..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bundlesForTargetDept.map(b => (
+                      <SelectItem key={b.id} value={b.id}>v{b.version_no} ({b.status})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {targetBundleId && (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50">
+                      <TableHead>Item Code</TableHead>
+                      <TableHead>Target Type</TableHead>
+                      <TableHead className="text-right">Qty</TableHead>
+                      <TableHead className="text-right">Time (min)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {targetLinesForBundle.length === 0 ? (
+                      <TableRow><TableCell colSpan={4} className="text-center text-slate-400 py-4">No target lines in this bundle</TableCell></TableRow>
+                    ) : targetLinesForBundle.map(l => (
+                      <TableRow key={l.id}>
+                        <TableCell className="font-medium">{l.item_code}</TableCell>
+                        <TableCell>{l.target_type}</TableCell>
+                        <TableCell className="text-right">{l.target_qty}</TableCell>
+                        <TableCell className="text-right">{l.item_total_min?.toFixed(1)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+            <p className="text-xs text-slate-500">
+              This will replace existing targets for the selected date & department with the lines from the chosen bundle.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTargetDialog(false)}>Cancel</Button>
+            <Button onClick={handleSaveTargets} disabled={isSavingTargets || !targetBundleId} className="bg-amber-600 hover:bg-amber-700">
+              {isSavingTargets ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Apply Targets"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={!!editDialog} onOpenChange={() => setEditDialog(null)}>
