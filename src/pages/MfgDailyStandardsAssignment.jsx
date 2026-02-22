@@ -61,6 +61,11 @@ export default function MfgDailyStandardsAssignment() {
   const [bulkTargetDeptEnabled, setBulkTargetDeptEnabled] = useState({}); // { dept_name: bool }
   const [isSavingBulkTargets, setIsSavingBulkTargets] = useState(false);
 
+  // Conflict confirmation state
+  const [conflictDialog, setConflictDialog] = useState(false);
+  const [conflictDates, setConflictDates] = useState([]); // list of "date - dept" strings with existing targets
+  const [pendingBulkPayload, setPendingBulkPayload] = useState(null); // store the validated payload to run after confirm
+
   // Fetch departments
   const { data: departments = [] } = useQuery({
     queryKey: ["Department"],
