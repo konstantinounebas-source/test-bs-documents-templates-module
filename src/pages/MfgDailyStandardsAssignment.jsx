@@ -378,24 +378,28 @@ export default function MfgDailyStandardsAssignment() {
     const end = parseISO(bulkTargetEndDate);
     const days = eachDayOfInterval({ start, end });
 
-    // Check for existing TargetDaily records in this range
+    // Fetch all TargetDaily records for all depts in range in one request
+    const startDateStr = format(days[0], "yyyy-MM-dd");
+    const endDateStr = format(days[days.length - 1], "yyyy-MM-dd");
+    const allExistingTargets = await base44.entities.TargetDaily.list();
+    const dayStrings = days.map(d => format(d, "yyyy-MM-dd"));
+
     const conflicts = [];
-    for (const deptName of enabledDepts) {
-      for (const day of days) {
-        const dateStr = format(day, "yyyy-MM-dd");
-        const existing = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
-        if (existing.length > 0) {
-          const firstRec = existing[0];
-          const existingBundle = firstRec.bundle_id ? bundleById[firstRec.bundle_id] : null;
-          const existingBundleLabel = existingBundle ? `v${existingBundle.version_no}` : (firstRec.bundle_id || '?');
-          const existingTargetType = firstRec.target_profile || '?';
-          conflicts.push({
-            label: `${dateStr} — ${deptName}`,
-            existingBundle: existingBundleLabel,
-            existingTargetType
-          });
-        }
-      }
+    const seenKeys = new Set();
+    for (const rec of allExistingTargets) {
+      if (!enabledDepts.includes(rec.department)) continue;
+      if (!dayStrings.includes(rec.date)) continue;
+      const key = `${rec.date}|${rec.department}`;
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      const existingBundle = rec.bundle_id ? bundleById[rec.bundle_id] : null;
+      const existingBundleLabel = existingBundle ? `v${existingBundle.version_no}` : (rec.bundle_id || '?');
+      const existingTargetType = rec.target_profile || '?';
+      conflicts.push({
+        label: `${rec.date} — ${rec.department}`,
+        existingBundle: existingBundleLabel,
+        existingTargetType
+      });
     }
 
     const payload = { enabledDepts, days };
