@@ -449,11 +449,11 @@ export default function MfgDailyStandardsAssignment() {
           // Update TGT_TIME metric
           await saveTGTTimeMetric(dateStr, deptName, bundleId, toCreate);
 
-          // Update DailyStandardsAssignment with target_type
+          // Update DailyStandardsAssignment with bundle and target_type
           const assignmentKey = `${dateStr}|${deptName}`;
           const existingAssignment = assignmentMap[assignmentKey];
           if (existingAssignment) {
-            await base44.entities.DailyStandardsAssignment.update(existingAssignment.id, { target_type: targetType });
+            await base44.entities.DailyStandardsAssignment.update(existingAssignment.id, { standards_bundle_id: bundleId, target_type: targetType });
           } else {
             await base44.entities.DailyStandardsAssignment.create({
               assignment_date: dateStr,
