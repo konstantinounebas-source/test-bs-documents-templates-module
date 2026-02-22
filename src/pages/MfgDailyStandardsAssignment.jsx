@@ -380,6 +380,8 @@ export default function MfgDailyStandardsAssignment() {
               if (toCreate.length > 0) {
                 await base44.entities.TargetDaily.bulkCreate(toCreate);
               }
+              // Update TGT_TIME metric
+              await saveTGTTimeMetric(dateStr, deptName, bundleId, toCreate);
 
               // Also update DailyStandardsAssignment with target_type
               const assignmentKey = `${dateStr}|${deptName}`;
