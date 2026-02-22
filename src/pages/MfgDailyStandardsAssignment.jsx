@@ -346,8 +346,7 @@ export default function MfgDailyStandardsAssignment() {
 
     setIsSavingBulkTargets(true);
     try {
-      // Process all depts and days in parallel
-      const allOps = [];
+      // Process sequentially to avoid rate limiting
       for (const deptName of enabledDepts) {
         const bundleId = bulkTargetSelections[deptName];
         const targetType = bulkTargetTypeSelections[deptName];
@@ -360,58 +359,57 @@ export default function MfgDailyStandardsAssignment() {
 
         for (const day of days) {
           const dateStr = format(day, "yyyy-MM-dd");
-          allOps.push(
-            (async () => {
-              const existing = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
-              const toDelete = existing.map(t => base44.entities.TargetDaily.delete(t.id));
-              await Promise.all(toDelete);
-              
-              const toCreate = targetLines.map(l => ({
-                bundle_id: bundleId,
-                date: dateStr,
-                department: deptName,
-                item_code: l.item_code,
-                target_profile: l.target_type,
-                operation_profile: l.operation_profile_id,
-                target_qty: l.target_qty,
-                profile_time_min_pc: l.per_piece_total_min,
-                target_time_min: l.item_total_min
-              }));
-              if (toCreate.length > 0) {
-                await base44.entities.TargetDaily.bulkCreate(toCreate);
-              }
-              // Update TGT_TIME metric
-              await saveTGTTimeMetric(dateStr, deptName, bundleId, toCreate);
 
-              // Also update DailyStandardsAssignment with target_type
-              const assignmentKey = `${dateStr}|${deptName}`;
-              const existingAssignment = assignmentMap[assignmentKey];
-              if (existingAssignment) {
-                await base44.entities.DailyStandardsAssignment.update(existingAssignment.id, { 
-                  target_type: targetType 
-                });
-              } else {
-                await base44.entities.DailyStandardsAssignment.create({
-                  assignment_date: dateStr,
-                  department_id: deptName,
-                  standards_bundle_id: bundleId,
-                  target_type: targetType
-                });
-              }
-            })()
-          );
+          // Delete existing targets
+          const existing = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
+          for (const t of existing) {
+            await base44.entities.TargetDaily.delete(t.id);
+          }
+
+          // Create new targets
+          const toCreate = targetLines.map(l => ({
+            bundle_id: bundleId,
+            date: dateStr,
+            department: deptName,
+            item_code: l.item_code,
+            target_profile: l.target_type,
+            operation_profile: l.operation_profile_id,
+            target_qty: l.target_qty,
+            profile_time_min_pc: l.per_piece_total_min,
+            target_time_min: l.item_total_min
+          }));
+          if (toCreate.length > 0) {
+            await base44.entities.TargetDaily.bulkCreate(toCreate);
+          }
+
+          // Update TGT_TIME metric
+          await saveTGTTimeMetric(dateStr, deptName, bundleId, toCreate);
+
+          // Update DailyStandardsAssignment with target_type
+          const assignmentKey = `${dateStr}|${deptName}`;
+          const existingAssignment = assignmentMap[assignmentKey];
+          if (existingAssignment) {
+            await base44.entities.DailyStandardsAssignment.update(existingAssignment.id, { target_type: targetType });
+          } else {
+            await base44.entities.DailyStandardsAssignment.create({
+              assignment_date: dateStr,
+              department_id: deptName,
+              standards_bundle_id: bundleId,
+              target_type: targetType
+            });
+          }
         }
       }
-      await Promise.all(allOps);
       queryClient.invalidateQueries(["TargetDaily"]);
       queryClient.invalidateQueries(["DailyStandardsAssignment"]);
+      queryClient.invalidateQueries(["DailyMetricValue"]);
       toast.success("Bulk targets saved");
       setBulkTargetDialog(false);
       setBulkTargetSelections({});
       setBulkTargetTypeSelections({});
       setBulkTargetDeptEnabled({});
     } catch (e) {
-      toast.error("Error saving bulk targets");
+      toast.error("Error saving bulk targets: " + e.message);
     } finally {
       setIsSavingBulkTargets(false);
     }
