@@ -320,7 +320,25 @@ export default function MfgDailyStandardsAssignment() {
       await base44.entities.TargetDaily.bulkCreate(toCreate);
       // Update TGT_TIME metric
       await saveTGTTimeMetric(targetDate, targetDept, targetBundleId, toCreate);
+      // Update DailyStandardsAssignment
+      const assignmentKey = `${targetDate}|${targetDept}`;
+      const existingAssignment = assignmentMap[assignmentKey];
+      const targetType = targetLinesForBundle[0]?.target_type || "";
+      if (existingAssignment) {
+        await base44.entities.DailyStandardsAssignment.update(existingAssignment.id, {
+          standards_bundle_id: targetBundleId,
+          target_type: targetType
+        });
+      } else {
+        await base44.entities.DailyStandardsAssignment.create({
+          assignment_date: targetDate,
+          department_id: targetDept,
+          standards_bundle_id: targetBundleId,
+          target_type: targetType
+        });
+      }
       queryClient.invalidateQueries(["TargetDaily"]);
+      queryClient.invalidateQueries(["DailyStandardsAssignment"]);
       toast.success(`${toCreate.length} target lines saved for ${targetDate}`);
       setTargetDialog(false);
     } catch (e) {
