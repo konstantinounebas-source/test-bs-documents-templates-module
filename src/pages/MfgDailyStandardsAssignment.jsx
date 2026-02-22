@@ -367,7 +367,15 @@ export default function MfgDailyStandardsAssignment() {
         const dateStr = format(day, "yyyy-MM-dd");
         const existing = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
         if (existing.length > 0) {
-          conflicts.push(`${dateStr} — ${deptName}`);
+          const firstRec = existing[0];
+          const existingBundle = firstRec.bundle_id ? bundleById[firstRec.bundle_id] : null;
+          const existingBundleLabel = existingBundle ? `v${existingBundle.version_no}` : (firstRec.bundle_id || '?');
+          const existingTargetType = firstRec.target_profile || '?';
+          conflicts.push({
+            label: `${dateStr} — ${deptName}`,
+            existingBundle: existingBundleLabel,
+            existingTargetType
+          });
         }
       }
     }
