@@ -189,51 +189,7 @@ export default function MfgDailyStandardsAssignment() {
     }
   };
 
-  const openEdit = (date, department_id) => {
-    const key = `${date}|${department_id}`;
-    const existing = assignmentMap[key];
-    // Pre-select the dept's active bundle or existing assignment
-    const activeBundleForDept = allBundles.find(b => b.department === department_id && b.status === "ACTIVE");
-    setSelectedBundleId(existing?.standards_bundle_id || activeBundleForDept?.id || "");
-    setEditDialog({ date, department_id, assignment: existing || null });
-  };
 
-  const saveMutation = useMutation({
-    mutationFn: async ({ date, department_id, assignment, bundleId }) => {
-      if (assignment) {
-        await base44.entities.DailyStandardsAssignment.update(assignment.id, {
-          standards_bundle_id: bundleId
-        });
-      } else {
-        await base44.entities.DailyStandardsAssignment.create({
-          assignment_date: date,
-          department_id,
-          standards_bundle_id: bundleId
-        });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries(["DailyStandardsAssignment"]);
-      toast.success("Assignment saved");
-      setEditDialog(null);
-    }
-  });
-
-  const handleSave = () => {
-    if (!selectedBundleId) { toast.error("Please select a bundle"); return; }
-    saveMutation.mutate({
-      date: editDialog.date,
-      department_id: editDialog.department_id,
-      assignment: editDialog.assignment,
-      bundleId: selectedBundleId
-    });
-  };
-
-  // Bundles for the department in the edit dialog
-  const bundlesForEditDept = useMemo(() => {
-    if (!editDialog) return [];
-    return allBundles.filter(b => b.department === editDialog.department_id);
-  }, [allBundles, editDialog]);
 
   // Bulk save handler
   const handleBulkSave = async () => {
