@@ -14,7 +14,6 @@ export default function MfgPlanningWizard() {
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedBundle, setSelectedBundle] = useState(null);
-  const [activeTab, setActiveTab] = useState('scheduled');
 
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
