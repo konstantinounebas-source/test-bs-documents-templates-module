@@ -957,9 +957,18 @@ export default function MfgDailyStandardsAssignment() {
             <p className="text-sm text-slate-600">
               The following dates already have targets recorded. Do you want to overwrite them?
             </p>
-            <div className="border rounded-lg bg-amber-50 p-3 max-h-[200px] overflow-y-auto space-y-1">
+            <div className="border rounded-lg bg-amber-50 p-3 max-h-[220px] overflow-y-auto space-y-1">
+              <div className="grid grid-cols-3 gap-2 text-xs font-semibold text-amber-900 mb-2 border-b border-amber-200 pb-1">
+                <span>Date — Dept</span>
+                <span>Current Bundle</span>
+                <span>Current Target Type</span>
+              </div>
               {conflictDates.map((c, i) => (
-                <p key={i} className="text-xs font-mono text-amber-800">{c}</p>
+                <div key={i} className="grid grid-cols-3 gap-2 text-xs font-mono text-amber-800">
+                  <span>{c.label}</span>
+                  <span>{c.existingBundle}</span>
+                  <span>{c.existingTargetType}</span>
+                </div>
               ))}
             </div>
             <p className="text-xs text-slate-500">
