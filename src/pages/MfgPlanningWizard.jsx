@@ -117,31 +117,11 @@ export default function MfgPlanningWizard() {
                 </AlertDescription>
               </Alert>
             ) : (
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-4">
-                  <TabsTrigger value="scheduled">
-                    <CalendarDays className="w-4 h-4 mr-2" />
-                    Scheduled Data
-                  </TabsTrigger>
-                  <TabsTrigger value="targets">
-                    <Target className="w-4 h-4 mr-2" />
-                    Daily Targets
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="scheduled">
-                  <ScheduledDataTab
-                    selectedDepartment={selectedDepartment}
-                    selectedBundle={selectedBundle}
-                    selectedDate={selectedDate}
-                  />
-                </TabsContent>
-                <TabsContent value="targets">
-                  <DailyTargetTab
-                    selectedDepartment={selectedDepartment}
-                    selectedBundle={selectedBundle}
-                  />
-                </TabsContent>
-              </Tabs>
+              <ScheduledDataTab
+                selectedDepartment={selectedDepartment}
+                selectedBundle={selectedBundle}
+                selectedDate={selectedDate}
+              />
             )}
           </CardContent>
         </Card>
