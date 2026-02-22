@@ -1367,6 +1367,11 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
               </div>
               <div>
                 <Label className="text-sm">Target Type</Label>
+                {tgtTimeMetric && (
+                  <p className="text-xs text-slate-500 mb-1">
+                    Saved TGT_TIME: <span className="font-semibold text-orange-700">{Number(tgtTimeMetric.value).toFixed(2)} min</span>
+                  </p>
+                )}
                 <Select value={selectedTargetType} onValueChange={setSelectedTargetType}>
                   <SelectTrigger className="h-8">
                     <SelectValue placeholder="Compare" />
