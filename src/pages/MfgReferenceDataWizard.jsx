@@ -126,7 +126,7 @@ export default function MfgReferenceDataWizard() {
       setSelectedDeptIds(item.department_ids || []);
     }
     if (activeTab === 'qc_types') {
-      setSelectedDeptIds(item.departments_csv ? item.departments_csv.split(',').filter(Boolean) : []);
+      setSelectedDeptIds(item.department_ids || []);
     }
   };
 
