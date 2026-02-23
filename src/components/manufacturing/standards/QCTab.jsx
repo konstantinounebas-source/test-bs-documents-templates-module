@@ -83,10 +83,19 @@ export default function QCTab({ bundle, isEditable }) {
   }, [allQCTypes, bundleDepartmentId]);
 
   // Fetch QC levels
-  const { data: qcLevels = [] } = useQuery({
+  const { data: allQCLevels = [] } = useQuery({
     queryKey: ['QCLevel'],
     queryFn: () => base44.entities.QCLevel.filter({ is_active: true })
   });
+
+  // Filter QC levels by bundle department
+  const qcLevels = useMemo(() => {
+    return allQCLevels.filter(ql => {
+      if (!ql.department_ids || ql.department_ids.length === 0) return true;
+      if (!bundleDepartmentId) return true;
+      return ql.department_ids.includes(bundleDepartmentId);
+    });
+  }, [allQCLevels, bundleDepartmentId]);
 
   // Fetch DATA tab lines to get base times
   const { data: dataLines = [] } = useQuery({
