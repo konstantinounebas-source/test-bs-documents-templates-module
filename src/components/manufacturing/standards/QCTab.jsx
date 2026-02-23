@@ -73,6 +73,17 @@ export default function QCTab({ bundle, isEditable }) {
     queryFn: () => base44.entities.QC_Type.filter({ is_active: true })
   });
 
+  // Filter QC types by bundle department
+  const qcTypes = useMemo(() => {
+    return allQCTypes.filter(qt => {
+      if (!qt.departments_csv) return true; // applies to all
+      if (!bundleDepartmentId) return true;
+      const ids = qt.departments_csv.split(',').filter(Boolean);
+      if (ids.length === 0) return true;
+      return ids.includes(bundleDepartmentId);
+    });
+  }, [allQCTypes, bundleDepartmentId]);
+
   // Fetch QC levels
   const { data: qcLevels = [] } = useQuery({
     queryKey: ['QCLevel'],
