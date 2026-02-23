@@ -321,7 +321,7 @@ export default function QCTab({ bundle, isEditable }) {
                 <SelectValue placeholder="Select QC type" />
               </SelectTrigger>
               <SelectContent>
-                {allQCTypes.map(qt => (
+                {qcTypes.map(qt => (
                   <SelectItem key={qt.id} value={qt.name}>{qt.name}</SelectItem>
                 ))}
               </SelectContent>
