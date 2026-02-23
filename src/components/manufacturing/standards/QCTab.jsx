@@ -67,20 +67,18 @@ export default function QCTab({ bundle, isEditable }) {
   
   const selectedOperation = operations.find(o => String(o.id) === selectedOperationId)?.name || '';
 
-  // Fetch QC types
+  // Fetch QC types (use QCType entity which supports department_ids array)
   const { data: allQCTypes = [] } = useQuery({
-    queryKey: ['QC_Type'],
-    queryFn: () => base44.entities.QC_Type.filter({ is_active: true })
+    queryKey: ['QCType'],
+    queryFn: () => base44.entities.QCType.filter({ is_active: true })
   });
 
   // Filter QC types by bundle department
   const qcTypes = useMemo(() => {
     return allQCTypes.filter(qt => {
-      if (!qt.departments_csv) return true; // applies to all
+      if (!qt.department_ids || qt.department_ids.length === 0) return true;
       if (!bundleDepartmentId) return true;
-      const ids = qt.departments_csv.split(',').filter(Boolean);
-      if (ids.length === 0) return true;
-      return ids.includes(bundleDepartmentId);
+      return qt.department_ids.includes(bundleDepartmentId);
     });
   }, [allQCTypes, bundleDepartmentId]);
 
