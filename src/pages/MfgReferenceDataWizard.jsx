@@ -335,16 +335,24 @@ export default function MfgReferenceDataWizard() {
                                   <TableCell className="text-slate-600">{item.description || '-'}</TableCell>
                                   {(tab.id === 'operations' || tab.id === 'qc_types' || tab.id === 'qc_levels') && (
                                     <TableCell>
-                                      {item.department_ids && item.department_ids.length > 0 ? (
-                                        <div className="flex flex-wrap gap-1">
-                                          {item.department_ids.map(dId => {
-                                            const dept = allDepartments.find(d => d.id === dId);
-                                            return dept ? <Badge key={dId} variant="outline" className="text-xs">{dept.name}</Badge> : null;
-                                          })}
-                                        </div>
-                                      ) : (
-                                        <span className="text-xs text-slate-400">All departments</span>
-                                      )}
+                                      {(() => {
+                                        let deptIds = [];
+                                        if (tab.id === 'qc_types') {
+                                          deptIds = item.departments_csv ? item.departments_csv.split(',').filter(Boolean) : [];
+                                        } else {
+                                          deptIds = item.department_ids || [];
+                                        }
+                                        return deptIds.length > 0 ? (
+                                          <div className="flex flex-wrap gap-1">
+                                            {deptIds.map(dId => {
+                                              const dept = allDepartments.find(d => d.id === dId);
+                                              return dept ? <Badge key={dId} variant="outline" className="text-xs">{dept.name}</Badge> : null;
+                                            })}
+                                          </div>
+                                        ) : (
+                                          <span className="text-xs text-slate-400">All departments</span>
+                                        );
+                                      })()}
                                     </TableCell>
                                   )}
                                   <TableCell>
