@@ -101,8 +101,12 @@ export default function MfgReferenceDataWizard() {
     }
 
     const dataToSave = { ...formData };
-    if (activeTab === 'operations' || activeTab === 'qc_types' || activeTab === 'qc_levels') {
+    if (activeTab === 'operations' || activeTab === 'qc_levels') {
       dataToSave.department_ids = selectedDeptIds;
+    }
+    if (activeTab === 'qc_types') {
+      // QC_Type entity doesn't support arrays - store as comma-separated string
+      dataToSave.departments_csv = selectedDeptIds.join(',');
     }
     if (editingItem) {
       updateMutation.mutate({ id: editingItem.id, data: dataToSave });
