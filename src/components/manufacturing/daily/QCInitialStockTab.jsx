@@ -48,11 +48,30 @@ export default function QCInitialStockTab({ batchId, department }) {
   const { data: itemCodes = [], isLoading: itemCodesLoading } = useBatchItemCodes(batchId, department);
   const hasItemCodes = itemCodes.length > 0;
 
-  const { data: qcTypes = [] } = useQuery({
+  const { data: allQcTypes = [] } = useQuery({
     queryKey: ['QC_Type'],
     queryFn: () => base44.entities.QC_Type.list(),
     staleTime: Infinity
   });
+
+  // Fetch departments to resolve department name -> id
+  const { data: allDepartments = [] } = useQuery({
+    queryKey: ['Department'],
+    queryFn: () => base44.entities.Department.filter({ is_active: true }),
+    staleTime: Infinity
+  });
+
+  // Filter QC types by department
+  const qcTypes = useMemo(() => {
+    const deptObj = allDepartments.find(d => d.name === department);
+    const deptId = deptObj?.id;
+    return allQcTypes.filter(qt => {
+      if (!qt.departments_csv) return true;
+      const ids = qt.departments_csv.split(',').filter(Boolean);
+      if (ids.length === 0) return true;
+      return deptId && ids.includes(deptId);
+    });
+  }, [allQcTypes, allDepartments, department]);
 
   const { data: qcLevels = [] } = useQuery({
     queryKey: ['QCLevel'],
