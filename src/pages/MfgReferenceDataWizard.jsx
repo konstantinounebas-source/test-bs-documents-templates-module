@@ -335,12 +335,7 @@ export default function MfgReferenceDataWizard() {
                                   {(tab.id === 'operations' || tab.id === 'qc_types' || tab.id === 'qc_levels') && (
                                     <TableCell>
                                       {(() => {
-                                        let deptIds = [];
-                                        if (tab.id === 'qc_types') {
-                                          deptIds = item.departments_csv ? item.departments_csv.split(',').filter(Boolean) : [];
-                                        } else {
-                                          deptIds = item.department_ids || [];
-                                        }
+                                        let deptIds = item.department_ids || [];
                                         return deptIds.length > 0 ? (
                                           <div className="flex flex-wrap gap-1">
                                             {deptIds.map(dId => {
