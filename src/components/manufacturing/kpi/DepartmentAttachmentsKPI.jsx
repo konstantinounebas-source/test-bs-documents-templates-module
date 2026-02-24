@@ -167,7 +167,7 @@ export default function DepartmentAttachmentsKPI({ batchHeaderId, date, departme
             ) : (
               <div className="flex items-center justify-center max-h-[70vh] overflow-auto bg-slate-50 rounded-lg">
                 <iframe 
-                  src={`${previewFile?.file_url}${previewFile?.file_url?.includes('?') ? '&' : '?'}embedded=true`}
+                  src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(previewFile?.file_url)}`}
                   className="w-full h-[600px] border-0"
                   title={previewFile?.file_name}
                 />
