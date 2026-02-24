@@ -217,16 +217,18 @@ export default function MfgDailyProduction() {
             )}
 
             {selectedBatch && (
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="grid grid-cols-7 w-full">
-                  <TabsTrigger value="batch_lines">Batch Lines</TabsTrigger>
-                  <TabsTrigger value="qc_initial">QC Initial Stock</TabsTrigger>
-                  <TabsTrigger value="operations">Operations</TabsTrigger>
-                  <TabsTrigger value="team_persons">Team Time Persons</TabsTrigger>
-                  <TabsTrigger value="team_extra">Team Time Extra</TabsTrigger>
-                  <TabsTrigger value="help_in">Help In</TabsTrigger>
-                  <TabsTrigger value="consumables">Consumables</TabsTrigger>
-                </TabsList>
+               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                 <div className="lg:col-span-3">
+                   <Tabs value={activeTab} onValueChange={setActiveTab}>
+                     <TabsList className="grid grid-cols-7 w-full">
+                       <TabsTrigger value="batch_lines">Batch Lines</TabsTrigger>
+                       <TabsTrigger value="qc_initial">QC Initial Stock</TabsTrigger>
+                       <TabsTrigger value="operations">Operations</TabsTrigger>
+                       <TabsTrigger value="team_persons">Team Time Persons</TabsTrigger>
+                       <TabsTrigger value="team_extra">Team Time Extra</TabsTrigger>
+                       <TabsTrigger value="help_in">Help In</TabsTrigger>
+                       <TabsTrigger value="consumables">Consumables</TabsTrigger>
+                     </TabsList>
 
                 <div className="mt-6">
                   <TabsContent value="batch_lines">
