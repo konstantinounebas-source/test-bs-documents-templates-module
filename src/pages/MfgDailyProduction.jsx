@@ -217,55 +217,55 @@ export default function MfgDailyProduction() {
             )}
 
             {selectedBatch && (
-               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                 <div className="lg:col-span-3">
-                   <Tabs value={activeTab} onValueChange={setActiveTab}>
-                     <TabsList className="grid grid-cols-7 w-full">
-                       <TabsTrigger value="batch_lines">Batch Lines</TabsTrigger>
-                       <TabsTrigger value="qc_initial">QC Initial Stock</TabsTrigger>
-                       <TabsTrigger value="operations">Operations</TabsTrigger>
-                       <TabsTrigger value="team_persons">Team Time Persons</TabsTrigger>
-                       <TabsTrigger value="team_extra">Team Time Extra</TabsTrigger>
-                       <TabsTrigger value="help_in">Help In</TabsTrigger>
-                       <TabsTrigger value="consumables">Consumables</TabsTrigger>
-                     </TabsList>
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-3">
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="grid grid-cols-7 w-full">
+                      <TabsTrigger value="batch_lines">Batch Lines</TabsTrigger>
+                      <TabsTrigger value="qc_initial">QC Initial Stock</TabsTrigger>
+                      <TabsTrigger value="operations">Operations</TabsTrigger>
+                      <TabsTrigger value="team_persons">Team Time Persons</TabsTrigger>
+                      <TabsTrigger value="team_extra">Team Time Extra</TabsTrigger>
+                      <TabsTrigger value="help_in">Help In</TabsTrigger>
+                      <TabsTrigger value="consumables">Consumables</TabsTrigger>
+                    </TabsList>
 
-                <div className="mt-6">
-                  <TabsContent value="batch_lines">
-                    <BatchLinesTab batchId={selectedBatch?.id} department={selectedBatch?.department} selectedBundle={selectedBundle} />
-                  </TabsContent>
+                    <div className="mt-6">
+                      <TabsContent value="batch_lines">
+                        <BatchLinesTab batchId={selectedBatch?.id} department={selectedBatch?.department} selectedBundle={selectedBundle} />
+                      </TabsContent>
 
-                  <TabsContent value="qc_initial">
-                    <QCInitialStockTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                  </TabsContent>
+                      <TabsContent value="qc_initial">
+                        <QCInitialStockTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                      </TabsContent>
 
-                  <TabsContent value="operations">
-                    <OperationsTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                  </TabsContent>
+                      <TabsContent value="operations">
+                        <OperationsTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                      </TabsContent>
 
-                  <TabsContent value="team_persons">
-                    <TeamTimePersonsTab batchId={selectedBatch?.id} />
-                  </TabsContent>
+                      <TabsContent value="team_persons">
+                        <TeamTimePersonsTab batchId={selectedBatch?.id} />
+                      </TabsContent>
 
-                  <TabsContent value="team_extra">
-                    <TeamTimeExtraTab batchId={selectedBatch?.id} />
-                  </TabsContent>
+                      <TabsContent value="team_extra">
+                        <TeamTimeExtraTab batchId={selectedBatch?.id} />
+                      </TabsContent>
 
-                  <TabsContent value="help_in">
-                    <HelpInTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                  </TabsContent>
+                      <TabsContent value="help_in">
+                        <HelpInTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                      </TabsContent>
 
-                  <TabsContent value="consumables">
-                    <ConsumablesActualTab batchId={selectedBatch?.id} />
-                  </TabsContent>
-                </div>
-                </Tabs>
+                      <TabsContent value="consumables">
+                        <ConsumablesActualTab batchId={selectedBatch?.id} />
+                      </TabsContent>
+                    </div>
+                  </Tabs>
                 </div>
                 <div className="lg:col-span-1">
-                <AttachmentsPanel batchHeaderId={selectedBatch?.id} department={selectedBatch?.department} />
+                  <AttachmentsPanel batchHeaderId={selectedBatch?.id} department={selectedBatch?.department} />
                 </div>
-                </div>
-                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
