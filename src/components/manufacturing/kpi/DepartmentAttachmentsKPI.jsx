@@ -7,6 +7,9 @@ import { FileText, CheckCircle, AlertCircle, Download, Eye, X, ChevronDown } fro
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function DepartmentAttachmentsKPI({ batchHeaderId, date, department }) {
+  const [previewFile, setPreviewFile] = useState(null);
+  const [expandedDept, setExpandedDept] = useState(null);
+
   const { data: batchHeaders = [] } = useQuery({
     queryKey: ['BatchHeader', date],
     queryFn: () => date ? base44.entities.BatchHeader.filter({ date }) : [],
