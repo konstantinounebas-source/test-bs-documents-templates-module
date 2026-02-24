@@ -7,6 +7,7 @@ import { Loader2, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } fr
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import DepartmentAttachmentsKPI from './DepartmentAttachmentsKPI';
 
 export default function DailyKPIValuesViewer() {
   const [isExpanded, setIsExpanded] = useState(true);
