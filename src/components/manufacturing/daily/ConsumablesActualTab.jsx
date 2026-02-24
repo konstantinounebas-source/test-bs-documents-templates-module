@@ -426,7 +426,37 @@ export default function ConsumablesActualTab({ batchId }) {
                       <TableCell className="font-medium text-sm">{group.consumable}</TableCell>
                       <TableCell className="text-sm">{group.unit}</TableCell>
                       <TableCell className="text-right text-sm">{group.totalExpected.toFixed(2)}</TableCell>
-                      <TableCell className="text-right text-sm font-semibold">{group.totalActual.toFixed(2)}</TableCell>
+                      <TableCell className="text-right text-sm font-semibold" onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingGroupTotal({ consumable: group.consumable, value: group.totalActual.toFixed(2) });
+                      }}>
+                        {editingGroupTotal?.consumable === group.consumable ? (
+                          <div className="flex items-center gap-1 justify-end" onClick={e => e.stopPropagation()}>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={editingGroupTotal.value}
+                              onChange={(e) => setEditingGroupTotal(prev => ({ ...prev, value: e.target.value }))}
+                              className="w-24 h-7 text-sm"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') confirmGroupTotalEdit(group);
+                                if (e.key === 'Escape') setEditingGroupTotal(null);
+                              }}
+                            />
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => confirmGroupTotalEdit(group)}>
+                              <Check className="w-3 h-3 text-green-600" />
+                            </Button>
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingGroupTotal(null)}>
+                              <X className="w-3 h-3 text-slate-400" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="cursor-pointer hover:text-blue-600 hover:underline" title="Click to edit total">
+                            {group.totalActual.toFixed(2)}
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         {usage !== null ? (
                           <span className={`text-sm font-semibold ${usage <= 105 ? 'text-green-700' : usage <= 120 ? 'text-yellow-700' : 'text-red-700'}`}>
