@@ -216,9 +216,9 @@ export default function MfgDailyProduction() {
               />
             )}
 
-            {selectedBatch && (
+            {selectedDepartment && (
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div className="lg:col-span-3">
+                <div className={selectedBatch ? "lg:col-span-3" : "lg:col-span-3"}>
                   <Tabs value={activeTab} onValueChange={setActiveTab}>
                     <TabsList className="grid grid-cols-7 w-full">
                       <TabsTrigger value="batch_lines">Batch Lines</TabsTrigger>
