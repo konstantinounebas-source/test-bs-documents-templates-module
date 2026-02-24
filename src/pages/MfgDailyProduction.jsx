@@ -259,8 +259,13 @@ export default function MfgDailyProduction() {
                     <ConsumablesActualTab batchId={selectedBatch?.id} />
                   </TabsContent>
                 </div>
-              </Tabs>
-            )}
+                </Tabs>
+                </div>
+                <div className="lg:col-span-1">
+                <AttachmentsPanel batchHeaderId={selectedBatch?.id} department={selectedBatch?.department} />
+                </div>
+                </div>
+                )}
           </CardContent>
         </Card>
       </div>
