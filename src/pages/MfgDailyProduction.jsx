@@ -19,6 +19,7 @@ import TeamTimePersonsTab from "@/components/manufacturing/daily/TeamTimePersons
 import TeamTimeExtraTab from "@/components/manufacturing/daily/TeamTimeExtraTab";
 import HelpInTab from "@/components/manufacturing/daily/HelpInTab";
 import ConsumablesActualTab from "@/components/manufacturing/daily/ConsumablesActualTab";
+import AttachmentsPanel from "@/components/manufacturing/daily/AttachmentsPanel";
 
 export default function MfgDailyProduction() {
   const navigate = useNavigate();
