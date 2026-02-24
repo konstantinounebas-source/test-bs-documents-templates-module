@@ -501,17 +501,17 @@ export default function OperationsTab({ batchId, department }) {
         return stdMap[`${itemCode}|${opName}`] ?? stdMap[`|${opName}`] ?? 0;
       };
 
-      // 3. Process each batch line — clean sync: delete all existing ops first, then recreate
+      // 3. Delete ALL existing operations for this batch in one go
+      const existingOpsAll = await base44.entities.Operations.filter({ batch_header_id: batchId });
+      const existingItemCodes = new Set(processedLines.map(bl => bl.item_code));
+      const opsToDelete = existingOpsAll.filter(op => existingItemCodes.has(op.item_code));
+      await Promise.all(opsToDelete.map(op => base44.entities.Operations.delete(op.id)));
+
+      // 4. Build all new operation records
+      const opsToCreate = [];
       for (const bl of processedLines) {
         const qty = bl.qty_processed;
         const scheduledItem = schedDataAll.find(sd => sd.item_code === bl.item_code);
-
-        // Delete ALL existing operations for this batch+item to avoid duplicates
-        const existingOps = await base44.entities.Operations.filter({
-          batch_header_id: batchId,
-          item_code: bl.item_code
-        });
-        await Promise.all(existingOps.map(op => base44.entities.Operations.delete(op.id)));
 
         if (scheduledItem?.operation_profile_id) {
           const profile = allProfileNames.find(p => p.id === scheduledItem.operation_profile_id);
@@ -522,9 +522,9 @@ export default function OperationsTab({ batchId, department }) {
 
           if (activeOps.length > 0) {
             const groupId = `sync-${batchId}-${bl.item_code}-${Date.now()}`;
-            for (const opName of activeOps) {
+            activeOps.forEach(opName => {
               const stdMinPC = getStdMin(bl.item_code, opName);
-              await base44.entities.Operations.create({
+              opsToCreate.push({
                 batch_header_id: batchId,
                 item_code: bl.item_code,
                 operation: opName,
@@ -535,10 +535,9 @@ export default function OperationsTab({ batchId, department }) {
                 profile_group_id: groupId,
                 source_type: 'SCHEDULE'
               });
-            }
+            });
           } else {
-            // Profile exists but no operations_required
-            await base44.entities.Operations.create({
+            opsToCreate.push({
               batch_header_id: batchId,
               item_code: bl.item_code,
               operation: '',
@@ -548,8 +547,7 @@ export default function OperationsTab({ batchId, department }) {
             });
           }
         } else {
-          // No schedule → single manual entry
-          await base44.entities.Operations.create({
+          opsToCreate.push({
             batch_header_id: batchId,
             item_code: bl.item_code,
             operation: '',
@@ -557,6 +555,11 @@ export default function OperationsTab({ batchId, department }) {
             source_type: 'MANUAL'
           });
         }
+      }
+
+      // 5. Bulk create all operations at once
+      if (opsToCreate.length > 0) {
+        await base44.entities.Operations.bulkCreate(opsToCreate);
       }
 
       await queryClient.invalidateQueries({ queryKey: ['Operations', batchId] });
