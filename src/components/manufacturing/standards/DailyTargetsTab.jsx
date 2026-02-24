@@ -62,9 +62,9 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
 
   // Filter operation profiles by current bundle's department
   const operationProfiles = useMemo(() => {
-    if (!bundle?.department_id) return allOperationProfiles;
-    return allOperationProfiles.filter(p => p.department === bundle.department_id);
-  }, [allOperationProfiles, bundle?.department_id]);
+    if (!bundle?.department) return allOperationProfiles;
+    return allOperationProfiles.filter(p => p.department === bundle.department);
+  }, [allOperationProfiles, bundle?.department]);
 
   // Profiles now store operations_required directly - no need for ProfileSetLines
 
