@@ -186,11 +186,21 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader className="flex flex-row items-center justify-between">
             <DialogTitle>{previewFile?.file_name}</DialogTitle>
-            <button onClick={() => setPreviewFile(null)} className="text-slate-400 hover:text-slate-600">
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex gap-2">
+              <a
+                href={previewFile?.file_url}
+                download={previewFile?.file_name}
+                className="text-blue-600 hover:text-blue-700 p-1"
+                title="Download"
+              >
+                <Download className="w-5 h-5" />
+              </a>
+              <button onClick={() => setPreviewFile(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </DialogHeader>
-          
+
           {previewFile?.file_type === 'image' ? (
             <div className="flex items-center justify-center max-h-[70vh] overflow-auto bg-slate-50 rounded-lg">
               <img src={previewFile.file_url} alt={previewFile.file_name} className="max-w-full max-h-full" />
@@ -198,7 +208,7 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
           ) : (
             <div className="flex items-center justify-center max-h-[70vh] overflow-auto bg-slate-50 rounded-lg">
               <iframe 
-                src={previewFile?.file_url} 
+                src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(previewFile?.file_url)}`}
                 className="w-full h-[600px] border-0"
                 title={previewFile?.file_name}
               />
