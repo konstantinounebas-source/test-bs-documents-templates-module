@@ -139,7 +139,33 @@ export default function DepartmentAttachmentsKPI({ batchHeaderId, date, departme
             </div>
           </DialogContent>
         </Dialog>
-      </CardContent>
-    </Card>
-  );
-}
+        </CardContent>
+        </Card>
+
+        {/* Preview Dialog */}
+        <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+        <DialogHeader className="flex flex-row items-center justify-between">
+          <DialogTitle>{previewFile?.file_name}</DialogTitle>
+          <button onClick={() => setPreviewFile(null)} className="text-slate-400 hover:text-slate-600">
+            <X className="w-5 h-5" />
+          </button>
+        </DialogHeader>
+
+        {previewFile?.file_type === 'image' ? (
+          <div className="flex items-center justify-center max-h-[70vh] overflow-auto bg-slate-50 rounded-lg">
+            <img src={previewFile.file_url} alt={previewFile.file_name} className="max-w-full max-h-full" />
+          </div>
+        ) : (
+          <div className="flex items-center justify-center max-h-[70vh] overflow-auto bg-slate-50 rounded-lg">
+            <iframe 
+              src={previewFile?.file_url} 
+              className="w-full h-[600px] border-0"
+              title={previewFile?.file_name}
+            />
+          </div>
+        )}
+        </DialogContent>
+        </Dialog>
+        );
+        }
