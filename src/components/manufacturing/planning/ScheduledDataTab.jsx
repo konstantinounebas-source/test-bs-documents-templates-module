@@ -189,19 +189,12 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
     .slice(0, 10);
 
-  // Fetch QC types
-  const { data: qcTypes = [], isLoading: qcTypesLoading } = useQuery({
-    queryKey: ['QC_Type'],
-    queryFn: () => base44.entities.QC_Type.filter({ is_active: true }),
-    staleTime: 0
-  });
-
-  // Fetch QC levels
-  const { data: qcLevels = [], isLoading: qcLevelsLoading } = useQuery({
-    queryKey: ['QCLevel'],
-    queryFn: () => base44.entities.QCLevel.filter({ is_active: true }),
-    staleTime: 0
-  });
+  const { data: allDepts = [] } = useQuery({ queryKey: ['Department'], queryFn: () => base44.entities.Department.filter({ is_active: true }) });
+  const currentDepartmentId = useMemo(() => allDepts.find(d => d.name === selectedDepartment)?.id || null, [allDepts, selectedDepartment]);
+  const { data: allQCTypes = [], isLoading: qcTypesLoading } = useQuery({ queryKey: ['QCType'], queryFn: () => base44.entities.QCType.filter({ is_active: true }), staleTime: 0 });
+  const qcTypes = useMemo(() => allQCTypes.filter(qt => !qt.department_ids?.length || !currentDepartmentId || qt.department_ids.includes(currentDepartmentId)), [allQCTypes, currentDepartmentId]);
+  const { data: allQCLevels = [], isLoading: qcLevelsLoading } = useQuery({ queryKey: ['QCLevel'], queryFn: () => base44.entities.QCLevel.filter({ is_active: true }), staleTime: 0 });
+  const qcLevels = useMemo(() => allQCLevels.filter(ql => !ql.department_ids?.length || !currentDepartmentId || ql.department_ids.includes(currentDepartmentId)), [allQCLevels, currentDepartmentId]);
 
   // Fetch QC Set Lines for QC calculations (use source bundle for day)
   const { data: qcSetLines = [], isFetched: qcSetLinesFetched } = useQuery({
