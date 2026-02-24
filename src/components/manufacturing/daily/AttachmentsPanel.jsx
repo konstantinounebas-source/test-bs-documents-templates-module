@@ -145,6 +145,15 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={() => setPreviewFile(att)}
+                  className="h-6 w-6 text-slate-500 hover:text-slate-700"
+                  title="Preview"
+                >
+                  <Eye className="w-3 h-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => {
                     const a = document.createElement('a');
                     a.href = att.file_url;
@@ -152,6 +161,7 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
                     a.click();
                   }}
                   className="h-6 w-6 text-slate-500 hover:text-slate-700"
+                  title="Download"
                 >
                   <Download className="w-3 h-3" />
                 </Button>
@@ -161,6 +171,7 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
                   onClick={() => deleteMutation.mutate(att.id)}
                   disabled={deleteMutation.isPending}
                   className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
+                  title="Delete"
                 >
                   <Trash2 className="w-3 h-3" />
                 </Button>
