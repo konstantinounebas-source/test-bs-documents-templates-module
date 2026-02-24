@@ -130,16 +130,28 @@ export default function DailyProductionCalendarSelector({
         </CardContent>
       </Card>
 
-      {selectedDate && !datesWithBatches.has(selectedDate) && (
+      {selectedDate && (
         <Card className="bg-slate-50">
           <CardContent className="pt-4">
             <p className="text-sm font-semibold text-slate-700 mb-3">
               Selected Date: <span className="text-base text-slate-900">{selectedDate}</span>
             </p>
-            <Button onClick={() => onCreateBatch(selectedDate)} className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Batch for {selectedDate}
-            </Button>
+            {datesWithBatches.has(selectedDate) ? (
+              <Button
+                onClick={() => {
+                  const batch = batchHeaders.find(b => b.date === selectedDate);
+                  if (batch) onDateSelect(selectedDate);
+                }}
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                Open Batch for {selectedDate}
+              </Button>
+            ) : (
+              <Button onClick={() => onCreateBatch(selectedDate)} className="w-full">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Batch for {selectedDate}
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
