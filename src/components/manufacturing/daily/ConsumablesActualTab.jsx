@@ -277,6 +277,35 @@ export default function ConsumablesActualTab({ batchId }) {
     setExpandedGroups(prev => ({ ...prev, [consumable]: !prev[consumable] }));
   };
 
+  // Save group total: distribute proportionally across rows, or evenly if all expected=0
+  const confirmGroupTotalEdit = async (group) => {
+    const newTotal = parseFloat(editingGroupTotal.value) || 0;
+    const totalExp = group.totalExpected;
+    const rows = group.rows;
+
+    let updates;
+    if (totalExp > 0) {
+      // Distribute proportionally by expected_qty
+      updates = rows.map(line => ({
+        id: line.id,
+        actual_qty: totalExp > 0 ? (line.expected_qty || 0) / totalExp * newTotal : 0
+      }));
+    } else {
+      // Distribute evenly
+      const perRow = newTotal / rows.length;
+      updates = rows.map(line => ({ id: line.id, actual_qty: perRow }));
+    }
+
+    await Promise.all(updates.map(u =>
+      base44.entities.ConsumablesActual.update(u.id, { actual_qty: parseFloat(u.actual_qty.toFixed(4)) })
+    ));
+
+    await queryClient.invalidateQueries(['ConsumablesActual', batchId]);
+    setEditingGroupTotal(null);
+    toast.success('Updated actual qty');
+    if (batchHeader) await saveConsumablesMetrics();
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
