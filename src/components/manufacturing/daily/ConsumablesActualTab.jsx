@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, Loader2, RefreshCw, Edit2, Check, X, Info } from 'lucide-react';
+import { Plus, Trash2, Loader2, RefreshCw, Edit2, Check, X, Info, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ConsumablesActualTab({ batchId }) {
