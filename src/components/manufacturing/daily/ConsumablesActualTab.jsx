@@ -370,6 +370,7 @@ export default function ConsumablesActualTab({ batchId }) {
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
+                <TableHead className="w-8"></TableHead>
                 <TableHead>Consumable</TableHead>
                 <TableHead className="w-16">Unit</TableHead>
                 <TableHead className="text-right w-24">Exp. Qty (Total)</TableHead>
@@ -381,21 +382,82 @@ export default function ConsumablesActualTab({ batchId }) {
             <TableBody>
               {groupedLines.map(group => {
                 const usage = group.totalExpected > 0 ? (group.totalActual / group.totalExpected) * 100 : null;
+                const isExpanded = !!expandedGroups[group.consumable];
                 return (
-                  <TableRow key={group.consumable}>
-                    <TableCell className="font-medium text-sm">{group.consumable}</TableCell>
-                    <TableCell className="text-sm">{group.unit}</TableCell>
-                    <TableCell className="text-right text-sm">{group.totalExpected.toFixed(2)}</TableCell>
-                    <TableCell className="text-right text-sm font-semibold">{group.totalActual.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">
-                      {usage !== null ? (
-                        <span className={`text-sm font-semibold ${usage <= 105 ? 'text-green-700' : usage <= 120 ? 'text-yellow-700' : 'text-red-700'}`}>
-                          {usage.toFixed(1)}%
-                        </span>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell className="text-sm text-slate-500">{group.rows.length} row(s)</TableCell>
-                  </TableRow>
+                  <React.Fragment key={group.consumable}>
+                    {/* Group header row */}
+                    <TableRow
+                      className="cursor-pointer hover:bg-slate-50"
+                      onClick={() => toggleGroup(group.consumable)}
+                    >
+                      <TableCell className="w-8">
+                        {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronRight className="w-4 h-4 text-slate-500" />}
+                      </TableCell>
+                      <TableCell className="font-medium text-sm">{group.consumable}</TableCell>
+                      <TableCell className="text-sm">{group.unit}</TableCell>
+                      <TableCell className="text-right text-sm">{group.totalExpected.toFixed(2)}</TableCell>
+                      <TableCell className="text-right text-sm font-semibold">{group.totalActual.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">
+                        {usage !== null ? (
+                          <span className={`text-sm font-semibold ${usage <= 105 ? 'text-green-700' : usage <= 120 ? 'text-yellow-700' : 'text-red-700'}`}>
+                            {usage.toFixed(1)}%
+                          </span>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell className="text-sm text-slate-500">{group.rows.length} row(s)</TableCell>
+                    </TableRow>
+
+                    {/* Expanded detail rows with edit capability */}
+                    {isExpanded && group.rows.map(line => (
+                      <TableRow key={line.id} className="bg-slate-50/60">
+                        <TableCell></TableCell>
+                        <TableCell className="text-xs text-slate-500 pl-6">
+                          {line.item_code && <span className="mr-2">📦 {line.item_code}</span>}
+                          {line.operation && <span>⚙ {line.operation}</span>}
+                        </TableCell>
+                        <TableCell className="text-xs">{line.unit}</TableCell>
+                        <TableCell className="text-right text-xs">{line.expected_qty?.toFixed(2) || '-'}</TableCell>
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          {editingId === line.id ? (
+                            <Input
+                              type="number"
+                              value={editingActualQty}
+                              onChange={(e) => setEditingActualQty(e.target.value)}
+                              className="w-24 text-sm h-7"
+                              step="0.01"
+                              autoFocus
+                            />
+                          ) : (
+                            <span className="text-sm font-semibold">{line.actual_qty?.toFixed(2) || '0.00'}</span>
+                          )}
+                        </TableCell>
+                        <TableCell></TableCell>
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex gap-1 justify-end">
+                            {editingId === line.id ? (
+                              <>
+                                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => confirmEdit(line)} disabled={updateMutation.isPending}>
+                                  <Check className="w-3 h-3 text-green-600" />
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingId(null)}>
+                                  <X className="w-3 h-3 text-slate-400" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEdit(line)}>
+                                  <Edit2 className="w-3 h-3 text-slate-400" />
+                                </Button>
+                                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteMutation.mutate(line.id)} disabled={deleteMutation.isPending}>
+                                  <Trash2 className="w-3 h-3 text-red-500" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </React.Fragment>
                 );
               })}
             </TableBody>
