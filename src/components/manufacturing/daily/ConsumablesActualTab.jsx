@@ -255,6 +255,22 @@ export default function ConsumablesActualTab({ batchId }) {
 
   const noAutoGenLines = lines.filter(l => l.is_auto_generated).length === 0;
 
+  // Grouped view: aggregate by consumable name
+  const [showGrouped, setShowGrouped] = useState(true);
+  const groupedLines = useMemo(() => {
+    const map = {};
+    lines.forEach(line => {
+      const key = line.consumable;
+      if (!map[key]) {
+        map[key] = { consumable: line.consumable, unit: line.unit, totalExpected: 0, totalActual: 0, rows: [] };
+      }
+      map[key].totalExpected += line.expected_qty || 0;
+      map[key].totalActual += line.actual_qty || 0;
+      map[key].rows.push(line);
+    });
+    return Object.values(map);
+  }, [lines]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
