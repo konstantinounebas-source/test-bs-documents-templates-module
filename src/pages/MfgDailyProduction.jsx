@@ -263,9 +263,9 @@ export default function MfgDailyProduction() {
                     </Tabs>
                   )}
                 </div>
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-1 h-fit sticky top-20">
                   {selectedBatch && <AttachmentsPanel batchHeaderId={selectedBatch?.id} department={selectedBatch?.department} />}
-                  {selectedDepartment && <DailyProductionCalendarSelector selectedDate={selectedDate} onDateSelect={handleDateSelect} selectedDepartment={selectedDepartment} />}
+                  {selectedDepartment && !selectedBatch && <DailyProductionCalendarSelector selectedDate={selectedDate} onDateSelect={handleDateSelect} selectedDepartment={selectedDepartment} />}
                 </div>
               </div>
             )}
