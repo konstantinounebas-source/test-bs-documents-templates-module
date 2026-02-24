@@ -258,6 +258,7 @@ export default function ConsumablesActualTab({ batchId }) {
   // Grouped view: aggregate by consumable name
   const [showGrouped, setShowGrouped] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState({});
+  const [editingGroupTotal, setEditingGroupTotal] = useState(null); // { consumable, value }
   const groupedLines = useMemo(() => {
     const map = {};
     lines.forEach(line => {
