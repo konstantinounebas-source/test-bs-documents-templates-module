@@ -41,13 +41,14 @@ export default function MfgDailyProduction() {
     staleTime: Infinity
   });
 
-  const { data: batchHeaders = [] } = useQuery({
+  const { data: batchHeaders = [], refetch: refetchBatchHeaders } = useQuery({
     queryKey: ['BatchHeader', selectedDepartment],
     queryFn: () => selectedDepartment
       ? base44.entities.BatchHeader.filter({ department: selectedDepartment })
       : [],
     enabled: !!selectedDepartment,
-    staleTime: 0
+    staleTime: 0,
+    refetchOnMount: 'always'
   });
 
   const { data: allBundles = [] } = useQuery({
