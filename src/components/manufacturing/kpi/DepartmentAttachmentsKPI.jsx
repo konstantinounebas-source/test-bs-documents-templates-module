@@ -79,27 +79,61 @@ export default function DepartmentAttachmentsKPI({ batchHeaderId, date, departme
               View Details
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Department Document Status</DialogTitle>
             </DialogHeader>
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {departmentStatus.map((dept, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center gap-3 p-3 rounded-lg border"
-                >
-                  {dept.hasAttachment ? (
-                    <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0" />
+                <div key={idx} className="space-y-2">
+                  <button
+                    onClick={() => setExpandedDept(expandedDept === idx ? null : idx)}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-slate-50 transition-colors"
+                  >
+                    {dept.hasAttachment ? (
+                      <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0" />
+                    )}
+                    <div className="flex-1 text-left">
+                      <p className="font-medium text-slate-900">{dept.batch.department}</p>
+                      <p className="text-xs text-slate-500">
+                        {dept.hasAttachment ? `✓ ${dept.attachments.length} file(s) uploaded` : '⏳ Pending upload'}
+                      </p>
+                    </div>
+                    {dept.hasAttachment && (
+                      <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${expandedDept === idx ? 'rotate-180' : ''}`} />
+                    )}
+                  </button>
+
+                  {/* Files list */}
+                  {expandedDept === idx && dept.hasAttachment && (
+                    <div className="ml-8 space-y-1">
+                      {dept.attachments.map(file => (
+                        <div key={file.id} className="flex items-center gap-2 p-2 bg-slate-50 rounded text-xs">
+                          <FileText className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                          <span className="text-slate-600 truncate flex-1">{file.file_name}</span>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => setPreviewFile(file)}
+                              className="text-blue-600 hover:text-blue-700 p-1"
+                              title="Preview"
+                            >
+                              <Eye className="w-3 h-3" />
+                            </button>
+                            <a
+                              href={file.file_url}
+                              download={file.file_name}
+                              className="text-blue-600 hover:text-blue-700 p-1"
+                              title="Download"
+                            >
+                              <Download className="w-3 h-3" />
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  <div className="flex-1">
-                    <p className="font-medium text-slate-900">{dept.batch.department}</p>
-                    <p className="text-xs text-slate-500">
-                      {dept.hasAttachment ? '✓ Document uploaded' : '⏳ Pending upload'}
-                    </p>
-                  </div>
                 </div>
               ))}
             </div>
