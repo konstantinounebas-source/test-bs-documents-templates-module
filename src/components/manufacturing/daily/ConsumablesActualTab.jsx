@@ -257,6 +257,7 @@ export default function ConsumablesActualTab({ batchId }) {
 
   // Grouped view: aggregate by consumable name
   const [showGrouped, setShowGrouped] = useState(true);
+  const [expandedGroups, setExpandedGroups] = useState({});
   const groupedLines = useMemo(() => {
     const map = {};
     lines.forEach(line => {
@@ -270,6 +271,10 @@ export default function ConsumablesActualTab({ batchId }) {
     });
     return Object.values(map);
   }, [lines]);
+
+  const toggleGroup = (consumable) => {
+    setExpandedGroups(prev => ({ ...prev, [consumable]: !prev[consumable] }));
+  };
 
   if (isLoading) {
     return (
