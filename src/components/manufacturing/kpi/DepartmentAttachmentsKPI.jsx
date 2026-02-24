@@ -34,13 +34,14 @@ export default function DepartmentAttachmentsKPI({ batchHeaderId, date, departme
     const map = {};
     batchHeaders.forEach(batch => {
       if (!map[batch.department]) {
-        map[batch.department] = { batch, hasAttachment: false };
+        map[batch.department] = { batch, hasAttachment: false, attachments: [] };
       }
     });
     
     allAttachments.forEach(att => {
       if (map[att.department]) {
         map[att.department].hasAttachment = true;
+        map[att.department].attachments.push(att);
       }
     });
     
