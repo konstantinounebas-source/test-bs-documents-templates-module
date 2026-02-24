@@ -204,6 +204,11 @@ export default function DailyKPIValuesViewer() {
       </div>
 
       {isExpanded && <div className="space-y-3 mt-3">
+      {/* Documents KPI */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <DepartmentAttachmentsKPI date={format(selectedDate, 'yyyy-MM-dd')} />
+      </div>
+
       {/* Department tabs */}
       <div className="flex gap-1 flex-wrap border-b pb-2">
         <button
