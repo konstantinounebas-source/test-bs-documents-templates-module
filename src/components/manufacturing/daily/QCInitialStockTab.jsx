@@ -48,36 +48,29 @@ export default function QCInitialStockTab({ batchId, department }) {
   const { data: itemCodes = [], isLoading: itemCodesLoading } = useBatchItemCodes(batchId, department);
   const hasItemCodes = itemCodes.length > 0;
 
-  const { data: allQcTypes = [] } = useQuery({
-    queryKey: ['QC_Type'],
-    queryFn: () => base44.entities.QC_Type.list(),
-    staleTime: Infinity
-  });
-
   // Fetch departments to resolve department name -> id
   const { data: allDepartments = [] } = useQuery({
     queryKey: ['Department'],
     queryFn: () => base44.entities.Department.filter({ is_active: true }),
     staleTime: Infinity
   });
+  const currentDepartmentId = useMemo(() => allDepartments.find(d => d.name === department)?.id || null, [allDepartments, department]);
 
-  // Filter QC types by department
-  const qcTypes = useMemo(() => {
-    const deptObj = allDepartments.find(d => d.name === department);
-    const deptId = deptObj?.id;
-    return allQcTypes.filter(qt => {
-      if (!qt.departments_csv) return true;
-      const ids = qt.departments_csv.split(',').filter(Boolean);
-      if (ids.length === 0) return true;
-      return deptId && ids.includes(deptId);
-    });
-  }, [allQcTypes, allDepartments, department]);
+  // Fetch QC types (QCType entity with department_ids array)
+  const { data: allQcTypes = [] } = useQuery({
+    queryKey: ['QCType'],
+    queryFn: () => base44.entities.QCType.filter({ is_active: true }),
+    staleTime: Infinity
+  });
+  const qcTypes = useMemo(() => allQcTypes.filter(qt => !qt.department_ids?.length || !currentDepartmentId || qt.department_ids.includes(currentDepartmentId)), [allQcTypes, currentDepartmentId]);
 
-  const { data: qcLevels = [] } = useQuery({
+  // Fetch QC levels filtered by department
+  const { data: allQCLevels = [] } = useQuery({
     queryKey: ['QCLevel'],
     queryFn: () => base44.entities.QCLevel.filter({ is_active: true }),
     staleTime: Infinity
   });
+  const qcLevels = useMemo(() => allQCLevels.filter(ql => !ql.department_ids?.length || !currentDepartmentId || ql.department_ids.includes(currentDepartmentId)), [allQCLevels, currentDepartmentId]);
 
   // Fetch batch header to get date and department for scheduled data lookup
   const { data: batchHeader } = useQuery({
