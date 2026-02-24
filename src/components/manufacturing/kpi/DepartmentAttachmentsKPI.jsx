@@ -145,9 +145,19 @@ export default function DepartmentAttachmentsKPI({ batchHeaderId, date, departme
           <DialogContent className="max-w-4xl max-h-[80vh]">
             <DialogHeader className="flex flex-row items-center justify-between">
               <DialogTitle>{previewFile?.file_name}</DialogTitle>
-              <button onClick={() => setPreviewFile(null)} className="text-slate-400 hover:text-slate-600">
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex gap-2">
+                <a
+                  href={previewFile?.file_url}
+                  download={previewFile?.file_name}
+                  className="text-blue-600 hover:text-blue-700 p-1"
+                  title="Download"
+                >
+                  <Download className="w-5 h-5" />
+                </a>
+                <button onClick={() => setPreviewFile(null)} className="text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </DialogHeader>
 
             {previewFile?.file_type === 'image' ? (
