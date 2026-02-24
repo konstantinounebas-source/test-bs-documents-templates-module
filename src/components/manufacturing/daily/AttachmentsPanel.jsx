@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 export default function AttachmentsPanel({ batchHeaderId, department }) {
   const [isDragging, setIsDragging] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
   const queryClient = useQueryClient();
 
   const { data: attachments = [], isLoading } = useQuery({
