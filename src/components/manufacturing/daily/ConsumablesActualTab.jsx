@@ -118,12 +118,24 @@ export default function ConsumablesActualTab({ batchId }) {
       .map(op => ({ item_code: op.item_code, operation: op.operation }));
   }, [batchOperations]);
 
-  // ── Auto-generate expected consumables as actual rows (only once, if none exist)
+  // ── Auto-generate: only add rows for operation_ids not already present
   const autoGenerateMutation = useMutation({
     mutationFn: async () => {
       if (expectedRows.length === 0) throw new Error('No matching standards found for current operations.');
 
-      const promises = expectedRows.map(row =>
+      // Build a set of already-existing operation_id+consumable combos
+      const existingKeys = new Set(
+        lines.map(l => `${l.item_code}|${l.operation}|${l.consumable}`)
+      );
+
+      const newRows = expectedRows.filter(row => {
+        const key = `${row.item_code}|${row.operation}|${row.consumable}`;
+        return !existingKeys.has(key);
+      });
+
+      if (newRows.length === 0) throw new Error('No new consumable rows to add — all operations already have entries.');
+
+      await Promise.all(newRows.map(row =>
         base44.entities.ConsumablesActual.create({
           batch_header_id: batchId,
           department: batchHeader?.department || '',
@@ -131,18 +143,19 @@ export default function ConsumablesActualTab({ batchId }) {
           item_code: row.item_code,
           operation: row.operation,
           expected_qty: row.expected_qty,
-          actual_qty: row.expected_qty, // default actual = expected
+          actual_qty: row.expected_qty,
           unit: row.unit,
           rate_type: row.rate_type,
           is_auto_generated: true,
           notes: ''
         })
-      );
-      await Promise.all(promises);
+      ));
+
+      return newRows.length;
     },
-    onSuccess: () => {
+    onSuccess: (count) => {
       queryClient.invalidateQueries(['ConsumablesActual', batchId]);
-      toast.success(`Auto-generated ${expectedRows.length} consumable rows from standards`);
+      toast.success(`Added ${count} new consumable row(s) from standards`);
     },
     onError: (err) => toast.error(err.message || 'Failed to auto-generate consumables')
   });
