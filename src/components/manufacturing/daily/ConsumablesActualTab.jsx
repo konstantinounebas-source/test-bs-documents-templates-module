@@ -350,108 +350,131 @@ export default function ConsumablesActualTab({ batchId }) {
         </div>
       )}
 
-      {/* Table */}
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader className="bg-slate-50">
-            <TableRow>
-              <TableHead className="w-20">Consumable</TableHead>
-              <TableHead className="w-16">Item Code</TableHead>
-              <TableHead className="w-16">Operation</TableHead>
-              <TableHead className="text-right w-20">Exp. Qty</TableHead>
-              <TableHead className="text-right w-20">Actual Qty</TableHead>
-              <TableHead className="w-12">Unit</TableHead>
-              <TableHead>Notes</TableHead>
-              <TableHead className="w-24">Source</TableHead>
-              <TableHead className="text-right w-24">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {lines.length === 0 ? (
+      {/* Toggle view */}
+      {lines.length > 0 && (
+        <div className="flex gap-2 items-center">
+          <span className="text-sm text-slate-500">View:</span>
+          <Button size="sm" variant={showGrouped ? 'default' : 'outline'} onClick={() => setShowGrouped(true)}>Grouped</Button>
+          <Button size="sm" variant={!showGrouped ? 'default' : 'outline'} onClick={() => setShowGrouped(false)}>Detailed</Button>
+        </div>
+      )}
+
+      {/* Grouped Table */}
+      {showGrouped && lines.length > 0 && (
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableCell colSpan="9" className="text-center py-8 text-slate-500">
-                  No consumables recorded yet.
-                </TableCell>
+                <TableHead>Consumable</TableHead>
+                <TableHead className="w-16">Unit</TableHead>
+                <TableHead className="text-right w-24">Exp. Qty (Total)</TableHead>
+                <TableHead className="text-right w-24">Actual Qty (Total)</TableHead>
+                <TableHead className="text-right w-24">Usage %</TableHead>
+                <TableHead className="w-20">Lines</TableHead>
               </TableRow>
-            ) : (
-              lines.map(line => (
-                <TableRow key={line.id}>
-                  <TableCell className="font-medium text-sm">{line.consumable}</TableCell>
-                  <TableCell className="text-sm">{line.item_code}</TableCell>
-                  <TableCell className="text-sm">{line.operation}</TableCell>
-                  <TableCell className="text-right text-sm">{line.expected_qty?.toFixed(2) || '-'}</TableCell>
-                  <TableCell className="text-right">
-                    {editingId === line.id ? (
-                      <Input
-                        type="number"
-                        value={editingActualQty}
-                        onChange={(e) => setEditingActualQty(e.target.value)}
-                        className="w-full text-sm"
-                        step="0.01"
-                      />
-                    ) : (
-                      <span className="text-sm font-semibold">{line.actual_qty?.toFixed(2) || '0.00'}</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm">{line.unit}</TableCell>
-                  <TableCell className="text-sm max-w-xs">
-                    {editingId === line.id ? (
-                      <Input
-                        value={editingNotes}
-                        onChange={(e) => setEditingNotes(e.target.value)}
-                        className="w-full text-sm"
-                        placeholder="Notes..."
-                      />
-                    ) : (
-                      line.notes || '-'
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {line.is_auto_generated && (
-                      <Badge variant="outline" className="text-xs bg-indigo-50">Auto</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right space-x-1">
-                    {editingId === line.id ? (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => confirmEdit(line)}
-                          disabled={updateMutation.isPending}
-                        >
-                          <Check className="w-4 h-4 text-green-600" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setEditingId(null)}
-                        >
-                          <X className="w-4 h-4 text-slate-400" />
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button size="sm" variant="ghost" onClick={() => startEdit(line)}>
-                          <Edit2 className="w-4 h-4 text-slate-400" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => deleteMutation.mutate(line.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </>
-                    )}
+            </TableHeader>
+            <TableBody>
+              {groupedLines.map(group => {
+                const usage = group.totalExpected > 0 ? (group.totalActual / group.totalExpected) * 100 : null;
+                return (
+                  <TableRow key={group.consumable}>
+                    <TableCell className="font-medium text-sm">{group.consumable}</TableCell>
+                    <TableCell className="text-sm">{group.unit}</TableCell>
+                    <TableCell className="text-right text-sm">{group.totalExpected.toFixed(2)}</TableCell>
+                    <TableCell className="text-right text-sm font-semibold">{group.totalActual.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">
+                      {usage !== null ? (
+                        <span className={`text-sm font-semibold ${usage <= 105 ? 'text-green-700' : usage <= 120 ? 'text-yellow-700' : 'text-red-700'}`}>
+                          {usage.toFixed(1)}%
+                        </span>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell className="text-sm text-slate-500">{group.rows.length} row(s)</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      {/* Detailed Table */}
+      {(!showGrouped || lines.length === 0) && (
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader className="bg-slate-50">
+              <TableRow>
+                <TableHead className="w-20">Consumable</TableHead>
+                <TableHead className="w-16">Item Code</TableHead>
+                <TableHead className="w-16">Operation</TableHead>
+                <TableHead className="text-right w-20">Exp. Qty</TableHead>
+                <TableHead className="text-right w-20">Actual Qty</TableHead>
+                <TableHead className="w-12">Unit</TableHead>
+                <TableHead>Notes</TableHead>
+                <TableHead className="w-24">Source</TableHead>
+                <TableHead className="text-right w-24">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {lines.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan="9" className="text-center py-8 text-slate-500">
+                    No consumables recorded yet.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ) : (
+                lines.map(line => (
+                  <TableRow key={line.id}>
+                    <TableCell className="font-medium text-sm">{line.consumable}</TableCell>
+                    <TableCell className="text-sm">{line.item_code}</TableCell>
+                    <TableCell className="text-sm">{line.operation}</TableCell>
+                    <TableCell className="text-right text-sm">{line.expected_qty?.toFixed(2) || '-'}</TableCell>
+                    <TableCell className="text-right">
+                      {editingId === line.id ? (
+                        <Input type="number" value={editingActualQty} onChange={(e) => setEditingActualQty(e.target.value)} className="w-full text-sm" step="0.01" />
+                      ) : (
+                        <span className="text-sm font-semibold">{line.actual_qty?.toFixed(2) || '0.00'}</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">{line.unit}</TableCell>
+                    <TableCell className="text-sm max-w-xs">
+                      {editingId === line.id ? (
+                        <Input value={editingNotes} onChange={(e) => setEditingNotes(e.target.value)} className="w-full text-sm" placeholder="Notes..." />
+                      ) : (
+                        line.notes || '-'
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {line.is_auto_generated && <Badge variant="outline" className="text-xs bg-indigo-50">Auto</Badge>}
+                    </TableCell>
+                    <TableCell className="text-right space-x-1">
+                      {editingId === line.id ? (
+                        <>
+                          <Button size="sm" variant="ghost" onClick={() => confirmEdit(line)} disabled={updateMutation.isPending}>
+                            <Check className="w-4 h-4 text-green-600" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                            <X className="w-4 h-4 text-slate-400" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button size="sm" variant="ghost" onClick={() => startEdit(line)}>
+                            <Edit2 className="w-4 h-4 text-slate-400" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={() => deleteMutation.mutate(line.id)} disabled={deleteMutation.isPending}>
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Add Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
