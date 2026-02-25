@@ -258,9 +258,7 @@ export function LoadTemplateDialog({ open, onClose, templates, loadToDate, setLo
   );
 }
 
-export function AssignPersonsDialog({ open, onClose, dayPersons, setDayPersons, dayNotes, setDayNotes, persons, currentDayAssignment, onSave }) {
-  const [newPersonName, setNewPersonName] = React.useState('');
-  const [newPersonMinutes, setNewPersonMinutes] = React.useState(465);
+export function AssignPersonsDialog({ open, onClose, dayPersons, setDayPersons, dayNotes, setDayNotes, persons, currentDayAssignment, onSave, newPersonName, setNewPersonName, newPersonMinutes, setNewPersonMinutes }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
