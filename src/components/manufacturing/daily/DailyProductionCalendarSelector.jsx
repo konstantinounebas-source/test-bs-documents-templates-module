@@ -140,9 +140,10 @@ export default function DailyProductionCalendarSelector({
                     `}
                   >
                     <div className="text-sm">{format(day, 'd')}</div>
-                    {(hasBatch || hasPlanning) && (
+                    {(hasBatch || hasPlanning || hasTargets) && (
                       <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
                         {hasPlanning && <div className="w-1.5 h-1.5 bg-blue-500 rounded-full" />}
+                        {hasTargets && <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />}
                         {hasBatch && <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />}
                       </div>
                     )}
