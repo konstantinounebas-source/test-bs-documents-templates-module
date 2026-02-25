@@ -124,6 +124,7 @@ export default function DailyProductionCalendarSelector({
               const dateStr = format(day, 'yyyy-MM-dd');
               const hasBatch = datesWithBatches.has(dateStr);
               const hasPlanning = datesWithPlanning.has(dateStr);
+              const hasTargets = datesWithTargets.has(dateStr);
               const isSelected = selectedDate === dateStr;
               const isToday = isSameDay(day, new Date());
               
