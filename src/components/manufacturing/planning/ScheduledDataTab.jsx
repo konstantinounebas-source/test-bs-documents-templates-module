@@ -413,11 +413,13 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
     return new Set(lines.map(l => l.date).filter(Boolean));
   }, [lines]);
 
-  // Get dates with targets for calendar indicators
+  // Get dates with targets for calendar indicators (TargetDaily OR DailyStandardsAssignment)
   const datesWithTargets = useMemo(() => {
-    if (!allTargetDaily || allTargetDaily.length === 0) return new Set();
-    return new Set(allTargetDaily.map(t => t.date).filter(Boolean));
-  }, [allTargetDaily]);
+    const dates = new Set();
+    if (allTargetDaily) allTargetDaily.forEach(t => t.date && dates.add(t.date));
+    if (dailyStandardsAssignments) dailyStandardsAssignments.forEach(a => a.assignment_date && dates.add(a.assignment_date));
+    return dates;
+  }, [allTargetDaily, dailyStandardsAssignments]);
 
   // Calendar navigation
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
