@@ -64,6 +64,13 @@ export default function DailyProductionCalendarSelector({
     return new Set(scheduledData.map(s => s.date).filter(Boolean));
   }, [scheduledData]);
 
+  // Get dates with targets (TargetDaily) OR daily standards assignment
+  const datesWithTargets = useMemo(() => {
+    const targetDates = new Set(dailyTargets.map(t => t.date).filter(Boolean));
+    dailyAssignments.forEach(a => { if (a.assignment_date) targetDates.add(a.assignment_date); });
+    return targetDates;
+  }, [dailyTargets, dailyAssignments]);
+
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
 
