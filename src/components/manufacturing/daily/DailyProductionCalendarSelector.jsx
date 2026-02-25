@@ -33,6 +33,22 @@ export default function DailyProductionCalendarSelector({
     staleTime: 0
   });
 
+  // Fetch daily targets to mark days with targets assigned
+  const { data: dailyTargets = [] } = useQuery({
+    queryKey: ['TargetDaily', selectedDepartment],
+    queryFn: () => base44.entities.TargetDaily.filter({ department: selectedDepartment }),
+    enabled: !!selectedDepartment,
+    staleTime: 0
+  });
+
+  // Fetch daily standards assignments to mark days with bundle assigned
+  const { data: dailyAssignments = [] } = useQuery({
+    queryKey: ['DailyStandardsAssignment', selectedDepartment],
+    queryFn: () => base44.entities.DailyStandardsAssignment.filter({ department_id: selectedDepartment }),
+    enabled: !!selectedDepartment,
+    staleTime: 0
+  });
+
   // Use prop or fetched data
   const batchHeaders = propBatchHeaders || fetchedBatchHeaders;
 
