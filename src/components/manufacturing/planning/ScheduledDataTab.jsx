@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { MultiSelect } from '@/components/ui/multi-select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { buildItemOperationMap, computeOpsPerPiece, getOperationBreakdown, parseMinutes } from '../standards/shared/calculateOperationsTime';
+import { AddDialog, EditDialog, DetailsDialog, SaveTemplateDialog, LoadTemplateDialog, AssignPersonsDialog } from './ScheduledDataDialogs';
 import { exportScheduledDataToExcel } from '../standards/shared/exportToExcel';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 
