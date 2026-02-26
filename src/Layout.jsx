@@ -56,7 +56,7 @@ import { AlertCircle } from "lucide-react";
 
 
 // IMPORTANT: Update this version number when deploying a new version
-const CURRENT_APP_VERSION = "1.0.3";
+const CURRENT_APP_VERSION = "1.0.4";
 
 const allNavigationGroups = [
   {
