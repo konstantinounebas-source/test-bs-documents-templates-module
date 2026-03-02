@@ -231,7 +231,7 @@ export default function POReceiveDialog({
                               />
                             </div>
                             <div>
-                              <Label className="text-xs">Εταιρεία</Label>
+                              <Label className="text-xs">Εταιρεία *</Label>
                               <Select
                                 value={item.company_id || 'none'}
                                 onValueChange={(val) => {
