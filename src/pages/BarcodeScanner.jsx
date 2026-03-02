@@ -668,31 +668,7 @@ export default function BarcodeScannerPage() {
         return;
       }
 
-      // Validate against PO if one is selected
-      if (selectedPO) {
-        if (!poItemInfo) {
-          setScanResult({ 
-            type: 'error', 
-            message: `❌ Product "${matchedProduct.name}" is not included in the selected Purchase Order` 
-          });
-          return;
-        }
-        if (poItemInfo.quantityRemaining <= 0) {
-          setScanResult({ 
-            type: 'error', 
-            message: `❌ This product has already been fully received for this PO (${poItemInfo.quantityOrdered} ordered, ${poItemInfo.quantityReceived} received)` 
-          });
-          return;
-        }
-
-        if (quantityNum > poItemInfo.quantityRemaining) {
-          setScanResult({ 
-            type: 'error', 
-            message: `❌ Cannot receive ${quantityNum} units. Only ${poItemInfo.quantityRemaining} remaining in PO (${poItemInfo.quantityOrdered} ordered, ${poItemInfo.quantityReceived} already received)` 
-          });
-          return;
-        }
-      }
+      // PO validation is already done inside the BarcodeInputStepper before reaching this point
 
     } else if (movementType === "OUT") {
       if (!fromLocation) {
