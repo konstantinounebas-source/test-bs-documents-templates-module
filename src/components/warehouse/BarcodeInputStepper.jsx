@@ -312,7 +312,7 @@ export default function BarcodeInputStepper({
   const getStepsForMovementType = () => {
     if (formData.movementType === "IN") {
       if (formData.associateWithPO) {
-        return [1, 2, 5, 6, 7]; // Skip vendor/company steps if PO is selected, add summary
+        return [1, 2, 4, 5, 6, 7]; // Include step 4 (company/invoice cat + vendor code) even with PO
       }
       return [1, 2, 3, 4, 5, 6, 7]; // All steps for IN without PO, add summary
     } else if (formData.movementType === "OUT") {
