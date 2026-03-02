@@ -662,6 +662,16 @@ export default function BarcodeInputStepper({
                 </div>
 
                 <div>
+                  <Label>Κωδικός Προϊόντος Προμηθευτή</Label>
+                  <Input
+                    value={formData.vendorProductCode}
+                    onChange={(e) => handleFormChange('vendorProductCode', e.target.value)}
+                    placeholder="Κωδικός προμηθευτή"
+                    className="h-11"
+                  />
+                </div>
+
+                <div>
                   <Label>Εταιρεία *</Label>
                   <Select value={formData.selectedCompany || 'none'} onValueChange={(val) => handleFormChange('selectedCompany', val === 'none' ? '' : val)}>
                     <SelectTrigger className="h-11">
