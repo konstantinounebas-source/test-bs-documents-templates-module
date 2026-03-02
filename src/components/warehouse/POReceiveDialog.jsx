@@ -218,7 +218,7 @@ export default function POReceiveDialog({
                           <p className="text-xs font-semibold text-slate-700 mb-2">Πρόσθετα Στοιχεία</p>
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <Label className="text-xs">Κωδ. Προμηθευτή</Label>
+                              <Label className="text-xs">Κωδ. Προμηθευτή *</Label>
                               <Input
                                 value={item.vendor_product_code || ''}
                                 onChange={(e) => {
