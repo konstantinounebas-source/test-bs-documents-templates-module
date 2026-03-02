@@ -160,7 +160,7 @@ export default function BarcodeInputStepper({
   }, [formData.selectedVendor, matchedProduct, formData.movementType, formData.selectedPO, productVendors]);
 
   useEffect(() => {
-    if (formData.costInputMethod === 'total' && formData.movementType === "IN" && !formData.selectedPO) {
+    if (formData.costInputMethod === 'total' && formData.movementType === "IN") {
       const qty = parseFloat(formData.quantity) || 0;
       const totalCost = parseFloat(formData.totalItemCost) || 0;
       const discountVal = parseFloat(formData.discount) || 0;
