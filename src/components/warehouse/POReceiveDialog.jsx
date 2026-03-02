@@ -285,16 +285,52 @@ export default function POReceiveDialog({
             </div>
 
             {!showPOSummary ? (
-              <div className="flex justify-end gap-3 pt-4">
-                <Button variant="outline" onClick={onCancel}>Cancel</Button>
-                <Button
-                  onClick={onProceedToSummary}
-                  disabled={!toLocation || !poItemsToReceive.some(item => item.selected)}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Συνέχεια στη Σύνοψη
-                </Button>
+              <div className="space-y-3">
+                {validationError && (
+                  <Alert className="border-red-200 bg-red-50">
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                    <AlertDescription className="text-sm text-red-800">{validationError}</AlertDescription>
+                  </Alert>
+                )}
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={onCancel}>Cancel</Button>
+                  <Button
+                    onClick={() => {
+                      setValidationError(null);
+                      const selectedItems = poItemsToReceive.filter(item => item.selected && item.quantity_to_receive > 0);
+                      if (selectedItems.length === 0) {
+                        setValidationError('Παρακαλώ επιλέξτε τουλάχιστον ένα προϊόν');
+                        return;
+                      }
+                      if (!toLocation) {
+                        setValidationError('Παρακαλώ επιλέξτε θέση αποθήκης');
+                        return;
+                      }
+                      for (let i = 0; i < selectedItems.length; i++) {
+                        const item = selectedItems[i];
+                        const product = products.find(p => p.id === item.product_id);
+                        const name = product?.name || `Γραμμή ${i + 1}`;
+                        if (!item.vendor_product_code?.trim()) {
+                          setValidationError(`"${name}": Παρακαλώ συμπληρώστε Κωδ. Προμηθευτή`);
+                          return;
+                        }
+                        if (!item.company_id) {
+                          setValidationError(`"${name}": Παρακαλώ επιλέξτε Εταιρεία`);
+                          return;
+                        }
+                        if (!item.invoice_category_id) {
+                          setValidationError(`"${name}": Παρακαλώ επιλέξτε Κατ. Τιμολόγησης`);
+                          return;
+                        }
+                      }
+                      onProceedToSummary();
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                    Συνέχεια στη Σύνοψη
+                  </Button>
+                </div>
               </div>
             ) : (
               <>
