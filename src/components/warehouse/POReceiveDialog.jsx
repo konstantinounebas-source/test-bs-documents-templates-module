@@ -251,7 +251,7 @@ export default function POReceiveDialog({
                               </Select>
                             </div>
                             <div className="col-span-2">
-                              <Label className="text-xs">Κατ. Τιμολόγησης</Label>
+                              <Label className="text-xs">Κατ. Τιμολόγησης *</Label>
                               <Select
                                 value={item.invoice_category_id || 'none'}
                                 onValueChange={(val) => {
