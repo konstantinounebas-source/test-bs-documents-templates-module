@@ -36,6 +36,7 @@ export default function POReceiveDialog({
   onCancel,
 }) {
   const photoInputRef = useRef(null);
+  const [validationError, setValidationError] = useState(null);
 
   const togglePOItemSelection = (index) => {
     setPOItemsToReceive(prev => prev.map((item, i) =>
