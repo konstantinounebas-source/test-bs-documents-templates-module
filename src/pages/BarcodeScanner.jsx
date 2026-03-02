@@ -948,35 +948,16 @@ export default function BarcodeScannerPage() {
     const selectedItems = poItemsToReceive.filter(item => item.selected && item.quantity_to_receive > 0);
     
     if (selectedItems.length === 0) {
-      setScanResult({ type: 'error', message: 'Please select at least one item to receive' });
+      setPoDialogError('Please select at least one item to receive');
       return;
     }
 
     if (!toLocation) {
-      setScanResult({ type: 'error', message: 'Please select a warehouse location' });
+      setPoDialogError('Please select a warehouse location');
       return;
     }
 
-    // Validate all required fields for selected items
-    for (let i = 0; i < poItemsToReceive.length; i++) {
-      const item = poItemsToReceive[i];
-      if (item.selected) {
-        if (!item.vendor_product_code || !item.vendor_product_code.trim()) {
-          setScanResult({ type: 'error', message: `Παρακαλώ εισάγετε Κωδικό Προμηθευτή για το προϊόν #${i + 1}` });
-          return;
-        }
-        if (!item.company_id) {
-          setScanResult({ type: 'error', message: `Παρακαλώ επιλέξτε Εταιρεία για το προϊόν #${i + 1}` });
-          return;
-        }
-        if (!item.invoice_category_id) {
-          setScanResult({ type: 'error', message: `Παρακαλώ επιλέξτε Κατηγορία Τιμολόγησης για το προϊόν #${i + 1}` });
-          return;
-        }
-      }
-    }
-
-    setScanResult(null);
+    setPoDialogError(null);
     setShowPOSummary(true);
   };
 
