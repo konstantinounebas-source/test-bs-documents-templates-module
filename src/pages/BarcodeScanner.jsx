@@ -957,7 +957,7 @@ export default function BarcodeScannerPage() {
       return;
     }
 
-    setPoDialogError(null);
+    setScanResult(null);
     setShowPOSummary(true);
   };
 
