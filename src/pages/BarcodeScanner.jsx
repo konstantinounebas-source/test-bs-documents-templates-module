@@ -948,12 +948,12 @@ export default function BarcodeScannerPage() {
     const selectedItems = poItemsToReceive.filter(item => item.selected && item.quantity_to_receive > 0);
     
     if (selectedItems.length === 0) {
-      setPoDialogError('Please select at least one item to receive');
+      setScanResult({ type: 'error', message: 'Please select at least one item to receive' });
       return;
     }
 
     if (!toLocation) {
-      setPoDialogError('Please select a warehouse location');
+      setScanResult({ type: 'error', message: 'Please select a warehouse location' });
       return;
     }
 
