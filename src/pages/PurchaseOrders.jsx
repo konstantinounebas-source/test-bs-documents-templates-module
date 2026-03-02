@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -1165,72 +1164,72 @@ export default function PurchaseOrdersPage() {
                                 type="number"
                                 step="any"
                                 min="0"
-                                value={item.total_cost || 0}
+                                value={item.total_cost ?? ''}
                                 onChange={(e) => handleItemChange(index, 'total_cost', e.target.value)}
                                 className="text-sm font-semibold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                 disabled={item.cost_entry_method === 'unit_cost'}
                               />
                             </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex justify-end mt-3">
-                          <Button
+                            </div>
+                            </div>
+
+                            <div className="flex justify-end mt-3">
+                            <Button
                             type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() => handleRemoveItem(index)}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
+                            >
                             <Trash2 className="w-4 h-4 mr-1" />
                             Remove
-                          </Button>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                            </Button>
+                            </div>
+                            </Card>
+                            );
+                            })}
+                            </div>
+                            )}
+                            </div>
 
-            {formData.items.length > 0 && (
-              <div className="bg-slate-50 p-4 rounded-lg space-y-2">
-                <div className="flex justify-between">
-                  <span>Subtotal:</span>
-                  <span className="font-semibold">€{calculateTotals().subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>VAT (19%):</span>
-                  <span className="font-semibold">€{calculateTotals().vatAmount.toFixed(2)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between text-lg">
-                  <span className="font-bold">Total:</span>
-                  <span className="font-bold text-blue-600">€{calculateTotals().totalAmount.toFixed(2)}</span>
-                </div>
-              </div>
-            )}
+                            {formData.items.length > 0 && (
+                            <div className="bg-slate-50 p-4 rounded-lg space-y-2">
+                            <div className="flex justify-between">
+                            <span>Subtotal:</span>
+                            <span className="font-semibold">€{calculateTotals().subtotal.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                            <span>VAT (19%):</span>
+                            <span className="font-semibold">€{calculateTotals().vatAmount.toFixed(2)}</span>
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between text-lg">
+                            <span className="font-bold">Total:</span>
+                            <span className="font-bold text-blue-600">€{calculateTotals().totalAmount.toFixed(2)}</span>
+                            </div>
+                            </div>
+                            )}
 
-            <div>
-              <Label htmlFor="notes">Notes</Label>
-              <Input
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Optional notes..."
-              />
-            </div>
+                            <div>
+                            <Label htmlFor="notes">Notes</Label>
+                            <Input
+                            id="notes"
+                            value={formData.notes}
+                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                            placeholder="Optional notes..."
+                            />
+                            </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Create Purchase Order
-              </Button>
-            </DialogFooter>
-          </form>
+                            <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setShowCreateDialog(false)}>
+                            Cancel
+                            </Button>
+                            <Button type="submit" disabled={isSaving}>
+                            {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                            Create Purchase Order
+                            </Button>
+                            </DialogFooter>
+                            </form>
         </DialogContent>
       </Dialog>
 
