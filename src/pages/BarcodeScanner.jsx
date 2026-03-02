@@ -5,19 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ScanBarcode, Package, CheckCircle, AlertTriangle, ArrowRight, ArrowLeft, Info, Camera, X, Plus, Zap, TrendingUp, TrendingDown, Move, Activity, Upload, Image as ImageIcon, ShoppingCart } from "lucide-react";
+import { ScanBarcode, Package, CheckCircle, AlertTriangle, ArrowRight, ArrowLeft, Info, Camera, X, Plus, Zap, Upload, Image as ImageIcon, ShoppingCart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import POReceiveDialog from "../components/warehouse/POReceiveDialog";
 
 import CreateEditVendorDialog from "../components/warehouse/CreateEditVendorDialog";
 import CreateEditProductDialog from "../components/warehouse/CreateEditProductDialog";
