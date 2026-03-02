@@ -524,7 +524,7 @@ export default function PurchaseOrdersPage() {
   };
 
   const calculateTotals = () => {
-    const subtotal = formData.items.reduce((sum, item) => sum + (item.total_cost || 0), 0);
+    const subtotal = formData.items.reduce((sum, item) => sum + (parseFloat(item.total_cost) || 0), 0);
     const vatAmount = subtotal * 0.19;
     const totalAmount = subtotal + vatAmount;
     return { subtotal, vatAmount, totalAmount };
