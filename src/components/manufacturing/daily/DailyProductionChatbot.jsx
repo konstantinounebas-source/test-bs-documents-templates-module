@@ -61,7 +61,14 @@ function AttachmentItem({ att, onDelete, onPreview, isDeleting }) {
           <Eye className="w-3 h-3" />
         </Button>
         <Button variant="ghost" size="icon" className="h-6 w-6" title="Download"
-          onClick={() => { const a = document.createElement("a"); a.href = att.file_url; a.download = att.file_name; a.click(); }}>
+          onClick={async () => {
+            const res = await fetch(att.file_url);
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = att.file_name; a.click();
+            URL.revokeObjectURL(url);
+          }}>
           <Download className="w-3 h-3" />
         </Button>
         <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
