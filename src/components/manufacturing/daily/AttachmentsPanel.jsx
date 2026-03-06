@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Upload, Download, Trash2, Loader2, FileText, Image as ImageIcon, Eye, X } from "lucide-react";
+import { Upload, Download, Trash2, Loader2, FileText, Image as ImageIcon, Eye, X, RotateCw, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
