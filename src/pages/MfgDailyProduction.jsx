@@ -20,6 +20,7 @@ import TeamTimeExtraTab from "@/components/manufacturing/daily/TeamTimeExtraTab"
 import HelpInTab from "@/components/manufacturing/daily/HelpInTab";
 import ConsumablesActualTab from "@/components/manufacturing/daily/ConsumablesActualTab";
 import AttachmentsPanel from "@/components/manufacturing/daily/AttachmentsPanel";
+import ProductionAIAssistant from "@/components/manufacturing/daily/ProductionAIAssistant";
 
 export default function MfgDailyProduction() {
   const navigate = useNavigate();
