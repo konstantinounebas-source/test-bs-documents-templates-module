@@ -124,6 +124,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
 
   // attachment preview
   const [previewFile, setPreviewFile] = useState(null);
+  const [rotation, setRotation] = useState(0);
 
   // messages (chat log)
   const [messages, setMessages] = useState([
