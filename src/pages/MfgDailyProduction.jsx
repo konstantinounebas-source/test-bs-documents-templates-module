@@ -160,118 +160,112 @@ export default function MfgDailyProduction() {
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Production Data Entry</CardTitle>
-            {selectedBatch && (
-             <div className="flex items-center gap-3 flex-wrap mt-1">
-               <p className="text-sm text-slate-600">
-                 Selected Batch: {selectedBatch.date} - {selectedBatch.department}
-               </p>
-               <Button
-                 variant="outline"
-                 size="sm"
-                 onClick={() => navigate(createPageUrl("MfgPlanningWizard") + `?date=${selectedBatch.date}&department=${encodeURIComponent(selectedBatch.department)}`)}
-                 className="bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
-               >
-                 <Clock className="w-3.5 h-3.5 mr-1.5" />
-                 View Schedule
-               </Button>
-               {selectedBundle ? (
-                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">
-                   📦 Bundle: {selectedBundle.version_no} ({selectedBundle.status})
-                 </span>
-               ) : (
-                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
-                   ⚠ No bundle assigned
-                 </span>
-               )}
-             </div>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <Label className="text-sm font-semibold">Select Department</Label>
-              <Select value={selectedDepartment} onValueChange={(val) => { setSelectedDepartment(val); setSelectedBatch(null); setSelectedDate(''); }}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Select department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map(d => (
-                    <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedDepartment && !selectedBatch && (
-              <BatchHeaderTab 
-                batchHeaders={batchHeaders}
-                selectedBatch={selectedBatch}
-                selectedDepartment={selectedDepartment}
-                onBatchSelect={handleBatchSelect}
-                onBatchCreated={handleBatchCreated}
-                hideHeader={true}
-                autoOpenDate={pendingAutoOpen ? urlDate : null}
-                onAutoOpenHandled={() => setPendingAutoOpen(false)}
-              />
-            )}
-
-            {selectedDepartment && (
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                <div className="lg:col-span-3">
-                  {selectedBatch && (
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList className="grid grid-cols-7 w-full">
-                        <TabsTrigger value="batch_lines">Batch Lines</TabsTrigger>
-                        <TabsTrigger value="qc_initial">QC Initial Stock</TabsTrigger>
-                        <TabsTrigger value="operations">Operations</TabsTrigger>
-                        <TabsTrigger value="team_persons">Team Time Persons</TabsTrigger>
-                        <TabsTrigger value="team_extra">Team Time Extra</TabsTrigger>
-                        <TabsTrigger value="help_in">Help In</TabsTrigger>
-                        <TabsTrigger value="consumables">Consumables</TabsTrigger>
-                      </TabsList>
-
-                      <div className="mt-6">
-                        <TabsContent value="batch_lines">
-                          <BatchLinesTab batchId={selectedBatch?.id} department={selectedBatch?.department} selectedBundle={selectedBundle} />
-                        </TabsContent>
-
-                        <TabsContent value="qc_initial">
-                          <QCInitialStockTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                        </TabsContent>
-
-                        <TabsContent value="operations">
-                          <OperationsTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                        </TabsContent>
-
-                        <TabsContent value="team_persons">
-                          <TeamTimePersonsTab batchId={selectedBatch?.id} />
-                        </TabsContent>
-
-                        <TabsContent value="team_extra">
-                          <TeamTimeExtraTab batchId={selectedBatch?.id} />
-                        </TabsContent>
-
-                        <TabsContent value="help_in">
-                          <HelpInTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                        </TabsContent>
-
-                        <TabsContent value="consumables">
-                          <ConsumablesActualTab batchId={selectedBatch?.id} />
-                        </TabsContent>
-                      </div>
-                    </Tabs>
-                  )}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          {/* Main production area */}
+          <div className="xl:col-span-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Production Data Entry</CardTitle>
+                {selectedBatch && (
+                 <div className="flex items-center gap-3 flex-wrap mt-1">
+                   <p className="text-sm text-slate-600">
+                     Selected Batch: {selectedBatch.date} - {selectedBatch.department}
+                   </p>
+                   <Button
+                     variant="outline"
+                     size="sm"
+                     onClick={() => navigate(createPageUrl("MfgPlanningWizard") + `?date=${selectedBatch.date}&department=${encodeURIComponent(selectedBatch.department)}`)}
+                     className="bg-amber-50 border-amber-300 text-amber-700 hover:bg-amber-100"
+                   >
+                     <Clock className="w-3.5 h-3.5 mr-1.5" />
+                     View Schedule
+                   </Button>
+                   {selectedBundle ? (
+                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700 border border-indigo-200">
+                       📦 Bundle: {selectedBundle.version_no} ({selectedBundle.status})
+                     </span>
+                   ) : (
+                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                       ⚠ No bundle assigned
+                     </span>
+                   )}
+                 </div>
+                )}
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label className="text-sm font-semibold">Select Department</Label>
+                  <Select value={selectedDepartment} onValueChange={(val) => { setSelectedDepartment(val); setSelectedBatch(null); setSelectedDate(''); }}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map(d => (
+                        <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="lg:col-span-1 h-fit sticky top-20">
-                  {selectedBatch && <AttachmentsPanel batchHeaderId={selectedBatch?.id} department={selectedBatch?.department} />}
-                  
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+                {selectedDepartment && !selectedBatch && (
+                  <BatchHeaderTab 
+                    batchHeaders={batchHeaders}
+                    selectedBatch={selectedBatch}
+                    selectedDepartment={selectedDepartment}
+                    onBatchSelect={handleBatchSelect}
+                    onBatchCreated={handleBatchCreated}
+                    hideHeader={true}
+                    autoOpenDate={pendingAutoOpen ? urlDate : null}
+                    onAutoOpenHandled={() => setPendingAutoOpen(false)}
+                  />
+                )}
+
+                {selectedBatch && (
+                  <Tabs value={activeTab} onValueChange={setActiveTab}>
+                    <TabsList className="grid grid-cols-7 w-full">
+                      <TabsTrigger value="batch_lines">Batch Lines</TabsTrigger>
+                      <TabsTrigger value="qc_initial">QC Initial Stock</TabsTrigger>
+                      <TabsTrigger value="operations">Operations</TabsTrigger>
+                      <TabsTrigger value="team_persons">Team Time Persons</TabsTrigger>
+                      <TabsTrigger value="team_extra">Team Time Extra</TabsTrigger>
+                      <TabsTrigger value="help_in">Help In</TabsTrigger>
+                      <TabsTrigger value="consumables">Consumables</TabsTrigger>
+                    </TabsList>
+
+                    <div className="mt-6">
+                      <TabsContent value="batch_lines">
+                        <BatchLinesTab batchId={selectedBatch?.id} department={selectedBatch?.department} selectedBundle={selectedBundle} />
+                      </TabsContent>
+                      <TabsContent value="qc_initial">
+                        <QCInitialStockTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                      </TabsContent>
+                      <TabsContent value="operations">
+                        <OperationsTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                      </TabsContent>
+                      <TabsContent value="team_persons">
+                        <TeamTimePersonsTab batchId={selectedBatch?.id} />
+                      </TabsContent>
+                      <TabsContent value="team_extra">
+                        <TeamTimeExtraTab batchId={selectedBatch?.id} />
+                      </TabsContent>
+                      <TabsContent value="help_in">
+                        <HelpInTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
+                      </TabsContent>
+                      <TabsContent value="consumables">
+                        <ConsumablesActualTab batchId={selectedBatch?.id} />
+                      </TabsContent>
+                    </div>
+                  </Tabs>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* AI Assistant sidebar */}
+          <div className="xl:col-span-1 sticky top-20 h-fit">
+            <ProductionAIAssistant />
+          </div>
+        </div>
       </div>
     </div>
   );
