@@ -155,11 +155,15 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => {
+                  onClick={async () => {
+                    const res = await fetch(att.file_url);
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    a.href = att.file_url;
+                    a.href = url;
                     a.download = att.file_name;
                     a.click();
+                    URL.revokeObjectURL(url);
                   }}
                   className="h-6 w-6 text-slate-500 hover:text-slate-700"
                   title="Download"
