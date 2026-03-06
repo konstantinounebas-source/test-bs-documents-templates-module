@@ -138,7 +138,7 @@ export default function MfgDailyProduction() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-screen-2xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={() => navigate(createPageUrl("MfgPlanningWizard"))}>
             <ArrowLeft className="w-4 h-4 mr-2" />
