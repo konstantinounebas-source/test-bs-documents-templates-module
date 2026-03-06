@@ -187,20 +187,34 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
       </div>
 
       {/* Preview Dialog */}
-      <Dialog open={!!previewFile} onOpenChange={(open) => !open && setPreviewFile(null)}>
+      <Dialog open={!!previewFile} onOpenChange={(open) => { if (!open) { setPreviewFile(null); setRotation(0); } }}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader className="flex flex-row items-center justify-between">
             <DialogTitle>{previewFile?.file_name}</DialogTitle>
-            <div className="flex gap-2">
-              <a
-                href={previewFile?.file_url}
-                download={previewFile?.file_name}
-                className="text-blue-600 hover:text-blue-700 p-1"
-                title="Download"
-              >
+            <div className="flex gap-2 items-center">
+              {previewFile?.file_type === 'image' && (
+                <>
+                  <button onClick={() => setRotation(r => r - 90)} className="text-slate-500 hover:text-slate-700 p-1" title="Rotate Left">
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setRotation(r => r + 90)} className="text-slate-500 hover:text-slate-700 p-1" title="Rotate Right">
+                    <RotateCw className="w-4 h-4" />
+                  </button>
+                </>
+              )}
+              <button
+                onClick={async () => {
+                  const res = await fetch(previewFile.file_url);
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url; a.download = previewFile.file_name; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="text-blue-600 hover:text-blue-700 p-1" title="Download">
                 <Download className="w-5 h-5" />
-              </a>
-              <button onClick={() => setPreviewFile(null)} className="text-slate-400 hover:text-slate-600">
+              </button>
+              <button onClick={() => { setPreviewFile(null); setRotation(0); }} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -208,7 +222,12 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
 
           {previewFile?.file_type === 'image' ? (
             <div className="flex items-center justify-center max-h-[70vh] overflow-auto bg-slate-50 rounded-lg">
-              <img src={previewFile.file_url} alt={previewFile.file_name} className="max-w-full max-h-full" />
+              <img
+                src={previewFile.file_url}
+                alt={previewFile.file_name}
+                style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s ease' }}
+                className="max-w-full max-h-full"
+              />
             </div>
           ) : (
             <div className="flex items-center justify-center max-h-[70vh] overflow-auto bg-slate-50 rounded-lg">
