@@ -273,6 +273,9 @@ export default function MfgDailyProduction() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Floating AI Chatbot */}
+      <DailyProductionChatbot departments={departments} />
     </div>
   );
 }
