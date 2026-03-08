@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-
+import ExcelJS from 'exceljs';
 
 import ProductsTable from "../components/warehouse/ProductsTable";
 import CreateEditProductDialog from "../components/warehouse/CreateEditProductDialog";
@@ -318,7 +318,6 @@ export default function ProductsPage() {
 
   const handleExportExcel = async () => {
     try {
-      const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Products');
 

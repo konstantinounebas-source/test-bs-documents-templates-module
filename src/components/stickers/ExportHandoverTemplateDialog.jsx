@@ -1,12 +1,11 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
-
+import ExcelJS from 'exceljs';
 
 export default function ExportHandoverTemplateDialog({ availableItems, stops, stickerTemplates }) {
   const handleExportTemplate = async () => {
-     const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
-     const workbook = new Workbook();
+    const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Handover Template');
 
     // Headers

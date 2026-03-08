@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Search, Download, AlertTriangle, Package, FileSpreadsheet } from "lucide-react";
-
+import * as XLSX from "exceljs";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -190,7 +190,6 @@ export default function StockOverviewPage() {
   };
 
   const exportToExcel = async () => {
-    const XLSX = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new XLSX.Workbook();
     const sheet = workbook.addWorksheet("Stock Overview");
 

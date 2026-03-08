@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Save, Users, FileDown } from "lucide-react";
-
+import ExcelJS from 'exceljs';
 import ExportHandoverTemplateDialog from "@/components/stickers/ExportHandoverTemplateDialog";
 import ImportHandoverFromFileDialog from "@/components/stickers/ImportHandoverFromFileDialog";
 import { Loader2 } from "lucide-react";
@@ -111,7 +111,6 @@ export default function StickerHandoversPage() {
   };
 
   const handleExportToExcel = async () => {
-    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Available Sticker Items');
 

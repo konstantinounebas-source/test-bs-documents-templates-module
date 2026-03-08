@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { Label } from "@/components/ui/label";
 import { Search, Edit, PackageCheck, Users, AlertCircle, CheckCircle, History, FileDown } from "lucide-react";
-
+import ExcelJS from 'exceljs';
 import { Badge } from "@/components/ui/badge";
 import EditStickerItemDialog from "@/components/stickers/EditStickerItemDialog";
 import ReorderStickerDialog from "@/components/stickers/ReorderStickerDialog";
@@ -179,7 +179,6 @@ export default function StickerItemsPage() {
   };
 
   const handleExportToExcel = async () => {
-    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Sticker Items');
 

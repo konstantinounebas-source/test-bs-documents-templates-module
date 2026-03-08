@@ -1,10 +1,9 @@
 import React from "react";
-
+import ExcelJS from 'exceljs';
 
 export default function ExportOrderTemplateDialog({ filteredItems, stickerItems, stickerTemplates, stops }) {
   const handleExportTemplate = async () => {
-    const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
-    const workbook = new Workbook();
+    const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Order Template');
 
     // Add headers

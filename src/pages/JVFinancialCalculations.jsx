@@ -13,7 +13,7 @@ import SectionBCostBreakdown from "@/components/jv-financial/SectionBCostBreakdo
 import SectionCCostSummary from "@/components/jv-financial/SectionCCostSummary";
 import AddShelterInstanceDialog from "@/components/jv-financial/AddShelterInstanceDialog";
 import EditShelterInstanceDialog from "@/components/jv-financial/EditShelterInstanceDialog";
-
+import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 
 export default function JVFinancialCalculations() {
@@ -456,7 +456,6 @@ export default function JVFinancialCalculations() {
     };
 
     const exportBOM = async (shelterTypeId) => {
-        const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
         if (!shelterTypeId) return;
         
         try {
@@ -485,7 +484,7 @@ export default function JVFinancialCalculations() {
             teams.forEach(t => { teamMap[t.id] = t; });
 
             // Create Excel workbook
-            const workbook = new ExcelJS.Workbook(); // ExcelJS loaded above
+            const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('BOM');
 
             // Add title

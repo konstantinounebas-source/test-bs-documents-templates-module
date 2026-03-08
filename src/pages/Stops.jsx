@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import CreateEditStopDialog from "@/components/stickers/CreateEditStopDialog";
 import ImportStopsDialog from "@/components/stickers/ImportStopsDialog";
 import ViewStopDialog from "@/components/stickers/ViewStopDialog";
-
+import ExcelJS from "exceljs";
 
 export default function StopsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -238,7 +238,6 @@ export default function StopsPage() {
   };
 
   const handleExport = async () => {
-    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Stops");
 

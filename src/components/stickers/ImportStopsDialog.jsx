@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Download, Upload, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-
+import ExcelJS from "exceljs";
 
 export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
   const [file, setFile] = useState(null);
@@ -23,8 +23,7 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
   }, [open]);
 
   const downloadTemplate = async () => {
-    const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
-    const workbook = new Workbook();
+    const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Stops Template");
 
     worksheet.columns = [
@@ -70,8 +69,7 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
     setSuccess("");
 
     try {
-      const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
-      const workbook = new Workbook();
+      const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(await file.arrayBuffer());
       const worksheet = workbook.getWorksheet(1);
 

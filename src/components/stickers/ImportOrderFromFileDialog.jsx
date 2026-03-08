@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Trash2, Check, Loader2 } from "lucide-react";
-
+import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 
 export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImported, stickerItems, stops, stickerTemplates }) {
@@ -30,9 +30,8 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
     if (!file) return;
 
     try {
-      const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
       const arrayBuffer = await file.arrayBuffer();
-      const workbook = new Workbook();
+      const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(arrayBuffer);
       const worksheet = workbook.getWorksheet('Order Template');
 

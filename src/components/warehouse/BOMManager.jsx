@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import ProductCombobox from "./ProductCombobox";
 import { MultiSelect } from "@/components/ui/multi-select";
-
+import { Workbook } from 'exceljs';
 
 export default function BOMManager({ busStopTypes, components, products, selectedType, onComponentsUpdated }) {
   const [currentTypeId, setCurrentTypeId] = useState(selectedType?.id || '');
@@ -246,8 +246,7 @@ export default function BOMManager({ busStopTypes, components, products, selecte
     return costByTeam;
   };
 
-  const handleExportToExcel = async () => {
-    const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
+  const handleExportToExcel = () => {
     const workbook = new Workbook();
     const worksheet = workbook.addWorksheet('Bill of Materials');
 

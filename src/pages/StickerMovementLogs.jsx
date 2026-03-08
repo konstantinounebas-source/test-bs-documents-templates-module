@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, FileDown } from "lucide-react";
-
+import ExcelJS from 'exceljs';
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
@@ -72,7 +72,6 @@ export default function StickerMovementLogsPage() {
   const isLoading = logsLoading || itemsLoading || stopsLoading;
 
   const handleExportToExcel = async () => {
-    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Sticker Movement Logs');
 

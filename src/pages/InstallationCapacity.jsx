@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-
+import ExcelJS from 'exceljs';
 
 export default function InstallationCapacityPage() {
   const [selectedTypes, setSelectedTypes] = useState([]);
@@ -315,7 +315,6 @@ export default function InstallationCapacityPage() {
     if (!capacityResults) return;
 
     try {
-      const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Component Analysis');
 

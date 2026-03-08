@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Pencil, FileDown } from "lucide-react";
-
+import ExcelJS from 'exceljs';
 import { Badge } from "@/components/ui/badge";
 import CreateEditStickerTemplateDialog from "@/components/stickers/CreateEditStickerTemplateDialog";
 
@@ -90,7 +90,6 @@ export default function StickerTemplatesPage() {
   };
 
   const handleExportToExcel = async () => {
-    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Sticker Templates');
 

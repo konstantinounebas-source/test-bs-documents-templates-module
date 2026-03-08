@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { Plus, ShoppingCart, Eye, Printer, AlertTriangle, Search, FileDown, FileText, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-
+import ExcelJS from 'exceljs';
 import ExportOrderTemplateDialog from "@/components/stickers/ExportOrderTemplateDialog";
 import ImportOrderFromFileDialog from "@/components/stickers/ImportOrderFromFileDialog";
 
@@ -563,7 +563,6 @@ export default function OrdersManagementPage() {
   };
 
   const handleExportAvailableItems = async () => {
-    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Available Sticker Items');
 
@@ -615,7 +614,6 @@ export default function OrdersManagementPage() {
   };
 
   const handleExportOrders = async () => {
-    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Orders');
 

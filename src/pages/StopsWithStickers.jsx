@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, Search, FileDown } from "lucide-react";
-
+import ExcelJS from 'exceljs';
 
 export default function StopsWithStickersPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -80,7 +80,6 @@ export default function StopsWithStickersPage() {
   const isLoading = stopsLoading || itemsLoading || templatesLoading;
 
   const handleExportToExcel = async () => {
-    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Stops with Stickers');
 

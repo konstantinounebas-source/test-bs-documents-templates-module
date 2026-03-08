@@ -259,8 +259,8 @@ export default function DashboardPage() {
   };
 
   const exportToExcel = async (data, filename) => {
-    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
-    const workbook = new ExcelJS.Workbook();
+    const ExcelJS = await import('exceljs');
+    const workbook = new ExcelJS.default.Workbook();
     const worksheet = workbook.addWorksheet('Data');
 
     if (data.length > 0) {

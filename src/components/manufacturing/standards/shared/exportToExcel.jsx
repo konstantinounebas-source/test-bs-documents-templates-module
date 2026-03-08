@@ -1,6 +1,7 @@
+import ExcelJS from 'exceljs';
+
 export async function exportDataTabToExcel(gridRows, operationColumns, bundleName) {
-  const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
-  const workbook = new Workbook();
+  const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Standards Data');
 
   // Headers
@@ -47,8 +48,7 @@ export async function exportDataTabToExcel(gridRows, operationColumns, bundleNam
 }
 
 export async function exportQCTabToExcel(filteredItems, gridData, mode, selectedOperation, selectedQCType, selectedQCLevel, bundleName) {
-  const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
-  const workbook = new Workbook();
+  const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('QC Standards');
 
   // Headers
@@ -111,8 +111,7 @@ export async function exportQCTabToExcel(filteredItems, gridData, mode, selected
 }
 
 export async function exportProfilesToExcel(profiles, operations, bundleName) {
-  const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
-  const workbook = new Workbook();
+  const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Operation Profiles');
 
   const headers = ['Profile Name', 'Operations', 'Description', 'Status'];
@@ -159,8 +158,7 @@ export async function exportProfilesToExcel(profiles, operations, bundleName) {
 }
 
 export async function exportScheduledDataToExcel(filteredLines, getProfileName, selectedDate, bundleName) {
-  const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
-  const workbook = new Workbook();
+  const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Scheduled Data');
 
   const headers = ['Date', 'Item Code', 'Profile', 'Ops Qty', 'Ops Total', 'QC Total', 'Grand Total', 'Notes'];

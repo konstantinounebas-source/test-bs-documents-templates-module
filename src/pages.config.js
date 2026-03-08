@@ -60,6 +60,7 @@ import BusStopTypesBOM from './pages/BusStopTypesBOM';
 import ChargedMaterialsReport from './pages/ChargedMaterialsReport';
 import CustomFields from './pages/CustomFields';
 import DailyTracker from './pages/DailyTracker';
+import Dashboard from './pages/Dashboard';
 import DeliveryFieldsDataDefinitions from './pages/DeliveryFieldsDataDefinitions';
 import DeliveryLogs from './pages/DeliveryLogs';
 import DeliveryReporting from './pages/DeliveryReporting';
@@ -69,11 +70,12 @@ import FactoryFinancialCalculations from './pages/FactoryFinancialCalculations';
 import FormRunner from './pages/FormRunner';
 import Holidays from './pages/Holidays';
 import Home from './pages/Home';
+import InstallationCapacity from './pages/InstallationCapacity';
 import InteractiveForms from './pages/InteractiveForms';
+import JVFinancialCalculations from './pages/JVFinancialCalculations';
 import JVFinancialResults from './pages/JVFinancialResults';
 import Manufacturing from './pages/Manufacturing';
 import MfgConsumables from './pages/MfgConsumables';
-import MfgDailyProduction from './pages/MfgDailyProduction';
 import MfgDailyStandardsAssignment from './pages/MfgDailyStandardsAssignment';
 import MfgKPIDashboard from './pages/MfgKPIDashboard';
 import MfgKPIDefinitions from './pages/MfgKPIDefinitions';
@@ -94,14 +96,25 @@ import OperationalDashboard from './pages/OperationalDashboard';
 import OrderDetail from './pages/OrderDetail';
 import OrderPrint from './pages/OrderPrint';
 import Orders from './pages/Orders';
+import OrdersManagement from './pages/OrdersManagement';
 import PlatformChangeLog from './pages/PlatformChangeLog';
+import Products from './pages/Products';
 import ProfileSetup from './pages/ProfileSetup';
 import PurchaseOrders from './pages/PurchaseOrders';
+import Receipts from './pages/Receipts';
 import RepairRoutes from './pages/RepairRoutes';
 import ShelterTypes from './pages/ShelterTypes';
 import SnaggingList from './pages/SnaggingList';
+import StickerHandovers from './pages/StickerHandovers';
+import StickerItems from './pages/StickerItems';
+import StickerMovementLogs from './pages/StickerMovementLogs';
+import StickerTemplates from './pages/StickerTemplates';
 import StickersInstallationUserGuide from './pages/StickersInstallationUserGuide';
 import StockMovements from './pages/StockMovements';
+import StockOverview from './pages/StockOverview';
+import Stops from './pages/Stops';
+import StopsWithStickers from './pages/StopsWithStickers';
+import Templates from './pages/Templates';
 import UserGuide from './pages/UserGuide';
 import Users from './pages/Users';
 import VendorsCategories from './pages/VendorsCategories';
@@ -111,20 +124,7 @@ import WeeklyOverview from './pages/WeeklyOverview';
 import WeeklySchedule from './pages/WeeklySchedule';
 import Welcome from './pages/Welcome';
 import WorkspaceSettings from './pages/WorkspaceSettings';
-import Templates from './pages/Templates';
-import OrdersManagement from './pages/OrdersManagement';
-import Products from './pages/Products';
-import Receipts from './pages/Receipts';
-import StickerHandovers from './pages/StickerHandovers';
-import StickerItems from './pages/StickerItems';
-import StickerMovementLogs from './pages/StickerMovementLogs';
-import StickerTemplates from './pages/StickerTemplates';
-import StockOverview from './pages/StockOverview';
-import Stops from './pages/Stops';
-import StopsWithStickers from './pages/StopsWithStickers';
-import InstallationCapacity from './pages/InstallationCapacity';
-import JVFinancialCalculations from './pages/JVFinancialCalculations';
-import Dashboard from './pages/Dashboard';
+import MfgDailyProduction from './pages/MfgDailyProduction';
 import __Layout from './Layout.jsx';
 
 
@@ -142,6 +142,7 @@ export const PAGES = {
     "ChargedMaterialsReport": ChargedMaterialsReport,
     "CustomFields": CustomFields,
     "DailyTracker": DailyTracker,
+    "Dashboard": Dashboard,
     "DeliveryFieldsDataDefinitions": DeliveryFieldsDataDefinitions,
     "DeliveryLogs": DeliveryLogs,
     "DeliveryReporting": DeliveryReporting,
@@ -151,11 +152,12 @@ export const PAGES = {
     "FormRunner": FormRunner,
     "Holidays": Holidays,
     "Home": Home,
+    "InstallationCapacity": InstallationCapacity,
     "InteractiveForms": InteractiveForms,
+    "JVFinancialCalculations": JVFinancialCalculations,
     "JVFinancialResults": JVFinancialResults,
     "Manufacturing": Manufacturing,
     "MfgConsumables": MfgConsumables,
-    "MfgDailyProduction": MfgDailyProduction,
     "MfgDailyStandardsAssignment": MfgDailyStandardsAssignment,
     "MfgKPIDashboard": MfgKPIDashboard,
     "MfgKPIDefinitions": MfgKPIDefinitions,
@@ -176,14 +178,25 @@ export const PAGES = {
     "OrderDetail": OrderDetail,
     "OrderPrint": OrderPrint,
     "Orders": Orders,
+    "OrdersManagement": OrdersManagement,
     "PlatformChangeLog": PlatformChangeLog,
+    "Products": Products,
     "ProfileSetup": ProfileSetup,
     "PurchaseOrders": PurchaseOrders,
+    "Receipts": Receipts,
     "RepairRoutes": RepairRoutes,
     "ShelterTypes": ShelterTypes,
     "SnaggingList": SnaggingList,
+    "StickerHandovers": StickerHandovers,
+    "StickerItems": StickerItems,
+    "StickerMovementLogs": StickerMovementLogs,
+    "StickerTemplates": StickerTemplates,
     "StickersInstallationUserGuide": StickersInstallationUserGuide,
     "StockMovements": StockMovements,
+    "StockOverview": StockOverview,
+    "Stops": Stops,
+    "StopsWithStickers": StopsWithStickers,
+    "Templates": Templates,
     "UserGuide": UserGuide,
     "Users": Users,
     "VendorsCategories": VendorsCategories,
@@ -193,20 +206,7 @@ export const PAGES = {
     "WeeklySchedule": WeeklySchedule,
     "Welcome": Welcome,
     "WorkspaceSettings": WorkspaceSettings,
-    "Templates": Templates,
-    "OrdersManagement": OrdersManagement,
-    "Products": Products,
-    "Receipts": Receipts,
-    "StickerHandovers": StickerHandovers,
-    "StickerItems": StickerItems,
-    "StickerMovementLogs": StickerMovementLogs,
-    "StickerTemplates": StickerTemplates,
-    "StockOverview": StockOverview,
-    "Stops": Stops,
-    "StopsWithStickers": StopsWithStickers,
-    "InstallationCapacity": InstallationCapacity,
-    "JVFinancialCalculations": JVFinancialCalculations,
-    "Dashboard": Dashboard,
+    "MfgDailyProduction": MfgDailyProduction,
 }
 
 export const pagesConfig = {
