@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { Plus, ShoppingCart, Eye, Printer, AlertTriangle, Search, FileDown, FileText, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import ExcelJS from 'exceljs';
+import ExcelJS from 'npm:exceljs';
 import ExportOrderTemplateDialog from "@/components/stickers/ExportOrderTemplateDialog";
 import ImportOrderFromFileDialog from "@/components/stickers/ImportOrderFromFileDialog";
 

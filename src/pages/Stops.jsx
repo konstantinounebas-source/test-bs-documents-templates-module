@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import CreateEditStopDialog from "@/components/stickers/CreateEditStopDialog";
 import ImportStopsDialog from "@/components/stickers/ImportStopsDialog";
 import ViewStopDialog from "@/components/stickers/ViewStopDialog";
-import ExcelJS from "exceljs";
+import ExcelJS from "npm:exceljs";
 
 export default function StopsPage() {
   const [searchTerm, setSearchTerm] = useState("");
