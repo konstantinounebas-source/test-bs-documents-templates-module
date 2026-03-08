@@ -125,6 +125,33 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
     toast.success("Ενημερώθηκε");
   };
 
+  const handleManualAdd = async () => {
+    if (!manualForm.consumable || !manualForm.actual_qty) {
+      toast.error("Συμπλήρωσε τουλάχιστον Consumable και Actual Qty");
+      return;
+    }
+    setIsSavingManual(true);
+    try {
+      await base44.entities.ConsumablesActual.create({
+        batch_header_id: batchId,
+        department: batchHeader?.department || "",
+        consumable: manualForm.consumable,
+        item_code: manualForm.item_code,
+        operation: manualForm.operation,
+        expected_qty: parseFloat(manualForm.expected_qty) || 0,
+        actual_qty: parseFloat(manualForm.actual_qty) || 0,
+        unit: manualForm.unit,
+        is_auto_generated: false,
+        notes: ""
+      });
+      queryClient.invalidateQueries(["ConsumablesActual", batchId]);
+      toast.success("✅ Προστέθηκε");
+      setManualForm(EMPTY_FORM);
+      setShowManual(false);
+    } catch { toast.error("Σφάλμα αποθήκευσης"); }
+    setIsSavingManual(false);
+  };
+
   const totalActual = lines.reduce((s, l) => s + (l.actual_qty || 0), 0);
   const totalExpected = lines.reduce((s, l) => s + (l.expected_qty || 0), 0);
 
