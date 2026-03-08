@@ -781,20 +781,37 @@ ${context}
 
             {/* Step: add extra batch lines */}
             {step === "batch_lines_add" && (
-              <div className="border-t p-3 space-y-2">
+              <div className="border-t p-3 space-y-3 overflow-y-auto max-h-80">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-slate-700">Προσθήκη επιπλέον Item Code</p>
+                  <p className="text-xs font-semibold text-slate-700">Batch Lines</p>
                   <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleReset}>↩ Αρχή</Button>
                 </div>
-                <div className="space-y-1">
-                  <select
-                    value={blAddForm.item_code}
-                    onChange={e => setBlAddForm(f => ({ ...f, item_code: e.target.value }))}
-                    className="w-full text-xs border border-slate-200 rounded px-2 py-1.5 outline-none focus:border-blue-400 bg-white"
-                  >
-                    <option value="">-- Επέλεξε item code --</option>
-                    {bundleItemCodes.map(code => <option key={code} value={code}>{code}</option>)}
-                  </select>
+
+                {/* Existing lines editable table */}
+                {existingBatchLines.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Καταχωρημένες Γραμμές</p>
+                    <div className="grid grid-cols-5 gap-1 text-[10px] font-semibold text-slate-400 px-1">
+                      <span>Item</span><span className="text-center">Sched.</span><span className="text-center">Proc.</span><span className="text-center">Good</span><span className="text-center">Scrap</span>
+                    </div>
+                    {existingBatchLines.map(bl => (
+                      <ExistingLineRow key={bl.id} bl={bl} onSave={async (id, data) => {
+                        await base44.entities.Batch_Lines.update(id, data);
+                        queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
+                      }} />
+                    ))}
+                  </div>
+                )}
+
+                {/* Add new line */}
+                <div className="space-y-1 pt-1 border-t">
+                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Προσθήκη Νέας Γραμμής</p>
+                  {/* Searchable multi-select for item codes */}
+                  <ItemCodeMultiSelect
+                    available={bundleItemCodes.filter(c => !existingBatchLines.find(bl => bl.item_code === c))}
+                    selected={blAddForm.item_codes || []}
+                    onChange={codes => setBlAddForm(f => ({ ...f, item_codes: codes }))}
+                  />
                   <div className="grid grid-cols-3 gap-1">
                     {[["qty_processed","Processed"],["qty_out_good","Out Good"],["qty_scrap","Scrap"]].map(([field, label]) => (
                       <div key={field}>
@@ -808,11 +825,18 @@ ${context}
                     ))}
                   </div>
                   <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
-                    onClick={handleAddExtraLine} disabled={!blAddForm.item_code}>
-                    <Plus className="w-3 h-3 mr-1" /> Προσθήκη Line
+                    onClick={handleAddExtraLine} disabled={!blAddForm.item_codes?.length}>
+                    <Plus className="w-3 h-3 mr-1" /> Προσθήκη Line(s)
                   </Button>
                 </div>
-                <p className="text-xs text-slate-400 text-center">Πες "τέλος" ή κλείσε το chat για να ολοκληρώσεις.</p>
+
+                <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
+                  onClick={() => {
+                    addMsg("bot", "✅ Batch Lines ολοκληρώθηκαν! Μπορείς να κλείσεις το chat ή να επιλέξεις νέα καταχώριση.");
+                    handleReset();
+                  }}>
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → Ολοκλήρωση
+                </Button>
               </div>
             )}
 
