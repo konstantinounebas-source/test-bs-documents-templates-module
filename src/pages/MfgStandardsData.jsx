@@ -75,14 +75,26 @@ export default function MfgStandardsDataPage() {
   const { data: standardsSets = [] } = useQuery({
     queryKey: ['Std_Set', selectedDepartment],
     queryFn: () => base44.entities.Std_Set.filter({ department: selectedDepartment }),
-    enabled: !!selectedDepartment
+    enabled: !!selectedDepartment,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Fetch lines for selected set
   const { data: lines = [], isLoading: linesLoading } = useQuery({
     queryKey: ['Std_Set_Lines', selectedSetId],
     queryFn: () => base44.entities.Std_Set_Lines.filter({ std_set_id: selectedSetId }),
-    enabled: !!selectedSetId
+    enabled: !!selectedSetId,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Load grid from lines (pivot)
