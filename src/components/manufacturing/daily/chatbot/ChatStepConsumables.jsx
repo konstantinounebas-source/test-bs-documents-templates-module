@@ -113,9 +113,7 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries(["ConsumablesActual", batchId]);
-      const message = `✅ Προστέθηκαν ${count} consumable rows από standards`;
-      toast.success(message);
-      onNext(message);
+      toast.success(`✅ Προστέθηκαν ${count} consumable rows`);
     },
     onError: (err) => toast.error(err.message || "Σφάλμα")
   });
