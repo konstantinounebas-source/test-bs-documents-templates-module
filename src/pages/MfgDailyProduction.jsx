@@ -146,27 +146,24 @@ export default function MfgDailyProduction() {
   useEffect(() => {
     if (!selectedBatch?.id) return;
 
-    const prefetchSequence = async () => {
-      const tabsToPreload = [
-        { key: 'qc_initial', delay: 800 },
-        { key: 'operations', delay: 1500 },
-        { key: 'team_persons', delay: 2200 },
-        { key: 'team_extra', delay: 2900 },
-        { key: 'help_in', delay: 3600 },
-        { key: 'consumables', delay: 4300 }
-      ];
+    const timeouts = [];
+    const tabsToPreload = [
+      { key: 'qc_initial', delay: 800 },
+      { key: 'operations', delay: 1500 },
+      { key: 'team_persons', delay: 2200 },
+      { key: 'team_extra', delay: 2900 },
+      { key: 'help_in', delay: 3600 },
+      { key: 'consumables', delay: 4300 }
+    ];
 
-      for (const tab of tabsToPreload) {
-        setTimeout(() => {
-          // Only prefetch if not already mounted and not switching to a different batch
-          if (selectedBatch?.id && !loadedTabs.has(tab.key)) {
-            setLoadedTabs(prev => new Set(prev).add(tab.key));
-          }
-        }, tab.delay);
-      }
-    };
+    tabsToPreload.forEach(tab => {
+      const timeout = setTimeout(() => {
+        setLoadedTabs(prev => new Set(prev).add(tab.key));
+      }, tab.delay);
+      timeouts.push(timeout);
+    });
 
-    prefetchSequence();
+    return () => timeouts.forEach(t => clearTimeout(t));
   }, [selectedBatch?.id]);
 
   const handleCreateBatch = async (dateStr) => {
