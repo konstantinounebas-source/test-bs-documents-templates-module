@@ -1125,7 +1125,7 @@ ${context}
           <DialogHeader className="flex flex-row items-center justify-between">
             <DialogTitle>{previewFile?.file_name}</DialogTitle>
             <div className="flex gap-2 items-center mr-6">
-              {previewFile?.file_type === "image" && (
+              {previewFile && (
                 <>
                   <button onClick={() => setRotation(r => r - 90)} className="text-slate-500 hover:text-slate-700 p-1" title="Rotate Left">
                     <RotateCcw className="w-4 h-4" />
@@ -1149,7 +1149,7 @@ ${context}
               </button>
             </div>
           </DialogHeader>
-          {previewFile?.file_type === "image" ? (
+          {previewFile && getFileType(previewFile.file_name) === "image" ? (
             <div className="flex items-center justify-center max-h-[65vh] overflow-auto bg-slate-50 rounded-lg">
               <img
                 src={previewFile.file_url}
@@ -1159,11 +1159,13 @@ ${context}
               />
             </div>
           ) : (
-            <iframe
-              src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(previewFile?.file_url || "")}`}
-              className="w-full h-[600px] border-0 rounded-lg"
-              title={previewFile?.file_name}
-            />
+            <div className="flex items-center justify-center max-h-[65vh] overflow-auto bg-slate-50 rounded-lg" style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s ease' }}>
+              <iframe
+                src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(previewFile?.file_url || "")}`}
+                className="w-full h-[600px] border-0 rounded-lg"
+                title={previewFile?.file_name}
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>
