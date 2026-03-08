@@ -241,23 +241,28 @@ export default function DailyProductionChatbot({ departments = [] }) {
     onError: () => { toast.error("Αποτυχία δημιουργίας batch"); addMsg("bot", "❌ Σφάλμα κατά τη δημιουργία batch."); }
   });
 
-  // ── upload mutation ───────────────────────────────────────────────────────
-  const uploadMutation = useMutation({
-    mutationFn: async (file) => {
+  // ── upload state ──────────────────────────────────────────────────────────
+  const [uploadingCount, setUploadingCount] = useState(0);
+
+  const uploadFile = async (file) => {
+    setUploadingCount(c => c + 1);
+    try {
       const fileType = file.type.startsWith("image") ? "image" : "pdf";
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const me = await base44.auth.me();
-      return base44.entities.BatchAttachment.create({
+      const att = await base44.entities.BatchAttachment.create({
         batch_header_id: selBatch.id, department: selBatch.department,
         file_url, file_name: file.name, file_type, uploaded_by: me.email, notes: ""
       });
-    },
-    onSuccess: (att) => {
       queryClient.invalidateQueries(["BatchAttachments", selBatch?.id]);
       addMsg("bot", `📎 Αρχείο "${att.file_name}" ανέβηκε επιτυχώς!`);
-    },
-    onError: (_, file) => addMsg("bot", `❌ Αποτυχία ανεβάσματος "${file.name}".`)
-  });
+    } catch (err) {
+      console.error("Upload error:", err);
+      addMsg("bot", `❌ Αποτυχία ανεβάσματος "${file.name}": ${err?.message || "Άγνωστο σφάλμα"}`);
+    } finally {
+      setUploadingCount(c => c - 1);
+    }
+  };
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.BatchAttachment.delete(id),
