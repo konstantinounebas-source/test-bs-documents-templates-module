@@ -6,6 +6,11 @@ import { Upload, Download, Trash2, Loader2, FileText, Image as ImageIcon, Eye, X
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
+const getFileType = (fileName) => {
+  const ext = fileName.split('.').pop().toLowerCase();
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext) ? 'image' : 'pdf';
+};
+
 export default function AttachmentsPanel({ batchHeaderId, department }) {
   const [isDragging, setIsDragging] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
