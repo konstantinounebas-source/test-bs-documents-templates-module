@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Save, AlertTriangle, PackageCheck, FileDown } from "lucide-react";
-import ExcelJS from 'npm:exceljs';
+
 import ExportReceiptTemplateDialog from "@/components/stickers/ExportReceiptTemplateDialog";
 import ImportReceiptFromFileDialog from "@/components/stickers/ImportReceiptFromFileDialog";
 import { Loader2 } from "lucide-react";

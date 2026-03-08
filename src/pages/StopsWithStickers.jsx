@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, Search, FileDown } from "lucide-react";
-import ExcelJS from 'npm:exceljs';
+
 
 export default function StopsWithStickersPage() {
   const [searchTerm, setSearchTerm] = useState("");
