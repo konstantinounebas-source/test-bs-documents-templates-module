@@ -83,7 +83,13 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   // Fetch Operations
   const { data: allOperations = [] } = useQuery({
     queryKey: ['Operation'],
-    queryFn: () => base44.entities.Operation.filter({ is_active: true })
+    queryFn: () => base44.entities.Operation.filter({ is_active: true }),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
   const operations = allOperations
     .filter(op => op.is_allowed !== false)
