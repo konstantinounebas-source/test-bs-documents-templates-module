@@ -659,10 +659,22 @@ ${context}
 
   return (
     <>
+      {/* Backdrop */}
+      {open && (
+        <div
+          className="fixed inset-0 z-30 bg-black/20"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+      {/* Side Panel */}
       <div 
-        className={`fixed bottom-6 z-50 w-[500px] shadow-2xl rounded-2xl border border-slate-200 bg-white flex flex-col transition-all ${minimized ? "h-14" : "h-[700px]"}`}
+        className={`fixed top-0 bottom-0 w-[450px] z-40 shadow-2xl border-l border-slate-200 bg-white flex flex-col transition-transform duration-300 ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
         style={{
-          [position === "right" ? "right" : "left"]: "24px"
+          right: position === "right" ? "0" : "auto",
+          left: position === "left" ? "0" : "auto"
         }}
       >
         {/* Header */}
