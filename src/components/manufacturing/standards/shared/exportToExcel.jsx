@@ -42,40 +42,27 @@ export async function exportDataTabToExcel(gridRows, operationColumns, bundleNam
 }
 
 export async function exportQCTabToExcel(filteredItems, gridData, mode, selectedOperation, selectedQCType, selectedQCLevel, bundleName) {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('QC Standards');
-
-  // Headers
-  worksheet.addRow(['Operation', selectedOperation]);
-  worksheet.addRow(['QC Type', selectedQCType]);
-  worksheet.addRow(['QC Level', selectedQCLevel]);
-  worksheet.addRow(['Mode', mode === 'percent' ? 'Percentage' : 'Fixed Minutes']);
-  worksheet.addRow([]);
-
-  const headers = [
-    'Item Code',
-    'Base Time (min)',
-    mode === 'percent' ? 'QC Value (%)' : 'QC Value (min)',
-    'Calculated Extra Time (min)',
-    'Notes'
+  const wsData = [
+    ['Operation', selectedOperation],
+    ['QC Type', selectedQCType],
+    ['QC Level', selectedQCLevel],
+    ['Mode', mode === 'percent' ? 'Percentage' : 'Fixed Minutes'],
+    [],
+    [
+      'Item Code',
+      'Base Time (min)',
+      mode === 'percent' ? 'QC Value (%)' : 'QC Value (min)',
+      'Calculated Extra Time (min)',
+      'Notes'
+    ]
   ];
-  worksheet.addRow(headers);
-  
-  const headerRow = worksheet.lastRow;
-  headerRow.font = { bold: true };
-  headerRow.fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFE0E0E0' }
-  };
 
-  // Add data
   filteredItems.forEach(item => {
     const data = gridData[item.item_code] || {};
     const qc_value = parseFloat(data.qc_value) || 0;
     const calculated = mode === 'percent' ? item.base_time * (qc_value / 100) : qc_value;
     
-    worksheet.addRow([
+    wsData.push([
       item.item_code,
       item.base_time,
       data.qc_value || '',
@@ -84,24 +71,14 @@ export async function exportQCTabToExcel(filteredItems, gridData, mode, selected
     ]);
   });
 
-  // Auto-size
-  worksheet.columns.forEach(column => {
-    let maxLength = 0;
-    column.eachCell({ includeEmpty: true }, cell => {
-      const length = cell.value ? cell.value.toString().length : 10;
-      if (length > maxLength) maxLength = length;
-    });
-    column.width = Math.min(maxLength + 2, 30);
-  });
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [
+    { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 25 }, { wch: 15 }
+  ];
 
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${bundleName || 'QC'}_${selectedOperation}_${selectedQCType}_${selectedQCLevel}.xlsx`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'QC Standards');
+  XLSX.writeFile(wb, `${bundleName || 'QC'}_${selectedOperation}_${selectedQCType}_${selectedQCLevel}.xlsx`);
 }
 
 export async function exportProfilesToExcel(profiles, operations, bundleName) {
