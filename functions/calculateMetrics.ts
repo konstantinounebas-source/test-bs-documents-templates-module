@@ -95,21 +95,35 @@ Deno.serve(async (req) => {
   }
 });
 
+// Map table names to context keys
+function getDataContextKey(tableName) {
+  const mappings = {
+    'batchheader': 'batchHeaders',
+    'batchheaders': 'batchHeaders',
+    'operations': 'operations',
+    'teamperson': 'teamTime',
+    'teamtimeperson': 'teamTime',
+    'qcinitial': 'qcInitial',
+    'qc_initial_stock': 'qcInitial',
+    'scheduleddata': 'scheduledData'
+  };
+  return mappings[tableName.toLowerCase().replace(/\s+|_/g, '')] || null;
+}
+
 // Simple formula evaluator - handles basic aggregations
 function evaluateFormula(formula, dataContext) {
   try {
-    // Replace references with actual values
     let evaluated = formula;
 
     // SUM patterns: sum(TeamTimePerson.hours) or sum(Operations.quantity)
     const sumMatches = formula.match(/sum\((\w+)\.(\w+)\)/g) || [];
     for (const match of sumMatches) {
       const [table, field] = match.replace(/sum\(|\)/g, '').split('.');
-      const tableKey = table.toLowerCase().replace(/\s+/g, '');
+      const contextKey = getDataContextKey(table);
       let sum = 0;
       
-      if (dataContext[tableKey]) {
-        sum = dataContext[tableKey].reduce((acc, row) => {
+      if (contextKey && dataContext[contextKey]) {
+        sum = dataContext[contextKey].reduce((acc, row) => {
           return acc + (parseFloat(row[field]) || 0);
         }, 0);
       }
@@ -121,11 +135,11 @@ function evaluateFormula(formula, dataContext) {
     const countMatches = formula.match(/count\((\w+)\.(\w+)\)/g) || [];
     for (const match of countMatches) {
       const [table, field] = match.replace(/count\(|\)/g, '').split('.');
-      const tableKey = table.toLowerCase().replace(/\s+/g, '');
+      const contextKey = getDataContextKey(table);
       let count = 0;
       
-      if (dataContext[tableKey]) {
-        count = dataContext[tableKey].filter(row => row[field] != null).length;
+      if (contextKey && dataContext[contextKey]) {
+        count = dataContext[contextKey].filter(row => row[field] != null).length;
       }
       
       evaluated = evaluated.replace(match, count);
@@ -135,14 +149,14 @@ function evaluateFormula(formula, dataContext) {
     const avgMatches = formula.match(/avg\((\w+)\.(\w+)\)/g) || [];
     for (const match of avgMatches) {
       const [table, field] = match.replace(/avg\(|\)/g, '').split('.');
-      const tableKey = table.toLowerCase().replace(/\s+/g, '');
+      const contextKey = getDataContextKey(table);
       let avg = 0;
       
-      if (dataContext[tableKey] && dataContext[tableKey].length > 0) {
-        const sum = dataContext[tableKey].reduce((acc, row) => {
+      if (contextKey && dataContext[contextKey] && dataContext[contextKey].length > 0) {
+        const sum = dataContext[contextKey].reduce((acc, row) => {
           return acc + (parseFloat(row[field]) || 0);
         }, 0);
-        avg = sum / dataContext[tableKey].length;
+        avg = sum / dataContext[contextKey].length;
       }
       
       evaluated = evaluated.replace(match, avg);
