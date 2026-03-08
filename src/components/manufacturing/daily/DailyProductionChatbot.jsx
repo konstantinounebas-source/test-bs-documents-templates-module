@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays, isMonday } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import ExistingLineRow from "./chatbot/ExistingLineRow";
 import ItemCodeMultiSelect from "./chatbot/ItemCodeMultiSelect";
 import ChatStepQC from "./chatbot/ChatStepQC";
