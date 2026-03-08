@@ -13,7 +13,7 @@ import SectionBCostBreakdown from "@/components/jv-financial/SectionBCostBreakdo
 import SectionCCostSummary from "@/components/jv-financial/SectionCCostSummary";
 import AddShelterInstanceDialog from "@/components/jv-financial/AddShelterInstanceDialog";
 import EditShelterInstanceDialog from "@/components/jv-financial/EditShelterInstanceDialog";
-import ExcelJS from 'exceljs';
+import ExcelJS from 'npm:exceljs';
 import { toast } from 'sonner';
 
 export default function JVFinancialCalculations() {
