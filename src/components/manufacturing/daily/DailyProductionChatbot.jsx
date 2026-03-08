@@ -397,6 +397,19 @@ export default function DailyProductionChatbot({ departments = [] }) {
     goNextStep(fromStep, null);
   };
 
+  const goPrevStep = (fromStep) => {
+    const idx = stepSequence.indexOf(fromStep);
+    if (idx > 0) {
+      const prev = stepSequence[idx - 1];
+      setStep(prev);
+      addMsg("bot", `↩ Επιστροφή στο προηγούμενο βήμα.`);
+    } else {
+      // go back to batch_lines_add
+      setStep("batch_lines_add");
+      addMsg("bot", `↩ Επιστροφή στα Batch Lines.`);
+    }
+  };
+
   // ── batch lines: enter review mode after attachments ─────────────────────
   const startBatchLinesReview = () => {
     if (existingBatchLines.length === 0) {
