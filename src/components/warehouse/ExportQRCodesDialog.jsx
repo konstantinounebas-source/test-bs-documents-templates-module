@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, Download, FileSpreadsheet, FileText } from "lucide-react";
 import QRCode from "qrcode";
-import ExcelJS from "exceljs";
+
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -125,6 +125,7 @@ export default function ExportQRCodesDialog({ open, onClose, selectedProducts })
   };
 
   const exportToExcel = async () => {
+    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('QR Codes');
 

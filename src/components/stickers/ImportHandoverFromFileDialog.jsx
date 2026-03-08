@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Check, Loader2 } from "lucide-react";
-import ExcelJS from 'exceljs';
+
 import { toast } from 'sonner';
 
 export default function ImportHandoverFromFileDialog({ isOpen, onClose, onItemsImported, stops, stickerItems, stickerTemplates }) {
@@ -106,6 +106,7 @@ export default function ImportHandoverFromFileDialog({ isOpen, onClose, onItemsI
     if (!file) return;
 
     try {
+      const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
       const buffer = await file.arrayBuffer();
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(buffer);
