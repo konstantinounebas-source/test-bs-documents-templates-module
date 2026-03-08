@@ -659,10 +659,40 @@ ${context}
     );
   }
 
+  const handleMouseDown = (e) => {
+    setIsResizing(true);
+    e.preventDefault();
+  };
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e) => {
+      setWidth(Math.max(300, e.clientX - (position === "right" ? window.innerWidth - width : 0)));
+      setHeight(Math.max(200, window.innerHeight - e.clientY));
+    };
+
+    const handleMouseUp = () => setIsResizing(false);
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing, width, position]);
+
   return (
     <>
-      <div className={`fixed bottom-6 right-6 z-50 w-[400px] shadow-2xl rounded-2xl border border-slate-200 bg-white flex flex-col transition-all
-        ${minimized ? "h-14" : "h-[620px]"}`}
+      <div 
+        className={`fixed bottom-6 z-50 shadow-2xl rounded-2xl border border-slate-200 bg-white flex flex-col transition-all ${minimized ? "h-14" : ""}`}
+        style={{
+          width: `${width}px`,
+          height: minimized ? "56px" : `${height}px`,
+          [position === "right" ? "right" : "left"]: "24px",
+          cursor: isResizing ? "nwse-resize" : "default"
+        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 bg-blue-600 rounded-t-2xl text-white">
@@ -676,6 +706,13 @@ ${context}
             )}
           </div>
           <div className="flex gap-1">
+            <button 
+              onClick={() => setPosition(p => p === "right" ? "left" : "right")} 
+              className="hover:bg-blue-700 rounded p-1 text-xs"
+              title="Toggle position"
+            >
+              {position === "right" ? "←" : "→"}
+            </button>
             <button onClick={() => setMin(m => !m)} className="hover:bg-blue-700 rounded p-1">
               {minimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
             </button>
