@@ -920,12 +920,21 @@ ${context}
                   </div>
                 )}
 
-                <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
-                  onClick={() => {
-                    goNextStep("batch_lines_add", "✅ Batch Lines ολοκληρώθηκαν!");
-                  }}>
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → QC Initial Stock
-                </Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" className="flex-1 text-xs"
+                    onClick={() => {
+                      addMsg("user", "Παράλειψη όλων → Batch Lines");
+                      goNextStep("batch_lines_add", "✅ Batch Lines ολοκληρώθηκαν!");
+                    }}>
+                    <SkipForward className="w-3 h-3 mr-1" /> Skip All
+                  </Button>
+                  <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      goNextStep("batch_lines_add", "✅ Batch Lines ολοκληρώθηκαν!");
+                    }}>
+                    <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → QC
+                  </Button>
+                </div>
               </div>
             )}
 
