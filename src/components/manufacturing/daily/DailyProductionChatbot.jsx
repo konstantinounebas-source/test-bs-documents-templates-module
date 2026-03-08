@@ -899,6 +899,7 @@ ${context}
                 department={selDept}
                 onNext={(msg) => goNextStep("qc", msg)}
                 onSkip={() => skipStep("qc")}
+                onBack={() => goPrevStep("qc")}
               />
             )}
 
@@ -908,6 +909,7 @@ ${context}
                 batchId={selBatch.id}
                 onNext={(msg) => goNextStep("operations", msg)}
                 onSkip={() => skipStep("operations")}
+                onBack={() => goPrevStep("operations")}
               />
             )}
 
@@ -917,6 +919,7 @@ ${context}
                 batchId={selBatch.id}
                 onNext={(msg) => goNextStep("team_persons", msg)}
                 onSkip={() => skipStep("team_persons")}
+                onBack={() => goPrevStep("team_persons")}
               />
             )}
 
@@ -926,6 +929,7 @@ ${context}
                 batchId={selBatch.id}
                 onNext={(msg) => goNextStep("team_extra", msg)}
                 onSkip={() => skipStep("team_extra")}
+                onBack={() => goPrevStep("team_extra")}
               />
             )}
 
@@ -936,6 +940,7 @@ ${context}
                 department={selDept}
                 onNext={(msg) => goNextStep("help_in", msg)}
                 onSkip={() => skipStep("help_in")}
+                onBack={() => goPrevStep("help_in")}
               />
             )}
 
@@ -945,6 +950,7 @@ ${context}
                 batchId={selBatch.id}
                 onNext={(msg) => goNextStep("consumables", msg)}
                 onSkip={() => skipStep("consumables")}
+                onBack={() => goPrevStep("consumables")}
               />
             )}
 
