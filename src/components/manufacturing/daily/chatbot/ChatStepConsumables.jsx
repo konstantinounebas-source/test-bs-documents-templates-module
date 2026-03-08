@@ -118,6 +118,42 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
     onError: (err) => toast.error(err.message || "Σφάλμα")
   });
 
+  const operationOptions = useMemo(() => {
+    const seen = new Set();
+    return batchOperations.filter(op => {
+      const key = `${op.item_code}__${op.operation}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).map(op => ({ item_code: op.item_code, operation: op.operation }));
+  }, [batchOperations]);
+
+  const handleAddManual = async () => {
+    if (!manualForm.consumable || !manualForm.actual_qty || !manualForm.unit) {
+      toast.error("Consumable, Unit και Actual Qty είναι υποχρεωτικά"); return;
+    }
+    setIsSavingManual(true);
+    try {
+      await base44.entities.ConsumablesActual.create({
+        batch_header_id: batchId,
+        department: batchHeader?.department || "",
+        consumable: manualForm.consumable,
+        item_code: manualForm.item_code,
+        operation: manualForm.operation,
+        unit: manualForm.unit,
+        actual_qty: parseFloat(manualForm.actual_qty) || 0,
+        expected_qty: 0,
+        notes: manualForm.notes,
+        is_auto_generated: false
+      });
+      queryClient.invalidateQueries(["ConsumablesActual", batchId]);
+      toast.success("✅ Consumable προστέθηκε");
+      setManualForm({ consumable: "", item_code: "", operation: "", unit: "", actual_qty: "", notes: "" });
+      setShowAddForm(false);
+    } catch { toast.error("Σφάλμα αποθήκευσης"); }
+    setIsSavingManual(false);
+  };
+
   const handleDelete = async (id) => {
     await base44.entities.ConsumablesActual.delete(id);
     queryClient.invalidateQueries(["ConsumablesActual", batchId]);
