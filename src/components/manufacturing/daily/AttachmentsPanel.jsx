@@ -198,7 +198,7 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
           <DialogHeader className="flex flex-row items-center justify-between">
             <DialogTitle>{previewFile?.file_name}</DialogTitle>
             <div className="flex gap-2 items-center">
-              {previewFile?.file_type === 'image' && (
+              {previewFile && (
                 <>
                   <button onClick={() => setRotation(r => r - 90)} className="text-slate-500 hover:text-slate-700 p-1" title="Rotate Left">
                     <RotateCcw className="w-4 h-4" />
