@@ -733,6 +733,86 @@ ${context}
                     ))}
                   </div>
                 )}
+
+                <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+                  onClick={startBatchLinesReview}>
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → Batch Lines
+                </Button>
+              </div>
+            )}
+
+            {/* Step: batch lines review */}
+            {step === "batch_lines_review" && blReviewItems.length > 0 && (
+              <div className="border-t p-3 space-y-2">
+                <p className="text-xs text-slate-500 font-medium">
+                  Item {blCurrentIdx + 1}/{blReviewItems.length}: <span className="font-bold text-slate-800">{blReviewItems[blCurrentIdx]?.item_code}</span>
+                </p>
+                {/* Editable fields inline */}
+                <div className="grid grid-cols-3 gap-1">
+                  {["qty_processed","qty_out_good","qty_scrap"].map(field => (
+                    <div key={field}>
+                      <p className="text-[10px] text-slate-500 mb-0.5">{field === "qty_processed" ? "Processed" : field === "qty_out_good" ? "Out Good" : "Scrap"}</p>
+                      <input
+                        type="number" min="0"
+                        value={blReviewItems[blCurrentIdx]?.[field] ?? ""}
+                        onChange={e => {
+                          const val = parseFloat(e.target.value) || 0;
+                          setBlReviewItems(prev => prev.map((it, i) => i === blCurrentIdx ? { ...it, [field]: val } : it));
+                        }}
+                        className="w-full text-sm border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
+                    disabled={isSavingLine}
+                    onClick={() => {
+                      const item = blReviewItems[blCurrentIdx];
+                      addMsg("user", `ok · Processed=${item.qty_processed} Good=${item.qty_out_good} Scrap=${item.qty_scrap}`);
+                      handleBatchLineConfirm(item);
+                    }}>
+                    {isSavingLine ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
+                    Επιβεβαίωση
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step: add extra batch lines */}
+            {step === "batch_lines_add" && (
+              <div className="border-t p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-slate-700">Προσθήκη επιπλέον Item Code</p>
+                  <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleReset}>↩ Αρχή</Button>
+                </div>
+                <div className="space-y-1">
+                  <select
+                    value={blAddForm.item_code}
+                    onChange={e => setBlAddForm(f => ({ ...f, item_code: e.target.value }))}
+                    className="w-full text-xs border border-slate-200 rounded px-2 py-1.5 outline-none focus:border-blue-400 bg-white"
+                  >
+                    <option value="">-- Επέλεξε item code --</option>
+                    {bundleItemCodes.map(code => <option key={code} value={code}>{code}</option>)}
+                  </select>
+                  <div className="grid grid-cols-3 gap-1">
+                    {[["qty_processed","Processed"],["qty_out_good","Out Good"],["qty_scrap","Scrap"]].map(([field, label]) => (
+                      <div key={field}>
+                        <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
+                        <input type="number" min="0" placeholder="0"
+                          value={blAddForm[field]}
+                          onChange={e => setBlAddForm(f => ({ ...f, [field]: e.target.value }))}
+                          className="w-full text-sm border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+                    onClick={handleAddExtraLine} disabled={!blAddForm.item_code}>
+                    <Plus className="w-3 h-3 mr-1" /> Προσθήκη Line
+                  </Button>
+                </div>
+                <p className="text-xs text-slate-400 text-center">Πες "τέλος" ή κλείσε το chat για να ολοκληρώσεις.</p>
               </div>
             )}
 
