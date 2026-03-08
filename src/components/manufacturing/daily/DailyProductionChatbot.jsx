@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Bot, X, Send, Paperclip, Upload, FileText, Image as ImageIcon,
   Download, Eye, Trash2, ChevronDown, ChevronUp, Calendar,
-  Loader2, CheckCircle2, Minimize2, Maximize2, Plus, RotateCw, RotateCcw, MessageSquare, SkipForward
+  Loader2, CheckCircle2, Minimize2, Maximize2, Plus, RotateCw, RotateCcw, MessageSquare, SkipForward, Paperclip as PaperclipIcon
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays, isMonday } from "date-fns";
