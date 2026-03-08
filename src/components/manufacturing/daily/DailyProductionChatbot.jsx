@@ -918,13 +918,25 @@ ${context}
 
             {/* Step: QC Initial Stock */}
             {step === "qc" && selBatch && (
-              <ChatStepQC
-                batchId={selBatch.id}
-                department={selDept}
-                onNext={(msg) => goNextStep("qc", msg)}
-                onSkip={() => skipStep("qc")}
-                onBack={() => goPrevStep("qc")}
-              />
+              <div className="space-y-3">
+                <div className="flex justify-end px-3 pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => setShowAttachmentsModal(true)}
+                  >
+                    <Paperclip className="w-3 h-3 mr-1" /> Attachments
+                  </Button>
+                </div>
+                <ChatStepQC
+                  batchId={selBatch.id}
+                  department={selDept}
+                  onNext={(msg) => goNextStep("qc", msg)}
+                  onSkip={() => skipStep("qc")}
+                  onBack={() => goPrevStep("qc")}
+                />
+              </div>
             )}
 
             {/* Step: Operations */}
