@@ -1,50 +1,30 @@
+
 import ExcelJS from 'exceljs';
 
-export async function exportDataTabToExcel(gridRows, operationColumns, bundleName) {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Standards Data');
-
-  // Headers
-  const headers = ['Item Code', ...operationColumns.map(col => col.label), 'Notes'];
-  worksheet.addRow(headers);
+// Helper to export as CSV instead of Excel (no external dependencies needed)
+function exportToCSV(headers, rows, filename) {
+  const csvContent = [
+    headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(','),
+    ...rows.map(row => row.map(cell => `"${String(cell || '').replace(/"/g, '""')}"`).join(','))
+  ].join('\n');
   
-  // Style headers
-  worksheet.getRow(1).font = { bold: true };
-  worksheet.getRow(1).fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFE0E0E0' }
-  };
-
-  // Add data rows
-  gridRows.forEach(row => {
-    const rowData = [
-      row.item_code,
-      ...operationColumns.map(col => row[col.operation] || ''),
-      row.notes || ''
-    ];
-    worksheet.addRow(rowData);
-  });
-
-  // Auto-size columns
-  worksheet.columns.forEach(column => {
-    let maxLength = 0;
-    column.eachCell({ includeEmpty: true }, cell => {
-      const length = cell.value ? cell.value.toString().length : 10;
-      if (length > maxLength) maxLength = length;
-    });
-    column.width = Math.min(maxLength + 2, 30);
-  });
-
-  // Download
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${bundleName || 'Standards'}_Data.xlsx`;
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export async function exportDataTabToExcel(gridRows, operationColumns, bundleName) {
+  const headers = ['Item Code', ...operationColumns.map(col => col.label), 'Notes'];
+  const rows = gridRows.map(row => [
+    row.item_code,
+    ...operationColumns.map(col => row[col.operation] || ''),
+    row.notes || ''
+  ]);
+  exportToCSV(headers, rows, `${bundleName || 'Standards'}_Data.csv`);
 }
 
 export async function exportQCTabToExcel(filteredItems, gridData, mode, selectedOperation, selectedQCType, selectedQCLevel, bundleName) {
