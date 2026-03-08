@@ -63,7 +63,13 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   // Fetch Operation Profiles (all)
   const { data: allOperationProfiles = [] } = useQuery({
     queryKey: ['OperationProfileName'],
-    queryFn: () => base44.entities.OperationProfileName.filter({ is_active: true })
+    queryFn: () => base44.entities.OperationProfileName.filter({ is_active: true }),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Filter operation profiles by current bundle's department
