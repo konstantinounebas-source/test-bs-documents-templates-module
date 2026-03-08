@@ -40,13 +40,25 @@ export default function MfgStandardsDataPage() {
   // Fetch departments
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
-    queryFn: () => base44.entities.Department.list()
+    queryFn: () => base44.entities.Department.list(),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Fetch all operations
   const { data: allOperations = [] } = useQuery({
     queryKey: ['Operation'],
-    queryFn: () => base44.entities.Operation.list()
+    queryFn: () => base44.entities.Operation.list(),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Compute operation columns (pinned + dynamic)
