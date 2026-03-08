@@ -271,27 +271,41 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
           </div>
         </div>
 
-        {/* QC Type & Level selection */}
-        <div className="grid grid-cols-2 gap-1">
-          <div>
-            <p className="text-[10px] text-slate-500 mb-0.5">QC Type</p>
-            <Select value={form.qc_type} onValueChange={v => setForm(f => ({ ...f, qc_type: v }))}>
-              <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε..." /></SelectTrigger>
-              <SelectContent>
-                {filteredQcTypes.map(qt => <SelectItem key={qt.id} value={qt.name}>{qt.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 mb-0.5">QC Level</p>
-            <Select value={form.qc_level} onValueChange={v => setForm(f => ({ ...f, qc_level: v }))}>
-              <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε..." /></SelectTrigger>
-              <SelectContent>
-                {filteredQcLevels.map(ql => <SelectItem key={ql.id} value={ql.name}>{ql.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        {/* QC Type, Level & Per-piece min */}
+         <div className="space-y-1">
+           <div className="grid grid-cols-2 gap-1">
+             <div>
+               <p className="text-[10px] text-slate-500 mb-0.5">QC Type</p>
+               <Select value={form.qc_type} onValueChange={v => setForm(f => ({ ...f, qc_type: v }))}>
+                 <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε..." /></SelectTrigger>
+                 <SelectContent>
+                   {filteredQcTypes.map(qt => <SelectItem key={qt.id} value={qt.name}>{qt.name}</SelectItem>)}
+                 </SelectContent>
+               </Select>
+             </div>
+             <div>
+               <p className="text-[10px] text-slate-500 mb-0.5">QC Level</p>
+               <Select value={form.qc_level} onValueChange={v => setForm(f => ({ ...f, qc_level: v }))}>
+                 <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε..." /></SelectTrigger>
+                 <SelectContent>
+                   {filteredQcLevels.map(ql => <SelectItem key={ql.id} value={ql.name}>{ql.name}</SelectItem>)}
+                 </SelectContent>
+               </Select>
+             </div>
+           </div>
+           <div>
+             <p className="text-[10px] text-slate-500 mb-0.5">Per-piece (min)</p>
+             <input 
+               type="number" 
+               step="0.01" 
+               min="0"
+               value={form.qc_per_piece_min}
+               onChange={(e) => setForm(f => ({ ...f, qc_per_piece_min: e.target.value }))}
+               placeholder="0.00"
+               className="w-full h-7 px-2 border border-slate-300 rounded text-xs outline-none focus:border-blue-400"
+             />
+           </div>
+         </div>
 
         <Button 
           size="sm" 
