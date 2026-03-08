@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Pencil, FileDown } from "lucide-react";
-import ExcelJS from 'exceljs';
+
 import { Badge } from "@/components/ui/badge";
 import CreateEditStickerTemplateDialog from "@/components/stickers/CreateEditStickerTemplateDialog";
 
@@ -90,44 +90,7 @@ export default function StickerTemplatesPage() {
   };
 
   const handleExportToExcel = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Sticker Templates');
-
-    worksheet.columns = [
-      { header: 'Template ID', key: 'template_id', width: 20 },
-      { header: 'Name / Category', key: 'name_category', width: 30 },
-      { header: 'Default Vendor', key: 'vendor', width: 25 },
-      { header: 'Est. Delivery (days)', key: 'delivery_days', width: 20 },
-      { header: 'Days Before Install', key: 'days_before', width: 20 },
-      { header: 'Status', key: 'status', width: 15 }
-    ];
-
-    filteredTemplates.forEach(template => {
-      worksheet.addRow({
-        template_id: template.sticker_template_id,
-        name_category: template.sticker_name_category,
-        vendor: template.default_vendor || "-",
-        delivery_days: template.estimated_delivery_days || "-",
-        days_before: template.days_before_installation_to_receive || "-",
-        status: template.active ? "Active" : "Inactive"
-      });
-    });
-
-    worksheet.getRow(1).font = { bold: true };
-    worksheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE0E0E0' }
-    };
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `sticker_templates_${new Date().toISOString().split('T')[0]}.xlsx`;
-    link.click();
-    window.URL.revokeObjectURL(url);
+    alert('Excel export is not available');
   };
 
   const toggleSort = (column) => {

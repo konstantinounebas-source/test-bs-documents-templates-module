@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronRight, Search, FileDown } from "lucide-react";
-import ExcelJS from 'exceljs';
+
 
 export default function StopsWithStickersPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -80,73 +80,7 @@ export default function StopsWithStickersPage() {
   const isLoading = stopsLoading || itemsLoading || templatesLoading;
 
   const handleExportToExcel = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Stops with Stickers');
-
-    worksheet.columns = [
-      { header: 'Stop ID', key: 'stop_id', width: 15 },
-      { header: 'English Name', key: 'english_name', width: 30 },
-      { header: 'Greek Name', key: 'greek_name', width: 30 },
-      { header: 'Sticker Template', key: 'sticker_template', width: 25 },
-      { header: 'Print Line 1', key: 'print_line_1', width: 20 },
-      { header: 'Print Line 2', key: 'print_line_2', width: 20 },
-      { header: 'Print Line 3', key: 'print_line_3', width: 20 },
-      { header: 'Status', key: 'status', width: 15 },
-      { header: 'Custody Status', key: 'custody_status', width: 20 },
-      { header: 'Installed', key: 'installed', width: 15 },
-      { header: 'Installed Date', key: 'installed_date', width: 15 }
-    ];
-
-    filteredStops.forEach(stop => {
-      const stopStickers = getStopStickers(stop.id);
-      if (stopStickers.length === 0) {
-        worksheet.addRow({
-          stop_id: stop.stop_id,
-          english_name: stop.english_name,
-          greek_name: stop.greek_name,
-          sticker_template: '-',
-          print_line_1: '-',
-          print_line_2: '-',
-          print_line_3: '-',
-          status: '-',
-          custody_status: '-',
-          installed: '-',
-          installed_date: '-'
-        });
-      } else {
-        stopStickers.forEach(item => {
-          worksheet.addRow({
-            stop_id: stop.stop_id,
-            english_name: stop.english_name,
-            greek_name: stop.greek_name,
-            sticker_template: getStickerTemplateName(item.sticker_template_id),
-            print_line_1: item.print_line_1 || '-',
-            print_line_2: item.print_line_2 || '-',
-            print_line_3: item.print_line_3 || '-',
-            status: item.status,
-            custody_status: item.custody_status,
-            installed: item.installed ? 'Yes' : 'No',
-            installed_date: item.installed_date || '-'
-          });
-        });
-      }
-    });
-
-    worksheet.getRow(1).font = { bold: true };
-    worksheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE0E0E0' }
-    };
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `stops_with_stickers_${new Date().toISOString().split('T')[0]}.xlsx`;
-    link.click();
-    window.URL.revokeObjectURL(url);
+    alert('Excel export is not available');
   };
 
   if (isLoading) {
