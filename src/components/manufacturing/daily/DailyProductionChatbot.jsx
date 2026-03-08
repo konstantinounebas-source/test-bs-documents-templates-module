@@ -306,7 +306,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
       setStep("batch");
       const bundle = resolveBundle(date, selDept);
       addMsg("bot",
-        `Δεν υπάρχει batch για ${date}.\n` +
+        `Δεν υπάρχει batch για ${date} – ${selDept}.\n` +
         (bundle
           ? `Θα χρησιμοποιηθεί bundle: **${bundle.version_no || bundle.version}** (${bundle.status}).\nΔημιουργώ batch;`
           : "⚠️ Δεν βρέθηκε ενεργό bundle για αυτό το τμήμα.")
