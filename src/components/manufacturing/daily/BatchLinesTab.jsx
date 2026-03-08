@@ -54,7 +54,13 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
     queryKey: ['BatchHeader', batchId],
     queryFn: () => base44.entities.BatchHeader.filter({ id: batchId }),
     enabled: !!batchId,
-    select: (data) => data?.[0]
+    select: (data) => data?.[0],
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Fetch scheduled data for auto-filling batch lines
@@ -65,14 +71,24 @@ export default function BatchLinesTab({ batchId, department, selectedBundle }) {
       department_id: batchHeader.department
     }),
     enabled: !!batchHeader?.date && !!batchHeader?.department,
-    staleTime: Infinity
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['Batch_Lines', batchId],
     queryFn: () => base44.entities.Batch_Lines.filter({ batch_header_id: batchId }),
     enabled: !!batchId,
-    staleTime: 30 * 1000
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   const filteredLines = useMemo(() => {
