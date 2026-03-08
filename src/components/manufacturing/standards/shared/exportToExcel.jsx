@@ -65,50 +65,15 @@ export async function exportQCTabToExcel(filteredItems, gridData, mode, selected
 }
 
 export async function exportProfilesToExcel(profiles, operations, bundleName) {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Operation Profiles');
-
   const headers = ['Profile Name', 'Operations', 'Description', 'Status'];
-  worksheet.addRow(headers);
-  
-  worksheet.getRow(1).font = { bold: true };
-  worksheet.getRow(1).fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFE0E0E0' }
-  };
-
-  profiles.forEach(profile => {
+  const rows = profiles.map(profile => {
     const profileOps = (profile.operations_required || [])
       .map(opId => operations.find(o => o.id === opId)?.name)
       .filter(Boolean)
       .join(', ');
-    
-    worksheet.addRow([
-      profile.name,
-      profileOps,
-      profile.description || '',
-      profile.is_active ? 'Active' : 'Inactive'
-    ]);
+    return [profile.name, profileOps, profile.description || '', profile.is_active ? 'Active' : 'Inactive'];
   });
-
-  worksheet.columns.forEach(column => {
-    let maxLength = 0;
-    column.eachCell({ includeEmpty: true }, cell => {
-      const length = cell.value ? cell.value.toString().length : 10;
-      if (length > maxLength) maxLength = length;
-    });
-    column.width = Math.min(maxLength + 2, 50);
-  });
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${bundleName || 'Profiles'}_OperationProfiles.xlsx`;
-  a.click();
-  URL.revokeObjectURL(url);
+  exportToCSV(headers, rows, `${bundleName || 'Profiles'}_OperationProfiles.csv`);
 }
 
 export async function exportScheduledDataToExcel(filteredLines, getProfileName, selectedDate, bundleName) {
