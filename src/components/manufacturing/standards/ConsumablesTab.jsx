@@ -29,33 +29,69 @@ export default function ConsumablesTab({ bundle, isEditable }) {
   // Fetch departments
   const { data: allDepartments = [] } = useQuery({
     queryKey: ['Department'],
-    queryFn: () => base44.entities.Department.list()
+    queryFn: () => base44.entities.Department.list(),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Fetch reference data
   const { data: allConsumables = [] } = useQuery({
     queryKey: ['Consumable'],
-    queryFn: () => base44.entities.Consumable.list()
+    queryFn: () => base44.entities.Consumable.list(),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   const { data: allOperations = [] } = useQuery({
     queryKey: ['Operation'],
-    queryFn: () => base44.entities.Operation.list()
+    queryFn: () => base44.entities.Operation.list(),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   const { data: allProducts = [] } = useQuery({
     queryKey: ['Product'],
-    queryFn: () => base44.entities.Product.list()
+    queryFn: () => base44.entities.Product.list(),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   const { data: allUnits = [] } = useQuery({
     queryKey: ['Unit'],
-    queryFn: () => base44.entities.Unit.list()
+    queryFn: () => base44.entities.Unit.list(),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   const { data: allRateTypes = [] } = useQuery({
     queryKey: ['Rate_Type'],
-    queryFn: () => base44.entities.Rate_Type.list()
+    queryFn: () => base44.entities.Rate_Type.list(),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
   const rateTypes = allRateTypes.filter(rt => rt.is_active).slice(0, 10);
   const units = allUnits.filter(u => u.is_active);
