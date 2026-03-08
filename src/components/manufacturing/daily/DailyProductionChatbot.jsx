@@ -325,7 +325,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
       const bundle = resolveBundle(date, selDept);
       addMsg("bot",
         `✅ Βρέθηκε batch για ${date} – ${selDept}.\n` +
-        (bundle ? `📦 Bundle: ${bundle.version_no || bundle.version} (${bundle.status})` : "⚠️ Χωρίς bundle.")
+        (bundle ? `📦 Bundle: ${bundle.version_no || bundle.version} (${bundle.status})\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.` : "⚠️ Χωρίς bundle.\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.")
       );
     } else {
       setStep("batch");
