@@ -1149,13 +1149,11 @@ ${context}
                 className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl p-2 transition-colors"
               >
                 <Send className="w-4 h-4" />
-              </button>
-              </div>
-              </div>
-              </div>
-              </div>
+                </button>
+                </div>
+                </div>
 
-            {/* Duplicate file confirmation dialog */}
+                {/* Duplicate file confirmation dialog */}
       {pendingDuplicates.length > 0 && (
           <Dialog open={true} onOpenChange={() => setPendingDuplicates([])}>
             <DialogContent className="max-w-sm">
