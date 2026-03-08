@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import ExcelJS from 'exceljs';
 
 export default function InstallationCapacityPage() {
   const [selectedTypes, setSelectedTypes] = useState([]);
@@ -311,7 +312,91 @@ export default function InstallationCapacityPage() {
     }));
 
   const handleExportComponentAnalysis = async () => {
-    alert('Excel export is not available');
+    if (!capacityResults) return;
+
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Component Analysis');
+
+      // Define columns
+      worksheet.columns = [
+        { header: 'Product', key: 'product', width: 30 },
+        { header: 'SKU', key: 'sku', width: 20 },
+        { header: 'Available Stock', key: 'available_stock', width: 18 },
+        { header: 'Total Requested', key: 'total_requested', width: 18 },
+        { header: 'Will Consume', key: 'will_consume', width: 18 },
+        { header: 'Used By', key: 'used_by', width: 50 }
+      ];
+
+      // Style header row
+      worksheet.getRow(1).font = { bold: true };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4B5563' }
+      };
+      worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+      // Filter data based on checkbox
+      const dataToExport = exportOnlyBottlenecks 
+        ? capacityResults.componentAnalysis.filter(comp => comp.available_stock < comp.total_requested)
+        : capacityResults.componentAnalysis;
+
+      // Add data
+      dataToExport.forEach(comp => {
+        const usedByText = comp.usages.map(usage => 
+          `#${usage.priority} ${usage.typeName}: ${usage.quantity_per_unit} × ${usage.requested_units} = ${usage.total_needed}${usage.actual_built !== undefined && usage.actual_built < usage.requested_units ? ` (built only ${usage.actual_built})` : ''}`
+        ).join('; ');
+
+        const row = worksheet.addRow({
+          product: comp.product_name,
+          sku: comp.product_sku,
+          available_stock: `${comp.available_stock} ${comp.unit_of_measure}`,
+          total_requested: `${comp.total_requested} ${comp.unit_of_measure}`,
+          will_consume: `${comp.total_consumed} ${comp.unit_of_measure}`,
+          used_by: usedByText
+        });
+
+        // Highlight bottleneck rows
+        if (comp.available_stock < comp.total_requested) {
+          row.eachCell((cell) => {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFEF2F2' }
+            };
+          });
+        }
+      });
+
+      // Add borders
+      worksheet.eachRow({ includeEmpty: false }, (row) => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+
+      // Generate buffer and download
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const filename = exportOnlyBottlenecks 
+        ? `Component_Analysis_Bottlenecks_${new Date().toISOString().split('T')[0]}.xlsx`
+        : `Component_Analysis_${new Date().toISOString().split('T')[0]}.xlsx`;
+      link.download = filename;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      alert('Failed to export to Excel. Please try again.');
+    }
   };
 
   return (

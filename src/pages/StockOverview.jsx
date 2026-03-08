@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Search, Download, AlertTriangle, Package, FileSpreadsheet } from "lucide-react";
-
+import * as XLSX from "exceljs";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -190,7 +190,70 @@ export default function StockOverviewPage() {
   };
 
   const exportToExcel = async () => {
-    alert('Excel export is not available');
+    const workbook = new XLSX.Workbook();
+    const sheet = workbook.addWorksheet("Stock Overview");
+
+    sheet.columns = [
+      { header: "SKU", key: "sku", width: 18 },
+      { header: "Product Name", key: "name", width: 35 },
+      { header: "Category", key: "category", width: 20 },
+      { header: "Unit", key: "unit", width: 12 },
+      { header: "Total Stock", key: "total", width: 14 },
+      { header: "Reserved", key: "reserved", width: 14 },
+      { header: "Available", key: "available", width: 14 },
+      { header: "Min Stock", key: "min_stock", width: 14 },
+      { header: "Unit Cost (€)", key: "unit_cost", width: 16 },
+      { header: "Stock Value (€)", key: "stock_value", width: 18 },
+      { header: "Status", key: "status", width: 14 },
+    ];
+
+    // Header row styling
+    const headerRow = sheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E3A5F" } };
+    headerRow.alignment = { horizontal: "center" };
+
+    filteredProducts.forEach((p) => {
+      const cat = categories.find(c => c.id === p.category_id);
+      const status = p.available === 0 ? "Out of Stock" : p.available < (p.minimum_stock || 0) ? "Low Stock" : "OK";
+      const row = sheet.addRow({
+        sku: p.sku || "",
+        name: p.name || "",
+        category: cat?.name || "",
+        unit: p.unit_of_measure || "",
+        total: p.total || 0,
+        reserved: p.reserved || 0,
+        available: p.available || 0,
+        min_stock: p.minimum_stock || 0,
+        unit_cost: p.unit_cost || 0,
+        stock_value: (p.available || 0) * (p.unit_cost || 0),
+        status,
+      });
+      if (status === "Out of Stock") {
+        row.getCell("status").font = { color: { argb: "FFCC0000" }, bold: true };
+      } else if (status === "Low Stock") {
+        row.getCell("status").font = { color: { argb: "FFD97706" }, bold: true };
+      } else {
+        row.getCell("status").font = { color: { argb: "FF16A34A" }, bold: true };
+      }
+    });
+
+    // Number formatting
+    ["total", "reserved", "available", "min_stock"].forEach(k => {
+      sheet.getColumn(k).numFmt = "#,##0.##";
+    });
+    ["unit_cost", "stock_value"].forEach(k => {
+      sheet.getColumn(k).numFmt = "#,##0.0000";
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `stock_overview_${new Date().toISOString().split("T")[0]}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // Calculate stats based on filtered products - memoized

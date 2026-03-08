@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Trash2, Check, Loader2 } from "lucide-react";
+import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 
 export default function ImportReceiptFromFileDialog({ isOpen, onClose, onItemsImported, stops, stickerItems, stickerTemplates }) {
@@ -98,7 +99,52 @@ export default function ImportReceiptFromFileDialog({ isOpen, onClose, onItemsIm
   };
 
   const handleFileSelect = async (e) => {
-    toast.error('Excel import is not available');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(buffer);
+
+      const worksheet = workbook.getWorksheet('Receipt Template');
+      if (!worksheet) {
+        toast.error('Invalid file format - expected "Receipt Template" sheet');
+        return;
+      }
+
+      const rows = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // Skip header
+
+        const stopId = row.getCell('A').value;
+        const stickerName = row.getCell('B').value;
+        const quantity = row.getCell('C').value;
+        const notes = row.getCell('D').value;
+        const ok = row.getCell('E').value;
+
+        if (stopId && stickerName && (ok === 'x' || ok === 'Yes')) {
+          rows.push({
+            stop_id: String(stopId).trim(),
+            sticker_name: String(stickerName).trim(),
+            quantity: quantity || 1,
+            notes: notes ? String(notes).trim() : ""
+          });
+        }
+      });
+
+      if (rows.length === 0) {
+        toast.error('No valid items found in file');
+        return;
+      }
+
+      setImportedData(rows);
+      setValidationResults(rows.map(() => ({ isValid: null, error: null })));
+      setStep("validating");
+    } catch (error) {
+      console.error("Error reading file:", error);
+      toast.error('Error reading file');
+    }
   };
 
   const toggleValidItem = (stickerId) => {

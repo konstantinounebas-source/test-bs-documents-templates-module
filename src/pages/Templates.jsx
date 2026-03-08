@@ -278,7 +278,7 @@ export default function TemplatesPage() {
     );
   }
 
-  if (!hasAccess && hasAccess !== null) {
+  if (!hasAccess) {
     return null;
   }
 

@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { Plus, ShoppingCart, Eye, Printer, AlertTriangle, Search, FileDown, FileText, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import ExcelJS from 'exceljs';
 import ExportOrderTemplateDialog from "@/components/stickers/ExportOrderTemplateDialog";
 import ImportOrderFromFileDialog from "@/components/stickers/ImportOrderFromFileDialog";
 
@@ -562,11 +563,97 @@ export default function OrdersManagementPage() {
   };
 
   const handleExportAvailableItems = async () => {
-    alert('Excel export is not available');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Available Sticker Items');
+
+    worksheet.columns = [
+      { header: 'Stop ID', key: 'stop_id', width: 15 },
+      { header: 'Greek Name', key: 'greek_name', width: 30 },
+      { header: 'English Name', key: 'english_name', width: 30 },
+      { header: 'Sticker Template', key: 'sticker_template', width: 25 },
+      { header: 'Print Line 1', key: 'print_line_1', width: 20 },
+      { header: 'Print Line 2', key: 'print_line_2', width: 20 },
+      { header: 'Print Line 3', key: 'print_line_3', width: 20 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Critical', key: 'critical', width: 10 }
+    ];
+
+    filteredItems.forEach(item => {
+      const { stop } = getStopInfo(item.id);
+      const template = getTemplateInfo(item.sticker_template_id);
+      const critical = isCriticalStop(item.stop_id, item.id);
+
+      worksheet.addRow({
+        stop_id: stop?.stop_id || '-',
+        greek_name: stop?.greek_name || '-',
+        english_name: stop?.english_name || '-',
+        sticker_template: template?.sticker_name_category || '-',
+        print_line_1: item.print_line_1 || '-',
+        print_line_2: item.print_line_2 || '-',
+        print_line_3: item.print_line_3 || '-',
+        status: item.status,
+        critical: critical ? 'Yes' : 'No'
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `available_sticker_items_${new Date().toISOString().split('T')[0]}.xlsx`;
+    link.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const handleExportOrders = async () => {
-    alert('Excel export is not available');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Orders');
+
+    worksheet.columns = [
+      { header: 'Order ID', key: 'order_id', width: 20 },
+      { header: 'Vendor', key: 'vendor', width: 25 },
+      { header: 'Order Date', key: 'order_date', width: 15 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Items Count', key: 'items', width: 12 },
+      { header: 'Critical Stops', key: 'critical', width: 15 }
+    ];
+
+    filteredOrders.forEach(order => {
+      const stats = getOrderStats(order.id);
+      
+      worksheet.addRow({
+        order_id: `#${order.id.slice(0, 8)}`,
+        vendor: order.vendor || '-',
+        order_date: order.order_date || '-',
+        status: order.status,
+        items: stats.itemCount,
+        critical: stats.criticalStops
+      });
+    });
+
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `orders_${new Date().toISOString().split('T')[0]}.xlsx`;
+    link.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const [paginatedItems, setPaginatedItems] = useState([]);

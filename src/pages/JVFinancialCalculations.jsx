@@ -13,6 +13,7 @@ import SectionBCostBreakdown from "@/components/jv-financial/SectionBCostBreakdo
 import SectionCCostSummary from "@/components/jv-financial/SectionCCostSummary";
 import AddShelterInstanceDialog from "@/components/jv-financial/AddShelterInstanceDialog";
 import EditShelterInstanceDialog from "@/components/jv-financial/EditShelterInstanceDialog";
+import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 
 export default function JVFinancialCalculations() {
@@ -455,7 +456,126 @@ export default function JVFinancialCalculations() {
     };
 
     const exportBOM = async (shelterTypeId) => {
-        toast.error('Excel export is not available');
+        if (!shelterTypeId) return;
+        
+        try {
+            // Get BOM components for the shelter type
+            const bomComponents = await base44.entities.BusStopTypeComponent.filter({
+                bus_stop_type_id: shelterTypeId
+            });
+
+            const filteredComponents = bomComponents;
+
+            // Get all products and material categories
+            const [products, materialCategories, teams, shelterType] = await Promise.all([
+                base44.entities.Product.list(),
+                base44.entities.MaterialCategory.list(),
+                base44.entities.Team.list(),
+                base44.entities.BusStopType.filter({ id: shelterTypeId })
+            ]);
+
+            const productMap = {};
+            products.forEach(p => { productMap[p.id] = p; });
+
+            const categoryMap = {};
+            materialCategories.forEach(c => { categoryMap[c.id] = c; });
+
+            const teamMap = {};
+            teams.forEach(t => { teamMap[t.id] = t; });
+
+            // Create Excel workbook
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('BOM');
+
+            // Add title
+            worksheet.mergeCells('A1:H1');
+            worksheet.getCell('A1').value = `Bill of Materials - ${shelterType[0]?.code || 'Unknown'}`;
+            worksheet.getCell('A1').font = { size: 16, bold: true };
+            worksheet.getCell('A1').alignment = { horizontal: 'center' };
+
+            // Add headers
+            worksheet.addRow([]);
+            const headerRow = worksheet.addRow([
+                'Material Category',
+                'Product Name',
+                'Product Code',
+                'Team',
+                'Quantity Required',
+                'Unit',
+                'Unit Cost',
+                'Total Cost'
+            ]);
+            headerRow.font = { bold: true };
+            headerRow.fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFE0E0E0' }
+            };
+
+            // Add data rows
+            let totalCost = 0;
+            filteredComponents.forEach(comp => {
+                const product = productMap[comp.product_id];
+                const category = categoryMap[comp.material_category_id];
+                const team = teamMap[comp.team_id];
+                const quantity = parseFloat(comp.quantity_required) || 0;
+                const unitCost = parseFloat(product?.unit_cost) || 0;
+                const itemTotal = quantity * unitCost;
+                totalCost += itemTotal;
+
+                worksheet.addRow([
+                    category?.name || 'N/A',
+                    product?.name || 'Unknown',
+                    product?.sku || 'N/A',
+                    team?.name || 'N/A',
+                    quantity,
+                    comp.unit_of_measure || 'pcs',
+                    unitCost,
+                    itemTotal
+                ]);
+            });
+
+            // Add total row
+            worksheet.addRow([]);
+            const totalRow = worksheet.addRow(['', '', '', '', '', '', 'Total:', totalCost]);
+            totalRow.font = { bold: true };
+            totalRow.getCell(8).fill = {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFFFEB3B' }
+            };
+
+            // Format columns
+            worksheet.columns = [
+                { key: 'category', width: 20 },
+                { key: 'product', width: 30 },
+                { key: 'code', width: 15 },
+                { key: 'team', width: 15 },
+                { key: 'quantity', width: 15 },
+                { key: 'unit', width: 10 },
+                { key: 'unitCost', width: 15 },
+                { key: 'total', width: 15 }
+            ];
+
+            // Format number columns
+            for (let i = 4; i <= worksheet.lastRow.number; i++) {
+                worksheet.getCell(`E${i}`).numFmt = '0.00';
+                worksheet.getCell(`G${i}`).numFmt = '€#,##0.00';
+                worksheet.getCell(`H${i}`).numFmt = '€#,##0.00';
+            }
+
+            // Export file
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `BOM_${shelterType[0]?.code || 'Unknown'}.xlsx`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Failed to export BOM:', error);
+        }
     };
 
     if (accessLoading || isLoading) {

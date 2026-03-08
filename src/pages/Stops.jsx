@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import CreateEditStopDialog from "@/components/stickers/CreateEditStopDialog";
 import ImportStopsDialog from "@/components/stickers/ImportStopsDialog";
 import ViewStopDialog from "@/components/stickers/ViewStopDialog";
-
+import ExcelJS from "exceljs";
 
 export default function StopsPage() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -238,7 +238,41 @@ export default function StopsPage() {
   };
 
   const handleExport = async () => {
-    alert('Excel export is not available');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Stops");
+
+    worksheet.columns = [
+      { header: "Stop ID", key: "stop_id", width: 15 },
+      { header: "English Name", key: "english_name", width: 30 },
+      { header: "Greek Name", key: "greek_name", width: 30 },
+      { header: "Shelter Type Initial", key: "shelter_type_initial", width: 20 },
+      { header: "Shelter Type Approved", key: "shelter_type_approved", width: 20 },
+      { header: "Planned Installation Date", key: "current_planned_installation_date", width: 25 },
+      { header: "Shelter Installed", key: "shelter_installed", width: 18 },
+      { header: "Comments", key: "comments", width: 40 }
+    ];
+
+    sortedStops.forEach(stop => {
+      worksheet.addRow({
+        stop_id: stop.stop_id,
+        english_name: stop.english_name,
+        greek_name: stop.greek_name,
+        shelter_type_initial: getShelterTypeName(stop.shelter_type_initial_id),
+        shelter_type_approved: getShelterTypeName(stop.shelter_type_approved_id),
+        current_planned_installation_date: formatDateToDDMMYYYY(stop.current_planned_installation_date),
+        shelter_installed: stop.shelter_installed ? "Yes" : "No",
+        comments: stop.comments || ""
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `stops_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   if (isLoading) {
