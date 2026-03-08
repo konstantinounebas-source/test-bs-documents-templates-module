@@ -259,24 +259,14 @@ export default function DashboardPage() {
   };
 
   const exportToExcel = async (data, filename) => {
-    const ExcelJS = await import('exceljs');
-    const workbook = new ExcelJS.default.Workbook();
-    const worksheet = workbook.addWorksheet('Data');
-
-    if (data.length > 0) {
-      const headers = Object.keys(data[0]);
-      worksheet.addRow(headers);
-      data.forEach(row => {
-        worksheet.addRow(Object.values(row));
-      });
-    }
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    if (data.length === 0) return;
+    const headers = Object.keys(data[0]);
+    const csv = [headers, ...data.map(row => headers.map(h => JSON.stringify(row[h] || '')).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${filename}.xlsx`;
+    a.download = `${filename}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
