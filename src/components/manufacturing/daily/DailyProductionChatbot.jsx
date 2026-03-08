@@ -16,6 +16,8 @@ import {
 import { toast } from "sonner";
 import { format, subDays, isMonday } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ExistingLineRow from "./chatbot/ExistingLineRow";
+import ItemCodeMultiSelect from "./chatbot/ItemCodeMultiSelect";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
