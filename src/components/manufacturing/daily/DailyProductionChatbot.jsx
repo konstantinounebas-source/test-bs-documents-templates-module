@@ -349,6 +349,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
       // Ask AI to detect intent AND respond
       const result = await base44.integrations.Core.InvokeLLM({
         prompt: `Είσαι βοηθός παραγωγής για manufacturing σύστημα. 
+Σημερινή ημερομηνία: ${todayStr()}
 
 Διαθέσιμα τμήματα: ${deptList.join(", ")}
 Τρέχον βήμα wizard: ${step}
