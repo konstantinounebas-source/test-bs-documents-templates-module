@@ -485,7 +485,7 @@ export default function JVFinancialCalculations() {
             teams.forEach(t => { teamMap[t.id] = t; });
 
             // Create Excel workbook
-            const workbook = new ExcelJS.Workbook();
+            const workbook = new ExcelJS.Workbook(); // ExcelJS loaded above
             const worksheet = workbook.addWorksheet('BOM');
 
             // Add title
