@@ -49,6 +49,12 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
   const [manualForm, setManualForm] = useState({ consumable: "", item_code: "", operation: "", unit: "", actual_qty: "", notes: "" });
   const [isSavingManual, setIsSavingManual] = useState(false);
 
+  const { data: consumables = [] } = useQuery({
+    queryKey: ["Consumable"],
+    queryFn: () => base44.entities.Consumable.list(),
+    staleTime: Infinity
+  });
+
   const { data: batchHeader } = useQuery({
     queryKey: ["BatchHeader", batchId],
     queryFn: () => base44.entities.BatchHeader.filter({ id: batchId }),
