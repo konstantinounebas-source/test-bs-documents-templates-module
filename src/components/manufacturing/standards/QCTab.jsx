@@ -125,7 +125,13 @@ export default function QCTab({ bundle, isEditable }) {
   const { data: dataLines = [] } = useQuery({
     queryKey: ['StdSetLines', bundle?.id],
     queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: bundle.id }),
-    enabled: !!bundle
+    enabled: !!bundle,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Fetch existing QC lines
@@ -137,7 +143,13 @@ export default function QCTab({ bundle, isEditable }) {
       qc_type: selectedQCType,
       qc_level: selectedQCLevel
     }),
-    enabled: !!bundle && !!selectedOperation && !!selectedQCType && !!selectedQCLevel
+    enabled: !!bundle && !!selectedOperation && !!selectedQCType && !!selectedQCLevel,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
   
   console.log("selectedOperationId:", selectedOperationId, "selectedOperation name:", selectedOperation);
