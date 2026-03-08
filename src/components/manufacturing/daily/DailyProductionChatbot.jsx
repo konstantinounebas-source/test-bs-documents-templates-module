@@ -145,6 +145,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
   // attachment preview
   const [previewFile, setPreviewFile] = useState(null);
   const [rotation, setRotation] = useState(0);
+  const [showAttachmentsModal, setShowAttachmentsModal] = useState(false);
 
   // free-text input
   const [userInput, setUserInput] = useState("");
