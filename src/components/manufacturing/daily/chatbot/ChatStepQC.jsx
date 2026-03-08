@@ -161,20 +161,46 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
 
       {existingQC.length > 0 && (
         <div className="space-y-2">
-          <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
-            ✅ {existingQC.length} QC record(s) υπάρχουν ήδη
+          <div className="bg-blue-50 border border-blue-200 rounded p-2">
+            <p className="text-xs font-semibold text-blue-900">Total QC Time: {totalQCTime.toFixed(2)} min ({(totalQCTime / 60).toFixed(2)} hrs)</p>
           </div>
-          <div className="bg-slate-50 rounded border border-slate-200 p-2 max-h-48 overflow-y-auto">
-            <div className="grid grid-cols-3 gap-1 text-[10px] font-semibold text-slate-600 mb-1 pb-1 border-b">
+          <div className="bg-slate-50 rounded border border-slate-200 p-2 max-h-56 overflow-y-auto">
+            <div className="grid grid-cols-6 gap-1 text-[10px] font-semibold text-slate-600 mb-1 pb-1 border-b sticky top-0 bg-slate-50">
               <div>Item</div>
               <div>Type</div>
               <div>Level</div>
+              <div>Per-piece (min)</div>
+              <div>Qty</div>
+              <div>Actions</div>
             </div>
-            {existingQC.map((qc, i) => (
-              <div key={i} className="grid grid-cols-3 gap-1 text-[10px] text-slate-700 py-0.5 border-b border-slate-100 last:border-0">
+            {existingQC.map((qc) => (
+              <div key={qc.id} className="grid grid-cols-6 gap-1 text-[10px] text-slate-700 py-0.5 border-b border-slate-100 last:border-0 items-center">
                 <div>{qc.item_code}</div>
                 <div>{qc.qc_type}</div>
                 <div>{qc.qc_level}</div>
+                {editingId === qc.id ? (
+                  <>
+                    <input type="number" step="0.01" value={editForm.qc_per_piece_min || 0} 
+                      onChange={(e) => setEditForm(f => ({ ...f, qc_per_piece_min: e.target.value }))}
+                      className="h-6 px-1 border border-slate-300 rounded text-[10px]" />
+                    <input type="number" value={editForm.qty_affected || 0}
+                      onChange={(e) => setEditForm(f => ({ ...f, qty_affected: e.target.value }))}
+                      className="h-6 px-1 border border-slate-300 rounded text-[10px]" />
+                    <div className="flex gap-0.5">
+                      <button onClick={handleEditSave} className="text-green-600 hover:text-green-700">✓</button>
+                      <button onClick={() => setEditingId(null)} className="text-slate-400 hover:text-slate-600">✕</button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>{(qc.qc_per_piece_min || 0).toFixed(2)}</div>
+                    <div>{qc.qty_affected}</div>
+                    <div className="flex gap-1">
+                      <button onClick={() => handleEditStart(qc)} className="text-blue-600 hover:text-blue-700">✏</button>
+                      <button onClick={() => handleDelete(qc.id)} className="text-red-600 hover:text-red-700">🗑</button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
