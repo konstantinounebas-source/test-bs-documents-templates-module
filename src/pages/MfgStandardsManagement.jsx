@@ -374,25 +374,11 @@ export default function MfgStandardsManagementPage() {
               </TabsList>
 
               <div className="mt-6">
-                <TabsContent value="data">
-                  <DataTab bundle={currentBundle} isEditable={isEditable} />
-                </TabsContent>
-
-                <TabsContent value="qc">
-                  <QCTab bundle={currentBundle} isEditable={isEditable} />
-                </TabsContent>
-
-                <TabsContent value="profiles">
-                  <ProfilesTab bundle={currentBundle} isEditable={isEditable} />
-                </TabsContent>
-
-                <TabsContent value="targets">
-                  <DailyTargetsTab bundle={currentBundle} isEditable={isEditable} />
-                </TabsContent>
-
-                <TabsContent value="consumables">
-                  <ConsumablesTab bundle={currentBundle} isEditable={isEditable} />
-                </TabsContent>
+                {activeTab === 'data' && <DataTab bundle={currentBundle} isEditable={isEditable} />}
+                {activeTab === 'qc' && <QCTab bundle={currentBundle} isEditable={isEditable} />}
+                {activeTab === 'profiles' && <ProfilesTab bundle={currentBundle} isEditable={isEditable} />}
+                {activeTab === 'targets' && <DailyTargetsTab bundle={currentBundle} isEditable={isEditable} />}
+                {activeTab === 'consumables' && <ConsumablesTab bundle={currentBundle} isEditable={isEditable} />}
               </div>
 
               {/* Action Buttons */}
