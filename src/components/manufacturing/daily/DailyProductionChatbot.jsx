@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays, isMonday } from "date-fns";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ExistingLineRow from "./chatbot/ExistingLineRow";
 import ItemCodeMultiSelect from "./chatbot/ItemCodeMultiSelect";
 import ChatStepQC from "./chatbot/ChatStepQC";
@@ -659,27 +659,50 @@ ${context}
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] p-0 flex flex-col">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white border-b border-blue-700 rounded-t-lg">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Bot className="w-5 h-5 flex-shrink-0" />
-              <span className="font-semibold text-sm truncate">AI Production Assistant</span>
-              {selBatch && (
-                <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
-                  {selBatch.date} · {selDept}
-                </Badge>
-              )}
-            </div>
-            <DialogClose asChild>
-              <button className="hover:bg-blue-700 rounded p-1">
-                <X className="w-4 h-4" />
-              </button>
-            </DialogClose>
-          </div>
+      {/* Backdrop */}
+      {open && (
+        <div
+          className="fixed inset-0 z-30 bg-black/20"
+          onClick={() => setOpen(false)}
+        />
+      )}
 
-          <div className="flex flex-col flex-1 overflow-hidden flex-grow">
+      {/* Side Panel */}
+      <div 
+        className={`fixed top-16 bottom-0 w-[450px] z-40 shadow-2xl border-l border-slate-200 bg-white flex flex-col transition-transform duration-300 ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
+        style={{
+          right: position === "right" ? "0" : "auto",
+          left: position === "left" ? "0" : "auto"
+        }}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white border-b border-blue-700">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Bot className="w-5 h-5 flex-shrink-0" />
+            <span className="font-semibold text-sm truncate">AI Production Assistant</span>
+            {selBatch && (
+              <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
+                {selBatch.date} · {selDept}
+              </Badge>
+            )}
+          </div>
+          <div className="flex gap-1 ml-2">
+            <button 
+              onClick={() => setPosition(p => p === "right" ? "left" : "right")} 
+              className="hover:bg-blue-700 rounded p-1"
+              title="Toggle position"
+            >
+              {position === "right" ? "←" : "→"}
+            </button>
+            <button onClick={() => setOpen(false)} className="hover:bg-blue-700 rounded p-1">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col flex-1 overflow-hidden">
           {/* Chat log */}
           <ScrollArea className="flex-1 p-4">
               <div className="space-y-3">
@@ -1126,13 +1149,12 @@ ${context}
                 className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl p-2 transition-colors"
               >
                 <Send className="w-4 h-4" />
-                </button>
-                </div>
-                </div>
-                </DialogContent>
-                </Dialog>
+               </button>
+               </div>
+               </div>
+               </div>
 
-                {/* Duplicate file confirmation dialog */}
+               {/* Duplicate file confirmation dialog */}
                {pendingDuplicates.length > 0 && (
           <Dialog open={true} onOpenChange={() => setPendingDuplicates([])}>
             <DialogContent className="max-w-sm">
