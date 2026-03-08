@@ -122,12 +122,17 @@ export default function DailyProductionChatbot({ departments = [] }) {
   const [minimized, setMin]   = useState(false);
 
   // wizard state
-  const [step, setStep]         = useState("dept");   // dept | date | batch | attachments
+  const [step, setStep]         = useState("dept");   // dept | date | batch | attachments | batch_lines_review | batch_lines_add
   const [selDept, setSelDept]   = useState("");
   const [selDate, setSelDate]   = useState("");
   const [customDate, setCustomDate] = useState("");
   const [showPicker, setShowPicker] = useState(false);
   const [selBatch, setSelBatch] = useState(null);
+
+  // batch lines state
+  const [blReviewItems, setBlReviewItems]   = useState([]); // [{item_code, scheduled_qty, qty_processed, qty_out_good, qty_scrap}]
+  const [blCurrentIdx, setBlCurrentIdx]     = useState(0);
+  const [blAddForm, setBlAddForm]           = useState({ item_code: "", qty_processed: "", qty_out_good: "", qty_scrap: "" });
 
   // attachment preview
   const [previewFile, setPreviewFile] = useState(null);
