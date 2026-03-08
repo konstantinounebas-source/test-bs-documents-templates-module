@@ -64,8 +64,9 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
     queryFn: () => base44.entities.Batch_Lines.filter({ batch_header_id: batchId }),
     enabled: !!batchId, 
     staleTime: 30000,
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+    gcTime: 1000 * 60 * 10, // 10 min cache
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * (2 ** attemptIndex + Math.random()), 60000)
   });
 
   const { data: existingQC = [] } = useQuery({
@@ -73,8 +74,9 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
     queryFn: () => base44.entities.QC_Initial_Stock.filter({ batch_header_id: batchId }),
     enabled: !!batchId, 
     staleTime: 30000,
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+    gcTime: 1000 * 60 * 10,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * (2 ** attemptIndex + Math.random()), 60000)
   });
 
   const { data: scheduledData = [] } = useQuery({
@@ -82,8 +84,9 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
     queryFn: () => base44.entities.ScheduledData.filter({ date: batchHeader.date, department_id: batchHeader.department }),
     enabled: !!batchHeader?.date && !!batchHeader?.department, 
     staleTime: Infinity,
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+    gcTime: 1000 * 60 * 60,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * (2 ** attemptIndex + Math.random()), 60000)
   });
 
   const processedLines = batchLines.filter(bl => (bl.qty_processed || 0) > 0);
