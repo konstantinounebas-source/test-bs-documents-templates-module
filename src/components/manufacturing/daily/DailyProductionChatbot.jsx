@@ -820,6 +820,13 @@ ${context}
                   ))}
                 </div>
                 <div className="flex gap-2">
+                  <Button size="sm" variant="outline" className="text-xs"
+                    onClick={() => {
+                      addMsg("user", "← Αρχή");
+                      setStep("batch_lines_add");
+                    }}>
+                    ← Αρχή
+                  </Button>
                   <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
                     disabled={isSavingLine}
                     onClick={() => {
@@ -837,13 +844,6 @@ ${context}
                       handleBatchLineConfirm({ ...blReviewItems[blCurrentIdx], _skip: true });
                     }}>
                     Skip
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-xs"
-                    onClick={() => {
-                      addMsg("user", "→ Batch Lines");
-                      setStep("batch_lines_add");
-                    }}>
-                    Batch Lines
                   </Button>
                 </div>
               </div>
