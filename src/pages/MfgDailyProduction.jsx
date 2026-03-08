@@ -50,21 +50,35 @@ export default function MfgDailyProduction() {
       ? base44.entities.BatchHeader.filter({ department: selectedDepartment })
       : [],
     enabled: !!selectedDepartment,
-    staleTime: 0,
-    refetchOnMount: 'always'
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   const { data: allBundles = [] } = useQuery({
     queryKey: ['StandardsBundle-All'],
     queryFn: () => base44.entities.StandardsBundle.list(),
-    staleTime: 0
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   const { data: dailyStandardsAssignments = [] } = useQuery({
     queryKey: ['DailyStandardsAssignment', selectedDepartment],
     queryFn: () => base44.entities.DailyStandardsAssignment.filter({ department_id: selectedDepartment }),
     enabled: !!selectedDepartment,
-    staleTime: 0
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Resolve the effective bundle: DailyStandardsAssignment > BatchHeader.bundle_id
