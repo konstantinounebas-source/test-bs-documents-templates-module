@@ -820,13 +820,6 @@ ${context}
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" className="text-xs"
-                    onClick={() => {
-                      addMsg("user", "← Αρχή");
-                      setStep("batch_lines_add");
-                    }}>
-                    ← Αρχή
-                  </Button>
                   <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
                     disabled={isSavingLine}
                     onClick={() => {
@@ -845,6 +838,13 @@ ${context}
                     }}>
                     Skip
                   </Button>
+                  <Button size="sm" variant="outline" className="text-xs"
+                    onClick={() => {
+                      addMsg("user", "→ Batch Lines");
+                      setStep("batch_lines_add");
+                    }}>
+                    Batch Lines
+                  </Button>
                 </div>
               </div>
             )}
@@ -856,7 +856,7 @@ ${context}
                    <p className="text-xs font-semibold text-slate-700">Batch Lines</p>
                    <div className="flex gap-1">
                      <Button variant="ghost" size="sm" className="text-xs h-6 text-slate-400"
-                       onClick={() => skipStep("batch_lines_add")}>
+                       onClick={() => goNextStep("batch_lines_add", "⏭ Batch Lines – Παράλειψη...")}>
                        <SkipForward className="w-3 h-3 mr-1" /> Παράλειψη
                      </Button>
                      <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleReset}>↩ Αρχή</Button>
