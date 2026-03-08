@@ -838,32 +838,32 @@ ${context}
                   ))}
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                  <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
-                    disabled={isSavingLine}
-                    onClick={() => {
-                      const item = blReviewItems[blCurrentIdx];
-                      addMsg("user", `ok · Processed=${item.qty_processed} Good=${item.qty_out_good} Scrap=${item.qty_scrap}`);
-                      handleBatchLineConfirm(item);
-                    }}>
-                    {isSavingLine ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
-                    Επιβεβαίωση
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-xs"
-                    disabled={isSavingLine}
-                    onClick={() => {
-                      addMsg("user", "Skip");
-                      handleBatchLineConfirm({ ...blReviewItems[blCurrentIdx], _skip: true });
-                    }}>
-                    Skip
-                  </Button>
-                  <Button size="sm" variant="outline" className="text-xs"
-                    onClick={() => {
-                      addMsg("user", "→ Attachments");
-                      setStep("attachments");
-                    }}>
-                    ← Attachments
-                  </Button>
-                </div>
+                   <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
+                     disabled={isSavingLine}
+                     onClick={() => {
+                       const item = blReviewItems[blCurrentIdx];
+                       addMsg("user", `ok · Processed=${item.qty_processed} Good=${item.qty_out_good} Scrap=${item.qty_scrap}`);
+                       handleBatchLineConfirm(item);
+                     }}>
+                     {isSavingLine ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
+                     Επιβεβαίωση
+                   </Button>
+                   <Button size="sm" variant="outline" className="text-xs"
+                     disabled={isSavingLine}
+                     onClick={() => {
+                       addMsg("user", "Skip");
+                       handleBatchLineConfirm({ ...blReviewItems[blCurrentIdx], _skip: true });
+                     }}>
+                     Skip
+                   </Button>
+                   <Button size="sm" variant="outline" className="flex-1 text-xs bg-orange-100 text-orange-700 hover:bg-orange-200"
+                     onClick={() => {
+                       addMsg("user", "⏭️ Skip All Confirmations");
+                       setStep("batch_lines_add");
+                     }}>
+                     <FastForward className="w-3 h-3 mr-1" /> Skip All
+                   </Button>
+                 </div>
               </div>
             )}
 
