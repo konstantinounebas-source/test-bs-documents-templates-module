@@ -139,7 +139,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
         if (exists) continue;
         await base44.entities.QC_Initial_Stock.create({
           batch_header_id: batchId, item_code: sd.item_code,
-          qc_type: sd.qc_type, qc_level: sd.qc_level || "", qty_affected: bl.qty_processed
+          qc_type: sd.qc_type, qc_level: sd.qc_level || "", qc_per_piece_min: sd.qc_per_piece_min || 0, qty_affected: bl.qty_processed
         });
         created++;
       }
