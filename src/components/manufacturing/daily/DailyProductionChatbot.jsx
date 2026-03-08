@@ -55,11 +55,18 @@ function getQuickDates() {
   return dates;
 }
 
+// ─── File type detector ───────────────────────────────────────────────────────
+function getFileType(fileName) {
+  const ext = fileName.split('.').pop().toLowerCase();
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext) ? 'image' : 'pdf';
+}
+
 // ─── Attachment item ─────────────────────────────────────────────────────────
 function AttachmentItem({ att, onDelete, onPreview, isDeleting }) {
+  const fileType = getFileType(att.file_name);
   return (
     <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg group hover:bg-slate-100 transition-colors">
-      {att.file_type === "image"
+      {fileType === "image"
         ? <ImageIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
         : <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />}
       <a href={att.file_url} target="_blank" rel="noopener noreferrer"
