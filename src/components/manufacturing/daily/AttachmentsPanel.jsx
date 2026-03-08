@@ -130,66 +130,66 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
           attachments.map(att => {
             const fileType = getFileType(att.file_name);
             return (
-            <div
-              key={att.id}
-              className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg group hover:bg-slate-100 transition-colors"
-            >
-              {fileType === 'image' ? (
-                <ImageIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
-              ) : (
-                <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />
-              )}
-              <a
-                href={att.file_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-blue-600 hover:underline truncate flex-1"
+              <div
+                key={att.id}
+                className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg group hover:bg-slate-100 transition-colors"
               >
-                {att.file_name}
-              </a>
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setPreviewFile(att)}
-                  className="h-6 w-6 text-slate-500 hover:text-slate-700"
-                  title="Preview"
+                {fileType === 'image' ? (
+                  <ImageIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                ) : (
+                  <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />
+                )}
+                <a
+                  href={att.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:underline truncate flex-1"
                 >
-                  <Eye className="w-3 h-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={async () => {
-                    const res = await fetch(att.file_url);
-                    const blob = await res.blob();
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = att.file_name;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="h-6 w-6 text-slate-500 hover:text-slate-700"
-                  title="Download"
-                >
-                  <Download className="w-3 h-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteMutation.mutate(att.id)}
-                  disabled={deleteMutation.isPending}
-                  className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
-                  title="Delete"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+                  {att.file_name}
+                </a>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setPreviewFile(att)}
+                    className="h-6 w-6 text-slate-500 hover:text-slate-700"
+                    title="Preview"
+                  >
+                    <Eye className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={async () => {
+                      const res = await fetch(att.file_url);
+                      const blob = await res.blob();
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = att.file_name;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="h-6 w-6 text-slate-500 hover:text-slate-700"
+                    title="Download"
+                  >
+                    <Download className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteMutation.mutate(att.id)}
+                    disabled={deleteMutation.isPending}
+                    className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
-              </div>
-              );
-              })
-              )}
+            );
+          })
+        )}
               </div>
 
       {/* Preview Dialog */}
