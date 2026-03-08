@@ -262,9 +262,9 @@ export default function QCTab({ bundle, isEditable }) {
       await Promise.all(updates);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['QCSetLines'] });
-      toast.success('QC standards saved successfully');
-    },
+       queryClient.invalidateQueries({ queryKey: ['QCSetLines', bundle?.id, selectedOperation, selectedQCType, selectedQCLevel] });
+       toast.success('QC standards saved successfully');
+     },
     onError: (error) => {
       toast.error('Failed to save: ' + error.message);
     }
