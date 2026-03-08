@@ -459,7 +459,9 @@ export default function DailyProductionChatbot({ departments = [] }) {
   };
 
   const handleBatchLineConfirm = async (updatedItem) => {
-    await saveBatchLine(updatedItem);
+    if (!updatedItem._skip) {
+      await saveBatchLine(updatedItem);
+    }
     const nextIdx = blCurrentIdx + 1;
     if (nextIdx >= blReviewItems.length) {
       setStep("batch_lines_add");
