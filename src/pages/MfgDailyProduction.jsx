@@ -28,7 +28,6 @@ export default function MfgDailyProduction() {
   const [activeTab, setActiveTab] = useState("batch_lines");
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [pendingAutoOpen, setPendingAutoOpen] = useState(false);
-  const [loadedTabs, setLoadedTabs] = useState(new Set(['batch_lines'])); // Track mounted tabs
 
   // Read URL params
   const urlParams = new URLSearchParams(window.location.search);
