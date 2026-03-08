@@ -525,6 +525,26 @@ export default function DailyProductionChatbot({ departments = [] }) {
                 )}
               </div>
             )}
+
+            {/* Free-text input bar — always visible */}
+            <div className="border-t bg-white p-2 flex gap-2 items-center rounded-b-2xl">
+              <input
+                ref={inputRef}
+                type="text"
+                value={userInput}
+                onChange={e => setUserInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } }}
+                placeholder="Γράψε μήνυμα..."
+                className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400 bg-slate-50"
+              />
+              <button
+                onClick={handleUserMessage}
+                disabled={!userInput.trim()}
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl p-2 transition-colors"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>
