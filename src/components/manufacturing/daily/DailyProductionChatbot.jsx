@@ -1154,7 +1154,7 @@ ${context}
             )}
 
             {/* Free-text input bar — always visible */}
-            <div className="border-t bg-white p-2 flex gap-2 items-center rounded-b-2xl">
+            <div className="border-t bg-white p-2 flex gap-2 items-center">
               <input
                 ref={inputRef}
                 type="text"
@@ -1172,6 +1172,13 @@ ${context}
                 <Send className="w-4 h-4" />
               </button>
             </div>
+
+            {/* Resize handle */}
+            <div
+              onMouseDown={handleMouseDown}
+              className="h-1 bg-slate-300 hover:bg-blue-400 cursor-nwse-resize rounded-b-2xl transition-colors"
+              title="Drag to resize"
+            />
             </div>
             )}
             </div>
