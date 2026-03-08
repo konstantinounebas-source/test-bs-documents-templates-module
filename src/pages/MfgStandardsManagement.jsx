@@ -362,7 +362,7 @@ export default function MfgStandardsManagementPage() {
             </Alert>
           )}
 
-          {/* Tabs */}
+          {/* Tabs - Only mount active tab to reduce initial API calls */}
           {currentBundle ? (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-5">
