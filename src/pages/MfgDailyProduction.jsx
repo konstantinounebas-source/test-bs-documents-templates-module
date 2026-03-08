@@ -35,7 +35,6 @@ export default function MfgDailyProduction() {
   const urlDept = urlParams.get('department') || '';
 
   const [selectedDepartment, setSelectedDepartment] = useState(urlDept);
-  const [selectedDate, setSelectedDate] = useState(urlDate);
 
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
