@@ -185,7 +185,7 @@ export default function MfgDailyProduction() {
           <CardContent className="space-y-6">
             <div>
               <Label className="text-sm font-semibold">Select Department</Label>
-              <Select value={selectedDepartment} onValueChange={(val) => { setSelectedDepartment(val); setSelectedBatch(null); setSelectedDate(''); }}>
+              <Select value={selectedDepartment} onValueChange={(val) => { setSelectedDepartment(val); setSelectedBatch(null); }}>
                 <SelectTrigger className="mt-2">
                   <SelectValue placeholder="Select department" />
                 </SelectTrigger>
