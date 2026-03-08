@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, FileDown } from "lucide-react";
-import ExcelJS from 'exceljs';
+import ExcelJS from 'npm:exceljs';
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 

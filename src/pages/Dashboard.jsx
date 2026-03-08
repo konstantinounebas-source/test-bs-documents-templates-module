@@ -259,7 +259,7 @@ export default function DashboardPage() {
   };
 
   const exportToExcel = async (data, filename) => {
-    const ExcelJS = await import('exceljs');
+    const ExcelJS = await import('npm:exceljs');
     const workbook = new ExcelJS.default.Workbook();
     const worksheet = workbook.addWorksheet('Data');
 
