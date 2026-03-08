@@ -1030,12 +1030,24 @@ ${context}
 
             {/* Step: Consumables */}
             {step === "consumables" && selBatch && (
-              <ChatStepConsumables
-                batchId={selBatch.id}
-                onNext={(msg) => goNextStep("consumables", msg)}
-                onSkip={() => skipStep("consumables")}
-                onBack={() => goPrevStep("consumables")}
-              />
+              <div className="space-y-3">
+                <div className="flex justify-end px-3 pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => setShowAttachmentsModal(true)}
+                  >
+                    <Paperclip className="w-3 h-3 mr-1" /> Attachments
+                  </Button>
+                </div>
+                <ChatStepConsumables
+                  batchId={selBatch.id}
+                  onNext={(msg) => goNextStep("consumables", msg)}
+                  onSkip={() => skipStep("consumables")}
+                  onBack={() => goPrevStep("consumables")}
+                />
+              </div>
             )}
 
             {/* Step: Done */}
