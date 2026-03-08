@@ -668,7 +668,7 @@ ${context}
     if (!isResizing) return;
 
     const handleMouseMove = (e) => {
-      setWidth(Math.max(300, e.clientX - (position === "right" ? window.innerWidth - width : 0)));
+      setWidth(Math.max(300, position === "right" ? window.innerWidth - e.clientX : e.clientX));
       setHeight(Math.max(200, window.innerHeight - e.clientY));
     };
 
@@ -681,7 +681,7 @@ ${context}
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isResizing, width, position]);
+  }, [isResizing, position]);
 
   return (
     <>
