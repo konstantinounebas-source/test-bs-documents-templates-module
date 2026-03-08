@@ -31,7 +31,13 @@ export default function ProfilesTab({ bundle, isEditable }) {
   // Fetch departments to resolve bundle department id
   const { data: allDepartments = [] } = useQuery({
     queryKey: ['Department'],
-    queryFn: () => base44.entities.Department.filter({ is_active: true })
+    queryFn: () => base44.entities.Department.filter({ is_active: true }),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   const bundleDepartmentId = useMemo(() => {
@@ -43,7 +49,13 @@ export default function ProfilesTab({ bundle, isEditable }) {
   // Fetch Operations (active, max 10)
   const { data: allOperations = [], isLoading: opsLoading } = useQuery({
     queryKey: ['Operation'],
-    queryFn: () => base44.entities.Operation.filter({ is_active: true })
+    queryFn: () => base44.entities.Operation.filter({ is_active: true }),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   const operations = useMemo(() => {
@@ -62,7 +74,13 @@ export default function ProfilesTab({ bundle, isEditable }) {
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
     queryKey: ['OperationProfileName', bundle?.department],
     queryFn: () => base44.entities.OperationProfileName.filter({ department: bundle.department }),
-    enabled: !!bundle
+    enabled: !!bundle,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Filter profiles by search
