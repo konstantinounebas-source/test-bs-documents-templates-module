@@ -558,7 +558,22 @@ ${context}
     if (!text) return;
     setUserInput("");
     addMsg("user", text);
-    // Always route through AI for smart intent detection
+
+    // batch lines review: handle inline without AI call
+    if (step === "batch_lines_review") {
+      handleBatchLineMessage(text);
+      return;
+    }
+    // batch lines add: "τέλος" or similar → reset
+    if (step === "batch_lines_add") {
+      const lower = text.toLowerCase();
+      if (lower.includes("τέλος") || lower.includes("done") || lower.includes("finish") || lower.includes("ok") || lower.includes("ναι") === false) {
+        addMsg("bot", "Εντάξει! Η καταχώριση Batch Lines ολοκληρώθηκε. 🎉\nΜπορείς να συνεχίσεις με τις υπόλοιπες καρτέλες από τη σελίδα.");
+        return;
+      }
+    }
+
+    // default: AI
     askAI(text, text.toLowerCase());
   };
 
