@@ -2,10 +2,47 @@ import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, SkipForward, RefreshCw } from "lucide-react";
+import { Loader2, CheckCircle2, SkipForward, RefreshCw, Trash2, Pencil, Check, X, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
-export default function ChatStepConsumables({ batchId, onNext, onSkip }) {
+function ConsumableRow({ line, onDelete, onUpdate }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(line.actual_qty ?? line.expected_qty ?? 0);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    await onUpdate(line.id, { actual_qty: parseFloat(val) || 0 });
+    setSaving(false);
+    setEditing(false);
+  };
+
+  return (
+    <div className="flex items-center gap-1 px-2 py-1 text-[10px] text-slate-700 hover:bg-slate-50 group">
+      <span className="flex-1 truncate font-medium">{line.consumable}</span>
+      <span className="text-slate-400 truncate max-w-[40px]">{line.item_code}</span>
+      {editing ? (
+        <>
+          <input type="number" value={val} onChange={e => setVal(e.target.value)}
+            className="w-14 border rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-400" />
+          <button onClick={save} disabled={saving} className="text-green-600 hover:text-green-800">
+            {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+          </button>
+          <button onClick={() => setEditing(false)} className="text-slate-400 hover:text-slate-600"><X className="w-3 h-3" /></button>
+        </>
+      ) : (
+        <>
+          <span className="text-slate-400 w-10 text-right">{(line.expected_qty || 0).toFixed(2)}e</span>
+          <span className="text-slate-700 font-medium w-10 text-right">{(line.actual_qty || 0).toFixed(2)}a</span>
+          <button onClick={() => setEditing(true)} className="opacity-0 group-hover:opacity-100 text-blue-500 hover:text-blue-700 ml-1"><Pencil className="w-3 h-3" /></button>
+          <button onClick={() => onDelete(line.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600"><Trash2 className="w-3 h-3" /></button>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack }) {
   const queryClient = useQueryClient();
 
   const { data: batchHeader } = useQuery({
@@ -71,28 +108,52 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip }) {
     onError: (err) => toast.error(err.message || "Σφάλμα")
   });
 
+  const handleDelete = async (id) => {
+    await base44.entities.ConsumablesActual.delete(id);
+    queryClient.invalidateQueries(["ConsumablesActual", batchId]);
+    toast.success("Διαγράφηκε");
+  };
+
+  const handleUpdate = async (id, data) => {
+    await base44.entities.ConsumablesActual.update(id, data);
+    queryClient.invalidateQueries(["ConsumablesActual", batchId]);
+    toast.success("Ενημερώθηκε");
+  };
+
   const totalActual = lines.reduce((s, l) => s + (l.actual_qty || 0), 0);
   const totalExpected = lines.reduce((s, l) => s + (l.expected_qty || 0), 0);
 
   return (
-    <div className="border-t p-3 space-y-3">
+    <div className="border-t p-3 space-y-2 overflow-y-auto max-h-[420px]">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-slate-700">Consumables</p>
+        <div className="flex items-center gap-1">
+          <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>
+          <p className="text-xs font-semibold text-slate-700">Consumables</p>
+        </div>
         <Button variant="ghost" size="sm" className="text-xs h-6 text-slate-400" onClick={onSkip}>
           <SkipForward className="w-3 h-3 mr-1" /> Παράλειψη
         </Button>
       </div>
 
       {lines.length > 0 && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded p-2 text-xs text-indigo-700 space-y-0.5">
-          <div>✅ {lines.length} εγγραφές καταχωρημένες</div>
-          <div>EXP: {totalExpected.toFixed(2)} · ACT: {totalActual.toFixed(2)}</div>
-        </div>
+        <>
+          <div className="bg-indigo-50 border border-indigo-200 rounded p-2 text-xs text-indigo-700">
+            ✅ {lines.length} εγγραφές · EXP: {totalExpected.toFixed(2)} · ACT: {totalActual.toFixed(2)}
+          </div>
+          <div className="border rounded divide-y max-h-40 overflow-y-auto">
+            <div className="grid grid-cols-4 px-2 py-1 text-[9px] font-semibold text-slate-400 uppercase">
+              <span>Consumable</span><span>Item</span><span className="text-right">EXP</span><span className="text-right">ACT</span>
+            </div>
+            {lines.map(l => (
+              <ConsumableRow key={l.id} line={l} onDelete={handleDelete} onUpdate={handleUpdate} />
+            ))}
+          </div>
+        </>
       )}
 
       {expectedRows.length > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
-          📊 {expectedRows.length} expected rows από standards βρέθηκαν
+          📊 {expectedRows.length} expected rows από standards
         </div>
       )}
 

@@ -3,10 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CheckCircle2, SkipForward, Plus } from "lucide-react";
+import { Loader2, CheckCircle2, SkipForward, Plus, Trash2, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
-export default function ChatStepHelpIn({ batchId, department, onNext, onSkip }) {
+export default function ChatStepHelpIn({ batchId, department, onNext, onSkip, onBack }) {
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({ department: department || "", from_department: "", help_min: "" });
@@ -17,13 +17,20 @@ export default function ChatStepHelpIn({ batchId, department, onNext, onSkip }) 
     staleTime: Infinity
   });
 
+  // Persons from TeamTimePerson for this batch
+  const { data: teamPersonLines = [] } = useQuery({
+    queryKey: ["TeamTimePerson", batchId],
+    queryFn: () => base44.entities.TeamTimePerson.filter({ batch_header_id: batchId }),
+    enabled: !!batchId, staleTime: 0
+  });
+
   const { data: lines = [] } = useQuery({
     queryKey: ["Help_In", batchId],
     queryFn: () => base44.entities.Help_In.filter({ batch_header_id: batchId }),
     enabled: !!batchId, staleTime: 0
   });
 
-  const totalHelp = lines.filter(h => h.department === department).reduce((s, h) => s + (h.help_min || 0), 0);
+  const totalHelp = lines.reduce((s, h) => s + (h.help_min || 0), 0);
 
   const handleAdd = async () => {
     if (!form.department || !form.from_department || !form.help_min) {
@@ -42,22 +49,48 @@ export default function ChatStepHelpIn({ batchId, department, onNext, onSkip }) 
     setIsSaving(false);
   };
 
+  const handleDelete = async (id) => {
+    await base44.entities.Help_In.delete(id);
+    queryClient.invalidateQueries(["Help_In", batchId]);
+    toast.success("Διαγράφηκε");
+  };
+
   return (
-    <div className="border-t p-3 space-y-3">
+    <div className="border-t p-3 space-y-2 overflow-y-auto max-h-[420px]">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-slate-700">Help In</p>
+        <div className="flex items-center gap-1">
+          <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>
+          <p className="text-xs font-semibold text-slate-700">Help In</p>
+        </div>
         <Button variant="ghost" size="sm" className="text-xs h-6 text-slate-400" onClick={onSkip}>
           <SkipForward className="w-3 h-3 mr-1" /> Παράλειψη
         </Button>
       </div>
 
+      {/* Existing entries */}
       {lines.length > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
-          ✅ {lines.length} εγγραφές · Σύνολο για {department}: {totalHelp} min
-        </div>
+        <>
+          <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
+            ✅ {lines.length} εγγραφές · Σύνολο: {totalHelp} min
+          </div>
+          <div className="border rounded divide-y max-h-32 overflow-y-auto">
+            {lines.map(l => (
+              <div key={l.id} className="flex items-center gap-1 px-2 py-1.5 text-[10px] text-slate-700 hover:bg-slate-50 group">
+                <span className="flex-1 truncate font-medium">{l.department}</span>
+                <span className="text-slate-400">← {l.from_department}</span>
+                <span className="text-slate-500 w-12 text-right">{l.help_min}m</span>
+                <button onClick={() => handleDelete(l.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 ml-1">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
       )}
 
-      <div className="space-y-1">
+      {/* Add form */}
+      <div className="border-t pt-2 space-y-1">
+        <p className="text-[10px] font-semibold text-slate-400 uppercase">Προσθήκη</p>
         {[["department","Τμήμα (Λαμβάνει)"],["from_department","Από Τμήμα"]].map(([field, label]) => (
           <div key={field}>
             <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>

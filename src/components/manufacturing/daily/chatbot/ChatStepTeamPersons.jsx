@@ -2,10 +2,59 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, SkipForward, Plus, X } from "lucide-react";
+import { Loader2, CheckCircle2, SkipForward, Plus, X, Trash2, Pencil, Check, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
-export default function ChatStepTeamPersons({ batchId, onNext, onSkip }) {
+function PersonRow({ line, onDelete, onUpdate }) {
+  const [editing, setEditing] = useState(false);
+  const [vals, setVals] = useState({ from_time: line.from_time, to_time: line.to_time, break_time_minutes: line.break_time_minutes || 0 });
+  const [saving, setSaving] = useState(false);
+
+  const calcAvail = (from, to, brk) => {
+    if (!from || !to) return 0;
+    const [fh, fm] = from.split(":").map(Number);
+    const [th, tm] = to.split(":").map(Number);
+    return Math.max(0, (th * 60 + tm) - (fh * 60 + fm) - (brk || 0));
+  };
+
+  const save = async () => {
+    setSaving(true);
+    await onUpdate(line.id, vals);
+    setSaving(false);
+    setEditing(false);
+  };
+
+  const avail = calcAvail(line.from_time, line.to_time, line.break_time_minutes);
+
+  return (
+    <div className="px-2 py-1.5 hover:bg-slate-50 group">
+      <div className="flex items-center gap-1">
+        <span className="text-[10px] font-medium text-slate-700 flex-1 truncate">{line.person_name}</span>
+        <span className="text-[10px] text-slate-400">{line.from_time}–{line.to_time} ({avail}m)</span>
+        <button onClick={() => setEditing(e => !e)} className="opacity-0 group-hover:opacity-100 text-blue-400 hover:text-blue-600 ml-1"><Pencil className="w-3 h-3" /></button>
+        <button onClick={() => onDelete(line.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600"><Trash2 className="w-3 h-3" /></button>
+      </div>
+      {editing && (
+        <div className="grid grid-cols-4 gap-1 mt-1 items-end">
+          {[["from_time","Από","time"],["to_time","Έως","time"],["break_time_minutes","Brk","number"]].map(([f,l,t]) => (
+            <div key={f}>
+              <p className="text-[9px] text-slate-400">{l}</p>
+              <input type={t} value={vals[f]}
+                onChange={e => setVals(v => ({ ...v, [f]: t === "number" ? Number(e.target.value) : e.target.value }))}
+                className="w-full text-[10px] border rounded px-1 py-0.5 outline-none focus:border-blue-400"
+              />
+            </div>
+          ))}
+          <button onClick={save} disabled={saving} className="h-6 text-green-600 hover:text-green-800 flex items-center justify-center border rounded">
+            {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack }) {
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({ person_names: [], from_time: "07:00", to_time: "15:30", break_time_minutes: 45 });
@@ -17,7 +66,7 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip }) {
     staleTime: Infinity
   });
 
-  const { data: lines = [] } = useQuery({
+  const { data: lines = [], refetch } = useQuery({
     queryKey: ["TeamTimePerson", batchId],
     queryFn: () => base44.entities.TeamTimePerson.filter({ batch_header_id: batchId }),
     enabled: !!batchId, staleTime: 0
@@ -31,9 +80,10 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip }) {
   };
 
   const totalAvail = lines.reduce((s, l) => s + calcAvail(l.from_time, l.to_time, l.break_time_minutes), 0);
+  const registeredNames = new Set(lines.map(l => l.person_name));
 
   const filteredPersons = persons.filter(p =>
-    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) && !lines.find(l => l.person_name === p.name)
+    p.name?.toLowerCase().includes(searchTerm.toLowerCase()) && !registeredNames.has(p.name)
   );
 
   const togglePerson = (name) => {
@@ -63,10 +113,25 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip }) {
     setIsSaving(false);
   };
 
+  const handleDelete = async (id) => {
+    await base44.entities.TeamTimePerson.delete(id);
+    queryClient.invalidateQueries(["TeamTimePerson", batchId]);
+    toast.success("Διαγράφηκε");
+  };
+
+  const handleUpdate = async (id, data) => {
+    await base44.entities.TeamTimePerson.update(id, data);
+    queryClient.invalidateQueries(["TeamTimePerson", batchId]);
+    toast.success("Ενημερώθηκε");
+  };
+
   return (
-    <div className="border-t p-3 space-y-3 overflow-y-auto max-h-96">
+    <div className="border-t p-3 space-y-2 overflow-y-auto max-h-[420px]">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-slate-700">Team Time - Persons</p>
+        <div className="flex items-center gap-1">
+          <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>
+          <p className="text-xs font-semibold text-slate-700">Team Time - Persons</p>
+        </div>
         <Button variant="ghost" size="sm" className="text-xs h-6 text-slate-400" onClick={onSkip}>
           <SkipForward className="w-3 h-3 mr-1" /> Παράλειψη
         </Button>
@@ -78,61 +143,69 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip }) {
         </div>
       )}
 
-      {/* Time inputs */}
-      <div className="grid grid-cols-3 gap-1">
-        {[["from_time","Από","time"],["to_time","Έως","time"],["break_time_minutes","Διάλ.(min)","number"]].map(([field, label, type]) => (
-          <div key={field}>
-            <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
-            <input type={type} value={form[field]}
-              onChange={e => setForm(f => ({ ...f, [field]: type === "number" ? Number(e.target.value) : e.target.value }))}
-              className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
-            />
-          </div>
-        ))}
-      </div>
-
-      <p className="text-[10px] text-slate-500">
-        Διαθέσιμος χρόνος: <strong>{calcAvail(form.from_time, form.to_time, form.break_time_minutes)} min</strong>
-      </p>
-
-      {/* Person search */}
-      <input type="text" placeholder="Αναζήτηση ατόμου..." value={searchTerm}
-        onChange={e => setSearchTerm(e.target.value)}
-        className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
-      />
-
-      {/* Selected tags */}
-      {form.person_names.length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {form.person_names.map(n => (
-            <span key={n} className="flex items-center gap-1 bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full">
-              {n}
-              <button onClick={() => togglePerson(n)}><X className="w-2.5 h-2.5" /></button>
-            </span>
+      {/* Existing persons */}
+      {lines.length > 0 && (
+        <div className="border rounded divide-y max-h-36 overflow-y-auto">
+          {lines.map(l => (
+            <PersonRow key={l.id} line={l} onDelete={handleDelete} onUpdate={handleUpdate} />
           ))}
         </div>
       )}
 
-      {/* Person list */}
-      <div className="border rounded max-h-32 overflow-y-auto">
-        {filteredPersons.length === 0
-          ? <p className="text-[10px] text-slate-400 p-2 text-center">Δεν βρέθηκαν άτομα</p>
-          : filteredPersons.map(p => (
-            <button key={p.id} onClick={() => togglePerson(p.name)}
-              className={`w-full text-left text-xs px-2 py-1.5 hover:bg-slate-50 flex items-center gap-2
-                ${form.person_names.includes(p.name) ? "bg-blue-50 text-blue-700" : "text-slate-700"}`}>
-              <span className={`w-3 h-3 rounded border flex-shrink-0 ${form.person_names.includes(p.name) ? "bg-blue-500 border-blue-500" : "border-slate-300"}`} />
-              {p.name}
-            </button>
-          ))
-        }
-      </div>
+      {/* Time inputs for new entries */}
+      <div className="border-t pt-2 space-y-1">
+        <p className="text-[10px] font-semibold text-slate-400 uppercase">Προσθήκη ατόμων</p>
+        <div className="grid grid-cols-3 gap-1">
+          {[["from_time","Από","time"],["to_time","Έως","time"],["break_time_minutes","Διάλ.(min)","number"]].map(([field, label, type]) => (
+            <div key={field}>
+              <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
+              <input type={type} value={form[field]}
+                onChange={e => setForm(f => ({ ...f, [field]: type === "number" ? Number(e.target.value) : e.target.value }))}
+                className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
+              />
+            </div>
+          ))}
+        </div>
+        <p className="text-[10px] text-slate-500">
+          Διαθέσιμος: <strong>{calcAvail(form.from_time, form.to_time, form.break_time_minutes)} min</strong>
+        </p>
 
-      <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
-        onClick={handleAdd} disabled={isSaving || !form.person_names.length}>
-        {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
-        Προσθήκη ({form.person_names.length})
-      </Button>
+        <input type="text" placeholder="Αναζήτηση ατόμου..." value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
+        />
+
+        {form.person_names.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {form.person_names.map(n => (
+              <span key={n} className="flex items-center gap-1 bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full">
+                {n}
+                <button onClick={() => togglePerson(n)}><X className="w-2.5 h-2.5" /></button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="border rounded max-h-28 overflow-y-auto">
+          {filteredPersons.length === 0
+            ? <p className="text-[10px] text-slate-400 p-2 text-center">Δεν βρέθηκαν άτομα</p>
+            : filteredPersons.map(p => (
+              <button key={p.id} onClick={() => togglePerson(p.name)}
+                className={`w-full text-left text-xs px-2 py-1.5 hover:bg-slate-50 flex items-center gap-2
+                  ${form.person_names.includes(p.name) ? "bg-blue-50 text-blue-700" : "text-slate-700"}`}>
+                <span className={`w-3 h-3 rounded border flex-shrink-0 ${form.person_names.includes(p.name) ? "bg-blue-500 border-blue-500" : "border-slate-300"}`} />
+                {p.name}
+              </button>
+            ))
+          }
+        </div>
+
+        <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+          onClick={handleAdd} disabled={isSaving || !form.person_names.length}>
+          {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
+          Προσθήκη ({form.person_names.length})
+        </Button>
+      </div>
 
       <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
         onClick={() => onNext("⏭ Team Time Persons – Συνέχεια...")}>
