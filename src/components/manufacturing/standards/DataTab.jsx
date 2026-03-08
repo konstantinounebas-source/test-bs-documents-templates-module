@@ -83,7 +83,12 @@ export default function DataTab({ bundle, isEditable }) {
       return result;
     },
     enabled: !!bundle?.id,
-    staleTime: 0 // Always refetch
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Convert lines to grid format - reload whenever lines or bundle changes
