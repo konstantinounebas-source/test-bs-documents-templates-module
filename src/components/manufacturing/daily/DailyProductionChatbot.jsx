@@ -455,20 +455,22 @@ export default function DailyProductionChatbot({ departments = [] }) {
   };
 
   const handleAddExtraLine = async () => {
-    const { item_code, qty_processed, qty_out_good, qty_scrap } = blAddForm;
-    if (!item_code) { addMsg("bot", "Επίλεξε item code πρώτα."); return; }
+    const { item_codes = [], qty_processed, qty_out_good, qty_scrap } = blAddForm;
+    if (!item_codes.length) { addMsg("bot", "Επίλεξε τουλάχιστον ένα item code πρώτα."); return; }
     const proc = parseFloat(qty_processed) || 0;
     const good = parseFloat(qty_out_good)  || 0;
     const scrap= parseFloat(qty_scrap)     || 0;
     try {
-      await base44.entities.Batch_Lines.create({
-        batch_header_id: selBatch.id,
-        item_code, scheduled_qty: 0,
-        qty_processed: proc, qty_out_good: good, qty_scrap: scrap
-      });
+      await base44.entities.Batch_Lines.bulkCreate(
+        item_codes.map(code => ({
+          batch_header_id: selBatch.id,
+          item_code: code, scheduled_qty: 0,
+          qty_processed: proc, qty_out_good: good, qty_scrap: scrap
+        }))
+      );
       queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
-      addMsg("bot", `✅ Προστέθηκε: ${item_code} | Processed=${proc} | Good=${good} | Scrap=${scrap}`);
-      setBlAddForm({ item_code: "", qty_processed: "", qty_out_good: "", qty_scrap: "" });
+      addMsg("bot", `✅ Προστέθηκαν: ${item_codes.join(", ")} | Processed=${proc} | Good=${good} | Scrap=${scrap}`);
+      setBlAddForm({ item_codes: [], qty_processed: "", qty_out_good: "", qty_scrap: "" });
     } catch {
       addMsg("bot", "❌ Σφάλμα κατά την προσθήκη.");
     }
