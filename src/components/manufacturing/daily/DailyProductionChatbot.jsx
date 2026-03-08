@@ -989,7 +989,7 @@ ${context}
                 </div>
                 )}
 
-            {/* Step: QC Initial Stock */}
+                {/* Step: QC Initial Stock */}
             {step === "qc" && selBatch && (
               <div className="space-y-3">
                 <div className="flex justify-end px-3 pt-3">
