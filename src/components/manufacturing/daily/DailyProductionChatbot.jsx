@@ -853,9 +853,15 @@ ${context}
             {step === "batch_lines_add" && (
               <div className="border-t p-3 space-y-3 overflow-y-auto max-h-80">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-slate-700">Batch Lines</p>
-                  <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleReset}>↩ Αρχή</Button>
-                </div>
+                   <p className="text-xs font-semibold text-slate-700">Batch Lines</p>
+                   <div className="flex gap-1">
+                     <Button variant="ghost" size="sm" className="text-xs h-6 text-slate-400"
+                       onClick={() => goNextStep("batch_lines_add", "⏭ Batch Lines – Παράλειψη...")}>
+                       <SkipForward className="w-3 h-3 mr-1" /> Παράλειψη
+                     </Button>
+                     <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleReset}>↩ Αρχή</Button>
+                   </div>
+                 </div>
 
                 {/* Add new line */}
                 <div className="space-y-1 pt-1 border-b pb-3">
