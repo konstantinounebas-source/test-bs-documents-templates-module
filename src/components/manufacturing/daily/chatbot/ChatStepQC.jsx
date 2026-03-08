@@ -93,8 +93,8 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
   const processedLines = batchLines.filter(bl => (bl.qty_processed || 0) > 0);
 
   const totalQCTime = existingQC.reduce((sum, qc) => {
-    const perPiece = parseFloat(qc.qc_per_piece_min || 0);
-    const qty = parseInt(qc.qty_affected || 0);
+    const perPiece = parseFloat(qc.qc_per_piece_min) || 0;
+    const qty = parseInt(qc.qty_affected) || 0;
     return sum + (perPiece * qty);
   }, 0);
 
