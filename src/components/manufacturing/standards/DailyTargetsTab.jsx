@@ -245,7 +245,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     // Delete only lines that belong to this bundle
     const linesInThisBundle = dailyTargets.filter(dt => dt.target_type === typeName);
     await Promise.all(linesInThisBundle.map(dt => base44.entities.DailyTargetLines.delete(dt.id)));
-    queryClient.invalidateQueries(['DailyTargetLines']);
+    queryClient.invalidateQueries({ queryKey: ['DailyTargetLines', bundle?.id] });
     setTargetTypesList(targetTypesList.filter(t => t !== typeName));
     toast.success('Target Type removed');
   };
