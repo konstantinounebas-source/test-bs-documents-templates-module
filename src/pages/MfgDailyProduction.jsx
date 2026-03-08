@@ -127,7 +127,9 @@ export default function MfgDailyProduction() {
   const handleBatchCreated = (newBatch) => {
     setSelectedBatch(newBatch);
     setActiveTab("batch_lines");
-    queryClient.invalidateQueries(['BatchHeader']);
+    setLoadedTabs(new Set(['batch_lines'])); // Reset to batch_lines only
+    // Refetch only the batch headers list
+    queryClient.invalidateQueries({ queryKey: ['BatchHeader', selectedDepartment] });
   };
 
   const handleDateSelect = (dateStr) => {
