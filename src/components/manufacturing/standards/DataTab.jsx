@@ -18,7 +18,13 @@ export default function DataTab({ bundle, isEditable }) {
   // Fetch departments to get bundle's department id
   const { data: allDepartments = [] } = useQuery({
     queryKey: ['Department'],
-    queryFn: () => base44.entities.Department.filter({ is_active: true })
+    queryFn: () => base44.entities.Department.filter({ is_active: true }),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   const bundleDepartmentId = useMemo(() => {
@@ -30,7 +36,13 @@ export default function DataTab({ bundle, isEditable }) {
   // Fetch operations from Step 1 - dynamically build columns
   const { data: allOperations = [], isLoading: operationsLoading } = useQuery({
     queryKey: ['Operation'],
-    queryFn: () => base44.entities.Operation.filter({ is_active: true })
+    queryFn: () => base44.entities.Operation.filter({ is_active: true }),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Filter operations by department: include if department_ids is empty/missing OR includes this bundle's department
