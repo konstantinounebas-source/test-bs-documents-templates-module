@@ -198,11 +198,11 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
       return results;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(['DailyTargetLines']);
-      toast.success('Daily Targets added');
-      setShowAddTargetDialog(false);
-      resetForm();
-    },
+       queryClient.invalidateQueries({ queryKey: ['DailyTargetLines', bundle?.id] });
+       toast.success('Daily Targets added');
+       setShowAddTargetDialog(false);
+       resetForm();
+     },
     onError: (err) => toast.error('Failed to add Daily Targets: ' + err.message)
   });
 
