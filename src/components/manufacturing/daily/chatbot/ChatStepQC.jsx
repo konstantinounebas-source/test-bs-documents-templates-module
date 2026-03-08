@@ -59,19 +59,28 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
   const { data: batchLines = [] } = useQuery({
     queryKey: ["Batch_Lines", batchId],
     queryFn: () => base44.entities.Batch_Lines.filter({ batch_header_id: batchId }),
-    enabled: !!batchId, staleTime: 0
+    enabled: !!batchId, 
+    staleTime: 30000,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 
   const { data: existingQC = [] } = useQuery({
     queryKey: ["QC_Initial_Stock", batchId],
     queryFn: () => base44.entities.QC_Initial_Stock.filter({ batch_header_id: batchId }),
-    enabled: !!batchId, staleTime: 0
+    enabled: !!batchId, 
+    staleTime: 30000,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 
   const { data: scheduledData = [] } = useQuery({
     queryKey: ["ScheduledData", batchHeader?.date, batchHeader?.department],
     queryFn: () => base44.entities.ScheduledData.filter({ date: batchHeader.date, department_id: batchHeader.department }),
-    enabled: !!batchHeader?.date && !!batchHeader?.department, staleTime: Infinity
+    enabled: !!batchHeader?.date && !!batchHeader?.department, 
+    staleTime: Infinity,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 
   const processedLines = batchLines.filter(bl => (bl.qty_processed || 0) > 0);
