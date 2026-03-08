@@ -348,23 +348,30 @@ export default function DailyProductionChatbot({ departments = [] }) {
 
       // Ask AI to detect intent AND respond
       const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Είσαι βοηθός παραγωγής για manufacturing σύστημα. 
+        prompt: `Είσαι βοηθός παραγωγής για manufacturing σύστημα. Απαντάς ΠΑΝΤΑ στα ελληνικά, σύντομα και φιλικά.
 Σημερινή ημερομηνία: ${todayStr()}
-
 Διαθέσιμα τμήματα: ${deptList.join(", ")}
-Τρέχον βήμα wizard: ${step}
+Τρέχον βήμα wizard: ${step} (dept=επιλογή τμήματος, date=επιλογή ημερομηνίας, batch=επιβεβαίωση δημιουργίας batch, attachments=διαχείριση αρχείων)
 ${context}
 
 Μήνυμα χρήστη: "${text}"
 
-Αν το μήνυμα αναφέρεται σε επιλογή τμήματος (ακόμα και με ορθογραφικά λάθη ή greeklish), επέστρεψε JSON με:
-{"action": "select_dept", "dept": "<ακριβές όνομα τμήματος από τη λίστα>", "reply": "<σύντομη απάντηση>"}
+Αναλύσε την πρόθεση του χρήστη και επέστρεψε ΠΑΝΤΑ ένα από τα παρακάτω JSON:
 
-Αν το μήνυμα αναφέρεται σε επιλογή ημερομηνίας, επέστρεψε JSON με:
-{"action": "select_date", "date": "<YYYY-MM-DD>", "reply": "<σύντομη απάντηση>"}
+1. Επιλογή τμήματος (ακόμα και με ορθογραφικά λάθη, greeklish, ή μερική αναγνώριση):
+{"action": "select_dept", "dept": "<ακριβές όνομα από τη λίστα>", "reply": "..."}
 
-Αλλιώς επέστρεψε JSON με:
-{"action": "reply", "reply": "<απάντηση στα ελληνικά, σύντομη>"}`,
+2. Επιλογή ημερομηνίας (π.χ. "σήμερα", "χθες", "2026-03-07", "7 Μαρτίου", greeklish):
+{"action": "select_date", "date": "<YYYY-MM-DD>", "reply": "..."}
+
+3. Επιβεβαίωση δημιουργίας batch (π.χ. "ναι", "yes", "ok", "φτιάξε", "δημιούργησε"):
+{"action": "confirm_batch", "reply": "..."}
+
+4. Ακύρωση / επανεκκίνηση (π.χ. "όχι", "ακύρωση", "reset", "αρχή", "νέα αναζήτηση"):
+{"action": "reset", "reply": "..."}
+
+5. Οποιοδήποτε άλλο ερώτημα ή σχόλιο:
+{"action": "reply", "reply": "<απάντηση>"}`,
         response_json_schema: {
           type: "object",
           properties: {
@@ -380,14 +387,22 @@ ${context}
       if (result.action === "select_dept" && result.dept) {
         const match = departments.find(d => d.name === result.dept);
         if (match) {
-          addMsg("bot", result.reply || `Επέλεξα το τμήμα ${match.name}.`);
           handleDeptSelect(match.name);
           return;
         }
       }
       if (result.action === "select_date" && result.date) {
-        addMsg("bot", result.reply || `Επέλεξα ημερομηνία ${result.date}.`);
         handleDateSelect(result.date);
+        return;
+      }
+      if (result.action === "confirm_batch") {
+        addMsg("bot", result.reply || "Εντάξει, δημιουργώ batch...");
+        handleConfirmCreate();
+        return;
+      }
+      if (result.action === "reset") {
+        addMsg("bot", result.reply || "Εντάξει, επανεκκίνηση.");
+        handleReset();
         return;
       }
       addMsg("bot", result.reply || "Δεν κατάλαβα. Δοκίμασε ξανά.");
