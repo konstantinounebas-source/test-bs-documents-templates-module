@@ -238,6 +238,7 @@ export default function StopsPage() {
   };
 
   const handleExport = async () => {
+    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Stops");
 

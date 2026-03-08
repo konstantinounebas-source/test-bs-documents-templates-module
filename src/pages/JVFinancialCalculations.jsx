@@ -456,6 +456,7 @@ export default function JVFinancialCalculations() {
     };
 
     const exportBOM = async (shelterTypeId) => {
+        const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
         if (!shelterTypeId) return;
         
         try {

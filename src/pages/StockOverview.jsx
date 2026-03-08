@@ -190,6 +190,7 @@ export default function StockOverviewPage() {
   };
 
   const exportToExcel = async () => {
+    const XLSX = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new XLSX.Workbook();
     const sheet = workbook.addWorksheet("Stock Overview");
 
