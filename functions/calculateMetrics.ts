@@ -27,13 +27,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch data for formula evaluation
+    // Fetch data for formula evaluation with limits
     const [batchHeaders, operations, teamTime, qcInitial, scheduledData] = await Promise.all([
-      base44.entities.BatchHeader.filter({ date, department }),
-      base44.entities.Operations.filter({ date, department }),
-      base44.entities.TeamTimePerson.filter({ date, department }),
-      base44.entities.QC_Initial_Stock.filter({ date, department }),
-      base44.entities.ScheduledData.filter({ date, department })
+      base44.entities.BatchHeader.list().then(all => all.filter(b => b.date === date && b.department === department)),
+      base44.entities.Operations.list().then(all => all.filter(o => o.date === date && o.department === department)),
+      base44.entities.TeamTimePerson.list().then(all => all.filter(t => t.date === date && t.department === department)),
+      base44.entities.QC_Initial_Stock.list().then(all => all.filter(q => q.date === date && q.department === department)),
+      base44.entities.ScheduledData.list().then(all => all.filter(s => s.date === date && s.department === department))
     ]);
 
     const calculatedValues = [];
