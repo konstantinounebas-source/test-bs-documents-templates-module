@@ -20,7 +20,8 @@ import TeamTimeExtraTab from "@/components/manufacturing/daily/TeamTimeExtraTab"
 import HelpInTab from "@/components/manufacturing/daily/HelpInTab";
 import ConsumablesActualTab from "@/components/manufacturing/daily/ConsumablesActualTab";
 import AttachmentsPanel from "@/components/manufacturing/daily/AttachmentsPanel";
-import DailyProductionChatbot from "@/components/manufacturing/daily/DailyProductionChatbot";
+
+const DailyProductionChatbot = lazy(() => import("@/components/manufacturing/daily/DailyProductionChatbot"));
 
 export default function MfgDailyProduction() {
   const navigate = useNavigate();
