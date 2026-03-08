@@ -156,10 +156,8 @@ export default function TemplatesPage() {
   
   const loadUsersCache = useCallback(async () => {
     try {
-      const [systemUsers, appUsers] = await Promise.all([
-        base44.entities.User.list().catch(() => []),
-        base44.entities.AppUser.list().catch(() => [])
-      ]);
+      const systemUsers = await base44.entities.User.list().catch(() => []);
+      const appUsers = await base44.entities.AppUser.list().catch(() => []);
       
       const cache = {};
       systemUsers.forEach(user => {
