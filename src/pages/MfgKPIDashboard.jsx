@@ -6,6 +6,7 @@ import MetricDefinitionManager from "@/components/manufacturing/metrics/MetricDe
 import DailyMetricValuesViewer from "@/components/manufacturing/metrics/DailyMetricValuesViewer";
 import DailyKPIValuesViewer from "@/components/manufacturing/kpi/DailyKPIValuesViewer";
 import KPIDefinitionsTable from "@/components/manufacturing/KPIDefinitionsTable";
+import MetricsCalculator from "@/components/manufacturing/metrics/MetricsCalculator";
 
 export default function MfgKPIDashboardPage() {
   const [expandedKPIDefinitions, setExpandedKPIDefinitions] = useState(false);
@@ -19,6 +20,9 @@ export default function MfgKPIDashboardPage() {
           </CardHeader>
           <CardContent className="space-y-8">
             <div>
+              <MetricsCalculator />
+            </div>
+            <div className="border-t pt-6">
               <MetricDefinitionManager />
             </div>
             <div className="border-t pt-6">
