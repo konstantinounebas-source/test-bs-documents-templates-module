@@ -103,7 +103,13 @@ export default function ConsumablesTab({ bundle, isEditable }) {
   const { data: lines = [], isLoading } = useQuery({
     queryKey: ['ConsumablesStandardsLines', bundle.id],
     queryFn: () => base44.entities.ConsumablesStandardsLines.filter({ bundle_id: bundle.id }),
-    enabled: !!bundle
+    enabled: !!bundle,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Filter consumables by department
