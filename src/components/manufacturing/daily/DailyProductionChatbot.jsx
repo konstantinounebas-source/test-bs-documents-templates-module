@@ -1129,7 +1129,8 @@ ${context}
                </button>
                </div>
                </div>
-               </div>
+               </DialogContent>
+               </Dialog>
 
                {/* Duplicate file confirmation dialog */}
                {pendingDuplicates.length > 0 && (
