@@ -53,7 +53,13 @@ export default function QCTab({ bundle, isEditable }) {
     queryFn: async () => {
       const ops = await base44.entities.Operation.filter({ is_active: true });
       return ops;
-    }
+    },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
   
   const operations = useMemo(() => {
