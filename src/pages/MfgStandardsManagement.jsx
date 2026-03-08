@@ -37,14 +37,26 @@ export default function MfgStandardsManagementPage() {
   // Fetch departments
   const { data: departments = [] } = useQuery({
     queryKey: ['Department'],
-    queryFn: () => base44.entities.Department.filter({ is_active: true })
+    queryFn: () => base44.entities.Department.filter({ is_active: true }),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Fetch bundles for selected department
   const { data: bundles = [] } = useQuery({
     queryKey: ['StandardsBundle', selectedDepartment],
     queryFn: () => base44.entities.StandardsBundle.filter({ department: selectedDepartment }, '-created_date'),
-    enabled: !!selectedDepartment
+    enabled: !!selectedDepartment,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Find the department object for selected department name
