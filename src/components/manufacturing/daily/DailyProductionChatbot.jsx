@@ -1156,7 +1156,7 @@ ${context}
                </div>
 
                {/* Duplicate file confirmation dialog */}
-      {pendingDuplicates.length > 0 && (
+               {pendingDuplicates.length > 0 && (
           <Dialog open={true} onOpenChange={() => setPendingDuplicates([])}>
             <DialogContent className="max-w-sm">
               <DialogHeader>
