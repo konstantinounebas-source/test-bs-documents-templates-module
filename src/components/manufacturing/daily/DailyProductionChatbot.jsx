@@ -627,7 +627,7 @@ ${context}
         {!minimized && (
           <div className="flex flex-col flex-1 overflow-hidden">
             {/* Chat log */}
-            <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+            <ScrollArea className="flex-1 p-4">
               <div className="space-y-3">
                 {messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
