@@ -820,6 +820,22 @@ ${context}
                   </Button>
                 </div>
 
+                {/* Existing lines editable table */}
+                {existingBatchLines.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Καταχωρημένες Γραμμές</p>
+                    <div className="grid grid-cols-5 gap-1 text-[10px] font-semibold text-slate-400 px-1">
+                      <span>Item</span><span className="text-center">Sched.</span><span className="text-center">Proc.</span><span className="text-center">Good</span><span className="text-center">Scrap</span>
+                    </div>
+                    {existingBatchLines.map(bl => (
+                      <ExistingLineRow key={bl.id} bl={bl} onSave={async (id, data) => {
+                        await base44.entities.Batch_Lines.update(id, data);
+                        queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
+                      }} />
+                    ))}
+                  </div>
+                )}
+
                 <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
                   onClick={() => {
                     addMsg("bot", "✅ Batch Lines ολοκληρώθηκαν! Μπορείς να κλείσεις το chat ή να επιλέξεις νέα καταχώριση.");
