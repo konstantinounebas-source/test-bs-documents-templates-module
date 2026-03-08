@@ -10,7 +10,6 @@ import { ArrowLeft, ClipboardList, Plus, Edit2, Trash2, Save, Loader2, Clock } f
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
-import DailyProductionCalendarSelector from "@/components/manufacturing/daily/DailyProductionCalendarSelector";
 import BatchHeaderTab from "@/components/manufacturing/daily/BatchHeaderTab";
 import BatchLinesTab from "@/components/manufacturing/daily/BatchLinesTab";
 import QCInitialStockTab from "@/components/manufacturing/daily/QCInitialStockTab";
