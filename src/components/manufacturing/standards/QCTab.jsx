@@ -32,7 +32,13 @@ export default function QCTab({ bundle, isEditable }) {
   // Fetch departments to resolve bundle department id
   const { data: allDepartments = [] } = useQuery({
     queryKey: ['Department'],
-    queryFn: () => base44.entities.Department.filter({ is_active: true })
+    queryFn: () => base44.entities.Department.filter({ is_active: true }),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   const bundleDepartmentId = useMemo(() => {
