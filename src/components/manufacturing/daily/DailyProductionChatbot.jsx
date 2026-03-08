@@ -828,6 +828,21 @@ ${context}
                     {isSavingLine ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
                     Επιβεβαίωση
                   </Button>
+                  <Button size="sm" variant="outline" className="text-xs"
+                    disabled={isSavingLine}
+                    onClick={() => {
+                      addMsg("user", "Skip");
+                      handleBatchLineConfirm({ ...blReviewItems[blCurrentIdx], _skip: true });
+                    }}>
+                    Skip
+                  </Button>
+                  <Button size="sm" variant="outline" className="text-xs"
+                    onClick={() => {
+                      addMsg("user", "→ Batch Lines");
+                      setStep("batch_lines_add");
+                    }}>
+                    Batch Lines
+                  </Button>
                 </div>
               </div>
             )}
