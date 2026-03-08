@@ -124,7 +124,7 @@ export default function DailyMetricValuesViewer() {
   };
 
   // Check data validity when metrics or filtered values change
-  React.useEffect(() => {
+  useEffect(() => {
     if (filteredValues.length === 0) return;
 
     const checkAll = async () => {
