@@ -1108,11 +1108,14 @@ ${context}
                 <Send className="w-4 h-4" />
               </button>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Duplicate file confirmation dialog */}
+            </div>
+            )}
+            </div>
+            </>
+            ) : (
+            <>
+            {/* Dialogs outside main container */}
+            {/* Duplicate file confirmation dialog */}
       {pendingDuplicates.length > 0 && (
         <Dialog open={true} onOpenChange={() => setPendingDuplicates([])}>
           <DialogContent className="max-w-sm">
