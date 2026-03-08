@@ -120,14 +120,7 @@ export default function MfgDailyProduction() {
   const handleBatchSelect = (batch) => {
     setSelectedBatch(batch);
     setActiveTab('batch_lines');
-    queryClient.invalidateQueries(['Batch_Lines']);
-    queryClient.invalidateQueries(['QC_Initial_Stock']);
-    queryClient.invalidateQueries(['Operations']);
-    queryClient.invalidateQueries(['QC_Actions']);
-    queryClient.invalidateQueries(['Team_Time_Persons']);
-    queryClient.invalidateQueries(['Team_Time_Extra']);
-    queryClient.invalidateQueries(['Help_In']);
-    queryClient.invalidateQueries(['ConsumablesActual']);
+    setLoadedTabs(new Set(['batch_lines'])); // Reset to batch_lines only
     toast.success('Batch selected');
   };
 
