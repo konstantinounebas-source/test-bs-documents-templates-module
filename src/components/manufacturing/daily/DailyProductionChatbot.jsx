@@ -563,6 +563,36 @@ export default function DailyProductionChatbot({ departments = [] }) {
         )}
       </div>
 
+      {/* Duplicate file confirmation dialog */}
+      {pendingDuplicates.length > 0 && (
+        <Dialog open={true} onOpenChange={() => setPendingDuplicates([])}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle className="text-base">Αρχείο υπάρχει ήδη</DialogTitle>
+            </DialogHeader>
+            <div className="py-2 space-y-2">
+              {pendingDuplicates.map((f, i) => (
+                <p key={i} className="text-sm text-slate-700">
+                  Το αρχείο <span className="font-semibold">"{f.name}"</span> υπάρχει ήδη. Θέλεις να το καταχωρίσεις ξανά;
+                </p>
+              ))}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" size="sm" onClick={() => setPendingDuplicates([])}>
+                Ακύρωση
+              </Button>
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => {
+                const files = [...pendingDuplicates];
+                setPendingDuplicates([]);
+                files.forEach(f => uploadFile(f, true));
+              }}>
+                Ναι, ανέβασέ το
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
       {/* Preview dialog */}
       <Dialog open={!!previewFile} onOpenChange={open => { if (!open) { setPreviewFile(null); setRotation(0); } }}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
