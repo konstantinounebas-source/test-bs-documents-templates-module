@@ -133,6 +133,10 @@ export default function DailyProductionChatbot({ departments = [] }) {
   const [previewFile, setPreviewFile] = useState(null);
   const [rotation, setRotation] = useState(0);
 
+  // free-text input
+  const [userInput, setUserInput] = useState("");
+  const inputRef = useRef();
+
   // messages (chat log)
   const [messages, setMessages] = useState([
     { role: "bot", text: "Γεια σου! 👋 Επέλεξε τμήμα για να ξεκινήσουμε." }
