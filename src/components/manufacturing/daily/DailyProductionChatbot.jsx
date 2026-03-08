@@ -369,6 +369,34 @@ export default function DailyProductionChatbot({ departments = [] }) {
     setMessages([{ role: "bot", text: "Γεια σου! 👋 Επέλεξε τμήμα για να ξεκινήσουμε." }]);
   };
 
+  // ── step navigation helpers ───────────────────────────────────────────────
+  const stepSequence = ["batch_lines_add", "qc", "operations", "team_persons", "team_extra", "help_in", "consumables"];
+  const goNextStep = (fromStep, botMsg) => {
+    if (botMsg) addMsg("bot", botMsg);
+    const idx = stepSequence.indexOf(fromStep);
+    if (idx >= 0 && idx < stepSequence.length - 1) {
+      const next = stepSequence[idx + 1];
+      setStep(next);
+      const labels = {
+        qc: "QC Initial Stock",
+        operations: "Operations",
+        team_persons: "Team Time - Persons",
+        team_extra: "Team Time - Extra",
+        help_in: "Help In",
+        consumables: "Consumables"
+      };
+      if (labels[next]) addMsg("bot", `📋 Βήμα: **${labels[next]}**`);
+    } else {
+      setStep("done");
+      addMsg("bot", "🎉 Η καταχώριση ολοκληρώθηκε! Μπορείς να κλείσεις το chat ή να ξεκινήσεις νέα καταχώριση.");
+    }
+  };
+
+  const skipStep = (fromStep) => {
+    addMsg("user", "Παράλειψη");
+    goNextStep(fromStep, null);
+  };
+
   // ── batch lines: enter review mode after attachments ─────────────────────
   const startBatchLinesReview = () => {
     if (existingBatchLines.length === 0) {
