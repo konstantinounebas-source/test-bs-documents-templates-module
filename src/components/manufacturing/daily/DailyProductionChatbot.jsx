@@ -805,13 +805,21 @@ ${context}
             )}
 
             {/* Step: batch lines review */}
-             {step === "batch_lines_review" && blReviewItems.length > 0 && (
-               <div className="border-t p-3 space-y-2">
-                 <div className="flex items-center justify-between">
-                   <p className="text-xs text-slate-500 font-medium">
-                     Item {blCurrentIdx + 1}/{blReviewItems.length}: <span className="font-bold text-slate-800">{blReviewItems[blCurrentIdx]?.item_code}</span>
-                   </p>
-                 </div>
+              {step === "batch_lines_review" && blReviewItems.length > 0 && (
+                <div className="border-t p-3 space-y-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs text-slate-500 font-medium">
+                      Item {blCurrentIdx + 1}/{blReviewItems.length}: <span className="font-bold text-slate-800">{blReviewItems[blCurrentIdx]?.item_code}</span>
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-6"
+                      onClick={() => setShowAttachmentsModal(true)}
+                    >
+                      <Paperclip className="w-3 h-3 mr-1" /> Attachments
+                    </Button>
+                  </div>
                 {/* Editable fields inline */}
                 <div className="grid grid-cols-3 gap-1">
                   {["qty_processed","qty_out_good","qty_scrap"].map(field => (
