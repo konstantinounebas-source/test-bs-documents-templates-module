@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, CheckCircle2, SkipForward, RefreshCw } from "lucide-react";
+import { Loader2, CheckCircle2, SkipForward, RefreshCw, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack }) {
