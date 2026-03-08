@@ -105,7 +105,13 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   const { data: stdLines = [] } = useQuery({
     queryKey: ['StdSetLines', bundle?.id],
     queryFn: () => base44.entities.StdSetLines.filter({ bundle_id: bundle.id }),
-    enabled: !!bundle
+    enabled: !!bundle,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Extract unique item codes from DATA
