@@ -186,10 +186,11 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
                   <Trash2 className="w-3 h-3" />
                 </Button>
               </div>
-            </div>
-          ))
-        )}
-      </div>
+              </div>
+              );
+              })
+              )}
+              </div>
 
       {/* Preview Dialog */}
       <Dialog open={!!previewFile} onOpenChange={(open) => { if (!open) { setPreviewFile(null); setRotation(0); } }}>
