@@ -649,7 +649,7 @@ ${context}
 
   return (
     <>
-      <div className={`fixed bottom-6 right-6 z-50 w-[400px] shadow-2xl rounded-2xl border border-slate-200 bg-white flex flex-col transition-all
+      <div className={`fixed bottom-6 right-6 z-50 w-[800px] shadow-2xl rounded-2xl border border-slate-200 bg-white flex gap-0 transition-all
         ${minimized ? "h-14" : "h-[620px]"}`}
       >
         {/* Header */}
