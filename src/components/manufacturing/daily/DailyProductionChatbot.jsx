@@ -1110,11 +1110,9 @@ ${context}
             </div>
             </div>
             )}
-            </div>
-            </>
-            ) : (
-            <>
-            {/* Dialogs outside main container */}
+          </div>
+        )}
+      </div>
             {/* Duplicate file confirmation dialog */}
       {pendingDuplicates.length > 0 && (
         <Dialog open={true} onOpenChange={() => setPendingDuplicates([])}>
