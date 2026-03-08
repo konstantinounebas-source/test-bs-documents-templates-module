@@ -703,29 +703,27 @@ ${context}
         </div>
 
         <div className="flex flex-col flex-1 overflow-hidden min-h-0">
-          {/* Chat log */}
-          <ScrollArea className="flex-1 p-4 overflow-hidden">
-              <div className="space-y-3">
-                {messages.map((m, i) => (
-                  <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[85%] text-sm px-3 py-2 rounded-2xl whitespace-pre-wrap
-                      ${m.role === "user"
-                        ? "bg-blue-600 text-white rounded-br-sm"
-                        : "bg-slate-100 text-slate-800 rounded-bl-sm"}`}>
-                      {m.text}
-                    </div>
-                  </div>
-                ))}
-                {(createBatchMutation.isPending || uploadingCount > 0 || isAiThinking || isSavingLine) && (
-                  <div className="flex justify-start">
-                    <div className="bg-slate-100 rounded-2xl rounded-bl-sm px-3 py-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
+          {/* Chat log - takes remaining space */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[85%] text-sm px-3 py-2 rounded-2xl whitespace-pre-wrap
+                  ${m.role === "user"
+                    ? "bg-blue-600 text-white rounded-br-sm"
+                    : "bg-slate-100 text-slate-800 rounded-bl-sm"}`}>
+                  {m.text}
+                </div>
               </div>
-            </ScrollArea>
+            ))}
+            {(createBatchMutation.isPending || uploadingCount > 0 || isAiThinking || isSavingLine) && (
+              <div className="flex justify-start">
+                <div className="bg-slate-100 rounded-2xl rounded-bl-sm px-3 py-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
 
             {/* Step: choose department */}
             {step === "dept" && (
