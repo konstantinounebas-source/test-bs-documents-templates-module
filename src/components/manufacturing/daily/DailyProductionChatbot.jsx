@@ -942,8 +942,9 @@ ${context}
                     <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → QC
                   </Button>
                 </div>
-              </div>
-            )}
+                </div>
+                </div>
+                )}
 
             {/* Step: QC Initial Stock */}
             {step === "qc" && selBatch && (
