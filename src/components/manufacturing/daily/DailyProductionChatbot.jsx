@@ -674,7 +674,9 @@ ${context}
         </div>
 
         {!minimized && (
-          <div className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex gap-0 flex-1 overflow-hidden">
+            {/* Main chat area */}
+            <div className="flex flex-col flex-1 overflow-hidden min-w-0">
             {/* Chat log */}
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-3">
