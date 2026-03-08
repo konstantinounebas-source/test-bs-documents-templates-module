@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
-import ExcelJS from 'exceljs';
+
 
 export default function ExportHandoverTemplateDialog({ availableItems, stops, stickerTemplates }) {
   const handleExportTemplate = async () => {
