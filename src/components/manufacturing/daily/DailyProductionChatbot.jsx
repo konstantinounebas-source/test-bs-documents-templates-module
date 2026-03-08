@@ -985,12 +985,24 @@ ${context}
 
             {/* Step: Team Time - Extra */}
             {step === "team_extra" && selBatch && (
-              <ChatStepTeamExtra
-                batchId={selBatch.id}
-                onNext={(msg) => goNextStep("team_extra", msg)}
-                onSkip={() => skipStep("team_extra")}
-                onBack={() => goPrevStep("team_extra")}
-              />
+              <div className="space-y-3">
+                <div className="flex justify-end px-3 pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => setShowAttachmentsModal(true)}
+                  >
+                    <Paperclip className="w-3 h-3 mr-1" /> Attachments
+                  </Button>
+                </div>
+                <ChatStepTeamExtra
+                  batchId={selBatch.id}
+                  onNext={(msg) => goNextStep("team_extra", msg)}
+                  onSkip={() => skipStep("team_extra")}
+                  onBack={() => goPrevStep("team_extra")}
+                />
+              </div>
             )}
 
             {/* Step: Help In */}
