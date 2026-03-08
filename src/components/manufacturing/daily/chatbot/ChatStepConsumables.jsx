@@ -45,6 +45,9 @@ function ConsumableRow({ line, onDelete, onUpdate }) {
 
 export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack }) {
   const queryClient = useQueryClient();
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [manualForm, setManualForm] = useState({ consumable: "", item_code: "", operation: "", unit: "", actual_qty: "", notes: "" });
+  const [isSavingManual, setIsSavingManual] = useState(false);
 
   const { data: batchHeader } = useQuery({
     queryKey: ["BatchHeader", batchId],
