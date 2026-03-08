@@ -145,9 +145,20 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
         if (!bl || !bl.qty_processed) continue;
         const exists = existingQC.find(q => q.item_code === sd.item_code && q.qc_type === sd.qc_type);
         if (exists) continue;
+        
+        // Find qc_per_piece_min from QCSetLines
+        const trimmedItemCode = (sd.item_code || '').trim().toLowerCase();
+        const qcRule = qcSetLines.find(ql => {
+          const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
+          const qlQcType = ql.data?.qc_type || ql.qc_type;
+          const qlQcLevel = ql.data?.qc_level || ql.qc_level;
+          return qlItemCode === trimmedItemCode && qlQcType === sd.qc_type && qlQcLevel === (sd.qc_level || '');
+        });
+        const perPieceMin = qcRule ? (parseFloat(qcRule.calculated_extra_time_min || qcRule.calculated_extra_time || 0)) : 0;
+        
         await base44.entities.QC_Initial_Stock.create({
           batch_header_id: batchId, item_code: sd.item_code,
-          qc_type: sd.qc_type, qc_level: sd.qc_level || "", qc_per_piece_min: sd.qc_per_piece_min || 0, qty_affected: bl.qty_processed
+          qc_type: sd.qc_type, qc_level: sd.qc_level || "", qc_per_piece_min: perPieceMin, qty_affected: bl.qty_processed
         });
         created++;
       }
