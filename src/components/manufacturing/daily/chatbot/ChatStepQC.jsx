@@ -70,6 +70,39 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
 
   const processedLines = batchLines.filter(bl => (bl.qty_processed || 0) > 0);
 
+  const totalQCTime = existingQC.reduce((sum, qc) => {
+    const perPiece = parseFloat(qc.qc_per_piece_min || 0);
+    const qty = parseInt(qc.qty_affected || 0);
+    return sum + (perPiece * qty);
+  }, 0);
+
+  const handleEditStart = (qc) => {
+    setEditingId(qc.id);
+    setEditForm({ ...qc });
+  };
+
+  const handleEditSave = async () => {
+    if (!editingId) return;
+    try {
+      await base44.entities.QC_Initial_Stock.update(editingId, editForm);
+      queryClient.invalidateQueries(["QC_Initial_Stock", batchId]);
+      setEditingId(null);
+      toast.success("✅ QC record ενημερώθηκε");
+    } catch {
+      toast.error("Σφάλμα ενημέρωσης");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      await base44.entities.QC_Initial_Stock.delete(id);
+      queryClient.invalidateQueries(["QC_Initial_Stock", batchId]);
+      toast.success("✅ QC record διαγράφηκε");
+    } catch {
+      toast.error("Σφάλμα διαγραφής");
+    }
+  };
+
   const handleSync = async () => {
     setIsSyncing(true);
     try {
