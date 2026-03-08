@@ -19,8 +19,8 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
 
   const uploadMutation = useMutation({
     mutationFn: async (file) => {
-      const mimeOrName = file.type || file.name || "";
-      const fileType = /image|jpg|jpeg|png|gif|webp|bmp/i.test(mimeOrName) ? "image" : "pdf";
+      const isImage = /image/i.test(file.type || "") || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file.name || "");
+      const fileType = isImage ? "image" : "pdf";
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       
       return base44.entities.BatchAttachment.create({
