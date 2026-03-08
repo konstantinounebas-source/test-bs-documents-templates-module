@@ -276,7 +276,9 @@ export default function MfgDailyProduction() {
       </div>
 
       {/* Floating AI Chatbot */}
-      <DailyProductionChatbot departments={departments} />
+      <Suspense fallback={null}>
+        <DailyProductionChatbot departments={departments} />
+      </Suspense>
     </div>
   );
 }
