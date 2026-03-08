@@ -125,24 +125,8 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
       </div>
 
       {existingQC.length > 0 && (
-        <div className="space-y-1">
-          <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
-            ✅ {existingQC.length} QC record(s) υπάρχουν ήδη
-          </div>
-          <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Καταχωρημένες QC</div>
-          <div className="grid grid-cols-4 gap-1 text-[10px] font-semibold text-slate-400 px-1 bg-slate-50 p-1 rounded">
-            <span>Item</span><span className="text-center">Type</span><span className="text-center">Level</span><span className="text-center">Qty</span>
-          </div>
-          <div className="space-y-0.5 max-h-32 overflow-y-auto">
-            {existingQC.map((qc, i) => (
-              <div key={i} className="grid grid-cols-4 gap-1 text-[10px] text-slate-700 px-1 py-0.5 bg-slate-50 rounded hover:bg-slate-100">
-                <span className="font-medium">{qc.item_code}</span>
-                <span className="text-center text-slate-600">{qc.qc_type}</span>
-                <span className="text-center text-slate-600">{qc.qc_level}</span>
-                <span className="text-center font-semibold">{qc.qty_affected}</span>
-              </div>
-            ))}
-          </div>
+        <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
+          ✅ {existingQC.length} QC record(s) υπάρχουν ήδη
         </div>
       )}
 
