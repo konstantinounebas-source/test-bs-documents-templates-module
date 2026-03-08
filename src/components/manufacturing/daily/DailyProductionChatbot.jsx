@@ -929,9 +929,18 @@ ${context}
 
                 <div className="flex gap-2 flex-col">
                   <div className="flex gap-2">
+                    <Button size="sm" className="flex-1 text-xs bg-orange-500 hover:bg-orange-600 text-white"
+                      onClick={() => {
+                        addMsg("user", "⏭️ Παράλειψη όλων επιβεβαιώσεων → Batch Lines");
+                        setStep("batch_lines_add");
+                      }}>
+                      <FastForward className="w-3 h-3 mr-1" /> Skip All Confirmations
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
                     <Button size="sm" variant="outline" className="flex-1 text-xs"
                       onClick={() => {
-                        addMsg("user", "Παράλειψη όλων → Batch Lines");
+                        addMsg("user", "Παράλειψη → Batch Lines");
                         goNextStep("batch_lines_add", "✅ Batch Lines ολοκληρώθηκαν!");
                       }}>
                       <SkipForward className="w-3 h-3 mr-1" /> Skip
