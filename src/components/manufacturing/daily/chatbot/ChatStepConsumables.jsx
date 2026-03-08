@@ -211,6 +211,66 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
         </Button>
       )}
 
+      {/* Manual Add */}
+      <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => setShowAddForm(f => !f)}>
+        <Plus className="w-3 h-3 mr-1" /> Add Manual
+      </Button>
+
+      {showAddForm && (
+        <div className="border rounded p-2 space-y-1.5 bg-slate-50">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase">Add Consumable</p>
+          <div>
+            <p className="text-[10px] text-slate-500 mb-0.5">Consumable *</p>
+            <Select value={manualForm.consumable} onValueChange={v => setManualForm(f => ({ ...f, consumable: v }))}>
+              <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Select consumable" /></SelectTrigger>
+              <SelectContent>
+                {consumables.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          {operationOptions.length > 0 && (
+            <div>
+              <p className="text-[10px] text-slate-500 mb-0.5">Item Code + Operation</p>
+              <Select onValueChange={v => {
+                const [item_code, operation] = v.split("||");
+                setManualForm(f => ({ ...f, item_code, operation }));
+              }}>
+                <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Select operation" /></SelectTrigger>
+                <SelectContent>
+                  {operationOptions.map((op, i) => (
+                    <SelectItem key={i} value={`${op.item_code}||${op.operation}`}>{op.item_code} - {op.operation}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div>
+            <p className="text-[10px] text-slate-500 mb-0.5">Unit *</p>
+            <input placeholder="e.g., kg, ltr, pcs" value={manualForm.unit}
+              onChange={e => setManualForm(f => ({ ...f, unit: e.target.value }))}
+              className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-500 mb-0.5">Actual Qty *</p>
+            <input type="number" step="0.01" placeholder="0.00" value={manualForm.actual_qty}
+              onChange={e => setManualForm(f => ({ ...f, actual_qty: e.target.value }))}
+              className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-500 mb-0.5">Notes</p>
+            <input placeholder="Optional notes..." value={manualForm.notes}
+              onChange={e => setManualForm(f => ({ ...f, notes: e.target.value }))}
+              className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
+          </div>
+          <div className="flex gap-1 pt-1">
+            <Button size="sm" variant="outline" className="flex-1 text-xs h-7" onClick={() => setShowAddForm(false)}>Ακύρωση</Button>
+            <Button size="sm" className="flex-1 text-xs h-7 bg-slate-800 hover:bg-slate-900" onClick={handleAddManual} disabled={isSavingManual}>
+              {isSavingManual ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Add
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
         onClick={() => onNext("🎉 Η καταχώριση ολοκληρώθηκε! Όλα τα βήματα εκτελέστηκαν.")}>
         <CheckCircle2 className="w-3 h-3 mr-1" /> Ολοκλήρωση
