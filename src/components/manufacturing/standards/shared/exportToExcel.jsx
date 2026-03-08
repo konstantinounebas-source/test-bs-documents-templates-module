@@ -1,4 +1,3 @@
-import ExcelJS from 'exceljs';
 import XLSX from 'xlsx';
 
 export async function exportDataTabToExcel(gridRows, operationColumns, bundleName) {
