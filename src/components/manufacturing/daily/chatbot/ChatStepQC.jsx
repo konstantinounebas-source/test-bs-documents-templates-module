@@ -115,7 +115,10 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
   return (
     <div className="border-t p-3 space-y-3 overflow-y-auto max-h-80">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-slate-700">QC Initial Stock</p>
+        <div className="flex items-center gap-1">
+          <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>
+          <p className="text-xs font-semibold text-slate-700">QC Initial Stock</p>
+        </div>
         <Button variant="ghost" size="sm" className="text-xs h-6 text-slate-400" onClick={onSkip}>
           <SkipForward className="w-3 h-3 mr-1" /> Παράλειψη
         </Button>
