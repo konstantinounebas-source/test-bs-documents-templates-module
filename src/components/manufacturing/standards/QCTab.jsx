@@ -82,7 +82,13 @@ export default function QCTab({ bundle, isEditable }) {
   // Fetch QC types (use QCType entity which supports department_ids array)
   const { data: allQCTypes = [] } = useQuery({
     queryKey: ['QCType'],
-    queryFn: () => base44.entities.QCType.filter({ is_active: true })
+    queryFn: () => base44.entities.QCType.filter({ is_active: true }),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Filter QC types by bundle department
