@@ -239,46 +239,26 @@ export default function MfgDailyProduction() {
                       </TabsList>
 
                       <div className="mt-6">
-                        {(activeTab === 'batch_lines' || loadedTabs.has('batch_lines')) && (
-                          <TabsContent value="batch_lines">
-                            <BatchLinesTab batchId={selectedBatch?.id} department={selectedBatch?.department} selectedBundle={selectedBundle} />
-                          </TabsContent>
+                        {activeTab === 'batch_lines' && (
+                          <BatchLinesTab batchId={selectedBatch?.id} department={selectedBatch?.department} selectedBundle={selectedBundle} />
                         )}
-
-                        {(activeTab === 'qc_initial' || loadedTabs.has('qc_initial')) && (
-                          <TabsContent value="qc_initial">
-                            <QCInitialStockTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                          </TabsContent>
+                        {activeTab === 'qc_initial' && (
+                          <QCInitialStockTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
                         )}
-
-                        {(activeTab === 'operations' || loadedTabs.has('operations')) && (
-                          <TabsContent value="operations">
-                            <OperationsTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                          </TabsContent>
+                        {activeTab === 'operations' && (
+                          <OperationsTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
                         )}
-
-                        {(activeTab === 'team_persons' || loadedTabs.has('team_persons')) && (
-                          <TabsContent value="team_persons">
-                            <TeamTimePersonsTab batchId={selectedBatch?.id} />
-                          </TabsContent>
+                        {activeTab === 'team_persons' && (
+                          <TeamTimePersonsTab batchId={selectedBatch?.id} />
                         )}
-
-                        {(activeTab === 'team_extra' || loadedTabs.has('team_extra')) && (
-                          <TabsContent value="team_extra">
-                            <TeamTimeExtraTab batchId={selectedBatch?.id} />
-                          </TabsContent>
+                        {activeTab === 'team_extra' && (
+                          <TeamTimeExtraTab batchId={selectedBatch?.id} />
                         )}
-
-                        {(activeTab === 'help_in' || loadedTabs.has('help_in')) && (
-                          <TabsContent value="help_in">
-                            <HelpInTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
-                          </TabsContent>
+                        {activeTab === 'help_in' && (
+                          <HelpInTab batchId={selectedBatch?.id} department={selectedBatch?.department} />
                         )}
-
-                        {(activeTab === 'consumables' || loadedTabs.has('consumables')) && (
-                          <TabsContent value="consumables">
-                            <ConsumablesActualTab batchId={selectedBatch?.id} />
-                          </TabsContent>
+                        {activeTab === 'consumables' && (
+                          <ConsumablesActualTab batchId={selectedBatch?.id} />
                         )}
                       </div>
                     </Tabs>
