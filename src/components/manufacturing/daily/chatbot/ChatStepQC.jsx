@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, CheckCircle2, SkipForward, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-export default function ChatStepQC({ batchId, department, onNext, onSkip }) {
+export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack }) {
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
