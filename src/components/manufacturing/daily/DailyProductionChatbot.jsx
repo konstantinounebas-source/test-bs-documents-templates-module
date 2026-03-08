@@ -678,26 +678,23 @@ ${context}
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-blue-600 rounded-t-2xl text-white">
-          <div className="flex items-center gap-2">
-            <Bot className="w-5 h-5" />
-            <span className="font-semibold text-sm">AI Production Assistant</span>
+        <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white border-b border-blue-700">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Bot className="w-5 h-5 flex-shrink-0" />
+            <span className="font-semibold text-sm truncate">AI Production Assistant</span>
             {selBatch && (
-              <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0">
+              <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
                 {selBatch.date} · {selDept}
               </Badge>
             )}
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 ml-2">
             <button 
               onClick={() => setPosition(p => p === "right" ? "left" : "right")} 
-              className="hover:bg-blue-700 rounded p-1 text-xs"
+              className="hover:bg-blue-700 rounded p-1"
               title="Toggle position"
             >
               {position === "right" ? "←" : "→"}
-            </button>
-            <button onClick={() => setMin(m => !m)} className="hover:bg-blue-700 rounded p-1">
-              {minimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
             </button>
             <button onClick={() => setOpen(false)} className="hover:bg-blue-700 rounded p-1">
               <X className="w-4 h-4" />
@@ -705,7 +702,7 @@ ${context}
           </div>
         </div>
 
-        {!minimized && (
+        <div className="flex flex-col flex-1 overflow-hidden">
           <div className="flex flex-col flex-1 overflow-hidden">
             {/* Chat log */}
             <ScrollArea className="flex-1 p-4">
