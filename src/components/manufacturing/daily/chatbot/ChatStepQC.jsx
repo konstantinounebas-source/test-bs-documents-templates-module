@@ -125,8 +125,24 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
       </div>
 
       {existingQC.length > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
-          ✅ {existingQC.length} QC record(s) υπάρχουν ήδη
+        <div className="space-y-2">
+          <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
+            ✅ {existingQC.length} QC record(s) υπάρχουν ήδη
+          </div>
+          <div className="bg-slate-50 rounded border border-slate-200 p-2 max-h-48 overflow-y-auto">
+            <div className="grid grid-cols-3 gap-1 text-[10px] font-semibold text-slate-600 mb-1 pb-1 border-b">
+              <div>Item</div>
+              <div>Type</div>
+              <div>Level</div>
+            </div>
+            {existingQC.map((qc, i) => (
+              <div key={i} className="grid grid-cols-3 gap-1 text-[10px] text-slate-700 py-0.5 border-b border-slate-100 last:border-0">
+                <div>{qc.item_code}</div>
+                <div>{qc.qc_type}</div>
+                <div>{qc.qc_level}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
