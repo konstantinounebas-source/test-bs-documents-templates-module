@@ -1,5 +1,3 @@
-import ExcelJS from 'exceljs';
-
 // Helper to export as CSV instead of Excel (no external dependencies needed)
 function exportToCSV(headers, rows, filename) {
   const csvContent = [
