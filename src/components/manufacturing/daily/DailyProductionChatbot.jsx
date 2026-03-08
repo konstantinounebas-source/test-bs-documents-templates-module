@@ -190,6 +190,25 @@ export default function DailyProductionChatbot({ departments = [] }) {
     staleTime: 0
   });
 
+  // fetch existing batch lines for review
+  const { data: existingBatchLines = [] } = useQuery({
+    queryKey: ["Batch_Lines", selBatch?.id],
+    queryFn: () => base44.entities.Batch_Lines.filter({ batch_header_id: selBatch?.id }),
+    enabled: !!selBatch?.id,
+    staleTime: 0
+  });
+
+  // fetch item codes from bundle for "add extra" dropdown
+  const { data: bundleItemCodes = [] } = useQuery({
+    queryKey: ["BundleItemCodes", selBatch?.bundle_id],
+    queryFn: async () => {
+      const lines = await base44.entities.StdSetLines.filter({ bundle_id: selBatch.bundle_id });
+      return [...new Set(lines.map(l => l.item_code))].filter(Boolean).sort();
+    },
+    enabled: !!selBatch?.bundle_id,
+    staleTime: Infinity
+  });
+
   // ── bundle resolver ───────────────────────────────────────────────────────
   const resolveBundle = (date, dept) => {
     const da = dailyAssignments.find(a => a.assignment_date === date && a.department_id === dept);
