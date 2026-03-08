@@ -5,7 +5,6 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, Download, FileSpreadsheet, FileText } from "lucide-react";
 import QRCode from "qrcode";
-import ExcelJS from "exceljs";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -125,56 +124,7 @@ export default function ExportQRCodesDialog({ open, onClose, selectedProducts })
   };
 
   const exportToExcel = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('QR Codes');
-
-    // Set column widths
-    worksheet.columns = [
-      { width: 5 },
-      { width: 20 },
-      { width: 35 },
-      { width: 20 }
-    ];
-
-    let currentRow = 1;
-
-    for (const product of selectedProducts) {
-      const qrDataURL = await generateQRCodeDataURL(product.sku || product.id);
-      if (!qrDataURL) continue;
-
-      // Set row height for QR code (approximately 100 pixels)
-      worksheet.getRow(currentRow).height = 100;
-
-      // Add product info
-      worksheet.getCell(`B${currentRow}`).value = product.sku || 'N/A';
-      worksheet.getCell(`B${currentRow}`).font = { bold: true, size: 12 };
-      
-      worksheet.getCell(`C${currentRow}`).value = product.name || 'Unknown Product';
-      worksheet.getCell(`C${currentRow}`).font = { size: 10 };
-
-      // Add QR Code image
-      const qrImageId = workbook.addImage({
-        base64: qrDataURL.split(',')[1],
-        extension: 'png',
-      });
-
-      worksheet.addImage(qrImageId, {
-        tl: { col: 3, row: currentRow - 1 },
-        ext: { width: 120, height: 120 }
-      });
-
-      currentRow += 2; // Add some spacing between rows
-    }
-
-    // Generate buffer and download
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `QR_Codes_${new Date().toISOString().split('T')[0]}.xlsx`;
-    link.click();
-    window.URL.revokeObjectURL(url);
+    alert('Excel export is not available');
   };
 
   return (
