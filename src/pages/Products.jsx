@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import ExcelJS from 'exceljs';
+import ExcelJS from 'npm:exceljs';
 
 import ProductsTable from "../components/warehouse/ProductsTable";
 import CreateEditProductDialog from "../components/warehouse/CreateEditProductDialog";

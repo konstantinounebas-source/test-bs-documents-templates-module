@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Save, Users, FileDown } from "lucide-react";
-import ExcelJS from 'exceljs';
+import ExcelJS from 'npm:exceljs';
 import ExportHandoverTemplateDialog from "@/components/stickers/ExportHandoverTemplateDialog";
 import ImportHandoverFromFileDialog from "@/components/stickers/ImportHandoverFromFileDialog";
 import { Loader2 } from "lucide-react";

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Pencil, FileDown } from "lucide-react";
-import ExcelJS from 'exceljs';
+import ExcelJS from 'npm:exceljs';
 import { Badge } from "@/components/ui/badge";
 import CreateEditStickerTemplateDialog from "@/components/stickers/CreateEditStickerTemplateDialog";
 
