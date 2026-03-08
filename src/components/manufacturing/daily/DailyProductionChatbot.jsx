@@ -317,6 +317,57 @@ export default function DailyProductionChatbot({ departments = [] }) {
     setMessages([{ role: "bot", text: "Γεια σου! 👋 Επέλεξε τμήμα για να ξεκινήσουμε." }]);
   };
 
+  const handleUserMessage = () => {
+    const text = userInput.trim();
+    if (!text) return;
+    setUserInput("");
+    addMsg("user", text);
+
+    // simple keyword routing
+    const lower = text.toLowerCase();
+
+    if (step === "dept") {
+      const match = departments.find(d => lower.includes(d.name.toLowerCase()));
+      if (match) { handleDeptSelect(match.name); return; }
+      addMsg("bot", "Παρακαλώ επέλεξε ένα τμήμα από τη λίστα παρακάτω.");
+      return;
+    }
+
+    if (step === "date") {
+      // try to parse a date from text (YYYY-MM-DD)
+      const dateMatch = text.match(/\d{4}-\d{2}-\d{2}/);
+      if (dateMatch) { handleDateSelect(dateMatch[0]); return; }
+      if (lower.includes("σήμερ") || lower.includes("today")) { handleDateSelect(todayStr()); return; }
+      if (lower.includes("χθες") || lower.includes("yester")) {
+        const d = new Date(); d.setDate(d.getDate() - 1);
+        handleDateSelect(d.toISOString().split("T")[0]); return;
+      }
+      addMsg("bot", "Παρακαλώ επέλεξε ημερομηνία από τις επιλογές ή γράψε σε μορφή ΕΕΕΕ-ΜΜ-ΗΗ.");
+      return;
+    }
+
+    if (step === "batch") {
+      if (lower.includes("ναι") || lower.includes("yes") || lower.includes("δημιούργ")) {
+        handleConfirmCreate(); return;
+      }
+      if (lower.includes("όχι") || lower.includes("no") || lower.includes("ακύρ")) {
+        handleReset(); return;
+      }
+      addMsg("bot", 'Απάντησε "Ναι" για δημιουργία ή "Ακύρωση".');
+      return;
+    }
+
+    if (step === "attachments") {
+      if (lower.includes("επανεκκίν") || lower.includes("reset") || lower.includes("νέα αναζήτ") || lower.includes("αρχή")) {
+        handleReset(); return;
+      }
+      addMsg("bot", "Μπορείς να ανεβάσεις αρχεία με drag & drop ή κάνοντας κλικ στην περιοχή ανεβάσματος.");
+      return;
+    }
+
+    addMsg("bot", "Δεν κατάλαβα. Χρησιμοποίησε τα κουμπιά για να πλοηγηθείς.");
+  };
+
   const quickDates = getQuickDates();
 
   // ── UI ────────────────────────────────────────────────────────────────────
