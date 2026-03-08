@@ -10,7 +10,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [form, setForm] = useState({ qc_type: "", qc_level: "" });
+  const [form, setForm] = useState({ qc_type: "", qc_level: "", qc_per_piece_min: "" });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [selectedItems, setSelectedItems] = useState(new Set());
