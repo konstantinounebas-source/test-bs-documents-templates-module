@@ -187,25 +187,12 @@ export default function MfgStandardsManagementPage() {
     }
   });
 
-  const handleOpenBundle = async () => {
+  const handleOpenBundle = () => {
     const bundle = bundles.find(b => b.id === selectedBundleId);
     if (!bundle) return;
-    
-    // Clear current bundle first
-    setCurrentBundle(null);
-    
-    // Force invalidate all queries
-    await queryClient.invalidateQueries({ queryKey: ['StdSetLines'] });
-    await queryClient.invalidateQueries({ queryKey: ['QCSetLines'] });
-    await queryClient.invalidateQueries({ queryKey: ['ProfileSetLines'] });
-    await queryClient.invalidateQueries({ queryKey: ['TargetType'] });
-    await queryClient.invalidateQueries({ queryKey: ['DailyTargetLines'] });
-    await queryClient.invalidateQueries({ queryKey: ['ConsumablesStandardsLines'] });
-    
-    // Set bundle and reset to first tab
+
     setCurrentBundle(bundle);
     setActiveTab('data');
-    
     toast.success(`Loaded bundle v${bundle.version_no}`);
   };
 
