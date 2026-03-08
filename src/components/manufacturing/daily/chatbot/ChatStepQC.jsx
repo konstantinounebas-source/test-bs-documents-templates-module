@@ -11,6 +11,8 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [form, setForm] = useState({ qc_type: "", qc_level: "" });
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
 
   const { data: batchHeader } = useQuery({
     queryKey: ["BatchHeader", batchId],
