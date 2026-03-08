@@ -563,6 +563,7 @@ export default function OrdersManagementPage() {
   };
 
   const handleExportAvailableItems = async () => {
+    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Available Sticker Items');
 
@@ -614,6 +615,7 @@ export default function OrdersManagementPage() {
   };
 
   const handleExportOrders = async () => {
+    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Orders');
 
