@@ -127,19 +127,7 @@ export default function MfgDailyProduction() {
     queryClient.invalidateQueries({ queryKey: ['BatchHeader', selectedDepartment] });
   };
 
-  const handleDateSelect = (dateStr) => {
-    setSelectedDate(dateStr);
-    const existingBatch = batchHeaders.find(b => b.date === dateStr && b.department === selectedDepartment);
-    if (existingBatch) {
-      handleBatchSelect(existingBatch);
-    } else {
-      setSelectedBatch(null);
-    }
-  };
 
-  const handleCreateBatch = async (dateStr) => {
-    // This will be handled by BatchHeaderTab but we need to pass the department
-  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-6">
