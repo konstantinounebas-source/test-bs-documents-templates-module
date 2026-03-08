@@ -1133,7 +1133,7 @@ ${context}
             )}
 
             {/* Free-text input bar — always visible */}
-            <div className="border-t bg-white p-2 flex gap-2 items-center rounded-b-2xl">
+            <div className="border-t bg-white p-2 flex gap-2 items-center">
               <input
                 ref={inputRef}
                 type="text"
