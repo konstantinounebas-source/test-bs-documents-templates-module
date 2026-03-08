@@ -3,16 +3,18 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
+import { checkMetricsDataValidity } from '@/functions/checkMetricsDataValidity';
 
 export default function DailyMetricValuesViewer() {
   const [isExpanded, setIsExpanded] = useState(true);
   const [viewMode, setViewMode] = useState('daily');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedDept, setSelectedDept] = useState('ALL');
+  const [validityCheck, setValidityCheck] = useState({});
 
   const dateRange = useMemo(() => {
     if (viewMode === 'daily') {
@@ -121,6 +123,31 @@ export default function DailyMetricValuesViewer() {
     }
   };
 
+  // Check data validity when metrics or filtered values change
+  React.useEffect(() => {
+    if (filteredValues.length === 0) return;
+
+    const checkAll = async () => {
+      const checks = {};
+      for (const mv of filteredValues) {
+        try {
+          const result = await checkMetricsDataValidity({
+            metric_id: mv.id,
+            date: mv.date,
+            department: mv.department
+          });
+          checks[mv.id] = result.data;
+        } catch (error) {
+          console.error('Validity check error:', error);
+          checks[mv.id] = { isValid: true };
+        }
+      }
+      setValidityCheck(checks);
+    };
+
+    checkAll();
+  }, [filteredValues]);
+
   if (isLoading) {
     return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin" /></div>;
   }
@@ -200,16 +227,27 @@ export default function DailyMetricValuesViewer() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredValues.map(mv => (
-                   <TableRow key={mv.id} className="hover:bg-slate-50">
-                     <TableCell>{mv.department}</TableCell>
-                     <TableCell>
-                       <div className="font-mono font-semibold text-blue-700">{mv.metric_code}</div>
-                       <div className="text-xs text-slate-600">{metricNameMap[mv.metric_code] || '-'}</div>
-                     </TableCell>
-                     <TableCell className="text-right font-semibold">{mv.value?.toFixed(2)}</TableCell>
-                   </TableRow>
-                 ))
+                filteredValues.map(mv => {
+                  const checkKey = `${mv.id}`;
+                  const isStale = validityCheck[checkKey]?.isValid === false;
+                  return (
+                    <TableRow key={mv.id} className={`hover:bg-slate-50 ${isStale ? 'bg-orange-50' : ''}`}>
+                      <TableCell>{mv.department}</TableCell>
+                      <TableCell>
+                        <div className="font-mono font-semibold text-blue-700">{mv.metric_code}</div>
+                        <div className="text-xs text-slate-600">{metricNameMap[mv.metric_code] || '-'}</div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="font-semibold">{mv.value?.toFixed(2)}</span>
+                          {isStale && (
+                            <AlertCircle className="w-4 h-4 text-orange-500" title="Data changed after calculation" />
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
