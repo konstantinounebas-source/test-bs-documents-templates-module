@@ -879,6 +879,71 @@ ${context}
               </div>
             )}
 
+            {/* Step: QC Initial Stock */}
+            {step === "qc" && selBatch && (
+              <ChatStepQC
+                batchId={selBatch.id}
+                department={selDept}
+                onNext={(msg) => goNextStep("qc", msg)}
+                onSkip={() => skipStep("qc")}
+              />
+            )}
+
+            {/* Step: Operations */}
+            {step === "operations" && selBatch && (
+              <ChatStepOperations
+                batchId={selBatch.id}
+                onNext={(msg) => goNextStep("operations", msg)}
+                onSkip={() => skipStep("operations")}
+              />
+            )}
+
+            {/* Step: Team Time - Persons */}
+            {step === "team_persons" && selBatch && (
+              <ChatStepTeamPersons
+                batchId={selBatch.id}
+                onNext={(msg) => goNextStep("team_persons", msg)}
+                onSkip={() => skipStep("team_persons")}
+              />
+            )}
+
+            {/* Step: Team Time - Extra */}
+            {step === "team_extra" && selBatch && (
+              <ChatStepTeamExtra
+                batchId={selBatch.id}
+                onNext={(msg) => goNextStep("team_extra", msg)}
+                onSkip={() => skipStep("team_extra")}
+              />
+            )}
+
+            {/* Step: Help In */}
+            {step === "help_in" && selBatch && (
+              <ChatStepHelpIn
+                batchId={selBatch.id}
+                department={selDept}
+                onNext={(msg) => goNextStep("help_in", msg)}
+                onSkip={() => skipStep("help_in")}
+              />
+            )}
+
+            {/* Step: Consumables */}
+            {step === "consumables" && selBatch && (
+              <ChatStepConsumables
+                batchId={selBatch.id}
+                onNext={(msg) => goNextStep("consumables", msg)}
+                onSkip={() => skipStep("consumables")}
+              />
+            )}
+
+            {/* Step: Done */}
+            {step === "done" && (
+              <div className="border-t p-3 space-y-2">
+                <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700" onClick={handleReset}>
+                  ↩ Νέα Καταχώριση
+                </Button>
+              </div>
+            )}
+
             {/* Free-text input bar — always visible */}
             <div className="border-t bg-white p-2 flex gap-2 items-center rounded-b-2xl">
               <input
