@@ -326,9 +326,39 @@ export default function DailyProductionChatbot({ departments = [] }) {
     files.forEach(f => uploadFile(f));
   };
 
+  const [isAiThinking, setIsAiThinking] = useState(false);
+
   const handleReset = () => {
     setStep("dept"); setSelDept(""); setSelDate(""); setSelBatch(null);
     setMessages([{ role: "bot", text: "Γεια σου! 👋 Επέλεξε τμήμα για να ξεκινήσουμε." }]);
+  };
+
+  const askAI = async (text, lower) => {
+    setIsAiThinking(true);
+    try {
+      const context = [
+        selDept && `Επιλεγμένο τμήμα: ${selDept}`,
+        selDate && `Επιλεγμένη ημερομηνία: ${selDate}`,
+        selBatch && `Ενεργό batch: ID=${selBatch.id}, Ημ=${selBatch.date}, Τμήμα=${selBatch.department}`,
+        attachments.length > 0 && `Υπάρχοντα attachments: ${attachments.map(a => a.file_name).join(", ")}`,
+        allBundles.length > 0 && `Διαθέσιμα bundles: ${allBundles.map(b => `${b.version_no || b.version} (${b.status}, dept: ${b.department})`).join("; ")}`,
+        batchHeaders.length > 0 && `Batches τμήματος: ${batchHeaders.map(b => b.date).join(", ")}`,
+      ].filter(Boolean).join("\n");
+
+      const response = await base44.integrations.Core.InvokeLLM({
+        prompt: `Είσαι βοηθός παραγωγής για manufacturing σύστημα. Απάντα σύντομα και στα ελληνικά.
+
+Πληροφορίες session:
+${context}
+
+Ερώτηση χρήστη: ${text}`,
+      });
+      addMsg("bot", response);
+    } catch (err) {
+      addMsg("bot", "❌ Σφάλμα επικοινωνίας με AI.");
+    } finally {
+      setIsAiThinking(false);
+    }
   };
 
   const handleUserMessage = () => {
@@ -337,18 +367,17 @@ export default function DailyProductionChatbot({ departments = [] }) {
     setUserInput("");
     addMsg("user", text);
 
-    // simple keyword routing
     const lower = text.toLowerCase();
 
     if (step === "dept") {
       const match = departments.find(d => lower.includes(d.name.toLowerCase()));
       if (match) { handleDeptSelect(match.name); return; }
-      addMsg("bot", "Παρακαλώ επέλεξε ένα τμήμα από τη λίστα παρακάτω.");
+      // fallback to AI
+      askAI(text, lower);
       return;
     }
 
     if (step === "date") {
-      // try to parse a date from text (YYYY-MM-DD)
       const dateMatch = text.match(/\d{4}-\d{2}-\d{2}/);
       if (dateMatch) { handleDateSelect(dateMatch[0]); return; }
       if (lower.includes("σήμερ") || lower.includes("today")) { handleDateSelect(todayStr()); return; }
@@ -356,7 +385,8 @@ export default function DailyProductionChatbot({ departments = [] }) {
         const d = new Date(); d.setDate(d.getDate() - 1);
         handleDateSelect(d.toISOString().split("T")[0]); return;
       }
-      addMsg("bot", "Παρακαλώ επέλεξε ημερομηνία από τις επιλογές ή γράψε σε μορφή ΕΕΕΕ-ΜΜ-ΗΗ.");
+      // fallback to AI
+      askAI(text, lower);
       return;
     }
 
@@ -367,7 +397,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
       if (lower.includes("όχι") || lower.includes("no") || lower.includes("ακύρ")) {
         handleReset(); return;
       }
-      addMsg("bot", 'Απάντησε "Ναι" για δημιουργία ή "Ακύρωση".');
+      askAI(text, lower);
       return;
     }
 
@@ -375,11 +405,12 @@ export default function DailyProductionChatbot({ departments = [] }) {
       if (lower.includes("επανεκκίν") || lower.includes("reset") || lower.includes("νέα αναζήτ") || lower.includes("αρχή")) {
         handleReset(); return;
       }
-      addMsg("bot", "Μπορείς να ανεβάσεις αρχεία με drag & drop ή κάνοντας κλικ στην περιοχή ανεβάσματος.");
+      // All other messages → AI
+      askAI(text, lower);
       return;
     }
 
-    addMsg("bot", "Δεν κατάλαβα. Χρησιμοποίησε τα κουμπιά για να πλοηγηθείς.");
+    askAI(text, lower);
   };
 
   const quickDates = getQuickDates();
