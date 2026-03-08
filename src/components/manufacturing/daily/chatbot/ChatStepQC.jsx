@@ -152,12 +152,14 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
     setIsSyncing(false);
   };
 
-  const handleAddAll = async () => {
+  const handleAddSelected = async () => {
     if (!form.qc_type || !form.qc_level) { toast.error("Επίλεξε QC Type και QC Level"); return; }
-    if (!processedLines.length) { toast.info("Δεν υπάρχουν processed lines"); return; }
+    if (selectedItems.size === 0) { toast.error("Επίλεξε τουλάχιστον 1 item"); return; }
+    
     setIsSaving(true);
     try {
-      for (const bl of processedLines) {
+      const itemsToAdd = processedLines.filter(bl => selectedItems.has(bl.item_code));
+      for (const bl of itemsToAdd) {
         const exists = existingQC.find(q => q.item_code === bl.item_code && q.qc_type === form.qc_type);
         if (exists) continue;
         await base44.entities.QC_Initial_Stock.create({
@@ -166,8 +168,9 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
         });
       }
       queryClient.invalidateQueries(["QC_Initial_Stock", batchId]);
-      toast.success("✅ QC records προστέθηκαν");
-      onNext("✅ QC Initial Stock καταχωρήθηκε για όλα τα processed items.");
+      toast.success(`✅ ${selectedItems.size} QC record(s) προστέθηκαν`);
+      setSelectedItems(new Set());
+      setForm({ qc_type: "", qc_level: "" });
     } catch { toast.error("Σφάλμα αποθήκευσης"); }
     setIsSaving(false);
   };
