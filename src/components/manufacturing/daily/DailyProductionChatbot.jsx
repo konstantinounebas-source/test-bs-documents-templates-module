@@ -247,7 +247,8 @@ export default function DailyProductionChatbot({ departments = [] }) {
   const uploadFile = async (file) => {
     setUploadingCount(c => c + 1);
     try {
-      const fileType = file.type.startsWith("image") ? "image" : "pdf";
+      const mimeOrName = file.type || file.name || "";
+      const fileType = /image|jpg|jpeg|png|gif|webp|bmp/i.test(mimeOrName) ? "image" : "pdf";
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const me = await base44.auth.me();
       const att = await base44.entities.BatchAttachment.create({
