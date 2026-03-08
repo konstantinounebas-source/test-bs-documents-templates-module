@@ -130,7 +130,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
   const [minimized, setMin]   = useState(false);
 
   // wizard state
-  const [step, setStep]         = useState("dept");   // dept | date | batch | attachments | batch_lines_review | batch_lines_add
+  const [step, setStep]         = useState("dept");   // dept | date | batch | attachments | batch_lines_review | batch_lines_add | qc | operations | team_persons | team_extra | help_in | consumables
   const [selDept, setSelDept]   = useState("");
   const [selDate, setSelDate]   = useState("");
   const [customDate, setCustomDate] = useState("");
