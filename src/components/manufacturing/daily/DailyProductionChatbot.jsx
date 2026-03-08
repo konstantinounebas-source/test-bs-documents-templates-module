@@ -669,7 +669,7 @@ ${context}
 
       {/* Side Panel */}
       <div 
-        className={`fixed top-16 bottom-0 w-[380px] z-40 shadow-2xl border-l border-slate-200 bg-white flex flex-col transition-transform duration-300 ${
+        className={`fixed top-16 bottom-0 w-[450px] z-40 shadow-2xl border-l border-slate-200 bg-white flex flex-col transition-transform duration-300 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
         style={{
