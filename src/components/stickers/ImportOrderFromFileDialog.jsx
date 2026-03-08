@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Trash2, Check, Loader2 } from "lucide-react";
-import ExcelJS from 'exceljs';
 import { toast } from 'sonner';
 
 export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImported, stickerItems, stops, stickerTemplates }) {
@@ -26,58 +25,7 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
   }, [step, importedData]);
 
   const handleFileSelect = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    try {
-      const arrayBuffer = await file.arrayBuffer();
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(arrayBuffer);
-      const worksheet = workbook.getWorksheet('Order Template');
-
-      if (!worksheet) {
-        toast.error('Sheet "Order Template" not found in Excel file');
-        return;
-      }
-
-      const rows = [];
-      worksheet.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) return; // Skip header
-        if (!row.values[1]) return; // Skip empty rows
-
-        const stopId = row.values[1]?.toString().trim();
-        const stickerName = row.values[2]?.toString().trim();
-        const okValue = row.values[3]?.toString().trim().toLowerCase();
-
-        if (stopId && stickerName && okValue === 'yes') {
-          rows.push({
-            rowNumber: rowNumber,
-            stop_id: stopId,
-            sticker_name: stickerName,
-            ok: okValue === 'yes'
-          });
-        }
-      });
-
-      if (rows.length === 0) {
-        toast.error('No valid rows found with OK = "Yes"');
-        return;
-      }
-
-      setImportedData(rows);
-      setValidationResults(rows.map(() => ({ isValid: null, error: null })));
-      setCurrentValidationIndex(0);
-      setConfirmDialogOpen(true);
-      setStep("validating");
-    } catch (error) {
-      console.error('Error reading Excel file:', error);
-      toast.error('Error reading Excel file: ' + error.message);
-    }
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    toast.error('Excel import is not available');
   };
 
   const validateAllItems = async () => {
