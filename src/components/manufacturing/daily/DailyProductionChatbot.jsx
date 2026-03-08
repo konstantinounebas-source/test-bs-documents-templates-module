@@ -963,12 +963,24 @@ ${context}
 
             {/* Step: Team Time - Persons */}
             {step === "team_persons" && selBatch && (
-              <ChatStepTeamPersons
-                batchId={selBatch.id}
-                onNext={(msg) => goNextStep("team_persons", msg)}
-                onSkip={() => skipStep("team_persons")}
-                onBack={() => goPrevStep("team_persons")}
-              />
+              <div className="space-y-3">
+                <div className="flex justify-end px-3 pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => setShowAttachmentsModal(true)}
+                  >
+                    <Paperclip className="w-3 h-3 mr-1" /> Attachments
+                  </Button>
+                </div>
+                <ChatStepTeamPersons
+                  batchId={selBatch.id}
+                  onNext={(msg) => goNextStep("team_persons", msg)}
+                  onSkip={() => skipStep("team_persons")}
+                  onBack={() => goPrevStep("team_persons")}
+                />
+              </div>
             )}
 
             {/* Step: Team Time - Extra */}
