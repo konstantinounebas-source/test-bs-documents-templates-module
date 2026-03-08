@@ -2,62 +2,10 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { FileDown } from "lucide-react";
 
-
 export default function ExportHandoverTemplateDialog({ availableItems, stops, stickerTemplates }) {
   const handleExportTemplate = async () => {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Handover Template');
-
-    // Headers
-    worksheet.columns = [
-      { header: 'Stop ID', key: 'stop_id', width: 15 },
-      { header: 'Sticker Name', key: 'sticker_name', width: 30 },
-      { header: 'Quantity', key: 'quantity', width: 12 },
-      { header: 'Notes', key: 'notes', width: 40 },
-      { header: 'ok', key: 'ok', width: 8 }
-    ];
-
-    // Add items
-    availableItems.forEach(item => {
-      const stop = stops.find(s => s.id === item.stop_id);
-      const template = stickerTemplates.find(t => t.id === item.sticker_template_id);
-      
-      worksheet.addRow({
-        stop_id: stop?.stop_id || '',
-        sticker_name: template?.sticker_name_category || '',
-        quantity: 1,
-        notes: '',
-        ok: 'Yes'
-      });
-    });
-
-    // Format header
-    worksheet.getRow(1).font = { bold: true };
-    worksheet.getRow(1).fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFE0E0E0' }
-    };
-
-    // Add instructions
-    const lastRow = availableItems.length + 2;
-    worksheet.addRow({});
-    worksheet.addRow({});
-    worksheet.getCell(`A${lastRow + 2}`).value = "Instructions:";
-    worksheet.getCell(`A${lastRow + 2}`).font = { bold: true, size: 12 };
-    worksheet.getCell(`A${lastRow + 3}`).value = "1. Fill in the Quantity column with items to handover";
-    worksheet.getCell(`A${lastRow + 4}`).value = "2. Add any notes in the Notes column (optional)";
-    worksheet.getCell(`A${lastRow + 5}`).value = "3. Keep the 'ok' column as is (marks valid rows)";
-    worksheet.getCell(`A${lastRow + 6}`).value = "4. Save the file and import it back to create handovers";
-
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `handover_template_${new Date().toISOString().split('T')[0]}.xlsx`;
-    link.click();
-    window.URL.revokeObjectURL(url);
+    // Export functionality currently unavailable
+    alert('Export functionality is temporarily unavailable');
   };
 
   return (
