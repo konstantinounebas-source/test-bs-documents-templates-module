@@ -837,7 +837,7 @@ ${context}
                     </div>
                   ))}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
                     disabled={isSavingLine}
                     onClick={() => {
@@ -858,10 +858,10 @@ ${context}
                   </Button>
                   <Button size="sm" variant="outline" className="text-xs"
                     onClick={() => {
-                      addMsg("user", "→ Batch Lines");
-                      setStep("batch_lines_add");
+                      addMsg("user", "→ Attachments");
+                      setStep("attachments");
                     }}>
-                    Batch Lines
+                    ← Attachments
                   </Button>
                 </div>
               </div>
