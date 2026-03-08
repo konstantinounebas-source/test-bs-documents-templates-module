@@ -159,18 +159,19 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
     setIsSaving(true);
     try {
       const itemsToAdd = processedLines.filter(bl => selectedItems.has(bl.item_code));
+      const perPieceMin = parseFloat(form.qc_per_piece_min) || 0;
       for (const bl of itemsToAdd) {
         const exists = existingQC.find(q => q.item_code === bl.item_code && q.qc_type === form.qc_type);
         if (exists) continue;
         await base44.entities.QC_Initial_Stock.create({
           batch_header_id: batchId, item_code: bl.item_code,
-          qc_type: form.qc_type, qc_level: form.qc_level, qty_affected: bl.qty_processed
+          qc_type: form.qc_type, qc_level: form.qc_level, qc_per_piece_min: perPieceMin, qty_affected: bl.qty_processed
         });
       }
       queryClient.invalidateQueries(["QC_Initial_Stock", batchId]);
       toast.success(`✅ ${selectedItems.size} QC record(s) προστέθηκαν`);
       setSelectedItems(new Set());
-      setForm({ qc_type: "", qc_level: "" });
+      setForm({ qc_type: "", qc_level: "", qc_per_piece_min: "" });
     } catch { toast.error("Σφάλμα αποθήκευσης"); }
     setIsSaving(false);
   };
