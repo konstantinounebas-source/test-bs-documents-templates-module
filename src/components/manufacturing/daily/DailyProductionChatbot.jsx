@@ -354,7 +354,123 @@ export default function DailyProductionChatbot({ departments = [] }) {
 
   const handleReset = () => {
     setStep("dept"); setSelDept(""); setSelDate(""); setSelBatch(null);
+    setBlReviewItems([]); setBlCurrentIdx(0);
+    setBlAddForm({ item_code: "", qty_processed: "", qty_out_good: "", qty_scrap: "" });
     setMessages([{ role: "bot", text: "Γεια σου! 👋 Επέλεξε τμήμα για να ξεκινήσουμε." }]);
+  };
+
+  // ── batch lines: enter review mode after attachments ─────────────────────
+  const startBatchLinesReview = () => {
+    if (existingBatchLines.length === 0) {
+      setStep("batch_lines_add");
+      addMsg("bot", "Δεν υπάρχουν γραμμές παραγωγής. Μπορείς να προσθέσεις item codes παρακάτω.");
+      return;
+    }
+    // Build review list pre-filled with scheduled qty as both processed & out good
+    const items = existingBatchLines.map(bl => ({
+      id: bl.id,
+      item_code: bl.item_code,
+      scheduled_qty: bl.scheduled_qty || 0,
+      qty_processed: bl.qty_processed > 0 ? bl.qty_processed : (bl.scheduled_qty || 0),
+      qty_out_good:  bl.qty_out_good  > 0 ? bl.qty_out_good  : (bl.scheduled_qty || 0),
+      qty_scrap:     bl.qty_scrap     || 0,
+    }));
+    setBlReviewItems(items);
+    setBlCurrentIdx(0);
+    setStep("batch_lines_review");
+    showBatchLinePrompt(items, 0);
+  };
+
+  const showBatchLinePrompt = (items, idx) => {
+    const item = items[idx];
+    addMsg("bot",
+      `📦 Item ${idx + 1}/${items.length}: **${item.item_code}**\n` +
+      `Scheduled: ${item.scheduled_qty}\n` +
+      `Processed: ${item.qty_processed} | Out Good: ${item.qty_out_good} | Scrap: ${item.qty_scrap}\n\n` +
+      `Επιβεβαίωσε ή άλλαξε τιμές (π.χ. "ok", "processed=50 good=48 scrap=2").`
+    );
+  };
+
+  const [isSavingLine, setIsSavingLine] = useState(false);
+
+  const saveBatchLine = async (item) => {
+    setIsSavingLine(true);
+    try {
+      await base44.entities.Batch_Lines.update(item.id, {
+        qty_processed: item.qty_processed,
+        qty_out_good:  item.qty_out_good,
+        qty_scrap:     item.qty_scrap,
+      });
+      queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
+    } finally {
+      setIsSavingLine(false);
+    }
+  };
+
+  const handleBatchLineConfirm = async (updatedItem) => {
+    await saveBatchLine(updatedItem);
+    const nextIdx = blCurrentIdx + 1;
+    if (nextIdx >= blReviewItems.length) {
+      setStep("batch_lines_add");
+      addMsg("bot", `✅ Όλα τα items καταχωρήθηκαν!\nΘέλεις να προσθέσεις επιπλέον item code; Επέλεξε από τη λίστα ή πες "τέλος".`);
+    } else {
+      setBlCurrentIdx(nextIdx);
+      showBatchLinePrompt(blReviewItems, nextIdx);
+    }
+  };
+
+  // Parse user input for batch line values (e.g. "ok", "processed=50 good=48 scrap=2", "50 48 2")
+  const parseBatchLineInput = (text, currentItem) => {
+    const lower = text.toLowerCase().trim();
+    if (lower === "ok" || lower === "ναι" || lower === "yes" || lower === "σωστό" || lower === "next") {
+      return { ...currentItem }; // keep as-is
+    }
+    const updated = { ...currentItem };
+    // parse "processed=X good=Y scrap=Z" or "p=X g=Y s=Z"
+    const pMatch = text.match(/(?:processed|proc|p)\s*=\s*([\d.]+)/i);
+    const gMatch = text.match(/(?:out.?good|good|g)\s*=\s*([\d.]+)/i);
+    const sMatch = text.match(/(?:scrap|s)\s*=\s*([\d.]+)/i);
+    if (pMatch) updated.qty_processed = parseFloat(pMatch[1]);
+    if (gMatch) updated.qty_out_good  = parseFloat(gMatch[1]);
+    if (sMatch) updated.qty_scrap     = parseFloat(sMatch[1]);
+    // plain 3 numbers: "50 48 2"
+    if (!pMatch && !gMatch && !sMatch) {
+      const nums = text.match(/[\d.]+/g);
+      if (nums && nums.length >= 1) updated.qty_processed = parseFloat(nums[0]);
+      if (nums && nums.length >= 2) updated.qty_out_good  = parseFloat(nums[1]);
+      if (nums && nums.length >= 3) updated.qty_scrap     = parseFloat(nums[2]);
+    }
+    return updated;
+  };
+
+  const handleBatchLineMessage = async (text) => {
+    const currentItem = blReviewItems[blCurrentIdx];
+    const updated = parseBatchLineInput(text, currentItem);
+    // update local state
+    const newItems = blReviewItems.map((it, i) => i === blCurrentIdx ? updated : it);
+    setBlReviewItems(newItems);
+    addMsg("bot", `💾 Αποθηκεύω: Processed=${updated.qty_processed} | Good=${updated.qty_out_good} | Scrap=${updated.qty_scrap}...`);
+    await handleBatchLineConfirm(updated);
+  };
+
+  const handleAddExtraLine = async () => {
+    const { item_code, qty_processed, qty_out_good, qty_scrap } = blAddForm;
+    if (!item_code) { addMsg("bot", "Επίλεξε item code πρώτα."); return; }
+    const proc = parseFloat(qty_processed) || 0;
+    const good = parseFloat(qty_out_good)  || 0;
+    const scrap= parseFloat(qty_scrap)     || 0;
+    try {
+      await base44.entities.Batch_Lines.create({
+        batch_header_id: selBatch.id,
+        item_code, scheduled_qty: 0,
+        qty_processed: proc, qty_out_good: good, qty_scrap: scrap
+      });
+      queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
+      addMsg("bot", `✅ Προστέθηκε: ${item_code} | Processed=${proc} | Good=${good} | Scrap=${scrap}`);
+      setBlAddForm({ item_code: "", qty_processed: "", qty_out_good: "", qty_scrap: "" });
+    } catch {
+      addMsg("bot", "❌ Σφάλμα κατά την προσθήκη.");
+    }
   };
 
   const askAI = async (text, lower) => {
