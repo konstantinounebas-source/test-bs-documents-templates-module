@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, SkipForward, RefreshCw, Trash2, Pencil, Check, X, ChevronLeft, Plus } from "lucide-react";
+import { Loader2, CheckCircle2, SkipForward, RefreshCw, Trash2, Pencil, Check, X, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
 function ConsumableRow({ line, onDelete, onUpdate }) {
@@ -42,13 +42,8 @@ function ConsumableRow({ line, onDelete, onUpdate }) {
   );
 }
 
-const EMPTY_FORM = { consumable: "", item_code: "", operation: "", expected_qty: "", actual_qty: "", unit: "" };
-
 export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack }) {
   const queryClient = useQueryClient();
-  const [showManual, setShowManual] = useState(false);
-  const [manualForm, setManualForm] = useState(EMPTY_FORM);
-  const [isSavingManual, setIsSavingManual] = useState(false);
 
   const { data: batchHeader } = useQuery({
     queryKey: ["BatchHeader", batchId],
@@ -125,33 +120,6 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
     toast.success("Ενημερώθηκε");
   };
 
-  const handleManualAdd = async () => {
-    if (!manualForm.consumable || !manualForm.actual_qty) {
-      toast.error("Συμπλήρωσε τουλάχιστον Consumable και Actual Qty");
-      return;
-    }
-    setIsSavingManual(true);
-    try {
-      await base44.entities.ConsumablesActual.create({
-        batch_header_id: batchId,
-        department: batchHeader?.department || "",
-        consumable: manualForm.consumable,
-        item_code: manualForm.item_code,
-        operation: manualForm.operation,
-        expected_qty: parseFloat(manualForm.expected_qty) || 0,
-        actual_qty: parseFloat(manualForm.actual_qty) || 0,
-        unit: manualForm.unit,
-        is_auto_generated: false,
-        notes: ""
-      });
-      queryClient.invalidateQueries(["ConsumablesActual", batchId]);
-      toast.success("✅ Προστέθηκε");
-      setManualForm(EMPTY_FORM);
-      setShowManual(false);
-    } catch { toast.error("Σφάλμα αποθήκευσης"); }
-    setIsSavingManual(false);
-  };
-
   const totalActual = lines.reduce((s, l) => s + (l.actual_qty || 0), 0);
   const totalExpected = lines.reduce((s, l) => s + (l.expected_qty || 0), 0);
 
@@ -195,48 +163,6 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
           {autoGenerateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
           Generate από Standards ({expectedRows.length})
         </Button>
-      )}
-
-      {/* Manual Add */}
-      <Button size="sm" variant="outline" className="w-full text-xs border-dashed"
-        onClick={() => setShowManual(s => !s)}>
-        <Plus className="w-3 h-3 mr-1" /> Manual Προσθήκη
-      </Button>
-
-      {showManual && (
-        <div className="border rounded p-2 space-y-1 bg-slate-50">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase mb-1">Νέα Εγγραφή</p>
-          {[
-            ["consumable", "Consumable *", "text"],
-            ["item_code", "Item Code", "text"],
-            ["operation", "Operation", "text"],
-            ["unit", "Unit", "text"],
-            ["expected_qty", "Expected Qty", "number"],
-            ["actual_qty", "Actual Qty *", "number"],
-          ].map(([field, label, type]) => (
-            <div key={field}>
-              <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
-              <input
-                type={type}
-                value={manualForm[field]}
-                onChange={e => setManualForm(f => ({ ...f, [field]: e.target.value }))}
-                className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 bg-white"
-                placeholder={label.replace(" *", "")}
-              />
-            </div>
-          ))}
-          <div className="flex gap-1 pt-1">
-            <Button size="sm" className="flex-1 text-xs h-7 bg-blue-600 hover:bg-blue-700"
-              onClick={handleManualAdd} disabled={isSavingManual}>
-              {isSavingManual ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
-              Αποθήκευση
-            </Button>
-            <Button size="sm" variant="outline" className="text-xs h-7"
-              onClick={() => { setShowManual(false); setManualForm(EMPTY_FORM); }}>
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-        </div>
       )}
 
       <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
