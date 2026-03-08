@@ -656,39 +656,12 @@ ${context}
     );
   }
 
-  const handleMouseDown = (e) => {
-    setIsResizing(true);
-    e.preventDefault();
-  };
-
-  useEffect(() => {
-    if (!isResizing) return;
-
-    const handleMouseMove = (e) => {
-      setWidth(Math.max(300, position === "right" ? window.innerWidth - e.clientX : e.clientX));
-      setHeight(Math.max(200, window.innerHeight - e.clientY));
-    };
-
-    const handleMouseUp = () => setIsResizing(false);
-
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("mouseup", handleMouseUp);
-    };
-  }, [isResizing, position]);
-
   return (
     <>
       <div 
-        className={`fixed bottom-6 z-50 shadow-2xl rounded-2xl border border-slate-200 bg-white flex flex-col transition-all ${minimized ? "h-14" : ""}`}
+        className={`fixed bottom-6 z-50 w-[500px] shadow-2xl rounded-2xl border border-slate-200 bg-white flex flex-col transition-all ${minimized ? "h-14" : "h-[700px]"}`}
         style={{
-          width: `${width}px`,
-          height: minimized ? "56px" : `${height}px`,
-          [position === "right" ? "right" : "left"]: "24px",
-          cursor: isResizing ? "nwse-resize" : "default"
+          [position === "right" ? "right" : "left"]: "24px"
         }}
       >
         {/* Header */}
