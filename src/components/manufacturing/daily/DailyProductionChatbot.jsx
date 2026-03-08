@@ -135,6 +135,10 @@ export default function DailyProductionChatbot({ departments = [] }) {
   // panel state
   const [open, setOpen]       = useState(false);
   const [minimized, setMin]   = useState(false);
+  const [width, setWidth]     = useState(500);
+  const [height, setHeight]   = useState(700);
+  const [position, setPosition] = useState("right"); // "left" or "right"
+  const [isResizing, setIsResizing] = useState(false);
 
   // wizard state
   const [step, setStep]         = useState("dept");   // dept | date | batch | attachments | batch_lines_review | batch_lines_add | qc | operations | team_persons | team_extra | help_in | consumables
