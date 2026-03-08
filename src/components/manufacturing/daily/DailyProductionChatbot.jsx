@@ -872,10 +872,9 @@ ${context}
 
                 <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
                   onClick={() => {
-                    addMsg("bot", "✅ Batch Lines ολοκληρώθηκαν! Μπορείς να κλείσεις το chat ή να επιλέξεις νέα καταχώριση.");
-                    handleReset();
+                    goNextStep("batch_lines_add", "✅ Batch Lines ολοκληρώθηκαν!");
                   }}>
-                  <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → Ολοκλήρωση
+                  <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → QC Initial Stock
                 </Button>
               </div>
             )}
