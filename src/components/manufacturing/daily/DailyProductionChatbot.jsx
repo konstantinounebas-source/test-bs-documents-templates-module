@@ -793,24 +793,8 @@ ${context}
                   <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleReset}>↩ Αρχή</Button>
                 </div>
 
-                {/* Existing lines editable table */}
-                {existingBatchLines.length > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Καταχωρημένες Γραμμές</p>
-                    <div className="grid grid-cols-5 gap-1 text-[10px] font-semibold text-slate-400 px-1">
-                      <span>Item</span><span className="text-center">Sched.</span><span className="text-center">Proc.</span><span className="text-center">Good</span><span className="text-center">Scrap</span>
-                    </div>
-                    {existingBatchLines.map(bl => (
-                      <ExistingLineRow key={bl.id} bl={bl} onSave={async (id, data) => {
-                        await base44.entities.Batch_Lines.update(id, data);
-                        queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
-                      }} />
-                    ))}
-                  </div>
-                )}
-
                 {/* Add new line */}
-                <div className="space-y-1 pt-1 border-t">
+                <div className="space-y-1 pt-1 border-b pb-3">
                   <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Προσθήκη Νέας Γραμμής</p>
                   {/* Searchable multi-select for item codes */}
                   <ItemCodeMultiSelect
