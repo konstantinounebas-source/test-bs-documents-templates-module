@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, SkipForward, RefreshCw, Trash2, Pencil, Check, X, ChevronLeft } from "lucide-react";
+import { Loader2, CheckCircle2, SkipForward, RefreshCw, Trash2, Pencil, Check, X, ChevronLeft, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 function ConsumableRow({ line, onDelete, onUpdate }) {
