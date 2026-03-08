@@ -90,6 +90,14 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
     retryDelay: attemptIndex => Math.min(1000 * (2 ** attemptIndex + Math.random()), 60000)
   });
 
+  const { data: qcSetLines = [] } = useQuery({
+    queryKey: ["QCSetLines", batchHeader?.bundle_id],
+    queryFn: () => base44.entities.QCSetLines.filter({ bundle_id: batchHeader.bundle_id }),
+    enabled: !!batchHeader?.bundle_id,
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60
+  });
+
   const processedLines = batchLines.filter(bl => (bl.qty_processed || 0) > 0);
 
   const totalQCTime = existingQC.reduce((sum, qc) => {
