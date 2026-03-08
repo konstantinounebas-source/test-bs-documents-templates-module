@@ -1160,6 +1160,41 @@ ${context}
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Attachments Modal - Accessible from any tab */}
+      <Dialog open={showAttachmentsModal} onOpenChange={setShowAttachmentsModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Attachments · {selBatch?.date} · {selDept}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-3 py-4">
+            <DropZone onFiles={handleFiles} isUploading={uploadingCount > 0} />
+
+            {loadingAtts ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+              </div>
+            ) : attachments.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">Δεν υπάρχουν attachments ακόμα.</p>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-700">
+                  Υπάρχοντα Attachments ({attachments.length})
+                </p>
+                <div className="space-y-1">
+                  {attachments.map(att => (
+                    <AttachmentItem key={att.id} att={att}
+                      onDelete={id => deleteMutation.mutate(id)}
+                      onPreview={setPreviewFile}
+                      isDeleting={deleteMutation.isPending} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
