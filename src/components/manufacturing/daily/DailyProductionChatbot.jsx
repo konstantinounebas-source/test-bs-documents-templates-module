@@ -153,8 +153,9 @@ export default function DailyProductionChatbot({ departments = [] }) {
     setMessages(p => [...p, { role, text, ...extra }]);
 
   const scrollRef = useRef();
+  const messagesEndRef = useRef();
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   // ── data ──────────────────────────────────────────────────────────────────
