@@ -127,12 +127,14 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
         ) : attachments.length === 0 ? (
           <p className="text-xs text-slate-500 text-center py-4">No attachments yet</p>
         ) : (
-          attachments.map(att => (
+          attachments.map(att => {
+            const fileType = getFileType(att.file_name);
+            return (
             <div
               key={att.id}
               className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg group hover:bg-slate-100 transition-colors"
             >
-              {att.file_type === 'image' ? (
+              {fileType === 'image' ? (
                 <ImageIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
               ) : (
                 <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />
