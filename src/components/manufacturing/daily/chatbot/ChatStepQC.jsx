@@ -37,15 +37,17 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
     queryKey: ["QCType"],
     queryFn: () => base44.entities.QCType.filter({ is_active: true }),
     staleTime: Infinity,
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+    gcTime: 1000 * 60 * 60,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * (2 ** attemptIndex + Math.random()), 60000)
   });
   const { data: qcLevels = [] } = useQuery({
     queryKey: ["QCLevel"],
     queryFn: () => base44.entities.QCLevel.filter({ is_active: true }),
     staleTime: Infinity,
-    retry: 2,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+    gcTime: 1000 * 60 * 60,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * (2 ** attemptIndex + Math.random()), 60000)
   });
 
   const filteredQcTypes = useMemo(
