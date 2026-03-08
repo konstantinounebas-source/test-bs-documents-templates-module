@@ -18,6 +18,12 @@ import { format, subDays, isMonday } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ExistingLineRow from "./chatbot/ExistingLineRow";
 import ItemCodeMultiSelect from "./chatbot/ItemCodeMultiSelect";
+import ChatStepQC from "./chatbot/ChatStepQC";
+import ChatStepOperations from "./chatbot/ChatStepOperations";
+import ChatStepTeamPersons from "./chatbot/ChatStepTeamPersons";
+import ChatStepTeamExtra from "./chatbot/ChatStepTeamExtra";
+import ChatStepHelpIn from "./chatbot/ChatStepHelpIn";
+import ChatStepConsumables from "./chatbot/ChatStepConsumables";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
