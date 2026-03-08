@@ -1,50 +1,44 @@
+
 import ExcelJS from 'exceljs';
+import XLSX from 'xlsx';
 
 export async function exportDataTabToExcel(gridRows, operationColumns, bundleName) {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Standards Data');
-
-  // Headers
+  // Prepare data
   const headers = ['Item Code', ...operationColumns.map(col => col.label), 'Notes'];
-  worksheet.addRow(headers);
+  const data = gridRows.map(row => [
+    row.item_code,
+    ...operationColumns.map(col => row[col.operation] || ''),
+    row.notes || ''
+  ]);
+
+  // Create workbook
+  const wsData = [headers, ...data];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
   
-  // Style headers
-  worksheet.getRow(1).font = { bold: true };
-  worksheet.getRow(1).fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFE0E0E0' }
-  };
-
-  // Add data rows
-  gridRows.forEach(row => {
-    const rowData = [
-      row.item_code,
-      ...operationColumns.map(col => row[col.operation] || ''),
-      row.notes || ''
-    ];
-    worksheet.addRow(rowData);
-  });
-
-  // Auto-size columns
-  worksheet.columns.forEach(column => {
+  // Style header row (this is for column width in XLSX, actual styling is more complex and not directly supported in this simple approach for XLSX)
+  const headerRange = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } });
+  if (!ws['!cols']) ws['!cols'] = [];
+  headers.forEach((_, i) => {
+    // Calculate max length for each column based on header and data
     let maxLength = 0;
-    column.eachCell({ includeEmpty: true }, cell => {
-      const length = cell.value ? cell.value.toString().length : 10;
-      if (length > maxLength) maxLength = length;
+    // Check header length
+    if (headers[i]) {
+      maxLength = Math.max(maxLength, headers[i].toString().length);
+    }
+    // Check data column length
+    data.forEach(row => {
+      if (row[i]) {
+        maxLength = Math.max(maxLength, row[i].toString().length);
+      }
     });
-    column.width = Math.min(maxLength + 2, 30);
+
+    if (!ws['!cols'][i]) ws['!cols'][i] = {};
+    ws['!cols'][i].wch = Math.min(maxLength + 2, 30); // Add 2 for padding, cap at 30
   });
 
-  // Download
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${bundleName || 'Standards'}_Data.xlsx`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Standards Data');
+  XLSX.writeFile(wb, `${bundleName || 'Standards'}_Data.xlsx`);
 }
 
 export async function exportQCTabToExcel(filteredItems, gridData, mode, selectedOperation, selectedQCType, selectedQCLevel, bundleName) {
