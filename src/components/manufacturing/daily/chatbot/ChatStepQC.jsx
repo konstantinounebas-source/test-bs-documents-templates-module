@@ -122,7 +122,10 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
         created++;
       }
       queryClient.invalidateQueries(["QC_Initial_Stock", batchId]);
-      toast.success(created > 0 ? `Συγχρονίστηκαν ${created} QC record(s)` : "Όλα τα QC records υπάρχουν ήδη");
+      const message = created > 0 
+        ? `✅ QC Initial Stock συγχρονίστηκε από Schedule - ${created} καταχωρήσεις προστέθηκαν.` 
+        : "ℹ️ Όλα τα QC records υπάρχουν ήδη στο σύστημα.";
+      onNext(message);
     } catch { toast.error("Αποτυχία sync"); }
     setIsSyncing(false);
   };
