@@ -1185,91 +1185,91 @@ ${context}
           </Dialog>
         )}
 
-        {/* Preview dialog */}
-        <Dialog open={!!previewFile} onOpenChange={open => { if (!open) { setPreviewFile(null); setRotation(0); } }}>
-          <DialogContent className="max-w-4xl max-h-[80vh]">
-            <DialogHeader className="flex flex-row items-center justify-between">
-              <DialogTitle>{previewFile?.file_name}</DialogTitle>
-              <div className="flex gap-2 items-center mr-6">
-                {previewFile && (
-                  <>
-                    <button onClick={() => setRotation(r => r - 90)} className="text-slate-500 hover:text-slate-700 p-1" title="Rotate Left">
-                      <RotateCcw className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => setRotation(r => r + 90)} className="text-slate-500 hover:text-slate-700 p-1" title="Rotate Right">
-                      <RotateCw className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-                <button
-                  onClick={async () => {
-                    const res = await fetch(previewFile.file_url);
-                    const blob = await res.blob();
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url; a.download = previewFile.file_name; a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="text-blue-600 hover:text-blue-700 p-1" title="Download">
-                  <Download className="w-5 h-5" />
-                </button>
+      {/* Preview dialog */}
+      <Dialog open={!!previewFile} onOpenChange={open => { if (!open) { setPreviewFile(null); setRotation(0); } }}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader className="flex flex-row items-center justify-between">
+            <DialogTitle>{previewFile?.file_name}</DialogTitle>
+            <div className="flex gap-2 items-center mr-6">
+              {previewFile && (
+                <>
+                  <button onClick={() => setRotation(r => r - 90)} className="text-slate-500 hover:text-slate-700 p-1" title="Rotate Left">
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setRotation(r => r + 90)} className="text-slate-500 hover:text-slate-700 p-1" title="Rotate Right">
+                    <RotateCw className="w-4 h-4" />
+                  </button>
+                </>
+              )}
+              <button
+                onClick={async () => {
+                  const res = await fetch(previewFile.file_url);
+                  const blob = await res.blob();
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url; a.download = previewFile.file_name; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="text-blue-600 hover:text-blue-700 p-1" title="Download">
+                <Download className="w-5 h-5" />
+              </button>
+            </div>
+          </DialogHeader>
+          {previewFile && getFileType(previewFile.file_name) === "image" ? (
+            <div className="flex items-center justify-center max-h-[65vh] overflow-auto bg-slate-50 rounded-lg">
+              <img
+                src={previewFile.file_url}
+                alt={previewFile.file_name}
+                style={{ transform: `rotate(${rotation}deg)`, transition: "transform 0.3s ease" }}
+                className="max-w-full max-h-full"
+              />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center max-h-[65vh] overflow-auto bg-slate-50 rounded-lg" style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s ease' }}>
+              <iframe
+                src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(previewFile?.file_url || "")}`}
+                className="w-full h-[600px] border-0 rounded-lg"
+                title={previewFile?.file_name}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Attachments Modal - Accessible from any tab */}
+      <Dialog open={showAttachmentsModal} onOpenChange={setShowAttachmentsModal}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Attachments · {selBatch?.date} · {selDept}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-3 py-4">
+            <DropZone onFiles={handleFiles} isUploading={uploadingCount > 0} />
+
+            {loadingAtts ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
               </div>
-            </DialogHeader>
-            {previewFile && getFileType(previewFile.file_name) === "image" ? (
-              <div className="flex items-center justify-center max-h-[65vh] overflow-auto bg-slate-50 rounded-lg">
-                <img
-                  src={previewFile.file_url}
-                  alt={previewFile.file_name}
-                  style={{ transform: `rotate(${rotation}deg)`, transition: "transform 0.3s ease" }}
-                  className="max-w-full max-h-full"
-                />
-              </div>
+            ) : attachments.length === 0 ? (
+              <p className="text-sm text-slate-400 text-center py-4">Δεν υπάρχουν attachments ακόμα.</p>
             ) : (
-              <div className="flex items-center justify-center max-h-[65vh] overflow-auto bg-slate-50 rounded-lg" style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s ease' }}>
-                <iframe
-                  src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(previewFile?.file_url || "")}`}
-                  className="w-full h-[600px] border-0 rounded-lg"
-                  title={previewFile?.file_name}
-                />
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-700">
+                  Υπάρχοντα Attachments ({attachments.length})
+                </p>
+                <div className="space-y-1">
+                  {attachments.map(att => (
+                    <AttachmentItem key={att.id} att={att}
+                      onDelete={id => deleteMutation.mutate(id)}
+                      onPreview={setPreviewFile}
+                      isDeleting={deleteMutation.isPending} />
+                  ))}
+                </div>
               </div>
             )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Attachments Modal - Accessible from any tab */}
-        <Dialog open={showAttachmentsModal} onOpenChange={setShowAttachmentsModal}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Attachments · {selBatch?.date} · {selDept}</DialogTitle>
-            </DialogHeader>
-            
-            <div className="space-y-3 py-4">
-              <DropZone onFiles={handleFiles} isUploading={uploadingCount > 0} />
-
-              {loadingAtts ? (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-                </div>
-              ) : attachments.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-4">Δεν υπάρχουν attachments ακόμα.</p>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-slate-700">
-                    Υπάρχοντα Attachments ({attachments.length})
-                  </p>
-                  <div className="space-y-1">
-                    {attachments.map(att => (
-                      <AttachmentItem key={att.id} att={att}
-                        onDelete={id => deleteMutation.mutate(id)}
-                        onPreview={setPreviewFile}
-                        isDeleting={deleteMutation.isPending} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      </>
-      );
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+    );
       }
