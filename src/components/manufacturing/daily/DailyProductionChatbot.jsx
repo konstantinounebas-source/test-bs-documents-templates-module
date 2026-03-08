@@ -336,6 +336,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
   const askAI = async (text, lower) => {
     setIsAiThinking(true);
     try {
+      const deptList = departments.map(d => d.name);
       const context = [
         selDept && `Επιλεγμένο τμήμα: ${selDept}`,
         selDate && `Επιλεγμένη ημερομηνία: ${selDate}`,
@@ -345,15 +346,50 @@ export default function DailyProductionChatbot({ departments = [] }) {
         batchHeaders.length > 0 && `Batches τμήματος: ${batchHeaders.map(b => b.date).join(", ")}`,
       ].filter(Boolean).join("\n");
 
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `Είσαι βοηθός παραγωγής για manufacturing σύστημα. Απάντα σύντομα και στα ελληνικά.
+      // Ask AI to detect intent AND respond
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Είσαι βοηθός παραγωγής για manufacturing σύστημα. 
 
-Πληροφορίες session:
+Διαθέσιμα τμήματα: ${deptList.join(", ")}
+Τρέχον βήμα wizard: ${step}
 ${context}
 
-Ερώτηση χρήστη: ${text}`,
+Μήνυμα χρήστη: "${text}"
+
+Αν το μήνυμα αναφέρεται σε επιλογή τμήματος (ακόμα και με ορθογραφικά λάθη ή greeklish), επέστρεψε JSON με:
+{"action": "select_dept", "dept": "<ακριβές όνομα τμήματος από τη λίστα>", "reply": "<σύντομη απάντηση>"}
+
+Αν το μήνυμα αναφέρεται σε επιλογή ημερομηνίας, επέστρεψε JSON με:
+{"action": "select_date", "date": "<YYYY-MM-DD>", "reply": "<σύντομη απάντηση>"}
+
+Αλλιώς επέστρεψε JSON με:
+{"action": "reply", "reply": "<απάντηση στα ελληνικά, σύντομη>"}`,
+        response_json_schema: {
+          type: "object",
+          properties: {
+            action: { type: "string" },
+            dept: { type: "string" },
+            date: { type: "string" },
+            reply: { type: "string" }
+          },
+          required: ["action", "reply"]
+        }
       });
-      addMsg("bot", response);
+
+      if (result.action === "select_dept" && result.dept) {
+        const match = departments.find(d => d.name === result.dept);
+        if (match) {
+          addMsg("bot", result.reply || `Επέλεξα το τμήμα ${match.name}.`);
+          handleDeptSelect(match.name);
+          return;
+        }
+      }
+      if (result.action === "select_date" && result.date) {
+        addMsg("bot", result.reply || `Επέλεξα ημερομηνία ${result.date}.`);
+        handleDateSelect(result.date);
+        return;
+      }
+      addMsg("bot", result.reply || "Δεν κατάλαβα. Δοκίμασε ξανά.");
     } catch (err) {
       addMsg("bot", "❌ Σφάλμα επικοινωνίας με AI.");
     } finally {
