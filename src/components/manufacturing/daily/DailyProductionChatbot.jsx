@@ -1047,7 +1047,6 @@ ${context}
           </div>
         )}
       </div>
-      </div>
 
       {/* Duplicate file confirmation dialog */}
       {pendingDuplicates.length > 0 && (
