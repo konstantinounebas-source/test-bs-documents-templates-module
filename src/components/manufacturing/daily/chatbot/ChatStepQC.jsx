@@ -23,7 +23,9 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
   const { data: allDepartments = [] } = useQuery({
     queryKey: ["Department"],
     queryFn: () => base44.entities.Department.filter({ is_active: true }),
-    staleTime: Infinity
+    staleTime: Infinity,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
   const currentDeptId = useMemo(
     () => allDepartments.find(d => d.name === department)?.id || null,
@@ -33,12 +35,16 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
   const { data: qcTypes = [] } = useQuery({
     queryKey: ["QCType"],
     queryFn: () => base44.entities.QCType.filter({ is_active: true }),
-    staleTime: Infinity
+    staleTime: Infinity,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
   const { data: qcLevels = [] } = useQuery({
     queryKey: ["QCLevel"],
     queryFn: () => base44.entities.QCLevel.filter({ is_active: true }),
-    staleTime: Infinity
+    staleTime: Infinity,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 
   const filteredQcTypes = useMemo(
