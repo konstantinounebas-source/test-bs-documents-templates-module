@@ -1,5 +1,5 @@
 
-import XLSX from 'xlsx';
+
 
 export async function exportDataTabToExcel(gridRows, operationColumns, bundleName) {
   alert('Excel export is not not available');
