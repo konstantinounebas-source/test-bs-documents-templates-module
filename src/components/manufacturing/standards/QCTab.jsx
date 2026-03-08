@@ -103,7 +103,13 @@ export default function QCTab({ bundle, isEditable }) {
   // Fetch QC levels
   const { data: allQCLevels = [] } = useQuery({
     queryKey: ['QCLevel'],
-    queryFn: () => base44.entities.QCLevel.filter({ is_active: true })
+    queryFn: () => base44.entities.QCLevel.filter({ is_active: true }),
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
   });
 
   // Filter QC levels by bundle department
