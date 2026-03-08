@@ -649,7 +649,7 @@ ${context}
 
   return (
     <>
-      <div className={`fixed bottom-6 right-6 z-50 w-[800px] shadow-2xl rounded-2xl border border-slate-200 bg-white flex gap-0 transition-all
+      <div className={`fixed bottom-6 right-6 z-50 w-[400px] shadow-2xl rounded-2xl border border-slate-200 bg-white flex flex-col transition-all
         ${minimized ? "h-14" : "h-[620px]"}`}
       >
         {/* Header */}
@@ -674,9 +674,7 @@ ${context}
         </div>
 
         {!minimized && (
-          <div className="flex gap-0 flex-1 overflow-hidden">
-            {/* Main chat area */}
-            <div className="flex flex-col flex-1 overflow-hidden min-w-0">
+          <div className="flex flex-col flex-1 overflow-hidden">
             {/* Chat log */}
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-3">
@@ -988,62 +986,25 @@ ${context}
               </div>
             )}
 
-              {/* Free-text input bar — always visible */}
-              <div className="border-t bg-white p-2 flex gap-2 items-center rounded-b-2xl">
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={userInput}
-                  onChange={e => setUserInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } }}
-                  placeholder="Γράψε μήνυμα..."
-                  className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400 bg-slate-50"
-                />
-                <button
-                  onClick={handleUserMessage}
-                  disabled={!userInput.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl p-2 transition-colors"
-                >
-                  <Send className="w-4 h-4" />
-                </button>
-              </div>
+            {/* Free-text input bar — always visible */}
+            <div className="border-t bg-white p-2 flex gap-2 items-center rounded-b-2xl">
+              <input
+                ref={inputRef}
+                type="text"
+                value={userInput}
+                onChange={e => setUserInput(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } }}
+                placeholder="Γράψε μήνυμα..."
+                className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400 bg-slate-50"
+              />
+              <button
+                onClick={handleUserMessage}
+                disabled={!userInput.trim()}
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl p-2 transition-colors"
+              >
+                <Send className="w-4 h-4" />
+              </button>
             </div>
-
-            {/* Attachments panel — always visible on right */}
-            {selBatch && (
-              <div className="w-[300px] border-l border-slate-200 flex flex-col bg-slate-50 overflow-hidden">
-                <div className="px-3 py-2 bg-slate-100 border-b">
-                  <p className="text-xs font-semibold text-slate-700 flex items-center gap-2">
-                    <Paperclip className="w-4 h-4" />
-                    Attachments ({attachments.length})
-                  </p>
-                </div>
-                <div className="flex-1 overflow-y-auto p-2 space-y-2">
-                  {loadingAtts ? (
-                    <div className="flex justify-center py-4">
-                      <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-                    </div>
-                  ) : attachments.length === 0 ? (
-                    <p className="text-xs text-slate-400 text-center py-4">Δεν υπάρχουν attachments</p>
-                  ) : (
-                    attachments.map(att => (
-                      <AttachmentItem key={att.id} att={att}
-                        onDelete={id => deleteMutation.mutate(id)}
-                        onPreview={setPreviewFile}
-                        isDeleting={deleteMutation.isPending} />
-                    ))
-                  )}
-                </div>
-                {selBatch && step !== "attachments" && (
-                  <div className="border-t p-2">
-                    <Button size="sm" variant="outline" className="w-full text-xs h-7"
-                      onClick={() => setStep("attachments")}>
-                      <Upload className="w-3 h-3 mr-1" /> Προσθήκη
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
       </div>
