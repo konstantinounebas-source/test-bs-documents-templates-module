@@ -510,7 +510,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
                   </Button>
                 </div>
 
-                <DropZone onFiles={handleFiles} isUploading={uploadMutation.isPending} />
+                <DropZone onFiles={handleFiles} isUploading={uploadingCount > 0} />
 
                 {loadingAtts ? (
                   <div className="flex justify-center py-2">
