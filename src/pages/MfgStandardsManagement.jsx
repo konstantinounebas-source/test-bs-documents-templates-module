@@ -22,16 +22,9 @@ import ProfilesTab from '@/components/manufacturing/standards/ProfilesTab.jsx';
 import ConsumablesTab from '@/components/manufacturing/standards/ConsumablesTab.jsx';
 import DailyTargetsTab from '@/components/manufacturing/standards/DailyTargetsTab.jsx';
 
-/**
- * OPTIMIZATION NOTES (429 Rate Limiting Fix):
- * - Only active tab mounts (lazy loading reduces parallel requests)
- * - All queries use aggressive caching: staleTime 5min + gcTime 10min
- * - Mutations invalidate specific query keys, not broad ones
- * - No invalidateQueries in handleOpenBundle() to prevent cascades
- */
 export default function MfgStandardsManagementPage() {
-   const { accessLevel, loading: accessLoading } = usePageAccess('MfgStandardsManagement');
-   const queryClient = useQueryClient();
+  const { accessLevel, loading: accessLoading } = usePageAccess('MfgStandardsManagement');
+  const queryClient = useQueryClient();
   
   const [selectedDepartment, setSelectedDepartment] = useState('');
   const [selectedBundleId, setSelectedBundleId] = useState('');
@@ -369,7 +362,7 @@ export default function MfgStandardsManagementPage() {
             </Alert>
           )}
 
-          {/* Tabs - Only mount active tab to reduce initial API calls */}
+          {/* Tabs */}
           {currentBundle ? (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-5">

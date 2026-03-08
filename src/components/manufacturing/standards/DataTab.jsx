@@ -201,9 +201,10 @@ export default function DataTab({ bundle, isEditable }) {
       return totalWrites;
     },
     onSuccess: (totalWrites) => {
-       refetch();
-       toast.success(`Data saved: ${totalWrites} operations`);
-     },
+      queryClient.invalidateQueries({ queryKey: ['StdSetLines', bundle.id] });
+      refetch();
+      toast.success(`Data saved: ${totalWrites} operations`);
+    },
     onError: (error) => {
       toast.error('Failed to save: ' + error.message);
     }

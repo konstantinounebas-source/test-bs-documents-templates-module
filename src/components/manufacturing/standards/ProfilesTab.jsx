@@ -96,7 +96,7 @@ export default function ProfilesTab({ bundle, isEditable }) {
   const createProfileMutation = useMutation({
     mutationFn: (data) => base44.entities.OperationProfileName.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['OperationProfileName', bundle?.department] });
+      queryClient.invalidateQueries(['OperationProfileName']);
       toast.success('Profile created');
       handleCloseDialog();
     },
@@ -106,7 +106,7 @@ export default function ProfilesTab({ bundle, isEditable }) {
   const updateProfileMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.OperationProfileName.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['OperationProfileName', bundle?.department] });
+      queryClient.invalidateQueries(['OperationProfileName']);
       toast.success('Profile updated');
       handleCloseDialog();
     },
@@ -116,7 +116,7 @@ export default function ProfilesTab({ bundle, isEditable }) {
   const deleteProfileMutation = useMutation({
     mutationFn: (id) => base44.entities.OperationProfileName.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['OperationProfileName', bundle?.department] });
+      queryClient.invalidateQueries(['OperationProfileName']);
       toast.success('Profile deleted');
     },
     onError: (err) => toast.error('Failed to delete profile: ' + err.message)

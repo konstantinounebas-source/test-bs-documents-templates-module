@@ -198,18 +198,18 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
       return results;
     },
     onSuccess: () => {
-       queryClient.invalidateQueries({ queryKey: ['DailyTargetLines', bundle?.id] });
-       toast.success('Daily Targets added');
-       setShowAddTargetDialog(false);
-       resetForm();
-     },
+      queryClient.invalidateQueries(['DailyTargetLines']);
+      toast.success('Daily Targets added');
+      setShowAddTargetDialog(false);
+      resetForm();
+    },
     onError: (err) => toast.error('Failed to add Daily Targets: ' + err.message)
   });
 
   const deleteDailyTargetMutation = useMutation({
     mutationFn: (id) => base44.entities.DailyTargetLines.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['DailyTargetLines', bundle?.id] });
+      queryClient.invalidateQueries(['DailyTargetLines']);
       toast.success('Daily Target deleted');
     },
     onError: (err) => toast.error('Failed to delete Daily Target: ' + err.message)
@@ -245,7 +245,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     // Delete only lines that belong to this bundle
     const linesInThisBundle = dailyTargets.filter(dt => dt.target_type === typeName);
     await Promise.all(linesInThisBundle.map(dt => base44.entities.DailyTargetLines.delete(dt.id)));
-    queryClient.invalidateQueries({ queryKey: ['DailyTargetLines', bundle?.id] });
+    queryClient.invalidateQueries(['DailyTargetLines']);
     setTargetTypesList(targetTypesList.filter(t => t !== typeName));
     toast.success('Target Type removed');
   };
