@@ -314,7 +314,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
   };
 
   const handleFiles = (files) => {
-    files.forEach(f => uploadMutation.mutate(f));
+    files.forEach(f => uploadFile(f));
   };
 
   const handleReset = () => {
