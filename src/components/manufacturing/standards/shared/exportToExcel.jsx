@@ -1,4 +1,3 @@
-
 import ExcelJS from 'exceljs';
 
 // Helper to export as CSV instead of Excel (no external dependencies needed)
@@ -28,64 +27,39 @@ export async function exportDataTabToExcel(gridRows, operationColumns, bundleNam
 }
 
 export async function exportQCTabToExcel(filteredItems, gridData, mode, selectedOperation, selectedQCType, selectedQCLevel, bundleName) {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('QC Standards');
-
-  // Headers
-  worksheet.addRow(['Operation', selectedOperation]);
-  worksheet.addRow(['QC Type', selectedQCType]);
-  worksheet.addRow(['QC Level', selectedQCLevel]);
-  worksheet.addRow(['Mode', mode === 'percent' ? 'Percentage' : 'Fixed Minutes']);
-  worksheet.addRow([]);
-
-  const headers = [
-    'Item Code',
-    'Base Time (min)',
-    mode === 'percent' ? 'QC Value (%)' : 'QC Value (min)',
-    'Calculated Extra Time (min)',
-    'Notes'
+  const rows = [
+    ['Operation', selectedOperation],
+    ['QC Type', selectedQCType],
+    ['QC Level', selectedQCLevel],
+    ['Mode', mode === 'percent' ? 'Percentage' : 'Fixed Minutes'],
+    [],
+    [
+      'Item Code',
+      'Base Time (min)',
+      mode === 'percent' ? 'QC Value (%)' : 'QC Value (min)',
+      'Calculated Extra Time (min)',
+      'Notes'
+    ],
+    ...filteredItems.map(item => {
+      const data = gridData[item.item_code] || {};
+      const qc_value = parseFloat(data.qc_value) || 0;
+      const calculated = mode === 'percent' ? item.base_time * (qc_value / 100) : qc_value;
+      return [
+        item.item_code,
+        item.base_time,
+        data.qc_value || '',
+        qc_value > 0 ? calculated : '',
+        data.notes || ''
+      ];
+    })
   ];
-  worksheet.addRow(headers);
   
-  const headerRow = worksheet.lastRow;
-  headerRow.font = { bold: true };
-  headerRow.fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFE0E0E0' }
-  };
-
-  // Add data
-  filteredItems.forEach(item => {
-    const data = gridData[item.item_code] || {};
-    const qc_value = parseFloat(data.qc_value) || 0;
-    const calculated = mode === 'percent' ? item.base_time * (qc_value / 100) : qc_value;
-    
-    worksheet.addRow([
-      item.item_code,
-      item.base_time,
-      data.qc_value || '',
-      qc_value > 0 ? calculated : '',
-      data.notes || ''
-    ]);
-  });
-
-  // Auto-size
-  worksheet.columns.forEach(column => {
-    let maxLength = 0;
-    column.eachCell({ includeEmpty: true }, cell => {
-      const length = cell.value ? cell.value.toString().length : 10;
-      if (length > maxLength) maxLength = length;
-    });
-    column.width = Math.min(maxLength + 2, 30);
-  });
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const csvContent = rows.map(row => row.map(cell => `"${cell || ''}"`).join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${bundleName || 'QC'}_${selectedOperation}_${selectedQCType}_${selectedQCLevel}.xlsx`;
+  a.download = `${bundleName || 'QC'}_${selectedOperation}_${selectedQCType}_${selectedQCLevel}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
