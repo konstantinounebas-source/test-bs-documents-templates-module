@@ -255,11 +255,12 @@ export default function DailyProductionChatbot({ departments = [] }) {
     },
     onSuccess: (batch) => {
       queryClient.invalidateQueries(["BatchHeader", selDept]);
+      queryClient.invalidateQueries(["Batch_Lines", batch.id]);
       setSelBatch(batch);
       setStep("attachments");
       addMsg("bot",
         `✅ Batch δημιουργήθηκε για ${batch.date} – ${batch.department}.\n` +
-        (batch.has_scheduled_data ? "Οι γραμμές παραγωγής προσυμπληρώθηκαν από το πρόγραμμα." : "⚠️ Δεν βρέθηκαν δεδομένα προγράμματος.")
+        (batch.has_scheduled_data ? "Οι γραμμές παραγωγής προσυμπληρώθηκαν από το πρόγραμμα.\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'." : "⚠️ Δεν βρέθηκαν δεδομένα προγράμματος.\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.")
       );
     },
     onError: () => { toast.error("Αποτυχία δημιουργίας batch"); addMsg("bot", "❌ Σφάλμα κατά τη δημιουργία batch."); }
