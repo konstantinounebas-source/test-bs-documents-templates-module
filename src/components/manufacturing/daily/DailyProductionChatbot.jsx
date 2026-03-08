@@ -644,14 +644,15 @@ ${context}
   const quickDates = getQuickDates();
 
   // ── UI ────────────────────────────────────────────────────────────────────
+  // Show toggle button when closed
   if (!open) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-4 shadow-2xl transition-all flex items-center gap-2"
+        className="fixed right-6 bottom-6 z-40 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-2xl transition-all"
+        title="Open AI Assistant"
       >
-        <Bot className="w-5 h-5" />
-        <span className="text-sm font-medium pr-1">AI Assistant</span>
+        <Bot className="w-6 h-6" />
       </button>
     );
   }
