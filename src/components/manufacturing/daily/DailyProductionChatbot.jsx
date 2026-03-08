@@ -403,51 +403,8 @@ ${context}
     if (!text) return;
     setUserInput("");
     addMsg("user", text);
-
-    const lower = text.toLowerCase();
-
-    if (step === "dept") {
-      const match = departments.find(d => lower.includes(d.name.toLowerCase()));
-      if (match) { handleDeptSelect(match.name); return; }
-      // fallback to AI
-      askAI(text, lower);
-      return;
-    }
-
-    if (step === "date") {
-      const dateMatch = text.match(/\d{4}-\d{2}-\d{2}/);
-      if (dateMatch) { handleDateSelect(dateMatch[0]); return; }
-      if (lower.includes("σήμερ") || lower.includes("today")) { handleDateSelect(todayStr()); return; }
-      if (lower.includes("χθες") || lower.includes("yester")) {
-        const d = new Date(); d.setDate(d.getDate() - 1);
-        handleDateSelect(d.toISOString().split("T")[0]); return;
-      }
-      // fallback to AI
-      askAI(text, lower);
-      return;
-    }
-
-    if (step === "batch") {
-      if (lower.includes("ναι") || lower.includes("yes") || lower.includes("δημιούργ")) {
-        handleConfirmCreate(); return;
-      }
-      if (lower.includes("όχι") || lower.includes("no") || lower.includes("ακύρ")) {
-        handleReset(); return;
-      }
-      askAI(text, lower);
-      return;
-    }
-
-    if (step === "attachments") {
-      if (lower.includes("επανεκκίν") || lower.includes("reset") || lower.includes("νέα αναζήτ") || lower.includes("αρχή")) {
-        handleReset(); return;
-      }
-      // All other messages → AI
-      askAI(text, lower);
-      return;
-    }
-
-    askAI(text, lower);
+    // Always route through AI for smart intent detection
+    askAI(text, text.toLowerCase());
   };
 
   const quickDates = getQuickDates();
