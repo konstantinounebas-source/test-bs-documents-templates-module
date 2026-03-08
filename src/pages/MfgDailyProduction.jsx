@@ -119,15 +119,12 @@ export default function MfgDailyProduction() {
   const handleBatchSelect = (batch) => {
     setSelectedBatch(batch);
     setActiveTab('batch_lines');
-    setLoadedTabs(new Set(['batch_lines'])); // Reset to batch_lines only
     toast.success('Batch selected');
   };
 
   const handleBatchCreated = (newBatch) => {
     setSelectedBatch(newBatch);
     setActiveTab("batch_lines");
-    setLoadedTabs(new Set(['batch_lines'])); // Reset to batch_lines only
-    // Refetch only the batch headers list
     queryClient.invalidateQueries({ queryKey: ['BatchHeader', selectedDepartment] });
   };
 
