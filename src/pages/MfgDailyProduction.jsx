@@ -262,10 +262,23 @@ export default function MfgDailyProduction() {
         </Card>
       </div>
 
+      {/* Open Chatbot Button */}
+      {!showChatbot && (
+        <button
+          onClick={() => setShowChatbot(true)}
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center justify-center transition-colors"
+          title="Open AI Assistant"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </button>
+      )}
+
       {/* Floating AI Chatbot */}
-      <Suspense fallback={null}>
-        <DailyProductionChatbot departments={departments} />
-      </Suspense>
+      {showChatbot && (
+        <Suspense fallback={null}>
+          <DailyProductionChatbot departments={departments} />
+        </Suspense>
+      )}
     </div>
   );
 }
