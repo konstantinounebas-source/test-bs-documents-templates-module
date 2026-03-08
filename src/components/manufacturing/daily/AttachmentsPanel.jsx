@@ -226,7 +226,7 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
             </div>
           </DialogHeader>
 
-          {previewFile?.file_type === 'image' ? (
+          {previewFile && getFileType(previewFile.file_name) === 'image' ? (
             <div className="flex items-center justify-center max-h-[70vh] overflow-auto bg-slate-50 rounded-lg">
               <img
                 src={previewFile.file_url}
@@ -236,7 +236,7 @@ export default function AttachmentsPanel({ batchHeaderId, department }) {
               />
             </div>
           ) : (
-            <div className="flex items-center justify-center max-h-[70vh] overflow-auto bg-slate-50 rounded-lg">
+            <div className="flex items-center justify-center max-h-[70vh] overflow-auto bg-slate-50 rounded-lg" style={{ transform: `rotate(${rotation}deg)`, transition: 'transform 0.3s ease' }}>
               <iframe 
                 src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(previewFile?.file_url)}`}
                 className="w-full h-[600px] border-0"
