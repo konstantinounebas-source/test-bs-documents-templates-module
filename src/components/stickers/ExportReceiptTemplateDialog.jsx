@@ -5,8 +5,8 @@ import { FileDown } from "lucide-react";
 
 export default function ExportReceiptTemplateDialog({ orderedItems, stops, stickerTemplates }) {
   const handleExportTemplate = async () => {
-    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
-    const workbook = new ExcelJS.Workbook();
+    const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
+    const workbook = new Workbook();
     const worksheet = workbook.addWorksheet('Receipt Template');
 
     // Headers

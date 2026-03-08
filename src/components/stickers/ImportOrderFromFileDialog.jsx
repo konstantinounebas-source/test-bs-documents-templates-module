@@ -30,9 +30,9 @@ export default function ImportOrderFromFileDialog({ isOpen, onClose, onItemsImpo
     if (!file) return;
 
     try {
-      const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
+      const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
       const arrayBuffer = await file.arrayBuffer();
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new Workbook();
       await workbook.xlsx.load(arrayBuffer);
       const worksheet = workbook.getWorksheet('Order Template');
 

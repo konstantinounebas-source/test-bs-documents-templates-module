@@ -23,8 +23,8 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
   }, [open]);
 
   const downloadTemplate = async () => {
-    const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
-    const workbook = new ExcelJS.Workbook();
+    const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
+    const workbook = new Workbook();
     const worksheet = workbook.addWorksheet("Stops Template");
 
     worksheet.columns = [
@@ -70,8 +70,8 @@ export default function ImportStopsDialog({ open, onClose, onImportComplete }) {
     setSuccess("");
 
     try {
-      const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
-      const workbook = new ExcelJS.Workbook();
+      const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
+      const workbook = new Workbook();
       await workbook.xlsx.load(await file.arrayBuffer());
       const worksheet = workbook.getWorksheet(1);
 

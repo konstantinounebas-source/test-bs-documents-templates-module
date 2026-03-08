@@ -1,6 +1,6 @@
 export async function exportDataTabToExcel(gridRows, operationColumns, bundleName) {
-  const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
-  const workbook = new ExcelJS.Workbook();
+  const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
+  const workbook = new Workbook();
   const worksheet = workbook.addWorksheet('Standards Data');
 
   // Headers
@@ -47,8 +47,8 @@ export async function exportDataTabToExcel(gridRows, operationColumns, bundleNam
 }
 
 export async function exportQCTabToExcel(filteredItems, gridData, mode, selectedOperation, selectedQCType, selectedQCLevel, bundleName) {
-  const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
-  const workbook = new ExcelJS.Workbook();
+  const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
+  const workbook = new Workbook();
   const worksheet = workbook.addWorksheet('QC Standards');
 
   // Headers
@@ -111,8 +111,8 @@ export async function exportQCTabToExcel(filteredItems, gridData, mode, selected
 }
 
 export async function exportProfilesToExcel(profiles, operations, bundleName) {
-  const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
-  const workbook = new ExcelJS.Workbook();
+  const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
+  const workbook = new Workbook();
   const worksheet = workbook.addWorksheet('Operation Profiles');
 
   const headers = ['Profile Name', 'Operations', 'Description', 'Status'];
@@ -159,8 +159,8 @@ export async function exportProfilesToExcel(profiles, operations, bundleName) {
 }
 
 export async function exportScheduledDataToExcel(filteredLines, getProfileName, selectedDate, bundleName) {
-  const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
-  const workbook = new ExcelJS.Workbook();
+  const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
+  const workbook = new Workbook();
   const worksheet = workbook.addWorksheet('Scheduled Data');
 
   const headers = ['Date', 'Item Code', 'Profile', 'Ops Qty', 'Ops Total', 'QC Total', 'Grand Total', 'Notes'];

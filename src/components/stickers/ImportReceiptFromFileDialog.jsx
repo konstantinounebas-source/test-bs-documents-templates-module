@@ -103,9 +103,9 @@ export default function ImportReceiptFromFileDialog({ isOpen, onClose, onItemsIm
     if (!file) return;
 
     try {
-      const ExcelJS = (await import('https://esm.sh/exceljs@4.4.0')).default;
+      const { Workbook } = await import('https://cdn.jsdelivr.net/npm/exceljs@4.4.0/+esm');
       const buffer = await file.arrayBuffer();
-      const workbook = new ExcelJS.Workbook();
+      const workbook = new Workbook();
       await workbook.xlsx.load(buffer);
 
       const worksheet = workbook.getWorksheet('Receipt Template');
