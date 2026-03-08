@@ -77,47 +77,16 @@ export async function exportProfilesToExcel(profiles, operations, bundleName) {
 }
 
 export async function exportScheduledDataToExcel(filteredLines, getProfileName, selectedDate, bundleName) {
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Scheduled Data');
-
   const headers = ['Date', 'Item Code', 'Profile', 'Ops Qty', 'Ops Total', 'QC Total', 'Grand Total', 'Notes'];
-  worksheet.addRow(headers);
-  
-  worksheet.getRow(1).font = { bold: true };
-  worksheet.getRow(1).fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFE0E0E0' }
-  };
-
-  filteredLines.forEach(line => {
-    worksheet.addRow([
-      line.date,
-      line.item_code,
-      getProfileName(line.operation_profile_id),
-      line.ops_qty,
-      (line.ops_total_min || 0).toFixed(2),
-      (line.qc_total_min || 0).toFixed(2),
-      (line.grand_total_min || 0).toFixed(2),
-      line.notes || ''
-    ]);
-  });
-
-  worksheet.columns.forEach(column => {
-    let maxLength = 0;
-    column.eachCell({ includeEmpty: true }, cell => {
-      const length = cell.value ? cell.value.toString().length : 10;
-      if (length > maxLength) maxLength = length;
-    });
-    column.width = Math.min(maxLength + 2, 30);
-  });
-
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${bundleName || 'Scheduled'}_${selectedDate || 'All'}.xlsx`;
-  a.click();
-  URL.revokeObjectURL(url);
+  const rows = filteredLines.map(line => [
+    line.date,
+    line.item_code,
+    getProfileName(line.operation_profile_id),
+    line.ops_qty,
+    (line.ops_total_min || 0).toFixed(2),
+    (line.qc_total_min || 0).toFixed(2),
+    (line.grand_total_min || 0).toFixed(2),
+    line.notes || ''
+  ]);
+  exportToCSV(headers, rows, `${bundleName || 'Scheduled'}_${selectedDate || 'All'}.csv`);
 }
