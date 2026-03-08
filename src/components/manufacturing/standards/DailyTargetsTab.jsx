@@ -209,7 +209,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   const deleteDailyTargetMutation = useMutation({
     mutationFn: (id) => base44.entities.DailyTargetLines.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['DailyTargetLines']);
+      queryClient.invalidateQueries({ queryKey: ['DailyTargetLines', bundle?.id] });
       toast.success('Daily Target deleted');
     },
     onError: (err) => toast.error('Failed to delete Daily Target: ' + err.message)
