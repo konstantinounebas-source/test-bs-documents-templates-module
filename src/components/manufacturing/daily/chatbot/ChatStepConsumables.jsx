@@ -197,6 +197,48 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
         </Button>
       )}
 
+      {/* Manual Add */}
+      <Button size="sm" variant="outline" className="w-full text-xs border-dashed"
+        onClick={() => setShowManual(s => !s)}>
+        <Plus className="w-3 h-3 mr-1" /> Manual Προσθήκη
+      </Button>
+
+      {showManual && (
+        <div className="border rounded p-2 space-y-1 bg-slate-50">
+          <p className="text-[10px] font-semibold text-slate-500 uppercase mb-1">Νέα Εγγραφή</p>
+          {[
+            ["consumable", "Consumable *", "text"],
+            ["item_code", "Item Code", "text"],
+            ["operation", "Operation", "text"],
+            ["unit", "Unit", "text"],
+            ["expected_qty", "Expected Qty", "number"],
+            ["actual_qty", "Actual Qty *", "number"],
+          ].map(([field, label, type]) => (
+            <div key={field}>
+              <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
+              <input
+                type={type}
+                value={manualForm[field]}
+                onChange={e => setManualForm(f => ({ ...f, [field]: e.target.value }))}
+                className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 bg-white"
+                placeholder={label.replace(" *", "")}
+              />
+            </div>
+          ))}
+          <div className="flex gap-1 pt-1">
+            <Button size="sm" className="flex-1 text-xs h-7 bg-blue-600 hover:bg-blue-700"
+              onClick={handleManualAdd} disabled={isSavingManual}>
+              {isSavingManual ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Check className="w-3 h-3 mr-1" />}
+              Αποθήκευση
+            </Button>
+            <Button size="sm" variant="outline" className="text-xs h-7"
+              onClick={() => { setShowManual(false); setManualForm(EMPTY_FORM); }}>
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
         onClick={() => onNext("🎉 Η καταχώριση ολοκληρώθηκε! Όλα τα βήματα εκτελέστηκαν.")}>
         <CheckCircle2 className="w-3 h-3 mr-1" /> Ολοκλήρωση
