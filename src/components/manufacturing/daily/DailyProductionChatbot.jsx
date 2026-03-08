@@ -247,13 +247,11 @@ export default function DailyProductionChatbot({ departments = [] }) {
   const uploadFile = async (file) => {
     setUploadingCount(c => c + 1);
     try {
-      const isImage = /image/i.test(file.type || "") || /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file.name || "");
-      const fileType = isImage ? "image" : "pdf";
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const me = await base44.auth.me();
       const att = await base44.entities.BatchAttachment.create({
         batch_header_id: selBatch.id, department: selBatch.department,
-        file_url, file_name: file.name, file_type, uploaded_by: me.email, notes: ""
+        file_url, file_name: file.name, uploaded_by: me.email, notes: ""
       });
       queryClient.invalidateQueries(["BatchAttachments", selBatch?.id]);
       addMsg("bot", `📎 Αρχείο "${att.file_name}" ανέβηκε επιτυχώς!`);
