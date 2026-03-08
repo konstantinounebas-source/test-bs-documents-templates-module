@@ -244,7 +244,17 @@ export default function DailyProductionChatbot({ departments = [] }) {
   // ── upload state ──────────────────────────────────────────────────────────
   const [uploadingCount, setUploadingCount] = useState(0);
 
-  const uploadFile = async (file) => {
+  const [pendingDuplicates, setPendingDuplicates] = useState([]);
+
+  const uploadFile = async (file, forceUpload = false) => {
+    // Check for duplicate
+    if (!forceUpload) {
+      const existing = attachments.find(a => a.file_name === file.name);
+      if (existing) {
+        setPendingDuplicates(prev => [...prev, file]);
+        return;
+      }
+    }
     setUploadingCount(c => c + 1);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
