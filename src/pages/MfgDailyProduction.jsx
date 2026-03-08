@@ -43,7 +43,7 @@ export default function MfgDailyProduction() {
     staleTime: Infinity
   });
 
-  const { data: batchHeaders = [], refetch: refetchBatchHeaders } = useQuery({
+  const { data: batchHeaders = [] } = useQuery({
     queryKey: ['BatchHeader', selectedDepartment],
     queryFn: () => selectedDepartment
       ? base44.entities.BatchHeader.filter({ department: selectedDepartment })
