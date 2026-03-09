@@ -123,29 +123,35 @@ export default function DailyMetricValuesViewer() {
     }
   };
 
-  // Check data validity once per unique date+department combination (sequential to avoid rate limit)
+  // Check data validity - batch sequentially with minimal delay
   useEffect(() => {
     if (filteredValues.length === 0) return;
 
+    // Only check combos that have actual calculated metric values
+    const combos = [...new Set(filteredValues.map(mv => `${mv.date}__${mv.department}`))];
+    if (combos.length === 0) return;
+
+    let cancelled = false;
+
     const checkAll = async () => {
-      const combos = [...new Set(filteredValues.map(mv => `${mv.date}__${mv.department}`))];
       const checks = {};
       for (const combo of combos) {
+        if (cancelled) break;
         const [date, department] = combo.split('__');
         try {
           const result = await checkMetricsDataValidity({ date, department });
           checks[combo] = result.data;
-        } catch (error) {
-          console.error('Validity check error:', error);
-          checks[combo] = { isValid: true };
+          // Update progressively so warnings appear as they come in
+          if (!cancelled) setValidityCheck(prev => ({ ...prev, [combo]: result.data }));
+        } catch {
+          // skip silently
         }
-        // small delay between calls to avoid rate limiting
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 100));
       }
-      setValidityCheck(checks);
     };
 
     checkAll();
+    return () => { cancelled = true; };
   }, [filteredValues]);
 
   if (isLoading) {
