@@ -36,10 +36,12 @@ export default function DailyMetricValuesViewer() {
       if (viewMode === 'daily') {
         return base44.entities.DailyMetricValue.filter({ date: dateRange[0] });
       } else {
-        const results = await Promise.all(
-          dateRange.map(d => base44.entities.DailyMetricValue.filter({ date: d }))
-        );
-        return results.flat();
+        // Fetch with date range filter instead of per-day calls
+        const startDate = dateRange[0];
+        const endDate = dateRange[dateRange.length - 1];
+        return base44.entities.DailyMetricValue.filter({
+          date: { $gte: startDate, $lte: endDate }
+        });
       }
     }
   });
