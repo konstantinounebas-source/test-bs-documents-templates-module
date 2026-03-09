@@ -142,7 +142,11 @@ export default function ProfilesTab({ bundle, isEditable }) {
     setFormName(profile.name);
     setFormDescription(profile.description || '');
     setFormOperations(profile.operations_required || []);
-    setFormOperationOrder(profile.operations_order || profile.operations_required || []);
+    // Use operations_order if saved, otherwise use operations_required
+    const savedOrder = profile.operations_order && profile.operations_order.length > 0 
+      ? profile.operations_order 
+      : profile.operations_required || [];
+    setFormOperationOrder(savedOrder);
     setShowAddDialog(true);
   };
 
