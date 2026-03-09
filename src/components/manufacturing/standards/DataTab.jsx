@@ -47,6 +47,19 @@ export default function DataTab({ bundle, isEditable }) {
   });
 
   // Filter operations by department: include if department_ids is empty/missing OR includes this bundle's department
+  // Fetch Operation Profiles for this department
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['OperationProfileName', bundle?.department],
+    queryFn: () => base44.entities.OperationProfileName.filter({ department: bundle.department }),
+    enabled: !!bundle,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    retry: 1
+  });
+
   const filteredOperations = useMemo(() => {
     return allOperations.filter(op => {
       if (!op.department_ids || op.department_ids.length === 0) return true;
@@ -54,6 +67,20 @@ export default function DataTab({ bundle, isEditable }) {
       return op.department_ids.includes(bundleDepartmentId);
     });
   }, [allOperations, bundleDepartmentId]);
+
+  // Get operations for selected profile
+  const selectedProfile = useMemo(() => {
+    return profiles.find(p => p.id === selectedProfileId);
+  }, [profiles, selectedProfileId]);
+
+  // If a profile is selected, use its operations; otherwise use all department operations
+  const displayedOperations = useMemo(() => {
+    if (selectedProfile && selectedProfile.operations_required) {
+      const profileOpsIds = new Set(selectedProfile.operations_required);
+      return filteredOperations.filter(op => profileOpsIds.has(op.id));
+    }
+    return filteredOperations;
+  }, [filteredOperations, selectedProfile]);
 
   const operationColumns = useMemo(() => {
     const sorted = [...filteredOperations]
