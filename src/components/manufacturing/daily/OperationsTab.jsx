@@ -880,6 +880,25 @@ export default function OperationsTab({ batchId, department }) {
               </Select>
             </div>
 
+            {formData.item_code && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm font-medium text-blue-900 mb-2">Existing Operations for {formData.item_code}:</p>
+                <div className="space-y-1">
+                  {lines.filter(l => l.item_code === formData.item_code).length === 0 ? (
+                    <p className="text-sm text-blue-700">None yet</p>
+                  ) : (
+                    lines.filter(l => l.item_code === formData.item_code).map(op => (
+                      <div key={op.id} className="text-sm text-blue-800 flex items-center gap-2">
+                        <span className="font-medium">{op.operation || '(no operation)'}</span>
+                        <span className="text-blue-600">Qty: {op.qty_operation}</span>
+                        <span className="text-blue-600">Time: {op.operation_time_min?.toFixed(2)}m</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
             {formData.operation_profile_id && (
               <div>
                 <div className="flex items-center justify-between mb-2">
