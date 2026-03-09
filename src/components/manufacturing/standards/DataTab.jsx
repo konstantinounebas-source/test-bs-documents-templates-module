@@ -75,11 +75,18 @@ export default function DataTab({ bundle, isEditable }) {
 
   // If a profile is selected, use its operations in its defined order; otherwise use all department operations
   const displayedOperations = useMemo(() => {
-    if (selectedProfile && selectedProfile.operations_required) {
-      // Use profile's operation order if available, otherwise use required list
-      const orderList = selectedProfile.operations_order || selectedProfile.operations_required;
+    if (selectedProfile && selectedProfile.operations_required && selectedProfile.operations_required.length > 0) {
+      // Only use operations that are explicitly in operations_required (strict filtering)
+      const requiredSet = new Set(selectedProfile.operations_required);
+      
+      // If operations_order exists and matches, use it; otherwise use operations_required
+      let opsToUse = selectedProfile.operations_order || selectedProfile.operations_required;
+      
+      // Filter to only operations that exist in both the order list and required list
+      opsToUse = opsToUse.filter(opId => requiredSet.has(opId));
+      
       const orderedOps = [];
-      orderList.forEach(opId => {
+      opsToUse.forEach(opId => {
         const op = filteredOperations.find(o => o.id === opId);
         if (op) orderedOps.push(op);
       });
