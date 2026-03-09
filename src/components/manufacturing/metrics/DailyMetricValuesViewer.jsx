@@ -260,11 +260,28 @@ export default function DailyMetricValuesViewer() {
               <TableHeader>
                 <TableRow className="bg-slate-50">
                   <TableHead className="font-semibold sticky left-0 bg-slate-50 z-10 min-w-[200px]">Metric Name</TableHead>
-                  {dateRange.map(date => (
-                    <TableHead key={date} className="text-center font-semibold min-w-[80px]">
-                      {format(new Date(date), 'dd/MM')}
-                    </TableHead>
-                  ))}
+                  {dateRange.map(date => {
+                    // Check if any dept has stale data for this date
+                    const isStaleDate = Object.entries(validityCheck).some(
+                      ([key, val]) => key.startsWith(date + '__') && val?.isValid === false
+                    );
+                    const staleDepts = Object.entries(validityCheck)
+                      .filter(([key, val]) => key.startsWith(date + '__') && val?.isValid === false)
+                      .map(([key, val]) => `${key.split('__')[1]}: ${val?.changedTables?.join(', ')}`);
+                    return (
+                      <TableHead key={date} className="text-center font-semibold min-w-[80px]">
+                        <div className="flex items-center justify-center gap-1">
+                          {format(new Date(date), 'dd/MM')}
+                          {isStaleDate && (
+                            <AlertCircle
+                              className="w-3.5 h-3.5 text-orange-500 cursor-help flex-shrink-0"
+                              title={`Data changed after last calculation:\n${staleDepts.join('\n')}`}
+                            />
+                          )}
+                        </div>
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
               </TableHeader>
               <TableBody>
