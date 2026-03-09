@@ -133,9 +133,10 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
 
   const handleAddManual = async () => {
     if (!manualForm.consumable || !manualForm.actual_qty || !manualForm.unit) {
-      toast.error("Consumable, Unit και Actual Qty είναι υποχρεωτικά"); return;
+      setErrorMsg("Consumable, Unit και Actual Qty είναι υποχρεωτικά"); return;
     }
     setIsSavingManual(true);
+    setErrorMsg("");
     try {
       await base44.entities.ConsumablesActual.create({
         batch_header_id: batchId,
@@ -150,10 +151,11 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
         is_auto_generated: false
       });
       queryClient.invalidateQueries(["ConsumablesActual", batchId]);
-      toast.success("✅ Consumable προστέθηκε");
       setManualForm({ consumable: "", item_code: "", operation: "", unit: "", actual_qty: "", notes: "" });
       setShowAddForm(false);
-    } catch { toast.error("Σφάλμα αποθήκευσης"); }
+    } catch (err) {
+      setErrorMsg(err.message || "Σφάλμα αποθήκευσης");
+    }
     setIsSavingManual(false);
   };
 
