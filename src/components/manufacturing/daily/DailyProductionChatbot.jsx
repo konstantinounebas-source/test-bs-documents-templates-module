@@ -871,10 +871,10 @@ ${context}
                    <Button size="sm" variant="outline" className="text-xs"
                      disabled={isSavingLine}
                      onClick={() => {
-                       addMsg("user", "Skip");
+                       addMsg("user", "Skip - next item");
                        handleBatchLineConfirm({ ...blReviewItems[blCurrentIdx], _skip: true });
                      }}>
-                     Skip
+                     Skip - next item
                    </Button>
                    <Button size="sm" variant="outline" className="flex-1 text-xs bg-orange-100 text-orange-700 hover:bg-orange-200"
                      onClick={() => {
