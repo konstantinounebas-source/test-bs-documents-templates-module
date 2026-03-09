@@ -123,25 +123,25 @@ export default function DailyMetricValuesViewer() {
     }
   };
 
-  // Check data validity when metrics or filtered values change
+  // Check data validity once per unique date+department combination
   useEffect(() => {
     if (filteredValues.length === 0) return;
 
     const checkAll = async () => {
+      // Get unique date+department combos
+      const combos = [...new Set(filteredValues.map(mv => `${mv.date}__${mv.department}`))];
+
       const checks = {};
-      for (const mv of filteredValues) {
+      await Promise.all(combos.map(async (combo) => {
+        const [date, department] = combo.split('__');
         try {
-          const result = await checkMetricsDataValidity({
-            metric_id: mv.id,
-            date: mv.date,
-            department: mv.department
-          });
-          checks[mv.id] = result.data;
+          const result = await checkMetricsDataValidity({ date, department });
+          checks[combo] = result.data;
         } catch (error) {
           console.error('Validity check error:', error);
-          checks[mv.id] = { isValid: true };
+          checks[combo] = { isValid: true };
         }
-      }
+      }));
       setValidityCheck(checks);
     };
 
