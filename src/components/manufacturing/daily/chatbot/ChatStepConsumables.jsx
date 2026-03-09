@@ -207,11 +207,21 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
       )}
 
       {expectedRows.length > 0 && (
-        <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => autoGenerateMutation.mutate()}
-          disabled={autoGenerateMutation.isPending}>
-          {autoGenerateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-          Generate από Standards ({expectedRows.length})
-        </Button>
+        <>
+          {autoGenerateMutation.isError && (
+            <div className="bg-red-50 border border-red-200 rounded p-2 text-xs text-red-700">
+              ❌ {autoGenerateMutation.error?.message || "Σφάλμα κατά τη δημιουργία"}
+            </div>
+          )}
+          <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => {
+            setErrorMsg("");
+            autoGenerateMutation.mutate();
+          }}
+            disabled={autoGenerateMutation.isPending}>
+            {autoGenerateMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+            Generate από Standards ({expectedRows.length})
+          </Button>
+        </>
       )}
 
       {/* Manual Add */}
