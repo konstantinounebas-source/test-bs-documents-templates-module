@@ -14,6 +14,7 @@ export default function DataTab({ bundle, isEditable }) {
   const [gridRows, setGridRows] = useState([]);
   const [sortBy, setSortBy] = useState('none'); // 'none' | 'name_asc' | 'name_desc' | 'mins_asc' | 'mins_desc'
   const [itemCodeFilter, setItemCodeFilter] = useState('');
+  const [selectedProfileId, setSelectedProfileId] = useState(null);
 
   // Fetch departments to get bundle's department id
   const { data: allDepartments = [] } = useQuery({
