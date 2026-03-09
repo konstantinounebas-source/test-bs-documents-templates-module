@@ -27,6 +27,7 @@ export default function ProfilesTab({ bundle, isEditable }) {
   const [formName, setFormName] = useState('');
   const [formDescription, setFormDescription] = useState('');
   const [formOperations, setFormOperations] = useState([]);
+  const [formOperationOrder, setFormOperationOrder] = useState([]);
 
   // Fetch departments to resolve bundle department id
   const { data: allDepartments = [] } = useQuery({
