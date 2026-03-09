@@ -196,7 +196,8 @@ export default function ProfilesTab({ bundle, isEditable }) {
       department: bundle.department,
       description: formDescription.trim(),
       is_active: true,
-      operations_required: formOperations
+      operations_required: formOperations,
+      operations_order: formOperationOrder
     };
 
     if (editingProfile) {
