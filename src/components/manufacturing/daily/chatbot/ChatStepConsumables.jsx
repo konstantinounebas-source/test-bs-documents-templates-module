@@ -48,6 +48,7 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
   const [showAddForm, setShowAddForm] = useState(false);
   const [manualForm, setManualForm] = useState({ consumable: "", item_code: "", operation: "", unit: "", actual_qty: "", notes: "" });
   const [isSavingManual, setIsSavingManual] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   const { data: consumables = [] } = useQuery({
     queryKey: ["Consumable"],
