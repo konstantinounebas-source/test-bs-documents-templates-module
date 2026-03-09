@@ -470,6 +470,9 @@ export default function DailyProductionChatbot({ departments = [] }) {
   const handleBatchLineConfirm = async (updatedItem) => {
     if (!updatedItem._skip) {
       await saveBatchLine(updatedItem);
+      addMsg("bot", `💾 Item **${updatedItem.item_code}** - Processed: ${updatedItem.qty_processed} | Good: ${updatedItem.qty_out_good} | Scrap: ${updatedItem.qty_scrap}`);
+    } else {
+      addMsg("bot", `⏭️ Item **${updatedItem.item_code}** - Παράλειψη`);
     }
     const nextIdx = blCurrentIdx + 1;
     if (nextIdx >= blReviewItems.length) {
