@@ -46,7 +46,7 @@ export default function ProfilesTab({ bundle, isEditable }) {
     return dept?.id || null;
   }, [bundle, allDepartments]);
 
-  // Fetch Operations (active, max 10)
+  // Fetch Operations (active, ALL for dialog selection)
   const { data: allOperations = [], isLoading: opsLoading } = useQuery({
     queryKey: ['Operation'],
     queryFn: () => base44.entities.Operation.filter({ is_active: true }),
@@ -58,7 +58,8 @@ export default function ProfilesTab({ bundle, isEditable }) {
     retry: 1
   });
 
-  const operations = useMemo(() => {
+  // All department operations (for dialog - show ALL)
+  const allDepartmentOperations = useMemo(() => {
     return allOperations
       .filter(op => {
         if (op.is_allowed === false) return false;
@@ -66,9 +67,13 @@ export default function ProfilesTab({ bundle, isEditable }) {
         if (!bundleDepartmentId) return true;
         return op.department_ids.includes(bundleDepartmentId);
       })
-      .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
-      .slice(0, 10);
+      .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
   }, [allOperations, bundleDepartmentId]);
+
+  // Grid display operations (max 10)
+  const operations = useMemo(() => {
+    return allDepartmentOperations.slice(0, 10);
+  }, [allDepartmentOperations]);
 
   // Fetch Operation Profiles for this department
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
