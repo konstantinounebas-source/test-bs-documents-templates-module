@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, X, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { calculateMetrics } from '@/functions/calculateMetrics';
 import { format } from 'date-fns';
 
 export default function MetricsCalculator() {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [selectedDept, setSelectedDept] = useState('');
+  const [selectedDepts, setSelectedDepts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [departments, setDepartments] = React.useState([]);
+  const [showDeptDropdown, setShowDeptDropdown] = React.useState(false);
 
   // Load departments on mount
   React.useEffect(() => {
