@@ -839,24 +839,6 @@ export default function OperationsTab({ batchId, department }) {
 
           <div className="space-y-4 py-4">
             <div>
-              <Label>Item Code *{selectedItemQtyProcessed !== null && <span className="text-slate-500 font-normal ml-2">(Qty Processed: <strong>{selectedItemQtyProcessed}</strong>)</span>}</Label>
-              <Select 
-                value={formData.item_code} 
-                onValueChange={(v) => setFormData({ ...formData, item_code: v })}
-                disabled={!!editingGroupId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select item code from standards" />
-                </SelectTrigger>
-                <SelectContent>
-                  {itemCodes.map(code => (
-                    <SelectItem key={code} value={code}>{code}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
               <Label>Operation Profile *</Label>
               <Select 
                 value={formData.operation_profile_id} 
@@ -875,6 +857,24 @@ export default function OperationsTab({ batchId, department }) {
                 <SelectContent>
                   {profileNames.filter(pn => pn.department === department).map(pn => (
                     <SelectItem key={pn.id} value={pn.id}>{pn.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Item Code *{selectedItemQtyProcessed !== null && <span className="text-slate-500 font-normal ml-2">(Qty Processed: <strong>{selectedItemQtyProcessed}</strong>)</span>}</Label>
+              <Select 
+                value={formData.item_code} 
+                onValueChange={(v) => setFormData({ ...formData, item_code: v })}
+                disabled={!!editingGroupId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select item code from standards" />
+                </SelectTrigger>
+                <SelectContent>
+                  {itemCodes.map(code => (
+                    <SelectItem key={code} value={code}>{code}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
