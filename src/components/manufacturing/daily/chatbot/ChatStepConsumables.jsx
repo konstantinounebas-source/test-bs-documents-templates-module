@@ -113,9 +113,11 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
     },
     onSuccess: (count) => {
       queryClient.invalidateQueries(["ConsumablesActual", batchId]);
-      toast.success(`✅ Προστέθηκαν ${count} consumable rows`);
     },
-    onError: (err) => toast.error(err.message || "Σφάλμα")
+    onError: (err) => {
+      // Silent fail - error already shown in UI
+      console.error(err);
+    }
   });
 
   const operationOptions = useMemo(() => {
