@@ -89,15 +89,24 @@ export default function DataTab({ bundle, isEditable }) {
   }, [filteredOperations, selectedProfile]);
 
   const operationColumns = useMemo(() => {
-    const sorted = [...displayedOperations]
-      .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    // If a profile is selected, use its operation order; otherwise sort by display_order
+    let sorted = [...displayedOperations];
+    
+    if (selectedProfile && selectedProfile.operations_order && selectedProfile.operations_order.length > 0) {
+      // Sort by the profile's operations_order
+      const orderMap = new Map(selectedProfile.operations_order.map((id, idx) => [id, idx]));
+      sorted.sort((a, b) => (orderMap.get(a.id) ?? 999) - (orderMap.get(b.id) ?? 999));
+    } else {
+      // Default: sort by display_order
+      sorted.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+    }
     
     return sorted.map(op => ({ 
       id: op.id,
       operation: op.name, 
       label: `${op.name} (min)` 
     }));
-  }, [displayedOperations]);
+  }, [displayedOperations, selectedProfile]);
 
   const hasMoreThan10 = filteredOperations.length > 10;
   const hasNoOperations = filteredOperations.length === 0;
