@@ -168,31 +168,41 @@ export default function MetricsCalculator() {
        </div>
 
       {result && (
-        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-semibold text-green-900">Metrics Calculated Successfully</p>
-              <p className="text-sm text-green-800 mt-1">
-                {result.metrics.length} metrics calculated on {result.calculatedAt}
-              </p>
-              <div className="mt-3 space-y-1">
-                {result.metrics.slice(0, 5).map((m, idx) => (
-                  <div key={idx} className="text-xs text-green-700">
-                    <span className="font-mono font-medium">{m.metric_code}</span> = {m.value?.toFixed(2) || 'N/A'}
-                    {m.error && <span className="text-red-600 ml-2">({m.error})</span>}
-                  </div>
-                ))}
-                {result.metrics.length > 5 && (
-                  <div className="text-xs text-green-700 font-medium">
-                    ... and {result.metrics.length - 5} more
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+         <div className="mt-6 space-y-3">
+           {Object.entries(result).map(([dept, data]) => (
+             <div key={dept} className="p-4 bg-green-50 border border-green-200 rounded-lg">
+               <div className="flex items-start gap-3">
+                 {data.error ? (
+                   <>
+                     <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                     <div>
+                       <p className="font-semibold text-red-900">{dept}</p>
+                       <p className="text-sm text-red-800">{data.error}</p>
+                     </div>
+                   </>
+                 ) : (
+                   <>
+                     <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                     <div>
+                       <p className="font-semibold text-green-900">{dept}</p>
+                       <p className="text-sm text-green-800">
+                         {data.metrics.length} metrics calculated
+                       </p>
+                       <div className="mt-2 space-y-1">
+                         {data.metrics.slice(0, 3).map((m, idx) => (
+                           <div key={idx} className="text-xs text-green-700">
+                             <span className="font-mono font-medium">{m.metric_code}</span> = {m.value?.toFixed(2) || 'N/A'}
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   </>
+                 )}
+               </div>
+             </div>
+           ))}
+         </div>
+       )}
     </div>
   );
 }
