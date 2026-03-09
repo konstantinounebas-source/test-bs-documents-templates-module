@@ -285,9 +285,9 @@ export default function DailyMetricValuesViewer() {
                            <div className="text-xs text-slate-600">{metricNameMap[row.metric_code] || '-'}</div>
                          </TableCell>
                          {dateRange.map(date => (
-                         <TableCell key={date} className="text-center font-semibold">
-                           {row.values[date] !== undefined && row.values[date] !== 0 ? row.values[date].toFixed(2) : '-'}
-                         </TableCell>
+                           <TableCell key={date} className="text-center font-semibold">
+                             {row.values[date] !== undefined ? row.values[date].toFixed(2) : '-'}
+                           </TableCell>
                          ))}
                        </TableRow>
                      ))}
