@@ -281,7 +281,11 @@ export default function DailyProductionChatbot({ departments = [] }) {
         (batch.has_scheduled_data ? "Οι γραμμές παραγωγής προσυμπληρώθηκαν από το πρόγραμμα.\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'." : "⚠️ Δεν βρέθηκαν δεδομένα προγράμματος.\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.")
       );
     },
-    onError: () => { toast.error("Αποτυχία δημιουργίας batch"); addMsg("bot", "❌ Σφάλμα κατά τη δημιουργία batch."); }
+    onError: (err) => { 
+      console.error("Batch creation error:", err);
+      toast.error("Αποτυχία δημιουργίας batch: " + (err?.message || "Άγνωστο σφάλμα")); 
+      addMsg("bot", "❌ Σφάλμα κατά τη δημιουργία batch: " + (err?.message || "Άγνωστο σφάλμα")); 
+    }
   });
 
   // ── upload state ──────────────────────────────────────────────────────────
