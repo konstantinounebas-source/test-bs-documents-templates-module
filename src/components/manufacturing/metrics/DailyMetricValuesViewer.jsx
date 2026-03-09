@@ -123,16 +123,14 @@ export default function DailyMetricValuesViewer() {
     }
   };
 
-  // Check data validity once per unique date+department combination
+  // Check data validity once per unique date+department combination (sequential to avoid rate limit)
   useEffect(() => {
     if (filteredValues.length === 0) return;
 
     const checkAll = async () => {
-      // Get unique date+department combos
       const combos = [...new Set(filteredValues.map(mv => `${mv.date}__${mv.department}`))];
-
       const checks = {};
-      await Promise.all(combos.map(async (combo) => {
+      for (const combo of combos) {
         const [date, department] = combo.split('__');
         try {
           const result = await checkMetricsDataValidity({ date, department });
@@ -141,7 +139,9 @@ export default function DailyMetricValuesViewer() {
           console.error('Validity check error:', error);
           checks[combo] = { isValid: true };
         }
-      }));
+        // small delay between calls to avoid rate limiting
+        await new Promise(r => setTimeout(r, 200));
+      }
       setValidityCheck(checks);
     };
 
