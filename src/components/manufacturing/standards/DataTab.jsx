@@ -73,11 +73,17 @@ export default function DataTab({ bundle, isEditable }) {
     return profiles.find(p => p.id === selectedProfileId);
   }, [profiles, selectedProfileId]);
 
-  // If a profile is selected, use its operations; otherwise use all department operations
+  // If a profile is selected, use its operations in its defined order; otherwise use all department operations
   const displayedOperations = useMemo(() => {
     if (selectedProfile && selectedProfile.operations_required) {
-      const profileOpsIds = new Set(selectedProfile.operations_required);
-      return filteredOperations.filter(op => profileOpsIds.has(op.id));
+      // Use profile's operation order if available, otherwise use required list
+      const orderList = selectedProfile.operations_order || selectedProfile.operations_required;
+      const orderedOps = [];
+      orderList.forEach(opId => {
+        const op = filteredOperations.find(o => o.id === opId);
+        if (op) orderedOps.push(op);
+      });
+      return orderedOps;
     }
     return filteredOperations;
   }, [filteredOperations, selectedProfile]);
