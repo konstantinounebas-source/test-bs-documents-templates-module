@@ -3,80 +3,115 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { metric_id, date, department } = await req.json();
+    const { date, department } = await req.json();
 
-    // Get the metric record
-    const metric = await base44.entities.DailyMetricValue.filter({
-      id: metric_id
-    });
-
-    if (!metric || metric.length === 0) {
-      return Response.json({ error: 'Metric not found' }, { status: 404 });
+    if (!date || !department) {
+      return Response.json({ error: 'Missing date or department' }, { status: 400 });
     }
 
-    const metricRecord = metric[0];
-    const calculatedAt = new Date(metricRecord.calculated_at);
-    const targetDate = metricRecord.date;
-
-    // Check latest updated_date from all production/planning tables for this date and department
-    const tables = [
-      'ScheduledData',
-      'TargetDaily',
-      'DailyTargetLines',
-      'BatchHeader',
-      'ConsumablesActual',
-      'Operations',
-      'QC_Initial_Stock',
-      'TeamTimePerson',
-      'BreakTime'
-    ];
-
-    const checks = tables.map(async (tableName) => {
-      try {
-        const records = await base44.asServiceRole.entities[tableName].filter({
-          department: department
-        });
-
-        // Filter records that match the date (handle different date field names)
-        const dateFieldNames = ['date', 'work_date', 'scheduled_date', 'production_date'];
-        const relevantRecords = records.filter(r => {
-          for (const dateField of dateFieldNames) {
-            if (r[dateField] && new Date(r[dateField]).toDateString() === new Date(targetDate).toDateString()) {
-              return true;
-            }
-          }
-          return false;
-        });
-
-        if (relevantRecords.length === 0) return null;
-
-        // Get max updated_date
-        const maxUpdated = relevantRecords.reduce((max, r) => {
-          const updated = new Date(r.updated_date);
-          return updated > max ? updated : max;
-        }, new Date(0));
-
-        return {
-          table: tableName,
-          lastUpdated: maxUpdated,
-          isNewer: maxUpdated > calculatedAt
-        };
-      } catch (error) {
-        return null;
-      }
+    // Find the latest calculated_at for this date+department
+    const metricValues = await base44.asServiceRole.entities.DailyMetricValue.filter({
+      date,
+      department
     });
 
-    const results = await Promise.all(checks);
-    const changedTables = results.filter(r => r && r.isNewer);
+    if (!metricValues || metricValues.length === 0) {
+      return Response.json({ isValid: true, message: 'No metrics calculated yet' });
+    }
+
+    // Get the most recent calculated_at among all metrics for this date+department
+    const calculatedAt = metricValues.reduce((max, mv) => {
+      const t = new Date(mv.calculated_at);
+      return t > max ? t : max;
+    }, new Date(0));
+
+    // Tables to check for changes
+    // BatchHeader has date+department directly
+    // Operations, TeamTimePerson etc. are linked via batch_header_id
+    const batchHeaders = await base44.asServiceRole.entities.BatchHeader.filter({
+      date,
+      department
+    });
+
+    const changedTables = [];
+
+    // Check BatchHeader itself
+    if (batchHeaders.length > 0) {
+      const maxBH = batchHeaders.reduce((max, r) => {
+        const u = new Date(r.updated_date);
+        return u > max ? u : max;
+      }, new Date(0));
+      if (maxBH > calculatedAt) {
+        changedTables.push('BatchHeader');
+      }
+    }
+
+    // For tables linked via batch_header_id
+    if (batchHeaders.length > 0) {
+      const batchHeaderId = batchHeaders[0].id;
+
+      const linkedTables = [
+        'Operations',
+        'TeamTimePerson',
+        'Batch_Lines',
+        'QC_Initial_Stock',
+        'Help_In',
+        'Team_Time_Extra',
+        'Consumables_Actual'
+      ];
+
+      const linkedChecks = await Promise.all(
+        linkedTables.map(async (tableName) => {
+          try {
+            const records = await base44.asServiceRole.entities[tableName].filter({
+              batch_header_id: batchHeaderId
+            });
+            if (records.length === 0) return null;
+            const maxUpdated = records.reduce((max, r) => {
+              const u = new Date(r.updated_date);
+              return u > max ? u : max;
+            }, new Date(0));
+            return maxUpdated > calculatedAt ? tableName : null;
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      linkedChecks.forEach(t => { if (t) changedTables.push(t); });
+    }
+
+    // Also check ScheduledData and TargetDaily which have date+department
+    const planningTables = ['ScheduledData', 'TargetDaily', 'DailyTargetLines'];
+    const planningChecks = await Promise.all(
+      planningTables.map(async (tableName) => {
+        try {
+          const records = await base44.asServiceRole.entities[tableName].filter({
+            date,
+            department
+          });
+          if (records.length === 0) return null;
+          const maxUpdated = records.reduce((max, r) => {
+            const u = new Date(r.updated_date);
+            return u > max ? u : max;
+          }, new Date(0));
+          return maxUpdated > calculatedAt ? tableName : null;
+        } catch {
+          return null;
+        }
+      })
+    );
+    planningChecks.forEach(t => { if (t) changedTables.push(t); });
 
     return Response.json({
       isValid: changedTables.length === 0,
       calculatedAt: calculatedAt.toISOString(),
-      changedTables: changedTables,
-      message: changedTables.length === 0 
-        ? 'Metrics are up-to-date' 
-        : `Data changed in: ${changedTables.map(t => t.table).join(', ')}`
+      changedTables,
+      message: changedTables.length === 0
+        ? 'Metrics are up-to-date'
+        : `Data changed in: ${changedTables.join(', ')}`
     });
+
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
