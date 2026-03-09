@@ -83,18 +83,21 @@ export default function DataTab({ bundle, isEditable }) {
   }, [filteredOperations, selectedProfile]);
 
   const operationColumns = useMemo(() => {
-    const sorted = [...filteredOperations]
+    const sorted = [...displayedOperations]
       .sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
     
-    return sorted.slice(0, 10).map(op => ({ 
+    return sorted.map(op => ({ 
       id: op.id,
       operation: op.name, 
       label: `${op.name} (min)` 
     }));
-  }, [filteredOperations]);
+  }, [displayedOperations]);
 
   const hasMoreThan10 = filteredOperations.length > 10;
   const hasNoOperations = filteredOperations.length === 0;
+  const activeProfiles = useMemo(() => {
+    return profiles.filter(p => p.is_active !== false);
+  }, [profiles]);
 
   // Fetch lines for this bundle - CRITICAL: Use bundle.id as primary key
   const { data: lines = [], isLoading, refetch } = useQuery({
