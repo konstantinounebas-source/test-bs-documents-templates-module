@@ -309,30 +309,54 @@ export default function DataTab({ bundle, isEditable }) {
         </div>
       )}
 
-      {/* Sort & Filter toolbar */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-[180px] max-w-xs">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
-          <Input
-            placeholder="Filter by Item Code..."
-            value={itemCodeFilter}
-            onChange={e => setItemCodeFilter(e.target.value)}
-            className="pl-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          />
+      {/* Profile Selector & Sort & Filter toolbar */}
+      <div className="space-y-3">
+        <div>
+          <label className="text-sm font-medium text-slate-700 block mb-2">Filter by Profile (Optional)</label>
+          <Select value={selectedProfileId || ''} onValueChange={(val) => setSelectedProfileId(val || null)}>
+            <SelectTrigger className="w-full max-w-xs">
+              <SelectValue placeholder="Select profile to filter operations..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>All Operations (No Filter)</SelectItem>
+              {activeProfiles.map(profile => (
+                <SelectItem key={profile.id} value={profile.id}>
+                  {profile.name} ({profile.operations_required?.length || 0} ops)
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedProfile && (
+            <p className="text-xs text-slate-500 mt-1">
+              ✓ Showing {operationColumns.length} operation(s) from profile "{selectedProfile.name}"
+            </p>
+          )}
         </div>
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-[220px]">
-            <ArrowUpDown className="w-4 h-4 mr-2 text-slate-400" />
-            <SelectValue placeholder="Sort by..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">No Sort</SelectItem>
-            <SelectItem value="name_asc">Item Code A → Z</SelectItem>
-            <SelectItem value="name_desc">Item Code Z → A</SelectItem>
-            <SelectItem value="mins_asc">Total Minutes ↑ (Low first)</SelectItem>
-            <SelectItem value="mins_desc">Total Minutes ↓ (High first)</SelectItem>
-          </SelectContent>
-        </Select>
+
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[180px] max-w-xs">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="Filter by Item Code..."
+              value={itemCodeFilter}
+              onChange={e => setItemCodeFilter(e.target.value)}
+              className="pl-8 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
+          </div>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[220px]">
+              <ArrowUpDown className="w-4 h-4 mr-2 text-slate-400" />
+              <SelectValue placeholder="Sort by..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No Sort</SelectItem>
+              <SelectItem value="name_asc">Item Code A → Z</SelectItem>
+              <SelectItem value="name_desc">Item Code Z → A</SelectItem>
+              <SelectItem value="mins_asc">Total Minutes ↑ (Low first)</SelectItem>
+              <SelectItem value="mins_desc">Total Minutes ↓ (High first)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="flex justify-between items-center">
