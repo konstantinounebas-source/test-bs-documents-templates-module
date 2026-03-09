@@ -133,6 +133,7 @@ export default function ProfilesTab({ bundle, isEditable }) {
     setFormName('');
     setFormDescription('');
     setFormOperations([]);
+    setFormOperationOrder([]);
     setShowAddDialog(true);
   };
 
