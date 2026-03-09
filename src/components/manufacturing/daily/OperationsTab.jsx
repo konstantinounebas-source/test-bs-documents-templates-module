@@ -882,8 +882,26 @@ export default function OperationsTab({ batchId, department }) {
 
             {formData.operation_profile_id && (
               <div>
-                <Label>Select Operations & Quantities *</Label>
-                <p className="text-sm text-slate-500 mb-2">Check operations and enter quantities</p>
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <Label>Select Operations & Quantities *</Label>
+                    <p className="text-sm text-slate-500">Check operations and enter quantities</p>
+                  </div>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const newSelections = {};
+                      operationsForProfile.forEach(op => {
+                        newSelections[op.id] = selectedItemQtyProcessed ?? 1;
+                      });
+                      setSelectedOperations(newSelections);
+                    }}
+                  >
+                    Select All
+                  </Button>
+                </div>
 
                 <div className="border rounded-lg p-4 bg-slate-50 max-h-96 overflow-y-auto">
                   {operationsForProfile.length === 0 ? (
