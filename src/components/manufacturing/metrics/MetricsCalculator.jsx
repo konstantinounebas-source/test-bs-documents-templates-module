@@ -99,49 +99,73 @@ export default function MetricsCalculator() {
       <h3 className="font-semibold text-lg">Calculate Metrics</h3>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="text-sm font-medium text-slate-600 block mb-2">Date</label>
-          <Input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            disabled={isLoading}
-          />
-        </div>
+         <div>
+           <label className="text-sm font-medium text-slate-600 block mb-2">Date</label>
+           <Input
+             type="date"
+             value={selectedDate}
+             onChange={(e) => setSelectedDate(e.target.value)}
+             disabled={isLoading}
+           />
+         </div>
 
-        <div>
-          <label className="text-sm font-medium text-slate-600 block mb-2">Department</label>
-          <Select value={selectedDept} onValueChange={setSelectedDept} disabled={isLoading}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select department" />
-            </SelectTrigger>
-            <SelectContent>
-              {departments.map(dept => (
-                <SelectItem key={dept.id} value={dept.name}>
-                  {dept.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+         <div className="relative">
+           <label className="text-sm font-medium text-slate-600 block mb-2">Departments</label>
+           <button
+             onClick={() => setShowDeptDropdown(!showDeptDropdown)}
+             disabled={isLoading}
+             className="w-full border border-slate-300 rounded-md px-3 py-2 text-left text-sm bg-white hover:bg-slate-50 disabled:opacity-50"
+           >
+             {selectedDepts.length === 0 ? 'Select departments...' : `${selectedDepts.length} selected`}
+           </button>
+           {showDeptDropdown && (
+             <div className="absolute z-10 mt-1 w-full bg-white border border-slate-300 rounded-md shadow-lg">
+               <button
+                 onClick={toggleAll}
+                 className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 border-b font-medium flex items-center gap-2"
+               >
+                 {selectedDepts.length === departments.length ? (
+                   <Check className="w-4 h-4 text-blue-600" />
+                 ) : (
+                   <div className="w-4 h-4 border border-slate-300 rounded" />
+                 )}
+                 All Departments
+               </button>
+               {departments.map(dept => (
+                 <button
+                   key={dept.id}
+                   onClick={() => toggleDept(dept.name)}
+                   className="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 flex items-center gap-2"
+                 >
+                   {selectedDepts.includes(dept.name) ? (
+                     <Check className="w-4 h-4 text-blue-600" />
+                   ) : (
+                     <div className="w-4 h-4 border border-slate-300 rounded" />
+                   )}
+                   {dept.name}
+                 </button>
+               ))}
+             </div>
+           )}
+         </div>
 
-        <div className="flex items-end">
-          <Button
-            onClick={handleCalculate}
-            disabled={isLoading || !selectedDate || !selectedDept}
-            className="w-full bg-blue-600 hover:bg-blue-700"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Calculating...
-              </>
-            ) : (
-              'Calculate Metrics'
-            )}
-          </Button>
-        </div>
-      </div>
+         <div className="flex items-end">
+           <Button
+             onClick={handleCalculate}
+             disabled={isLoading || !selectedDate || selectedDepts.length === 0}
+             className="w-full bg-blue-600 hover:bg-blue-700"
+           >
+             {isLoading ? (
+               <>
+                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                 Calculating...
+               </>
+             ) : (
+               'Calculate Metrics'
+             )}
+           </Button>
+         </div>
+       </div>
 
       {result && (
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
