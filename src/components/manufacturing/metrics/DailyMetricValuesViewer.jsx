@@ -241,7 +241,10 @@ export default function DailyMetricValuesViewer() {
                         <div className="flex items-center justify-end gap-2">
                           <span className="font-semibold">{mv.value?.toFixed(2)}</span>
                           {isStale && (
-                            <AlertCircle className="w-4 h-4 text-orange-500" title="Data changed after calculation" />
+                            <AlertCircle
+                              className="w-4 h-4 text-orange-500 cursor-help"
+                              title={`Data changed after last calculation in: ${validityCheck[checkKey]?.changedTables?.join(', ')}`}
+                            />
                           )}
                         </div>
                       </TableCell>
