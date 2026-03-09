@@ -228,7 +228,7 @@ export default function DailyMetricValuesViewer() {
                 </TableRow>
               ) : (
                 filteredValues.map(mv => {
-                  const checkKey = `${mv.id}`;
+                  const checkKey = `${mv.date}__${mv.department}`;
                   const isStale = validityCheck[checkKey]?.isValid === false;
                   return (
                     <TableRow key={mv.id} className={`hover:bg-slate-50 ${isStale ? 'bg-orange-50' : ''}`}>
