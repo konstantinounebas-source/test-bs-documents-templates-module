@@ -233,6 +233,11 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
 
       {showAddForm && (
         <div className="border rounded p-2 space-y-1.5 bg-slate-50">
+          {errorMsg && (
+            <div className="bg-red-50 border border-red-200 rounded p-1.5 text-xs text-red-700 mb-1">
+              ❌ {errorMsg}
+            </div>
+          )}
           <p className="text-[10px] font-semibold text-slate-400 uppercase">Add Consumable</p>
           <div>
             <p className="text-[10px] text-slate-500 mb-0.5">Consumable *</p>
