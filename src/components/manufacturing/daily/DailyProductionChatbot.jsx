@@ -955,35 +955,13 @@ ${context}
                   </div>
                 )}
 
-                <div className="flex gap-2 flex-col">
-                  <div className="flex gap-2">
-                    <Button size="sm" className="flex-1 text-xs bg-orange-500 hover:bg-orange-600 text-white"
-                      onClick={() => {
-                        addMsg("user", "⏭️ Παράλειψη όλων επιβεβαιώσεων → Batch Lines");
-                        setStep("batch_lines_add");
-                      }}>
-                      <FastForward className="w-3 h-3 mr-1" /> Skip All Confirmations
-                    </Button>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1 text-xs"
-                      onClick={() => {
-                        addMsg("user", "Παράλειψη → Batch Lines");
-                        goNextStep("batch_lines_add", "✅ Batch Lines ολοκληρώθηκαν!");
-                      }}>
-                      <SkipForward className="w-3 h-3 mr-1" /> Skip
-                    </Button>
-                    <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
-                      onClick={() => {
-                        goNextStep("batch_lines_add", "✅ Batch Lines ολοκληρώθηκαν!");
-                      }}>
-                      <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → QC
-                    </Button>
-                    <Button size="sm" variant="outline" className="text-xs"
-                      onClick={() => setShowAttachmentsModal(true)}>
-                      <Paperclip className="w-3 h-3 mr-1" /> Attachments
-                    </Button>
-                  </div>
+                <div className="flex gap-2">
+                  <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      goNextStep("batch_lines_add", "✅ Batch Lines ολοκληρώθηκαν!");
+                    }}>
+                    <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → QC
+                  </Button>
                 </div>
                 </div>
               </div>
