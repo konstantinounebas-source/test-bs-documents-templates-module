@@ -158,8 +158,26 @@ export default function ProfilesTab({ bundle, isEditable }) {
   const handleToggleOperation = (opId) => {
     if (formOperations.includes(opId)) {
       setFormOperations(formOperations.filter(id => id !== opId));
+      setFormOperationOrder(formOperationOrder.filter(id => id !== opId));
     } else {
       setFormOperations([...formOperations, opId]);
+      setFormOperationOrder([...formOperationOrder, opId]);
+    }
+  };
+
+  const moveOperationUp = (index) => {
+    if (index > 0) {
+      const newOrder = [...formOperationOrder];
+      [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]];
+      setFormOperationOrder(newOrder);
+    }
+  };
+
+  const moveOperationDown = (index) => {
+    if (index < formOperationOrder.length - 1) {
+      const newOrder = [...formOperationOrder];
+      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+      setFormOperationOrder(newOrder);
     }
   };
 
