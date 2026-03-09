@@ -98,7 +98,7 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
   }, [batchOperations, consumablesStdLines]);
 
   const autoGenerateMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (onMsg) => {
       if (!expectedRows.length) throw new Error("Δεν βρέθηκαν standards για τις operations.");
       const existingKeys = new Set(lines.map(l => `${l.item_code}|${l.operation}|${l.consumable}`));
       const newRows = expectedRows.filter(r => !existingKeys.has(`${r.item_code}|${r.operation}|${r.consumable}`));
@@ -111,9 +111,9 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
       })));
       return newRows.length;
     },
-    onSuccess: (count) => {
+    onSuccess: (count, onMsg) => {
       queryClient.invalidateQueries(["ConsumablesActual", batchId]);
-      toast.success(`✅ Προστέθηκαν ${count} consumable rows`);
+      if (onMsg) onMsg(`✅ Προστέθηκαν ${count} consumables από standards`);
     },
     onError: (err) => toast.error(err.message || "Σφάλμα")
   });
