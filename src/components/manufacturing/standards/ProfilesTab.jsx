@@ -361,21 +361,63 @@ export default function ProfilesTab({ bundle, isEditable }) {
 
             <div>
               <Label>Operations Required *</Label>
-              <p className="text-xs text-slate-500 mb-2">Select operations included in this profile (max 10)</p>
-              <div className="grid grid-cols-2 gap-3 border rounded-lg p-4">
-                {operations.map(op => (
-                  <div key={op.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`op-${op.id}`}
-                      checked={formOperations.includes(op.id)}
-                      onCheckedChange={() => handleToggleOperation(op.id)}
-                    />
-                    <Label htmlFor={`op-${op.id}`} className="text-sm font-normal cursor-pointer">
-                      {op.name}
-                    </Label>
-                  </div>
-                ))}
+              <p className="text-xs text-slate-500 mb-2">Select operations and drag to set column order in Data tab</p>
+              
+              {/* Available Operations Grid */}
+              <div className="mb-4">
+                <p className="text-xs font-semibold text-slate-600 mb-2">Available Operations ({allDepartmentOperations.length})</p>
+                <div className="grid grid-cols-2 gap-2 border rounded-lg p-3 bg-slate-50">
+                  {allDepartmentOperations.map(op => (
+                    <div key={op.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`op-${op.id}`}
+                        checked={formOperations.includes(op.id)}
+                        onCheckedChange={() => handleToggleOperation(op.id)}
+                      />
+                      <Label htmlFor={`op-${op.id}`} className="text-sm font-normal cursor-pointer">
+                        {op.name}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              {/* Selected Operations with Order Controls */}
+              {formOperationOrder.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-slate-600 mb-2">Selected Operations - Column Order</p>
+                  <div className="border rounded-lg p-3 space-y-2 bg-blue-50">
+                    {formOperationOrder.map((opId, index) => {
+                      const op = allDepartmentOperations.find(o => o.id === opId);
+                      return op ? (
+                        <div key={opId} className="flex items-center justify-between bg-white border rounded p-2 text-sm">
+                          <span className="flex-1 font-medium">{index + 1}. {op.name}</span>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => moveOperationUp(index)}
+                              disabled={index === 0}
+                              className="h-6 px-2 text-xs"
+                            >
+                              ↑
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => moveOperationDown(index)}
+                              disabled={index === formOperationOrder.length - 1}
+                              className="h-6 px-2 text-xs"
+                            >
+                              ↓
+                            </Button>
+                          </div>
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div>
