@@ -141,6 +141,7 @@ export default function ProfilesTab({ bundle, isEditable }) {
     setFormName(profile.name);
     setFormDescription(profile.description || '');
     setFormOperations(profile.operations_required || []);
+    setFormOperationOrder(profile.operations_order || profile.operations_required || []);
     setShowAddDialog(true);
   };
 
@@ -150,6 +151,7 @@ export default function ProfilesTab({ bundle, isEditable }) {
     setFormName('');
     setFormDescription('');
     setFormOperations([]);
+    setFormOperationOrder([]);
   };
 
   const handleToggleOperation = (opId) => {
