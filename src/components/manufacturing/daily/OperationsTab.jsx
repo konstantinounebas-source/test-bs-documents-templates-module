@@ -873,7 +873,7 @@ export default function OperationsTab({ batchId, department }) {
                   <SelectValue placeholder="Select profile" />
                 </SelectTrigger>
                 <SelectContent>
-                  {profileNames.map(pn => (
+                  {profileNames.filter(pn => pn.department === department).map(pn => (
                     <SelectItem key={pn.id} value={pn.id}>{pn.name}</SelectItem>
                   ))}
                 </SelectContent>
