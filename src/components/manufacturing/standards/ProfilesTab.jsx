@@ -370,17 +370,23 @@ export default function ProfilesTab({ bundle, isEditable }) {
               {/* Available Operations Grid */}
               <div className="mb-4">
                 <p className="text-xs font-semibold text-slate-600 mb-2">Available Operations ({allDepartmentOperations.length})</p>
-                <div className="grid grid-cols-2 gap-2 border rounded-lg p-3 bg-slate-50">
+                <div className="space-y-2 border rounded-lg p-3 bg-slate-50 max-h-64 overflow-y-auto">
                   {allDepartmentOperations.map(op => (
-                    <div key={op.id} className="flex items-center space-x-2">
+                    <div key={op.id} className="flex items-start space-x-2 pb-2 border-b last:border-b-0">
                       <Checkbox
                         id={`op-${op.id}`}
                         checked={formOperations.includes(op.id)}
                         onCheckedChange={() => handleToggleOperation(op.id)}
+                        className="mt-0.5"
                       />
-                      <Label htmlFor={`op-${op.id}`} className="text-sm font-normal cursor-pointer">
-                        {op.name}
-                      </Label>
+                      <div className="flex-1">
+                        <Label htmlFor={`op-${op.id}`} className="text-sm font-normal cursor-pointer block">
+                          {op.name}
+                        </Label>
+                        {op.description && (
+                          <p className="text-xs text-slate-500 mt-0.5 ml-0">{op.description}</p>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
