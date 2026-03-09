@@ -28,9 +28,25 @@ export default function MetricsCalculator() {
     loadDepartments();
   }, []);
 
+  const toggleDept = (deptName) => {
+    setSelectedDepts(prev =>
+      prev.includes(deptName)
+        ? prev.filter(d => d !== deptName)
+        : [...prev, deptName]
+    );
+  };
+
+  const toggleAll = () => {
+    if (selectedDepts.length === departments.length) {
+      setSelectedDepts([]);
+    } else {
+      setSelectedDepts(departments.map(d => d.name));
+    }
+  };
+
   const handleCalculate = async () => {
-    if (!selectedDate || !selectedDept) {
-      toast.error('Valepoiise date ke department');
+    if (!selectedDate || selectedDepts.length === 0) {
+      toast.error('Select date and at least one department');
       return;
     }
 
@@ -38,34 +54,41 @@ export default function MetricsCalculator() {
     setResult(null);
 
     try {
-      // Get batch header for this date/department
-      const batches = await base44.entities.BatchHeader.filter({
-        date: selectedDate,
-        department: selectedDept
-      });
+      const results = {};
+      let totalMetrics = 0;
 
-      if (!batches || batches.length === 0) {
-        toast.error('No batch found for this date and department');
-        setIsLoading(false);
-        return;
+      // Calculate for each selected department
+      for (const dept of selectedDepts) {
+        const batches = await base44.entities.BatchHeader.filter({
+          date: selectedDate,
+          department: dept
+        });
+
+        if (!batches || batches.length === 0) {
+          results[dept] = { error: 'No batch found' };
+          continue;
+        }
+
+        try {
+          const response = await calculateMetrics({
+            date: selectedDate,
+            department: dept,
+            batch_header_id: batches[0].id,
+            bundle_id: 'DEFAULT'
+          });
+          results[dept] = response.data;
+          totalMetrics += response.data.metrics.length;
+        } catch (err) {
+          results[dept] = { error: err.message };
+        }
       }
 
-      const batchId = batches[0].id;
-
-      // Call backend function
-      const response = await calculateMetrics({
-        date: selectedDate,
-        department: selectedDept,
-        batch_header_id: batchId,
-        bundle_id: 'DEFAULT'
-      });
-
-      setResult(response.data);
-      toast.success(`${response.data.metrics.length} metrics calculated`);
+      setResult(results);
+      toast.success(`${totalMetrics} metrics calculated for ${selectedDepts.length} departments`);
 
     } catch (error) {
       console.error('Calculation error:', error);
-      toast.error('Error calculating metrics: ' + error.message);
+      toast.error('Error: ' + error.message);
     } finally {
       setIsLoading(false);
     }
