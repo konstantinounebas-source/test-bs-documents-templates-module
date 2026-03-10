@@ -275,17 +275,41 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
         </div>
       )}
 
-      {/* Existing ops list */}
-      {existingOps.length > 0 && (
-        <div className="border rounded divide-y max-h-32 overflow-y-auto">
-          <div className="grid grid-cols-4 px-2 py-1 text-[9px] font-semibold text-slate-400 uppercase">
-            <span>Item</span><span>Operation</span><span className="text-right">Time(m)</span><span></span>
+      {/* Existing ops list - grouped by item_code */}
+      {existingOps.length > 0 && (() => {
+        const grouped = existingOps.reduce((acc, op) => {
+          const key = op.item_code || "(no item)";
+          if (!acc[key]) acc[key] = [];
+          acc[key].push(op);
+          return acc;
+        }, {});
+        return (
+          <div className="border rounded max-h-48 overflow-y-auto text-[10px]">
+            {/* Header */}
+            <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 text-[9px] font-semibold text-slate-400 uppercase sticky top-0">
+              <span className="flex-1">Operation</span>
+              <span className="w-10 text-right">Qty</span>
+              <span className="w-12 text-right">Time(m)</span>
+              <span className="w-8"></span>
+            </div>
+            {Object.entries(grouped).map(([itemCode, ops]) => {
+              const groupTime = ops.reduce((s, o) => s + (o.operation_time_min || 0), 0);
+              return (
+                <div key={itemCode}>
+                  {/* Item group header */}
+                  <div className="flex items-center justify-between px-2 py-1 bg-slate-50 border-t">
+                    <span className="font-semibold text-slate-700">{itemCode}</span>
+                    <span className="text-slate-400">{groupTime.toFixed(1)}m</span>
+                  </div>
+                  {ops.map(op => (
+                    <OpRow key={op.id} op={op} onDelete={handleDelete} onUpdate={handleUpdate} />
+                  ))}
+                </div>
+              );
+            })}
           </div>
-          {existingOps.map(op => (
-            <OpRow key={op.id} op={op} onDelete={handleDelete} onUpdate={handleUpdate} />
-          ))}
-        </div>
-      )}
+        );
+      })()}
 
       {/* Toggle Add Form */}
       <Button
