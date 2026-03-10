@@ -464,6 +464,11 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
             </div>
           )}
 
+          {errorMsg && (
+            <div className="bg-red-50 border border-red-200 rounded p-2 text-[10px] text-red-700">
+              {errorMsg}
+            </div>
+          )}
           <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
             onClick={handleAdd} disabled={isSaving}>
             {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
