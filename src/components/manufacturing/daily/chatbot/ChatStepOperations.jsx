@@ -172,11 +172,18 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
       return;
     }
     if (selectedItemQtyProcessed !== null) {
-      const over = selectedOps.find(([_, qty]) => qty > selectedItemQtyProcessed);
-      if (over) {
-        const opName = allOperations.find(o => o.id === over[0])?.name || over[0];
-        toast.error(`Qty για "${opName}" υπερβαίνει το qty processed (${selectedItemQtyProcessed})`);
-        return;
+      for (const [opId, qty] of selectedOps) {
+        const operation = allOperations.find(o => o.id === opId);
+        const opName = operation?.name || opId;
+        // Sum already existing qty for this item+operation combination
+        const existingQty = existingOps
+          .filter(o => o.item_code === formData.item_code && o.operation === opName)
+          .reduce((s, o) => s + (o.qty_operation || 0), 0);
+        const totalQty = existingQty + parseFloat(qty);
+        if (totalQty > selectedItemQtyProcessed) {
+          toast.error(`Qty για "${opName}" (${totalQty}) υπερβαίνει το qty processed (${selectedItemQtyProcessed}). Ήδη καταχωρημένο: ${existingQty}`);
+          return;
+        }
       }
     }
     setIsSaving(true);
