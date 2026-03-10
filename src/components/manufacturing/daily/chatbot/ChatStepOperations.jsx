@@ -46,7 +46,7 @@ function OpRow({ op, onDelete, onUpdate }) {
   );
 }
 
-export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) {
+export default function ChatStepOperations({ batchId, onNext, onSkip, onBack, onError }) {
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
