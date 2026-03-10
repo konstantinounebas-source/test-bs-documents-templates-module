@@ -58,6 +58,14 @@ export default function ExistingLineRow({ bl, onSave, onDelete }) {
         />
         {saving && <Loader2 className="w-2.5 h-2.5 animate-spin text-blue-400 absolute -top-1 -right-1" />}
       </div>
+      {/* Delete button */}
+      <button
+        onClick={() => onDelete && onDelete(bl.id)}
+        className="text-red-400 hover:text-red-600 p-0.5 flex-shrink-0"
+        title="Διαγραφή"
+      >
+        <Trash2 className="w-3 h-3" />
+      </button>
     </div>
   );
 }
