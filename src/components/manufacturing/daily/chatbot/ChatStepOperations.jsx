@@ -20,9 +20,12 @@ function OpRow({ op, onDelete, onUpdate }) {
   };
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1 text-[10px] text-slate-700 hover:bg-slate-50 rounded group">
-      <span className="flex-1 truncate font-medium">{op.item_code}</span>
-      <span className="text-slate-400 truncate max-w-[60px]">{op.operation || "—"}</span>
+    <div className="flex items-center gap-1 px-2 py-1 text-[10px] text-slate-700 hover:bg-slate-50 group">
+      {/* Operation name */}
+      <span className="flex-1 truncate text-slate-600">{op.operation || "—"}</span>
+      {/* Qty */}
+      <span className="w-10 text-right text-slate-500">{op.qty_operation ?? "—"}</span>
+      {/* Time */}
       {editing ? (
         <>
           <input type="number" value={val} onChange={e => setVal(e.target.value)}
@@ -34,8 +37,8 @@ function OpRow({ op, onDelete, onUpdate }) {
         </>
       ) : (
         <>
-          <span className="text-slate-500 w-12 text-right">{(op.operation_time_min || 0).toFixed(1)}m</span>
-          <button onClick={() => setEditing(true)} className="opacity-0 group-hover:opacity-100 text-blue-500 hover:text-blue-700 ml-1"><Pencil className="w-3 h-3" /></button>
+          <span className="w-12 text-right text-slate-500">{(op.operation_time_min || 0).toFixed(1)}m</span>
+          <button onClick={() => setEditing(true)} className="opacity-0 group-hover:opacity-100 text-blue-500 hover:text-blue-700"><Pencil className="w-3 h-3" /></button>
           <button onClick={() => onDelete(op.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600"><Trash2 className="w-3 h-3" /></button>
         </>
       )}
