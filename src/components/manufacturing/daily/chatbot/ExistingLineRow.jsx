@@ -28,7 +28,7 @@ export default function ExistingLineRow({ bl, onSave, onDelete }) {
   };
 
   return (
-    <div className="grid grid-cols-5 gap-1 items-center px-1">
+    <div className="grid gap-1 items-center px-1" style={{ gridTemplateColumns: "1fr auto auto auto auto auto" }}>
       <span className="text-[10px] font-medium text-slate-700 truncate" title={bl.item_code}>{bl.item_code}</span>
       {/* Scheduled - read only */}
       <div className="text-center">
