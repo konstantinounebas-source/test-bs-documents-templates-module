@@ -327,6 +327,7 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
           if (!showAddForm && itemCodes.length === 1) {
             setFormData(f => ({ ...f, item_code: itemCodes[0] }));
           }
+          setErrorMsg("");
           setShowAddForm(v => !v);
         }}
       >
