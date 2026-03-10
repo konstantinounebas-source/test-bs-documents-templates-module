@@ -93,10 +93,10 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
     enabled: !!batchHeader?.bundle_id, staleTime: Infinity
   });
 
-  // ── Item codes from bundle ────────────────────────────────────────────────
+  // ── Item codes from registered batch lines only ───────────────────────────
   const itemCodes = useMemo(() => {
-    return [...new Set(stdSetLines.map(l => l.item_code))].filter(Boolean).sort();
-  }, [stdSetLines]);
+    return [...new Set(batchLines.map(l => l.item_code))].filter(Boolean).sort();
+  }, [batchLines]);
 
   // ── Profiles filtered to department ──────────────────────────────────────
   const departmentProfiles = useMemo(() => {
