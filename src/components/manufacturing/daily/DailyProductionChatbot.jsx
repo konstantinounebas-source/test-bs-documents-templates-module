@@ -950,14 +950,21 @@ ${context}
                 {existingBatchLines.length > 0 && (
                   <div className="space-y-1">
                     <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Καταχωρημένες Γραμμές</p>
-                    <div className="grid grid-cols-5 gap-1 text-[10px] font-semibold text-slate-400 px-1">
-                      <span>Item</span><span className="text-center">Sched.</span><span className="text-center">Proc.</span><span className="text-center">Good</span><span className="text-center">Scrap</span>
+                    <div className="grid gap-1 text-[10px] font-semibold text-slate-400 px-1" style={{ gridTemplateColumns: "1fr auto auto auto auto auto" }}>
+                      <span>Item</span><span className="text-center">Sched.</span><span className="text-center">Proc.</span><span className="text-center">Good</span><span className="text-center">Scrap</span><span></span>
                     </div>
                     {existingBatchLines.map(bl => (
-                      <ExistingLineRow key={bl.id} bl={bl} onSave={async (id, data) => {
-                        await base44.entities.Batch_Lines.update(id, data);
-                        queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
-                      }} />
+                      <ExistingLineRow key={bl.id} bl={bl}
+                        onSave={async (id, data) => {
+                          await base44.entities.Batch_Lines.update(id, data);
+                          queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
+                        }}
+                        onDelete={async (id) => {
+                          await base44.entities.Batch_Lines.delete(id);
+                          queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
+                          toast.success("Γραμμή διαγράφηκε");
+                        }}
+                      />
                     ))}
                   </div>
                 )}
