@@ -289,7 +289,12 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
       <Button
         size="sm" variant="outline"
         className="w-full text-xs"
-        onClick={() => setShowAddForm(v => !v)}
+        onClick={() => {
+          if (!showAddForm && itemCodes.length === 1) {
+            setFormData(f => ({ ...f, item_code: itemCodes[0] }));
+          }
+          setShowAddForm(v => !v);
+        }}
       >
         <Plus className="w-3 h-3 mr-1" />
         {showAddForm ? "Κλείσιμο Φόρμας" : "Προσθήκη Operations (Profile)"}
