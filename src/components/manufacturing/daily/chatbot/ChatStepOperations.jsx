@@ -223,9 +223,8 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
     const stdMap = {};
     stdLinesAll.forEach(sl => { stdMap[`${sl.item_code || ""}|${sl.operation}`] = sl.std_min_per_pc || 0; });
     const getStd = (ic, op) => stdMap[`${ic}|${op}`] ?? stdMap[`|${op}`] ?? 0;
-    const existingItemCodes = new Set(processedLines.map(bl => bl.item_code));
-    const opsToDelete = existingOps.filter(op => existingItemCodes.has(op.item_code));
-    await Promise.all(opsToDelete.map(op => base44.entities.Operations.delete(op.id)));
+    // Delete ALL existing operations for this batch (including stale ones from old entries)
+    await Promise.all(existingOps.map(op => base44.entities.Operations.delete(op.id)));
     const opsToCreate = [];
     for (const bl of processedLines) {
       const qty = bl.qty_processed;
