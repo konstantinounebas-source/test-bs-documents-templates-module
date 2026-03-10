@@ -384,8 +384,11 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
                           if (checked) {
                             setSelectedOperations(prev => ({ ...prev, [op.id]: selectedItemQtyProcessed ?? 1 }));
                           } else {
-                            const { [op.id]: _, ...rest } = selectedOperations;
-                            setSelectedOperations(rest);
+                            setSelectedOperations(prev => {
+                              const next = { ...prev };
+                              delete next[op.id];
+                              return next;
+                            });
                           }
                         }}
                       />
