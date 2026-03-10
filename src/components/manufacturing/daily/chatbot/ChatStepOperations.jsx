@@ -404,8 +404,11 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
                           if (val) {
                             setSelectedOperations(prev => ({ ...prev, [op.id]: parseFloat(val) || 0 }));
                           } else {
-                            const { [op.id]: _, ...rest } = selectedOperations;
-                            setSelectedOperations(rest);
+                            setSelectedOperations(prev => {
+                              const next = { ...prev };
+                              delete next[op.id];
+                              return next;
+                            });
                           }
                         }}
                         disabled={!selectedOperations[op.id] && qty === 0}
