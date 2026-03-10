@@ -46,13 +46,14 @@ function OpRow({ op, onDelete, onUpdate }) {
   );
 }
 
-export default function ChatStepOperations({ batchId, onNext, onSkip, onBack, onError }) {
+export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) {
   const queryClient = useQueryClient();
   const [isSyncing, setIsSyncing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({ item_code: "", operation_profile_id: "" });
   const [selectedOperations, setSelectedOperations] = useState({});
+  const [errorMsg, setErrorMsg] = useState("");
 
   // ── Fetch batch header ────────────────────────────────────────────────────
   const { data: batchHeader } = useQuery({
