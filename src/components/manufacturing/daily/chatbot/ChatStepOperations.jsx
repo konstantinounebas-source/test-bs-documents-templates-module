@@ -142,14 +142,16 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
     if (!batchHeader) return;
     const allOps = await base44.entities.Operations.filter({ batch_header_id: batchId });
     const total = allOps.reduce((s, o) => s + (o.operation_time_min || 0), 0);
+    const now = new Date().toISOString();
     const existing = await base44.entities.DailyMetricValue.filter({
       metric_code: "OP_TIME", date: batchHeader.date, department: batchHeader.department
     });
     if (existing.length > 0) {
-      await base44.entities.DailyMetricValue.update(existing[0].id, { value: total });
+      await base44.entities.DailyMetricValue.update(existing[0].id, { value: total, calculated_at: now });
     } else {
       await base44.entities.DailyMetricValue.create({
-        metric_code: "OP_TIME", date: batchHeader.date, department: batchHeader.department, value: total
+        metric_code: "OP_TIME", date: batchHeader.date, department: batchHeader.department,
+        bundle_id: batchHeader.bundle_id, value: total, calculated_at: now
       });
     }
     queryClient.invalidateQueries(["DailyMetricValue"]);
