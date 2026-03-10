@@ -163,26 +163,26 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
 
   // ── Add operations from profile form ─────────────────────────────────────
   const handleAdd = async () => {
+    setErrorMsg("");
     if (!formData.item_code || !formData.operation_profile_id) {
-      toast.error("Επίλεξε item code και operation profile");
+      setErrorMsg("Επίλεξε item code και operation profile");
       return;
     }
     const selectedOps = Object.entries(selectedOperations).filter(([_, qty]) => qty > 0);
     if (selectedOps.length === 0) {
-      toast.error("Επίλεξε τουλάχιστον μία operation με ποσότητα");
+      setErrorMsg("Επίλεξε τουλάχιστον μία operation με ποσότητα");
       return;
     }
     if (selectedItemQtyProcessed !== null) {
       for (const [opId, qty] of selectedOps) {
         const operation = allOperations.find(o => o.id === opId);
         const opName = operation?.name || opId;
-        // Sum already existing qty for this item+operation combination
         const existingQty = existingOps
           .filter(o => o.item_code === formData.item_code && o.operation === opName)
           .reduce((s, o) => s + (o.qty_operation || 0), 0);
         const totalQty = existingQty + parseFloat(qty);
         if (totalQty > selectedItemQtyProcessed) {
-          toast.error(`Qty για "${opName}" (${totalQty}) υπερβαίνει το qty processed (${selectedItemQtyProcessed}). Ήδη καταχωρημένο: ${existingQty}`);
+          setErrorMsg(`⚠ Qty για "${opName}" (${totalQty}) υπερβαίνει το qty processed (${selectedItemQtyProcessed}). Ήδη καταχωρημένο: ${existingQty}`);
           return;
         }
       }
