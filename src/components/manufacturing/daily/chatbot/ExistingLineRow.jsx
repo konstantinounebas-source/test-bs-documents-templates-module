@@ -28,33 +28,31 @@ export default function ExistingLineRow({ bl, onSave, onDelete }) {
   };
 
   return (
-    <div className="grid gap-1 items-center px-1" style={{ gridTemplateColumns: "1fr auto auto auto auto auto" }}>
-      <span className="text-[10px] font-medium text-slate-700 truncate" title={bl.item_code}>{bl.item_code}</span>
+    <div className="flex items-center gap-1 px-1">
+      <span className="text-[10px] font-medium text-slate-700 truncate flex-1 min-w-0" title={bl.item_code}>{bl.item_code}</span>
       {/* Scheduled - read only */}
-      <div className="text-center">
-        <span className="text-[10px] text-slate-400">{bl.scheduled_qty ?? 0}</span>
-      </div>
+      <span className="text-[10px] text-slate-400 w-8 text-center flex-shrink-0">{bl.scheduled_qty ?? 0}</span>
       {/* Processed */}
       <input
         type="number" min="0"
         value={vals.qty_processed}
         onChange={e => handleChange("qty_processed", e.target.value)}
-        className="text-[11px] border border-slate-200 rounded px-1 py-0.5 outline-none focus:border-blue-400 text-center w-full"
+        className="text-[11px] border border-slate-200 rounded px-1 py-0.5 outline-none focus:border-blue-400 text-center w-12 flex-shrink-0"
       />
       {/* Out Good */}
       <input
         type="number" min="0"
         value={vals.qty_out_good}
         onChange={e => handleChange("qty_out_good", e.target.value)}
-        className="text-[11px] border border-slate-200 rounded px-1 py-0.5 outline-none focus:border-blue-400 text-center w-full"
+        className="text-[11px] border border-slate-200 rounded px-1 py-0.5 outline-none focus:border-blue-400 text-center w-12 flex-shrink-0"
       />
       {/* Scrap */}
-      <div className="relative">
+      <div className="relative flex-shrink-0">
         <input
           type="number" min="0"
           value={vals.qty_scrap}
           onChange={e => handleChange("qty_scrap", e.target.value)}
-          className="text-[11px] border border-slate-200 rounded px-1 py-0.5 outline-none focus:border-blue-400 text-center w-full"
+          className="text-[11px] border border-slate-200 rounded px-1 py-0.5 outline-none focus:border-blue-400 text-center w-12"
         />
         {saving && <Loader2 className="w-2.5 h-2.5 animate-spin text-blue-400 absolute -top-1 -right-1" />}
       </div>
