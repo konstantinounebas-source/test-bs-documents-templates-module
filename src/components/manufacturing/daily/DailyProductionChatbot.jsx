@@ -950,8 +950,13 @@ ${context}
                 {existingBatchLines.length > 0 && (
                   <div className="space-y-1">
                     <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Καταχωρημένες Γραμμές</p>
-                    <div className="grid gap-1 text-[10px] font-semibold text-slate-400 px-1" style={{ gridTemplateColumns: "1fr auto auto auto auto auto" }}>
-                      <span>Item</span><span className="text-center">Sched.</span><span className="text-center">Proc.</span><span className="text-center">Good</span><span className="text-center">Scrap</span><span></span>
+                    <div className="flex gap-1 text-[10px] font-semibold text-slate-400 px-1">
+                      <span className="flex-1 min-w-0">Item</span>
+                      <span className="w-8 text-center flex-shrink-0">Sched.</span>
+                      <span className="w-12 text-center flex-shrink-0">Proc.</span>
+                      <span className="w-12 text-center flex-shrink-0">Good</span>
+                      <span className="w-12 text-center flex-shrink-0">Scrap</span>
+                      <span className="w-4 flex-shrink-0"></span>
                     </div>
                     {existingBatchLines.map(bl => (
                       <ExistingLineRow key={bl.id} bl={bl}
