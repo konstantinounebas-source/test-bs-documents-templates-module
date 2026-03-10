@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 
-export default function ExistingLineRow({ bl, onSave }) {
+export default function ExistingLineRow({ bl, onSave, onDelete }) {
   const [vals, setVals] = useState({
     qty_processed: bl.qty_processed ?? 0,
     qty_out_good:  bl.qty_out_good  ?? 0,
