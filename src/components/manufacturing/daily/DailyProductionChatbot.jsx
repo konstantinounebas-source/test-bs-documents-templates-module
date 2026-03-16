@@ -377,7 +377,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
   const [isAiThinking, setIsAiThinking] = useState(false);
 
   const handleReset = () => {
-    setStep("dept"); setSelDept(""); setSelDate(""); setSelBatch(null);
+    setStep("file_upload"); setSelDept(""); setSelDate(""); setSelBatch(null);
     setBlReviewItems([]); setBlCurrentIdx(0);
     setBlAddForm({ item_code: "", qty_processed: "", qty_out_good: "", qty_scrap: "" });
     setMessages([{ role: "bot", text: "Γεια σου! 👋 Επέλεξε τμήμα για να ξεκινήσουμε." }]);
