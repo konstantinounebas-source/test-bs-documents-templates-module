@@ -334,45 +334,8 @@ export default function MfgDailyStandardsAssignment() {
     const end = parseISO(bulkTargetEndDate);
     const days = eachDayOfInterval({ start, end });
 
-    const dayStrings = days.map(d => format(d, "yyyy-MM-dd"));
-
-    // Fetch existing targets per dept (filtered, not full list)
-    const allExistingTargets = [];
-    for (const deptName of enabledDepts) {
-      for (const dateStr of dayStrings) {
-        const records = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
-        allExistingTargets.push(...records);
-      }
-    }
-
-    const conflicts = [];
-    const seenKeys = new Set();
-    for (const rec of allExistingTargets) {
-      if (!enabledDepts.includes(rec.department)) continue;
-      if (!dayStrings.includes(rec.date)) continue;
-      const key = `${rec.date}|${rec.department}`;
-      if (seenKeys.has(key)) continue;
-      seenKeys.add(key);
-      const existingBundle = rec.bundle_id ? bundleById[rec.bundle_id] : null;
-      const existingBundleLabel = existingBundle ? `v${existingBundle.version_no}` : (rec.bundle_id || '?');
-      const existingTargetType = rec.target_profile || '?';
-      conflicts.push({
-        label: `${rec.date} — ${rec.department}`,
-        existingBundle: existingBundleLabel,
-        existingTargetType
-      });
-    }
-
     const payload = { enabledDepts, days };
-
-    if (conflicts.length > 0) {
-      // Show conflict dialog
-      setConflictDates(conflicts);
-      setPendingBulkPayload(payload);
-      setConflictDialog(true);
-    } else {
-      await executeBulkSaveTargets(payload);
-    }
+    await executeBulkSaveTargets(payload);
   };
 
   // The actual execution after conflict confirmation
