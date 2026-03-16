@@ -242,12 +242,13 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
       if (!batch) {
         const bundle = allBundles.find(b => b.department === dept && b.status === "ACTIVE");
         const scheduledData = await base44.entities.ScheduledData.filter({ date, department_id: dept });
-        batch = await base44.entities.BatchHeader.create({
+        const batchData = {
           date,
           department: dept,
-          bundle_id: bundle?.id || null,
           has_scheduled_data: scheduledData.length > 0
-        });
+        };
+        if (bundle?.id) batchData.bundle_id = bundle.id;
+        batch = await base44.entities.BatchHeader.create(batchData);
         // Create batch lines from scheduled data if any
         if (scheduledData.length > 0) {
           const lines = scheduledData.map(sd => ({
