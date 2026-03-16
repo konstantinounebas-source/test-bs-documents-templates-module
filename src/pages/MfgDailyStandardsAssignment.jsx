@@ -244,7 +244,7 @@ export default function MfgDailyStandardsAssignment() {
     if (existing.length > 0) {
       await base44.entities.DailyMetricValue.update(existing[0].id, { value: total });
     } else {
-      await base44.entities.DailyMetricValue.create({ metric_code: 'TGT_TIME', date, department: dept, bundle_id: bundleId, value: total });
+      await base44.entities.DailyMetricValue.create({ metric_code: 'TGT_TIME', date, department: dept, bundle_id: bundleId, value: total, calculated_at: new Date().toISOString() });
     }
     queryClient.invalidateQueries(["DailyMetricValue"]);
   };
