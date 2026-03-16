@@ -1,9 +1,10 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, AlertCircle, SkipForward, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, AlertCircle, SkipForward, X, Eye, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
