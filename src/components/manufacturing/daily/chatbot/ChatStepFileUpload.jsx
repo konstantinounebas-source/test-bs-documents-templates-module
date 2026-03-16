@@ -194,7 +194,7 @@ function FileResultCard({ item, departments, batchHeaders, onConfirm, onSkip }) 
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function ChatStepFileUpload({ departments = [], batchHeaders = [], onFilesSaved, onSkip }) {
+export default function ChatStepFileUpload({ departments = [], batchHeaders = [], allBundles = [], onFilesSaved, onSkip }) {
   const [dragging, setDragging] = useState(false);
   const [queue, setQueue] = useState([]); // [{file, status: "pending"|"parsing"|"ready"|"uploading"|"done"|"skipped", parsed}]
   const [isParsing, setIsParsing] = useState(false);
