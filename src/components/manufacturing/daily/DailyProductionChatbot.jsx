@@ -755,6 +755,27 @@ ${context}
                     addMsg("bot", `📎 Αρχείο "${fileName}" αποθηκεύτηκε (χωρίς σύνδεση batch).`);
                   }
                 }}
+                onBatchReady={({ dept, date }) => {
+                  setSelDept(dept);
+                  setSelDate(date);
+                  addMsg("user", `${dept} · ${date}`);
+                  // Check if batch already exists
+                  const existing = allBatchHeaders.find(b => b.date === date && b.department === dept);
+                  if (existing) {
+                    setSelBatch(existing);
+                    setStep("attachments");
+                    addMsg("bot", `✅ Βρέθηκε batch για ${date} – ${dept}.\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.`);
+                  } else {
+                    setStep("batch");
+                    const bundle = allBundles.find(b => b.department === dept && b.status === "ACTIVE");
+                    addMsg("bot",
+                      `Δεν υπάρχει batch για ${date} – ${dept}.\n` +
+                      (bundle
+                        ? `Θα χρησιμοποιηθεί bundle: **${bundle.version_no || bundle.version}** (${bundle.status}).\nΔημιουργώ batch;`
+                        : "⚠️ Δεν βρέθηκε ενεργό bundle για αυτό το τμήμα.")
+                    );
+                  }
+                }}
                 onSkip={() => {
                   setStep("dept");
                   addMsg("bot", "Επέλεξε τμήμα για να ξεκινήσουμε.");
