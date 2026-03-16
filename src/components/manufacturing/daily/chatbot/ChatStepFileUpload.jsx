@@ -172,16 +172,26 @@ function FileResultCard({ item, departments, batchHeaders, onConfirm, onSkip }) 
           />
         </div>
 
-        {date && dept && (
-          <div className={`flex items-center gap-1.5 rounded p-1.5 text-[10px] ${
-            matchedBatch ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"
-          }`}>
-            {matchedBatch
-              ? <><CheckCircle2 className="w-3 h-3" /> Batch βρέθηκε: {matchedBatch.date} · {matchedBatch.department}</>
-              : <><AlertCircle className="w-3 h-3" /> Δεν βρέθηκε batch — θα δημιουργηθεί νέο</>
-            }
-          </div>
-        )}
+        {date && dept && (() => {
+          const activeBundle = allBundles.find(b => b.department === dept && b.status === "ACTIVE");
+          return (
+            <>
+              <div className={`flex items-center gap-1.5 rounded p-1.5 text-[10px] ${
+                matchedBatch ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"
+              }`}>
+                {matchedBatch
+                  ? <><CheckCircle2 className="w-3 h-3" /> Batch βρέθηκε: {matchedBatch.date} · {matchedBatch.department}</>
+                  : <><AlertCircle className="w-3 h-3" /> Δεν βρέθηκε batch — θα δημιουργηθεί νέο</>
+                }
+              </div>
+              {!matchedBatch && !activeBundle && (
+                <div className="flex items-center gap-1.5 rounded p-1.5 text-[10px] bg-red-50 text-red-700">
+                  <AlertCircle className="w-3 h-3" /> Δεν βρέθηκε bundle. Αδύνατη η δημιουργία batch.
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         <div className="flex gap-1.5">
           <Button
