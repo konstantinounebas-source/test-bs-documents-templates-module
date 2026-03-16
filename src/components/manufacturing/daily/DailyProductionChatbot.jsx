@@ -757,7 +757,12 @@ ${context}
             {/* Step: choose department */}
             {step === "dept" && (
               <div className="border-t p-3 space-y-2">
-                <p className="text-xs text-slate-500 font-medium">Επέλεξε τμήμα:</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-slate-500 font-medium">Επέλεξε τμήμα:</p>
+                  <Button variant="ghost" size="sm" className="text-xs h-6" onClick={() => setStep("file_upload")}>
+                    ↩ Ανέβασμα αρχείων
+                  </Button>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   {departments.map(d => (
                     <Button key={d.id} variant="outline" size="sm"
