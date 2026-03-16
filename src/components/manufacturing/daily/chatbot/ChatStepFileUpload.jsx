@@ -273,7 +273,7 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
       let batch = matchedBatch;
 
       if (!batch) {
-        const bundle = allBundles.find(b => b.department === dept && b.status === "ACTIVE");
+        const bundle = resolveBundle(date, dept, allBundles, dailyAssignments, scheduledDayHeaders);
         if (!bundle) {
           onFilesSaved && onFilesSaved(file.name, null, { error: "no_bundle", dept, date });
           toast.error(`❌ Δεν βρέθηκε ενεργό bundle για το τμήμα "${dept}". Αδύνατη η δημιουργία batch.`);
@@ -394,6 +394,8 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
               departments={deptNames}
               batchHeaders={batchHeaders}
               allBundles={allBundles}
+              dailyAssignments={dailyAssignments}
+              scheduledDayHeaders={scheduledDayHeaders}
               onConfirm={handleConfirm}
               onSkip={handleSkip}
             />
