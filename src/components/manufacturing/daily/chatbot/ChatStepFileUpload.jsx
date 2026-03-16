@@ -236,31 +236,46 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
   const handleConfirm = async (file, { date, dept, matchedBatch, parsed }) => {
     setUploadingNames(prev => new Set([...prev, file.name]));
     try {
+      let batch = matchedBatch;
+
+      // If no batch exists, create one
+      if (!batch) {
+        const bundle = allBundles.find(b => b.department === dept && b.status === "ACTIVE");
+        const scheduledData = await base44.entities.ScheduledData.filter({ date, department_id: dept });
+        batch = await base44.entities.BatchHeader.create({
+          date,
+          department: dept,
+          bundle_id: bundle?.id || null,
+          has_scheduled_data: scheduledData.length > 0
+        });
+        // Create batch lines from scheduled data if any
+        if (scheduledData.length > 0) {
+          const lines = scheduledData.map(sd => ({
+            batch_header_id: batch.id, item_code: sd.item_code,
+            scheduled_qty: sd.ops_qty || 0, qty_processed: 0, qty_out_good: 0, qty_scrap: 0
+          }));
+          await base44.entities.Batch_Lines.bulkCreate(lines);
+        }
+        toast.info(`📦 Batch δημιουργήθηκε: ${date} · ${dept}`);
+      }
+
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const me = await base44.auth.me();
 
-      const attData = {
+      await base44.entities.BatchAttachment.create({
         file_url,
         file_name: file.name,
         department: dept,
+        batch_header_id: batch.id,
         uploaded_by: me.email,
         notes: [
           parsed?.description,
           parsed?.page_number && parsed?.total_pages ? `Σελίδα ${parsed.page_number}/${parsed.total_pages}` : null
         ].filter(Boolean).join(" | ")
-      };
-
-      if (matchedBatch) {
-        attData.batch_header_id = matchedBatch.id;
-      } else {
-        // Save without batch - use a placeholder or skip batch_header_id
-        attData.batch_header_id = "unlinked";
-      }
-
-      await base44.entities.BatchAttachment.create(attData);
+      });
 
       setQueue(prev => prev.map(q => q.file === file ? { ...q, status: "done" } : q));
-      onFilesSaved && onFilesSaved(file.name, matchedBatch);
+      onFilesSaved && onFilesSaved(file.name, batch);
       toast.success(`✅ "${file.name}" αποθηκεύτηκε`);
     } catch (err) {
       toast.error(`❌ Σφάλμα: ${err?.message}`);
