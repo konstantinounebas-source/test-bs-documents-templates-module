@@ -4,11 +4,27 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, AlertCircle, SkipForward, X, Eye, Plus } from "lucide-react";
+import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, AlertCircle, SkipForward, X, Eye, Plus, Calendar } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
+
+function getQuickDates() {
+  const today = new Date();
+  const dow = today.getDay();
+  const dates = [
+    { label: "Σήμερα", value: todayStr() },
+    { label: "Χθες", value: format(subDays(today, 1), "yyyy-MM-dd") },
+  ];
+  if (dow === 1) dates.push({ label: "Παρ. Παρασκευή", value: format(subDays(today, 3), "yyyy-MM-dd") });
+  if (dow === 6) dates.push({ label: "Παρασκευή", value: format(subDays(today, 1), "yyyy-MM-dd") });
+  if (dow === 0) {
+    dates.push({ label: "Σάββατο", value: format(subDays(today, 1), "yyyy-MM-dd") });
+    dates.push({ label: "Παρασκευή", value: format(subDays(today, 2), "yyyy-MM-dd") });
+  }
+  return dates;
+}
 
 // ── Parse filename via AI ─────────────────────────────────────────────────────
 async function parseFilenameWithAI(fileName, departments) {
@@ -36,7 +52,7 @@ async function parseFilenameWithAI(fileName, departments) {
 - page_number: number ή null
 - total_pages: number ή null  
 - description: string ή null
-- confidence: "high" | "medium" | "low" (πόσο σίγουρος είσαι για την ανάλυση)`,
+- confidence: "high" | "medium" | "low"`,
     response_json_schema: {
       type: "object",
       properties: {
@@ -84,7 +100,7 @@ function FilePreviewDialog({ file, onClose }) {
   );
 }
 
-// ── Single file processing result card ───────────────────────────────────────
+// ── Single file result card ───────────────────────────────────────────────────
 function FileResultCard({ item, departments, batchHeaders, onConfirm, onSkip }) {
   const [date, setDate] = useState(item.parsed?.date || "");
   const [dept, setDept] = useState(item.parsed?.department || "");
@@ -114,7 +130,6 @@ function FileResultCard({ item, departments, batchHeaders, onConfirm, onSkip }) 
           </div>
         </div>
 
-        {/* Parsed info */}
         {item.parsed?.description && (
           <p className="text-slate-500 text-[10px]">📝 {item.parsed.description}</p>
         )}
@@ -122,7 +137,6 @@ function FileResultCard({ item, departments, batchHeaders, onConfirm, onSkip }) 
           <p className="text-slate-500 text-[10px]">📄 Σελίδα {item.parsed.page_number} / {item.parsed.total_pages}</p>
         )}
 
-        {/* Confidence warning */}
         {item.parsed?.confidence === "low" && (
           <div className="flex items-center gap-1 text-orange-600 bg-orange-50 rounded p-1.5 text-[10px]">
             <AlertCircle className="w-3 h-3 flex-shrink-0" />
@@ -130,7 +144,6 @@ function FileResultCard({ item, departments, batchHeaders, onConfirm, onSkip }) 
           </div>
         )}
 
-        {/* Department selector */}
         <div>
           <p className="text-[10px] font-semibold text-slate-500 mb-0.5">Τμήμα *</p>
           <Select value={dept} onValueChange={setDept}>
@@ -145,7 +158,6 @@ function FileResultCard({ item, departments, batchHeaders, onConfirm, onSkip }) 
           </Select>
         </div>
 
-        {/* Date */}
         <div>
           <p className="text-[10px] font-semibold text-slate-500 mb-0.5">
             Ημερομηνία *
@@ -160,7 +172,6 @@ function FileResultCard({ item, departments, batchHeaders, onConfirm, onSkip }) 
           />
         </div>
 
-        {/* Batch status */}
         {date && dept && (
           <div className={`flex items-center gap-1.5 rounded p-1.5 text-[10px] ${
             matchedBatch ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"
@@ -194,13 +205,20 @@ function FileResultCard({ item, departments, batchHeaders, onConfirm, onSkip }) 
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function ChatStepFileUpload({ departments = [], batchHeaders = [], allBundles = [], onFilesSaved, onSkip }) {
+export default function ChatStepFileUpload({ departments = [], batchHeaders = [], allBundles = [], onFilesSaved, onBatchReady, onSkip }) {
   const [dragging, setDragging] = useState(false);
-  const [queue, setQueue] = useState([]); // [{file, status: "pending"|"parsing"|"ready"|"uploading"|"done"|"skipped", parsed}]
+  const [queue, setQueue] = useState([]);
   const [isParsing, setIsParsing] = useState(false);
   const [uploadingNames, setUploadingNames] = useState(new Set());
   const inputRef = useRef();
 
+  // Manual dept/date selection (for "continue without files")
+  const [manualDept, setManualDept] = useState("");
+  const [manualDate, setManualDate] = useState(todayStr());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [customDate, setCustomDate] = useState("");
+
+  const quickDates = getQuickDates();
   const deptNames = departments.map(d => d.name || d).filter(Boolean);
 
   const handleFiles = async (files) => {
@@ -210,12 +228,10 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
     });
     if (!validFiles.length) return;
 
-    // Add to queue as "parsing"
     const newItems = validFiles.map(f => ({ file: f, status: "parsing", parsed: null }));
     setQueue(prev => [...prev, ...newItems]);
     setIsParsing(true);
 
-    // Parse each filename with AI
     const parsed = await Promise.all(
       validFiles.map(f => parseFilenameWithAI(f.name, deptNames).catch(() => null))
     );
@@ -238,7 +254,6 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
     try {
       let batch = matchedBatch;
 
-      // If no batch exists, create one
       if (!batch) {
         const bundle = allBundles.find(b => b.department === dept && b.status === "ACTIVE");
         const scheduledData = await base44.entities.ScheduledData.filter({ date, department_id: dept });
@@ -249,7 +264,6 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
         };
         if (bundle?.id) batchData.bundle_id = bundle.id;
         batch = await base44.entities.BatchHeader.create(batchData);
-        // Create batch lines from scheduled data if any
         if (scheduledData.length > 0) {
           const lines = scheduledData.map(sd => ({
             batch_header_id: batch.id, item_code: sd.item_code,
@@ -275,7 +289,7 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
         ].filter(Boolean).join(" | ")
       });
 
-      setQueue(prev => prev.map(q => q.file === file ? { ...q, status: "done" } : q));
+      setQueue(prev => prev.map(q => q.file === file ? { ...q, status: "done", batch } : q));
       onFilesSaved && onFilesSaved(file.name, batch);
       toast.success(`✅ "${file.name}" αποθηκεύτηκε`);
     } catch (err) {
@@ -289,9 +303,17 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
     setQueue(prev => prev.map(q => q.file.name === fileName ? { ...q, status: "skipped" } : q));
   };
 
+  // "Continue without files" → pass dept+date to parent so it can proceed to dept/date/batch steps
+  const handleContinueWithoutFiles = () => {
+    if (!manualDept) { toast.error("Επίλεξε τμήμα πρώτα"); return; }
+    if (!manualDate) { toast.error("Επίλεξε ημερομηνία πρώτα"); return; }
+    onBatchReady && onBatchReady({ dept: manualDept, date: manualDate });
+  };
+
   const readyCount = queue.filter(q => q.status === "ready").length;
   const doneCount = queue.filter(q => q.status === "done").length;
   const parsingCount = queue.filter(q => q.status === "parsing").length;
+  const allProcessed = queue.length > 0 && queue.every(q => q.status === "done" || q.status === "skipped");
 
   return (
     <div className="border-t p-3 space-y-3 overflow-y-auto max-h-[520px]">
@@ -338,7 +360,7 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
         </div>
       )}
 
-      {/* File cards — only show "ready" items */}
+      {/* File cards */}
       <div className="space-y-2">
         {queue
           .filter(q => q.status === "ready")
@@ -354,7 +376,7 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
           ))}
       </div>
 
-      {/* Done items summary */}
+      {/* Done items */}
       {doneCount > 0 && (
         <div className="space-y-1">
           {queue.filter(q => q.status === "done").map((item, i) => (
@@ -366,14 +388,83 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
         </div>
       )}
 
-      {/* Continue button */}
-      {(doneCount > 0 || queue.every(q => q.status === "skipped" || q.status === "done")) && queue.length > 0 && (
-        <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
-          onClick={onSkip}>
+      {/* ── Continue with a batch (with or without files) ── */}
+      <div className="border rounded-lg p-3 space-y-2 bg-slate-50">
+        <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-wider">
+          {allProcessed ? "✅ Συνέχεια για καταχώριση παραγωγής" : "Ή συνέχισε χωρίς αρχεία"}
+        </p>
+
+        {/* Department selector */}
+        <div>
+          <p className="text-[10px] font-semibold text-slate-500 mb-0.5">Τμήμα *</p>
+          <Select value={manualDept} onValueChange={setManualDept}>
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder="Επίλεξε τμήμα" />
+            </SelectTrigger>
+            <SelectContent>
+              {deptNames.map(d => (
+                <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Quick date buttons */}
+        <div>
+          <p className="text-[10px] font-semibold text-slate-500 mb-1">Ημερομηνία *</p>
+          <div className="flex flex-wrap gap-1">
+            {quickDates.map(qd => (
+              <button
+                key={qd.value}
+                onClick={() => { setManualDate(qd.value); setShowDatePicker(false); }}
+                className={`text-[10px] px-2 py-1 rounded border transition-colors ${
+                  manualDate === qd.value
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-slate-600 border-slate-300 hover:border-blue-400"
+                }`}
+              >
+                {qd.label}
+              </button>
+            ))}
+            <button
+              onClick={() => setShowDatePicker(v => !v)}
+              className={`text-[10px] px-2 py-1 rounded border transition-colors ${
+                showDatePicker ? "bg-blue-100 text-blue-700 border-blue-400" : "bg-white text-slate-600 border-slate-300 hover:border-blue-400"
+              }`}
+            >
+              <Calendar className="w-3 h-3 inline mr-0.5" /> Άλλη...
+            </button>
+          </div>
+          {showDatePicker && (
+            <div className="flex gap-1 mt-1">
+              <Input
+                type="date"
+                value={customDate}
+                onChange={e => setCustomDate(e.target.value)}
+                className="h-7 text-xs flex-1"
+                max={todayStr()}
+              />
+              <Button size="sm" className="h-7 text-xs" disabled={!customDate}
+                onClick={() => { setManualDate(customDate); setShowDatePicker(false); }}>
+                OK
+              </Button>
+            </div>
+          )}
+          {manualDate && (
+            <p className="text-[10px] text-blue-700 mt-0.5">📅 {manualDate}</p>
+          )}
+        </div>
+
+        <Button
+          size="sm"
+          className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+          disabled={!manualDept || !manualDate}
+          onClick={handleContinueWithoutFiles}
+        >
           <CheckCircle2 className="w-3 h-3 mr-1" />
-          Συνέχεια → Επιλογή Τμήματος
+          Συνέχεια → Batch {allProcessed ? "(αρχεία αποθηκεύτηκαν)" : ""}
         </Button>
-      )}
+      </div>
     </div>
   );
 }
