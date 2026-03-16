@@ -101,7 +101,7 @@ function FilePreviewDialog({ file, onClose }) {
 }
 
 // ── Single file result card ───────────────────────────────────────────────────
-function FileResultCard({ item, departments, batchHeaders, allBundles, onConfirm, onSkip }) {
+function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssignments, scheduledDayHeaders, onConfirm, onSkip }) {
   const [date, setDate] = useState(item.parsed?.date || "");
   const [dept, setDept] = useState(item.parsed?.department || "");
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -173,7 +173,7 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, onConfirm
         </div>
 
         {date && dept && (() => {
-          const activeBundle = allBundles.find(b => b.department === dept && b.status === "ACTIVE");
+          const activeBundle = resolveBundle(date, dept, allBundles, dailyAssignments, scheduledDayHeaders);
           return (
             <>
               <div className={`flex items-center gap-1.5 rounded p-1.5 text-[10px] ${
