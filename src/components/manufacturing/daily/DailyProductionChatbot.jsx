@@ -748,11 +748,11 @@ ${context}
                 departments={departments}
                 batchHeaders={allBatchHeaders}
                 allBundles={allBundles}
-                onFilesSaved={(fileName, batch) => {
-                  if (batch) {
+                onFilesSaved={(fileName, batch, errorInfo) => {
+                  if (errorInfo?.error === "no_bundle") {
+                    addMsg("bot", `❌ Δεν βρέθηκε bundle για το τμήμα "${errorInfo.dept}". Αδύνατη η δημιουργία batch.`);
+                  } else if (batch) {
                     addMsg("bot", `📎 Αρχείο "${fileName}" αποθηκεύτηκε στο batch ${batch.date} · ${batch.department}.`);
-                  } else {
-                    addMsg("bot", `📎 Αρχείο "${fileName}" αποθηκεύτηκε (χωρίς σύνδεση batch).`);
                   }
                 }}
                 onBatchReady={({ dept, date }) => {

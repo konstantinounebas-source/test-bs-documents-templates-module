@@ -256,13 +256,18 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
 
       if (!batch) {
         const bundle = allBundles.find(b => b.department === dept && b.status === "ACTIVE");
+        if (!bundle) {
+          onFilesSaved && onFilesSaved(file.name, null, { error: "no_bundle", dept, date });
+          toast.error(`❌ Δεν βρέθηκε ενεργό bundle για το τμήμα "${dept}". Αδύνατη η δημιουργία batch.`);
+          return;
+        }
         const scheduledData = await base44.entities.ScheduledData.filter({ date, department_id: dept });
         const batchData = {
           date,
           department: dept,
-          has_scheduled_data: scheduledData.length > 0
+          has_scheduled_data: scheduledData.length > 0,
+          bundle_id: bundle.id
         };
-        if (bundle?.id) batchData.bundle_id = bundle.id;
         batch = await base44.entities.BatchHeader.create(batchData);
         if (scheduledData.length > 0) {
           const lines = scheduledData.map(sd => ({
