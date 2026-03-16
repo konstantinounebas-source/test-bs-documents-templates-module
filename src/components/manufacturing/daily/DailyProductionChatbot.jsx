@@ -735,6 +735,25 @@ ${context}
               </div>
             </ScrollArea>
 
+            {/* Step: file upload (initial) */}
+            {step === "file_upload" && (
+              <ChatStepFileUpload
+                departments={departments}
+                batchHeaders={batchHeaders}
+                onFilesSaved={(fileName, batch) => {
+                  if (batch) {
+                    addMsg("bot", `📎 Αρχείο "${fileName}" αποθηκεύτηκε στο batch ${batch.date} · ${batch.department}.`);
+                  } else {
+                    addMsg("bot", `📎 Αρχείο "${fileName}" αποθηκεύτηκε (χωρίς σύνδεση batch).`);
+                  }
+                }}
+                onSkip={() => {
+                  setStep("dept");
+                  addMsg("bot", "Επέλεξε τμήμα για να ξεκινήσουμε.");
+                }}
+              />
+            )}
+
             {/* Step: choose department */}
             {step === "dept" && (
               <div className="border-t p-3 space-y-2">
