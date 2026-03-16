@@ -339,7 +339,7 @@ export default function MfgDailyStandardsAssignment() {
     await executeBulkSaveTargets(payload);
   };
 
-  // The actual execution after conflict confirmation
+  // The actual execution via backend function (no rate limit)
   const executeBulkSaveTargets = async (payload) => {
     const { enabledDepts, days } = payload;
     setConflictDialog(false);
@@ -347,56 +347,16 @@ export default function MfgDailyStandardsAssignment() {
     try {
       const dayStrings = days.map(d => format(d, "yyyy-MM-dd"));
 
-      // Process each dept in parallel
-      await Promise.all(enabledDepts.map(async (deptName) => {
-        const bundleId = bulkTargetSelections[deptName];
-        const targetType = bulkTargetTypeSelections[deptName];
-        const targetLines = allDailyTargetLines.filter(l => l.bundle_id === bundleId && l.target_type === targetType);
+      const response = await bulkSetDailyTargets({
+        enabledDepts,
+        dayStrings,
+        bulkTargetSelections,
+        bulkTargetTypeSelections,
+        targetLines: allDailyTargetLines,
+        assignmentMap
+      });
 
-        // Process all days for this dept in parallel
-        await Promise.all(dayStrings.map(async (dateStr) => {
-          // Fetch existing targets for this date+dept
-          const existing = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
-
-          // Delete all existing in parallel
-          if (existing.length > 0) {
-            await Promise.all(existing.map(t => base44.entities.TargetDaily.delete(t.id)));
-          }
-
-          // Build new records
-          const toCreate = targetLines.map(l => ({
-            bundle_id: bundleId,
-            date: dateStr,
-            department: deptName,
-            item_code: l.item_code,
-            target_profile: l.target_type,
-            operation_profile: l.operation_profile_id,
-            target_qty: l.target_qty,
-            profile_time_min_pc: l.per_piece_total_min,
-            target_time_min: l.item_total_min
-          }));
-
-          // BulkCreate + metric + assignment in parallel
-          await Promise.all([
-            toCreate.length > 0 ? base44.entities.TargetDaily.bulkCreate(toCreate) : Promise.resolve(),
-            saveTGTTimeMetric(dateStr, deptName, bundleId, toCreate),
-            (async () => {
-              const assignmentKey = `${dateStr}|${deptName}`;
-              const existingAssignment = assignmentMap[assignmentKey];
-              if (existingAssignment) {
-                await base44.entities.DailyStandardsAssignment.update(existingAssignment.id, { standards_bundle_id: bundleId, target_type: targetType });
-              } else {
-                await base44.entities.DailyStandardsAssignment.create({
-                  assignment_date: dateStr,
-                  department_id: deptName,
-                  standards_bundle_id: bundleId,
-                  target_type: targetType
-                });
-              }
-            })()
-          ]);
-        }));
-      }));
+      if (response.data?.error) throw new Error(response.data.error);
 
       queryClient.invalidateQueries(["TargetDaily"]);
       queryClient.invalidateQueries(["DailyStandardsAssignment"]);
