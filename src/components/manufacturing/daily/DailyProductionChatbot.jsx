@@ -747,6 +747,7 @@ ${context}
               <ChatStepFileUpload
                 departments={departments}
                 batchHeaders={allBatchHeaders}
+                allBundles={allBundles}
                 onFilesSaved={(fileName, batch) => {
                   if (batch) {
                     addMsg("bot", `📎 Αρχείο "${fileName}" αποθηκεύτηκε στο batch ${batch.date} · ${batch.department}.`);
