@@ -101,7 +101,7 @@ function FilePreviewDialog({ file, onClose }) {
 }
 
 // ── Single file result card ───────────────────────────────────────────────────
-function FileResultCard({ item, departments, batchHeaders, onConfirm, onSkip }) {
+function FileResultCard({ item, departments, batchHeaders, allBundles, onConfirm, onSkip }) {
   const [date, setDate] = useState(item.parsed?.date || "");
   const [dept, setDept] = useState(item.parsed?.department || "");
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -385,6 +385,7 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
               item={item}
               departments={deptNames}
               batchHeaders={batchHeaders}
+              allBundles={allBundles}
               onConfirm={handleConfirm}
               onSkip={handleSkip}
             />
