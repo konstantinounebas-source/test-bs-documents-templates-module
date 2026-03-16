@@ -24,6 +24,7 @@ import ChatStepTeamPersons from "./chatbot/ChatStepTeamPersons";
 import ChatStepTeamExtra from "./chatbot/ChatStepTeamExtra";
 import ChatStepHelpIn from "./chatbot/ChatStepHelpIn";
 import ChatStepConsumables from "./chatbot/ChatStepConsumables";
+import ChatStepFileUpload from "./chatbot/ChatStepFileUpload";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
