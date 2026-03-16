@@ -52,102 +52,144 @@ async function parseFilenameWithAI(fileName, departments) {
   return result;
 }
 
+// ── File Preview Dialog ───────────────────────────────────────────────────────
+function FilePreviewDialog({ file, onClose }) {
+  const [objectUrl, setObjectUrl] = useState(null);
+  const isImage = file?.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+
+  useEffect(() => {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    setObjectUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  return (
+    <Dialog open={!!file} onOpenChange={open => { if (!open) onClose(); }}>
+      <DialogContent className="max-w-3xl max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle className="text-sm truncate">{file?.name}</DialogTitle>
+        </DialogHeader>
+        <div className="flex items-center justify-center bg-slate-50 rounded-lg overflow-auto" style={{ maxHeight: "65vh" }}>
+          {objectUrl && isImage ? (
+            <img src={objectUrl} alt={file?.name} className="max-w-full max-h-full object-contain" />
+          ) : objectUrl ? (
+            <iframe src={objectUrl} className="w-full h-[60vh] border-0 rounded-lg" title={file?.name} />
+          ) : (
+            <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Single file processing result card ───────────────────────────────────────
 function FileResultCard({ item, departments, batchHeaders, onConfirm, onSkip }) {
   const [date, setDate] = useState(item.parsed?.date || "");
   const [dept, setDept] = useState(item.parsed?.department || "");
-  const [showDatePicker, setShowDatePicker] = useState(!item.parsed?.date);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const matchedBatch = batchHeaders.find(b => b.date === date && b.department === dept);
 
   return (
-    <div className="border rounded-lg p-3 space-y-2 bg-white text-xs">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          {item.file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-            ? <ImageIcon className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
-            : <FileText className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />}
-          <span className="truncate font-medium text-slate-700">{item.file.name}</span>
+    <>
+      <FilePreviewDialog file={previewOpen ? item.file : null} onClose={() => setPreviewOpen(false)} />
+
+      <div className="border rounded-lg p-3 space-y-2 bg-white text-xs">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
+            {item.file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+              ? <ImageIcon className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
+              : <FileText className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />}
+            <span className="truncate font-medium text-slate-700">{item.file.name}</span>
+          </div>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button onClick={() => setPreviewOpen(true)} className="text-slate-400 hover:text-blue-600" title="Προεπισκόπηση">
+              <Eye className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={() => onSkip(item.file.name)} className="text-slate-400 hover:text-slate-600">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
-        <button onClick={() => onSkip(item.file.name)} className="text-slate-400 hover:text-slate-600 flex-shrink-0">
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </div>
 
-      {/* Parsed info */}
-      {item.parsed?.description && (
-        <p className="text-slate-500 text-[10px]">📝 {item.parsed.description}</p>
-      )}
-      {item.parsed?.page_number && item.parsed?.total_pages && (
-        <p className="text-slate-500 text-[10px]">📄 Σελίδα {item.parsed.page_number} / {item.parsed.total_pages}</p>
-      )}
+        {/* Parsed info */}
+        {item.parsed?.description && (
+          <p className="text-slate-500 text-[10px]">📝 {item.parsed.description}</p>
+        )}
+        {item.parsed?.page_number && item.parsed?.total_pages && (
+          <p className="text-slate-500 text-[10px]">📄 Σελίδα {item.parsed.page_number} / {item.parsed.total_pages}</p>
+        )}
 
-      {/* Confidence warning */}
-      {item.parsed?.confidence === "low" && (
-        <div className="flex items-center gap-1 text-orange-600 bg-orange-50 rounded p-1.5 text-[10px]">
-          <AlertCircle className="w-3 h-3 flex-shrink-0" />
-          Χαμηλή βεβαιότητα ανάλυσης — επιβεβαίωσε τα στοιχεία
+        {/* Confidence warning */}
+        {item.parsed?.confidence === "low" && (
+          <div className="flex items-center gap-1 text-orange-600 bg-orange-50 rounded p-1.5 text-[10px]">
+            <AlertCircle className="w-3 h-3 flex-shrink-0" />
+            Χαμηλή βεβαιότητα ανάλυσης — επιβεβαίωσε τα στοιχεία
+          </div>
+        )}
+
+        {/* Department selector */}
+        <div>
+          <p className="text-[10px] font-semibold text-slate-500 mb-0.5">Τμήμα *</p>
+          <Select value={dept} onValueChange={setDept}>
+            <SelectTrigger className="h-7 text-xs">
+              <SelectValue placeholder="Επίλεξε τμήμα" />
+            </SelectTrigger>
+            <SelectContent>
+              {departments.map(d => (
+                <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      )}
 
-      {/* Department selector */}
-      <div>
-        <p className="text-[10px] font-semibold text-slate-500 mb-0.5">Τμήμα *</p>
-        <Select value={dept} onValueChange={setDept}>
-          <SelectTrigger className="h-7 text-xs">
-            <SelectValue placeholder="Επίλεξε τμήμα" />
-          </SelectTrigger>
-          <SelectContent>
-            {departments.map(d => (
-              <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Date */}
-      <div>
-        <p className="text-[10px] font-semibold text-slate-500 mb-0.5">
-          Ημερομηνία *
-          {!item.parsed?.date && <span className="text-orange-500 ml-1">(δεν βρέθηκε στο όνομα)</span>}
-        </p>
-        <Input
-          type="date"
-          value={date}
-          onChange={e => setDate(e.target.value)}
-          className="h-7 text-xs"
-          max={todayStr()}
-        />
-      </div>
-
-      {/* Batch status */}
-      {date && dept && (
-        <div className={`flex items-center gap-1.5 rounded p-1.5 text-[10px] ${
-          matchedBatch
-            ? "bg-green-50 text-green-700"
-            : "bg-red-50 text-red-700"
-        }`}>
-          {matchedBatch
-            ? <><CheckCircle2 className="w-3 h-3" /> Batch βρέθηκε: {matchedBatch.date} · {matchedBatch.department}</>
-            : <><AlertCircle className="w-3 h-3" /> Δεν βρέθηκε batch για {date} · {dept}</>
-          }
+        {/* Date */}
+        <div>
+          <p className="text-[10px] font-semibold text-slate-500 mb-0.5">
+            Ημερομηνία *
+            {!item.parsed?.date && <span className="text-orange-500 ml-1">(δεν βρέθηκε στο όνομα)</span>}
+          </p>
+          <Input
+            type="date"
+            value={date}
+            onChange={e => setDate(e.target.value)}
+            className="h-7 text-xs"
+            max={todayStr()}
+          />
         </div>
-      )}
 
-      <div className="flex gap-1.5">
-        <Button
-          size="sm"
-          className={`flex-1 text-xs ${matchedBatch ? "bg-green-600 hover:bg-green-700" : "bg-slate-400 hover:bg-slate-500"}`}
-          disabled={!date || !dept}
-          onClick={() => onConfirm(item.file, { date, dept, matchedBatch, parsed: item.parsed })}
-        >
-          {matchedBatch ? "✅ Αποθήκευση στο Batch" : "💾 Αποθήκευση (χωρίς batch)"}
-        </Button>
-        <Button size="sm" variant="outline" className="text-xs" onClick={() => onSkip(item.file.name)}>
-          Παράλειψη
-        </Button>
+        {/* Batch status */}
+        {date && dept && (
+          <div className={`flex items-center gap-1.5 rounded p-1.5 text-[10px] ${
+            matchedBatch ? "bg-green-50 text-green-700" : "bg-orange-50 text-orange-700"
+          }`}>
+            {matchedBatch
+              ? <><CheckCircle2 className="w-3 h-3" /> Batch βρέθηκε: {matchedBatch.date} · {matchedBatch.department}</>
+              : <><AlertCircle className="w-3 h-3" /> Δεν βρέθηκε batch — θα δημιουργηθεί νέο</>
+            }
+          </div>
+        )}
+
+        <div className="flex gap-1.5">
+          <Button
+            size="sm"
+            className={`flex-1 text-xs ${matchedBatch ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"}`}
+            disabled={!date || !dept}
+            onClick={() => onConfirm(item.file, { date, dept, matchedBatch, parsed: item.parsed })}
+          >
+            {matchedBatch
+              ? <><CheckCircle2 className="w-3 h-3 mr-1" /> Αποθήκευση στο Batch</>
+              : <><Plus className="w-3 h-3 mr-1" /> Δημιουργία Batch & Αποθήκευση</>
+            }
+          </Button>
+          <Button size="sm" variant="outline" className="text-xs" onClick={() => onSkip(item.file.name)}>
+            Παράλειψη
+          </Button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
