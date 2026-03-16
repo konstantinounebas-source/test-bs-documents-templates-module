@@ -162,7 +162,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
 
   // messages (chat log)
   const [messages, setMessages] = useState([
-    { role: "bot", text: "Γεια σου! 👋 Επέλεξε τμήμα για να ξεκινήσουμε." }
+    { role: "bot", text: "Γεια σου! 👋 Μπορείς να ανεβάσεις αρχεία παραγωγής ή να επιλέξεις τμήμα για να ξεκινήσουμε." }
   ]);
 
   const addMsg = (role, text, extra = {}) =>
