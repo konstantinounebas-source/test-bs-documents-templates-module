@@ -334,11 +334,16 @@ export default function MfgDailyStandardsAssignment() {
     const end = parseISO(bulkTargetEndDate);
     const days = eachDayOfInterval({ start, end });
 
-    // Fetch all TargetDaily records for all depts in range in one request
-    const startDateStr = format(days[0], "yyyy-MM-dd");
-    const endDateStr = format(days[days.length - 1], "yyyy-MM-dd");
-    const allExistingTargets = await base44.entities.TargetDaily.list();
     const dayStrings = days.map(d => format(d, "yyyy-MM-dd"));
+
+    // Fetch existing targets per dept (filtered, not full list)
+    const allExistingTargets = [];
+    for (const deptName of enabledDepts) {
+      for (const dateStr of dayStrings) {
+        const records = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
+        allExistingTargets.push(...records);
+      }
+    }
 
     const conflicts = [];
     const seenKeys = new Set();
