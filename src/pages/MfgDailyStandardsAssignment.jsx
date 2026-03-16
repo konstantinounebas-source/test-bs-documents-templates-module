@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ChevronLeft, ChevronRight, Layers, Zap, Target, Loader2, Pencil } from "lucide-react";
+import { bulkSetDailyTargets } from "@/functions/bulkSetDailyTargets";
 import { toast } from "sonner";
 import {
   format,
