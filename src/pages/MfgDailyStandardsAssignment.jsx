@@ -344,21 +344,25 @@ export default function MfgDailyStandardsAssignment() {
     setConflictDialog(false);
     setIsSavingBulkTargets(true);
     try {
-      for (const deptName of enabledDepts) {
+      const dayStrings = days.map(d => format(d, "yyyy-MM-dd"));
+
+      // Process each dept in parallel
+      await Promise.all(enabledDepts.map(async (deptName) => {
         const bundleId = bulkTargetSelections[deptName];
         const targetType = bulkTargetTypeSelections[deptName];
         const targetLines = allDailyTargetLines.filter(l => l.bundle_id === bundleId && l.target_type === targetType);
 
-        for (const day of days) {
-          const dateStr = format(day, "yyyy-MM-dd");
-
-          // Delete existing targets
+        // Process all days for this dept in parallel
+        await Promise.all(dayStrings.map(async (dateStr) => {
+          // Fetch existing targets for this date+dept
           const existing = await base44.entities.TargetDaily.filter({ date: dateStr, department: deptName });
-          for (const t of existing) {
-            await base44.entities.TargetDaily.delete(t.id);
+
+          // Delete all existing in parallel
+          if (existing.length > 0) {
+            await Promise.all(existing.map(t => base44.entities.TargetDaily.delete(t.id)));
           }
 
-          // Create new targets
+          // Build new records
           const toCreate = targetLines.map(l => ({
             bundle_id: bundleId,
             date: dateStr,
@@ -370,28 +374,29 @@ export default function MfgDailyStandardsAssignment() {
             profile_time_min_pc: l.per_piece_total_min,
             target_time_min: l.item_total_min
           }));
-          if (toCreate.length > 0) {
-            await base44.entities.TargetDaily.bulkCreate(toCreate);
-          }
 
-          // Update TGT_TIME metric
-          await saveTGTTimeMetric(dateStr, deptName, bundleId, toCreate);
+          // BulkCreate + metric + assignment in parallel
+          await Promise.all([
+            toCreate.length > 0 ? base44.entities.TargetDaily.bulkCreate(toCreate) : Promise.resolve(),
+            saveTGTTimeMetric(dateStr, deptName, bundleId, toCreate),
+            (async () => {
+              const assignmentKey = `${dateStr}|${deptName}`;
+              const existingAssignment = assignmentMap[assignmentKey];
+              if (existingAssignment) {
+                await base44.entities.DailyStandardsAssignment.update(existingAssignment.id, { standards_bundle_id: bundleId, target_type: targetType });
+              } else {
+                await base44.entities.DailyStandardsAssignment.create({
+                  assignment_date: dateStr,
+                  department_id: deptName,
+                  standards_bundle_id: bundleId,
+                  target_type: targetType
+                });
+              }
+            })()
+          ]);
+        }));
+      }));
 
-          // Update DailyStandardsAssignment with bundle and target_type
-          const assignmentKey = `${dateStr}|${deptName}`;
-          const existingAssignment = assignmentMap[assignmentKey];
-          if (existingAssignment) {
-            await base44.entities.DailyStandardsAssignment.update(existingAssignment.id, { standards_bundle_id: bundleId, target_type: targetType });
-          } else {
-            await base44.entities.DailyStandardsAssignment.create({
-              assignment_date: dateStr,
-              department_id: deptName,
-              standards_bundle_id: bundleId,
-              target_type: targetType
-            });
-          }
-        }
-      }
       queryClient.invalidateQueries(["TargetDaily"]);
       queryClient.invalidateQueries(["DailyStandardsAssignment"]);
       queryClient.invalidateQueries(["DailyMetricValue"]);
