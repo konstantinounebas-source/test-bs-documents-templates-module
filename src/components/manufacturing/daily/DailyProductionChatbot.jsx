@@ -748,6 +748,8 @@ ${context}
                 departments={departments}
                 batchHeaders={allBatchHeaders}
                 allBundles={allBundles}
+                dailyAssignments={dailyAssignments}
+                scheduledDayHeaders={scheduledDayHeaders}
                 onFilesSaved={(fileName, batch, errorInfo) => {
                   if (errorInfo?.error === "no_bundle") {
                     addMsg("bot", `❌ Δεν βρέθηκε bundle για το τμήμα "${errorInfo.dept}". Αδύνατη η δημιουργία batch.`);
@@ -767,7 +769,7 @@ ${context}
                     addMsg("bot", `✅ Βρέθηκε batch για ${date} – ${dept}.\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.`);
                   } else {
                     setStep("batch");
-                    const bundle = allBundles.find(b => b.department === dept && b.status === "ACTIVE");
+                    const bundle = resolveBundle(date, dept);
                     addMsg("bot",
                       `Δεν υπάρχει batch για ${date} – ${dept}.\n` +
                       (bundle
