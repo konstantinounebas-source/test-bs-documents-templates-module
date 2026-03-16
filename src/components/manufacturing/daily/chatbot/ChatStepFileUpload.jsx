@@ -215,7 +215,15 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, onConfirm
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-export default function ChatStepFileUpload({ departments = [], batchHeaders = [], allBundles = [], onFilesSaved, onBatchReady, onSkip }) {
+function resolveBundle(date, dept, allBundles, dailyAssignments, scheduledDayHeaders) {
+  const da = dailyAssignments.find(a => a.assignment_date === date && a.department_id === dept);
+  if (da?.standards_bundle_id) return allBundles.find(b => b.id === da.standards_bundle_id);
+  const sh = scheduledDayHeaders.find(h => h.date === date && h.department_id === dept);
+  if (sh?.source_bundle_id) return allBundles.find(b => b.id === sh.source_bundle_id);
+  return allBundles.find(b => b.department === dept && b.status === "ACTIVE");
+}
+
+export default function ChatStepFileUpload({ departments = [], batchHeaders = [], allBundles = [], dailyAssignments = [], scheduledDayHeaders = [], onFilesSaved, onBatchReady, onSkip }) {
   const [dragging, setDragging] = useState(false);
   const [queue, setQueue] = useState([]);
   const [isParsing, setIsParsing] = useState(false);
