@@ -175,6 +175,13 @@ export default function DailyProductionChatbot({ departments = [] }) {
   }, [messages]);
 
   // ── data ──────────────────────────────────────────────────────────────────
+  // All batch headers (for file upload step batch matching)
+  const { data: allBatchHeaders = [] } = useQuery({
+    queryKey: ["BatchHeader-All"],
+    queryFn: () => base44.entities.BatchHeader.list(),
+    staleTime: 0
+  });
+
   const { data: batchHeaders = [] } = useQuery({
     queryKey: ["BatchHeader", selDept],
     queryFn: () => base44.entities.BatchHeader.filter({ department: selDept }),
