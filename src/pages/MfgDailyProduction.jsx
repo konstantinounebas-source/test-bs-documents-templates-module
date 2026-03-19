@@ -138,7 +138,7 @@ export default function MfgDailyProduction() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Planning
           </Button>
-          <Button variant="outline" onClick={() => navigate(createPageUrl("MfgDailyStandardsAssignment"))}>
+          <Button variant="outline" onClick={() => navigate(createPageUrl("MfgDailyStandardsAssignment") + (selectedDepartment ? `?department=${encodeURIComponent(selectedDepartment)}` : ''))}>
             <CalendarDays className="w-4 h-4 mr-2" />
             Back to Daily Calendar
           </Button>
