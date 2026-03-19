@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, ClipboardList, Plus, Edit2, Trash2, Save, Loader2, Clock, MessageCircle } from "lucide-react";
+import { ArrowLeft, ClipboardList, Plus, Edit2, Trash2, Save, Loader2, Clock, MessageCircle, CalendarDays } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
