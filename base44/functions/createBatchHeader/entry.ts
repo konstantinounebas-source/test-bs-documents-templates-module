@@ -86,7 +86,8 @@ Deno.serve(async (req) => {
         date,
         department,
         bundle_id,
-        value: m.metric_code === 'SCH_TIME' ? schTime : 0
+        value: m.metric_code === 'SCH_TIME' ? schTime : 0,
+        calculated_at: new Date().toISOString()
       }));
 
     if (metricsToCreate.length > 0) {
