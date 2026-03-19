@@ -159,94 +159,14 @@ export default function BatchHeaderTab({ batchHeaders, selectedBatch, selectedDe
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
-      // Check if scheduled data exists
-      const scheduledData = await base44.entities.ScheduledData.filter({
+      const response = await createBatchHeader({
         date: data.date,
-        department_id: data.department
+        department: data.department,
+        bundle_id: data.bundle_id,
+        notes: data.notes || ''
       });
-      
-      // Create batch header with scheduled data flag
-      const newBatch = await base44.entities.BatchHeader.create({
-        ...data,
-        has_scheduled_data: scheduledData.length > 0
-      });
-      
-      // Auto-populate Batch Lines
-      if (scheduledData.length > 0) {
-        const batchLines = scheduledData.map(sd => ({
-          batch_header_id: newBatch.id,
-          item_code: sd.item_code,
-          scheduled_qty: sd.ops_qty || 0,
-          qty_processed: 0,
-          qty_out_good: 0,
-          qty_scrap: 0
-        }));
-        await base44.entities.Batch_Lines.bulkCreate(batchLines);
-
-        // Auto-populate Operations - group by item_code and operation to avoid duplicates
-        const opsMap = new Map();
-        scheduledData
-          .filter(sd => sd.operation && sd.ops_qty)
-          .forEach(sd => {
-            const key = `${sd.item_code}|${sd.operation}`;
-            if (opsMap.has(key)) {
-              const existing = opsMap.get(key);
-              existing.qty_operation += sd.ops_qty || 0;
-              existing.operation_time_min += (sd.ops_qty || 0) * (sd.std_min_pc || 0);
-            } else {
-              opsMap.set(key, {
-                batch_header_id: newBatch.id,
-                item_code: sd.item_code,
-                operation: sd.operation,
-                qty_operation: sd.ops_qty || 0,
-                remake_qty: 0,
-                source_type: 'SCHEDULE',
-                std_min_pc_lookup: sd.std_min_pc || 0,
-                operation_time_min: (sd.ops_qty || 0) * (sd.std_min_pc || 0)
-              });
-            }
-          });
-        const operations = Array.from(opsMap.values());
-        if (operations.length > 0) {
-          await base44.entities.Operations.bulkCreate(operations);
-        }
-      }
-      
-      // Fetch all metric definitions
-      const metrics = await base44.entities.MetricDefinition.list();
-      
-      // Create all metrics in one bulk call
-      const existingMetrics = await base44.entities.DailyMetricValue.filter({
-        date: newBatch.date,
-        department: newBatch.department
-      });
-      
-      const existingMetricCodes = new Set(existingMetrics.map(m => m.metric_code));
-      
-      const metricsToCreate = metrics
-        .filter(metric => !existingMetricCodes.has(metric.metric_code))
-        .map(metric => {
-          let initialValue = 0;
-          
-          // Calculate SCH_TIME from existing ScheduledData
-          if (metric.metric_code === 'SCH_TIME') {
-            initialValue = scheduledData.reduce((sum, sd) => sum + (sd.grand_total_min || 0), 0);
-          }
-          
-          return {
-            metric_code: metric.metric_code,
-            date: newBatch.date,
-            department: newBatch.department,
-            bundle_id: newBatch.bundle_id,
-            value: initialValue
-          };
-        });
-      
-      if (metricsToCreate.length > 0) {
-        await base44.entities.DailyMetricValue.bulkCreate(metricsToCreate);
-      }
-      
-      return newBatch;
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data.batch;
     },
     onSuccess: (newBatch) => {
       queryClient.invalidateQueries(['BatchHeader']);
