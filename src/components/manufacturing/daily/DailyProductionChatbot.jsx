@@ -196,17 +196,15 @@ export default function DailyProductionChatbot({ departments = [] }) {
   });
 
   const { data: dailyAssignments = [] } = useQuery({
-    queryKey: ["DailyStandardsAssignment", selDept],
-    queryFn: () => base44.entities.DailyStandardsAssignment.filter({ department_id: selDept }),
-    enabled: !!selDept,
-    staleTime: 0
+    queryKey: ["DailyStandardsAssignment-All"],
+    queryFn: () => base44.entities.DailyStandardsAssignment.list(),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: scheduledDayHeaders = [] } = useQuery({
-    queryKey: ["ScheduledDayHeader", selDept],
-    queryFn: () => base44.entities.ScheduledDayHeader.filter({ department_id: selDept }),
-    enabled: !!selDept,
-    staleTime: 0
+    queryKey: ["ScheduledDayHeader-All"],
+    queryFn: () => base44.entities.ScheduledDayHeader.list(),
+    staleTime: 5 * 60 * 1000
   });
 
   const { data: attachments = [], isLoading: loadingAtts } = useQuery({
