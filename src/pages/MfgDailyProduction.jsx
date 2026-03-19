@@ -138,6 +138,10 @@ export default function MfgDailyProduction() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Planning
           </Button>
+          <Button variant="outline" onClick={() => navigate(createPageUrl("MfgDailyStandardsAssignment"))}>
+            <CalendarDays className="w-4 h-4 mr-2" />
+            Back to Daily Calendar
+          </Button>
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
               <ClipboardList className="w-6 h-6 text-blue-600" />
