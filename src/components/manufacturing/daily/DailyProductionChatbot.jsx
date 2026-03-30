@@ -10,8 +10,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
   Bot, X, Send, Paperclip, Upload, FileText, Image as ImageIcon,
-  Download, Eye, Trash2, ChevronDown, ChevronUp, Calendar,
-  Loader2, CheckCircle2, Minimize2, Maximize2, Plus, RotateCw, RotateCcw, MessageSquare, SkipForward, Paperclip as PaperclipIcon, FastForward
+  Download, Eye, Trash2, Calendar,
+  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays, isMonday } from "date-fns";
