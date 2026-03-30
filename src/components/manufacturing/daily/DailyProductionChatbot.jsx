@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Bot, X, Send, Paperclip, Upload, FileText, Image as ImageIcon,
   Download, Eye, Trash2, Calendar,
-  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward
+  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward, ZoomIn, ZoomOut
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays, isMonday } from "date-fns";
@@ -154,6 +154,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
   // attachment preview
   const [previewFile, setPreviewFile] = useState(null);
   const [rotation, setRotation] = useState(0);
+  const [zoom, setZoom] = useState(1);
   const [showAttachmentsModal, setShowAttachmentsModal] = useState(false);
 
   // free-text input
@@ -1236,11 +1237,23 @@ ${context}
         )}
 
       {/* Preview dialog */}
-      <Dialog open={!!previewFile} onOpenChange={open => { if (!open) { setPreviewFile(null); setRotation(0); } }}>
+      <Dialog open={!!previewFile} onOpenChange={open => { if (!open) { setPreviewFile(null); setRotation(0); setZoom(1); } }}>
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader className="flex flex-row items-center justify-between">
             <DialogTitle>{previewFile?.file_name}</DialogTitle>
             <div className="flex gap-2 items-center mr-6">
+              {previewFile && getFileType(previewFile.file_name) === "image" && (
+                <>
+                  <button onClick={() => setZoom(z => Math.max(0.25, z - 0.25))} className="text-slate-500 hover:text-slate-700 p-1" title="Zoom Out">
+                    <ZoomOut className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs text-slate-500 w-10 text-center">{Math.round(zoom * 100)}%</span>
+                  <button onClick={() => setZoom(z => Math.min(4, z + 0.25))} className="text-slate-500 hover:text-slate-700 p-1" title="Zoom In">
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
+                  <div className="w-px h-4 bg-slate-200 mx-1" />
+                </>
+              )}
               {previewFile && (
                 <>
                   <button onClick={() => setRotation(r => r - 90)} className="text-slate-500 hover:text-slate-700 p-1" title="Rotate Left">
@@ -1270,8 +1283,12 @@ ${context}
               <img
                 src={previewFile.file_url}
                 alt={previewFile.file_name}
-                style={{ transform: `rotate(${rotation}deg)`, transition: "transform 0.3s ease" }}
-                className="max-w-full max-h-full"
+                style={{
+                  transform: `rotate(${rotation}deg) scale(${zoom})`,
+                  transition: "transform 0.3s ease",
+                  transformOrigin: "center center",
+                  maxWidth: zoom > 1 ? "none" : "100%",
+                }}
               />
             </div>
           ) : (
