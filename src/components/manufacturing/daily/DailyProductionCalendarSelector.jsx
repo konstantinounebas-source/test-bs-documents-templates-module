@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
@@ -74,11 +74,13 @@ export default function DailyProductionCalendarSelector({
   const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
   const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
 
-  // Generate calendar days
+  // Generate calendar days - include leading/trailing days to fill the grid correctly
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
-    return eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 }); // Sunday
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });       // Saturday
+    return eachDayOfInterval({ start: calendarStart, end: calendarEnd });
   }, [currentMonth]);
 
   // Handle day click
@@ -127,6 +129,7 @@ export default function DailyProductionCalendarSelector({
               const hasTargets = datesWithTargets.has(dateStr);
               const isSelected = selectedDate === dateStr;
               const isToday = isSameDay(day, new Date());
+              const isCurrentMonth = isSameMonth(day, currentMonth);
               
               return (
                 <div key={index} className="relative">
@@ -136,7 +139,7 @@ export default function DailyProductionCalendarSelector({
                       w-full p-3 text-center rounded-lg border transition-all
                       ${isSelected ? 'bg-blue-100 border-blue-500 font-semibold' : 'border-slate-200 hover:bg-slate-50'}
                       ${isToday ? 'ring-2 ring-blue-300' : ''}
-                      ${!isSameMonth(day, currentMonth) ? 'text-slate-300' : 'text-slate-900'}
+                      ${!isCurrentMonth ? 'text-slate-300' : 'text-slate-900'}
                     `}
                   >
                     <div className="text-sm">{format(day, 'd')}</div>
