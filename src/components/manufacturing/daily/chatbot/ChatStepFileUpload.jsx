@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, AlertCircle, SkipForward, X, Eye, Plus, Calendar } from "lucide-react";
+import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, AlertCircle, SkipForward, X, Eye, Plus, Calendar, ZoomIn, ZoomOut, RotateCw, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays } from "date-fns";
 
@@ -83,10 +83,15 @@ async function parseFilenameWithAI(fileName, departments) {
 // ── File Preview Dialog ───────────────────────────────────────────────────────
 function FilePreviewDialog({ file, onClose }) {
   const [objectUrl, setObjectUrl] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
   const isImage = file?.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+  const isPdf = file?.name.match(/\.pdf$/i);
 
   useEffect(() => {
     if (!file) return;
+    setZoom(1);
+    setRotation(0);
     const url = URL.createObjectURL(file);
     setObjectUrl(url);
     return () => URL.revokeObjectURL(url);
@@ -94,17 +99,46 @@ function FilePreviewDialog({ file, onClose }) {
 
   return (
     <Dialog open={!!file} onOpenChange={open => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-3xl max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle className="text-sm truncate">{file?.name}</DialogTitle>
+      <DialogContent className="max-w-3xl w-[90vw]">
+        <DialogHeader className="flex flex-row items-center justify-between pb-2 border-b">
+          <DialogTitle className="text-sm truncate max-w-xs">{file?.name}</DialogTitle>
+          {isImage && (
+            <div className="flex gap-1 items-center">
+              <button onClick={() => setZoom(z => Math.max(0.25, z - 0.25))} className="text-slate-500 hover:text-slate-700 p-1.5 rounded hover:bg-slate-100" title="Zoom Out">
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <span className="text-xs text-slate-500 w-10 text-center">{Math.round(zoom * 100)}%</span>
+              <button onClick={() => setZoom(z => Math.min(4, z + 0.25))} className="text-slate-500 hover:text-slate-700 p-1.5 rounded hover:bg-slate-100" title="Zoom In">
+                <ZoomIn className="w-4 h-4" />
+              </button>
+              <div className="w-px h-4 bg-slate-200 mx-1" />
+              <button onClick={() => setRotation(r => r - 90)} className="text-slate-500 hover:text-slate-700 p-1.5 rounded hover:bg-slate-100" title="Rotate Left">
+                <RotateCcw className="w-4 h-4" />
+              </button>
+              <button onClick={() => setRotation(r => r + 90)} className="text-slate-500 hover:text-slate-700 p-1.5 rounded hover:bg-slate-100" title="Rotate Right">
+                <RotateCw className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </DialogHeader>
-        <div className="flex items-center justify-center bg-slate-50 rounded-lg overflow-auto" style={{ maxHeight: "65vh" }}>
-          {objectUrl && isImage ? (
-            <img src={objectUrl} alt={file?.name} className="max-w-full max-h-full object-contain" />
-          ) : objectUrl ? (
-            <iframe src={objectUrl} className="w-full h-[60vh] border-0 rounded-lg" title={file?.name} />
-          ) : (
+        <div className="flex items-center justify-center bg-slate-50 rounded-lg overflow-auto" style={{ maxHeight: "70vh" }}>
+          {!objectUrl ? (
             <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+          ) : isImage ? (
+            <img
+              src={objectUrl}
+              alt={file?.name}
+              style={{
+                transform: `rotate(${rotation}deg) scale(${zoom})`,
+                transition: 'transform 0.3s ease',
+                transformOrigin: 'center center',
+                maxWidth: zoom > 1 ? 'none' : '100%',
+              }}
+            />
+          ) : isPdf ? (
+            <iframe src={objectUrl} className="w-full border-0 rounded-lg" style={{ height: '70vh' }} title={file?.name} />
+          ) : (
+            <iframe src={objectUrl} className="w-full h-[60vh] border-0 rounded-lg" title={file?.name} />
           )}
         </div>
       </DialogContent>
@@ -369,7 +403,7 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
         className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors
           ${dragging ? "border-blue-500 bg-blue-50" : "border-slate-300 bg-slate-50 hover:border-slate-400"}`}
       >
-        <input ref={inputRef} type="file" multiple accept="image/*,.pdf" className="hidden"
+        <input ref={inputRef} type="file" multiple accept="image/*,application/pdf,.pdf" className="hidden"
           onChange={e => handleFiles(e.target.files)} />
         {isParsing
           ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-blue-400 mb-1" />
