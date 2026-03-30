@@ -38,20 +38,10 @@ export default function ProductMovementsDrawer({ isOpen, onOpenChange, productId
       setMovements(movementsData);
       setUsers(usersData);
       
-      // Calculate current stock from StockItem if available, otherwise compute from movements
+      // Always compute current stock from StockItems (single source of truth)
+      // StockItems are kept in sync by recalculateStockForProduct and allow negatives
       const totalStock = stockItems.reduce((sum, item) => sum + (item.quantity_on_hand || 0), 0);
-      if (totalStock > 0 || stockItems.length > 0) {
-        setCurrentStock(totalStock);
-      } else {
-        // Fallback: compute from movements
-        const computed = movementsData.reduce((sum, m) => {
-          const qty = m.base_quantity || parseFloat(m.quantity) || 0;
-          if (m.movement_type === 'IN' || m.movement_type === 'ADJUSTMENT') return sum + qty;
-          if (m.movement_type === 'OUT') return sum - qty;
-          return sum;
-        }, 0);
-        setCurrentStock(computed);
-      }
+      setCurrentStock(totalStock);
     } catch (error) {
       console.error("Error loading movements:", error);
     }
