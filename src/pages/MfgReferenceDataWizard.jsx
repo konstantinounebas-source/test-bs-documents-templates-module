@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ArrowRight, Save, Plus, Trash2, Edit2, Building2, Wrench, AlertTriangle, Package, Briefcase, Database, Ruler, Tag, FileText, Target, FileCheck, Users, Clock } from "lucide-react";
+import { ArrowRight, Save, Plus, Trash2, Edit2, Building2, Wrench, AlertTriangle, Package, Briefcase, Database, Ruler, Tag, FileText, Target, FileCheck, Users, Clock, PaintBucket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -40,7 +40,8 @@ export default function MfgReferenceDataWizard() {
     { id: "consumables", label: "Consumables", entity: "Consumable", icon: Package, customComponent: true },
     { id: "work_types", label: "Work Types", entity: "Work_Type", icon: Briefcase },
     { id: "break_times", label: "Break Times", entity: "BreakTime", icon: Clock },
-    { id: "persons", label: "Persons", entity: "Person", icon: Users, customComponent: true }
+    { id: "persons", label: "Persons", entity: "Person", icon: Users, customComponent: true },
+    { id: "paint_booths", label: "Paint Booths", entity: "PaintBooth", icon: PaintBucket }
   ];
 
   const currentEntity = tabs.find(t => t.id === activeTab)?.entity;

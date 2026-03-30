@@ -1,0 +1,22 @@
+{
+  "name": "PaintBooth",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the paint booth"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional description"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this paint booth is active"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
