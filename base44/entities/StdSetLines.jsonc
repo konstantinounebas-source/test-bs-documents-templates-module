@@ -1,0 +1,35 @@
+{
+  "name": "StdSetLines",
+  "type": "object",
+  "properties": {
+    "bundle_id": {
+      "type": "string",
+      "description": "Reference to StandardsBundle"
+    },
+    "item_code": {
+      "type": "string",
+      "description": "Item code (optional, leave empty for general standard)"
+    },
+    "operation": {
+      "type": "string",
+      "description": "Operation name"
+    },
+    "std_min_per_pc": {
+      "type": "number",
+      "description": "Standard minutes per piece"
+    },
+    "surface_area_m2": {
+      "type": "number",
+      "description": "Standard surface area in m2 per piece (for painting operations)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes"
+    }
+  },
+  "required": [
+    "bundle_id",
+    "operation",
+    "std_min_per_pc"
+  ]
+}

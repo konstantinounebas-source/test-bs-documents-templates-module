@@ -154,9 +154,13 @@ export default function DataTab({ bundle, isEditable }) {
     const grouped = {};
     lines.forEach(line => {
       if (!grouped[line.item_code]) {
-        grouped[line.item_code] = { item_code: line.item_code, notes: line.notes || '' };
+        grouped[line.item_code] = { item_code: line.item_code, notes: line.notes || '', surface_area_m2: '' };
       }
       grouped[line.item_code][line.operation] = line.std_min_per_pc;
+      // surface_area_m2 is per item_code (not per operation), take from any line
+      if (line.surface_area_m2 != null && line.surface_area_m2 !== '') {
+        grouped[line.item_code].surface_area_m2 = line.surface_area_m2;
+      }
     });
     
     const rows = Object.values(grouped);
@@ -200,6 +204,8 @@ export default function DataTab({ bundle, isEditable }) {
       const deletes = [];
 
       for (const row of gridRows) {
+        const surfaceArea = row.surface_area_m2 !== '' && row.surface_area_m2 != null ? parseFloat(row.surface_area_m2) : null;
+
         for (const col of operationColumns) {
           const key = `${row.item_code}|${col.operation}`;
           const value = row[col.operation];
@@ -213,10 +219,10 @@ export default function DataTab({ bundle, isEditable }) {
             const numValue = parseFloat(value);
             if (!isNaN(numValue)) {
               if (existingLine) {
-                if (existingLine.std_min_per_pc !== numValue || existingLine.notes !== (row.notes || '')) {
+                if (existingLine.std_min_per_pc !== numValue || existingLine.notes !== (row.notes || '') || existingLine.surface_area_m2 !== surfaceArea) {
                   updates.push({
                     id: existingLine.id,
-                    data: { std_min_per_pc: numValue, notes: row.notes || '' }
+                    data: { std_min_per_pc: numValue, notes: row.notes || '', surface_area_m2: surfaceArea }
                   });
                 }
               } else {
@@ -225,7 +231,8 @@ export default function DataTab({ bundle, isEditable }) {
                   item_code: row.item_code,
                   operation: col.operation,
                   std_min_per_pc: numValue,
-                  notes: row.notes || ''
+                  notes: row.notes || '',
+                  surface_area_m2: surfaceArea
                 });
               }
             }
@@ -285,7 +292,7 @@ export default function DataTab({ bundle, isEditable }) {
   }, [gridRows, sortBy, itemCodeFilter, operationColumns]);
 
   const addRow = () => {
-    setGridRows([...gridRows, { item_code: '', notes: '' }]);
+    setGridRows([...gridRows, { item_code: '', notes: '', surface_area_m2: '' }]);
   };
 
   const deleteRow = (index) => {
@@ -420,6 +427,7 @@ export default function DataTab({ bundle, isEditable }) {
               {operationColumns.map(col => (
                 <TableHead key={col.operation} className="min-w-[120px] font-semibold">{col.label}</TableHead>
               ))}
+              <TableHead className="min-w-[130px] font-semibold text-blue-700">Surface Area (m²)</TableHead>
               <TableHead className="min-w-[200px] font-semibold">Notes</TableHead>
               {isEditable && <TableHead className="w-[100px] font-semibold">Actions</TableHead>}
             </TableRow>
@@ -471,6 +479,18 @@ export default function DataTab({ bundle, isEditable }) {
                         />
                       </TableCell>
                     ))}
+                    <TableCell>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={row.surface_area_m2 || ''}
+                        onChange={(e) => updateCell(index, 'surface_area_m2', e.target.value)}
+                        disabled={!isEditable}
+                        placeholder="-"
+                        className="min-w-[110px] text-center font-mono [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                    </TableCell>
                     <TableCell>
                       <Input
                         value={row.notes || ''}
