@@ -43,68 +43,52 @@ Deno.serve(async (req) => {
   const { file_url } = await req.json();
   if (!file_url) return Response.json({ error: 'file_url is required' }, { status: 400 });
 
-  // ── Step 1: OCR via vision LLM ────────────────────────────────────────────
-  const extracted = await base44.asServiceRole.integrations.Core.InvokeLLM({
+  // ── Single-pass OCR + validation via gemini_3_flash (faster) ────────────────
+  const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    model: "gemini_3_flash",
     prompt: `Αναλύσε αυτή την εικόνα που είναι μια φόρμα "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ" (Daily Production Form) στα ελληνικά.
-    
-Εξάγαγε ΟΛΕΣ τις γραμμές παραγωγής που βλέπεις στον πίνακα. Κάθε γραμμή αντιστοιχεί σε έναν κωδικό κομματιού.
 
-Η φόρμα έχει τις εξής στήλες (αριστερά προς τα δεξιά):
-1. Ημερομηνία (μόνο στην πρώτη γραμμή)
-2. Κωδικός Κομματιών (item_code) 
-3. Αρ. Παρτίδας (batch_number)
-4. Ποσότητα Προγραμματισμού (scheduled_quantity) - αριθμός
-5. Αντληση από Stock (initial_qc_stock_pull) - checkbox: true αν τσεκαρισμένο
-6. Remake (initial_qc_remake) - checkbox
-7. Σκουριασμένα (initial_qc_rusty) - checkbox
-8. Γδαρσίματα/Κτυπήματα (initial_qc_scratches_dents) - checkbox
-9. Λάδια/Αστάρια/Ακαθαρσίες (initial_qc_oils_primers_dirt) - checkbox
-10. Άλλα (initial_qc_other_issues) - checkbox
-11. Zink (required_treatments_zink) - checkbox
-12. Τρίψιμο (required_treatments_sanding) - checkbox
-13. Διχρωμίες-Masking (required_treatments_color_masking) - checkbox
-14. Ισοπό,Σιλικόνη,ΚΤΛ (required_treatments_fillers_silicone) - checkbox
-15. Συνολο κομματιών επιπρόσθετων (additional_treatments_total_pieces) - αριθμός
-16. Εκτίμηση Χρόνου Λεπτά (additional_treatments_time_mins) - αριθμός
-17. Κρέμασμα (paint_preparation_hanging) - checkbox
-18. Καθαρισμός Φούρνου (paint_preparation_oven_cleaning) - checkbox
-19. Επαναπροωθήσεις από Τμηματάρχη (rework_from_dept_head) - αριθμός
-20. Συνολική Ποσότητα Παράδοσης (total_delivery_quantity) - αριθμός
-21. Καταστροφή-Πέραν Επιδιόρθωσης (destroyed_beyond_repair) - checkbox
+ΕΞΑΓΩΓΗ ΔΕΔΟΜΕΝΩΝ:
+Εξάγαγε ΟΛΕΣ τις γραμμές παραγωγής. Κάθε γραμμή = ένας κωδικός κομματιού.
 
-Οδηγίες:
-- Για checkboxes: true αν είναι τσεκαρισμένο (✓, x, ✗, ●, γεμάτο), false αν είναι άδειο
-- Αν κάποιο πεδίο δεν φαίνεται, βάλε null
-- Ημερομηνία σε format YYYY-MM-DD αν είναι δυνατό
-- Διάβασε προσεκτικά τους αριθμούς (προσοχή σε 0 vs O, 1 vs l)`,
+Στήλες φόρμας (αριστερά → δεξιά):
+1. Ημερομηνία (μόνο πρώτη γραμμή)
+2. item_code - Κωδικός Κομματιών
+3. batch_number - Αρ. Παρτίδας
+4. scheduled_quantity - Ποσότητα Προγραμματισμού (αριθμός)
+5. initial_qc_stock_pull - Αντληση από Stock (checkbox)
+6. initial_qc_remake - Remake (checkbox)
+7. initial_qc_rusty - Σκουριασμένα (checkbox)
+8. initial_qc_scratches_dents - Γδαρσίματα/Κτυπήματα (checkbox)
+9. initial_qc_oils_primers_dirt - Λάδια/Αστάρια/Ακαθαρσίες (checkbox)
+10. initial_qc_other_issues - Άλλα (checkbox)
+11. required_treatments_zink - Zink (checkbox)
+12. required_treatments_sanding - Τρίψιμο (checkbox)
+13. required_treatments_color_masking - Διχρωμίες-Masking (checkbox)
+14. required_treatments_fillers_silicone - Ισοπό,Σιλικόνη,ΚΤΛ (checkbox)
+15. additional_treatments_total_pieces - Συνολο επιπρόσθετων κομματιών (αριθμός)
+16. additional_treatments_time_mins - Εκτίμηση Χρόνου Λεπτά (αριθμός)
+17. paint_preparation_hanging - Κρέμασμα (checkbox)
+18. paint_preparation_oven_cleaning - Καθαρισμός Φούρνου (checkbox)
+19. rework_from_dept_head - Επαναπροωθήσεις από Τμηματάρχη (αριθμός)
+20. total_delivery_quantity - Συνολική Ποσότητα Παράδοσης (αριθμός)
+21. destroyed_beyond_repair - Καταστροφή-Πέραν Επιδιόρθωσης (checkbox)
+
+Κανόνες:
+- Checkboxes: true αν τσεκαρισμένο (✓, x, ✗, ●), false αν άδειο
+- Αριθμοί: null αν δεν φαίνεται (προσοχή 0 vs O, 1 vs l)
+- Ημερομηνία: YYYY-MM-DD
+
+ΕΠΙΚΥΡΩΣΗ (στο issues):
+- Έλεγξε αν total_delivery_quantity <= scheduled_quantity + rework_from_dept_head
+- Σημείωσε αριθμούς που μοιάζουν σαν OCR λάθη (severity: "warning" ή "error")
+- confidence_score: 0-100`,
     file_urls: [file_url],
-    response_json_schema: PRODUCTION_FORM_SCHEMA
-  });
-
-  if (!extracted || typeof extracted !== 'object') {
-    return Response.json({ error: 'OCR extraction failed' }, { status: 422 });
-  }
-
-  // ── Step 2: AI validation ─────────────────────────────────────────────────
-  const validationResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    prompt: `Είσαι ειδικός QC σε manufacturing παραγωγή. Έχεις εξαγάγει δεδομένα μέσω OCR από τη φόρμα "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ". 
-Αναλύσε τα δεδομένα για λάθη και αναντιστοιχίες.
-
-Δεδομένα OCR:
-${JSON.stringify(extracted, null, 2)}
-
-Κανόνες επικύρωσης:
-1. ΥΠΟΧΡΕΩΤΙΚΑ ΠΕΔΙΑ: item_code πρέπει να υπάρχει σε κάθε γραμμή
-2. ΑΡΙΘΜΗΤΙΚΑ: scheduled_quantity, total_delivery_quantity, rework_from_dept_head πρέπει να είναι >= 0
-3. ΛΟΓΙΚΟΣ ΕΛΕΓΧΟΣ: total_delivery_quantity δεν πρέπει να υπερβαίνει scheduled_quantity + rework_from_dept_head
-4. OCR ΛΑΘΗ: Ψάξε για πιθανά OCR λάθη (0 vs O, 1 vs I, κλπ)
-5. ΕΛΛΕΙΨΕΙΣ: Αν μια γραμμή έχει κατεργασίες αλλά δεν έχει ποσότητες, σημείωσε το
-6. ΗΜΕΡΟΜΗΝΙΑ: Πρέπει να είναι σε μορφή YYYY-MM-DD
-
-Επέστρεψε JSON.`,
     response_json_schema: {
       type: "object",
       properties: {
+        date: { type: "string" },
+        production_lines: PRODUCTION_FORM_SCHEMA.properties.production_lines,
         issues: {
           type: "array",
           items: {
@@ -118,15 +102,21 @@ ${JSON.stringify(extracted, null, 2)}
             }
           }
         },
-        corrected_data: { type: "object" },
         confidence_score: { type: "number" }
       }
     }
   });
 
+  if (!result || typeof result !== 'object') {
+    return Response.json({ error: 'OCR extraction failed' }, { status: 422 });
+  }
+
+  const extracted = { date: result.date, production_lines: result.production_lines };
+  const validationResult = { issues: result.issues || [], confidence_score: result.confidence_score };
+
   return Response.json({
     extracted_data: extracted,
     validation: validationResult,
-    corrected_data: validationResult?.corrected_data || extracted
+    corrected_data: extracted
   });
 });

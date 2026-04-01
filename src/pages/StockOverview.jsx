@@ -14,6 +14,7 @@ import StockOverviewTable from "../components/warehouse/StockOverviewTable";
 import PaginationControls from "../components/warehouse/PaginationControls";
 
 export default function StockOverviewPage() {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [companyFilter, setCompanyFilter] = useState("all");

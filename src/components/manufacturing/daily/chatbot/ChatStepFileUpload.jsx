@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, AlertCircle, SkipForward, X, Eye, Plus, Calendar, ZoomIn, ZoomOut, RotateCw, RotateCcw } from "lucide-react";
+import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, AlertCircle, SkipForward, X, Eye, Plus, Calendar, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays } from "date-fns";
+import { ocrProductionForm } from "@/functions/ocrProductionForm";
+import OCRVerificationModal from "../OCRVerificationModal";
 
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
 
@@ -151,12 +153,49 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssi
   const [date, setDate] = useState(item.parsed?.date || "");
   const [dept, setDept] = useState(item.parsed?.department || "");
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrResult, setOcrResult] = useState(null);
+  const [showOcrModal, setShowOcrModal] = useState(false);
+  const [uploadedUrl, setUploadedUrl] = useState(null);
+
+  const handleOCR = async () => {
+    setOcrLoading(true);
+    try {
+      // Upload file first to get a URL for OCR
+      let fileUrl = uploadedUrl;
+      if (!fileUrl) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: item.file });
+        fileUrl = file_url;
+        setUploadedUrl(file_url);
+      }
+      const result = await ocrProductionForm({ file_url: fileUrl });
+      setOcrResult(result.data);
+      setShowOcrModal(true);
+    } catch (err) {
+      toast.error(`OCR σφάλμα: ${err?.message || "Άγνωστο σφάλμα"}`);
+    } finally {
+      setOcrLoading(false);
+    }
+  };
 
   const matchedBatch = batchHeaders.find(b => b.date === date && b.department === dept);
 
   return (
     <>
       <FilePreviewDialog file={previewOpen ? item.file : null} onClose={() => setPreviewOpen(false)} />
+      {showOcrModal && ocrResult && (
+        <OCRVerificationModal
+          open={showOcrModal}
+          onClose={() => setShowOcrModal(false)}
+          fileUrl={uploadedUrl || URL.createObjectURL(item.file)}
+          fileName={item.file.name}
+          ocrResult={ocrResult}
+          onConfirm={(confirmed) => {
+            setShowOcrModal(false);
+            toast.success(`✅ OCR επιβεβαιώθηκε: ${confirmed.production_lines?.length || 0} γραμμές`);
+          }}
+        />
+      )}
 
       <div className="border rounded-lg p-3 space-y-2 bg-white text-xs">
         <div className="flex items-start justify-between gap-2">
@@ -167,6 +206,14 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssi
             <span className="truncate font-medium text-slate-700">{item.file.name}</span>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              onClick={handleOCR}
+              disabled={ocrLoading}
+              className="text-purple-500 hover:text-purple-700 p-0.5 disabled:opacity-50"
+              title="OCR Εξαγωγή δεδομένων"
+            >
+              {ocrLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Scan className="w-3.5 h-3.5" />}
+            </button>
             <button onClick={() => setPreviewOpen(true)} className="text-slate-400 hover:text-blue-600" title="Προεπισκόπηση">
               <Eye className="w-3.5 h-3.5" />
             </button>
