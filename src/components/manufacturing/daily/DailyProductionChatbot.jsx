@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Bot, X, Send, Paperclip, Upload, FileText, Image as ImageIcon,
   Download, Eye, Trash2, Calendar,
-  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward, ZoomIn, ZoomOut
+  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward, ZoomIn, ZoomOut, Scan
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays, isMonday } from "date-fns";
@@ -25,6 +25,8 @@ import ChatStepTeamExtra from "./chatbot/ChatStepTeamExtra";
 import ChatStepHelpIn from "./chatbot/ChatStepHelpIn";
 import ChatStepConsumables from "./chatbot/ChatStepConsumables";
 import ChatStepFileUpload from "./chatbot/ChatStepFileUpload";
+import OCRVerificationModal from "./OCRVerificationModal";
+import { ocrProductionForm } from "@/functions/ocrProductionForm";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
@@ -63,7 +65,7 @@ function getFileType(fileName) {
 }
 
 // ─── Attachment item ─────────────────────────────────────────────────────────
-function AttachmentItem({ att, onDelete, onPreview, isDeleting }) {
+function AttachmentItem({ att, onDelete, onPreview, onOCR, isDeleting, isOcrLoading }) {
   const fileType = getFileType(att.file_name);
   return (
     <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg group hover:bg-slate-100 transition-colors">
@@ -73,6 +75,9 @@ function AttachmentItem({ att, onDelete, onPreview, isDeleting }) {
       <a href={att.file_url} target="_blank" rel="noopener noreferrer"
          className="text-xs text-blue-600 hover:underline truncate flex-1">{att.file_name}</a>
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} disabled={isOcrLoading} title="OCR Εξαγωγή">
+          {isOcrLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Scan className="w-3 h-3" />}
+        </Button>
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onPreview(att)} title="Preview">
           <Eye className="w-3 h-3" />
         </Button>
@@ -156,6 +161,12 @@ export default function DailyProductionChatbot({ departments = [] }) {
   const [rotation, setRotation] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [showAttachmentsModal, setShowAttachmentsModal] = useState(false);
+
+  // OCR state
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrTargetAtt, setOcrTargetAtt] = useState(null);
+  const [ocrResult, setOcrResult] = useState(null);
+  const [showOcrModal, setShowOcrModal] = useState(false);
 
   // free-text input
   const [userInput, setUserInput] = useState("");
@@ -331,6 +342,34 @@ export default function DailyProductionChatbot({ departments = [] }) {
     mutationFn: (id) => base44.entities.BatchAttachment.delete(id),
     onSuccess: () => queryClient.invalidateQueries(["BatchAttachments", selBatch?.id])
   });
+
+  const handleOCR = async (att) => {
+    setOcrTargetAtt(att);
+    setOcrLoading(true);
+    addMsg("bot", `🔍 Εκτελώ OCR στο αρχείο "${att.file_name}"...`);
+    try {
+      const result = await ocrProductionForm({ file_url: att.file_url });
+      setOcrResult(result.data);
+      setShowOcrModal(true);
+      addMsg("bot", `✅ OCR ολοκληρώθηκε! Βρέθηκαν ${result.data?.extracted_data?.production_lines?.length || 0} γραμμές. Επιβεβαίωσε τα δεδομένα.`);
+    } catch (err) {
+      addMsg("bot", `❌ Σφάλμα OCR: ${err?.message || "Άγνωστο σφάλμα"}`);
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  const handleOcrConfirm = (confirmedData) => {
+    setShowOcrModal(false);
+    addMsg("bot", 
+      `✅ OCR δεδομένα επιβεβαιώθηκαν!\n` +
+      `📅 Ημερομηνία: ${confirmedData.date}\n` +
+      `📦 Γραμμές: ${confirmedData.production_lines?.length || 0}\n\n` +
+      `Τα δεδομένα είναι έτοιμα για αντιστοίχιση με το batch.`
+    );
+    // Store confirmed OCR data for future batch mapping
+    queryClient.setQueryData(["OCRConfirmedData", ocrTargetAtt?.id], confirmedData);
+  };
 
   // ── step handlers ─────────────────────────────────────────────────────────
   const handleDeptSelect = (dept) => {
@@ -874,6 +913,8 @@ ${context}
                       <AttachmentItem key={att.id} att={att}
                         onDelete={id => deleteMutation.mutate(id)}
                         onPreview={setPreviewFile}
+                        onOCR={(a) => { setShowAttachmentsModal(false); handleOCR(a); }}
+                        isOcrLoading={ocrLoading && ocrTargetAtt?.id === att.id}
                         isDeleting={deleteMutation.isPending} />
                     ))}
                   </div>
@@ -1303,6 +1344,18 @@ ${context}
         </DialogContent>
       </Dialog>
 
+      {/* OCR Verification Modal */}
+      {showOcrModal && ocrResult && ocrTargetAtt && (
+        <OCRVerificationModal
+          open={showOcrModal}
+          onClose={() => setShowOcrModal(false)}
+          fileUrl={ocrTargetAtt.file_url}
+          fileName={ocrTargetAtt.file_name}
+          ocrResult={ocrResult}
+          onConfirm={handleOcrConfirm}
+        />
+      )}
+
       {/* Attachments Modal - Accessible from any tab */}
       <Dialog open={showAttachmentsModal} onOpenChange={setShowAttachmentsModal}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -1329,6 +1382,8 @@ ${context}
                     <AttachmentItem key={att.id} att={att}
                       onDelete={id => deleteMutation.mutate(id)}
                       onPreview={setPreviewFile}
+                      onOCR={handleOCR}
+                      isOcrLoading={ocrLoading && ocrTargetAtt?.id === att.id}
                       isDeleting={deleteMutation.isPending} />
                   ))}
                 </div>

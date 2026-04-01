@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { FormTemplate } from "@/entities/FormTemplate";
 import { User } from "@/entities/User";
@@ -108,7 +107,7 @@ const ResponsibilityField = ({ label, value, onChange, systemUsers, appUsers, ad
                              <SelectItem disabled value="_app_users_header" className="font-semibold text-green-600">
                                 Application Users
                             </SelectItem>
-                            {appUsers.filter(u => u.id).map(user => (
+                            {appUsers.filter(u => u.id).map(u => (
                                 <SelectItem key={`app_user_${u.id}`} value={u.id}>
                                     {u.full_name}
                                 </SelectItem>

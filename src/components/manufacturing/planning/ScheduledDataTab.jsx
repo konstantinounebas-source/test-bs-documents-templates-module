@@ -1329,7 +1329,6 @@ export default function ScheduledDataTab({ selectedDepartment, selectedBundle: i
             </div>
           </CardContent>
         </Card>
-      )}
 
           {/* Daily Summary */}
           {dailySummary && (
