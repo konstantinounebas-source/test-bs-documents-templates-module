@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Check } from "lucide-react";
 
 const FIELD_LABELS = {
   item_code: "Κωδικός",
@@ -71,13 +71,20 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
   const [date, setDate] = useState(ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "");
   const [activeLineIdx, setActiveLineIdx] = useState(0);
   const [confirmed, setConfirmed] = useState(false);
+  const [acceptedIssues, setAcceptedIssues] = useState(new Set());
 
   const issues = ocrResult?.validation?.issues || [];
   const confidence = ocrResult?.validation?.confidence_score ?? null;
+
+  const acceptIssue = (issueKey) => {
+    setAcceptedIssues(prev => new Set([...prev, issueKey]));
+  };
+
+  const getIssueKey = (iss, i) => `${iss.line_index}-${iss.field}-${i}`;
   const isImage = fileName && ['jpg','jpeg','png','gif','webp','bmp'].includes(fileName.split('.').pop().toLowerCase());
 
   const getIssuesForLine = (lineIdx, field) =>
-    issues.filter(i => i.line_index === lineIdx && i.field === field);
+    issues.filter((iss, i) => iss.line_index === lineIdx && iss.field === field && !acceptedIssues.has(getIssueKey(iss, issues.indexOf(iss))));
 
   const updateLine = (lineIdx, field, value) => {
     setLines(prev => prev.map((l, i) => i === lineIdx ? { ...l, [field]: value } : l));
@@ -85,13 +92,13 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
 
   const allFields = Object.keys(FIELD_LABELS);
   const activeLine = lines[activeLineIdx];
-  const activeLineIssues = issues.filter(i => i.line_index === activeLineIdx);
-  const errorCount = issues.filter(i => i.severity === "error").length;
-  const warningCount = issues.filter(i => i.severity === "warning").length;
+  const activeLineIssues = issues.filter((iss, i) => iss.line_index === activeLineIdx && !acceptedIssues.has(getIssueKey(iss, i)));
+  const errorCount = issues.filter((iss, i) => iss.severity === "error" && !acceptedIssues.has(getIssueKey(iss, i))).length;
+  const warningCount = issues.filter((iss, i) => iss.severity === "warning" && !acceptedIssues.has(getIssueKey(iss, i))).length;
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-7xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-[98vw] w-[98vw] max-h-[96vh] p-0 overflow-hidden">
         <DialogHeader className="px-4 py-3 border-b bg-slate-50 flex-row items-center justify-between">
           <div className="flex items-center gap-3">
             <Scan className="w-5 h-5 text-blue-600" />
@@ -106,9 +113,9 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
           </div>
         </DialogHeader>
 
-        <div className="flex h-[calc(90vh-120px)]">
+        <div className="flex h-[calc(96vh-120px)]">
           {/* LEFT: Image/PDF viewer */}
-          <div className="w-1/2 border-r bg-slate-100 flex flex-col">
+          <div className="w-[65%] border-r bg-slate-100 flex flex-col">
             <div className="flex items-center gap-2 px-3 py-2 border-b bg-white text-xs">
               <span className="text-slate-500 font-medium flex-1">Αρχείο</span>
               {isImage && (
@@ -144,7 +151,7 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
           </div>
 
           {/* RIGHT: Data editor */}
-          <div className="w-1/2 flex flex-col bg-white">
+          <div className="w-[35%] flex flex-col bg-white">
             {/* Date row */}
             <div className="px-4 py-2 border-b bg-slate-50 flex items-center gap-3">
               <span className="text-xs font-semibold text-slate-600">Ημερομηνία:</span>
@@ -186,12 +193,22 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
             {/* Active line issues */}
             {activeLineIssues.length > 0 && (
               <div className="px-4 py-2 space-y-1 border-b bg-amber-50">
-                {activeLineIssues.map((iss, i) => (
-                  <div key={i} className={`flex items-start gap-2 text-xs ${iss.severity === "error" ? "text-red-700" : "text-amber-700"}`}>
-                    {iss.severity === "error" ? <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" /> : <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />}
-                    <span><strong>{FIELD_LABELS[iss.field] || iss.field}:</strong> {iss.message}{iss.suggested_fix ? ` → ${iss.suggested_fix}` : ""}</span>
-                  </div>
-                ))}
+                {activeLineIssues.map((iss, i) => {
+                  const issueKey = getIssueKey(iss, issues.indexOf(iss));
+                  return (
+                    <div key={i} className={`flex items-start gap-2 text-xs ${iss.severity === "error" ? "text-red-700" : "text-amber-700"}`}>
+                      {iss.severity === "error" ? <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" /> : <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />}
+                      <span className="flex-1"><strong>{FIELD_LABELS[iss.field] || iss.field}:</strong> {iss.message}{iss.suggested_fix ? ` → ${iss.suggested_fix}` : ""}</span>
+                      <button
+                        onClick={() => acceptIssue(issueKey)}
+                        className="flex-shrink-0 p-0.5 rounded bg-white border border-current hover:bg-green-50 hover:text-green-700 hover:border-green-400 transition-colors"
+                        title="Αποδοχή - αγνόησε αυτή την προειδοποίηση"
+                      >
+                        <Check className="w-3 h-3" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -213,7 +230,7 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                           />
                         </div>
                         {fieldIssues.length > 0 && (
-                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${fieldIssues[0].severity === "error" ? "bg-red-500" : "bg-amber-400"}`} />
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${fieldIssues[0].severity === "error" ? "bg-red-500" : "bg-amber-400"}`} title={fieldIssues[0].message} />
                         )}
                       </div>
                     );
