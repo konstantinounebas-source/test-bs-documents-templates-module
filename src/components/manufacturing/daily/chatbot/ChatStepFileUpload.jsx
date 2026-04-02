@@ -190,6 +190,7 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssi
           fileUrl={uploadedUrl || URL.createObjectURL(item.file)}
           fileName={item.file.name}
           ocrResult={ocrResult}
+          department={dept}
           onConfirm={(confirmed) => {
             setShowOcrModal(false);
             toast.success(`✅ OCR επιβεβαιώθηκε: ${confirmed.production_lines?.length || 0} γραμμές`);
