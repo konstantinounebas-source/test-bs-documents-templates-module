@@ -53,6 +53,31 @@ const convertDdMmToMmDd = (dateStr) => {
   return `${month}/${day}/${year}`;
 };
 
+// Helper: Μετατροπή mm/dd/yyyy ή yyyy-mm-dd → yyyy-mm-dd (για input type="date")
+const toDateInputFormat = (dateStr) => {
+  if (!dateStr) return "";
+  // If already yyyy-mm-dd, return as is
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+  // Convert mm/dd/yyyy to yyyy-mm-dd
+  const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (match) {
+    const [, month, day, year] = match;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  return dateStr;
+};
+
+// Helper: Μετατροπή yyyy-mm-dd → mm/dd/yyyy (για storage)
+const fromDateInputFormat = (dateStr) => {
+  if (!dateStr) return "";
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const [, year, month, day] = match;
+    return `${month}/${day}/${year}`;
+  }
+  return dateStr;
+};
+
 // Helper: Parse filename (e.g., "4-3-26.FA.Prepaint.1From2.pdf")
 const parseFileName = (fileName) => {
   if (!fileName) return { date: null, type: null };
@@ -123,6 +148,9 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
   const convertedOcrDate = convertDdMmToMmDd(ocrDate);
 
   const [date, setDate] = useState(convertedOcrDate || fileParsed.date || "");
+
+  // For the date input field (yyyy-mm-dd format)
+  const dateInputValue = toDateInputFormat(date);
   const [department, setDepartment] = useState(initialDepartment || "");
   const [confirmed, setConfirmed] = useState(false);
   const [acceptedIssues, setAcceptedIssues] = useState(new Set());
@@ -262,7 +290,7 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
             {/* Date + department row */}
             <div className="px-4 py-2 border-b bg-slate-50 flex items-center gap-3 flex-shrink-0">
               <span className="text-xs font-semibold text-slate-600">Ημερομηνία:</span>
-              <input type="date" value={date} onChange={e => setDate(e.target.value)}
+              <input type="date" value={dateInputValue} onChange={e => setDate(fromDateInputFormat(e.target.value))}
                 className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
               {fileParsed.date && (
                 <span className="text-xs text-slate-500">Αρχείου: {fileParsed.date}</span>
