@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
 
   // ── Single-pass OCR + validation via gemini_3_flash (faster) ────────────────
   const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    model: "gpt_5_mini",
+    model: "gemini_3_flash",
     prompt: `Εξάγαγε δεδομένα από τη φόρμα ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ.
 
 ΚΑΤΑΝΟΜΗ ΣΤΗΛΩΝ:
