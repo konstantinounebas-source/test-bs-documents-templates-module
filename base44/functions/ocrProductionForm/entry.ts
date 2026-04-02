@@ -80,8 +80,10 @@ Deno.serve(async (req) => {
 - Ημερομηνία: YYYY-MM-DD
 
 ΕΠΙΚΥΡΩΣΗ (στο issues):
-- Έλεγξε αν total_delivery_quantity <= scheduled_quantity + rework_from_dept_head
-- Σημείωσε αριθμούς που μοιάζουν σαν OCR λάθη (severity: "warning" ή "error")
+- Έλεγξε αν paint_preparation_hanging = true και total_delivery_quantity = null/0/έλλειπει → ΑΛΕΡΤ: "Κρέμασμα = ✓ αλλά Συνολική Ποσότητα Παράδοσης λείπει/0"
+- Έλεγξε αν total_delivery_quantity > scheduled_quantity + rework_from_dept_head → ΑΛΕΡΤ: "Παράδοση > Προγρ/σμού + Επαναπροωθήσεις"
+- Έλεγξε αν κάποιο boolean=true αλλά total_delivery_quantity=0 (δηλ. δεν υπάρχει αριθμός στη σειρά) → ΑΛΕΡΤ
+- Δεν εξάγεις issue αν το boolean=false (άδειο κελί)
 - confidence_score: 0-100`,
     file_urls: [file_url],
     response_json_schema: {
