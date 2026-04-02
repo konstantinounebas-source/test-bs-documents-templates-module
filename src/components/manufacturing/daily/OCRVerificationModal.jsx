@@ -44,14 +44,48 @@ const GROUP_COLORS = {
   "Λοιπά":                    "bg-rose-50 text-rose-800",
 };
 
+// Helper: Μετατροπή dd/mm/yyyy → mm/dd/yyyy
+const convertDdMmToMmDd = (dateStr) => {
+  if (!dateStr || typeof dateStr !== 'string') return dateStr;
+  const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!match) return dateStr; // If not dd/mm/yyyy format, return as is
+  const [, day, month, year] = match;
+  return `${month}/${day}/${year}`;
+};
+
+// Helper: Parse filename (e.g., "4-3-26.FA.Prepaint.1From2.pdf")
+const parseFileName = (fileName) => {
+  if (!fileName) return { date: null, type: null };
+  const namePart = fileName.split('.').slice(0, -1).join('.');
+  const parts = namePart.split('.');
+  const dateStr = parts[0]; // "4-3-26"
+  const type = parts.includes('Prepaint') ? 'Prepaint' : null;
+
+  // Parse date: 4-3-26 → 04/03/2026
+  const dateParts = dateStr.split('-');
+  if (dateParts.length === 3) {
+    const day = dateParts[0].padStart(2, '0');
+    const month = dateParts[1].padStart(2, '0');
+    const year = `20${dateParts[2]}`;
+    return { 
+      date: `${month}/${day}/${year}`, // stored as mm/dd/yyyy
+      type 
+    };
+  }
+  return { date: null, type: null };
+};
+
 export default function OCRVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, department: initialDepartment, departments = [] }) {
-  const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState(0);
-  const [modalFullscreen, setModalFullscreen] = useState(false);
-  const [imageFullscreen, setImageFullscreen] = useState(false);
-  const [imagePanelWidth, setImagePanelWidth] = useState(35); // percent
-  const isDragging = useRef(false);
-  const containerRef = useRef(null);
+   const [zoom, setZoom] = useState(1);
+   const [rotation, setRotation] = useState(0);
+   const [modalFullscreen, setModalFullscreen] = useState(false);
+   const [imageFullscreen, setImageFullscreen] = useState(false);
+   const [imagePanelWidth, setImagePanelWidth] = useState(35); // percent
+   const isDragging = useRef(false);
+   const containerRef = useRef(null);
+
+   // Parse filename for date and type
+   const fileParsed = parseFileName(fileName);
 
   const handleDividerMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -83,10 +117,49 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
       return updated;
     });
   });
-  const [date, setDate] = useState(ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "");
+
+  // Convert OCR date from dd/mm/yyyy to mm/dd/yyyy for storage
+  const ocrDate = ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "";
+  const convertedOcrDate = convertDdMmToMmDd(ocrDate);
+
+  const [date, setDate] = useState(convertedOcrDate || fileParsed.date || "");
   const [department, setDepartment] = useState(initialDepartment || "");
   const [confirmed, setConfirmed] = useState(false);
   const [acceptedIssues, setAcceptedIssues] = useState(new Set());
+
+  // Validation issues from filename & form mismatch
+  const [fileValidationIssues, setFileValidationIssues] = useState(() => {
+    const issues = [];
+
+    // Check if OCR date matches filename date
+    if (fileParsed.date && convertedOcrDate && convertedOcrDate !== fileParsed.date) {
+      issues.push({
+        field: "date",
+        severity: "warning",
+        message: `Ημερομηνία OCR (${convertedOcrDate}) ≠ Ημερομηνία Αρχείου (${fileParsed.date})`
+      });
+    }
+
+    // Check if Prepaint type matches form content
+    const formText = ocrResult?.extracted_data?.production_lines?.map(l => JSON.stringify(l)).join('') || "";
+    const isPrepaint = formText.includes('Προετοιμασία Βαφής');
+
+    if (fileParsed.type === 'Prepaint' && !isPrepaint) {
+      issues.push({
+        field: "type",
+        severity: "warning",
+        message: "Αρχείο λέει Prepaint αλλά φόρμα δεν περιέχει 'Προετοιμασία Βαφής'"
+      });
+    } else if (fileParsed.type !== 'Prepaint' && isPrepaint) {
+      issues.push({
+        field: "type",
+        severity: "warning",
+        message: "Φόρμα περιέχει 'Προετοιμασία Βαφής' αλλά αρχείο δεν λέει Prepaint"
+      });
+    }
+
+    return issues;
+  });
 
   const issues = ocrResult?.validation?.issues || [];
   const confidence = ocrResult?.validation?.confidence_score ?? null;
@@ -191,6 +264,9 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
               <span className="text-xs font-semibold text-slate-600">Ημερομηνία:</span>
               <input type="date" value={date} onChange={e => setDate(e.target.value)}
                 className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
+              {fileParsed.date && (
+                <span className="text-xs text-slate-500">Αρχείου: {fileParsed.date}</span>
+              )}
               {departments.length > 0 ? (
                 <Select value={department} onValueChange={setDepartment}>
                   <SelectTrigger className="h-7 text-xs w-36 border-slate-200">
@@ -208,7 +284,19 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
               <span className="text-xs text-slate-400 ml-auto">{lines.length} γραμμ{lines.length === 1 ? "ή" : "ές"}</span>
             </div>
 
-            {/* Issues panel */}
+            {/* File Validation Issues */}
+            {fileValidationIssues.length > 0 && (
+              <div className="px-4 py-2 border-b bg-orange-50 flex-shrink-0">
+                {fileValidationIssues.map((iss, i) => (
+                  <div key={i} className="flex items-start gap-2 text-xs mb-1 text-orange-700">
+                    <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <span className="flex-1">{iss.message}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* OCR Issues panel */}
             {issues.filter((iss, i) => !acceptedIssues.has(getIssueKey(iss, i))).length > 0 && (
               <div className="px-4 py-2 border-b bg-amber-50 flex-shrink-0 max-h-24 overflow-y-auto">
                 {issues.map((iss, i) => {
