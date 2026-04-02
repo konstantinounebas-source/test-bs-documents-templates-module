@@ -47,6 +47,7 @@ const GROUP_COLORS = {
 export default function OCRVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, department: initialDepartment, departments = [] }) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const [modalFullscreen, setModalFullscreen] = useState(false);
   const [imageFullscreen, setImageFullscreen] = useState(false);
   const [imagePanelWidth, setImagePanelWidth] = useState(35); // percent
   const isDragging = useRef(false);
@@ -103,7 +104,8 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-[98vw] w-[98vw] max-h-[96vh] p-0 overflow-hidden">
+      <DialogContent className={`p-0 overflow-hidden transition-all duration-200 ${modalFullscreen ? "max-w-[100vw] w-[100vw] max-h-[100vh] h-[100vh] rounded-none top-0 left-0 translate-x-0 translate-y-0" : "max-w-[98vw] w-[98vw] max-h-[96vh]"}`}
+        style={modalFullscreen ? { position: "fixed", top: 0, left: 0, transform: "none", borderRadius: 0 } : {}}>
         <DialogHeader className="px-4 py-2 border-b bg-slate-50 flex-row items-center gap-3">
           <Scan className="w-5 h-5 text-blue-600 flex-shrink-0" />
           <DialogTitle className="text-sm">OCR Επιβεβαίωση · {fileName}</DialogTitle>
@@ -114,9 +116,16 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
           )}
           {errorCount > 0 && <Badge className="bg-red-100 text-red-700 text-xs">{errorCount} Σφάλματα</Badge>}
           {warningCount > 0 && <Badge className="bg-amber-100 text-amber-700 text-xs">{warningCount} Προειδοποιήσεις</Badge>}
+          <button
+            onClick={() => setModalFullscreen(v => !v)}
+            className="ml-auto p-1.5 hover:bg-slate-200 rounded transition-colors"
+            title={modalFullscreen ? "Μικρότερο παράθυρο" : "Πλήρης οθόνη"}
+          >
+            {modalFullscreen ? <Minimize2 className="w-4 h-4 text-blue-600" /> : <Maximize2 className="w-4 h-4 text-slate-500" />}
+          </button>
         </DialogHeader>
 
-        <div className="flex h-[calc(96vh-100px)]" ref={containerRef}>
+        <div className={`flex ${modalFullscreen ? "h-[calc(100vh-100px)]" : "h-[calc(96vh-100px)]"}`} ref={containerRef}>
           {/* LEFT: Image/PDF viewer */}
           <div
             className="border-r bg-slate-100 flex flex-col flex-shrink-0"
