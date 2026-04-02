@@ -359,61 +359,16 @@ export default function DailyProductionChatbot({ departments = [] }) {
     }
   };
 
-  const handleOcrConfirm = async (confirmedData) => {
+  const handleOcrConfirm = (confirmedData) => {
     setShowOcrModal(false);
-    addMsg("bot", "⏳ Αποθηκεύω δεδομένα OCR στο batch...");
-    
-    try {
-      // Convert OCR production_lines to Batch_Lines format
-      const ocrLines = confirmedData.production_lines || [];
-      
-      // Create entries for each production line from OCR
-      const batchLinesToCreate = ocrLines
-        .filter(line => line.item_code) // only items with code
-        .map(line => ({
-          batch_header_id: selBatch.id,
-          item_code: line.item_code,
-          batch_number: line.batch_number || null,
-          scheduled_qty: line.scheduled_quantity || 0,
-          qty_processed: 0,
-          qty_out_good: 0,
-          qty_scrap: 0,
-          // Store OCR metadata
-          initial_qc_stock_pull: line.initial_qc_stock_pull ? 1 : 0,
-          initial_qc_remake: line.initial_qc_remake ? 1 : 0,
-          initial_qc_rusty: line.initial_qc_rusty ? 1 : 0,
-          initial_qc_scratches_dents: line.initial_qc_scratches_dents ? 1 : 0,
-          initial_qc_oils_primers_dirt: line.initial_qc_oils_primers_dirt ? 1 : 0,
-          initial_qc_other_issues: line.initial_qc_other_issues ? 1 : 0,
-          required_treatments_zink: line.required_treatments_zink ? 1 : 0,
-          required_treatments_sanding: line.required_treatments_sanding ? 1 : 0,
-          required_treatments_color_masking: line.required_treatments_color_masking ? 1 : 0,
-          required_treatments_fillers_silicone: line.required_treatments_fillers_silicone ? 1 : 0,
-          additional_treatments_total_pieces: line.additional_treatments_total_pieces,
-          additional_treatments_time_mins: line.additional_treatments_time_mins,
-          paint_preparation_hanging: line.paint_preparation_hanging ? 1 : 0,
-          paint_preparation_oven_cleaning: line.paint_preparation_oven_cleaning ? 1 : 0,
-          rework_from_dept_head: line.rework_from_dept_head,
-          total_delivery_quantity: line.total_delivery_quantity,
-          destroyed_beyond_repair: line.destroyed_beyond_repair ? 1 : 0,
-        }));
-
-      if (batchLinesToCreate.length > 0) {
-        await base44.entities.Batch_Lines.bulkCreate(batchLinesToCreate);
-        queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
-        addMsg("bot", 
-          `✅ OCR δεδομένα καταχωρήθηκαν!\n` +
-          `📅 Ημερομηνία: ${confirmedData.date}\n` +
-          `📦 Γραμμές: ${batchLinesToCreate.length} κατάχωρηση\n\n` +
-          `Τα δεδομένα προστέθηκαν στο batch. Μπορείς να συνεχίσεις με τις υπόλοιπες καρτέλες.`
-        );
-      } else {
-        addMsg("bot", "⚠️ Δεν βρέθηκαν έγκυρες γραμμές παραγωγής στο OCR.");
-      }
-    } catch (err) {
-      console.error("OCR batch save error:", err);
-      addMsg("bot", `❌ Σφάλμα αποθήκευσης: ${err?.message || "Άγνωστο σφάλμα"}`);
-    }
+    addMsg("bot", 
+      `✅ OCR δεδομένα επιβεβαιώθηκαν!\n` +
+      `📅 Ημερομηνία: ${confirmedData.date}\n` +
+      `📦 Γραμμές: ${confirmedData.production_lines?.length || 0}\n\n` +
+      `Τα δεδομένα είναι έτοιμα για αντιστοίχιση με το batch.`
+    );
+    // Store confirmed OCR data for future batch mapping
+    queryClient.setQueryData(["OCRConfirmedData", ocrTargetAtt?.id], confirmedData);
   };
 
   // ── step handlers ─────────────────────────────────────────────────────────

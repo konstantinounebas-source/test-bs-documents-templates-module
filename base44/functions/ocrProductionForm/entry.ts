@@ -43,26 +43,54 @@ Deno.serve(async (req) => {
   const { file_url } = await req.json();
   if (!file_url) return Response.json({ error: 'file_url is required' }, { status: 400 });
 
-  // ── Single-pass OCR + validation via gpt_5_mini (faster) ────────────────
+  // ── Single-pass OCR + validation via gemini_3_flash (faster) ────────────────
   const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    model: "gpt_5_mini",
-    prompt: `Εξάγαγε δεδομένα από τη φόρμα ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ.
+    model: "gemini_3_flash",
+    prompt: `Αναλύσε αυτή την εικόνα που είναι μια φόρμα "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ" (Daily Production Form) στα ελληνικά.
+
+ΕΞΑΓΩΓΗ ΔΕΔΟΜΕΝΩΝ:
+Εξάγαγε ΟΛΕΣ τις γραμμές παραγωγής. Κάθε γραμμή = ένας κωδικός κομματιού.
+
+ΣΗΜΑΝΤΙΚΟ ΓΙΑ CHECKBOX ΚΕΛΙΑ ΜΕ ΑΡΙΘΜΟΥΣ:
+Όταν ένα checkbox κελί (π.χ. paint_preparation_hanging "Κρέμασμα") περιέχει αριθμό (π.χ. "10"), αυτό σημαίνει:
+- paint_preparation_hanging = true (η κουτίστρα είναι τσεκαρισμένη)
+- Ο αριθμός που φαίνεται ΜΕΣΑ στο κελί είναι δευτερεύων - δεν αντιστοιχεί σε άλλο πεδίο
+- Ο αριθμός στο κελί κρέμασμα δεν πρέπει να μεταφερθεί σε total_delivery_quantity
 
 ΚΑΤΑΝΟΜΗ ΣΤΗΛΩΝ (αριστερά → δεξιά):
-1. date | 2. item_code | 3. batch_number | 4. scheduled_quantity (num)
-5. initial_qc_stock_pull (bool) | 6. initial_qc_remake (bool) | 7. initial_qc_rusty (bool) | 8. initial_qc_scratches_dents (bool)
-9. initial_qc_oils_primers_dirt (bool) | 10. initial_qc_other_issues (bool) | 11. required_treatments_zink (bool) | 12. required_treatments_sanding (bool)
-13. required_treatments_color_masking (bool) | 14. required_treatments_fillers_silicone (bool) | 15. additional_treatments_total_pieces (num) | 16. additional_treatments_time_mins (num)
-17. paint_preparation_hanging (bool - αν έχει αριθμό μέσα, είναι true) | 18. paint_preparation_oven_cleaning (bool) | 19. rework_from_dept_head (num) | 20. total_delivery_quantity (num) | 21. destroyed_beyond_repair (bool)
+1. Ημερομηνία (μόνο πρώτη γραμμή)
+2. item_code - Κωδικός Κομματιών
+3. batch_number - Αρ. Παρτίδας
+4. scheduled_quantity - Ποσότητα Προγραμματισμού (αριθμός)
+5. initial_qc_stock_pull - Αντληση από Stock (checkbox, ίσως με αριθμό)
+6. initial_qc_remake - Remake (checkbox, ίσως με αριθμό)
+7. initial_qc_rusty - Σκουριασμένα (checkbox)
+8. initial_qc_scratches_dents - Γδαρσίματα/Κτυπήματα (checkbox)
+9. initial_qc_oils_primers_dirt - Λάδια/Αστάρια/Ακαθαρσίες (checkbox)
+10. initial_qc_other_issues - Άλλα (checkbox)
+11. required_treatments_zink - Zink (checkbox)
+12. required_treatments_sanding - Τρίψιμο (checkbox)
+13. required_treatments_color_masking - Διχρωμίες-Masking (checkbox)
+14. required_treatments_fillers_silicone - Ισοπό,Σιλικόνη,ΚΤΛ (checkbox)
+15. additional_treatments_total_pieces - Σύνολο επιπρόσθετων κομματιών (αριθμός)
+16. additional_treatments_time_mins - Εκτίμηση Χρόνου Λεπτά (αριθμός)
+17. paint_preparation_hanging - Κρέμασμα (checkbox, ίσως με αριθμό ΜΕΣΑ)
+18. paint_preparation_oven_cleaning - Καθαρισμός Φούρνου (checkbox, ίσως με αριθμό ΜΕΣΑ)
+19. rework_from_dept_head - Επαναπροωθήσεις από Τμηματάρχη (αριθμός)
+20. total_delivery_quantity - Συνολική Ποσότητα Παράδοσης (αριθμός)
+21. destroyed_beyond_repair - Καταστροφή-Πέραν Επιδιόρθωσης (checkbox)
 
-ΚΑΝΟΝΕΣ:
-- Checkboxes: true=✓/x/✗/●, false=άδειο
-- Αριθμοί: null αν κενό (ΌΧΙ 0), date=YYYY-MM-DD
-- Αν αριθμός μέσα σε checkbox (π.χ. 10 στο Κρέμασμα) → checkbox=true, όχι αριθμός παράδοσης
+Κανόνες:
+- Checkboxes: true αν τσεκαρισμένο (✓, x, ✗, ●), false αν άδειο
+- Αριθμοί: null (ΌΧΙ 0) αν δεν φαίνεται ή κελί είναι άδειο (προσοχή 0 vs O, 1 vs l)
+- Ημερομηνία: YYYY-MM-DD
+- Αν κελί αριθμητικό είναι κενό/άδειο → null, ΌΧΙ 0
 
-ΕΠΙΚΥΡΩΣΗ:
-- paint_preparation_hanging=true & total_delivery_quantity=null/0 → ERROR
-- total_delivery_quantity > (scheduled_quantity + rework_from_dept_head) → WARNING
+ΕΠΙΚΥΡΩΣΗ (στο issues):
+- Έλεγξε αν paint_preparation_hanging = true και total_delivery_quantity = null/0/έλλειπει → ΑΛΕΡΤ: "Κρέμασμα = ✓ αλλά Συνολική Ποσότητα Παράδοσης λείπει/0"
+- Έλεγξε αν total_delivery_quantity > scheduled_quantity + rework_from_dept_head → ΑΛΕΡΤ: "Παράδοση > Προγρ/σμού + Επαναπροωθήσεις"
+- Έλεγξε αν κάποιο boolean=true αλλά total_delivery_quantity=0 (δηλ. δεν υπάρχει αριθμός στη σειρά) → ΑΛΕΡΤ
+- Δεν εξάγεις issue αν το boolean=false (άδειο κελί)
 - confidence_score: 0-100`,
     file_urls: [file_url],
     response_json_schema: {
