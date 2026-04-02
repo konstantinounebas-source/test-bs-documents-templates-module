@@ -67,7 +67,20 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     window.addEventListener("mouseup", onUp);
   }, []);
 
-  const [lines, setLines] = useState(() => ocrResult?.corrected_data?.production_lines || ocrResult?.extracted_data?.production_lines || []);
+  const booleanKeys = COLUMNS.filter(c => c.boolean).map(c => c.key);
+
+  const autofillBooleans = (rawLines) =>
+    rawLines.map(line => {
+      const updated = { ...line };
+      booleanKeys.forEach(key => {
+        if (!updated[key]) updated[key] = updated.total_delivery_quantity || 0;
+      });
+      return updated;
+    });
+
+  const [lines, setLines] = useState(() =>
+    autofillBooleans(ocrResult?.corrected_data?.production_lines || ocrResult?.extracted_data?.production_lines || [])
+  );
   const [date, setDate] = useState(ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "");
   const [department, setDepartment] = useState(initialDepartment || "");
   const [confirmed, setConfirmed] = useState(false);
@@ -274,7 +287,6 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                                     type="number"
                                     value={line[col.key] || ""}
                                     onChange={e => updateLine(lineIdx, col.key, e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)}
-                                    onFocus={e => { if (!line[col.key]) { updateLine(lineIdx, col.key, line.total_delivery_quantity || 0); e.target.select(); } }}
                                     min={0}
                                     className={`w-full text-xs border rounded px-1 py-0.5 outline-none focus:border-blue-400 ${cellBorder} ${cellBg}`}
                                   />
