@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 const PRODUCTION_FORM_SCHEMA = {
   type: "object",
   properties: {
-    date: { type: "string", description: "Ημερομηνία παραγωγής (format: YYYY-MM-DD)" },
+    date: { type: "string", description: "Ημερομηνία παραγωγής (format: dd/mm/yyyy)" },
     production_lines: {
       type: "array",
       items: {
@@ -74,6 +74,9 @@ Deno.serve(async (req) => {
 18. rework_from_dept_head (ΑΡΙΘΜΟΣ): Επαναπροωθήσεις από Τμηματάρχη.
 19. total_delivery_quantity (ΑΡΙΘΜΟΣ): Συνολική Ποσότητα Παράδοσης.
 20. destroyed_beyond_repair (ΑΡΙΘΜΟΣ): Καταστροφή – Πέραν Επιδιόρθωσης.
+
+ΓΕΝΙΚΕΣ ΟΔΗΓΙΕΣ:
+- Εξάγε την **date** σε μορφή dd/mm/yyyy.
 
 ΚΑΝΟΝΕΣ ΕΞΑΓΩΓΗΣ ΤΙΜΩΝ:
 1. Σαφείς Αριθμοί: Εάν κελί περιέχει αριθμό, εξάγε τον αριθμό.
