@@ -73,8 +73,9 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     rawLines.map(line => {
       const updated = { ...line };
       booleanKeys.forEach(key => {
-        // Only autofill if OCR already detected a truthy value (true, 1, "yes", etc.)
-        if (updated[key] && updated[key] !== 0) {
+        // Only autofill if: checkbox is true (OCR detected tick) AND no number was extracted in that cell
+        // If a number exists in the checkbox cell, it means the checkbox is ticked but has secondary number - don't autofill
+        if (updated[key] === true) {
           updated[key] = updated.total_delivery_quantity || 0;
         }
       });
