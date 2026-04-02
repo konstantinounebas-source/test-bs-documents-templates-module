@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Check } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Check, Maximize2, Minimize2 } from "lucide-react";
 
 // Columns in the exact order of the physical form
 const COLUMNS = [
@@ -47,6 +47,25 @@ const GROUP_COLORS = {
 export default function OCRVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, department: initialDepartment, departments = [] }) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const [imageFullscreen, setImageFullscreen] = useState(false);
+  const [imagePanelWidth, setImagePanelWidth] = useState(35); // percent
+  const isDragging = useRef(false);
+  const containerRef = useRef(null);
+
+  const handleDividerMouseDown = useCallback((e) => {
+    e.preventDefault();
+    isDragging.current = true;
+    const onMove = (ev) => {
+      if (!isDragging.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const pct = ((ev.clientX - rect.left) / rect.width) * 100;
+      setImagePanelWidth(Math.min(80, Math.max(15, pct)));
+    };
+    const onUp = () => { isDragging.current = false; window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, []);
+
   const [lines, setLines] = useState(() => ocrResult?.corrected_data?.production_lines || ocrResult?.extracted_data?.production_lines || []);
   const [date, setDate] = useState(ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "");
   const [department, setDepartment] = useState(initialDepartment || "");
@@ -97,9 +116,12 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
           {warningCount > 0 && <Badge className="bg-amber-100 text-amber-700 text-xs">{warningCount} Προειδοποιήσεις</Badge>}
         </DialogHeader>
 
-        <div className="flex h-[calc(96vh-100px)]">
+        <div className="flex h-[calc(96vh-100px)]" ref={containerRef}>
           {/* LEFT: Image/PDF viewer */}
-          <div className="w-[35%] border-r bg-slate-100 flex flex-col flex-shrink-0">
+          <div
+            className="border-r bg-slate-100 flex flex-col flex-shrink-0"
+            style={{ width: imageFullscreen ? "100%" : `${imagePanelWidth}%`, transition: isDragging.current ? "none" : "width 0.15s" }}
+          >
             <div className="flex items-center gap-2 px-3 py-2 border-b bg-white text-xs">
               <span className="text-slate-500 font-medium flex-1">Αρχείο</span>
               {isImage && (
@@ -111,6 +133,9 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
               )}
               <button onClick={() => setRotation(r => r - 90)} className="p-1 hover:bg-slate-100 rounded"><RotateCcw className="w-3.5 h-3.5" /></button>
               <button onClick={() => setRotation(r => r + 90)} className="p-1 hover:bg-slate-100 rounded"><RotateCw className="w-3.5 h-3.5" /></button>
+              <button onClick={() => setImageFullscreen(v => !v)} className="p-1 hover:bg-slate-100 rounded" title={imageFullscreen ? "Μικρότερο" : "Μεγιστοποίηση εικόνας"}>
+                {imageFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-blue-600" /> : <Maximize2 className="w-3.5 h-3.5 text-slate-500" />}
+              </button>
             </div>
             <div className="flex-1 overflow-auto flex items-start justify-center p-4">
               {isImage ? (
@@ -126,8 +151,17 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
             </div>
           </div>
 
+          {/* Drag divider */}
+          {!imageFullscreen && (
+            <div
+              onMouseDown={handleDividerMouseDown}
+              className="w-1.5 bg-slate-200 hover:bg-blue-400 cursor-col-resize flex-shrink-0 transition-colors"
+              title="Σύρε για αλλαγή μεγέθους"
+            />
+          )}
+
           {/* RIGHT: Horizontal table editor */}
-          <div className="flex-1 flex flex-col bg-white min-w-0">
+          <div className="flex-1 flex flex-col bg-white min-w-0" style={{ display: imageFullscreen ? "none" : undefined }}>
             {/* Date + department row */}
             <div className="px-4 py-2 border-b bg-slate-50 flex items-center gap-3 flex-shrink-0">
               <span className="text-xs font-semibold text-slate-600">Ημερομηνία:</span>
