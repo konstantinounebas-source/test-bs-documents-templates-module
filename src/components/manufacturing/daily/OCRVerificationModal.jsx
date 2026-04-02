@@ -159,8 +159,8 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
   const [fileValidationIssues, setFileValidationIssues] = useState(() => {
     const issues = [];
 
-    // Check if OCR date matches filename date
-    if (fileParsed.date && convertedOcrDate && convertedOcrDate !== fileParsed.date) {
+    // Check if OCR date matches filename date (only if both exist and are different)
+    if (fileParsed.date && convertedOcrDate && convertedOcrDate.trim() && fileParsed.date.trim() && convertedOcrDate !== fileParsed.date) {
       issues.push({
         field: "date",
         severity: "warning",
