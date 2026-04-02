@@ -229,17 +229,30 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                             onChange={v => updateLine(activeLineIdx, field, v)}
                           />
                         </div>
-                        {fieldIssues.length > 0 && (
-                          <button
-                            onClick={() => {
-                              fieldIssues.forEach(iss => acceptIssue(getIssueKey(iss, issues.indexOf(iss))));
-                            }}
-                            className={`flex-shrink-0 p-0.5 rounded border transition-colors hover:bg-green-50 hover:text-green-700 hover:border-green-400 ${fieldIssues[0].severity === "error" ? "border-red-400 text-red-500 bg-red-50" : "border-amber-400 text-amber-500 bg-amber-50"}`}
-                            title={`Αποδοχή: ${fieldIssues[0].message}`}
-                          >
-                            <Check className="w-3 h-3" />
-                          </button>
-                        )}
+                        {(() => {
+                          const allAccepted = issues
+                            .filter(iss => iss.line_index === activeLineIdx && iss.field === field)
+                            .every((iss, _, arr) => acceptedIssues.has(getIssueKey(iss, issues.indexOf(iss))));
+                          const originalIssues = issues.filter(iss => iss.line_index === activeLineIdx && iss.field === field);
+                          if (originalIssues.length === 0) return null;
+                          return (
+                            <button
+                              onClick={() => {
+                                if (!allAccepted) {
+                                  originalIssues.forEach(iss => acceptIssue(getIssueKey(iss, issues.indexOf(iss))));
+                                }
+                              }}
+                              className={`flex-shrink-0 p-0.5 rounded border transition-colors ${
+                                allAccepted
+                                  ? "border-green-400 text-green-600 bg-green-50 cursor-default"
+                                  : `hover:bg-green-50 hover:text-green-700 hover:border-green-400 ${originalIssues[0].severity === "error" ? "border-red-400 text-red-500 bg-red-50" : "border-amber-400 text-amber-500 bg-amber-50"}`
+                              }`}
+                              title={allAccepted ? "Αποδεκτό" : `Αποδοχή: ${originalIssues[0].message}`}
+                            >
+                              <Check className="w-3 h-3" />
+                            </button>
+                          );
+                        })()}
                       </div>
                     );
                   })}
