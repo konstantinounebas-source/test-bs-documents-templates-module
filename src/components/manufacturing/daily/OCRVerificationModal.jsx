@@ -270,9 +270,14 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                               style={{ width: col.boolean ? "28px" : "52px" }}>
                               <div className="flex items-center justify-center gap-0.5 px-0.5 py-1">
                                 {col.boolean ? (
-                                  <input type="checkbox" checked={!!line[col.key]}
-                                    onChange={e => updateLine(lineIdx, col.key, e.target.checked)}
-                                    className="h-3.5 w-3.5 accent-blue-600" />
+                                  <input
+                                    type="number"
+                                    value={line[col.key] || ""}
+                                    onChange={e => updateLine(lineIdx, col.key, e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)}
+                                    onFocus={e => { if (!line[col.key]) { updateLine(lineIdx, col.key, line.total_delivery_quantity || 0); e.target.select(); } }}
+                                    min={0}
+                                    className={`w-full text-xs border rounded px-1 py-0.5 outline-none focus:border-blue-400 ${cellBorder} ${cellBg}`}
+                                  />
                                 ) : (
                                   <input
                                     type={typeof line[col.key] === "number" ? "number" : "text"}
