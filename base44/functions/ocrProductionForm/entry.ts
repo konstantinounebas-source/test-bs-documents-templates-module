@@ -87,7 +87,37 @@ Deno.serve(async (req) => {
   }
 
   const extracted = { date: result.date, production_lines: result.production_lines };
-  const validationResult = { issues: result.issues || [], confidence_score: result.confidence_score };
+  
+  // Generate issues for numeric fields that got checkbox values
+  const numericFields = [
+    "batch_number", "scheduled_quantity",
+    "initial_qc_stock_pull", "initial_qc_remake",
+    "initial_qc_rusty", "initial_qc_scratches_dents", "initial_qc_oils_primers_dirt", "initial_qc_other_issues",
+    "required_treatments_zink", "required_treatments_sanding", "required_treatments_color_masking", "required_treatments_fillers_silicone",
+    "additional_treatments_total_pieces", "additional_treatments_time_mins",
+    "paint_preparation_hanging", "paint_preparation_oven_cleaning",
+    "rework_from_dept_head", "total_delivery_quantity", "destroyed_beyond_repair"
+  ].filter(f => !["item_code", "destroyed_beyond_repair", "initial_qc_stock_pull", "initial_qc_remake", 
+                    "initial_qc_rusty", "initial_qc_scratches_dents", "initial_qc_oils_primers_dirt", "initial_qc_other_issues",
+                    "required_treatments_zink", "required_treatments_sanding", "required_treatments_color_masking", "required_treatments_fillers_silicone",
+                    "paint_preparation_hanging", "paint_preparation_oven_cleaning"].includes(f));
+  
+  const issues = result.issues || [];
+  (extracted.production_lines || []).forEach((line, lineIdx) => {
+    numericFields.forEach(field => {
+      if (line[field] === true) {
+        issues.push({
+          line_index: lineIdx,
+          field: field,
+          severity: "warning",
+          message: `Βρέθηκε τικ αντί αριθμού - αντικαταστάθηκε με Ποσότητα Παράδοσης`,
+          suggested_fix: `Έχει τιμή: ${line.total_delivery_quantity || 0}`
+        });
+      }
+    });
+  });
+  
+  const validationResult = { issues: issues, confidence_score: result.confidence_score };
 
   return Response.json({
     extracted_data: extracted,

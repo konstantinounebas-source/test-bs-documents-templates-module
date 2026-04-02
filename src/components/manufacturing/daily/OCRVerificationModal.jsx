@@ -67,17 +67,22 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     window.addEventListener("mouseup", onUp);
   }, []);
 
-  const booleanKeys = COLUMNS.filter(c => c.boolean).map(c => c.key);
+  // Numeric fields that might have had a checkbox instead
+  const numericKeys = COLUMNS.filter(c => !c.boolean).map(c => c.key).filter(k => k !== "item_code");
 
-  const autofillBooleans = (rawLines) =>
-    rawLines.map(line => {
-      // Checkboxes stay as booleans - no autofill needed
-      return { ...line };
+  const [lines, setLines] = useState(() => {
+    const rawLines = ocrResult?.corrected_data?.production_lines || ocrResult?.extracted_data?.production_lines || [];
+    return rawLines.map(line => {
+      const updated = { ...line };
+      // If a numeric field has boolean true (OCR detected a checkbox), replace with total_delivery_quantity
+      numericKeys.forEach(key => {
+        if (updated[key] === true) {
+          updated[key] = updated.total_delivery_quantity || null;
+        }
+      });
+      return updated;
     });
-
-  const [lines, setLines] = useState(() =>
-    autofillBooleans(ocrResult?.corrected_data?.production_lines || ocrResult?.extracted_data?.production_lines || [])
-  );
+  });
   const [date, setDate] = useState(ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "");
   const [department, setDepartment] = useState(initialDepartment || "");
   const [confirmed, setConfirmed] = useState(false);
