@@ -24,11 +24,11 @@ const PRODUCTION_FORM_SCHEMA = {
           required_treatments_fillers_silicone: { type: "number", description: "Ισοπό, Σιλικόνη, ΚΤΛ" },
           additional_treatments_total_pieces: { type: "number", description: "Συνολο κομματιών (Τρύπιμα, Ισιωμα ΚΤΛ)" },
           additional_treatments_time_mins: { type: "number", description: "Εκτίμηση Συνολικού Χρόνου (Λεπτά)" },
-          paint_preparation_hanging: { type: "boolean", description: "Κρέμασμα" },
-          paint_preparation_oven_cleaning: { type: "boolean", description: "Καθαρισμός Κομματιών μέσα στον Φούρνο" },
+          paint_preparation_hanging: { type: "number", description: "Κρέμασμα" },
+          paint_preparation_oven_cleaning: { type: "number", description: "Καθαρισμός Κομματιών μέσα στον Φούρνο" },
           rework_from_dept_head: { type: "number", description: "Επαναπροωθήσεις από Τμηματάρχη" },
           total_delivery_quantity: { type: "number", description: "Συνολική Ποσότητα Παράδοσης" },
-          destroyed_beyond_repair: { type: "boolean", description: "Καταστροφή - Πέραν Επιδιόρθωσης" }
+          destroyed_beyond_repair: { type: "number", description: "Καταστροφή - Πέραν Επιδιόρθωσης" }
         }
       }
     }
@@ -52,15 +52,15 @@ Deno.serve(async (req) => {
     model: model,
     prompt: `Εξάγαγε δεδομένα από τη φόρμα ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ.
 
-ΚΑΤΑΝΟΜΗ ΣΤΗΛΩΝ:
-1. date | 2. item_code | 3. batch_number | 4. scheduled_quantity (num)
-5-10. initial_qc_* (bools) | 11-14. required_treatments_* (bools) | 15-16. additional_treatments_* (num) 
-17-18. paint_preparation_* (bools) | 19. rework_from_dept_head (num) | 20. total_delivery_quantity (num) | 21. destroyed_beyond_repair (bool)
+ΚΑΤΑΝΟΜΗ ΣΤΗΛΩΝ - ΌΛΟΙ ΑΡΙΘΜΟΙ:
+1. date | 2. item_code | 3. batch_number | 4. scheduled_quantity
+5-10. initial_qc_* (αριθμός κομματιών με το πρόβλημα) | 11-14. required_treatments_*
+15-16. additional_treatments_* | 17-18. paint_preparation_* | 19. rework_from_dept_head | 20. total_delivery_quantity | 21. destroyed_beyond_repair
 
 ΚΑΝΟΝΕΣ:
-- Checkboxes: true=✓/x/✗/●, false=άδειο
-- Αριθμοί: null αν κενό (ΌΧΙ 0)
-- Αν αριθμός μέσα σε checkbox → checkbox=true, δεν είναι αριθμός παράδοσης
+- Αν κελί έχει αριθμό → εξάγε τον αριθμό
+- Αν κελί είναι κενό → null (ΌΧΙ 0)
+- null αν δεν υπάρχει δεδομένα
 - confidence_score: 0-100`,
     file_urls: [file_url],
     response_json_schema: {
@@ -92,34 +92,7 @@ Deno.serve(async (req) => {
 
   const extracted = { date: result.date, production_lines: result.production_lines };
   
-  // Generate issues for numeric fields that got checkbox values
-  const numericFields = [
-    "batch_number", "scheduled_quantity",
-    "initial_qc_stock_pull", "initial_qc_remake",
-    "initial_qc_rusty", "initial_qc_scratches_dents", "initial_qc_oils_primers_dirt", "initial_qc_other_issues",
-    "required_treatments_zink", "required_treatments_sanding", "required_treatments_color_masking", "required_treatments_fillers_silicone",
-    "additional_treatments_total_pieces", "additional_treatments_time_mins",
-    "paint_preparation_hanging", "paint_preparation_oven_cleaning",
-    "rework_from_dept_head", "total_delivery_quantity", "destroyed_beyond_repair"
-  ].filter(f => !["item_code", "destroyed_beyond_repair", "initial_qc_stock_pull", "initial_qc_remake", 
-                    "initial_qc_rusty", "initial_qc_scratches_dents", "initial_qc_oils_primers_dirt", "initial_qc_other_issues",
-                    "required_treatments_zink", "required_treatments_sanding", "required_treatments_color_masking", "required_treatments_fillers_silicone",
-                    "paint_preparation_hanging", "paint_preparation_oven_cleaning"].includes(f));
-  
   const issues = result.issues || [];
-  (extracted.production_lines || []).forEach((line, lineIdx) => {
-    numericFields.forEach(field => {
-      if (line[field] === true) {
-        issues.push({
-          line_index: lineIdx,
-          field: field,
-          severity: "warning",
-          message: `Βρέθηκε τικ αντί αριθμού - αντικαταστάθηκε με Ποσότητα Παράδοσης`,
-          suggested_fix: `Έχει τιμή: ${line.total_delivery_quantity || 0}`
-        });
-      }
-    });
-  });
   
   const validationResult = { issues: issues, confidence_score: result.confidence_score };
 
