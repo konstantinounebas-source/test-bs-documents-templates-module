@@ -97,7 +97,7 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
 
         <div className="flex h-[calc(96vh-100px)]">
           {/* LEFT: Image/PDF viewer */}
-          <div className="w-[40%] border-r bg-slate-100 flex flex-col flex-shrink-0">
+          <div className="w-[35%] border-r bg-slate-100 flex flex-col flex-shrink-0">
             <div className="flex items-center gap-2 px-3 py-2 border-b bg-white text-xs">
               <span className="text-slate-500 font-medium flex-1">Αρχείο</span>
               {isImage && (
@@ -175,17 +175,17 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                     <th className="bg-slate-100 border border-slate-300 px-1 py-1 text-[10px] text-slate-500">✓</th>
                   </tr>
                   {/* Column label row */}
-                  <tr>
+                  <tr style={{ height: "80px" }}>
                     {COLUMNS.map(col => (
                       <th key={col.key}
-                        className="bg-white border border-slate-200 px-1 py-1 font-medium text-slate-600 whitespace-nowrap"
-                        style={{ writingMode: "vertical-rl", textOrientation: "mixed", transform: "rotate(180deg)", minHeight: "80px", maxWidth: "36px", verticalAlign: "bottom" }}>
-                        <span style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", display: "block", lineHeight: "1.2" }}>
+                        className="bg-white border border-slate-200 font-medium text-slate-600 text-[10px] align-bottom p-0"
+                        style={{ maxWidth: col.boolean ? "28px" : "52px", width: col.boolean ? "28px" : "52px" }}>
+                        <div style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", padding: "4px 2px", lineHeight: "1.2", whiteSpace: "normal", maxHeight: "88px", overflow: "hidden" }}>
                           {col.label}
-                        </span>
+                        </div>
                       </th>
                     ))}
-                    <th className="bg-white border border-slate-200 px-1 py-1 text-slate-400 text-[10px]"></th>
+                    <th className="bg-white border border-slate-200 px-1 text-slate-400 text-[10px]" style={{ width: "28px" }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -205,17 +205,18 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                           const allAccepted = issues.filter(iss => iss.line_index === lineIdx && iss.field === col.key)
                             .every(iss => acceptedIssues.has(getIssueKey(iss, issues.indexOf(iss))));
                           const origIssues = issues.filter(iss => iss.line_index === lineIdx && iss.field === col.key);
-
                           const cellBorder = hasErr ? "border-red-400" : hasWarn ? "border-amber-400" : "border-slate-200";
-                          const cellBg = hasErr ? "bg-red-50" : hasWarn ? "bg-amber-50" : "bg-transparent";
+                          const cellBg = hasErr ? "bg-red-50" : hasWarn ? "bg-amber-50" : "";
 
                           return (
-                            <td key={col.key} className={`border border-slate-200 px-0.5 py-0.5 relative`} style={{ minWidth: col.boolean ? "32px" : "56px" }}>
-                              <div className="flex items-center gap-0.5">
+                            <td key={col.key}
+                              className={`border border-slate-200 p-0 ${hasErr ? "bg-red-50" : hasWarn ? "bg-amber-50" : ""}`}
+                              style={{ width: col.boolean ? "28px" : "52px" }}>
+                              <div className="flex items-center justify-center gap-0.5 px-0.5 py-1">
                                 {col.boolean ? (
                                   <input type="checkbox" checked={!!line[col.key]}
                                     onChange={e => updateLine(lineIdx, col.key, e.target.checked)}
-                                    className="h-3.5 w-3.5 accent-blue-600 mx-auto block" />
+                                    className="h-3.5 w-3.5 accent-blue-600" />
                                 ) : (
                                   <input
                                     type={typeof line[col.key] === "number" ? "number" : "text"}
@@ -223,17 +224,16 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                                     onChange={e => updateLine(lineIdx, col.key, typeof line[col.key] === "number" ? parseFloat(e.target.value) || 0 : e.target.value)}
                                     min={0}
                                     className={`w-full text-xs border rounded px-1 py-0.5 outline-none focus:border-blue-400 ${cellBorder} ${cellBg}`}
-                                    style={{ minWidth: "40px" }}
                                   />
                                 )}
                                 {origIssues.length > 0 && (
                                   <button
                                     onClick={() => origIssues.forEach(iss => acceptIssue(getIssueKey(iss, issues.indexOf(iss))))}
-                                    className={`flex-shrink-0 p-0.5 rounded border transition-colors ${
+                                    className={`flex-shrink-0 rounded border transition-colors ${
                                       allAccepted
                                         ? "border-green-400 text-green-600 bg-green-50 cursor-default"
-                                        : hasErr ? "border-red-400 text-red-500 bg-red-50 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
-                                        : "border-amber-400 text-amber-500 bg-amber-50 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
+                                        : hasErr ? "border-red-400 text-red-500 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
+                                        : "border-amber-400 text-amber-500 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
                                     }`}
                                     title={allAccepted ? "Αποδεκτό" : "Αποδοχή"}
                                   >
