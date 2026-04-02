@@ -230,7 +230,15 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                           />
                         </div>
                         {fieldIssues.length > 0 && (
-                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${fieldIssues[0].severity === "error" ? "bg-red-500" : "bg-amber-400"}`} title={fieldIssues[0].message} />
+                          <button
+                            onClick={() => {
+                              fieldIssues.forEach(iss => acceptIssue(getIssueKey(iss, issues.indexOf(iss))));
+                            }}
+                            className={`flex-shrink-0 p-0.5 rounded border transition-colors hover:bg-green-50 hover:text-green-700 hover:border-green-400 ${fieldIssues[0].severity === "error" ? "border-red-400 text-red-500 bg-red-50" : "border-amber-400 text-amber-500 bg-amber-50"}`}
+                            title={`Αποδοχή: ${fieldIssues[0].message}`}
+                          >
+                            <Check className="w-3 h-3" />
+                          </button>
                         )}
                       </div>
                     );
