@@ -51,15 +51,19 @@ Deno.serve(async (req) => {
 ΕΞΑΓΩΓΗ ΔΕΔΟΜΕΝΩΝ:
 Εξάγαγε ΟΛΕΣ τις γραμμές παραγωγής. Κάθε γραμμή = ένας κωδικός κομματιού.
 
-ΣΗΜΑΝΤΙΚΟ: Αν υπάρχει αριθμός ΜΕΣΑ σε checkbox κελί (π.χ. "6" ή "10" μέσα στο Κρέμασμα), αυτό σημαίνει το checkbox είναι τσεκαρισμένο. Ο αριθμός είναι δευτερεύων και δεν πρέπει να αντιστοιχηθεί σε άλλο κελί.
+ΣΗΜΑΝΤΙΚΟ ΓΙΑ CHECKBOX ΚΕΛΙΑ ΜΕ ΑΡΙΘΜΟΥΣ:
+Όταν ένα checkbox κελί (π.χ. paint_preparation_hanging "Κρέμασμα") περιέχει αριθμό (π.χ. "10"), αυτό σημαίνει:
+- paint_preparation_hanging = true (η κουτίστρα είναι τσεκαρισμένη)
+- Ο αριθμός που φαίνεται ΜΕΣΑ στο κελί είναι δευτερεύων - δεν αντιστοιχεί σε άλλο πεδίο
+- Ο αριθμός στο κελί κρέμασμα δεν πρέπει να μεταφερθεί σε total_delivery_quantity
 
-Στήλες φόρμας (αριστερά → δεξιά):
+ΚΑΤΑΝΟΜΗ ΣΤΗΛΩΝ (αριστερά → δεξιά):
 1. Ημερομηνία (μόνο πρώτη γραμμή)
 2. item_code - Κωδικός Κομματιών
 3. batch_number - Αρ. Παρτίδας
 4. scheduled_quantity - Ποσότητα Προγραμματισμού (αριθμός)
-5. initial_qc_stock_pull - Αντληση από Stock (checkbox)
-6. initial_qc_remake - Remake (checkbox)
+5. initial_qc_stock_pull - Αντληση από Stock (checkbox, ίσως με αριθμό)
+6. initial_qc_remake - Remake (checkbox, ίσως με αριθμό)
 7. initial_qc_rusty - Σκουριασμένα (checkbox)
 8. initial_qc_scratches_dents - Γδαρσίματα/Κτυπήματα (checkbox)
 9. initial_qc_oils_primers_dirt - Λάδια/Αστάρια/Ακαθαρσίες (checkbox)
@@ -68,10 +72,10 @@ Deno.serve(async (req) => {
 12. required_treatments_sanding - Τρίψιμο (checkbox)
 13. required_treatments_color_masking - Διχρωμίες-Masking (checkbox)
 14. required_treatments_fillers_silicone - Ισοπό,Σιλικόνη,ΚΤΛ (checkbox)
-15. additional_treatments_total_pieces - Συνολο επιπρόσθετων κομματιών (αριθμός)
+15. additional_treatments_total_pieces - Σύνολο επιπρόσθετων κομματιών (αριθμός)
 16. additional_treatments_time_mins - Εκτίμηση Χρόνου Λεπτά (αριθμός)
-17. paint_preparation_hanging - Κρέμασμα (checkbox)
-18. paint_preparation_oven_cleaning - Καθαρισμός Φούρνου (checkbox)
+17. paint_preparation_hanging - Κρέμασμα (checkbox, ίσως με αριθμό ΜΕΣΑ)
+18. paint_preparation_oven_cleaning - Καθαρισμός Φούρνου (checkbox, ίσως με αριθμό ΜΕΣΑ)
 19. rework_from_dept_head - Επαναπροωθήσεις από Τμηματάρχη (αριθμός)
 20. total_delivery_quantity - Συνολική Ποσότητα Παράδοσης (αριθμός)
 21. destroyed_beyond_repair - Καταστροφή-Πέραν Επιδιόρθωσης (checkbox)
