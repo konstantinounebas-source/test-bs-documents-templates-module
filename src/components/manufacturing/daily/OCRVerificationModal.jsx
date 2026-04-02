@@ -73,7 +73,10 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     rawLines.map(line => {
       const updated = { ...line };
       booleanKeys.forEach(key => {
-        if (!updated[key]) updated[key] = updated.total_delivery_quantity || 0;
+        // Only autofill if OCR already detected a truthy value (true, 1, "yes", etc.)
+        if (updated[key] && updated[key] !== 0) {
+          updated[key] = updated.total_delivery_quantity || 0;
+        }
       });
       return updated;
     });
