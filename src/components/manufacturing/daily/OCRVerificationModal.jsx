@@ -118,7 +118,7 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
           {warningCount > 0 && <Badge className="bg-amber-100 text-amber-700 text-xs">{warningCount} Προειδοποιήσεις</Badge>}
           <button
             onClick={() => setModalFullscreen(v => !v)}
-            className="ml-auto p-1.5 hover:bg-slate-200 rounded transition-colors"
+            className="ml-auto mr-8 p-1.5 hover:bg-slate-200 rounded transition-colors"
             title={modalFullscreen ? "Μικρότερο παράθυρο" : "Πλήρης οθόνη"}
           >
             {modalFullscreen ? <Minimize2 className="w-4 h-4 text-blue-600" /> : <Maximize2 className="w-4 h-4 text-slate-500" />}
