@@ -191,6 +191,7 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssi
           fileName={item.file.name}
           ocrResult={ocrResult}
           department={dept}
+          departments={departments}
           onConfirm={(confirmed) => {
             setShowOcrModal(false);
             toast.success(`✅ OCR επιβεβαιώθηκε: ${confirmed.production_lines?.length || 0} γραμμές`);

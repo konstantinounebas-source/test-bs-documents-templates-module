@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Check } from "lucide-react";
 
 // Columns in the exact order of the physical form
@@ -43,11 +44,12 @@ const GROUP_COLORS = {
   "Λοιπά":                    "bg-rose-50 text-rose-800",
 };
 
-export default function OCRVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, department }) {
+export default function OCRVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, department: initialDepartment, departments = [] }) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [lines, setLines] = useState(() => ocrResult?.corrected_data?.production_lines || ocrResult?.extracted_data?.production_lines || []);
   const [date, setDate] = useState(ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "");
+  const [department, setDepartment] = useState(initialDepartment || "");
   const [confirmed, setConfirmed] = useState(false);
   const [acceptedIssues, setAcceptedIssues] = useState(new Set());
 
@@ -131,9 +133,20 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
               <span className="text-xs font-semibold text-slate-600">Ημερομηνία:</span>
               <input type="date" value={date} onChange={e => setDate(e.target.value)}
                 className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
-              {department && (
+              {departments.length > 0 ? (
+                <Select value={department} onValueChange={setDepartment}>
+                  <SelectTrigger className="h-7 text-xs w-36 border-slate-200">
+                    <SelectValue placeholder="Τμήμα..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments.map(d => (
+                      <SelectItem key={d} value={d} className="text-xs">{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : department ? (
                 <span className="text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1">{department}</span>
-              )}
+              ) : null}
               <span className="text-xs text-slate-400 ml-auto">{lines.length} γραμμ{lines.length === 1 ? "ή" : "ές"}</span>
             </div>
 
