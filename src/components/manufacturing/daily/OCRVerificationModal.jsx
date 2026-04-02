@@ -352,6 +352,10 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
             {/* Confirm footer */}
             <div className="border-t px-4 py-3 flex items-center gap-3 bg-white flex-shrink-0">
               <Button variant="outline" size="sm" className="text-xs" onClick={onClose}>Ακύρωση</Button>
+              <Button variant="outline" size="sm" className="text-xs" 
+                onClick={() => setLines(prev => [...prev, COLUMNS.reduce((acc, col) => ({ ...acc, [col.key]: null }), {})])}>
+                + Προσθήκη Γραμμής
+              </Button>
               <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
                 onClick={() => { setConfirmed(true); onConfirm({ date, production_lines: lines }); }}
                 disabled={confirmed}>
