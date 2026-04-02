@@ -52,16 +52,40 @@ Deno.serve(async (req) => {
     model: model,
     prompt: `Εξάγαγε δεδομένα από τη φόρμα ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ.
 
-ΚΑΤΑΝΟΜΗ ΣΤΗΛΩΝ - ΌΛΟΙ ΑΡΙΘΜΟΙ:
-1. date | 2. item_code | 3. batch_number | 4. scheduled_quantity
-5-10. initial_qc_* (αριθμός κομματιών με το πρόβλημα) | 11-14. required_treatments_*
-15-16. additional_treatments_* | 17-18. paint_preparation_* | 19. rework_from_dept_head | 20. total_delivery_quantity | 21. destroyed_beyond_repair
+ΚΑΤΑΝΟΜΗ ΚΑΙ ΣΕΙΡΑ ΣΤΗΛΩΝ ΑΝΑ ΓΡΑΜΜΗ ΠΑΡΑΓΩΓΗΣ (σε αυτήν ακριβώς τη σειρά):
 
-ΚΑΝΟΝΕΣ:
-- Αν κελί έχει αριθμό → εξάγε τον αριθμό
-- Αν κελί είναι κενό → null (ΌΧΙ 0)
-- null αν δεν υπάρχει δεδομένα
-- confidence_score: 0-100`,
+1. item_code (ΚΕΙΜΕΝΟ): Κωδικός Κομματιών (π.χ. C50, C33).
+2. batch_number (ΑΡΙΘΜΟΣ): Αριθμός Παρτίδας.
+3. scheduled_quantity (ΑΡΙΘΜΟΣ): Ποσότητα Προγραμματισμού.
+4. initial_qc_stock_pull (ΑΡΙΘΜΟΣ): Αντλ. από Stock (Πόσα κομμάτια τραβήχτηκαν από το αρχικό stock για QC).
+5. initial_qc_remake (ΑΡΙΘΜΟΣ): Remake (Πόσα κομμάτια προέρχονται από διαδικασία remake).
+6. initial_qc_rusty (ΑΡΙΘΜΟΣ): Σκουριασμένα (Πόσα κομμάτια βρέθηκαν σκουριασμένα).
+7. initial_qc_scratches_dents (ΑΡΙΘΜΟΣ): Γδαρσίματα / Κτυπήματα.
+8. initial_qc_oils_primers_dirt (ΑΡΙΘΜΟΣ): Λάδια / Αστάρια / Ακαθαρσίες.
+9. initial_qc_other_issues (ΑΡΙΘΜΟΣ): Άλλα θέματα QC.
+10. required_treatments_zink (ΑΡΙΘΜΟΣ): Zink (Πόσα κομμάτια απαιτούν Zink).
+11. required_treatments_sanding (ΑΡΙΘΜΟΣ): Τρίψιμο.
+12. required_treatments_color_masking (ΑΡΙΘΜΟΣ): Διχρωμίες – Masking.
+13. required_treatments_fillers_silicone (ΑΡΙΘΜΟΣ): Ισοπό, Σιλικόνη, ΚΤΛ.
+14. additional_treatments_total_pieces (ΑΡΙΘΜΟΣ): Σύνολο κομματιών για πρόσθετες κατεργασίες.
+15. additional_treatments_time_mins (ΑΡΙΘΜΟΣ): Εκτίμηση χρόνου σε λεπτά.
+16. paint_preparation_hanging (ΑΡΙΘΜΟΣ): Κρέμασμα.
+17. paint_preparation_oven_cleaning (ΑΡΙΘΜΟΣ): Καθαρισμός φούρνου.
+18. rework_from_dept_head (ΑΡΙΘΜΟΣ): Επαναπροωθήσεις από Τμηματάρχη.
+19. total_delivery_quantity (ΑΡΙΘΜΟΣ): Συνολική Ποσότητα Παράδοσης.
+20. destroyed_beyond_repair (ΑΡΙΘΜΟΣ): Καταστροφή – Πέραν Επιδιόρθωσης.
+
+ΚΑΝΟΝΕΣ ΕΞΑΓΩΓΗΣ ΤΙΜΩΝ:
+1. Σαφείς Αριθμοί: Εάν κελί περιέχει αριθμό, εξάγε τον αριθμό.
+2. Κενά Κελιά: Εάν κελί είναι κενό → null (ΟΧΙ 0, εκτός αν το 0 είναι σαφώς γραμμένο).
+3. Ειδική Χειρισμός 'Τικ' (✓): Εάν κελί έχει τικ/σύμβολο αντί αριθμού:
+   - Τιμή: Εξάγε την τιμή του total_delivery_quantity για την ίδια γραμμή.
+   - Warning: Πρόσθεσε warning "Εντοπίστηκε 'τικ' αντί για αριθμός, τιμή συμπληρώθηκε από total_delivery_quantity."
+4. Μη Αριθμητικά Δεδομένα: Εάν κελί έχει μη-αριθμητικό κείμενο (ΝΑ, ΟΧΙ, κ.λπ.):
+   - Τιμή: null
+   - Warning: "Βρέθηκαν μη-αριθμητικά δεδομένα όπου αναμενόταν αριθμός."
+
+confidence_score: Βαθμολογία 0-100 για εμπιστοσύνη OCR.`,
     file_urls: [file_url],
     response_json_schema: {
       type: "object",
