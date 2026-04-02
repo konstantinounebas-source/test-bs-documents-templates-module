@@ -45,52 +45,18 @@ Deno.serve(async (req) => {
 
   // ── Single-pass OCR + validation via gemini_3_flash (faster) ────────────────
   const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    model: "gemini_3_flash",
-    prompt: `Αναλύσε αυτή την εικόνα που είναι μια φόρμα "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ" (Daily Production Form) στα ελληνικά.
+    model: "gpt_5_mini",
+    prompt: `Εξάγαγε δεδομένα από τη φόρμα ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ.
 
-ΕΞΑΓΩΓΗ ΔΕΔΟΜΕΝΩΝ:
-Εξάγαγε ΟΛΕΣ τις γραμμές παραγωγής. Κάθε γραμμή = ένας κωδικός κομματιού.
+ΚΑΤΑΝΟΜΗ ΣΤΗΛΩΝ:
+1. date | 2. item_code | 3. batch_number | 4. scheduled_quantity (num)
+5-10. initial_qc_* (bools) | 11-14. required_treatments_* (bools) | 15-16. additional_treatments_* (num) 
+17-18. paint_preparation_* (bools) | 19. rework_from_dept_head (num) | 20. total_delivery_quantity (num) | 21. destroyed_beyond_repair (bool)
 
-ΣΗΜΑΝΤΙΚΟ ΓΙΑ CHECKBOX ΚΕΛΙΑ ΜΕ ΑΡΙΘΜΟΥΣ:
-Όταν ένα checkbox κελί (π.χ. paint_preparation_hanging "Κρέμασμα") περιέχει αριθμό (π.χ. "10"), αυτό σημαίνει:
-- paint_preparation_hanging = true (η κουτίστρα είναι τσεκαρισμένη)
-- Ο αριθμός που φαίνεται ΜΕΣΑ στο κελί είναι δευτερεύων - δεν αντιστοιχεί σε άλλο πεδίο
-- Ο αριθμός στο κελί κρέμασμα δεν πρέπει να μεταφερθεί σε total_delivery_quantity
-
-ΚΑΤΑΝΟΜΗ ΣΤΗΛΩΝ (αριστερά → δεξιά):
-1. Ημερομηνία (μόνο πρώτη γραμμή)
-2. item_code - Κωδικός Κομματιών
-3. batch_number - Αρ. Παρτίδας
-4. scheduled_quantity - Ποσότητα Προγραμματισμού (αριθμός)
-5. initial_qc_stock_pull - Αντληση από Stock (checkbox, ίσως με αριθμό)
-6. initial_qc_remake - Remake (checkbox, ίσως με αριθμό)
-7. initial_qc_rusty - Σκουριασμένα (checkbox)
-8. initial_qc_scratches_dents - Γδαρσίματα/Κτυπήματα (checkbox)
-9. initial_qc_oils_primers_dirt - Λάδια/Αστάρια/Ακαθαρσίες (checkbox)
-10. initial_qc_other_issues - Άλλα (checkbox)
-11. required_treatments_zink - Zink (checkbox)
-12. required_treatments_sanding - Τρίψιμο (checkbox)
-13. required_treatments_color_masking - Διχρωμίες-Masking (checkbox)
-14. required_treatments_fillers_silicone - Ισοπό,Σιλικόνη,ΚΤΛ (checkbox)
-15. additional_treatments_total_pieces - Σύνολο επιπρόσθετων κομματιών (αριθμός)
-16. additional_treatments_time_mins - Εκτίμηση Χρόνου Λεπτά (αριθμός)
-17. paint_preparation_hanging - Κρέμασμα (checkbox, ίσως με αριθμό ΜΕΣΑ)
-18. paint_preparation_oven_cleaning - Καθαρισμός Φούρνου (checkbox, ίσως με αριθμό ΜΕΣΑ)
-19. rework_from_dept_head - Επαναπροωθήσεις από Τμηματάρχη (αριθμός)
-20. total_delivery_quantity - Συνολική Ποσότητα Παράδοσης (αριθμός)
-21. destroyed_beyond_repair - Καταστροφή-Πέραν Επιδιόρθωσης (checkbox)
-
-Κανόνες:
-- Checkboxes: true αν τσεκαρισμένο (✓, x, ✗, ●), false αν άδειο
-- Αριθμοί: null (ΌΧΙ 0) αν δεν φαίνεται ή κελί είναι άδειο (προσοχή 0 vs O, 1 vs l)
-- Ημερομηνία: YYYY-MM-DD
-- Αν κελί αριθμητικό είναι κενό/άδειο → null, ΌΧΙ 0
-
-ΕΠΙΚΥΡΩΣΗ (στο issues):
-- Έλεγξε αν paint_preparation_hanging = true και total_delivery_quantity = null/0/έλλειπει → ΑΛΕΡΤ: "Κρέμασμα = ✓ αλλά Συνολική Ποσότητα Παράδοσης λείπει/0"
-- Έλεγξε αν total_delivery_quantity > scheduled_quantity + rework_from_dept_head → ΑΛΕΡΤ: "Παράδοση > Προγρ/σμού + Επαναπροωθήσεις"
-- Έλεγξε αν κάποιο boolean=true αλλά total_delivery_quantity=0 (δηλ. δεν υπάρχει αριθμός στη σειρά) → ΑΛΕΡΤ
-- Δεν εξάγεις issue αν το boolean=false (άδειο κελί)
+ΚΑΝΟΝΕΣ:
+- Checkboxes: true=✓/x/✗/●, false=άδειο
+- Αριθμοί: null αν κενό (ΌΧΙ 0)
+- Αν αριθμός μέσα σε checkbox → checkbox=true, δεν είναι αριθμός παράδοσης
 - confidence_score: 0-100`,
     file_urls: [file_url],
     response_json_schema: {
