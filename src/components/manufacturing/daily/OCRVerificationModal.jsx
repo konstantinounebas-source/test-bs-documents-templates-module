@@ -64,7 +64,7 @@ function FieldCell({ fieldKey, value, issuesForField, onChange, disabled }) {
   );
 }
 
-export default function OCRVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm }) {
+export default function OCRVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, department }) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [lines, setLines] = useState(() => ocrResult?.corrected_data?.production_lines || ocrResult?.extracted_data?.production_lines || []);
@@ -161,6 +161,9 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                 onChange={e => setDate(e.target.value)}
                 className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
               />
+              {department && (
+                <span className="text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1">{department}</span>
+              )}
               <span className="text-xs text-slate-400 ml-auto">{lines.length} γραμμ{lines.length === 1 ? "ή" : "ές"}</span>
             </div>
 
@@ -169,8 +172,9 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
               <div className="flex gap-1 px-4 pt-2 flex-wrap border-b pb-2 bg-slate-50">
                 {lines.map((l, i) => {
                   const lIssues = issues.filter(iss => iss.line_index === i);
-                  const hasErr = lIssues.some(iss => iss.severity === "error");
-                  const hasWarn = lIssues.some(iss => iss.severity === "warning");
+                  const allLineIssuesAccepted = lIssues.length > 0 && lIssues.every(iss => acceptedIssues.has(getIssueKey(iss, issues.indexOf(iss))));
+                  const hasErr = !allLineIssuesAccepted && lIssues.some(iss => iss.severity === "error");
+                  const hasWarn = !allLineIssuesAccepted && lIssues.some(iss => iss.severity === "warning");
                   return (
                     <button
                       key={i}

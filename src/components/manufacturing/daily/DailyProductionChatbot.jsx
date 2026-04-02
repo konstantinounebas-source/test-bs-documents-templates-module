@@ -1353,6 +1353,7 @@ ${context}
           fileName={ocrTargetAtt.file_name}
           ocrResult={ocrResult}
           onConfirm={handleOcrConfirm}
+          department={selDept}
         />
       )}
 
