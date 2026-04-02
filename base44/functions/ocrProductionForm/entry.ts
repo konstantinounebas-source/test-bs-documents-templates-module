@@ -52,15 +52,19 @@ Deno.serve(async (req) => {
     model: model,
     prompt: `Εξάγαγε δεδομένα από τη φόρμα ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ.
 
-ΚΑΤΑΝΟΜΗ ΣΤΗΛΩΝ:
-1. date | 2. item_code | 3. batch_number | 4. scheduled_quantity (num)
-5-10. initial_qc_* (bools) | 11-14. required_treatments_* (bools) | 15-16. additional_treatments_* (num) 
-17-18. paint_preparation_* (bools) | 19. rework_from_dept_head (num) | 20. total_delivery_quantity (num) | 21. destroyed_beyond_repair (bool)
+BOOLEAN ΠΕΔΙΑ (checkbox: true αν ✓/x/✗/● ή marked, false αν κενό):
+- initial_qc_stock_pull, initial_qc_remake, initial_qc_rusty, initial_qc_scratches_dents, initial_qc_oils_primers_dirt, initial_qc_other_issues
+- required_treatments_zink, required_treatments_sanding, required_treatments_color_masking, required_treatments_fillers_silicone
+- paint_preparation_hanging, paint_preparation_oven_cleaning
+- destroyed_beyond_repair
 
-ΚΑΝΟΝΕΣ:
-- Checkboxes: true=✓/x/✗/●, false=άδειο
-- Αριθμοί: null αν κενό (ΌΧΙ 0)
-- Αν αριθμός μέσα σε checkbox → checkbox=true, δεν είναι αριθμός παράδοσης
+NUMERIC ΠΕΔΙΑ (αριθμός ή null αν κενό):
+- batch_number, scheduled_quantity, additional_treatments_total_pieces, additional_treatments_time_mins, rework_from_dept_head, total_delivery_quantity
+
+⚠️ ΚΑΝΟΝΕΣ:
+- ΔΕΝ βάζεις αριθμούς σε BOOLEAN πεδία - ΜΟΝΟ true ή false
+- ΔΕΝ βάζεις αριθμούς στην στήλη item_code - ΜΟΝΟ κωδικός
+- Κενό → null για numeric, false για boolean
 - confidence_score: 0-100`,
     file_urls: [file_url],
     response_json_schema: {
