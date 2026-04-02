@@ -43,9 +43,13 @@ Deno.serve(async (req) => {
   const { file_url } = await req.json();
   if (!file_url) return Response.json({ error: 'file_url is required' }, { status: 400 });
 
-  // ── Single-pass OCR + validation via gpt_5_mini ────────────────
+  // Detect file type (PDF or image)
+  const isPDF = file_url.toLowerCase().endsWith('.pdf');
+  const model = isPDF ? "gemini_3_flash" : "gpt_5_mini";
+
+  // ── Single-pass OCR + validation ────────────────
   const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    model: "gpt_5_mini",
+    model: model,
     prompt: `Εξάγαγε δεδομένα από τη φόρμα ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ.
 
 ΚΑΤΑΝΟΜΗ ΣΤΗΛΩΝ:
