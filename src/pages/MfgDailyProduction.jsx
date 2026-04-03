@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ArrowLeft, ClipboardList, Plus, Edit2, Trash2, Save, Loader2, Clock, MessageCircle, CalendarDays } from "lucide-react";
+import { ArrowLeft, ClipboardList, Plus, Edit2, Trash2, Save, Loader2, Clock, CalendarDays } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import TeamTimeExtraTab from "@/components/manufacturing/daily/TeamTimeExtraTab"
 import HelpInTab from "@/components/manufacturing/daily/HelpInTab";
 import ConsumablesActualTab from "@/components/manufacturing/daily/ConsumablesActualTab";
 import AttachmentsPanel from "@/components/manufacturing/daily/AttachmentsPanel";
+import SplitLayoutWithChatbot from "@/components/manufacturing/daily/SplitLayoutWithChatbot";
 
 const DailyProductionChatbot = lazy(() => import("@/components/manufacturing/daily/DailyProductionChatbot"));
 
@@ -28,7 +29,6 @@ export default function MfgDailyProduction() {
   const [activeTab, setActiveTab] = useState("batch_lines");
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [pendingAutoOpen, setPendingAutoOpen] = useState(false);
-  const [showChatbot, setShowChatbot] = useState(false);
 
   // Read URL params
   const urlParams = new URLSearchParams(window.location.search);
@@ -129,10 +129,9 @@ export default function MfgDailyProduction() {
     queryClient.invalidateQueries({ queryKey: ['BatchHeader', selectedDepartment] });
   };
 
-
-
-  return (
-    <div className="min-h-screen bg-slate-50 p-6">
+  // Content component to be wrapped in split layout
+  const PageContent = (
+    <div className="min-h-screen bg-slate-50 p-6 overflow-y-auto">
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={() => navigate(createPageUrl("MfgPlanningWizard"))}>
@@ -261,31 +260,18 @@ export default function MfgDailyProduction() {
                 </div>
                 <div className="lg:col-span-1 h-fit sticky top-20">
                   {selectedBatch && <AttachmentsPanel batchHeaderId={selectedBatch?.id} department={selectedBatch?.department} />}
-                  
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Open Chatbot Button */}
-      {!showChatbot && (
-        <button
-          onClick={() => setShowChatbot(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center justify-center transition-colors"
-          title="Open AI Assistant"
-        >
-          <MessageCircle className="w-6 h-6" />
-        </button>
-      )}
-
-      {/* Floating AI Chatbot */}
-      {showChatbot && (
-        <Suspense fallback={null}>
-          <DailyProductionChatbot departments={departments} />
-        </Suspense>
-      )}
     </div>
+  );
+
+  return (
+    <SplitLayoutWithChatbot departments={departments}>
+      {PageContent}
+    </SplitLayoutWithChatbot>
   );
 }

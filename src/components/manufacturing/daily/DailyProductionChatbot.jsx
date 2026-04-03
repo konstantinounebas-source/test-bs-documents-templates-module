@@ -146,7 +146,7 @@ function DropZone({ onFiles, isUploading }) {
 }
 
 // ─── Main Chatbot ─────────────────────────────────────────────────────────────
-export default function DailyProductionChatbot({ departments = [] }) {
+export default function DailyProductionChatbot({ departments = [], isSplitLayout = false }) {
   const queryClient = useQueryClient();
 
   // panel state
@@ -802,8 +802,8 @@ ${context}
   // ── UI ────────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* Toggle Button - Fixed */}
-      {!open && (
+      {/* Toggle Button - Only shown in floating mode */}
+      {!isSplitLayout && !open && (
         <button
           onClick={() => setOpen(true)}
           className="fixed right-6 bottom-6 z-40 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-2xl transition-all"
@@ -813,8 +813,8 @@ ${context}
         </button>
       )}
 
-      {/* Floating Panel - Draggable & Resizable */}
-      {open && (
+      {/* Floating Panel - Draggable & Resizable (floating mode only) */}
+      {!isSplitLayout && open && (
         <div 
           ref={panelRef}
           className={fullscreen ? "fixed inset-0 z-40 shadow-2xl border-0 bg-white flex flex-col overflow-hidden" : "fixed z-40 shadow-2xl border border-slate-200 bg-white flex flex-col rounded-lg overflow-hidden"}
