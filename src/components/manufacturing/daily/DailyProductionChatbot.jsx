@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Bot, X, Send, Paperclip, Upload, FileText, Image as ImageIcon,
   Download, Eye, Trash2, Calendar,
-  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward, ZoomIn, ZoomOut, Scan
+  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward, ZoomIn, ZoomOut, Scan, AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays, isMonday } from "date-fns";
@@ -1020,16 +1020,35 @@ ${context}
                    </Button>
                  </div>
                  <div className="border-t p-3 space-y-3 overflow-y-auto max-h-80">
+                   {/* Missing item codes warning */}
+                   {existingBatchLines.length > 0 && bundleItemCodes.length > 0 && (
+                     <div className="space-y-1.5">
+                       {existingBatchLines.map((bl) => {
+                         const normalized = normalizeItemCode(bl.item_code);
+                         if (!normalized || bundleItemCodes.includes(normalized)) return null;
+                         return (
+                           <div key={bl.id} className="bg-red-50 border border-red-200 rounded px-2 py-1.5 flex items-start gap-2">
+                             <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-red-600" />
+                             <div className="text-xs text-red-700">
+                               <p className="font-semibold">{normalized} - Δεν υπάρχει στα standards</p>
+                               <p className="text-red-600 mt-0.5">Διαθέσιμα: {bundleItemCodes.slice(0, 3).join(", ")}{bundleItemCodes.length > 3 ? "..." : ""}</p>
+                             </div>
+                           </div>
+                         );
+                       })}
+                     </div>
+                   )}
+
                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold text-slate-700">Batch Lines</p>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleReset}>↩ Αρχή</Button>
-                        <Button variant="ghost" size="sm" className="text-xs h-6 text-slate-400"
-                          onClick={() => skipStep("batch_lines_add")}>
-                          <SkipForward className="w-3 h-3 mr-1" /> Παράλειψη
-                        </Button>
-                      </div>
-                    </div>
+                       <p className="text-xs font-semibold text-slate-700">Batch Lines</p>
+                       <div className="flex gap-1">
+                         <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleReset}>↩ Αρχή</Button>
+                         <Button variant="ghost" size="sm" className="text-xs h-6 text-slate-400"
+                           onClick={() => skipStep("batch_lines_add")}>
+                           <SkipForward className="w-3 h-3 mr-1" /> Παράλειψη
+                         </Button>
+                       </div>
+                     </div>
 
                 {/* Add new line */}
                 <div className="space-y-1 pt-1 border-b pb-3">
