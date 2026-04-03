@@ -122,10 +122,8 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
    // Parse filename for date and type
    const fileParsed = parseFileName(fileName);
    
-   // Normalize available item codes for comparison (normalize each code, then filter)
-   const normalizedAvailable = (availableItemCodes && availableItemCodes.length > 0)
-     ? [...new Set(availableItemCodes.map(normalizeItemCode).filter(Boolean))]
-     : [];
+   // Use available item codes as-is from bundle (no normalization)
+   const availableSet = new Set(availableItemCodes || []);
 
   const handleDividerMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -339,20 +337,20 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
               </div>
             )}
 
-            {/* Missing Item Codes Warning — Show ONLY if codes are loaded */}
-            {lines.length > 0 && normalizedAvailable.length > 0 && (
+            {/* Missing Item Codes Warning — Show if code from OCR is not in available list */}
+            {lines.length > 0 && availableItemCodes.length > 0 && (
               <div className="px-4 py-2 border-b flex-shrink-0">
                 {lines.map((line, idx) => {
-                  const normalizedCode = normalizeItemCode(line.item_code);
-                  if (!normalizedCode) return null;
-                  const exists = normalizedAvailable.includes(normalizedCode);
+                  if (!line.item_code) return null;
+                  const exists = availableSet.has(line.item_code);
                   if (exists) return null; // Only show warnings for missing codes
+                  console.log(`OCR Warning: Item code "${line.item_code}" not found in available codes`, { available: Array.from(availableSet) });
                   return (
                     <div key={idx} className="bg-red-50 border border-red-200 rounded p-2 mb-2 flex items-start gap-2 text-xs text-red-700">
                       <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <span className="font-semibold">Γρ.{idx + 1}: "{normalizedCode}" - Δεν υπάρχει στα standards</span>
-                        <div className="text-xs text-red-600 mt-1">Διαθέσιμα: {normalizedAvailable.join(", ")}</div>
+                        <span className="font-semibold">Γρ.{idx + 1}: "{line.item_code}" - Δεν υπάρχει στα standards</span>
+                        <div className="text-xs text-red-600 mt-1">Διαθέσιμα: {Array.from(availableSet).slice(0, 10).join(", ")}{availableSet.size > 10 ? "..." : ""}</div>
                       </div>
                     </div>
                   );
