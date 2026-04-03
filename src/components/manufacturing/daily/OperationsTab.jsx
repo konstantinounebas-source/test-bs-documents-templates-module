@@ -25,12 +25,24 @@ function useBatchItemCodes(batchId, department) {
       const bundleId = batch[0].bundle_id;
       const lines = await base44.entities.StdSetLines.filter({ bundle_id: bundleId });
       
-      const uniqueItemCodes = [...new Set(lines.map(l => l.item_code))].filter(Boolean);
+      const uniqueItemCodes = [...new Set(lines.map(l => normalizeItemCode(l.item_code)))].filter(Boolean);
       return uniqueItemCodes.sort();
     },
     enabled: !!batchId && !!department,
     staleTime: Infinity
   });
+}
+
+function normalizeItemCode(code) {
+  if (!code) return code;
+  // Convert B3 → B03, C5 → C05, etc.
+  // Format: Letter(s) + optional number → Letter(s) + zero-padded 2-digit number
+  const match = code.match(/^([A-Za-z]+)(\d+)$/);
+  if (match) {
+    const [, letters, number] = match;
+    return letters + String(parseInt(number)).padStart(2, '0');
+  }
+  return code;
 }
 
 export default function OperationsTab({ batchId, department }) {
@@ -109,9 +121,10 @@ export default function OperationsTab({ batchId, department }) {
 
   // qty_processed for the currently selected item code in the dialog
   const selectedItemQtyProcessed = useMemo(() => {
-    if (!formData.item_code) return null;
-    const bl = batchLines.find(l => l.item_code === formData.item_code);
-    return bl?.qty_processed ?? null;
+   if (!formData.item_code) return null;
+   const normalized = normalizeItemCode(formData.item_code);
+   const bl = batchLines.find(l => normalizeItemCode(l.item_code) === normalized);
+   return bl?.qty_processed ?? null;
   }, [formData.item_code, batchLines]);
 
   const operationsForProfile = useMemo(() => {
@@ -126,11 +139,11 @@ export default function OperationsTab({ batchId, department }) {
   }, [formData.operation_profile_id, profileNames, operations]);
 
   // Group operations by item_code and profile_group_id
-  const groupedOperations = useMemo(() => {
+   const groupedOperations = useMemo(() => {
     const groups = {};
-    
+
     lines.forEach(line => {
-      const key = line.item_code;
+      const key = normalizeItemCode(line.item_code);
       if (!groups[key]) {
         groups[key] = [];
       }
@@ -877,9 +890,10 @@ export default function OperationsTab({ batchId, department }) {
                   <SelectValue placeholder="Select item code from standards" />
                 </SelectTrigger>
                 <SelectContent>
-                  {itemCodes.map(code => (
-                    <SelectItem key={code} value={code}>{code}</SelectItem>
-                  ))}
+                  {itemCodes.map(code => {
+                    const normalized = normalizeItemCode(code);
+                    return <SelectItem key={normalized} value={normalized}>{normalized}</SelectItem>;
+                  })}
                 </SelectContent>
               </Select>
             </div>
