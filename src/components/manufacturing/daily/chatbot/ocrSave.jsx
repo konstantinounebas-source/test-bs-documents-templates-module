@@ -40,6 +40,23 @@ export async function saveOCRData(confirmed, batchHeaderId, onSuccess) {
     return;
   }
 
+  // Fetch batch header to get bundle_id
+  const batchHeaders = await base44.entities.BatchHeader.filter({ id: batchHeaderId });
+  const batchHeader = batchHeaders?.[0];
+  if (!batchHeader?.bundle_id) {
+    toast.error("Δεν βρέθηκε bundle. Αδύνατη αποθήκευση OCR.");
+    return;
+  }
+
+  // Fetch StdSetLines for time lookups
+  const stdSetLines = await base44.entities.StdSetLines.filter({ bundle_id: batchHeader.bundle_id });
+  const getStdTime = (itemCode, operation) => {
+    const stdLine = stdSetLines.find(sl => 
+      (sl.item_code === itemCode || !sl.item_code) && sl.operation === operation
+    );
+    return stdLine?.std_min_per_pc || 0;
+  };
+
   let totalCreated = 0;
 
   for (const line of production_lines) {
@@ -76,13 +93,19 @@ export async function saveOCRData(confirmed, batchHeaderId, onSuccess) {
     // ── 3. Operations ─────────────────────────────────────────────────────────
     const opRecords = OPERATION_MAP
       .filter(({ ocrField }) => isPositive(line[ocrField]))
-      .map(({ ocrField, operation }) => ({
-        batch_header_id: batchHeaderId,
-        item_code: itemCode,
-        operation,
-        qty_operation: Number(line[ocrField]),
-        source_type: "MANUAL",
-      }));
+      .map(({ ocrField, operation }) => {
+        const qty = Number(line[ocrField]);
+        const stdTime = getStdTime(itemCode, operation);
+        return {
+          batch_header_id: batchHeaderId,
+          item_code: itemCode,
+          operation,
+          qty_operation: qty,
+          std_min_pc_lookup: stdTime,
+          operation_time_min: qty * stdTime,
+          source_type: "MANUAL",
+        };
+      });
 
     if (isPositive(line.additional_treatments_total_pieces)) {
       opRecords.push({
