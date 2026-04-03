@@ -268,7 +268,9 @@ export default function DailyProductionChatbot({ departments = [] }) {
       
       const lines = await base44.entities.StdSetLines.filter({ bundle_id: bundleId });
       // Return original item codes as-is (without normalization) for OCR comparison
-      return [...new Set(lines.map(l => l.item_code))].filter(Boolean).sort();
+      const codes = [...new Set(lines.map(l => l.item_code))].filter(Boolean).sort();
+      console.log(`✓ Bundle ${bundleId.slice(0,8)}: Loaded ${codes.length} item codes:`, codes.slice(0, 20));
+      return codes;
     },
     enabled: !!selBatch,
     staleTime: Infinity
@@ -1049,6 +1051,7 @@ ${context}
                          const blCode = bl.item_code?.trim() || "";
                          // Exact match only
                          const exists = bundleItemCodes.includes(blCode);
+                         console.log(`Check "${blCode}": exists=${exists}, bundleHas=${bundleItemCodes.slice(0, 5)}`);
                          if (exists) return null;
                          return (
                            <div key={bl.id} className="bg-red-50 border border-red-200 rounded px-2 py-1.5 flex items-start gap-2">
