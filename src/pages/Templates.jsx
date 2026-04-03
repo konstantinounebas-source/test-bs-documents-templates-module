@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Filter, ChevronDown, Download, X, Loader2 } from "lucide-react";
+import { Plus, Search, Filter, ChevronDown, Download, X, Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -90,6 +90,7 @@ export default function TemplatesPage() {
   const [columnFilters, setColumnFilters] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: 'updated_date', direction: 'desc' });
   const [statFilter, setStatFilter] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState(() => {
     try {
       const saved = localStorage.getItem('visibleTemplateColumns');
@@ -283,8 +284,8 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className={isFullscreen ? "fixed inset-0 bg-slate-50 p-6 overflow-auto z-50" : "min-h-screen bg-slate-50 p-6"}>
+      <div className={isFullscreen ? "max-w-full mx-auto space-y-6" : "max-w-7xl mx-auto space-y-6"}>
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -292,6 +293,15 @@ export default function TemplatesPage() {
             <p className="text-slate-600 mt-1">Manage your organization's document templates and forms</p>
           </div>
           <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              size="icon"
+              onClick={() => setIsFullscreen(!isFullscreen)}
+              title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+              className="shadow-sm"
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="shadow-sm">
