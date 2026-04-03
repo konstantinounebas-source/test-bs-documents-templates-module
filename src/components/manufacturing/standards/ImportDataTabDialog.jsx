@@ -87,45 +87,70 @@ export default function ImportDataTabDialog({ open, onClose, onImportComplete, b
       await workbook.xlsx.load(await file.arrayBuffer());
       const worksheet = workbook.getWorksheet(1);
 
-      // Get operations to map column headers
-      const operations = await base44.entities.Operation.filter({ is_active: true });
-      const operationMap = {};
-      operations.forEach(op => {
-        operationMap[op.name] = op.id;
-      });
+      // Get operations and department
+      const [operations, departments] = await Promise.all([
+        base44.entities.Operation.filter({ is_active: true }),
+        base44.entities.Department.filter({ name: bundle.department })
+      ]);
+
+      const deptId = departments[0]?.id;
+      const deptOps = operations
+        .filter(op => {
+          if (!op.department_ids || op.department_ids.length === 0) return true;
+          return deptId ? op.department_ids.includes(deptId) : true;
+        })
+        .sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
+        .slice(0, 10);
 
       const lines = [];
       const errors = [];
 
+      // Get headers from the first row to correctly map columns
+      const headerRow = worksheet.getRow(1);
+      const headerMap = {};
+      headerRow.eachCell((cell, colNumber) => {
+        const headerText = cell.value?.toString().trim();
+        if (headerText) {
+          headerMap[headerText] = colNumber;
+        }
+      });
+
       worksheet.eachRow((row, rowNumber) => {
         if (rowNumber === 1) return; // Skip header
 
-        const itemCode = row.getCell(1).value?.toString().trim();
+        const itemCode = row.getCell(headerMap["Item Code*"])?.value?.toString().trim();
         if (!itemCode) {
           errors.push(`Row ${rowNumber}: Missing Item Code`);
           return;
         }
 
-        // Parse operations columns (skip first, last 2 columns)
-        let colIdx = 2;
-        for (const opName of Object.keys(operationMap)) {
-          const cell = row.getCell(colIdx);
-          const value = cell.value;
+        // Extract surface_area and notes
+        const surfaceAreaValue = row.getCell(headerMap["Surface Area (m²)"])?.value;
+        const surface_area_m2 = surfaceAreaValue && !isNaN(parseFloat(surfaceAreaValue)) ? parseFloat(surfaceAreaValue) : null;
+        const notes = row.getCell(headerMap["Notes"])?.value?.toString().trim() || '';
+
+        // Parse operation columns
+        for (const op of deptOps) {
+          const headerKey = `${op.name} (min)`;
+          const colNumber = headerMap[headerKey];
           
-          if (value != null && value !== '') {
-            const numValue = parseFloat(value);
+          if (!colNumber) continue; // Skip if header not found
+          
+          const cellValue = row.getCell(colNumber)?.value;
+
+          if (cellValue != null && cellValue !== '') {
+            const numValue = parseFloat(cellValue);
             if (!isNaN(numValue) && numValue >= 0) {
               lines.push({
                 bundle_id: bundle.id,
                 item_code: itemCode,
-                operation: opName,
+                operation: op.name,
                 std_min_per_pc: numValue,
-                surface_area_m2: row.getCell(colIdx + 10)?.value ? parseFloat(row.getCell(colIdx + 10).value) : null,
-                notes: row.getCell(colIdx + 11)?.value?.toString().trim() || ''
+                surface_area_m2: surface_area_m2,
+                notes: notes
               });
             }
           }
-          colIdx++;
         }
       });
 
