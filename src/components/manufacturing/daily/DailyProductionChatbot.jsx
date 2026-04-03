@@ -197,6 +197,13 @@ export default function DailyProductionChatbot({ departments = [] }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Display available item codes when they load
+  useEffect(() => {
+    if (bundleItemCodes.length > 0 && selBatch) {
+      addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes.length}): ${bundleItemCodes.join(", ")}`);
+    }
+  }, [bundleItemCodes, selBatch]);
+
   // ── data ──────────────────────────────────────────────────────────────────
   // All batch headers (for file upload step batch matching)
   const { data: allBatchHeaders = [] } = useQuery({
