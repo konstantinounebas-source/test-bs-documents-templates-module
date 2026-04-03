@@ -1511,7 +1511,7 @@ ${context}
           <DialogHeader>
             <DialogTitle>Attachments · {selBatch?.date} · {selDept}</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-3 py-4">
             <DropZone onFiles={handleFiles} isUploading={uploadingCount > 0} />
 
@@ -1538,9 +1538,9 @@ ${context}
                 </div>
               </div>
             )}
-            </div>
-            </DialogContent>
-            </Dialog>
-            </>
-            );
-            }
+          </div>
+        </DialogContent>
+      </Dialog>
+      </>
+      );
+      }
