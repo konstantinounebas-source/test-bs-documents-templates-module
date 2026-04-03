@@ -1375,24 +1375,24 @@ ${context}
                 className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl p-2 transition-colors"
               >
                 <Send className="w-4 h-4" />
-               </button>
-               </div>
-               </div>
-               )}
+                </button>
+                </div>
+                </div>
+                )}
 
-               {/* Resize Handle */}
-               {!minimized && !fullscreen && (
-               <div
-               className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize bg-blue-600 opacity-30 hover:opacity-60 rounded-tl-lg"
-               onMouseDown={() => setIsResizing(true)}
-               title="Drag to resize"
-               />
-               )}
-               </div>
-               )}
+                {/* Resize Handle */}
+                {!minimized && !fullscreen && (
+                <div
+                className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize bg-blue-600 opacity-30 hover:opacity-60 rounded-tl-lg"
+                onMouseDown={() => setIsResizing(true)}
+                title="Drag to resize"
+                />
+                )}
+                </div>
+                )}
 
                 {/* Duplicate file confirmation dialog */}
-               {pendingDuplicates.length > 0 && (
+                {pendingDuplicates.length > 0 && (
           <Dialog open={true} onOpenChange={() => setPendingDuplicates([])}>
             <DialogContent className="max-w-sm">
               <DialogHeader>
