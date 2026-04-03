@@ -28,6 +28,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
   const [filterTargetType, setFilterTargetType] = useState('');
   const [showBreakdownDialog, setShowBreakdownDialog] = useState(false);
   const [selectedBreakdownTarget, setSelectedBreakdownTarget] = useState(null);
+  const [allItemsSelected, setAllItemsSelected] = useState(false);
 
   // Form state for adding target
   const [formTargetType, setFormTargetType] = useState('');
@@ -262,6 +263,20 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     const newQty = { ...itemQuantities };
     delete newQty[itemCode];
     setItemQuantities(newQty);
+  };
+
+  const handleSelectAllItems = () => {
+    if (allItemsSelected) {
+      setSelectedItemCodes([]);
+      setAllItemsSelected(false);
+    } else {
+      const selectableItems = filteredAvailableItems.filter(item => !item.disabled).map(item => item.value);
+      setSelectedItemCodes(selectableItems);
+      selectableItems.forEach(ic => {
+        if (!itemQuantities[ic]) setItemQuantities(prev => ({ ...prev, [ic]: 1 }));
+      });
+      setAllItemsSelected(true);
+    }
   };
 
   const handleAddDailyTargets = () => {
@@ -548,10 +563,22 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
                   />
                 </div>
                 <div className="max-h-40 overflow-y-auto">
-                  {filteredAvailableItems.length === 0 && (
-                    <p className="text-xs text-slate-400 px-3 py-2">No items found</p>
-                  )}
-                  {filteredAvailableItems.map(item => {
+                   {filteredAvailableItems.length > 0 && (
+                     <div className="flex items-center gap-2 px-3 py-1.5 text-sm border-b bg-slate-50">
+                       <Checkbox
+                         id="select-all-daily-items"
+                         checked={allItemsSelected}
+                         onCheckedChange={handleSelectAllItems}
+                       />
+                       <label htmlFor="select-all-daily-items" className="font-semibold cursor-pointer flex-1">
+                         All ({selectedItemCodes.length}/{filteredAvailableItems.filter(i => !i.disabled).length})
+                       </label>
+                     </div>
+                   )}
+                   {filteredAvailableItems.length === 0 && (
+                     <p className="text-xs text-slate-400 px-3 py-2">No items found</p>
+                   )}
+                   {filteredAvailableItems.map(item => {
                     const isSelected = selectedItemCodes.includes(item.value);
                     const isDisabled = item.disabled;
                     return (
