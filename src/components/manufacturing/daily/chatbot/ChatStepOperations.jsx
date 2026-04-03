@@ -240,8 +240,14 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
       sd.department_id === deptId || sd.department_id === batchHeader?.department
     );
     const stdMap = {};
-    stdLinesAll.forEach(sl => { stdMap[`${sl.item_code || ""}|${sl.operation}`] = sl.std_min_per_pc || 0; });
-    const getStd = (ic, op) => stdMap[`${ic}|${op}`] ?? stdMap[`|${op}`] ?? 0;
+    stdLinesAll.forEach(sl => { 
+      const key = `${sl.item_code || ""}|${sl.operation || ""}`;
+      stdMap[key] = sl.std_min_per_pc || 0; 
+    });
+    const getStd = (ic, op) => {
+      const directKey = `${ic || ""}|${op || ""}`;
+      return stdMap[directKey] ?? 0;
+    };
     // Delete ALL existing operations for this batch (including stale ones from old entries)
     await Promise.all(existingOps.map(op => base44.entities.Operations.delete(op.id)));
     const opsToCreate = [];
@@ -250,10 +256,11 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
       const sched = schedDataAll.find(sd => sd.item_code === bl.item_code);
       if (sched?.operation_profile_id) {
         const profile = allProfileNames.find(p => p.id === sched.operation_profile_id);
-        const activeOps = (profile?.operations_required || []).map(id => allOps.find(o => o.id === id)).filter(Boolean).map(o => o.name);
+        const activeOps = (profile?.operations_required || []).map(id => allOps.find(o => o.id === id)).filter(Boolean);
         if (activeOps.length > 0) {
           const groupId = `sync-${batchId}-${bl.item_code}-${Date.now()}`;
-          activeOps.forEach(opName => {
+          activeOps.forEach(op => {
+            const opName = op.name;
             const std = getStd(bl.item_code, opName);
             opsToCreate.push({ batch_header_id: batchId, item_code: bl.item_code, operation: opName, qty_operation: qty, std_min_pc_lookup: std, operation_time_min: qty * std, operation_profile_id: sched.operation_profile_id, profile_group_id: groupId, source_type: "SCHEDULE" });
           });
