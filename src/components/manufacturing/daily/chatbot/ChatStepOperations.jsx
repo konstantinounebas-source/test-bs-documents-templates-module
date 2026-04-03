@@ -245,8 +245,10 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
       stdMap[key] = sl.std_min_per_pc || 0; 
     });
     const getStd = (ic, op) => {
+      // Try item-specific first, then general (empty item_code)
       const directKey = `${ic || ""}|${op || ""}`;
-      return stdMap[directKey] ?? 0;
+      const generalKey = `|${op || ""}`;
+      return stdMap[directKey] !== undefined ? stdMap[directKey] : (stdMap[generalKey] ?? 0);
     };
     // Delete ALL existing operations for this batch (including stale ones from old entries)
     await Promise.all(existingOps.map(op => base44.entities.Operations.delete(op.id)));
