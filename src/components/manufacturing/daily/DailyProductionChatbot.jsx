@@ -27,6 +27,7 @@ import ChatStepConsumables from "./chatbot/ChatStepConsumables";
 import ChatStepFileUpload from "./chatbot/ChatStepFileUpload";
 import OCRVerificationModal from "./OCRVerificationModal";
 import { ocrProductionForm } from "@/functions/ocrProductionForm";
+import { saveOCRData } from "./chatbot/ocrSave";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
@@ -362,13 +363,18 @@ export default function DailyProductionChatbot({ departments = [] }) {
   const handleOcrConfirm = (confirmedData) => {
     setShowOcrModal(false);
     addMsg("bot", 
-      `✅ OCR δεδομένα επιβεβαιώθηκαν!\n` +
-      `📅 Ημερομηνία: ${confirmedData.date}\n` +
-      `📦 Γραμμές: ${confirmedData.production_lines?.length || 0}\n\n` +
-      `Τα δεδομένα είναι έτοιμα για αντιστοίχιση με το batch.`
+      `✅ OCR επιβεβαιώθηκε! Αποθηκεύω ${confirmedData.production_lines?.length || 0} γραμμές...`
     );
-    // Store confirmed OCR data for future batch mapping
-    queryClient.setQueryData(["OCRConfirmedData", ocrTargetAtt?.id], confirmedData);
+    if (selBatch?.id) {
+      saveOCRData(confirmedData, selBatch.id, () => {
+        queryClient.invalidateQueries(["Batch_Lines", selBatch.id]);
+        queryClient.invalidateQueries(["QC_Initial_Stock", selBatch.id]);
+        queryClient.invalidateQueries(["Operations", selBatch.id]);
+        addMsg("bot", `📦 OCR δεδομένα αποθηκεύτηκαν στο batch ${selBatch.date} · ${selBatch.department}.`);
+      });
+    } else {
+      addMsg("bot", "⚠️ Δεν υπάρχει ενεργό batch. Επίλεξε batch πρώτα.");
+    }
   };
 
   // ── step handlers ─────────────────────────────────────────────────────────
