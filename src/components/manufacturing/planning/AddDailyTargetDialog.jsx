@@ -189,9 +189,9 @@ export default function AddDailyTargetDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleAdd} disabled={isAdding || selectedItems.length === 0}>
+          <Button onClick={handleAdd} disabled={isAdding}>
             {isAdding ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-            Add Targets
+            Add
           </Button>
         </DialogFooter>
       </DialogContent>
