@@ -127,6 +127,11 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
      ? availableItemCodes.map(normalizeItemCode).filter(Boolean)
      : [];
 
+   // Debug logs
+   console.log('OCRVerificationModal - props.availableItemCodes:', availableItemCodes);
+   console.log('OCRVerificationModal - normalizedAvailable:', normalizedAvailable);
+   console.log('OCRVerificationModal - lines:', lines.map(l => ({ item_code: l.item_code, normalized: normalizeItemCode(l.item_code) })));
+
   const handleDividerMouseDown = useCallback((e) => {
     e.preventDefault();
     isDragging.current = true;

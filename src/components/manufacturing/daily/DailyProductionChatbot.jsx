@@ -1381,16 +1381,19 @@ ${context}
 
       {/* OCR Verification Modal */}
       {showOcrModal && ocrResult && ocrTargetAtt && (
-        <OCRVerificationModal
-          open={showOcrModal}
-          onClose={() => setShowOcrModal(false)}
-          fileUrl={ocrTargetAtt.file_url}
-          fileName={ocrTargetAtt.file_name}
-          ocrResult={ocrResult}
-          onConfirm={handleOcrConfirm}
-          department={selDept || ocrTargetAtt?.department}
-          availableItemCodes={bundleItemCodes}
-        />
+        <>
+          {console.log('DailyProductionChatbot - Passing to OCR:', { bundleItemCodes, selBatch_id: selBatch?.id })}
+          <OCRVerificationModal
+            open={showOcrModal}
+            onClose={() => setShowOcrModal(false)}
+            fileUrl={ocrTargetAtt.file_url}
+            fileName={ocrTargetAtt.file_name}
+            ocrResult={ocrResult}
+            onConfirm={handleOcrConfirm}
+            department={selDept || ocrTargetAtt?.department}
+            availableItemCodes={bundleItemCodes}
+          />
+        </>
       )}
 
       {/* Attachments Modal - Accessible from any tab */}
