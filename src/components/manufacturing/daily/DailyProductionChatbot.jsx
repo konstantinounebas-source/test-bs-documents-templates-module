@@ -814,7 +814,7 @@ ${context}
       )}
 
       {/* Floating Panel - Draggable & Resizable (floating mode only) */}
-      {(!isSplitLayout && open) || isSplitLayout && (
+      {((!isSplitLayout && open) || isSplitLayout) && (
         <div 
           ref={panelRef}
           className={isSplitLayout ? "w-full h-full flex flex-col" : (fullscreen ? "fixed inset-0 z-40 shadow-2xl border-0 bg-white flex flex-col overflow-hidden" : "fixed z-40 shadow-2xl border border-slate-200 bg-white flex flex-col rounded-lg overflow-hidden")}
