@@ -43,7 +43,7 @@ export default function MfgDailyProduction() {
     staleTime: Infinity
   });
 
-  const { data: batchHeaders = [] } = useQuery({
+  const { data: batchHeaders = [], isLoading: batchHeadersLoading } = useQuery({
     queryKey: ['BatchHeader', selectedDepartment],
     queryFn: () => selectedDepartment
       ? base44.entities.BatchHeader.filter({ department: selectedDepartment })
@@ -57,9 +57,10 @@ export default function MfgDailyProduction() {
     retry: 1
   });
 
-  const { data: allBundles = [] } = useQuery({
+  const { data: allBundles = [], isLoading: bundlesLoading } = useQuery({
     queryKey: ['StandardsBundle-All'],
     queryFn: () => base44.entities.StandardsBundle.list(),
+    enabled: !!selectedBatch,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
     refetchOnWindowFocus: false,
@@ -68,10 +69,10 @@ export default function MfgDailyProduction() {
     retry: 1
   });
 
-  const { data: dailyStandardsAssignments = [] } = useQuery({
+  const { data: dailyStandardsAssignments = [], isLoading: assignmentsLoading } = useQuery({
     queryKey: ['DailyStandardsAssignment', selectedDepartment],
     queryFn: () => base44.entities.DailyStandardsAssignment.filter({ department_id: selectedDepartment }),
-    enabled: !!selectedDepartment,
+    enabled: !!selectedDepartment && !!selectedBatch,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 10,
     refetchOnWindowFocus: false,
