@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Bot, X, Send, Paperclip, Upload, FileText, Image as ImageIcon,
   Download, Eye, Trash2, Calendar,
-  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward, ZoomIn, ZoomOut, Scan, AlertTriangle, GripHorizontal, Minimize2, Maximize2
+  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward, ZoomIn, ZoomOut, Scan, AlertTriangle, GripHorizontal, Minimize2, Maximize2, Maximize
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays, isMonday } from "date-fns";
@@ -152,6 +152,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
   // panel state
   const [open, setOpen]       = useState(false);
   const [minimized, setMin]   = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const [position, setPosition] = useState("right"); // "left" or "right"
   
   // dragging & resizing state
@@ -816,8 +817,8 @@ ${context}
       {open && (
         <div 
           ref={panelRef}
-          className="fixed z-40 shadow-2xl border border-slate-200 bg-white flex flex-col rounded-lg overflow-hidden"
-          style={{
+          className={fullscreen ? "fixed inset-0 z-40 shadow-2xl border-0 bg-white flex flex-col overflow-hidden" : "fixed z-40 shadow-2xl border border-slate-200 bg-white flex flex-col rounded-lg overflow-hidden"}
+          style={fullscreen ? {} : {
             left: `${panelPos.x}px`,
             top: `${panelPos.y}px`,
             width: minimized ? "300px" : `${panelSize.width}px`,
@@ -841,17 +842,26 @@ ${context}
               )}
             </div>
             <div className="flex gap-1 ml-2">
-              <button 
-                onClick={() => setMin(!minimized)} 
-                className="hover:bg-blue-700 rounded p-1"
-                title={minimized ? "Maximize" : "Minimize"}
-              >
-                {minimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
-              </button>
-              <button onClick={() => setOpen(false)} className="hover:bg-blue-700 rounded p-1" title="Close">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+               {!fullscreen && (
+                 <button 
+                   onClick={() => setMin(!minimized)} 
+                   className="hover:bg-blue-700 rounded p-1"
+                   title={minimized ? "Maximize" : "Minimize"}
+                 >
+                   {minimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+                 </button>
+               )}
+               <button 
+                 onClick={() => setFullscreen(!fullscreen)} 
+                 className="hover:bg-blue-700 rounded p-1"
+                 title={fullscreen ? "Exit Fullscreen" : "Fullscreen"}
+               >
+                 <Maximize className="w-4 h-4" />
+               </button>
+               <button onClick={() => setOpen(false)} className="hover:bg-blue-700 rounded p-1" title="Close">
+                 <X className="w-4 h-4" />
+               </button>
+             </div>
           </div>
 
 
@@ -1371,12 +1381,12 @@ ${context}
                )}
 
                {/* Resize Handle */}
-               {!minimized && (
-               <div
-               className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize bg-blue-600 opacity-30 hover:opacity-60 rounded-tl-lg"
-               onMouseDown={() => setIsResizing(true)}
-               title="Drag to resize"
-               />
+               {!minimized && !fullscreen && (
+                 <div
+                   className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize bg-blue-600 opacity-30 hover:opacity-60 rounded-tl-lg"
+                   onMouseDown={() => setIsResizing(true)}
+                   title="Drag to resize"
+                 />
                )}
                </div>
                )}
