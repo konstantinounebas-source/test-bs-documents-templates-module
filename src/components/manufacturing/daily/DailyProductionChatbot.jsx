@@ -246,13 +246,30 @@ export default function DailyProductionChatbot({ departments = [] }) {
   });
 
   // fetch item codes from bundle for "add extra" dropdown
+  // Try both: batch's bundle_id AND daily assignment
   const { data: bundleItemCodes = [] } = useQuery({
-    queryKey: ["BundleItemCodes", selBatch?.bundle_id],
+    queryKey: ["BundleItemCodes", selBatch?.id, selBatch?.date, selDept],
     queryFn: async () => {
-      const lines = await base44.entities.StdSetLines.filter({ bundle_id: selBatch.bundle_id });
+      if (!selBatch) return [];
+      let bundleId = selBatch.bundle_id;
+      
+      // If batch has no bundle_id, try daily assignment
+      if (!bundleId && selBatch.date && selDept) {
+        const da = await base44.entities.DailyStandardsAssignment.filter({
+          assignment_date: selBatch.date,
+          department_id: selDept
+        });
+        if (da.length > 0 && da[0].standards_bundle_id) {
+          bundleId = da[0].standards_bundle_id;
+        }
+      }
+      
+      if (!bundleId) return [];
+      
+      const lines = await base44.entities.StdSetLines.filter({ bundle_id: bundleId });
       return [...new Set(lines.map(l => normalizeItemCode(l.item_code)))].filter(Boolean).sort();
     },
-    enabled: !!selBatch?.bundle_id,
+    enabled: !!selBatch,
     staleTime: Infinity
   });
 
