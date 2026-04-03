@@ -3,7 +3,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Check, Maximize2, Minimize2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Check, Maximize2, Minimize2, AlertCircle } from "lucide-react";
+
+function normalizeItemCode(code) {
+  if (!code) return code;
+  const match = code.match(/^([A-Za-z]+)(\d+)$/);
+  if (match) {
+    const [, letters, number] = match;
+    return letters + String(parseInt(number)).padStart(2, '0');
+  }
+  return code;
+}
 
 // Columns in the exact order of the physical form
 const COLUMNS = [
@@ -100,7 +110,7 @@ const parseFileName = (fileName) => {
   return { date: null, type: null };
 };
 
-export default function OCRVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, department: initialDepartment, departments = [] }) {
+export default function OCRVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, department: initialDepartment, departments = [], availableItemCodes = [] }) {
    const [zoom, setZoom] = useState(1);
    const [rotation, setRotation] = useState(0);
    const [modalFullscreen, setModalFullscreen] = useState(false);
@@ -111,6 +121,9 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
 
    // Parse filename for date and type
    const fileParsed = parseFileName(fileName);
+   
+   // Normalize available item codes for comparison
+   const normalizedAvailable = availableItemCodes.map(normalizeItemCode);
 
   const handleDividerMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -321,6 +334,24 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                     <span className="flex-1">{iss.message}</span>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Missing Item Codes Warning */}
+            {lines.length > 0 && normalizedAvailable.length > 0 && (
+              <div className="px-4 py-2 border-b bg-red-50 flex-shrink-0">
+                {lines.map((line, idx) => {
+                  const normalizedCode = normalizeItemCode(line.item_code);
+                  if (!normalizedCode || normalizedAvailable.includes(normalizedCode)) return null;
+                  return (
+                    <div key={idx} className="flex items-start gap-2 text-xs mb-1 text-red-700">
+                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                      <span className="flex-1">
+                        <strong>Γρ.{idx + 1}:</strong> Το item code "{normalizedCode}" δεν υπάρχει στα standards. Διαθέσιμα: {normalizedAvailable.slice(0, 5).join(", ")}{normalizedAvailable.length > 5 ? "..." : ""}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             )}
 

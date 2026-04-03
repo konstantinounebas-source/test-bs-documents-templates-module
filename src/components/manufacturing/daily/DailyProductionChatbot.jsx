@@ -1370,6 +1370,7 @@ ${context}
           ocrResult={ocrResult}
           onConfirm={handleOcrConfirm}
           department={selDept || ocrTargetAtt?.department}
+          availableItemCodes={bundleItemCodes}
         />
       )}
 
