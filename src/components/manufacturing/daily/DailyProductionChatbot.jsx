@@ -267,7 +267,8 @@ export default function DailyProductionChatbot({ departments = [] }) {
       if (!bundleId) return [];
       
       const lines = await base44.entities.StdSetLines.filter({ bundle_id: bundleId });
-      return [...new Set(lines.map(l => normalizeItemCode(l.item_code)))].filter(Boolean).sort();
+      // Return original item codes as-is (without normalization) for OCR comparison
+      return [...new Set(lines.map(l => l.item_code))].filter(Boolean).sort();
     },
     enabled: !!selBatch,
     staleTime: Infinity
