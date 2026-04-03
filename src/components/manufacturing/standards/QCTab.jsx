@@ -12,6 +12,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { exportQCTabToExcel } from './shared/exportToExcel';
+import ImportQCTabDialog from './ImportQCTabDialog';
+import { Upload as UploadIcon } from 'lucide-react';
 
 export default function QCTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
@@ -28,6 +30,7 @@ export default function QCTab({ bundle, isEditable }) {
   const [selectedRows, setSelectedRows] = useState({});
   const [searchFilter, setSearchFilter] = useState('');
   const [quickFilter, setQuickFilter] = useState('all');
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   // Fetch departments to resolve bundle department id
   const { data: allDepartments = [] } = useQuery({
@@ -330,7 +333,14 @@ export default function QCTab({ bundle, isEditable }) {
     );
   }
 
+  const handleImportComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ['QCSetLines'] });
+    setImportDialogOpen(false);
+    toast.success('QC rules imported successfully');
+  };
+
   return (
+    <>
     <div className="space-y-6">
       {/* QC Rule Header */}
       <div className="bg-white border rounded-lg p-6 space-y-4">
@@ -466,17 +476,26 @@ export default function QCTab({ bundle, isEditable }) {
           </Button>
 
           {isEditable && (
-            <Button 
-              onClick={() => saveMutation.mutate()} 
-              disabled={!canSave || saveMutation.isPending}
-            >
-              {saveMutation.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
-              )}
-              Save All
-            </Button>
+            <>
+              <Button 
+                onClick={() => setImportDialogOpen(true)}
+                variant="outline"
+              >
+                <UploadIcon className="w-4 h-4 mr-2" />
+                Import
+              </Button>
+              <Button 
+                onClick={() => saveMutation.mutate()} 
+                disabled={!canSave || saveMutation.isPending}
+              >
+                {saveMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                Save All
+              </Button>
+            </>
           )}
         </div>
       )}
@@ -577,6 +596,14 @@ export default function QCTab({ bundle, isEditable }) {
           </Table>
         </div>
       )}
+
+    <ImportQCTabDialog
+      open={importDialogOpen}
+      onClose={() => setImportDialogOpen(false)}
+      onImportComplete={handleImportComplete}
+      bundle={bundle}
+    />
     </div>
+    </>
   );
 }

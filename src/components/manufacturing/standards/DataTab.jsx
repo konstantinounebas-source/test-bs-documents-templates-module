@@ -4,10 +4,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Plus, Trash2, Save, Download, ArrowUpDown, ArrowUp, ArrowDown, Search, Upload } from 'lucide-react';
+import { Loader2, Plus, Trash2, Save, Download, ArrowUpDown, ArrowUp, ArrowDown, Search, Upload as UploadIcon } from 'lucide-react';
+const Upload = UploadIcon;
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { exportDataTabToExcel } from './shared/exportToExcel';
+import ImportDataTabDialog from './ImportDataTabDialog';
 
 export default function DataTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
@@ -15,6 +17,7 @@ export default function DataTab({ bundle, isEditable }) {
   const [sortBy, setSortBy] = useState('none'); // 'none' | 'name_asc' | 'name_desc' | 'mins_asc' | 'mins_desc'
   const [itemCodeFilter, setItemCodeFilter] = useState('');
   const [selectedProfileId, setSelectedProfileId] = useState(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   // Fetch departments to get bundle's department id
   const { data: allDepartments = [] } = useQuery({
@@ -323,7 +326,15 @@ export default function DataTab({ bundle, isEditable }) {
     );
   }
 
+  const handleImportComplete = () => {
+    queryClient.invalidateQueries({ queryKey: ['StdSetLines', bundle.id] });
+    refetch();
+    setImportDialogOpen(false);
+    toast.success('Data imported successfully');
+  };
+
   return (
+    <>
     <div className="space-y-4">
       {/* Operations Warning/Error Messages */}
       {hasNoOperations && (
@@ -404,6 +415,14 @@ export default function DataTab({ bundle, isEditable }) {
           </Button>
           {isEditable && (
             <>
+              <Button 
+                onClick={() => setImportDialogOpen(true)}
+                variant="outline" 
+                size="sm"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Import
+              </Button>
               <Button onClick={addRow} variant="outline" size="sm" disabled={hasNoOperations}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Row
@@ -516,5 +535,13 @@ export default function DataTab({ bundle, isEditable }) {
         </Table>
       </div>
     </div>
+
+    <ImportDataTabDialog
+      open={importDialogOpen}
+      onClose={() => setImportDialogOpen(false)}
+      onImportComplete={handleImportComplete}
+      bundle={bundle}
+    />
+    </>
   );
 }
