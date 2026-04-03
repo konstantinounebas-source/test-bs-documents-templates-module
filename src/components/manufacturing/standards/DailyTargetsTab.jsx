@@ -255,6 +255,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     if (!selectedItemCodes.includes(itemCode)) {
       setSelectedItemCodes([...selectedItemCodes, itemCode]);
       setItemQuantities({ ...itemQuantities, [itemCode]: 1 });
+      setAllItemsSelected(false);
     }
   };
 
@@ -263,6 +264,7 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
     const newQty = { ...itemQuantities };
     delete newQty[itemCode];
     setItemQuantities(newQty);
+    setAllItemsSelected(false);
   };
 
   const handleSelectAllItems = () => {
