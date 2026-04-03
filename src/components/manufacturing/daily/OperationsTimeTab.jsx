@@ -49,40 +49,37 @@ export default function OperationsTimeTab({ batchId, department }) {
     staleTime: 0
   });
 
-  // Calculate ops time per line
+  // Calculate ops time per line from Operations entity
   const linesWithOpsTime = useMemo(() => {
     return batchLines.map(line => {
-      const profile = profileNames.find(p => 
-        opsData.find(op => op.item_code === line.item_code && op.operation_profile === p.name)
-      );
+      // Get all operations for this item code
+      const itemOps = opsData.filter(op => op.item_code === line.item_code);
       
-      if (!profile) return { ...line, opsPerPiece: 0, opsTotal: 0, opsTotalHours: 0 };
+      if (itemOps.length === 0) {
+        return { ...line, opsPerPiece: 0, opsTotal: 0, opsTotalHours: 0 };
+      }
 
-      // Sum time from std_set_lines for operations in this profile
-      const profileOps = profile.operations_required || [];
-      let totalMinutes = 0;
+      // Sum all operation times for this item (already calculated as qty * std_min_per_pc)
+      const totalOperationTime = itemOps.reduce((sum, op) => sum + (op.operation_time_min || 0), 0);
+      
+      // Get qty_processed from batch line (or use qty_operation from first op)
+      const qty = parseFloat(line.qty_processed) || parseFloat(itemOps[0]?.qty_operation) || 1;
+      
+      // operation_time_min is already qty * std per piece, so just use it directly
+      const opsTotal = totalOperationTime;
+      const opsTotalHours = (opsTotal / 60).toFixed(2);
 
-      profileOps.forEach(opId => {
-        const stdLine = stdSetLines.find(
-          sl => sl.item_code === line.item_code && sl.operation_id === opId
-        );
-        if (stdLine && stdLine.time_per_unit) {
-          totalMinutes += parseFloat(stdLine.time_per_unit);
-        }
-      });
-
-      const qty = parseFloat(line.scheduled_qty) || 0;
-      const opsTotal = totalMinutes * qty;
-      const opsTotalHours = opsTotal / 60;
+      // Calculate per-piece average if needed
+      const opsPerPiece = qty > 0 ? opsTotal / qty : 0;
 
       return {
         ...line,
-        opsPerPiece: totalMinutes,
-        opsTotal,
-        opsTotalHours: opsTotalHours.toFixed(2)
+        opsPerPiece: opsPerPiece.toFixed(3),
+        opsTotal: opsTotal.toFixed(2),
+        opsTotalHours
       };
     });
-  }, [batchLines, profileNames, opsData, stdSetLines]);
+  }, [batchLines, opsData]);
 
   const totals = useMemo(() => {
     const totalMinutes = linesWithOpsTime.reduce((sum, line) => sum + (line.opsTotal || 0), 0);
@@ -128,9 +125,9 @@ export default function OperationsTimeTab({ batchId, department }) {
                     <TableCell className="font-medium">{line.item_code}</TableCell>
                     <TableCell className="text-right font-mono">{(parseFloat(line.scheduled_qty) || 0).toFixed(2)}</TableCell>
                     <TableCell>
-                      {profileNames.find(p => 
-                        opsData.find(op => op.item_code === line.item_code && op.operation_profile === p.name)
-                      )?.name || '-'}
+                      {opsData.find(op => op.item_code === line.item_code)?.operation_profile_id 
+                        ? profileNames.find(p => p.id === opsData.find(op => op.item_code === line.item_code)?.operation_profile_id)?.name 
+                        : '-'}
                     </TableCell>
                     <TableCell className="text-right font-mono">{line.opsPerPiece.toFixed(2)}</TableCell>
                     <TableCell className="text-right font-mono">{line.opsTotal.toFixed(2)}</TableCell>
