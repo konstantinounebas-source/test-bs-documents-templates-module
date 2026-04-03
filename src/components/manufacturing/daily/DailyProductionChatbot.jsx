@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Bot, X, Send, Paperclip, Upload, FileText, Image as ImageIcon,
   Download, Eye, Trash2, Calendar,
-  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward, ZoomIn, ZoomOut, Scan, AlertTriangle
+  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward, ZoomIn, ZoomOut, Scan, AlertTriangle, GripHorizontal, Minimize2, Maximize2
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays, isMonday } from "date-fns";
@@ -153,6 +153,14 @@ export default function DailyProductionChatbot({ departments = [] }) {
   const [open, setOpen]       = useState(false);
   const [minimized, setMin]   = useState(false);
   const [position, setPosition] = useState("right"); // "left" or "right"
+  
+  // dragging & resizing state
+  const [panelPos, setPanelPos] = useState({ x: window.innerWidth - 450 - 24, y: 64 });
+  const [panelSize, setPanelSize] = useState({ width: 450, height: 600 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isResizing, setIsResizing] = useState(false);
+  const panelRef = useRef();
 
   // wizard state
   const [step, setStep]         = useState("file_upload");   // file_upload | dept | date | batch | attachments | batch_lines_review | batch_lines_add | qc | operations | team_persons | team_extra | help_in | consumables
@@ -725,6 +733,45 @@ ${context}
     }
   };
 
+  // ── dragging & resizing ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isDragging && !isResizing) return;
+
+    const handleMouseMove = (e) => {
+      if (isDragging) {
+        setPanelPos({
+          x: Math.max(0, e.clientX - dragOffset.x),
+          y: Math.max(0, e.clientY - dragOffset.y)
+        });
+      } else if (isResizing) {
+        const newWidth = Math.max(300, e.clientX - panelPos.x);
+        const newHeight = Math.max(300, e.clientY - panelPos.y);
+        setPanelSize({ width: newWidth, height: newHeight });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setIsResizing(false);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, isResizing, dragOffset, panelPos]);
+
+  const handleDragStart = (e) => {
+    if (e.target.closest("input, button, [role='combobox']")) return;
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - panelPos.x,
+      y: e.clientY - panelPos.y
+    });
+  };
+
   const handleUserMessage = () => {
     const text = userInput.trim();
     if (!text) return;
@@ -752,67 +799,66 @@ ${context}
   const quickDates = getQuickDates();
 
   // ── UI ────────────────────────────────────────────────────────────────────
-  // Show toggle button when closed
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed right-6 bottom-6 z-40 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-2xl transition-all"
-        title="Open AI Assistant"
-      >
-        <Bot className="w-6 h-6" />
-      </button>
-    );
-  }
-
   return (
     <>
-      {/* Backdrop */}
-      {open && (
-        <div
-          className="fixed inset-0 z-30 bg-black/20 cursor-pointer"
-          onClick={() => setOpen(false)}
-        />
+      {/* Toggle Button - Fixed */}
+      {!open && (
+        <button
+          onClick={() => setOpen(true)}
+          className="fixed right-6 bottom-6 z-40 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-2xl transition-all"
+          title="Open AI Production Assistant"
+        >
+          <Bot className="w-6 h-6" />
+        </button>
       )}
 
-      {/* Side Panel - Independent popup (can operate in background) */}
-      <div 
-        className={`fixed top-16 bottom-0 w-[450px] z-40 shadow-2xl border-l border-slate-200 bg-white flex flex-col transition-transform duration-300 pointer-events-auto ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
-        style={{
-          right: position === "right" ? "0" : "auto",
-          left: position === "left" ? "0" : "auto"
-        }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white border-b border-blue-700">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Bot className="w-5 h-5 flex-shrink-0" />
-            <span className="font-semibold text-sm truncate">AI Production Assistant</span>
-            {selBatch && (
-              <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
-                {selBatch.date} · {selDept}
-              </Badge>
-            )}
+      {/* Floating Panel - Draggable & Resizable */}
+      {open && (
+        <div 
+          ref={panelRef}
+          className="fixed z-40 shadow-2xl border border-slate-200 bg-white flex flex-col rounded-lg overflow-hidden"
+          style={{
+            left: `${panelPos.x}px`,
+            top: `${panelPos.y}px`,
+            width: minimized ? "300px" : `${panelSize.width}px`,
+            height: minimized ? "auto" : `${panelSize.height}px`,
+            cursor: isDragging ? "grabbing" : "default"
+          }}
+        >
+          {/* Header - Draggable */}
+          <div 
+            className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white border-b border-blue-700 cursor-grab active:cursor-grabbing select-none"
+            onMouseDown={handleDragStart}
+          >
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <GripHorizontal className="w-4 h-4 flex-shrink-0 opacity-70" />
+              <Bot className="w-5 h-5 flex-shrink-0" />
+              <span className="font-semibold text-sm truncate">AI Production Assistant</span>
+              {selBatch && !minimized && (
+                <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
+                  {selBatch.date} · {selDept}
+                </Badge>
+              )}
+            </div>
+            <div className="flex gap-1 ml-2">
+              <button 
+                onClick={() => setMin(!minimized)} 
+                className="hover:bg-blue-700 rounded p-1"
+                title={minimized ? "Maximize" : "Minimize"}
+              >
+                {minimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+              </button>
+              <button onClick={() => setOpen(false)} className="hover:bg-blue-700 rounded p-1" title="Close">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <div className="flex gap-1 ml-2">
-            <button 
-              onClick={() => setPosition(p => p === "right" ? "left" : "right")} 
-              className="hover:bg-blue-700 rounded p-1"
-              title="Toggle position"
-            >
-              {position === "right" ? "←" : "→"}
-            </button>
-            <button onClick={() => setOpen(false)} className="hover:bg-blue-700 rounded p-1">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
 
-        <div className="flex flex-col flex-1 overflow-hidden">
-          {/* Chat log */}
-          <ScrollArea className="flex-1 p-4">
+
+        {!minimized && (
+          <div className="flex flex-col flex-1 overflow-hidden">
+            {/* Chat log */}
+            <ScrollArea className="flex-1 p-4">
               <div className="space-y-3">
                 {messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -1322,9 +1368,20 @@ ${context}
                </button>
                </div>
                </div>
-               </div>
+               )}
 
-               {/* Duplicate file confirmation dialog */}
+               {/* Resize Handle */}
+               {!minimized && (
+               <div
+               className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize bg-blue-600 opacity-30 hover:opacity-60 rounded-tl-lg"
+               onMouseDown={() => setIsResizing(true)}
+               title="Drag to resize"
+               />
+               )}
+               </div>
+               )}
+
+                {/* Duplicate file confirmation dialog */}
                {pendingDuplicates.length > 0 && (
           <Dialog open={true} onOpenChange={() => setPendingDuplicates([])}>
             <DialogContent className="max-w-sm">
