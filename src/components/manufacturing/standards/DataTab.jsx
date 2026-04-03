@@ -8,7 +8,6 @@ import { Loader2, Plus, Trash2, Save, Download, ArrowUpDown, ArrowUp, ArrowDown,
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { exportDataTabToExcel } from './shared/exportToExcel';
-import ImportStandardsDialog from './ImportStandardsDialog';
 
 export default function DataTab({ bundle, isEditable }) {
   const queryClient = useQueryClient();
