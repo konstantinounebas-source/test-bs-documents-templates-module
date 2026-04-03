@@ -11,6 +11,12 @@ Deno.serve(async (req) => {
     // Target date: 13-03-2026
     const targetDate = "2026-03-13";
     
+    // First, list ALL batches to see what dates exist
+    const allBatches = await base44.entities.BatchHeader.list();
+    const batchDates = [...new Set(allBatches.map(b => b.batch_date))].sort();
+    
+    console.log(`All batch dates in system: ${batchDates.join(", ")}`);
+    
     // Find batch for this date
     const batches = await base44.entities.BatchHeader.filter({
       batch_date: targetDate
@@ -21,7 +27,8 @@ Deno.serve(async (req) => {
     if (batches.length === 0) {
       return Response.json({ 
         error: 'No batch found for date 13-03-2026',
-        targetDate 
+        targetDate,
+        allBatchDatesInSystem: batchDates
       });
     }
 
