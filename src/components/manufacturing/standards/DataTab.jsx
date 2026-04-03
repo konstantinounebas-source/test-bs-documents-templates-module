@@ -16,7 +16,6 @@ export default function DataTab({ bundle, isEditable }) {
   const [sortBy, setSortBy] = useState('none'); // 'none' | 'name_asc' | 'name_desc' | 'mins_asc' | 'mins_desc'
   const [itemCodeFilter, setItemCodeFilter] = useState('');
   const [selectedProfileId, setSelectedProfileId] = useState(null);
-  const [showImportDialog, setShowImportDialog] = useState(false);
 
   // Fetch departments to get bundle's department id
   const { data: allDepartments = [] } = useQuery({
@@ -307,41 +306,7 @@ export default function DataTab({ bundle, isEditable }) {
     setGridRows(newRows);
   };
 
-  const handleImport = async (records) => {
-    // Add imported records to grid
-    const newRows = [...gridRows];
-    
-    // Group records by item_code
-    const importedByItemCode = {};
-    records.forEach(rec => {
-      if (!importedByItemCode[rec.item_code]) {
-        importedByItemCode[rec.item_code] = { 
-          item_code: rec.item_code, 
-          notes: rec.notes || '', 
-          surface_area_m2: ''
-        };
-      }
-      importedByItemCode[rec.item_code][rec.operation] = rec.std_min_per_pc;
-    });
 
-    // Merge with existing grid (new items + update existing)
-    const gridByItemCode = {};
-    gridRows.forEach(row => {
-      gridByItemCode[row.item_code] = row;
-    });
-
-    Object.entries(importedByItemCode).forEach(([itemCode, importedRow]) => {
-      if (gridByItemCode[itemCode]) {
-        // Merge operations into existing row
-        Object.assign(gridByItemCode[itemCode], importedRow);
-      } else {
-        // Add new row
-        gridByItemCode[itemCode] = importedRow;
-      }
-    });
-
-    setGridRows(Object.values(gridByItemCode));
-  };
 
   if (isLoading) {
     return (
@@ -440,15 +405,6 @@ export default function DataTab({ bundle, isEditable }) {
           </Button>
           {isEditable && (
             <>
-              <Button 
-                onClick={() => setShowImportDialog(true)} 
-                variant="outline" 
-                size="sm"
-                disabled={hasNoOperations}
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Import from Excel
-              </Button>
               <Button onClick={addRow} variant="outline" size="sm" disabled={hasNoOperations}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Row
@@ -560,13 +516,6 @@ export default function DataTab({ bundle, isEditable }) {
           </TableBody>
         </Table>
       </div>
-
-      <ImportStandardsDialog 
-        open={showImportDialog} 
-        onOpenChange={setShowImportDialog}
-        onImport={handleImport}
-        isLoading={false}
-      />
     </div>
   );
 }
