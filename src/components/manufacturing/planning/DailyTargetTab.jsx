@@ -14,6 +14,7 @@ import { Loader2, Plus, Trash2, AlertCircle, Target, ChevronLeft, ChevronRight, 
 import { toast } from 'sonner';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
 import { buildItemOperationMap, computeOpsPerPiece } from '../standards/shared/calculateOperationsTime';
+import AddDailyTargetDialog from './AddDailyTargetDialog';
 
 export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
   const queryClient = useQueryClient();
@@ -28,6 +29,10 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
   // Import from Standards dialog
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importTargetType, setImportTargetType] = useState('');
+
+  // Add Daily Target Dialog
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [isAddingBulk, setIsAddingBulk] = useState(false);
 
   // ---------- data fetching ----------
   const { data: allOperations = [] } = useQuery({
@@ -248,6 +253,46 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
     importMutation.mutate({ date: selectedDate, targetType: importTargetType });
   };
 
+  // Bulk add from dialog
+  const handleBulkAdd = async (data) => {
+    if (!selectedDate) {
+      toast.error('Select a date first');
+      return;
+    }
+
+    setIsAddingBulk(true);
+    try {
+      const profile = allProfiles.find(p => p.id === data.profile_id);
+      const promises = data.item_codes.map(itemCode => {
+        const { profile_time_min_pc, target_time_min } = calcTimes(itemCode, data.profile_id, data.qty);
+        return base44.entities.TargetDaily.create({
+          bundle_id: selectedBundle.id,
+          date: selectedDate,
+          department: selectedDepartment,
+          item_code: itemCode,
+          operation_profile: profile?.name || '',
+          operation_profile_id: data.profile_id,
+          target_profile: data.target_type,
+          target_qty: data.qty,
+          profile_time_min_pc,
+          target_time_min
+        });
+      });
+
+      await Promise.all(promises);
+      await queryClient.invalidateQueries({ queryKey: ['TargetDaily'] });
+      const fresh = await base44.entities.TargetDaily.filter({ department: selectedDepartment, bundle_id: selectedBundle.id });
+      await saveTGTTimeMetric(selectedDate, selectedDepartment, selectedBundle.id, fresh);
+      
+      setShowAddDialog(false);
+      toast.success(`${data.item_codes.length} targets added`);
+    } catch (err) {
+      toast.error('Failed: ' + err.message);
+    } finally {
+      setIsAddingBulk(false);
+    }
+  };
+
   // ---------- handlers ----------
   const handleAdd = () => {
     if (!newRow.item_code || !newRow.operation_profile_id || !newRow.target_qty || !newRow.target_type) {
@@ -364,17 +409,23 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
           {/* Table */}
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Target className="w-4 h-4 text-green-600" />
                   Daily Targets — {selectedDate}
                 </CardTitle>
-                {targetTypesInStandards.length > 0 && (
-                  <Button size="sm" variant="outline" onClick={() => setShowImportDialog(true)}>
-                    <Download className="w-4 h-4 mr-1" />
-                    Import from Standards
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setShowAddDialog(true)}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Target
                   </Button>
-                )}
+                  {targetTypesInStandards.length > 0 && (
+                    <Button size="sm" variant="outline" onClick={() => setShowImportDialog(true)}>
+                      <Download className="w-4 h-4 mr-1" />
+                      Import from Standards
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -497,6 +548,18 @@ export default function DailyTargetTab({ selectedDepartment, selectedBundle }) {
           </Card>
         </>
       )}
+
+      {/* Add Daily Target Dialog */}
+      <AddDailyTargetDialog
+        open={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        profiles={profiles}
+        itemCodes={itemCodes}
+        targetTypes={targetTypesInStandards}
+        onAdd={handleBulkAdd}
+        isAdding={isAddingBulk}
+        calcTimes={calcTimes}
+      />
 
       {/* Import from Standards Dialog */}
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>

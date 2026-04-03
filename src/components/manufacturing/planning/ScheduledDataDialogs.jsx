@@ -53,7 +53,20 @@ export function AddDialog({ open, onClose, formData, setFormData, profiles, item
           </div>
           {formData.operation_profile_id && (
             <div>
-              <Label>Item Codes * (Multi-select)</Label>
+              <div className="flex justify-between items-center mb-2">
+                <Label>Item Codes * (Multi-select)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setFormData({ 
+                    ...formData, 
+                    item_codes: formData.item_codes.length === itemCodes.length ? [] : itemCodes 
+                  })}
+                >
+                  {formData.item_codes.length === itemCodes.length ? 'Clear All' : 'Select All'}
+                </Button>
+              </div>
               <MultiSelect
                 options={itemCodes.map(code => ({ value: code, label: code }))}
                 selected={formData.item_codes}
