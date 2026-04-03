@@ -842,26 +842,26 @@ ${context}
               )}
             </div>
             <div className="flex gap-1 ml-2">
-               {!fullscreen && (
-                 <button 
-                   onClick={() => setMin(!minimized)} 
-                   className="hover:bg-blue-700 rounded p-1"
-                   title={minimized ? "Maximize" : "Minimize"}
-                 >
-                   {minimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
-                 </button>
-               )}
-               <button 
-                 onClick={() => setFullscreen(!fullscreen)} 
-                 className="hover:bg-blue-700 rounded p-1"
-                 title={fullscreen ? "Exit Fullscreen" : "Fullscreen"}
-               >
-                 <Maximize className="w-4 h-4" />
-               </button>
-               <button onClick={() => setOpen(false)} className="hover:bg-blue-700 rounded p-1" title="Close">
-                 <X className="w-4 h-4" />
-               </button>
-             </div>
+              {!fullscreen && (
+                <button 
+                  onClick={() => setMin(!minimized)} 
+                  className="hover:bg-blue-700 rounded p-1"
+                  title={minimized ? "Maximize" : "Minimize"}
+                >
+                  {minimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+                </button>
+              )}
+              <button 
+                onClick={() => setFullscreen(!fullscreen)} 
+                className="hover:bg-blue-700 rounded p-1"
+                title={fullscreen ? "Exit Fullscreen" : "Fullscreen"}
+              >
+                <Maximize className="w-4 h-4" />
+              </button>
+              <button onClick={() => setOpen(false)} className="hover:bg-blue-700 rounded p-1" title="Close">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
 
