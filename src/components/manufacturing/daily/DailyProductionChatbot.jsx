@@ -33,6 +33,16 @@ import { saveOCRData } from "./chatbot/ocrSave";
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
 function yesterdayStr() { return format(subDays(new Date(), 1), "yyyy-MM-dd"); }
 
+function normalizeItemCode(code) {
+  if (!code) return code;
+  const match = code.match(/^([A-Za-z]+)(\d+)$/);
+  if (match) {
+    const [, letters, number] = match;
+    return letters + String(parseInt(number)).padStart(2, '0');
+  }
+  return code;
+}
+
 function getQuickDates() {
   const today = new Date();
   const dow = today.getDay(); // 0=Sun,1=Mon,...,6=Sat
@@ -240,7 +250,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
     queryKey: ["BundleItemCodes", selBatch?.bundle_id],
     queryFn: async () => {
       const lines = await base44.entities.StdSetLines.filter({ bundle_id: selBatch.bundle_id });
-      return [...new Set(lines.map(l => l.item_code))].filter(Boolean).sort();
+      return [...new Set(lines.map(l => normalizeItemCode(l.item_code)))].filter(Boolean).sort();
     },
     enabled: !!selBatch?.bundle_id,
     staleTime: Infinity
@@ -584,7 +594,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
       await base44.entities.Batch_Lines.bulkCreate(
         item_codes.map(code => ({
           batch_header_id: selBatch.id,
-          item_code: code, scheduled_qty: 0,
+          item_code: normalizeItemCode(code), scheduled_qty: 0,
           qty_processed: proc, qty_out_good: good, qty_scrap: scrap
         }))
       );
@@ -1025,11 +1035,11 @@ ${context}
                 <div className="space-y-1 pt-1 border-b pb-3">
                   <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Προσθήκη Νέας Γραμμής</p>
                   {/* Searchable multi-select for item codes */}
-                  <ItemCodeMultiSelect
-                    available={bundleItemCodes.filter(c => !existingBatchLines.find(bl => bl.item_code === c))}
-                    selected={blAddForm.item_codes || []}
-                    onChange={codes => setBlAddForm(f => ({ ...f, item_codes: codes }))}
-                  />
+                   <ItemCodeMultiSelect
+                     available={bundleItemCodes.filter(c => !existingBatchLines.find(bl => normalizeItemCode(bl.item_code) === c))}
+                     selected={blAddForm.item_codes || []}
+                     onChange={codes => setBlAddForm(f => ({ ...f, item_codes: codes }))}
+                   />
                   <div className="grid grid-cols-3 gap-1">
                     {[["qty_processed","Processed"],["qty_out_good","Out Good"],["qty_scrap","Scrap"]].map(([field, label]) => (
                       <div key={field}>
