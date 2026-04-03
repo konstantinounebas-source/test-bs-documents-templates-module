@@ -8,7 +8,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Target date: 13-03-2026
+    // Target date: 13-03-2026 (shown as 2026-03-13 in the UI)
     const targetDate = "2026-03-13";
     
     // First, list ALL batches to see what dates exist
