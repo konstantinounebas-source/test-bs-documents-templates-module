@@ -57,10 +57,12 @@ export default function SplitLayoutWithChatbot({ children, departments }) {
 
       {/* Right: Chatbot */}
       <div
-        className="overflow-hidden border-l border-slate-200 bg-white flex flex-col"
+        className="overflow-hidden border-l border-slate-200 bg-slate-50"
         style={{ width: `${chatWidth}px` }}
       >
-        <DailyProductionChatbot departments={departments} isSplitLayout={true} />
+        <div className="h-full flex flex-col">
+          <DailyProductionChatbot departments={departments} isSplitLayout={true} />
+        </div>
       </div>
     </div>
   );

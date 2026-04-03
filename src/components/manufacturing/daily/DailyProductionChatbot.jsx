@@ -814,20 +814,19 @@ ${context}
       )}
 
       {/* Floating Panel - Draggable & Resizable (floating mode only) */}
-      {((!isSplitLayout && open) || isSplitLayout) && (
+      {!isSplitLayout && open && (
         <div 
           ref={panelRef}
-          className={isSplitLayout ? "w-full h-full flex flex-col" : (fullscreen ? "fixed inset-0 z-40 shadow-2xl border-0 bg-white flex flex-col overflow-hidden" : "fixed z-40 shadow-2xl border border-slate-200 bg-white flex flex-col rounded-lg overflow-hidden")}
-          style={isSplitLayout ? {} : (fullscreen ? {} : {
+          className={fullscreen ? "fixed inset-0 z-40 shadow-2xl border-0 bg-white flex flex-col overflow-hidden" : "fixed z-40 shadow-2xl border border-slate-200 bg-white flex flex-col rounded-lg overflow-hidden"}
+          style={fullscreen ? {} : {
             left: `${panelPos.x}px`,
             top: `${panelPos.y}px`,
             width: minimized ? "300px" : `${panelSize.width}px`,
             height: minimized ? "auto" : `${panelSize.height}px`,
             cursor: isDragging ? "grabbing" : "default"
-          })}
+          }}
         >
-          {/* Header - Draggable (hidden in split layout) */}
-          {!isSplitLayout && (
+          {/* Header - Draggable */}
           <div 
             className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white border-b border-blue-700 cursor-grab active:cursor-grabbing select-none"
             onMouseDown={handleDragStart}
@@ -864,10 +863,9 @@ ${context}
               </button>
             </div>
           </div>
-          )}
 
 
-        {(isSplitLayout || !minimized) && (
+        {!minimized && (
           <div className="flex flex-col flex-1 overflow-hidden">
             {/* Chat log */}
             <ScrollArea className="flex-1 p-4">
@@ -1382,8 +1380,8 @@ ${context}
           </div>
         )}
 
-        {/* Resize Handle (hidden in split layout) */}
-        {!isSplitLayout && !minimized && !fullscreen && (
+        {/* Resize Handle */}
+        {!minimized && !fullscreen && (
           <div
             className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize bg-blue-600 opacity-30 hover:opacity-60 rounded-tl-lg"
             onMouseDown={() => setIsResizing(true)}
