@@ -124,19 +124,21 @@ export default function AddDailyTargetDialog({
 
           {/* Item Codes with Select All */}
           <div>
-            <div className="flex justify-between items-center mb-2">
-              <Label>Item Codes (Multi-Select) *</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleSelectAll}
-              >
-                {allItemsSelected ? 'Clear All' : 'Select All'}
-              </Button>
-            </div>
+            <Label>Item Codes (Multi-Select) *</Label>
             <ScrollArea className="border rounded-lg h-48 p-3">
               <div className="space-y-2">
+                {itemCodes.length > 0 && (
+                  <div className="flex items-center gap-2 pb-2 border-b">
+                    <Checkbox
+                      id="select-all-items"
+                      checked={allItemsSelected}
+                      onCheckedChange={handleSelectAll}
+                    />
+                    <label htmlFor="select-all-items" className="text-sm font-semibold cursor-pointer flex-1">
+                      All ({selectedItems.length}/{itemCodes.length})
+                    </label>
+                  </div>
+                )}
                 {itemCodes.length === 0 ? (
                   <Alert>
                     <AlertCircle className="w-4 h-4" />
