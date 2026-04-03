@@ -337,26 +337,7 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
               </div>
             )}
 
-            {/* Missing Item Codes Warning — Show if code from OCR is not in available list */}
-            {lines.length > 0 && availableItemCodes.length > 0 && (
-              <div className="px-4 py-2 border-b flex-shrink-0">
-                {lines.map((line, idx) => {
-                  if (!line.item_code) return null;
-                  const exists = availableSet.has(line.item_code);
-                  if (exists) return null; // Only show warnings for missing codes
-                  console.log(`OCR Warning: Item code "${line.item_code}" not found in available codes`, { available: Array.from(availableSet) });
-                  return (
-                    <div key={idx} className="bg-red-50 border border-red-200 rounded p-2 mb-2 flex items-start gap-2 text-xs text-red-700">
-                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                      <div className="flex-1">
-                        <span className="font-semibold">Γρ.{idx + 1}: "{line.item_code}" - Δεν υπάρχει στα standards</span>
-                        <div className="text-xs text-red-600 mt-1">Διαθέσιμα: {Array.from(availableSet).slice(0, 10).join(", ")}{availableSet.size > 10 ? "..." : ""}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+
 
             {/* OCR Issues panel */}
             {issues.filter((iss, i) => !acceptedIssues.has(getIssueKey(iss, i))).length > 0 && (
@@ -420,55 +401,61 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                     return (
                       <tr key={lineIdx} className={rowBg}>
                         {COLUMNS.map(col => {
-                          const cellIssues = getActiveIssuesForCell(lineIdx, col.key);
-                          const hasErr = cellIssues.some(i => i.severity === "error");
-                          const hasWarn = cellIssues.some(i => i.severity === "warning");
-                          const allAccepted = issues.filter(iss => iss.line_index === lineIdx && iss.field === col.key)
-                            .every(iss => acceptedIssues.has(getIssueKey(iss, issues.indexOf(iss))));
-                          const origIssues = issues.filter(iss => iss.line_index === lineIdx && iss.field === col.key);
-                          const cellBorder = hasErr ? "border-red-400" : hasWarn ? "border-amber-400" : "border-slate-200";
-                          const cellBg = hasErr ? "bg-red-50" : hasWarn ? "bg-amber-50" : "";
+                           const cellIssues = getActiveIssuesForCell(lineIdx, col.key);
+                           const hasErr = cellIssues.some(i => i.severity === "error");
+                           const hasWarn = cellIssues.some(i => i.severity === "warning");
+                           const allAccepted = issues.filter(iss => iss.line_index === lineIdx && iss.field === col.key)
+                             .every(iss => acceptedIssues.has(getIssueKey(iss, issues.indexOf(iss))));
+                           const origIssues = issues.filter(iss => iss.line_index === lineIdx && iss.field === col.key);
 
-                          return (
-                            <td key={col.key}
-                              className={`border border-slate-200 p-0 ${hasErr ? "bg-red-50" : hasWarn ? "bg-amber-50" : ""}`}
-                              style={{ width: col.boolean ? "28px" : "52px" }}>
-                              <div className="flex items-center justify-center gap-0.5 px-0.5 py-1">
-                                {col.boolean ? (
-                                  <input
-                                    type="number"
-                                    value={line[col.key] || ""}
-                                    onChange={e => updateLine(lineIdx, col.key, e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)}
-                                    min={0}
-                                    className={`w-full text-xs border rounded px-1 py-0.5 outline-none focus:border-blue-400 ${cellBorder} ${cellBg}`}
-                                  />
-                                ) : (
-                                  <input
-                                    type={typeof line[col.key] === "number" ? "number" : "text"}
-                                    value={line[col.key] ?? ""}
-                                    onChange={e => updateLine(lineIdx, col.key, typeof line[col.key] === "number" ? parseFloat(e.target.value) || 0 : e.target.value)}
-                                    min={0}
-                                    className={`w-full text-xs border rounded px-1 py-0.5 outline-none focus:border-blue-400 ${cellBorder} ${cellBg}`}
-                                  />
-                                )}
-                                {origIssues.length > 0 && (
-                                  <button
-                                    onClick={() => origIssues.forEach(iss => acceptIssue(getIssueKey(iss, issues.indexOf(iss))))}
-                                    className={`flex-shrink-0 rounded border transition-colors ${
-                                      allAccepted
-                                        ? "border-green-400 text-green-600 bg-green-50 cursor-default"
-                                        : hasErr ? "border-red-400 text-red-500 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
-                                        : "border-amber-400 text-amber-500 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
-                                    }`}
-                                    title={allAccepted ? "Αποδεκτό" : "Αποδοχή"}
-                                  >
-                                    <Check className="w-2.5 h-2.5" />
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          );
-                        })}
+                           // Check if item_code is missing from available codes
+                           const isItemCodeCol = col.key === "item_code";
+                           const itemCodeNotFound = isItemCodeCol && line.item_code && availableItemCodes.length > 0 && !availableSet.has(line.item_code);
+                           const cellHasWarning = hasErr || hasWarn || itemCodeNotFound;
+                           const cellBorder = hasErr || itemCodeNotFound ? "border-red-400" : hasWarn ? "border-amber-400" : "border-slate-200";
+                           const cellBg = hasErr || itemCodeNotFound ? "bg-red-50" : hasWarn ? "bg-amber-50" : "";
+
+                           return (
+                             <td key={col.key}
+                               className={`border border-slate-200 p-0 ${hasErr || itemCodeNotFound ? "bg-red-50" : hasWarn ? "bg-amber-50" : ""}`}
+                               style={{ width: col.boolean ? "28px" : "52px" }}>
+                               <div className="flex items-center justify-center gap-0.5 px-0.5 py-1">
+                                 {col.boolean ? (
+                                   <input
+                                     type="number"
+                                     value={line[col.key] || ""}
+                                     onChange={e => updateLine(lineIdx, col.key, e.target.value === "" ? 0 : parseFloat(e.target.value) || 0)}
+                                     min={0}
+                                     className={`w-full text-xs border rounded px-1 py-0.5 outline-none focus:border-blue-400 ${cellBorder} ${cellBg}`}
+                                   />
+                                 ) : (
+                                   <input
+                                     type={typeof line[col.key] === "number" ? "number" : "text"}
+                                     value={line[col.key] ?? ""}
+                                     onChange={e => updateLine(lineIdx, col.key, typeof line[col.key] === "number" ? parseFloat(e.target.value) || 0 : e.target.value)}
+                                     min={0}
+                                     className={`w-full text-xs border rounded px-1 py-0.5 outline-none focus:border-blue-400 ${cellBorder} ${cellBg}`}
+                                   />
+                                 )}
+                                 {(origIssues.length > 0 || itemCodeNotFound) && (
+                                   <button
+                                     onClick={() => origIssues.forEach(iss => acceptIssue(getIssueKey(iss, issues.indexOf(iss))))}
+                                     className={`flex-shrink-0 rounded border transition-colors ${
+                                       allAccepted && !itemCodeNotFound
+                                         ? "border-green-400 text-green-600 bg-green-50 cursor-default"
+                                         : itemCodeNotFound ? "border-red-400 text-red-500 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
+                                         : hasErr ? "border-red-400 text-red-500 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
+                                         : "border-amber-400 text-amber-500 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
+                                     }`}
+                                     title={itemCodeNotFound ? "Κώδικας δεν υπάρχει στα standards" : allAccepted ? "Αποδεκτό" : "Αποδοχή"}
+                                   >
+                                     <Check className="w-2.5 h-2.5" />
+                                   </button>
+                                 )}
+                               </div>
+                             </td>
+                           );
+                         })}
                         {/* Accept all issues for this row */}
                         <td className="border border-slate-200 px-1 py-0.5 text-center">
                           {lineIssues.length > 0 && (
