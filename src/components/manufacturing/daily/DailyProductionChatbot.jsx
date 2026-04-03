@@ -1047,13 +1047,8 @@ ${context}
                      <div className="space-y-1.5">
                        {existingBatchLines.map((bl) => {
                          const blCode = bl.item_code?.trim() || "";
-                         // Check if this code exists in bundle (exact match or as prefix with space variants)
-                         const exists = bundleItemCodes.some(bcode => {
-                           // Exact match
-                           if (bcode === blCode) return true;
-                           // Prefix match: "C56" matches "C56", "C56 M", "C56-M"
-                           return bcode.startsWith(blCode) && (bcode.length === blCode.length || /[\s\-]/.test(bcode[blCode.length]));
-                         });
+                         // Exact match only
+                         const exists = bundleItemCodes.includes(blCode);
                          if (exists) return null;
                          return (
                            <div key={bl.id} className="bg-red-50 border border-red-200 rounded px-2 py-1.5 flex items-start gap-2">
