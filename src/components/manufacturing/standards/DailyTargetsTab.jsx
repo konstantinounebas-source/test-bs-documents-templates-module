@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, Trash2, AlertCircle, X, Info, Search, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { buildItemOperationMap, computeOpsPerPiece, getOperationBreakdown } from './shared/calculateOperationsTime';
@@ -564,43 +565,46 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
                     onChange={e => setItemSearch(e.target.value)}
                   />
                 </div>
-                <div className="max-h-40 overflow-y-auto">
-                   {filteredAvailableItems.length > 0 && (
-                     <div className="flex items-center gap-2 px-3 py-1.5 text-sm border-b bg-slate-50">
-                       <Checkbox
-                         id="select-all-daily-items"
-                         checked={allItemsSelected}
-                         onCheckedChange={handleSelectAllItems}
-                       />
-                       <label htmlFor="select-all-daily-items" className="font-semibold cursor-pointer flex-1">
-                         All ({selectedItemCodes.length}/{filteredAvailableItems.filter(i => !i.disabled).length})
-                       </label>
-                     </div>
-                   )}
-                   {filteredAvailableItems.length === 0 && (
-                     <p className="text-xs text-slate-400 px-3 py-2">No items found</p>
-                   )}
-                   {filteredAvailableItems.map(item => {
-                    const isSelected = selectedItemCodes.includes(item.value);
-                    const isDisabled = item.disabled;
-                    return (
-                      <div
-                        key={item.value}
-                        className={`flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer select-none
-                          ${isDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50'}
-                          ${isSelected ? 'bg-blue-50' : ''}`}
-                        onClick={() => {
-                          if (isDisabled) return;
-                          if (isSelected) handleRemoveItemCode(item.value);
-                          else handleAddItemCode(item.value);
-                        }}
-                      >
-                        <Checkbox checked={isSelected} disabled={isDisabled} className="pointer-events-none" />
-                        <span className={isDisabled ? 'text-slate-400' : ''}>{item.label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+                <ScrollArea className="border rounded-lg h-48 p-3">
+                   <div className="space-y-2">
+                     {filteredAvailableItems.length > 0 && (
+                       <div className="flex items-center gap-2 pb-2 border-b">
+                         <Checkbox
+                           id="select-all-daily-items"
+                           checked={allItemsSelected}
+                           onCheckedChange={handleSelectAllItems}
+                         />
+                         <label htmlFor="select-all-daily-items" className="text-sm font-semibold cursor-pointer flex-1">
+                           All ({selectedItemCodes.length}/{filteredAvailableItems.filter(i => !i.disabled).length})
+                         </label>
+                       </div>
+                     )}
+                     {filteredAvailableItems.length === 0 && (
+                       <p className="text-xs text-slate-400">No items found</p>
+                     )}
+                     {filteredAvailableItems.map(item => {
+                       const isSelected = selectedItemCodes.includes(item.value);
+                       const isDisabled = item.disabled;
+                       return (
+                         <div key={item.value} className="flex items-center gap-2">
+                           <Checkbox
+                             id={`item-${item.value}`}
+                             checked={isSelected}
+                             disabled={isDisabled}
+                             onCheckedChange={() => {
+                               if (isDisabled) return;
+                               if (isSelected) handleRemoveItemCode(item.value);
+                               else handleAddItemCode(item.value);
+                             }}
+                           />
+                           <label htmlFor={`item-${item.value}`} className="text-sm font-medium cursor-pointer flex-1">
+                             {item.label}
+                           </label>
+                         </div>
+                       );
+                     })}
+                   </div>
+                </ScrollArea>
               </div>
             </div>
 
