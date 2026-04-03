@@ -387,8 +387,12 @@ export default function OperationsTab({ batchId, department }) {
       const operation = operations.find(op => op.id === opId);
       if (!operation) return null;
 
+      // First try item-specific, then fall back to general
       const stdLine = stdSetLines.find(sl => 
         sl.item_code === formData.item_code && 
+        sl.operation === operation.name
+      ) || stdSetLines.find(sl =>
+        !sl.item_code && 
         sl.operation === operation.name
       );
 
@@ -928,8 +932,12 @@ export default function OperationsTab({ batchId, department }) {
                   ) : (
                     <div className="space-y-3">
                       {operationsForProfile.map(op => {
+                        // First try item-specific, then fall back to general
                         const stdLine = stdSetLines.find(sl => 
                           sl.item_code === formData.item_code && 
+                          sl.operation === op.name
+                        ) || stdSetLines.find(sl =>
+                          !sl.item_code && 
                           sl.operation === op.name
                         );
                         const stdMinPc = stdLine?.std_min_per_pc || 0;
