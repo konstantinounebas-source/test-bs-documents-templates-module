@@ -1382,11 +1382,11 @@ ${context}
 
                {/* Resize Handle */}
                {!minimized && !fullscreen && (
-                 <div
-                   className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize bg-blue-600 opacity-30 hover:opacity-60 rounded-tl-lg"
-                   onMouseDown={() => setIsResizing(true)}
-                   title="Drag to resize"
-                 />
+               <div
+               className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize bg-blue-600 opacity-30 hover:opacity-60 rounded-tl-lg"
+               onMouseDown={() => setIsResizing(true)}
+               title="Drag to resize"
+               />
                )}
                </div>
                )}
