@@ -379,19 +379,34 @@ export default function DailyProductionChatbot({ departments = [] }) {
     setOcrLoading(true);
     addMsg("bot", `🔍 Εκτελώ OCR στο αρχείο "${att.file_name}"...`);
     addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
-    try {
-      const result = await ocrProductionForm({ file_url: att.file_url });
-      console.log('OCR result received:', result.data);
-      setOcrResult(result.data);
-      setShowOcrModal(true);
-      console.log('OCR Modal opened - passing bundleItemCodes:', bundleItemCodes);
-      addMsg("bot", `✅ OCR ολοκληρώθηκε! Βρέθηκαν ${result.data?.extracted_data?.production_lines?.length || 0} γραμμές. Επιβεβαίωσε τα δεδομένα.`);
-    } catch (err) {
-      console.error('OCR error:', err);
-      addMsg("bot", `❌ Σφάλμα OCR: ${err?.message || "Άγνωστο σφάλμα"}`);
-    } finally {
-      setOcrLoading(false);
+    
+    // Retry logic: up to 3 attempts with exponential backoff
+    const maxRetries = 3;
+    let lastErr;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await ocrProductionForm({ file_url: att.file_url });
+        console.log('OCR result received:', result.data);
+        setOcrResult(result.data);
+        setShowOcrModal(true);
+        console.log('OCR Modal opened - passing bundleItemCodes:', bundleItemCodes);
+        addMsg("bot", `✅ OCR ολοκληρώθηκε! Βρέθηκαν ${result.data?.extracted_data?.production_lines?.length || 0} γραμμές. Επιβεβαίωσε τα δεδομένα.`);
+        setOcrLoading(false);
+        return;
+      } catch (err) {
+        lastErr = err;
+        console.warn(`OCR attempt ${attempt}/${maxRetries} failed:`, err?.message);
+        if (attempt < maxRetries) {
+          const waitMs = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+          addMsg("bot", `⚠️ Σφάλμα δικτύου. Προσπάθεια ${attempt + 1}/${maxRetries} σε ${waitMs / 1000}s...`);
+          await new Promise(resolve => setTimeout(resolve, waitMs));
+        }
+      }
     }
+    
+    console.error('OCR failed after max retries:', lastErr);
+    addMsg("bot", `❌ OCR αποτυχία μετά από ${maxRetries} προσπάθειες: ${lastErr?.message || "Network error"}`);
+    setOcrLoading(false);
   };
 
   const handleOcrConfirm = (confirmedData) => {
@@ -760,9 +775,9 @@ ${context}
         />
       )}
 
-      {/* Side Panel */}
+      {/* Side Panel - Independent popup (can operate in background) */}
       <div 
-        className={`fixed top-16 bottom-0 w-[450px] z-40 shadow-2xl border-l border-slate-200 bg-white flex flex-col transition-transform duration-300 ${
+        className={`fixed top-16 bottom-0 w-[450px] z-40 shadow-2xl border-l border-slate-200 bg-white flex flex-col transition-transform duration-300 pointer-events-auto ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
         style={{
