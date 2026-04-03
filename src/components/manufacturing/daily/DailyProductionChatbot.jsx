@@ -358,12 +358,16 @@ export default function DailyProductionChatbot({ departments = [] }) {
     setOcrTargetAtt(att);
     setOcrLoading(true);
     addMsg("bot", `🔍 Εκτελώ OCR στο αρχείο "${att.file_name}"...`);
+    console.log('Starting OCR - bundleItemCodes:', bundleItemCodes, 'selBatch:', selBatch);
     try {
       const result = await ocrProductionForm({ file_url: att.file_url });
+      console.log('OCR result received:', result.data);
       setOcrResult(result.data);
       setShowOcrModal(true);
+      console.log('OCR Modal opened - passing bundleItemCodes:', bundleItemCodes);
       addMsg("bot", `✅ OCR ολοκληρώθηκε! Βρέθηκαν ${result.data?.extracted_data?.production_lines?.length || 0} γραμμές. Επιβεβαίωσε τα δεδομένα.`);
     } catch (err) {
+      console.error('OCR error:', err);
       addMsg("bot", `❌ Σφάλμα OCR: ${err?.message || "Άγνωστο σφάλμα"}`);
     } finally {
       setOcrLoading(false);
