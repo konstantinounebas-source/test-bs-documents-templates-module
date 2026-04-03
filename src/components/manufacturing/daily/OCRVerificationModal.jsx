@@ -123,7 +123,9 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
    const fileParsed = parseFileName(fileName);
    
    // Normalize available item codes for comparison
-   const normalizedAvailable = availableItemCodes.map(normalizeItemCode);
+   const normalizedAvailable = (availableItemCodes || []).map(normalizeItemCode);
+   
+   console.log('OCR Modal - Available codes:', availableItemCodes, 'Normalized:', normalizedAvailable);
 
   const handleDividerMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -338,20 +340,31 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
             )}
 
             {/* Missing Item Codes Warning */}
-            {lines.length > 0 && normalizedAvailable.length > 0 && (
-              <div className="px-4 py-2 border-b bg-red-50 flex-shrink-0">
-                {lines.map((line, idx) => {
-                  const normalizedCode = normalizeItemCode(line.item_code);
-                  if (!normalizedCode || normalizedAvailable.includes(normalizedCode)) return null;
-                  return (
-                    <div key={idx} className="flex items-start gap-2 text-xs mb-1 text-red-700">
-                      <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                      <span className="flex-1">
-                        <strong>Γρ.{idx + 1}:</strong> Το item code "{normalizedCode}" δεν υπάρχει στα standards. Διαθέσιμα: {normalizedAvailable.slice(0, 5).join(", ")}{normalizedAvailable.length > 5 ? "..." : ""}
-                      </span>
-                    </div>
-                  );
-                })}
+            {lines.length > 0 && (
+              <div className="px-4 py-2 border-b flex-shrink-0">
+                {normalizedAvailable.length === 0 ? (
+                  <div className="bg-orange-50 border border-orange-200 rounded p-2 mb-2 text-xs text-orange-700">
+                    ⚠️ Δεν υπάρχουν διαθέσιμα item codes. Ελέγξτε το bundle.
+                  </div>
+                ) : (
+                  <>
+                    {lines.map((line, idx) => {
+                      const normalizedCode = normalizeItemCode(line.item_code);
+                      if (!normalizedCode) return null;
+                      const exists = normalizedAvailable.includes(normalizedCode);
+                      if (exists) return null; // Only show warnings for missing codes
+                      return (
+                        <div key={idx} className="bg-red-50 border border-red-200 rounded p-2 mb-2 flex items-start gap-2 text-xs text-red-700">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <span className="font-semibold">Γρ.{idx + 1}: "{normalizedCode}" - Δεν υπάρχει</span>
+                            <div className="text-xs text-red-600 mt-1">Διαθέσιμα: {normalizedAvailable.join(", ")}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
               </div>
             )}
 
