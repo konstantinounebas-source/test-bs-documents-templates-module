@@ -446,11 +446,11 @@ export default function DataTab({ bundle, isEditable }) {
             <TableRow className="bg-slate-50">
               <TableHead className="sticky left-0 bg-slate-50 z-10 min-w-[150px] font-semibold">Item Code</TableHead>
               {operationColumns.map(col => (
-                <TableHead key={col.operation} className="min-w-[120px] font-semibold">{col.label}</TableHead>
+                <TableHead key={col.operation} className="min-w-[140px] font-semibold text-xs px-2 py-3 whitespace-normal break-words h-auto">{col.label}</TableHead>
               ))}
-              <TableHead className="min-w-[130px] font-semibold text-blue-700">Surface Area (m²)</TableHead>
-              <TableHead className="min-w-[200px] font-semibold">Notes</TableHead>
-              {isEditable && <TableHead className="w-[100px] font-semibold">Actions</TableHead>}
+              <TableHead className="min-w-[130px] font-semibold text-blue-700 text-xs px-2 py-3 whitespace-normal break-words h-auto">Surface Area (m²)</TableHead>
+              <TableHead className="min-w-[200px] font-semibold text-xs px-2 py-3 whitespace-normal break-words h-auto">Notes</TableHead>
+              {isEditable && <TableHead className="w-[100px] font-semibold text-xs px-2 py-3">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
