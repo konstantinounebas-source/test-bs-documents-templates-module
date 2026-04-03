@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { format, subDays } from "date-fns";
 import { ocrProductionForm } from "@/functions/ocrProductionForm";
 import OCRVerificationModal from "../OCRVerificationModal";
+import { saveOCRData } from "./useOCRSave";
 
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
 
@@ -194,7 +195,12 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssi
           departments={departments}
           onConfirm={(confirmed) => {
             setShowOcrModal(false);
-            toast.success(`✅ OCR επιβεβαιώθηκε: ${confirmed.production_lines?.length || 0} γραμμές`);
+            const batch = batchHeaders.find(b => b.date === date && b.department === dept);
+            if (batch) {
+              saveOCRData(confirmed, batch.id, () => {});
+            } else {
+              toast.warning("Αποθηκεύτηκε OCR αλλά δεν βρέθηκε batch για αποθήκευση δεδομένων.");
+            }
           }}
         />
       )}
