@@ -899,20 +899,39 @@ export default function OperationsTab({ batchId, department }) {
             </div>
 
             {formData.item_code && (
-              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm font-medium text-blue-900 mb-2">Existing Operations for {formData.item_code}:</p>
-                <div className="space-y-1">
-                  {lines.filter(l => l.item_code === formData.item_code).length === 0 ? (
-                    <p className="text-sm text-blue-700">None yet</p>
-                  ) : (
-                    lines.filter(l => l.item_code === formData.item_code).map(op => (
-                      <div key={op.id} className="text-sm text-blue-800 flex items-center gap-2">
-                        <span className="font-medium">{op.operation || '(no operation)'}</span>
-                        <span className="text-blue-600">Qty: {op.qty_operation}</span>
-                        <span className="text-blue-600">Time: {op.operation_time_min?.toFixed(2)}m</span>
+              <div className="mb-4 space-y-2">
+                {/* Check if item_code exists in standards */}
+                {!itemCodes.includes(formData.item_code) && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-red-900">Item Code Not Found</p>
+                      <p className="text-xs text-red-700 mt-1">
+                        "{formData.item_code}" δεν υπάρχει στα standards της bundle. 
+                        Ελέγξτε τη σύγραφη ή επιλέξτε ένα διαθέσιμο item code.
+                      </p>
+                      <div className="text-xs text-red-600 mt-2 max-h-24 overflow-y-auto">
+                        <p className="font-medium">Διαθέσιμα item codes:</p>
+                        <p>{itemCodes.join(", ") || "None"}</p>
                       </div>
-                    ))
-                  )}
+                    </div>
+                  </div>
+                )}
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-medium text-blue-900 mb-2">Existing Operations for {formData.item_code}:</p>
+                  <div className="space-y-1">
+                    {lines.filter(l => l.item_code === formData.item_code).length === 0 ? (
+                      <p className="text-sm text-blue-700">None yet</p>
+                    ) : (
+                      lines.filter(l => l.item_code === formData.item_code).map(op => (
+                        <div key={op.id} className="text-sm text-blue-800 flex items-center gap-2">
+                          <span className="font-medium">{op.operation || '(no operation)'}</span>
+                          <span className="text-blue-600">Qty: {op.qty_operation}</span>
+                          <span className="text-blue-600">Time: {op.operation_time_min?.toFixed(2)}m</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
             )}
