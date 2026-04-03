@@ -629,6 +629,26 @@ export default function OperationsTab({ batchId, department }) {
         </Alert>
       )}
 
+      {/* Missing item codes warning for all operations in the table */}
+      {lines.length > 0 && itemCodes.length > 0 && (
+        <>
+          {lines.map((line, idx) => {
+            if (!line.item_code || itemCodes.includes(line.item_code)) return null;
+            return (
+              <div key={`${idx}-${line.item_code}`} className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-red-900">Item Code Not Found: "{line.item_code}"</p>
+                  <p className="text-xs text-red-700 mt-1">
+                    This item code doesn't exist in the standards. Διαθέσιμα: {itemCodes.slice(0, 5).join(", ")}{itemCodes.length > 5 ? "..." : ""}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
+
       <div className="flex justify-between items-center gap-4">
         <h3 className="text-lg font-semibold">Operations</h3>
         <div className="flex gap-2 items-center flex-1 max-w-md">
