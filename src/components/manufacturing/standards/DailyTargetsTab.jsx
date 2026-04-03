@@ -547,15 +547,30 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center justify-between mb-2">
                 <Label>Item Codes (Multi-Select) *</Label>
                 <div className="flex items-center gap-2">
                   <Checkbox id="showAssigned2" checked={showAssigned} onCheckedChange={setShowAssigned} />
                   <Label htmlFor="showAssigned2" className="text-xs font-normal cursor-pointer">Show assigned items</Label>
                 </div>
               </div>
+              
+              {/* "All" Checkbox - Outside ScrollArea */}
+              {filteredAvailableItems.length > 0 && (
+                <div className="flex items-center gap-2 mb-2 px-3 py-1.5 bg-slate-50 border rounded-t-md">
+                  <Checkbox
+                    id="select-all-daily-items"
+                    checked={allItemsSelected}
+                    onCheckedChange={handleSelectAllItems}
+                  />
+                  <label htmlFor="select-all-daily-items" className="text-sm font-semibold cursor-pointer flex-1">
+                    All ({selectedItemCodes.length}/{filteredAvailableItems.filter(i => !i.disabled).length})
+                  </label>
+                </div>
+              )}
+
               {/* Search + multi-select list */}
-              <div className="border rounded-md">
+              <div className={`border ${filteredAvailableItems.length > 0 ? 'rounded-b-md' : 'rounded-md'}`}>
                 <div className="flex items-center border-b px-3 py-1.5 gap-2">
                   <Search className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                   <input
@@ -565,20 +580,8 @@ export default function DailyTargetsTab({ bundle, isEditable }) {
                     onChange={e => setItemSearch(e.target.value)}
                   />
                 </div>
-                <ScrollArea className="border rounded-lg h-48 p-3">
+                <ScrollArea className="h-48 p-3">
                    <div className="space-y-2">
-                     {filteredAvailableItems.length > 0 && (
-                       <div className="flex items-center gap-2 pb-2 border-b">
-                         <Checkbox
-                           id="select-all-daily-items"
-                           checked={allItemsSelected}
-                           onCheckedChange={handleSelectAllItems}
-                         />
-                         <label htmlFor="select-all-daily-items" className="text-sm font-semibold cursor-pointer flex-1">
-                           All ({selectedItemCodes.length}/{filteredAvailableItems.filter(i => !i.disabled).length})
-                         </label>
-                       </div>
-                     )}
                      {filteredAvailableItems.length === 0 && (
                        <p className="text-xs text-slate-400">No items found</p>
                      )}
