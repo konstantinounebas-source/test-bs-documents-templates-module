@@ -20,8 +20,8 @@ export default function AddQCLineDialog({ open, onOpenChange, setId }) {
   });
 
   const { data: qcTypes = [] } = useQuery({
-    queryKey: ['QCType'],
-    queryFn: () => base44.entities.QCType.filter({ is_active: true })
+    queryKey: ['QC_Type'],
+    queryFn: () => base44.entities.QC_Type.list()
   });
 
   const qcLevels = ["L1", "L2", "L3", "L4", "L5"];
