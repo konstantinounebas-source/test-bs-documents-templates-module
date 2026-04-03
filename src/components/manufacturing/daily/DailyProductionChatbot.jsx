@@ -376,12 +376,7 @@ export default function DailyProductionChatbot({ departments = [] }) {
     setOcrTargetAtt(att);
     setOcrLoading(true);
     addMsg("bot", `🔍 Εκτελώ OCR στο αρχείο "${att.file_name}"...`);
-    console.log('=== OCR DEBUG ===');
-    console.log('selBatch.date:', selBatch?.date);
-    console.log('selDept:', selDept);
-    console.log('bundleItemCodes available:', bundleItemCodes);
-    console.log('bundleItemCodes count:', bundleItemCodes?.length);
-    console.log('=================');
+    addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
     try {
       const result = await ocrProductionForm({ file_url: att.file_url });
       console.log('OCR result received:', result.data);
