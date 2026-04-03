@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { format, subDays } from "date-fns";
 import { ocrProductionForm } from "@/functions/ocrProductionForm";
 import OCRVerificationModal from "../OCRVerificationModal";
-import { saveOCRData } from "./useOCRSave";
+import { saveOCRData } from "./ocrSave";
 
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
 
