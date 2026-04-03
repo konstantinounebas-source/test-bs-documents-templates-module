@@ -1046,13 +1046,20 @@ ${context}
                    {existingBatchLines.length > 0 && bundleItemCodes.length > 0 && (
                      <div className="space-y-1.5">
                        {existingBatchLines.map((bl) => {
-                         const normalized = normalizeItemCode(bl.item_code);
-                         if (!normalized || bundleItemCodes.includes(normalized)) return null;
+                         const blCode = bl.item_code?.trim() || "";
+                         // Check if this code exists in bundle (exact match or as prefix with space variants)
+                         const exists = bundleItemCodes.some(bcode => {
+                           // Exact match
+                           if (bcode === blCode) return true;
+                           // Prefix match: "C56" matches "C56", "C56 M", "C56-M"
+                           return bcode.startsWith(blCode) && (bcode.length === blCode.length || /[\s\-]/.test(bcode[blCode.length]));
+                         });
+                         if (exists) return null;
                          return (
                            <div key={bl.id} className="bg-red-50 border border-red-200 rounded px-2 py-1.5 flex items-start gap-2">
                              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-red-600" />
                              <div className="text-xs text-red-700">
-                               <p className="font-semibold">{normalized} - Δεν υπάρχει στα standards</p>
+                               <p className="font-semibold">{blCode} - Δεν υπάρχει στα standards</p>
                                <p className="text-red-600 mt-0.5">Διαθέσιμα: {bundleItemCodes.slice(0, 3).join(", ")}{bundleItemCodes.length > 3 ? "..." : ""}</p>
                              </div>
                            </div>

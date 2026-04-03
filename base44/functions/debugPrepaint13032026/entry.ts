@@ -10,25 +10,46 @@ Deno.serve(async (req) => {
 
     // Target date: 13-03-2026 (shown as 2026-03-13 in the UI)
     const targetDate = "2026-03-13";
+    const targetDept = "Pre-paint";
     
-    // First, list ALL batches to see what dates exist
+    // List ALL batches first to see structure
     const allBatches = await base44.entities.BatchHeader.list();
-    const batchDates = [...new Set(allBatches.map(b => b.batch_date))].sort();
+    console.log(`Total batches in system: ${allBatches.length}`);
     
-    console.log(`All batch dates in system: ${batchDates.join(", ")}`);
+    // Try different field names for date
+    const batchDates = [...new Set(allBatches.map(b => b.date || b.batch_date || b.production_date))].sort();
+    console.log(`All batch dates found: ${batchDates.join(", ")}`);
     
-    // Find batch for this date
-    const batches = await base44.entities.BatchHeader.filter({
-      batch_date: targetDate
+    // Sample first batch to see its structure
+    if (allBatches.length > 0) {
+      const sample = allBatches[0];
+      console.log(`Sample batch structure:`, JSON.stringify(sample, null, 2));
+    }
+    
+    // Try filtering by date (try different field names)
+    let batches = await base44.entities.BatchHeader.filter({
+      date: targetDate,
+      department: targetDept
     });
     
-    console.log(`Found ${batches.length} batches for date ${targetDate}`);
+    // If not found, try batch_date
+    if (batches.length === 0) {
+      batches = await base44.entities.BatchHeader.filter({
+        batch_date: targetDate,
+        department: targetDept
+      });
+    }
+    
+    console.log(`Found ${batches.length} batches for date ${targetDate} + dept ${targetDept}`);
     
     if (batches.length === 0) {
       return Response.json({ 
-        error: 'No batch found for date 13-03-2026',
+        error: 'No batch found for date 13-03-2026 + Pre-paint',
         targetDate,
-        allBatchDatesInSystem: batchDates
+        targetDept,
+        allBatchDatesInSystem: batchDates,
+        totalBatchesInSystem: allBatches.length,
+        sampleBatchStructure: allBatches.length > 0 ? allBatches[0] : null
       });
     }
 
@@ -59,10 +80,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get item codes from StdSetLines
-    const stdLines = await base44.entities.StdSetLines.filter({
-      std_set_id: bundleId
+    // Get item codes from StdSetLines (try both possible entity names)
+    let stdLines = await base44.entities.StdSetLines.filter({
+      bundle_id: bundleId
     });
+    
+    console.log(`StdSetLines query (bundle_id=${bundleId}): found ${stdLines.length}`);
+    
+    // If empty, try the underscore version
+    if (stdLines.length === 0) {
+      stdLines = await base44.entities.Std_Set_Lines.filter({
+        bundle_id: bundleId
+      });
+      console.log(`Std_Set_Lines query: found ${stdLines.length}`);
+    }
+    
+    // If still empty, list a sample to see the structure
+    if (stdLines.length === 0) {
+      const allLines = await base44.entities.StdSetLines.list();
+      console.log(`All StdSetLines in system: ${allLines.length}`);
+      if (allLines.length > 0) {
+        console.log('Sample StdSetLine:', JSON.stringify(allLines[0], null, 2));
+      }
+    }
 
     const itemCodes = stdLines.map(line => line.item_code).filter(Boolean);
     const uniqueItemCodes = [...new Set(itemCodes)].sort();
