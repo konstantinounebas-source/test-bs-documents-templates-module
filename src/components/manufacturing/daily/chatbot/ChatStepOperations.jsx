@@ -223,16 +223,10 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
     const processedLines = batchLines.filter(bl => (bl.qty_processed || 0) > 0);
     if (!processedLines.length) { toast.info("Δεν υπάρχουν processed lines"); setIsSyncing(false); return; }
     const bundleId = batchHeader?.bundle_id;
-    // Resolve department ID from department name
-    let deptId = null;
-    if (batchHeader?.department) {
-      const depts = await base44.entities.Department.filter({ name: batchHeader.department });
-      deptId = depts?.[0]?.id || null;
-    }
     const [stdLinesAll, schedDataAll, allProfileNames, allOps] = await Promise.all([
       bundleId ? base44.entities.StdSetLines.filter({ bundle_id: bundleId }) : Promise.resolve([]),
-      (batchHeader?.date && deptId)
-        ? base44.entities.ScheduledData.filter({ date: batchHeader.date, department_id: deptId })
+      (batchHeader?.date && batchHeader?.department)
+        ? base44.entities.ScheduledData.filter({ date: batchHeader.date, department_id: batchHeader.department })
         : Promise.resolve([]),
       base44.entities.OperationProfileName.list(),
       base44.entities.Operation.list()
