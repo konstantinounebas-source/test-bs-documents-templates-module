@@ -409,7 +409,11 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         return;
       }
 
-      addMsg("bot", `📋 Ανιχνεύθηκε: ${detectedForms.join(", ")}`);
+      // Display detailed detection results per page
+      const detectionDetails = Object.entries(detectResult.pages || {})
+        .map(([page, data]) => `Σελ.${page} = ${data?.form_type || 'unknown'}`)
+        .join(', ');
+      addMsg("bot", `📋 Ανιχνεύθηκε: ${detectionDetails}`);
       addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
 
       // Step 2: Call OCR functions for detected forms
