@@ -141,6 +141,13 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   const [referencePersons, setReferencePersons] = useState([]);
 
   const fileParsed = parseFileName(fileName);
+  
+  // Determine form type based on OCR title
+  const ocrTitle = ocrResult?.extracted_data?.title || ocrResult?.extracted_data?.form_title || "";
+  const isProductionForm = ocrTitle.toLowerCase().includes("production teams") || 
+                           (!ocrTitle.toLowerCase().includes("προετοιμασία") && !ocrTitle.toLowerCase().includes("prepaint") && ocrResult?.extracted_data?.team_persons);
+  const isPrepaintForm = ocrTitle.toLowerCase().includes("προετοιμασία") || ocrTitle.toLowerCase().includes("prepaint") || 
+                         (!isProductionForm && ocrResult?.extracted_data?.operations);
 
   // Resolve dept: OCR result > filename (filter out "null" string)
   const resolvedDept = ocrResult?.extracted_data?.team || fileParsed.dept;
@@ -416,7 +423,16 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
 
-              {/* ── Section 1: Team Persons ── */}
+              {/* Form type indicator */}
+              {(isProductionForm || isPrepaintForm) && (
+                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded text-xs font-semibold text-blue-700">
+                  <span>📋 Φόρμα:</span>
+                  <span>{isProductionForm ? "Production Teams Time Form" : isPrepaintForm ? "Prepaint - Βαφή" : "Unknown"}</span>
+                </div>
+              )}
+
+              {/* ── Section 1: Team Persons (Production Form Only) ── */}
+              {isProductionForm && (
               <div>
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                   Ενότητα 1 – Συνολικές ώρες Εργασίας
@@ -505,8 +521,10 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   + Προσθήκη
                 </Button>
               </div>
+              )}
 
-              {/* ── Section 2: Team Extra ── */}
+              {/* ── Section 2: Team Extra (Production Form Only) ── */}
+              {isProductionForm && (
               <div>
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                   Ενότητα 2 – Εργασίες εκτός φόρμας
@@ -683,8 +701,10 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   + Προσθήκη
                 </Button>
               </div>
+              )}
 
-              {/* ── Section 3: Help In (auto-derived) ── */}
+              {/* ── Section 3: Help In (Production Form Only, auto-derived) ── */}
+              {isProductionForm && (
               <div>
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-2">
                   Ενότητα 3 – Help In (Εξωτερικά Άτομα)
@@ -747,6 +767,14 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   + Προσθήκη
                 </Button>
               </div>
+              )}
+
+              {/* Placeholder for Prepaint sections (future) */}
+              {isPrepaintForm && (
+                <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
+                  ⚙️ Prepaint form detected - additional sections coming soon
+                </div>
+              )}
 
             </div>
 
