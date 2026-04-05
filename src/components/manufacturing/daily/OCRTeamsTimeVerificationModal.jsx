@@ -128,12 +128,15 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
     () => (ocrResult?.extracted_data?.team_persons || []).map(p => ({ ...p, break_min: p.break_min ?? 45 }))
   );
   const [extras, setExtras] = useState(
-    () => (ocrResult?.extracted_data?.team_extra || []).map(e => ({
-      ...e,
-      // normalize null/"null" charge_dept to empty string
-      charge_dept: (e.charge_dept === null || e.charge_dept === undefined || e.charge_dept === "null") ? "" : e.charge_dept,
-      is_help_in: false
-    }))
+    () => (ocrResult?.extracted_data?.team_extra || []).map(e => {
+      const personName = (e.person_name || "").trim().toLowerCase();
+      const isExternal = personName && !section1Names.has(personName);
+      return {
+        ...e,
+        charge_dept: (e.charge_dept === null || e.charge_dept === undefined || e.charge_dept === "null") ? "" : e.charge_dept,
+        is_help_in: isExternal
+      };
+    })
   );
 
   const ocrWarnings = ocrResult?.warnings || [];
@@ -173,29 +176,23 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
     return map;
   }, [extras]);
 
-  // Auto-derive Help In entries: persons in Section 2 NOT in Section 1
+  // Auto-derive Help In entries: persons in Section 2 marked as is_help_in
   const helpInEntries = useMemo(() => {
-    const foreign = {};
-    const deptMap = {}; // Track providing_dept per person
+    const helpInMap = {};
     extras.forEach(e => {
+      if (!e.is_help_in) return;
       const name = (e.person_name || "").trim();
       if (!name) return;
-      if (!section1Names.has(name.toLowerCase())) {
-        const mins = (e.duration_hours || 0) * 60 + (e.duration_mins || 0);
-        foreign[name] = (foreign[name] || 0) + mins;
-        // Use charge_dept as providing_dept (where they're from)
-        if (e.charge_dept && !deptMap[name]) {
-          deptMap[name] = e.charge_dept;
-        }
-      }
+      const mins = (e.duration_hours || 0) * 60 + (e.duration_mins || 0);
+      helpInMap[name] = (helpInMap[name] || 0) + mins;
     });
-    return Object.entries(foreign).map(([name, mins]) => ({
+    return Object.entries(helpInMap).map(([name, mins]) => ({
       person_name: name,
       help_time_min: mins,
       receiving_dept: dept || "",
-      providing_dept: deptMap[name] || ""
+      providing_dept: ""
     }));
-  }, [extras, section1Names, dept]);
+  }, [extras, dept]);
 
   const [helpInList, setHelpInList] = useState(helpInEntries);
 
@@ -368,6 +365,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                       <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Break (min)</th>
                       <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Available</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Σχόλια</th>
+                      <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Ενέργεια</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -451,7 +449,6 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Είδος</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Περιγραφή</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Τμήμα (Charge)</th>
-                      <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Τμήμα Λήψης</th>
                       <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Help In</th>
                     </tr>
                   </thead>
@@ -585,15 +582,6 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                              );
                            })()}
                           </td>
-                          <td className="border border-slate-200 p-1">
-                            <select value={e.receiving_dept || ""} onChange={ev => updateExtra(i, "receiving_dept", ev.target.value)}
-                              className="w-full text-xs border border-amber-300 bg-amber-50 rounded px-1.5 py-1 outline-none focus:border-amber-400">
-                              <option value="">-- Επιλέξτε --</option>
-                              {VALID_DEPARTMENTS.map(d => (
-                                <option key={d} value={d}>{d}</option>
-                              ))}
-                            </select>
-                          </td>
                           <td className="border border-slate-200 p-1 text-center">
                             <input
                               type="checkbox"
@@ -682,20 +670,9 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
               <Button size="sm" className="text-xs bg-green-600 hover:bg-green-700"
                 onClick={() => {
                   setConfirmed(true);
-                  // Separate extras into team_extra and help_in based on is_help_in flag
-                  const markedAsHelpIn = extras.filter(e => e.is_help_in);
+                  // Only save non-help-in extras to team_extra; help_in rows go to help_in section
                   const teamExtra = extras.filter(e => !e.is_help_in);
-                  
-                  // Convert marked rows to help_in format
-                  const markedHelpIn = markedAsHelpIn.map(e => ({
-                    person_name: e.person_name,
-                    help_time_min: (e.duration_hours || 0) * 60 + (e.duration_mins || 0),
-                    receiving_dept: dept || "",
-                    providing_dept: e.charge_dept || ""
-                  }));
-                  
-                  const finalHelpInList = [...helpInList, ...markedHelpIn];
-                  onConfirm({ date, dept, team_persons: persons, team_extra: teamExtra, help_in: finalHelpInList });
+                  onConfirm({ date, dept, team_persons: persons, team_extra: teamExtra, help_in: helpInList });
                 }}
                 disabled={confirmed}>
                 {confirmed ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
