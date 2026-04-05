@@ -1546,6 +1546,7 @@ ${context}
           fileName={ocrTargetAtt.file_name}
           ocrResult={teamsTimeOcrResult}
           onConfirm={handleTeamsTimeOcrConfirm}
+          totalPages={teamsTimeOcrResult?.page_count || (ocrTargetAtt.file_name?.toLowerCase().endsWith('.pdf') ? 2 : 1)}
         />
       )}
 

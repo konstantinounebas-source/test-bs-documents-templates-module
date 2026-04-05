@@ -21,9 +21,9 @@ export async function saveOCRTeamsTimeData(confirmed, batchHeaderId, onSuccess, 
   // ── 1. Team Time Persons ────────────────────────────────────────────────
   for (const p of team_persons) {
     // Accept time_from or from_time (modal uses time_from)
-    const fromTime = p.time_from || p.from_time;
-    const toTime = p.time_to || p.to_time;
-    if (!p.person_name || !fromTime || !toTime) continue;
+    const fromTime = p.time_from || p.from_time || "";
+    const toTime = p.time_to || p.to_time || "";
+    if (!p.person_name || !p.person_name.trim()) continue;
     await base44.entities.Team_Time_Persons.create({
       batch_header_id: batchHeaderId,
       person_name: p.person_name,
@@ -42,7 +42,7 @@ export async function saveOCRTeamsTimeData(confirmed, batchHeaderId, onSuccess, 
     await base44.entities.Team_Time_Extra.create({
       batch_header_id: batchHeaderId,
       person_name: e.person_name,
-      charge_dept: e.charge_dept || currentDept || "",
+      charge_dept: (e.charge_dept && e.charge_dept.trim()) || currentDept || "",
       work_type: e.work_type || "",
       duration_min: totalMins,
       description: e.description || ""
