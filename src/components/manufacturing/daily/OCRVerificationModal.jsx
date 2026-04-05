@@ -25,7 +25,7 @@ const COLUMNS = [
   { key: "initial_qc_remake",                   label: "Remake",                         group: "Περιγραφή & Προγρ/σμός", boolean: true },
   // Ποιοτικός Έλεγχος Αρχικού Stock
   { key: "initial_qc_rusty",                    label: "Σκουριασμένα",                   group: "QC Αρχικού Stock", boolean: true },
-  { key: "initial_qc_scratches_dents",          label: "Γδαρίσματα / Κτυπήματα",         group: "QC Αρχικού Stock", boolean: true },
+  { key: "initial_qc_scratches_dents",          label: "Γδαρσίματα / Κτυπήματα",         group: "QC Αρχικού Stock", boolean: true },
   { key: "initial_qc_oils_primers_dirt",        label: "Λάδια / Αστάρια / Ακαθαρσίες",  group: "QC Αρχικού Stock", boolean: true },
   { key: "initial_qc_other_issues",             label: "Άλλα",                           group: "QC Αρχικού Stock", boolean: true },
   // Απαιτούμενες Συνήθεις Κατεργασίες
