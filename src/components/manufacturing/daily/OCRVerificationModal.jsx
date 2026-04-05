@@ -167,6 +167,7 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
   const [department, setDepartment] = useState(initialDepartment || "");
   const [confirmed, setConfirmed] = useState(false);
   const [acceptedIssues, setAcceptedIssues] = useState(new Set());
+  const [acceptedItemCodes, setAcceptedItemCodes] = useState(new Set());
 
   // Validation issues from filename & form mismatch
   const [fileValidationIssues, setFileValidationIssues] = useState(() => {
@@ -410,14 +411,15 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
 
                            // Check if item_code is missing from available codes
                            const isItemCodeCol = col.key === "item_code";
-                           const itemCodeNotFound = isItemCodeCol && line.item_code && availableItemCodes.length > 0 && !availableSet.has(line.item_code);
-                           const cellHasWarning = hasErr || hasWarn || itemCodeNotFound;
+                           const itemCodeMissing = isItemCodeCol && line.item_code && availableItemCodes.length > 0 && !availableSet.has(line.item_code);
+                           const itemCodeAccepted = isItemCodeCol && acceptedItemCodes.has(line.item_code);
+                           const itemCodeNotFound = itemCodeMissing && !itemCodeAccepted;
                            const cellBorder = hasErr || itemCodeNotFound ? "border-red-400" : hasWarn ? "border-amber-400" : "border-slate-200";
                            const cellBg = hasErr || itemCodeNotFound ? "bg-red-50" : hasWarn ? "bg-amber-50" : "";
 
                            return (
                              <td key={col.key}
-                               className={`border border-slate-200 p-0 ${hasErr || itemCodeNotFound ? "bg-red-50" : hasWarn ? "bg-amber-50" : ""}`}
+                               className={`border border-slate-200 p-0 ${hasErr || itemCodeNotFound ? "bg-red-50" : (itemCodeAccepted || (!itemCodeMissing && allAccepted && origIssues.length > 0)) ? "bg-green-50" : hasWarn ? "bg-amber-50" : ""}`}
                                style={{ width: col.boolean ? "28px" : "52px" }}>
                                <div className="flex items-center justify-center gap-0.5 px-0.5 py-1">
                                  {col.boolean ? (
@@ -437,17 +439,20 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                                      className={`w-full text-xs border rounded px-1 py-0.5 outline-none focus:border-blue-400 ${cellBorder} ${cellBg}`}
                                    />
                                  )}
-                                 {(origIssues.length > 0 || itemCodeNotFound) && (
+                                 {(origIssues.length > 0 || itemCodeMissing) && (
                                    <button
-                                     onClick={() => origIssues.forEach(iss => acceptIssue(getIssueKey(iss, issues.indexOf(iss))))}
+                                     onClick={() => {
+                                       origIssues.forEach(iss => acceptIssue(getIssueKey(iss, issues.indexOf(iss))));
+                                       if (isItemCodeCol && itemCodeMissing) setAcceptedItemCodes(prev => new Set([...prev, line.item_code]));
+                                     }}
                                      className={`flex-shrink-0 rounded border transition-colors ${
-                                       allAccepted && !itemCodeNotFound
+                                       (allAccepted || origIssues.length === 0) && (itemCodeAccepted || !itemCodeMissing)
                                          ? "border-green-400 text-green-600 bg-green-50 cursor-default"
                                          : itemCodeNotFound ? "border-red-400 text-red-500 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
                                          : hasErr ? "border-red-400 text-red-500 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
                                          : "border-amber-400 text-amber-500 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
                                      }`}
-                                     title={itemCodeNotFound ? "Κώδικας δεν υπάρχει στα standards" : allAccepted ? "Αποδεκτό" : "Αποδοχή"}
+                                     title={itemCodeNotFound ? "Κώδικας δεν υπάρχει στα standards – κλικ για αποδοχή" : "Αποδεκτό"}
                                    >
                                      <Check className="w-2.5 h-2.5" />
                                    </button>

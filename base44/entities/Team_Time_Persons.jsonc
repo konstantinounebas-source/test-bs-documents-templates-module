@@ -30,8 +30,6 @@
   },
   "required": [
     "batch_header_id",
-    "person_name",
-    "from_time",
-    "to_time"
+    "person_name"
   ]
 }
