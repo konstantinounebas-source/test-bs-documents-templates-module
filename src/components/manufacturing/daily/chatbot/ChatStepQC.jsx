@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -101,7 +101,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
   const processedLines = batchLines.filter(bl => (bl.qty_processed || 0) > 0);
 
   // Calculate qc_per_piece for each QC record from QCSetLines
-  const getQCPerPiece = (itemCode, qcType, qcLevel) => {
+  const getQCPerPiece = useCallback((itemCode, qcType, qcLevel) => {
     const trimmedItemCode = (itemCode || '').trim().toLowerCase();
     const qcRule = qcSetLines.find(ql => {
       const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
@@ -110,7 +110,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
       return qlItemCode === trimmedItemCode && qlQcType === qcType && qlQcLevel === qcLevel;
     });
     return qcRule ? parseFloat(qcRule.calculated_extra_time_min || qcRule.calculated_extra_time || 0) : 0;
-  };
+  }, [qcSetLines]);
 
   const totalQCTime = useMemo(() => {
     return existingQC.reduce((sum, qc) => {
