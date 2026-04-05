@@ -42,33 +42,44 @@ Deno.serve(async (req) => {
   const detectedForms = {};
 
   for (const pageNum of pages) {
-    // Add page anchor to file_url to target specific page
-    const pageUrl = file_url.includes('#') 
-      ? file_url.replace(/#.*/, `#page=${pageNum}`)
-      : `${file_url}#page=${pageNum}`;
-
     let result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       model: model,
-      prompt: `Δες αυτό το έγγραφο (σελίδα ${pageNum}).
-
-Ποιο είναι το κύριο ΠΕΡΙΕΧΟΜΕΝΟ της σελίδας; Απάντησε ΜΟΝΟ με ένα από:
-- "PRODUCTION" (αν έχει πίνακα με item codes, ποσότητες παραγωγής)
-- "TEAMS_TIME" (αν έχει πίνακα με ονοματεπώνυμα, ώρες εργασίας, "Από", "Έως")
-- "UNKNOWN" (αν δεν αναγνωρίζεται)`,
-      file_urls: [pageUrl],
+      prompt: `Δες αυτό το PDF document. Ποιος είναι ο ΤΙΤΛΟΣ της φόρμας; 
+Απάντησε με τον τίτλο ΑΚΡΙΒΩΣ όπως φαίνεται στο έγγραφο (π.χ. "PRODUCTION TEAMS TIME FORM V.4" ή "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ").`,
+      file_urls: [file_url],
       response_json_schema: {
         type: "object",
         properties: {
-          form_type: { type: "string", enum: ["PRODUCTION", "TEAMS_TIME", "UNKNOWN"] }
+          form_title: { type: "string" }
         }
       }
     });
 
-    const formType = result.form_type === "PRODUCTION" ? "production" : 
-                     result.form_type === "TEAMS_TIME" ? "teams_time" : "unknown";
+    // Map title to form type using keyword detection
+    let formType = detectFormTypeFromTitle(result.form_title);
+
+    // For ambiguous cases, check specific table markers for each form type
+    if (formType === "production" && result.form_title === "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ") {
+      const detailCheck = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        model: model,
+        prompt: `Δες αυτό το PDF και βρες ΤΙ είναι το κύριο περιεχόμενο.
+Πράγματι έχει τα παρακάτω;
+- Πίνακα με "Ονοματεπώνυμο", "Από", "Έως", "ΣΧΟΛΙΑ" (Teams Time)?
+- Ή πίνακα με item codes/κωδικούς, ποσότητες (Production)?
+Απάντησε ΜΟΝΟ με: "TEAMS_TIME" ή "PRODUCTION".`,
+        file_urls: [file_url],
+        response_json_schema: {
+          type: "object",
+          properties: { answer: { type: "string", enum: ["TEAMS_TIME", "PRODUCTION"] } }
+        }
+      });
+
+      formType = detailCheck.answer === "TEAMS_TIME" ? "teams_time" : "production";
+    }
 
     detectedForms[pageNum] = {
       form_type: formType,
+      form_title: result.form_title || "UNKNOWN",
       confidence: formType !== "unknown" ? "high" : "low"
     };
   }
