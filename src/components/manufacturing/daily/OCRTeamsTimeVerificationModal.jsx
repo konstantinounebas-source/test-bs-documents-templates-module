@@ -195,25 +195,25 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   // Auto-derive Help In entries: persons in Section 2 marked as is_help_in
   const helpInEntries = useMemo(() => {
     const helpInMap = {};
-    const deptMap = {};
+    const receivingDeptMap = {};
     extras.forEach(e => {
       if (!e.is_help_in) return;
       const name = (e.person_name || "").trim();
       if (!name) return;
       const mins = (e.duration_hours || 0) * 60 + (e.duration_mins || 0);
       helpInMap[name] = (helpInMap[name] || 0) + mins;
-      // Capture charge_dept as providing_dept (where they come from)
-      if (e.charge_dept && !deptMap[name]) {
-        deptMap[name] = e.charge_dept;
+      // Capture charge_dept as receiving_dept (where the help goes to)
+      if (e.charge_dept && !receivingDeptMap[name]) {
+        receivingDeptMap[name] = e.charge_dept;
       }
     });
     return Object.entries(helpInMap).map(([name, mins]) => ({
       person_name: name,
       help_time_min: mins,
-      receiving_dept: dept || "",
-      providing_dept: deptMap[name] || ""
+      receiving_dept: receivingDeptMap[name] || "",
+      providing_dept: ""
     }));
-  }, [extras, dept]);
+  }, [extras]);
 
   const [helpInList, setHelpInList] = useState(helpInEntries);
 
@@ -255,8 +255,17 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
     window.addEventListener("mouseup", onUp);
   }, []);
 
-  const updatePerson = (i, field, val) =>
+  const updatePerson = (i, field, val) => {
     setPersons(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: val } : p));
+    // If person name changed, unmark Help In for that person in Section 2
+    if (field === 'person_name') {
+      const newName = (val || "").trim().toLowerCase();
+      setExtras(prev => prev.map(e => {
+        const eName = (e.person_name || "").trim().toLowerCase();
+        return eName === newName ? { ...e, is_help_in: false } : e;
+      }));
+    }
+  };
 
   const updateExtra = (i, field, val) => {
     setExtras(prev => prev.map((e, idx) => {
