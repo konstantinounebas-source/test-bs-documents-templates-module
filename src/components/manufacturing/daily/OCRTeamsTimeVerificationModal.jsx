@@ -110,6 +110,7 @@ function fmtMins(mins) {
   return `${h}h ${m > 0 ? m + 'm' : ''}`.trim();
 }
 
+const VALID_WORK_TYPES = ["Non Execution Time", "Other Departments Works", "Supportive Works"];
 const VALID_DEPARTMENTS = ["Delivery", "Refurbishment", "Assembly", "Sub-assembly", "Paint", "Pre-paint"];
 
 export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, totalPages, defaultPage }) {
@@ -122,7 +123,6 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   const containerRef = useRef(null);
   const [confirmed, setConfirmed] = useState(false);
   const [referencePersons, setReferencePersons] = useState([]);
-  const [workTypes, setWorkTypes] = useState([]);
 
   const fileParsed = parseFileName(fileName);
 
@@ -217,23 +217,17 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
 
   const [helpInList, setHelpInList] = useState(helpInEntries);
 
-  // Fetch reference persons and work types on mount
+  // Fetch reference persons on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchPersons = async () => {
       try {
         const persons = await base44.entities.Person.list();
         setReferencePersons(persons || []);
       } catch (error) {
         console.error("Failed to fetch reference persons:", error);
       }
-      try {
-        const types = await base44.entities.Work_Type.list();
-        setWorkTypes(types.map(t => t.name) || []);
-      } catch (error) {
-        console.error("Failed to fetch work types:", error);
-      }
     };
-    fetchData();
+    fetchPersons();
   }, []);
 
   // Auto-sync helpInList when helpInEntries change (when extras/persons change)
@@ -569,9 +563,9 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                           <td className="border border-slate-200 p-1">
                             {(() => {
                               const workType = e.work_type || "";
-                              const isValid = !workType || workTypes.includes(workType);
+                              const isValid = !workType || VALID_WORK_TYPES.includes(workType);
                               const isMissing = !workType;
-                              const suggestedWorkType = !isValid && workType ? findClosestMatch(workType, workTypes) : null;
+                              const suggestedWorkType = !isValid && workType ? findClosestMatch(workType, VALID_WORK_TYPES) : null;
                               return (
                                 <div className="space-y-1">
                                   <div className="flex items-center gap-1">
@@ -581,7 +575,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                                       className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isMissing ? "border-amber-400 bg-amber-50" : !isValid ? "border-red-400 bg-red-50" : "border-slate-200"}`}
                                     >
                                       <option value={workType}>{workType || "-- Επιλέξτε --"}</option>
-                                      {workTypes.map(wt => (
+                                      {VALID_WORK_TYPES.map(wt => (
                                         <option key={wt} value={wt}>{wt}</option>
                                       ))}
                                     </select>
