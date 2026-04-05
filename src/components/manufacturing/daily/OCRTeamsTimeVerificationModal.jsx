@@ -113,6 +113,22 @@ function fmtMins(mins) {
 const VALID_WORK_TYPES = ["Non Execution Time", "Other Departments Works", "Supportive Works"];
 const VALID_DEPARTMENTS = ["Delivery", "Refurbishment", "Assembly", "Sub-assembly", "Paint", "Pre-paint"];
 
+// OCR Work Type variants mapping
+const OCR_WORK_TYPE_MAPPINGS = {
+  "Υποστηρικτικές": "Supportive Works",
+  "Υποστρακτικές": "Supportive Works", // OCR typo variant
+  "Υποσ": "Supportive Works",
+  "Υποστ": "Supportive Works",
+  "Υποστ.": "Supportive Works",
+  "Supportive Works": "Supportive Works",
+  "Άλλες Εργασίες": "Other Departments Works",
+  "ΑΛλες": "Other Departments Works",
+  "Other Departments Works": "Other Departments Works",
+  "Μη Εκτέλεσης": "Non Execution Time",
+  "Μη Εκ.": "Non Execution Time",
+  "Non Execution Time": "Non Execution Time"
+};
+
 export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, totalPages, defaultPage }) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -501,26 +517,26 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   <table className="w-full text-xs border-collapse">
                     <thead>
                       <tr className="bg-blue-100">
-                        <th className="border border-blue-200 px-2 py-1 text-left font-semibold">OCR Value</th>
-                        <th className="border border-blue-200 px-2 py-1 text-left font-semibold">Stored Work Type</th>
+                        <th className="border border-blue-200 px-2 py-1 text-left font-semibold">OCR Variants (Greek & Shorthand)</th>
+                        <th className="border border-blue-200 px-2 py-1 text-left font-semibold">Mapped to Stored Value</th>
                         <th className="border border-blue-200 px-2 py-1 text-center font-semibold">Status</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr className="bg-white">
-                        <td className="border border-blue-200 px-2 py-1">Υποστηρικτικές (Υποσ)</td>
+                        <td className="border border-blue-200 px-2 py-1">Υποστηρικτικές (Υποσ) | Υποστρακτικές (OCR typo) | Υποστ | Υποστ.</td>
                         <td className="border border-blue-200 px-2 py-1">Supportive Works</td>
-                        <td className="border border-blue-200 px-2 py-1 text-center"><span className="text-green-600 font-semibold">✓ OK</span></td>
+                        <td className="border border-blue-200 px-2 py-1 text-center"><span className="text-green-600 font-semibold">✓ Auto-mapped</span></td>
                       </tr>
                       <tr className="bg-blue-50">
                         <td className="border border-blue-200 px-2 py-1">Άλλες Εργασίες (ΑΛλες)</td>
                         <td className="border border-blue-200 px-2 py-1">Other Departments Works</td>
-                        <td className="border border-blue-200 px-2 py-1 text-center"><span className="text-green-600 font-semibold">✓ OK</span></td>
+                        <td className="border border-blue-200 px-2 py-1 text-center"><span className="text-green-600 font-semibold">✓ Auto-mapped</span></td>
                       </tr>
                       <tr className="bg-white">
                         <td className="border border-blue-200 px-2 py-1">Μη Εκτέλεσης (Μη Εκ.)</td>
                         <td className="border border-blue-200 px-2 py-1">Non Execution Time</td>
-                        <td className="border border-blue-200 px-2 py-1 text-center"><span className="text-green-600 font-semibold">✓ OK</span></td>
+                        <td className="border border-blue-200 px-2 py-1 text-center"><span className="text-green-600 font-semibold">✓ Auto-mapped</span></td>
                       </tr>
                     </tbody>
                   </table>
@@ -597,25 +613,40 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                           <td className="border border-slate-200 p-1">
                             {(() => {
                               const workType = e.work_type || "";
-                              const isValid = !workType || VALID_WORK_TYPES.includes(workType);
+                              // Try to auto-map OCR variant to stored value
+                              const mappedWorkType = OCR_WORK_TYPE_MAPPINGS[workType] || workType;
+                              const isValid = !workType || VALID_WORK_TYPES.includes(mappedWorkType);
                               const isMissing = !workType;
                               const suggestedWorkType = !isValid && workType ? findClosestMatch(workType, VALID_WORK_TYPES) : null;
+                              const hasMapping = OCR_WORK_TYPE_MAPPINGS[workType] && workType !== mappedWorkType;
+                              
                               return (
                                 <div className="space-y-1">
                                   <div className="flex items-center gap-1">
                                     <select
                                       value={workType}
                                       onChange={ev => updateExtra(i, "work_type", ev.target.value)}
-                                      className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isMissing ? "border-amber-400 bg-amber-50" : !isValid ? "border-red-400 bg-red-50" : "border-slate-200"}`}
+                                      className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isMissing ? "border-amber-400 bg-amber-50" : hasMapping ? "border-green-400 bg-green-50" : !isValid ? "border-red-400 bg-red-50" : "border-slate-200"}`}
                                     >
                                       <option value={workType}>{workType || "-- Επιλέξτε --"}</option>
                                       {VALID_WORK_TYPES.map(wt => (
                                         <option key={wt} value={wt}>{wt}</option>
                                       ))}
                                     </select>
-                                    {isValid && workType && <Check className="w-3 h-3 text-green-600 flex-shrink-0" />}
+                                    {hasMapping && <Check className="w-3 h-3 text-green-600 flex-shrink-0" title={`Auto-mapped to: ${mappedWorkType}`} />}
+                                    {isValid && !hasMapping && workType && <Check className="w-3 h-3 text-green-600 flex-shrink-0" />}
                                   </div>
-                                  {!isValid && suggestedWorkType && (
+                                  {hasMapping && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateExtra(i, "work_type", mappedWorkType)}
+                                      className="text-xs text-green-600 hover:underline font-medium"
+                                      title="Auto-apply the mapping"
+                                    >
+                                      ✓ Auto-map to: {mappedWorkType}
+                                    </button>
+                                  )}
+                                  {!isValid && suggestedWorkType && !hasMapping && (
                                     <button
                                       type="button"
                                       onClick={() => updateExtra(i, "work_type", suggestedWorkType)}
@@ -625,7 +656,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                                       💡 Υπόδειξη: {suggestedWorkType}
                                     </button>
                                   )}
-                                  {!isValid && !suggestedWorkType && (
+                                  {!isValid && !suggestedWorkType && !hasMapping && (
                                     <span className="text-xs text-red-600">⚠ Μη έγκυρο είδος εργασίας</span>
                                   )}
                                 </div>
