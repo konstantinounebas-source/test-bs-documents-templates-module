@@ -8,6 +8,7 @@ import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, AlertCircl
 import { toast } from "sonner";
 import { format, subDays } from "date-fns";
 import { ocrProductionForm } from "@/functions/ocrProductionForm";
+import { ocrTeamsTimeForm } from "@/functions/ocrTeamsTimeForm";
 import { detectFormTypes } from "@/functions/detectFormTypes";
 import OCRVerificationModal from "../OCRVerificationModal";
 import { saveOCRData } from "./ocrSave";
@@ -181,12 +182,24 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssi
         return;
       }
 
-      // Process OCR for matching pages
-      const result = await ocrProductionForm({ file_url: fileUrl });
+      // Process OCR based on detected form type
+      let ocrData;
+      const isTeamsTimeForm = detection.pages.some(p => p.form_type === 'teams_time');
+      
+      if (isTeamsTimeForm) {
+        ocrData = await ocrTeamsTimeForm({ 
+          file_url: fileUrl,
+          pages_to_show: detection.pages_to_show
+        });
+      } else {
+        ocrData = await ocrProductionForm({ file_url: fileUrl });
+      }
+      
       setOcrResult({
-        ...result.data,
+        ...ocrData.data,
         detected_pages: detection.pages,
-        pages_to_show: detection.pages_to_show
+        pages_to_show: detection.pages_to_show,
+        form_type: isTeamsTimeForm ? 'teams_time' : 'production'
       });
       setShowOcrModal(true);
     } catch (err) {
