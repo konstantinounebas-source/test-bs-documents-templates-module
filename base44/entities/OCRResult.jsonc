@@ -1,0 +1,69 @@
+{
+  "name": "OCRResult",
+  "type": "object",
+  "properties": {
+    "attachment_id": {
+      "type": "string",
+      "description": "The ID of the BatchAttachment that was OCR'd"
+    },
+    "batch_header_id": {
+      "type": "string",
+      "description": "The ID of the BatchHeader this attachment belongs to"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department name for quick reference"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Original file name of the attachment"
+    },
+    "form_type": {
+      "type": "string",
+      "enum": [
+        "production",
+        "teams_time",
+        "unknown"
+      ],
+      "description": "Type of form detected by OCR"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "processing",
+        "completed",
+        "failed",
+        "saved"
+      ],
+      "default": "processing",
+      "description": "Current status of the OCR result"
+    },
+    "page_count": {
+      "type": "number",
+      "description": "Total number of pages in the file"
+    },
+    "confidence_score": {
+      "type": "number",
+      "description": "Confidence score (0-100) of the OCR extraction"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Error message if status is 'failed'"
+    },
+    "raw_ocr_json": {
+      "type": "object",
+      "description": "Complete raw OCR result from the backend function"
+    },
+    "corrected_data_json": {
+      "type": "object",
+      "description": "Final corrected/approved data after modal review"
+    }
+  },
+  "required": [
+    "attachment_id",
+    "batch_header_id",
+    "file_name",
+    "form_type",
+    "status"
+  ]
+}
