@@ -231,8 +231,14 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   }, []);
 
   // Auto-sync helpInList when helpInEntries change (when extras/persons change)
+  // But preserve user-edited providing_dept values
   useEffect(() => {
-    setHelpInList(helpInEntries);
+    setHelpInList(prev => {
+      return helpInEntries.map(newEntry => {
+        const existing = prev.find(p => p.person_name === newEntry.person_name);
+        return existing ? { ...newEntry, providing_dept: existing.providing_dept } : newEntry;
+      });
+    });
   }, [helpInEntries]);
 
   // Reference person names (lowercased for matching)
