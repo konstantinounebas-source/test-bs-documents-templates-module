@@ -176,19 +176,24 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   // Auto-derive Help In entries: persons in Section 2 NOT in Section 1
   const helpInEntries = useMemo(() => {
     const foreign = {};
+    const deptMap = {}; // Track providing_dept per person
     extras.forEach(e => {
       const name = (e.person_name || "").trim();
       if (!name) return;
       if (!section1Names.has(name.toLowerCase())) {
         const mins = (e.duration_hours || 0) * 60 + (e.duration_mins || 0);
         foreign[name] = (foreign[name] || 0) + mins;
+        // Use charge_dept as providing_dept (where they're from)
+        if (e.charge_dept && !deptMap[name]) {
+          deptMap[name] = e.charge_dept;
+        }
       }
     });
     return Object.entries(foreign).map(([name, mins]) => ({
       person_name: name,
       help_time_min: mins,
       receiving_dept: dept || "",
-      providing_dept: ""
+      providing_dept: deptMap[name] || ""
     }));
   }, [extras, section1Names, dept]);
 
@@ -665,8 +670,8 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   const markedHelpIn = markedAsHelpIn.map(e => ({
                     person_name: e.person_name,
                     help_time_min: (e.duration_hours || 0) * 60 + (e.duration_mins || 0),
-                    receiving_dept: e.charge_dept || "",
-                    providing_dept: e.description || ""
+                    receiving_dept: dept || "",
+                    providing_dept: e.charge_dept || ""
                   }));
                   
                   const finalHelpInList = [...helpInList, ...markedHelpIn];
