@@ -22,49 +22,56 @@ Deno.serve(async (req) => {
 - "UNKNOWN"
   `.trim());
 
-  const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    model: model,
-    prompt: `Δες το έγγραφο και για κάθε σελίδα αναφέρισε τον τίτλο της φόρμας.
+  let pages = [];
+  
+  try {
+    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      model: model,
+      prompt: `Δες το έγγραφο και για κάθε σελίδα αναφέρισε τον τίτλο της φόρμας.
 
-${pageRanges.map((p, i) => `**Σελίδα ${p}:** ${prompts[i]}`).join('\n\n')}
+${pageRanges.map((p) => `Σελίδα ${p}: Ποιος είναι ο τίτλος; Απάντησε: "PRODUCTION TEAMS TIME FORM V.4", "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ" ή "UNKNOWN"`).join('\n')}
 
-Απάντησε με JSON array με ένα αντικείμενο ανά σελίδα.`,
-    file_urls: [file_url],
-    response_json_schema: {
-      type: "object",
-      properties: {
-        pages: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              page: { type: "number" },
-              form_title: { type: "string" },
-              form_type: {
-                type: "string",
-                enum: ["teams_time", "production", "unknown"]
-              }
-            }
+Απάντησε με JSON array.`,
+      file_urls: [file_url],
+      response_json_schema: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            page: { type: "number" },
+            form_title: { type: "string" }
           }
         }
       }
-    }
-  });
+    });
 
-  // Map titles to form types
-  const pages = (result.pages || []).map(p => {
-    let formType = "unknown";
-    if (p.form_title === "PRODUCTION TEAMS TIME FORM V.4") {
-      formType = "teams_time";
-    } else if (p.form_title === "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ") {
-      formType = "production";
-    }
-    return {
-      page: p.page,
-      form_type: formType,
-      form_title: p.form_title || "UNKNOWN"
-    };
-  });
+    // Ensure result is an array
+    const resultsArray = Array.isArray(result) ? result : (result?.pages || []);
+    
+    // Map titles to form types
+    pages = resultsArray.map((p, idx) => {
+      let formType = "unknown";
+      const title = (p.form_title || "").trim();
+      if (title === "PRODUCTION TEAMS TIME FORM V.4") {
+        formType = "teams_time";
+      } else if (title === "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ") {
+        formType = "production";
+      }
+      return {
+        page: p.page || idx + 1,
+        form_type: formType,
+        form_title: title || "UNKNOWN"
+      };
+    });
+  } catch (err) {
+    console.error("Error in initial detection:", err);
+    // Fallback: assume all pages are unknown initially
+    pages = pageRanges.map(p => ({
+      page: p,
+      form_type: "unknown",
+      form_title: "UNKNOWN"
+    }));
+  }
 
   // Detect pages with unknown forms and retry with specific prompts
   const unknownPages = pages.filter(p => p.form_type === "unknown");
