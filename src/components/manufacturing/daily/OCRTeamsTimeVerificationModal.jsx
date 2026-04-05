@@ -450,7 +450,8 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                       <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Min</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Είδος</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Περιγραφή</th>
-                      <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Τμήμα</th>
+                      <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Τμήμα (Charge)</th>
+                      <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Τμήμα Λήψης</th>
                       <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Help In</th>
                     </tr>
                   </thead>
@@ -583,6 +584,15 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                                </div>
                              );
                            })()}
+                          </td>
+                          <td className="border border-slate-200 p-1">
+                            <select value={e.receiving_dept || ""} onChange={ev => updateExtra(i, "receiving_dept", ev.target.value)}
+                              className="w-full text-xs border border-amber-300 bg-amber-50 rounded px-1.5 py-1 outline-none focus:border-amber-400">
+                              <option value="">-- Επιλέξτε --</option>
+                              {VALID_DEPARTMENTS.map(d => (
+                                <option key={d} value={d}>{d}</option>
+                              ))}
+                            </select>
                           </td>
                           <td className="border border-slate-200 p-1 text-center">
                             <input
