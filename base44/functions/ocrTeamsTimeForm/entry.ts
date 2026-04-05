@@ -115,13 +115,36 @@ confidence_score: 0-100`,
     return Response.json({ error: 'OCR extraction failed' }, { status: 422 });
   }
 
+  // Normalize work_type from Greek to English
+  const workTypeMap = {
+    "Υποστηρικτικές": "Supportive Works",
+    "Υποστηρικτικές (Υποστ.)": "Supportive Works",
+    "Υποστ.": "Supportive Works",
+    "Υποστ": "Supportive Works",
+    "Υποστρακτικές": "Supportive Works", // OCR typo variant
+    "Άλλες Εργασίες": "Other Departments Works",
+    "Άλλες Εργασίες (Άλλες)": "Other Departments Works",
+    "Άλλες": "Other Departments Works",
+    "Αλλες": "Other Departments Works",
+    "Μη Εκτέλεσης": "Non Execution Time",
+    "Μη Εκτέλεσης (Μη Εκ.)": "Non Execution Time",
+    "Μη Εκ.": "Non Execution Time",
+    "Μη Εκ": "Non Execution Time",
+    "ΜΗ ΕΚ": "Non Execution Time"
+  };
+
+  const normalizedTeamExtra = (result.team_extra || []).map(e => ({
+    ...e,
+    work_type: workTypeMap[e.work_type] || e.work_type
+  }));
+
   return Response.json({
     extracted_data: {
       date: result.date,
       completed_by: result.completed_by,
       team: result.team,
       team_persons: result.team_persons || [],
-      team_extra: result.team_extra || []
+      team_extra: normalizedTeamExtra
     },
     warnings: result.warnings || [],
     confidence_score: result.confidence_score
