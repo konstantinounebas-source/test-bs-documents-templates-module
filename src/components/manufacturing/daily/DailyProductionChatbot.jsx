@@ -537,7 +537,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     addMsg("bot", `✅ Teams Time OCR επιβεβαιώθηκε! Αποθηκεύω...`);
     if (selBatch?.id) {
       saveOCRTeamsTimeData(confirmedData, selBatch.id, () => {
-        queryClient.invalidateQueries(["Team_Time_Persons", selBatch.id]);
+        queryClient.invalidateQueries(["TeamTimePerson", selBatch.id]);
         queryClient.invalidateQueries(["Team_Time_Extra", selBatch.id]);
         addMsg("bot", `📦 Teams Time δεδομένα αποθηκεύτηκαν στο batch ${selBatch.date} · ${selBatch.department}.`);
       }, selBatch.department);

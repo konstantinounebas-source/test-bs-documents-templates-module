@@ -28,8 +28,8 @@ export default function ViewProductionEntryDialog({ open, onOpenChange, batch })
   });
 
   const { data: teamTimePersons = [], isLoading: teamLoading } = useQuery({
-    queryKey: ['Team_Time_Persons', batch?.id],
-    queryFn: () => base44.entities.Team_Time_Persons.filter({ batch_header_id: batch.id }),
+    queryKey: ['TeamTimePerson', batch?.id],
+    queryFn: () => base44.entities.TeamTimePerson.filter({ batch_header_id: batch.id }),
     enabled: !!batch
   });
 

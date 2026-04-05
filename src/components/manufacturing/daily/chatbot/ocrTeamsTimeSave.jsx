@@ -2,7 +2,7 @@ import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
 /**
- * Saves OCR Teams Time Form data into Team_Time_Persons and Team_Time_Extra.
+ * Saves OCR Teams Time Form data into TeamTimePerson and Team_Time_Extra.
  * @param {object} confirmed - { team_persons: [], team_extra: [] }
  * @param {string} batchHeaderId
  * @param {function} onSuccess
