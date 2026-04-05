@@ -410,12 +410,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         fileAnalysisRaw?.output ||
         fileAnalysisRaw || {};
 
+      const pdfPageCount = Number(fileAnalysis.page_count) || 0;
+
       console.log("analyzeFilePages parsed:", fileAnalysis);
       addMsg("bot", `DEBUG analyzeFilePages raw: ${JSON.stringify(fileAnalysisRaw?.data || fileAnalysisRaw)}`);
-      addMsg("bot", 
-        `📄 Το αρχείο αναγνωρίστηκε ως **${fileAnalysis.file_type || "unknown"}**\n` +
-        `📊 Συνολικές σελίδες που βρέθηκαν: **${fileAnalysis.page_count || "unknown"}**`
-      );
 
       // Step 1: Detect which forms exist in the file (with small delay to ensure message appears)
       await new Promise(r => setTimeout(r, 300));
@@ -436,8 +434,21 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         .map(p => p?.form_type)
         .filter(type => type === "production" || type === "teams_time");
 
+      const detectedPageCount = Object.keys(detectedPages).length;
+
+      const effectivePageCount =
+        detectedPageCount > 0 && detectedPageCount <= pdfPageCount
+          ? detectedPageCount
+          : pdfPageCount;
+
       console.log("Detected pages:", detectedPages);
       console.log("Detected forms:", detectedForms);
+      console.log(`Page counts - PDF: ${pdfPageCount}, Detected: ${detectedPageCount}, Effective: ${effectivePageCount}`);
+
+      addMsg("bot", 
+        `📄 Το αρχείο αναγνωρίστηκε ως **${fileAnalysis.file_type || "unknown"}**\n` +
+        `📋 Χρήσιμες σελίδες που βρέθηκαν: **${effectivePageCount || 0}**`
+      );
 
       if (detectedForms.length === 0) {
         console.warn("No valid forms detected. Falling back...");
