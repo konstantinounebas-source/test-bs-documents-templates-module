@@ -130,7 +130,8 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
     () => (ocrResult?.extracted_data?.team_extra || []).map(e => ({
       ...e,
       // normalize null/"null" charge_dept to empty string
-      charge_dept: (e.charge_dept === null || e.charge_dept === undefined || e.charge_dept === "null") ? "" : e.charge_dept
+      charge_dept: (e.charge_dept === null || e.charge_dept === undefined || e.charge_dept === "null") ? "" : e.charge_dept,
+      is_help_in: false
     }))
   );
 
@@ -440,7 +441,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Είδος</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Περιγραφή</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Τμήμα</th>
-                      <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Status</th>
+                      <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Help In</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -573,17 +574,13 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                              );
                            })()}
                           </td>
-                          <td className="border border-slate-200 p-1 text-center whitespace-nowrap">
-                            {isOvertime && (
-                              <span className="flex items-center gap-1 text-red-600 text-[10px] font-semibold">
-                                <AlertCircle className="w-3 h-3" /> Υπέρβαση
-                              </span>
-                            )}
-                            {isExternal && !isOvertime && (
-                              <span className="flex items-center gap-1 text-orange-600 text-[10px] font-semibold">
-                                <Users className="w-3 h-3" /> Help In
-                              </span>
-                            )}
+                          <td className="border border-slate-200 p-1 text-center">
+                            <input
+                              type="checkbox"
+                              checked={e.is_help_in || false}
+                              onChange={ev => updateExtra(i, "is_help_in", ev.target.checked)}
+                              className="w-4 h-4 accent-blue-600"
+                            />
                           </td>
                         </tr>
                       );
@@ -657,7 +654,23 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                 {helpInList.length > 0 && ` · ${helpInList.length} help-in`}
               </div>
               <Button size="sm" className="text-xs bg-green-600 hover:bg-green-700"
-                onClick={() => { setConfirmed(true); onConfirm({ date, dept, team_persons: persons, team_extra: extras, help_in: helpInList }); }}
+                onClick={() => {
+                  setConfirmed(true);
+                  // Separate extras into team_extra and help_in based on is_help_in flag
+                  const markedAsHelpIn = extras.filter(e => e.is_help_in);
+                  const teamExtra = extras.filter(e => !e.is_help_in);
+                  
+                  // Convert marked rows to help_in format
+                  const markedHelpIn = markedAsHelpIn.map(e => ({
+                    person_name: e.person_name,
+                    help_time_min: (e.duration_hours || 0) * 60 + (e.duration_mins || 0),
+                    receiving_dept: e.charge_dept || "",
+                    providing_dept: e.description || ""
+                  }));
+                  
+                  const finalHelpInList = [...helpInList, ...markedHelpIn];
+                  onConfirm({ date, dept, team_persons: persons, team_extra: teamExtra, help_in: finalHelpInList });
+                }}
                 disabled={confirmed}>
                 {confirmed ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
                 Επιβεβαίωση OCR
