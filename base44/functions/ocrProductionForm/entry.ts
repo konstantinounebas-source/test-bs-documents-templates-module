@@ -43,9 +43,13 @@ Deno.serve(async (req) => {
   const { file_url } = await req.json();
   if (!file_url) return Response.json({ error: 'file_url is required' }, { status: 400 });
 
+  // Detect file type - gemini supports PDFs, gpt_5_mini for images
+  const isPDF = file_url.toLowerCase().includes('.pdf') || file_url.toLowerCase().includes('pdf');
+  const model = isPDF ? "gemini_3_flash" : "gpt_5_mini";
+
   // ── Single-pass OCR + validation ────────────────
   const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    model: "gpt_5_mini",
+    model: model,
     prompt: `Εξάγαγε δεδομένα από τη φόρμα ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ.
 
 ΚΑΤΑΝΟΜΗ ΚΑΙ ΣΕΙΡΑ ΣΤΗΛΩΝ ΑΝΑ ΓΡΑΜΜΗ ΠΑΡΑΓΩΓΗΣ (σε αυτήν ακριβώς τη σειρά):
