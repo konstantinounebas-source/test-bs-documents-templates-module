@@ -144,10 +144,11 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   
   // Determine form type based on OCR title
   const ocrTitle = ocrResult?.extracted_data?.title || ocrResult?.extracted_data?.form_title || "";
-  const isProductionForm = ocrTitle.toLowerCase().includes("production teams") || 
-                           (!ocrTitle.toLowerCase().includes("προετοιμασία") && !ocrTitle.toLowerCase().includes("prepaint") && ocrResult?.extracted_data?.team_persons);
-  const isPrepaintForm = ocrTitle.toLowerCase().includes("προετοιμασία") || ocrTitle.toLowerCase().includes("prepaint") || 
-                         (!isProductionForm && ocrResult?.extracted_data?.operations);
+  const titleLower = ocrTitle.toLowerCase();
+  
+  const isProductionForm = titleLower.includes("production teams");
+  const isPrepaintForm = titleLower.includes("διεργασία1") && titleLower.includes("προετοιμασία βαφής") ||
+                         titleLower.includes("prepaint") || titleLower.includes("smart bus stop repaint");
 
   // Resolve dept: OCR result > filename (filter out "null" string)
   const resolvedDept = ocrResult?.extracted_data?.team || fileParsed.dept;
