@@ -62,12 +62,12 @@ export default function TeamTimePersonsTab({ batchId }) {
       notes: data.notes
     }),
     onSuccess: async () => {
-      await saveMetric();
-      await saveNATTimeMetric();
-      queryClient.invalidateQueries(['TeamTimePerson']);
+      queryClient.invalidateQueries(['TeamTimePerson', batchId]);
       resetForm();
       setShowAddDialog(false);
       toast.success('Team time added');
+      saveMetric().catch(console.error);
+      saveNATTimeMetric().catch(console.error);
     },
     onError: () => toast.error('Failed to add team time')
   });
@@ -81,13 +81,13 @@ export default function TeamTimePersonsTab({ batchId }) {
       notes: data.notes
     }),
     onSuccess: async () => {
-      await saveMetric();
-      await saveNATTimeMetric();
-      queryClient.invalidateQueries(['TeamTimePerson']);
+      queryClient.invalidateQueries(['TeamTimePerson', batchId]);
       setEditingLine(null);
       setFormData({ person_name: '', from_time: '07:00', to_time: '15:30', break_time_minutes: 0, notes: '' });
       setShowAddDialog(false);
       toast.success('Team time updated');
+      saveMetric().catch(console.error);
+      saveNATTimeMetric().catch(console.error);
     },
     onError: () => toast.error('Failed to update team time')
   });
@@ -95,10 +95,10 @@ export default function TeamTimePersonsTab({ batchId }) {
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.TeamTimePerson.delete(id),
     onSuccess: async () => {
-      await saveMetric();
-      await saveNATTimeMetric();
-      queryClient.invalidateQueries(['TeamTimePerson']);
+      queryClient.invalidateQueries(['TeamTimePerson', batchId]);
       toast.success('Team time deleted');
+      saveMetric().catch(console.error);
+      saveNATTimeMetric().catch(console.error);
     },
     onError: () => toast.error('Failed to delete team time')
   });
@@ -190,7 +190,8 @@ export default function TeamTimePersonsTab({ batchId }) {
 
   const saveMetric = async () => {
     try {
-      const batchHeader = await base44.entities.BatchHeader.filter({ id: batchId });
+      const allBatchHeaders = await base44.entities.BatchHeader.list();
+      const batchHeader = allBatchHeaders.filter(b => b.id === batchId);
       if (!batchHeader || batchHeader.length === 0) return;
 
       // Fetch fresh team time data from database
@@ -227,7 +228,8 @@ export default function TeamTimePersonsTab({ batchId }) {
 
   const saveNATTimeMetric = async () => {
     try {
-      const batchHeader = await base44.entities.BatchHeader.filter({ id: batchId });
+      const allBatchHeaders = await base44.entities.BatchHeader.list();
+      const batchHeader = allBatchHeaders.filter(b => b.id === batchId);
       if (!batchHeader || batchHeader.length === 0) return;
 
       const date = batchHeader[0].date;
