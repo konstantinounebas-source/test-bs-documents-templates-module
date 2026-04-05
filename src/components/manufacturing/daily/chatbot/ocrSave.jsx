@@ -20,7 +20,7 @@ const OPERATION_MAP = [
 ];
 
 const ADDITIONAL_TREATMENTS_OPERATION = "Επιπρόσθετες Κατεργασίες";
-const REMAKE_OPERATION = "Επαναργασία (Remake)";
+const REMAKE_OPERATION = "Remake";
 const QC_LEVEL_DEFAULT = "Medium";
 
 function isPositive(val) {
