@@ -126,7 +126,15 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     const pages = ocrResult?.extracted_data?.pages;
     const totalPages = pages?.length || (ocrResult?.extracted_data ? 1 : 0);
     const currentPageData = pages?.[currentPage] || ocrResult?.extracted_data || {};
-    console.log('OCR Pages:', { totalPages, currentPage, hasPages: !!pages, hasExtractedData: !!ocrResult?.extracted_data });
+    
+    useEffect(() => {
+      console.log('OCRVerificationModal - ocrResult structure:', {
+        hasExtractedData: !!ocrResult?.extracted_data,
+        pages: ocrResult?.extracted_data?.pages,
+        totalPages,
+        allKeys: Object.keys(ocrResult?.extracted_data || {})
+      });
+    }, [ocrResult]);
 
     // Parse filename for date and type
     const fileParsed = parseFileName(fileName);
