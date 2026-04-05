@@ -546,24 +546,34 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
             </div>
 
             {/* Confirm footer */}
-            <div className="border-t px-4 py-3 flex items-center gap-3 bg-white flex-shrink-0">
-              <Button variant="outline" size="sm" className="text-xs" onClick={onClose}>Ακύρωση</Button>
-              <Button variant="outline" size="sm" className="text-xs" 
-                onClick={() => setLines(prev => [...prev, COLUMNS.reduce((acc, col) => ({ ...acc, [col.key]: null }), {})])}>
-                + Προσθήκη Γραμμής
-              </Button>
-              <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
-                onClick={() => {
-                  setConfirmed(true);
-                  // Merge all pages data when confirming
-                  const allLines = allPagesData.flat();
-                  onConfirm({ date, production_lines: allLines });
-                }}
-                disabled={confirmed}>
-                {confirmed ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
-                Επιβεβαίωση δεδομένων OCR
-              </Button>
-            </div>
+             <div className="border-t px-4 py-3 flex items-center gap-3 bg-white flex-shrink-0">
+               <Button variant="outline" size="sm" className="text-xs" onClick={onClose}>Ακύρωση</Button>
+               <Button variant="outline" size="sm" className="text-xs" 
+                 onClick={() => setLines(prev => [...prev, COLUMNS.reduce((acc, col) => ({ ...acc, [col.key]: null }), {})])}>
+                 + Προσθήκη Γραμμής
+               </Button>
+               {totalPages > 1 && currentPage < totalPages - 1 && (
+                 <Button variant="outline" size="sm" className="text-xs" onClick={() => setCurrentPage(p => p + 1)}>
+                   Επόμ. Σελίδα →
+                 </Button>
+               )}
+               {totalPages > 1 && currentPage > 0 && (
+                 <Button variant="outline" size="sm" className="text-xs" onClick={() => setCurrentPage(p => p - 1)}>
+                   ← Προηγ. Σελίδα
+                 </Button>
+               )}
+               <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
+                 onClick={() => {
+                   setConfirmed(true);
+                   // Merge all pages data when confirming
+                   const allLines = allPagesData.flat();
+                   onConfirm({ date, production_lines: allLines });
+                 }}
+                 disabled={confirmed}>
+                 {confirmed ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
+                 Επιβεβαίωση δεδομένων OCR
+               </Button>
+             </div>
           </div>
         </div>
       </DialogContent>

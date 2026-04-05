@@ -100,6 +100,17 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
 
   const processedLines = batchLines.filter(bl => (bl.qty_processed || 0) > 0);
 
+  // Helper: Normalize item code (e.g., C1 → c01, C25 → c25)
+  const normalizeItemCode = (code) => {
+    if (!code) return code;
+    const match = code.match(/^([A-Za-z]+)(\d+)$/);
+    if (match) {
+      const [, letters, number] = match;
+      return letters + String(parseInt(number)).padStart(2, '0');
+    }
+    return code;
+  };
+
   // Helper: Normalize Greek text (remove accents)
   const normalizeGreekText = (text) => {
     if (!text) return text;
