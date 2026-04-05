@@ -20,6 +20,7 @@ const OPERATION_MAP = [
 ];
 
 const ADDITIONAL_TREATMENTS_OPERATION = "Επιπρόσθετες Κατεργασίες";
+const REMAKE_OPERATION = "Επαναργασία (Remake)";
 const QC_LEVEL_DEFAULT = "Medium";
 
 function isPositive(val) {
@@ -117,6 +118,19 @@ export async function saveOCRData(confirmed, batchHeaderId, onSuccess) {
         operation_time_min: isPositive(line.additional_treatments_time_mins)
           ? Number(line.additional_treatments_time_mins)
           : 0,
+        source_type: "MANUAL",
+      });
+    }
+
+    if (isPositive(line.initial_qc_remake)) {
+      const remakeStdTime = getStdTime(itemCode, REMAKE_OPERATION);
+      opRecords.push({
+        batch_header_id: batchHeaderId,
+        item_code: itemCode,
+        operation: REMAKE_OPERATION,
+        qty_operation: Number(line.initial_qc_remake),
+        std_min_pc_lookup: remakeStdTime,
+        operation_time_min: Number(line.initial_qc_remake) * remakeStdTime,
         source_type: "MANUAL",
       });
     }
