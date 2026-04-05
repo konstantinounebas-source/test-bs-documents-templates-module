@@ -405,9 +405,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       const detectedForms = detectResult?.pages ? Object.values(detectResult.pages).map(p => p?.form_type).filter(Boolean) : [];
       
       if (!detectedForms.length) {
-        addMsg("bot", `❌ Δεν ανιχνεύθηκε καμία γνωστή φόρμα στο αρχείο.`);
-        setOcrLoading(false);
-        return;
+        addMsg("bot", `⚠️ Δεν ανιχνεύθηκαν φόρμες. Θα δοκιμάσω production + teams_time...`);
+        detectedForms.push("production", "teams_time");
       }
 
       // Display detailed detection results per page
