@@ -101,9 +101,8 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
   const processedLines = batchLines.filter(bl => (bl.qty_processed || 0) > 0);
 
   const totalQCTime = existingQC.reduce((sum, qc) => {
-    const perPiece = parseFloat(qc.qc_per_piece_min) || 0;
-    const qty = parseInt(qc.qty_affected) || 0;
-    return sum + (perPiece * qty);
+    const timeAdd = parseFloat(qc.time_add_min) || 0;
+    return sum + timeAdd;
   }, 0);
 
   const handleEditStart = (qc) => {
@@ -229,8 +228,8 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
                 <div>{qc.qc_level}</div>
                 {editingId === qc.id ? (
                   <>
-                    <input type="number" step="0.01" value={editForm.qc_per_piece_min || 0} 
-                      onChange={(e) => setEditForm(f => ({ ...f, qc_per_piece_min: e.target.value }))}
+                    <input type="number" step="0.01" value={editForm.time_add_min || 0} 
+                      onChange={(e) => setEditForm(f => ({ ...f, time_add_min: e.target.value }))}
                       className="h-6 px-1 border border-slate-300 rounded text-[10px]" />
                     <input type="number" value={editForm.qty_affected || 0}
                       onChange={(e) => setEditForm(f => ({ ...f, qty_affected: e.target.value }))}
@@ -242,7 +241,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
                   </>
                 ) : (
                   <>
-                    <div>{(qc.qc_per_piece_min || 0).toFixed(2)}</div>
+                    <div>{(qc.time_add_min || 0).toFixed(2)}</div>
                     <div>{qc.qty_affected}</div>
                     <div className="flex gap-1">
                       <button onClick={() => handleEditStart(qc)} className="text-blue-600 hover:text-blue-700">✏</button>
