@@ -437,13 +437,13 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       addMsg(
         "bot",
         `📄 Το αρχείο αναγνωρίστηκε ως **${fileAnalysis.file_type || "unknown"}**\n` +
-        `📋 Χρήσιμες σελίδες που βρέθηκαν: **${effectivePageCount}**`
+        `📋 Συνολικές σελίδες αρχείου: **${effectivePageCount}**`
       );
 
       if (detectedForms.length === 0) {
-        console.warn("No valid forms detected. Falling back...");
-        addMsg("bot", `⚠️ Δεν ανιχνεύθηκαν έγκυρες φόρμες. Θα δοκιμάσω production + teams_time...`);
-        detectedForms.push("production", "teams_time");
+        console.warn("No valid forms detected.");
+        addMsg("bot", "⚠️ Δεν ανιχνεύθηκαν έγκυρες φόρμες στο αρχείο.");
+        return;
       }
 
       // Display detailed detection results per page
@@ -528,7 +528,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       setTeamsTimeOcrResult(result);
       setOcrTargetAtt(att);
       setShowTeamsTimeOcrModal(true);
-      addMsg("bot", `📋 Τώρα επιβεβαίωσε τα δεδομένα Teams Time (Σελ.2): ${result?.extracted_data?.team_persons?.length || 0} άτομα · ${result?.extracted_data?.team_extra?.length || 0} extra.`);
+      addMsg("bot", `📋 Τώρα επιβεβαίωσε τα δεδομένα Teams Time: ${result?.extracted_data?.team_persons?.length || 0} άτομα · ${result?.extracted_data?.team_extra?.length || 0} extra.`);
     }
   };
 
