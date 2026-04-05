@@ -33,11 +33,23 @@ function getQuickDates() {
 async function parseFilenameWithAI(fileName, departments) {
   const nameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
   const today = todayStr();
+  
+  // Pre-process: if filename contains known department names (case-insensitive), extract it early
+  const lowerName = nameWithoutExt.toLowerCase();
+  let foundDept = null;
+  for (const dept of departments) {
+    if (lowerName.includes(dept.toLowerCase())) {
+      foundDept = dept;
+      break;
+    }
+  }
+  
   const result = await base44.integrations.Core.InvokeLLM({
     prompt: `Αναλύσε το παρακάτω όνομα αρχείου και εξήγαγε πληροφορίες από αυτό.
 Σημερινή ημερομηνία: ${today}
 Διαθέσιμα τμήματα: ${departments.join(", ")}
 Όνομα αρχείου: "${nameWithoutExt}"
+${foundDept ? `Προ-εντοπισμένο τμήμα από όνομα: "${foundDept}" - ΧΡΗΣΙΜΟΠΟΙΗΣΕ ΑΥΤΟ αν συμφωνεί με τα διαθέσιμα τμήματα` : ""}
 
 Η αναμενόμενη μορφή είναι: [Ημερομηνία]_[Τμήμα]_[ΑριθμόςΣελίδαςFromΣυνολικέςΣελίδες]_[Περιγραφή]
 
@@ -52,14 +64,15 @@ async function parseFilenameWithAI(fileName, departments) {
   - YYYY-MM-DD → "2026-02-03" → "2026-02-03"
   - Αν δεν υπάρχει ημερομηνία στην αρχή → date=null (ΜΗΝ χρησιμοποιείς τη σημερινή ημερομηνία)
 
-ΠΡΟΣΟΧΗ: Αν το πρώτο τμήμα (πριν _) ξεκινά με αριθμό, είναι ΣΙΓΟΥΡΑ ημερομηνία. 
-Παράδειγμα: "3-2-26_FA_SubAssembly_1From5" → ημερομηνία=3/2/2026, τμήμα=Sub-assembly (από λίστα)
-Παράδειγμα: "20260316_Assembly_1From3_DailyReport" → ημερομηνία=2026-03-16, τμήμα=Assembly
+ΚΡΙΣΙΜΟ - Αναγνώριση τμήματος:
+- ΕΑΝ το όνομα περιέχει ακριβώς ένα από τα διαθέσιμα τμήματα (με case-insensitive match), ΧΡΗΣΙΜΟΠΟΙΗΣΕ ΑΥΤΟ
+- Παράδειγμα: αν "PREPAINT" είναι στη λίστα και το όνομα έχει "PREPAINT" ή "prepaint" → department="PREPAINT"
+- Το τμήμα μπορεί να εμφανιστεί με underscore: "TEAM_TIME_FORM_PREPAINT" → PREPAINT
+- ΠΑΝΤΑ έκδωσε το ακριβές όνομα από τη λίστα διαθέσιμων τμημάτων
 
-Κανόνες:
-- Το τμήμα μπορεί να είναι παρόμοιο με τη λίστα (π.χ. "SubAssembly" ή "FA_SubAssembly" → "Sub-assembly")
-- Ο αριθμός σελίδας εμφανίζεται ως "1From5" (σελίδα 1 από 5)
-- Αν δεν μπορείς να αναγνωρίσεις το τμήμα, βάλε department=null
+Παράδειγμα: "3-2-26_FA_SubAssembly_1From5" → ημερομηνία=3/2/2026, τμήμα=Sub-assembly (από λίστα)
+Παράδειγμα: "TEAM_TIME_FORM_PREPAINT" → ημερομηνία=null, τμήμα=PREPAINT (από λίστα), description="Team Time Form"
+Παράδειγμα: "20260316_Assembly_1From3_DailyReport" → ημερομηνία=2026-03-16, τμήμα=Assembly
 
 Επέστρεψε JSON με τα εξής πεδία:
 - date: string (YYYY-MM-DD) ή null — ΠΟΤΕ μη βάζεις τη σημερινή αν δεν υπάρχει στο όνομα
