@@ -402,9 +402,15 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       // Step 0: Analyze file type and page count
       const fileAnalysisRaw = await base44.functions.invoke("analyzeFilePages", { file_url: att.file_url });
       console.log("analyzeFilePages raw result:", fileAnalysisRaw);
-      const fileAnalysis = fileAnalysisRaw?.data || fileAnalysisRaw || {};
-      console.log("analyzeFilePages parsed:", fileAnalysis);
       addMsg("bot", `DEBUG analyzeFilePages raw: ${JSON.stringify(fileAnalysisRaw)}`);
+
+      const fileAnalysis =
+        fileAnalysisRaw?.data ||
+        fileAnalysisRaw?.result ||
+        fileAnalysisRaw?.output ||
+        fileAnalysisRaw || {};
+
+      console.log("analyzeFilePages parsed:", fileAnalysis);
       addMsg("bot", 
         `📄 Το αρχείο αναγνωρίστηκε ως **${fileAnalysis.file_type || "unknown"}**\n` +
         `📊 Συνολικές σελίδες που βρέθηκαν: **${fileAnalysis.page_count || "unknown"}**`
