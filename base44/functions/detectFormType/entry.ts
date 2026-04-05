@@ -20,18 +20,17 @@ Deno.serve(async (req) => {
   const detectFormTypeFromTitle = (title) => {
     const normalized = normalizeTitle(title);
     
-    // Keywords for Teams Time Form
-    if (normalized.includes("PRODUCTION TEAMS") || 
+    // Keywords for Teams Time Form - CHECK FIRST (more specific)
+    if (normalized.includes("PRODUCTION TEAMS TIME FORM") ||
+        normalized.includes("TEAMS TIME") ||
         normalized.includes("TEAM TIME") ||
-        normalized.includes("TEAMS TIME FORM")) {
+        normalized.includes("ΣΥΝΟΛΙΚΕΣ ΩΡΕΣ ΕΡΓΑΣΙΑΣ")) {
       return "teams_time";
     }
     
-    // Keywords for Production Form
+    // Keywords for Production Form - CHECK SECOND
     if (normalized.includes("ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ") ||
-        normalized.includes("ΠΑΡΑΓΩΓΗ") ||
-        normalized.includes("ΔΙΕΡΓΑΣΙΑ") ||
-        normalized.includes("ΠΡΟΕΤΟΙΜΑΣΙΑ")) {
+        (normalized.includes("ΠΑΡΑΓΩΓΗ") && !normalized.includes("TEAMS"))) {
       return "production";
     }
     
@@ -43,13 +42,11 @@ Deno.serve(async (req) => {
   const detectedForms = {};
 
   for (const pageNum of pages) {
-    // Create a page-specific URL if PDF (PDF.js can handle #page=X)
-    const pageUrl = isPDF ? `${file_url}#page=${pageNum}` : file_url;
-
     let result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       model: model,
-      prompt: `Δες το έγγραφο (ΜΟΝΟ σελίδα ${pageNum} αν είναι PDF) και αναφέρισε: Ποιος είναι ο τίτλος της φόρμας;`,
-      file_urls: [pageUrl],
+      prompt: `Δες αυτό το PDF document. Ποιος είναι ο ΤΙΤΛΟΣ της φόρμας; 
+Απάντησε με τον τίτλο ΑΚΡΙΒΩΣ όπως φαίνεται στο έγγραφο (π.χ. "PRODUCTION TEAMS TIME FORM V.4" ή "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ").`,
+      file_urls: [file_url],
       response_json_schema: {
         type: "object",
         properties: {
@@ -61,39 +58,23 @@ Deno.serve(async (req) => {
     // Map title to form type using keyword detection
     let formType = detectFormTypeFromTitle(result.form_title);
 
-    // Retry with structural detection if keyword match failed
-    if (formType === "unknown") {
-      const teamsCheckResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    // For ambiguous cases, check specific table markers for each form type
+    if (formType === "production" && result.form_title === "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ") {
+      const detailCheck = await base44.asServiceRole.integrations.Core.InvokeLLM({
         model: model,
-        prompt: `Δες το έγγραφο (ΜΟΝΟ σελίδα ${pageNum} αν είναι PDF). Υπάρχει πίνακας με "Ονοματεπώνυμο", "Από", "Έως" ή "Συνολικές Ώρες Εργασίας";
-        
-Απάντησε "YES" ή "NO".`,
-        file_urls: [pageUrl],
+        prompt: `Δες αυτό το PDF και βρες ΤΙ είναι το κύριο περιεχόμενο.
+Πράγματι έχει τα παρακάτω;
+- Πίνακα με "Ονοματεπώνυμο", "Από", "Έως", "ΣΧΟΛΙΑ" (Teams Time)?
+- Ή πίνακα με item codes/κωδικούς, ποσότητες (Production)?
+Απάντησε ΜΟΝΟ με: "TEAMS_TIME" ή "PRODUCTION".`,
+        file_urls: [file_url],
         response_json_schema: {
           type: "object",
-          properties: { answer: { type: "string", enum: ["YES", "NO"] } }
+          properties: { answer: { type: "string", enum: ["TEAMS_TIME", "PRODUCTION"] } }
         }
       });
 
-      if (teamsCheckResult.answer === "YES") {
-        formType = "teams_time";
-      } else {
-        const prodCheckResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          model: model,
-          prompt: `Δες το έγγραφο (ΜΟΝΟ σελίδα ${pageNum} αν είναι PDF). Υπάρχει πίνακας με "Κωδικός", "Ποσότητα", "Παρτίδα" ή παραγωγή δεδομένα;
-          
-Απάντησε "YES" ή "NO".`,
-          file_urls: [pageUrl],
-          response_json_schema: {
-            type: "object",
-            properties: { answer: { type: "string", enum: ["YES", "NO"] } }
-          }
-        });
-
-        if (prodCheckResult.answer === "YES") {
-          formType = "production";
-        }
-      }
+      formType = detailCheck.answer === "TEAMS_TIME" ? "teams_time" : "production";
     }
 
     detectedForms[pageNum] = {
