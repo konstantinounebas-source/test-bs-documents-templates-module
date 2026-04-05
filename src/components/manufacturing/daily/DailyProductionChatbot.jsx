@@ -532,6 +532,20 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     }
   };
 
+  const handleOcrSkip = () => {
+    setShowOcrModal(false);
+    if (pendingTeamsTimeOcr) {
+      const { result, att } = pendingTeamsTimeOcr;
+      setPendingTeamsTimeOcr(null);
+      setTeamsTimeOcrResult(result);
+      setOcrTargetAtt(att);
+      setShowTeamsTimeOcrModal(true);
+      addMsg("bot", `📋 Παραλείφθηκε η αποθήκευση της πρώτης φόρμας. Συνέχεια με Teams Time: ${result?.extracted_data?.team_persons?.length || 0} άτομα · ${result?.extracted_data?.team_extra?.length || 0} extra.`);
+    } else {
+      addMsg("bot", "✅ Φόρμα παραλείφθηκε. Μπορείς να συνεχίσεις με τα επόμενα βήματα.");
+    }
+  };
+
   const handleTeamsTimeOcrConfirm = (confirmedData) => {
     setShowTeamsTimeOcrModal(false);
     addMsg("bot", `✅ Teams Time OCR επιβεβαιώθηκε! Αποθηκεύω...`);
@@ -1608,6 +1622,7 @@ ${context}
           fileName={ocrTargetAtt.file_name}
           ocrResult={ocrResult}
           onConfirm={handleOcrConfirm}
+          onSkip={handleOcrSkip}
           department={selDept || ocrTargetAtt?.department}
           availableItemCodes={bundleItemCodes}
         />
