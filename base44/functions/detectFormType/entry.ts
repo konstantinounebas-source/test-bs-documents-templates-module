@@ -43,12 +43,13 @@ Deno.serve(async (req) => {
   const detectedForms = {};
 
   for (const pageNum of pages) {
-    const pageInstruction = `\nΑνάλυσε ΜΟΝΟ τη σελίδα ${pageNum}.`;
+    // Create a page-specific URL if PDF (PDF.js can handle #page=X)
+    const pageUrl = isPDF ? `${file_url}#page=${pageNum}` : file_url;
 
     let result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       model: model,
-      prompt: `Δες το έγγραφο και αναφέρισε: Ποιος είναι ο τίτλος της φόρμας;${pageInstruction}`,
-      file_urls: [file_url],
+      prompt: `Δες το έγγραφο (ΜΟΝΟ σελίδα ${pageNum} αν είναι PDF) και αναφέρισε: Ποιος είναι ο τίτλος της φόρμας;`,
+      file_urls: [pageUrl],
       response_json_schema: {
         type: "object",
         properties: {
@@ -64,10 +65,10 @@ Deno.serve(async (req) => {
     if (formType === "unknown") {
       const teamsCheckResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
         model: model,
-        prompt: `Δες το έγγραφο. Υπάρχει πίνακας με "Ονοματεπώνυμο", "Από", "Έως" ή "Συνολικές Ώρες Εργασίας";${pageInstruction}
+        prompt: `Δες το έγγραφο (ΜΟΝΟ σελίδα ${pageNum} αν είναι PDF). Υπάρχει πίνακας με "Ονοματεπώνυμο", "Από", "Έως" ή "Συνολικές Ώρες Εργασίας";
         
 Απάντησε "YES" ή "NO".`,
-        file_urls: [file_url],
+        file_urls: [pageUrl],
         response_json_schema: {
           type: "object",
           properties: { answer: { type: "string", enum: ["YES", "NO"] } }
@@ -79,10 +80,10 @@ Deno.serve(async (req) => {
       } else {
         const prodCheckResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
           model: model,
-          prompt: `Δες το έγγραφο. Υπάρχει πίνακας με "Κωδικός", "Ποσότητα", "Παρτίδα" ή παραγωγή δεδομένα;${pageInstruction}
+          prompt: `Δες το έγγραφο (ΜΟΝΟ σελίδα ${pageNum} αν είναι PDF). Υπάρχει πίνακας με "Κωδικός", "Ποσότητα", "Παρτίδα" ή παραγωγή δεδομένα;
           
 Απάντησε "YES" ή "NO".`,
-          file_urls: [file_url],
+          file_urls: [pageUrl],
           response_json_schema: {
             type: "object",
             properties: { answer: { type: "string", enum: ["YES", "NO"] } }
