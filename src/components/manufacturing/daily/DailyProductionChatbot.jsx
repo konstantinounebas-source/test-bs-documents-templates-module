@@ -451,9 +451,11 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       }
 
       // Display detailed detection results per page
-      const detectionDetails = Object.entries(detectedPages)
-        .map(([page, data]) => `Σελ.${page} = ${data?.form_type || 'unknown'}`)
-        .join(', ');
+      const detectionDetails = Object.entries(detectedPages).length
+        ? Object.entries(detectedPages)
+            .map(([page, data]) => `Σελ.${page} = ${data?.form_type || "unknown"}`)
+            .join(", ")
+        : "Δεν εντοπίστηκαν συγκεκριμένες σελίδες";
       addMsg("bot", `✅ **Σάρωση ολοκληρώθηκε!**\n📋 Ανιχνεύθηκε: ${detectionDetails}`);
       addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
 
