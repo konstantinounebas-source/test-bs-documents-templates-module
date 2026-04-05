@@ -417,7 +417,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
 
               {/* ── Section 1: Team Persons ── */}
-              {persons.length > 0 && <div>
+              <div>
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                   Ενότητα 1 – Συνολικές ώρες Εργασίας
                   <Badge className="bg-blue-100 text-blue-700 text-[10px]">{persons.length} άτομα</Badge>
@@ -504,10 +504,10 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   onClick={() => setPersons(p => [...p, { person_name: "", time_from: "", time_to: "", break_min: 45, notes: "" }])}>
                   + Προσθήκη
                 </Button>
-              </div>}
+              </div>
 
               {/* ── Section 2: Team Extra ── */}
-              {extras.length > 0 && <div>
+              <div>
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                   Ενότητα 2 – Εργασίες εκτός φόρμας
                   <Badge className="bg-purple-100 text-purple-700 text-[10px]">{extras.length} εγγραφές</Badge>
@@ -682,10 +682,10 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   onClick={() => setExtras(ex => [...ex, { person_name: "", duration_hours: 0, duration_mins: 0, work_type: "", description: "", charge_dept: "" }])}>
                   + Προσθήκη
                 </Button>
-              </div>}
+              </div>
 
               {/* ── Section 3: Help In (auto-derived) ── */}
-              {helpInList.length > 0 && <div>
+              <div>
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-2">
                   Ενότητα 3 – Help In (Εξωτερικά Άτομα)
                   <Badge className="bg-orange-100 text-orange-700 text-[10px]">{helpInList.length} εγγραφές</Badge>
@@ -746,7 +746,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   onClick={() => setHelpInList(h => [...h, { person_name: "", help_time_min: 0, receiving_dept: "", providing_dept: "" }])}>
                   + Προσθήκη
                 </Button>
-              </div>}
+              </div>
 
             </div>
 
