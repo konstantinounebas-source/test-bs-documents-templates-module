@@ -31,6 +31,59 @@ function timeToMins(t) {
   return parseInt(m[1]) * 60 + parseInt(m[2]);
 }
 
+// Find closest string match using Levenshtein-like similarity
+function findClosestMatch(input, options, threshold = 0.6) {
+  if (!input || !options.length) return null;
+  const inputLower = input.toLowerCase().trim();
+  
+  let bestMatch = null;
+  let bestScore = threshold;
+  
+  options.forEach(opt => {
+    const optLower = opt.toLowerCase().trim();
+    const score = stringSimilarity(inputLower, optLower);
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = opt;
+    }
+  });
+  
+  return bestMatch;
+}
+
+// Simple similarity score (0-1)
+function stringSimilarity(a, b) {
+  const longer = a.length > b.length ? a : b;
+  const shorter = a.length > b.length ? b : a;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = getEditDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+// Calculate edit distance between two strings
+function getEditDistance(a, b) {
+  const costs = [];
+  for (let i = 0; i <= a.length; i++) {
+    let lastVal = i;
+    for (let j = 0; j <= b.length; j++) {
+      if (i === 0) costs[j] = j;
+      else if (j > 0) {
+        const newVal = Math.min(
+          costs[j] + 1,
+          costs[j - 1] + 1,
+          lastVal + (a[i - 1] === b[j - 1] ? 0 : 1)
+        );
+        costs[j - 1] = lastVal;
+        lastVal = newVal;
+      }
+    }
+    if (i > 0) costs[b.length] = lastVal;
+  }
+  return costs[b.length];
+}
+
 // Calculate available minutes for a person
 function calcAvailableMins(p) {
   const from = timeToMins(p.time_from);
@@ -382,29 +435,51 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   </thead>
                   <tbody>
                     {extras.map((e, i) => {
-                      const name = (e.person_name || "").trim().toLowerCase();
-                      const isExternal = name && !section1Names.has(name);
-                      const totalExtraMins = extraMinsByName[name] || 0;
-                      const availMins = availableByName[name];
-                      const isOvertime = availMins !== undefined && totalExtraMins > availMins;
-                      const rowBg = isOvertime ? "bg-red-50" : isExternal ? "bg-orange-50" : i % 2 === 0 ? "bg-white" : "bg-slate-50";
-                      return (
-                        <tr key={i} className={rowBg}>
-                          <td className="border border-slate-200 p-1">
-                            {(() => {
-                              const personName = (e.person_name || "").trim();
-                              const isValidPerson = personName && refPersonNames.has(personName.toLowerCase());
-                              const isMissing = personName && !isValidPerson;
-                              return (
-                                <div className="flex items-center gap-1">
-                                  <input value={personName} onChange={ev => updateExtra(i, "person_name", ev.target.value)}
-                                    className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isMissing ? "border-red-400 bg-red-50" : isExternal ? "border-orange-400" : "border-slate-200"}`} />
-                                  {isMissing && <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" title="Δεν βρέθηκε στα αποθηκευμένα άτομα" />}
-                                  {isValidPerson && <Check className="w-3 h-3 text-green-600 flex-shrink-0" />}
-                                </div>
-                              );
-                            })()}
-                          </td>
+                       const name = (e.person_name || "").trim().toLowerCase();
+                       const isExternal = name && !section1Names.has(name);
+                       const totalExtraMins = extraMinsByName[name] || 0;
+                       const availMins = availableByName[name];
+                       const isOvertime = availMins !== undefined && totalExtraMins > availMins;
+                       const rowBg = isOvertime ? "bg-red-50" : isExternal ? "bg-orange-50" : i % 2 === 0 ? "bg-white" : "bg-slate-50";
+
+                       // Find closest match for person name
+                       const personName = (e.person_name || "").trim();
+                       const isValidPerson = personName && refPersonNames.has(personName.toLowerCase());
+                       const suggestedPerson = !isValidPerson && personName ? findClosestMatch(personName, referencePersons.map(p => p.name)) : null;
+
+                       return (
+                         <tr key={i} className={rowBg}>
+                           <td className="border border-slate-200 p-1">
+                             {(() => {
+                               return (
+                                 <div className="space-y-1">
+                                   <div className="flex items-center gap-1">
+                                     <select
+                                       value={personName}
+                                       onChange={ev => updateExtra(i, "person_name", ev.target.value)}
+                                       className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${!isValidPerson ? "border-red-400 bg-red-50" : "border-slate-200"}`}
+                                     >
+                                       <option value={personName}>{personName || "-- Επιλέξτε --"}</option>
+                                       {referencePersons.map(p => (
+                                         <option key={p.id} value={p.name}>{p.name}</option>
+                                       ))}
+                                     </select>
+                                     {isValidPerson && <Check className="w-3 h-3 text-green-600 flex-shrink-0" />}
+                                   </div>
+                                   {!isValidPerson && suggestedPerson && (
+                                     <button
+                                       type="button"
+                                       onClick={() => updateExtra(i, "person_name", suggestedPerson)}
+                                       className="text-xs text-blue-600 hover:underline"
+                                       title="Χρησιμοποιήστε την προτεινόμενη τιμή"
+                                     >
+                                       💡 Υπόδειξη: {suggestedPerson}
+                                     </button>
+                                   )}
+                                 </div>
+                               );
+                             })()}
+                           </td>
                           <td className="border border-slate-200 p-1">
                             <input type="number" min="0" value={e.duration_hours ?? ""} onChange={ev => updateExtra(i, "duration_hours", parseFloat(ev.target.value) || 0)}
                               className={`w-12 text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 text-center ${isOvertime ? "border-red-400 bg-red-100" : (e.duration_hours || 0) > 4 ? "border-amber-400 bg-amber-50" : "border-slate-200"}`} />
@@ -418,20 +493,35 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                               const workType = e.work_type || "";
                               const isValid = !workType || VALID_WORK_TYPES.includes(workType);
                               const isMissing = !workType;
+                              const suggestedWorkType = !isValid && workType ? findClosestMatch(workType, VALID_WORK_TYPES) : null;
                               return (
-                                <div className="flex items-center gap-1">
-                                  <select
-                                    value={workType}
-                                    onChange={ev => updateExtra(i, "work_type", ev.target.value)}
-                                    className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isMissing ? "border-amber-400 bg-amber-50" : !isValid ? "border-red-400 bg-red-50" : "border-slate-200"}`}
-                                  >
-                                    <option value="">-- Επιλέξτε --</option>
-                                    {VALID_WORK_TYPES.map(wt => (
-                                      <option key={wt} value={wt}>{wt}</option>
-                                    ))}
-                                  </select>
-                                  {!isValid && <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" title="Μη έγκυρο είδος εργασίας" />}
-                                  {isValid && workType && <Check className="w-3 h-3 text-green-600 flex-shrink-0" />}
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-1">
+                                    <select
+                                      value={workType}
+                                      onChange={ev => updateExtra(i, "work_type", ev.target.value)}
+                                      className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isMissing ? "border-amber-400 bg-amber-50" : !isValid ? "border-red-400 bg-red-50" : "border-slate-200"}`}
+                                    >
+                                      <option value={workType}>{workType || "-- Επιλέξτε --"}</option>
+                                      {VALID_WORK_TYPES.map(wt => (
+                                        <option key={wt} value={wt}>{wt}</option>
+                                      ))}
+                                    </select>
+                                    {isValid && workType && <Check className="w-3 h-3 text-green-600 flex-shrink-0" />}
+                                  </div>
+                                  {!isValid && suggestedWorkType && (
+                                    <button
+                                      type="button"
+                                      onClick={() => updateExtra(i, "work_type", suggestedWorkType)}
+                                      className="text-xs text-blue-600 hover:underline"
+                                      title="Χρησιμοποιήστε την προτεινόμενη τιμή"
+                                    >
+                                      💡 Υπόδειξη: {suggestedWorkType}
+                                    </button>
+                                  )}
+                                  {!isValid && !suggestedWorkType && (
+                                    <span className="text-xs text-red-600">⚠ Μη έγκυρο είδος εργασίας</span>
+                                  )}
                                 </div>
                               );
                             })()}
