@@ -11,6 +11,7 @@ import { ocrProductionForm } from "@/functions/ocrProductionForm";
 import { ocrTeamsTimeForm } from "@/functions/ocrTeamsTimeForm";
 import { detectFormTypes } from "@/functions/detectFormTypes";
 import OCRVerificationModal from "../OCRVerificationModal";
+import OCRTeamsTimeVerificationModal from "../OCRTeamsTimeVerificationModal";
 import { saveOCRData } from "./ocrSave";
 
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
@@ -215,24 +216,43 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssi
     <>
       <FilePreviewDialog file={previewOpen ? item.file : null} onClose={() => setPreviewOpen(false)} />
       {showOcrModal && ocrResult && (
-        <OCRVerificationModal
-          open={showOcrModal}
-          onClose={() => setShowOcrModal(false)}
-          fileUrl={uploadedUrl || URL.createObjectURL(item.file)}
-          fileName={item.file.name}
-          ocrResult={ocrResult}
-          department={dept}
-          departments={departments}
-          onConfirm={(confirmed) => {
-            setShowOcrModal(false);
-            const batch = batchHeaders.find(b => b.date === date && b.department === dept);
-            if (batch) {
-              saveOCRData(confirmed, batch.id, () => {});
-            } else {
-              toast.warning("Αποθηκεύτηκε OCR αλλά δεν βρέθηκε batch για αποθήκευση δεδομένων.");
-            }
-          }}
-        />
+        ocrResult.form_type === 'teams_time' ? (
+          <OCRTeamsTimeVerificationModal
+            open={showOcrModal}
+            onClose={() => setShowOcrModal(false)}
+            fileUrl={uploadedUrl || URL.createObjectURL(item.file)}
+            fileName={item.file.name}
+            ocrResult={ocrResult}
+            onConfirm={(confirmed) => {
+              setShowOcrModal(false);
+              const batch = batchHeaders.find(b => b.date === date && b.department === dept);
+              if (batch) {
+                saveOCRData(confirmed, batch.id, () => {});
+              } else {
+                toast.warning("Αποθηκεύτηκε OCR αλλά δεν βρέθηκε batch για αποθήκευση δεδομένων.");
+              }
+            }}
+          />
+        ) : (
+          <OCRVerificationModal
+            open={showOcrModal}
+            onClose={() => setShowOcrModal(false)}
+            fileUrl={uploadedUrl || URL.createObjectURL(item.file)}
+            fileName={item.file.name}
+            ocrResult={ocrResult}
+            department={dept}
+            departments={departments}
+            onConfirm={(confirmed) => {
+              setShowOcrModal(false);
+              const batch = batchHeaders.find(b => b.date === date && b.department === dept);
+              if (batch) {
+                saveOCRData(confirmed, batch.id, () => {});
+              } else {
+                toast.warning("Αποθηκεύτηκε OCR αλλά δεν βρέθηκε batch για αποθήκευση δεδομένων.");
+              }
+            }}
+          />
+        )
       )}
 
       <div className="border rounded-lg p-3 space-y-2 bg-white text-xs">
