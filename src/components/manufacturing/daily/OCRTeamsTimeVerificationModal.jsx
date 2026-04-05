@@ -397,7 +397,16 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                                    onChange={ev => updateExtra(i, "charge_dept", ev.target.value)}
                                    className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isEmpty ? "border-amber-400 bg-amber-50" : "border-slate-200"}`}
                                  />
-                                 {isEmpty && <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" title="Κενό τμήμα χρέωσης" />}
+                                 {isEmpty && (
+                                   <button
+                                     type="button"
+                                     onClick={() => updateExtra(i, "charge_dept", dept)}
+                                     title="Συμπλήρωση με τμήμα από κεφαλίδα"
+                                     className="p-0.5 hover:bg-amber-100 rounded"
+                                   >
+                                     <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0 cursor-pointer" />
+                                   </button>
+                                 )}
                                </div>
                              );
                            })()}
