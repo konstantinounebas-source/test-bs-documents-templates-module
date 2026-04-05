@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -111,19 +111,40 @@ const parseFileName = (fileName) => {
 };
 
 export default function OCRVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, department: initialDepartment, departments = [], availableItemCodes = [] }) {
-   const [zoom, setZoom] = useState(1);
-   const [rotation, setRotation] = useState(0);
-   const [modalFullscreen, setModalFullscreen] = useState(false);
-   const [imageFullscreen, setImageFullscreen] = useState(false);
-   const [imagePanelWidth, setImagePanelWidth] = useState(35); // percent
-   const isDragging = useRef(false);
-   const containerRef = useRef(null);
+    const [zoom, setZoom] = useState(1);
+    const [rotation, setRotation] = useState(0);
+    const [modalFullscreen, setModalFullscreen] = useState(false);
+    const [imageFullscreen, setImageFullscreen] = useState(false);
+    const [imagePanelWidth, setImagePanelWidth] = useState(35); // percent
+    const isDragging = useRef(false);
+    const containerRef = useRef(null);
 
-   // Parse filename for date and type
-   const fileParsed = parseFileName(fileName);
-   
-   // Use available item codes as-is from bundle (no normalization)
-   const availableSet = new Set(availableItemCodes || []);
+    // Multi-page support: Track current page
+    const [currentPage, setCurrentPage] = useState(0);
+    const totalPages = ocrResult?.extracted_data?.pages?.length || 1;
+    const currentPageData = ocrResult?.extracted_data?.pages?.[currentPage] || ocrResult?.extracted_data || {};
+
+    // Parse filename for date and type
+    const fileParsed = parseFileName(fileName);
+
+    // Use available item codes as-is from bundle (no normalization)
+    const availableSet = new Set(availableItemCodes || []);
+
+  // Sync lines when page changes
+  useEffect(() => {
+    setLines(allPagesData[currentPage] || []);
+    setAcceptedIssues(new Set());
+  }, [currentPage, allPagesData]);
+
+  // Update allPagesData when lines change
+  const updatePageLines = (newLines) => {
+    setLines(newLines);
+    setAllPagesData(prev => {
+      const updated = [...prev];
+      updated[currentPage] = newLines;
+      return updated;
+    });
+  };
 
   const handleDividerMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -142,19 +163,23 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
   // Numeric fields that might have had a checkbox instead
   const numericKeys = COLUMNS.filter(c => !c.boolean).map(c => c.key).filter(k => k !== "item_code");
 
-  const [lines, setLines] = useState(() => {
-    const rawLines = ocrResult?.corrected_data?.production_lines || ocrResult?.extracted_data?.production_lines || [];
-    return rawLines.map(line => {
-      const updated = { ...line };
-      // If a numeric field has boolean true (OCR detected a checkbox), replace with total_delivery_quantity
-      numericKeys.forEach(key => {
-        if (updated[key] === true) {
-          updated[key] = updated.total_delivery_quantity || null;
-        }
+  const [allPagesData, setAllPagesData] = useState(() => {
+    const pages = ocrResult?.extracted_data?.pages || [ocrResult?.extracted_data || {}];
+    return pages.map(pageData => {
+      const rawLines = pageData?.production_lines || [];
+      return rawLines.map(line => {
+        const updated = { ...line };
+        numericKeys.forEach(key => {
+          if (updated[key] === true) {
+            updated[key] = updated.total_delivery_quantity || null;
+          }
+        });
+        return updated;
       });
-      return updated;
     });
   });
+  
+  const [lines, setLines] = useState(() => allPagesData[currentPage] || []);
 
   // Convert OCR date from dd/mm/yyyy to mm/dd/yyyy for storage
   const ocrDate = ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "";
@@ -214,8 +239,15 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
   const getActiveIssuesForCell = (lineIdx, field) =>
     issues.filter((iss, i) => iss.line_index === lineIdx && iss.field === field && !acceptedIssues.has(getIssueKey(iss, i)));
 
-  const updateLine = (lineIdx, field, value) =>
-    setLines(prev => prev.map((l, i) => i === lineIdx ? { ...l, [field]: value } : l));
+  const updateLine = (lineIdx, field, value) => {
+    const newLines = lines.map((l, i) => i === lineIdx ? { ...l, [field]: value } : l);
+    setLines(newLines);
+    setAllPagesData(prev => {
+      const updated = [...prev];
+      updated[currentPage] = newLines;
+      return updated;
+    });
+  };
 
   const errorCount = issues.filter((iss, i) => iss.severity === "error" && !acceptedIssues.has(getIssueKey(iss, i))).length;
   const warningCount = issues.filter((iss, i) => iss.severity === "warning" && !acceptedIssues.has(getIssueKey(iss, i))).length;
@@ -239,6 +271,11 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
         <DialogHeader className="px-4 py-2 border-b bg-slate-50 flex-row items-center gap-3">
           <Scan className="w-5 h-5 text-blue-600 flex-shrink-0" />
           <DialogTitle className="text-sm">OCR Επιβεβαίωση · {fileName}</DialogTitle>
+          {totalPages > 1 && (
+            <Badge className="bg-blue-100 text-blue-700 text-xs">
+              Σελίδα {currentPage + 1} από {totalPages}
+            </Badge>
+          )}
           {confidence !== null && (
             <Badge className={`text-xs ${confidence >= 80 ? "bg-green-100 text-green-700" : confidence >= 60 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
               Εμπιστοσύνη: {confidence}%
@@ -246,9 +283,19 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
           )}
           {errorCount > 0 && <Badge className="bg-red-100 text-red-700 text-xs">{errorCount} Σφάλματα</Badge>}
           {warningCount > 0 && <Badge className="bg-amber-100 text-amber-700 text-xs">{warningCount} Προειδοποιήσεις</Badge>}
+          {totalPages > 1 && (
+            <div className="ml-auto mr-4 flex items-center gap-2">
+              <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setCurrentPage(p => Math.max(0, p - 1))} disabled={currentPage === 0}>
+                ← Προηγ.
+              </Button>
+              <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))} disabled={currentPage === totalPages - 1}>
+                Επόμ. →
+              </Button>
+            </div>
+          )}
           <button
             onClick={() => setModalFullscreen(v => !v)}
-            className="ml-auto mr-8 p-1.5 hover:bg-slate-200 rounded transition-colors"
+            className="p-1.5 hover:bg-slate-200 rounded transition-colors"
             title={modalFullscreen ? "Μικρότερο παράθυρο" : "Πλήρης οθόνη"}
           >
             {modalFullscreen ? <Minimize2 className="w-4 h-4 text-blue-600" /> : <Maximize2 className="w-4 h-4 text-slate-500" />}
@@ -506,7 +553,12 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                 + Προσθήκη Γραμμής
               </Button>
               <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
-                onClick={() => { setConfirmed(true); onConfirm({ date, production_lines: lines }); }}
+                onClick={() => {
+                  setConfirmed(true);
+                  // Merge all pages data when confirming
+                  const allLines = allPagesData.flat();
+                  onConfirm({ date, production_lines: allLines });
+                }}
                 disabled={confirmed}>
                 {confirmed ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
                 Επιβεβαίωση δεδομένων OCR
