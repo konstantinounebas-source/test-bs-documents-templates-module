@@ -40,17 +40,23 @@ Deno.serve(async (req) => {
   const user = await base44.auth.me();
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { file_url } = await req.json();
+  const { file_url, page_number } = await req.json();
   if (!file_url) return Response.json({ error: 'file_url is required' }, { status: 400 });
 
   // Detect file type - gemini supports PDFs, gpt_5_mini for images
   const isPDF = file_url.toLowerCase().includes('.pdf') || file_url.toLowerCase().includes('pdf');
   const model = isPDF ? "gemini_3_flash" : "gpt_5_mini";
+  
+  // If page_number specified (e.g. page 1 of a multi-page PDF), instruct the LLM accordingly
+  const pageInstruction = page_number 
+    ? `\nΚΡΙΣΙΜΟ – ΕΠΙΛΟΓΗ ΣΕΛΙΔΑΣ: Επεξεργάσου ΜΟΝΟ τη σελίδα ${page_number} του αρχείου. Άγνοησε όλες τις άλλες σελίδες.`
+    : "";
 
   // ── Single-pass OCR + validation ────────────────
   const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
     model: model,
-    prompt: `Εξάγαγε δεδομένα από τη φόρμα ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ.
+    prompt: `Εξάγαγε δεδομένα από τη φόρμα ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ.${pageInstruction}
+Η φόρμα έχει τίτλο "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ" ή "Διεργασία1: Προετοιμασία Βαφής". Εξάγαγε δεδομένα ΜΟΝΟ από αυτή τη φόρμα, ΟΧΙ από φόρμα "PRODUCTION TEAMS TIME FORM".
 
 ΚΑΤΑΝΟΜΗ ΚΑΙ ΣΕΙΡΑ ΣΤΗΛΩΝ ΑΝΑ ΓΡΑΜΜΗ ΠΑΡΑΓΩΓΗΣ (σε αυτήν ακριβώς τη σειρά):
 

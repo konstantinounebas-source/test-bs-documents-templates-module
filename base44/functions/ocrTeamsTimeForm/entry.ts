@@ -46,17 +46,26 @@ Deno.serve(async (req) => {
   const user = await base44.auth.me();
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { file_url, file_name } = await req.json();
+  const { file_url, file_name, page_number } = await req.json();
   if (!file_url) return Response.json({ error: 'file_url is required' }, { status: 400 });
 
   const isPDF = file_url.toLowerCase().includes('.pdf') || (file_name || '').toLowerCase().includes('.pdf');
   const model = isPDF ? "gemini_3_flash" : "gpt_5_mini";
+  
+  const pageInstruction = page_number
+    ? `\nΚΡΙΣΙΜΟ – ΕΠΙΛΟΓΗ ΣΕΛΙΔΑΣ: Επεξεργάσου ΜΟΝΟ τη σελίδα ${page_number} του αρχείου. Η σελίδα αυτή περιέχει τη φόρμα "PRODUCTION TEAMS TIME FORM V.4". Άγνοησε όλες τις άλλες σελίδες.`
+    : "";
 
   const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
     model: model,
-    prompt: `Εξάγαγε δεδομένα από τη φόρμα PRODUCTION TEAMS TIME FORM V.4.
+    prompt: `Εξάγαγε δεδομένα από τη φόρμα "PRODUCTION TEAMS TIME FORM V.4".${pageInstruction}
 
-ΣΗΜΑΝΤΙΚΟ: Το PDF μπορεί να έχει 2 σελίδες. Η σελίδα με τον τίτλο "PRODUCTION TEAMS TIME FORM V.4" είναι αυτή που πρέπει να επεξεργαστείς. Αγνόησε σελίδες με τίτλο "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ". Αν υπάρχουν 2 σελίδες, ψάξε ΚΑΙ στις 2 για τον τίτλο "PRODUCTION TEAMS TIME FORM V.4".
+ΚΡΙΣΙΜΟ – ΕΠΙΛΟΓΗ ΣΕΛΙΔΑΣ:
+Αν το αρχείο έχει 2 σελίδες:
+- Σελίδα 1: τίτλος "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ" ή "Διεργασία" – ΑΓΝΟΗΣΕ ΤΕΛΕΙΩΣ.
+- Σελίδα 2: τίτλος "PRODUCTION TEAMS TIME FORM V.4" – ΑΥΤΗ επεξεργάσου.
+Εξάγαγε δεδομένα ΜΟΝΟ από τη σελίδα που περιέχει "PRODUCTION TEAMS TIME FORM V.4".
+Μη χρησιμοποιείς ΚΑΝΕΝΑ δεδομένο από σελίδα με τίτλο "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ" ή "Διεργασία".
 
 HEADER:
 - date: ημερομηνία σε μορφή dd/mm/yyyy (από το πεδίο "Ημερομηνία:")

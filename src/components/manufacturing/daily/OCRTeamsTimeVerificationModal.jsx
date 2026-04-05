@@ -24,10 +24,10 @@ function parseFileName(fileName) {
   return { date, dept };
 }
 
-export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, totalPages }) {
+export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, totalPages, defaultPage }) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(defaultPage || 1);
   const [modalFullscreen, setModalFullscreen] = useState(false);
   const [imagePanelWidth, setImagePanelWidth] = useState(40);
   const isDragging = useRef(false);

@@ -195,6 +195,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   // Teams Time OCR state
   const [showTeamsTimeOcrModal, setShowTeamsTimeOcrModal] = useState(false);
   const [teamsTimeOcrResult, setTeamsTimeOcrResult] = useState(null);
+  // Dual-form: pending teams time result to show after production modal confirmed
+  const [pendingTeamsTimeOcr, setPendingTeamsTimeOcr] = useState(null);
 
   // free-text input
   const [userInput, setUserInput] = useState("");
@@ -391,20 +393,51 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     onSuccess: () => queryClient.invalidateQueries(["BatchAttachments", selBatch?.id])
   });
 
-  // Detect if file is a Teams Time form based on filename
-  const isTeamsTimeForm = (fileName) => {
+  // Detect if file is a dual-form PDF (FA_Prepaint: page1=Production Form, page2=Teams Time Form)
+  const isDualFormPDF = (fileName) => {
     if (!fileName) return false;
     const lc = fileName.toLowerCase();
-    return lc.includes('fa_prepaint') || lc.includes('fa_') || lc.includes('teams') || lc.includes('time_form');
+    return (lc.includes('fa_prepaint') || lc.includes('fa_pre')) && lc.endsWith('.pdf');
+  };
+
+  // Detect if file is ONLY a Teams Time form (not dual)
+  const isTeamsTimeOnlyForm = (fileName) => {
+    if (!fileName) return false;
+    const lc = fileName.toLowerCase();
+    if (isDualFormPDF(fileName)) return false; // dual handled separately
+    return lc.includes('teams') || lc.includes('time_form');
   };
 
   const handleOCR = async (att) => {
     setOcrTargetAtt(att);
     setOcrLoading(true);
 
-    const teamsTime = isTeamsTimeForm(att.file_name);
-    addMsg("bot", `🔍 Εκτελώ OCR στο αρχείο "${att.file_name}"${teamsTime ? " (Teams Time Form)" : ""}...`);
-    if (!teamsTime) {
+    const dual = isDualFormPDF(att.file_name);
+    const teamsOnly = isTeamsTimeOnlyForm(att.file_name);
+
+    if (dual) {
+      // Dual form: run both OCRs in parallel (page 1 = production, page 2 = teams time)
+      addMsg("bot", `🔍 Εκτελώ OCR στο "${att.file_name}" (2 σελίδες: Παραγωγή + Teams Time)...`);
+      addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
+      try {
+        const [prodResult, teamsResult] = await Promise.all([
+          ocrProductionForm({ file_url: att.file_url, page_number: 1 }),
+          ocrTeamsTimeForm({ file_url: att.file_url, file_name: att.file_name, page_number: 2 })
+        ]);
+        setOcrResult(prodResult.data);
+        // Store teams time result to show after production modal is confirmed
+        setPendingTeamsTimeOcr({ result: teamsResult.data, att });
+        setShowOcrModal(true);
+        addMsg("bot", `✅ OCR ολοκληρώθηκε! Σελ.1: ${prodResult.data?.extracted_data?.production_lines?.length || 0} γραμμές παραγωγής · Σελ.2: ${teamsResult.data?.extracted_data?.team_persons?.length || 0} άτομα Teams Time. Επιβεβαίωσε πρώτα τα δεδομένα παραγωγής.`);
+      } catch (err) {
+        addMsg("bot", `❌ OCR αποτυχία: ${err?.message || "Network error"}`);
+      }
+      setOcrLoading(false);
+      return;
+    }
+
+    addMsg("bot", `🔍 Εκτελώ OCR στο αρχείο "${att.file_name}"${teamsOnly ? " (Teams Time Form)" : ""}...`);
+    if (!teamsOnly) {
       addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
     }
 
@@ -412,7 +445,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     let lastErr;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        if (teamsTime) {
+        if (teamsOnly) {
           const result = await ocrTeamsTimeForm({ file_url: att.file_url, file_name: att.file_name });
           setTeamsTimeOcrResult(result.data);
           setShowTeamsTimeOcrModal(true);
@@ -453,6 +486,15 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       });
     } else {
       addMsg("bot", "⚠️ Δεν υπάρχει ενεργό batch. Επίλεξε batch πρώτα.");
+    }
+    // If this was a dual-form OCR, automatically open Teams Time modal next
+    if (pendingTeamsTimeOcr) {
+      const { result, att } = pendingTeamsTimeOcr;
+      setPendingTeamsTimeOcr(null);
+      setTeamsTimeOcrResult(result);
+      setOcrTargetAtt(att);
+      setShowTeamsTimeOcrModal(true);
+      addMsg("bot", `📋 Τώρα επιβεβαίωσε τα δεδομένα Teams Time (Σελ.2): ${result?.extracted_data?.team_persons?.length || 0} άτομα · ${result?.extracted_data?.team_extra?.length || 0} extra.`);
     }
   };
 
@@ -1546,7 +1588,8 @@ ${context}
           fileName={ocrTargetAtt.file_name}
           ocrResult={teamsTimeOcrResult}
           onConfirm={handleTeamsTimeOcrConfirm}
-          totalPages={teamsTimeOcrResult?.page_count || (ocrTargetAtt.file_name?.toLowerCase().endsWith('.pdf') ? 2 : 1)}
+          totalPages={isDualFormPDF(ocrTargetAtt.file_name) ? 2 : (teamsTimeOcrResult?.page_count || 1)}
+          defaultPage={isDualFormPDF(ocrTargetAtt.file_name) ? 2 : 1}
         />
       )}
 
