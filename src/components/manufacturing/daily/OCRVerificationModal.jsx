@@ -130,6 +130,27 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     // Use available item codes as-is from bundle (no normalization)
     const availableSet = new Set(availableItemCodes || []);
 
+  // Numeric fields that might have had a checkbox instead
+  const numericKeys = COLUMNS.filter(c => !c.boolean).map(c => c.key).filter(k => k !== "item_code");
+
+  const [allPagesData, setAllPagesData] = useState(() => {
+    const pages = ocrResult?.extracted_data?.pages || [ocrResult?.extracted_data || {}];
+    return pages.map(pageData => {
+      const rawLines = pageData?.production_lines || [];
+      return rawLines.map(line => {
+        const updated = { ...line };
+        numericKeys.forEach(key => {
+          if (updated[key] === true) {
+            updated[key] = updated.total_delivery_quantity || null;
+          }
+        });
+        return updated;
+      });
+    });
+  });
+  
+  const [lines, setLines] = useState(() => allPagesData[currentPage] || []);
+
   // Sync lines when page changes
   useEffect(() => {
     setLines(allPagesData[currentPage] || []);
@@ -159,27 +180,6 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
   }, []);
-
-  // Numeric fields that might have had a checkbox instead
-  const numericKeys = COLUMNS.filter(c => !c.boolean).map(c => c.key).filter(k => k !== "item_code");
-
-  const [allPagesData, setAllPagesData] = useState(() => {
-    const pages = ocrResult?.extracted_data?.pages || [ocrResult?.extracted_data || {}];
-    return pages.map(pageData => {
-      const rawLines = pageData?.production_lines || [];
-      return rawLines.map(line => {
-        const updated = { ...line };
-        numericKeys.forEach(key => {
-          if (updated[key] === true) {
-            updated[key] = updated.total_delivery_quantity || null;
-          }
-        });
-        return updated;
-      });
-    });
-  });
-  
-  const [lines, setLines] = useState(() => allPagesData[currentPage] || []);
 
   // Convert OCR date from dd/mm/yyyy to mm/dd/yyyy for storage
   const ocrDate = ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "";
