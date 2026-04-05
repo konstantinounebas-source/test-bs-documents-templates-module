@@ -8,10 +8,7 @@ import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, AlertCircl
 import { toast } from "sonner";
 import { format, subDays } from "date-fns";
 import { ocrProductionForm } from "@/functions/ocrProductionForm";
-import { ocrTeamsTimeForm } from "@/functions/ocrTeamsTimeForm";
-import { detectFormTypes } from "@/functions/detectFormTypes";
 import OCRVerificationModal from "../OCRVerificationModal";
-import OCRTeamsTimeVerificationModal from "../OCRTeamsTimeVerificationModal";
 import { saveOCRData } from "./ocrSave";
 
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
@@ -172,36 +169,8 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssi
         fileUrl = file_url;
         setUploadedUrl(file_url);
       }
-
-      // Detect form types for all pages in one call
-      const isPdf = item.file.name.toLowerCase().endsWith('.pdf');
-      const pageCount = isPdf ? 2 : 1;
-      const detection = await detectFormTypes({ file_url: fileUrl, total_pages: pageCount });
-      
-      if (detection.pages_to_show.length === 0) {
-        toast.error("Δεν ανιχνεύθηκε καμία γνωστή φόρμα στο αρχείο");
-        return;
-      }
-
-      // Process OCR based on detected form type
-      let ocrData;
-      const isTeamsTimeForm = detection.pages.some(p => p.form_type === 'teams_time');
-      
-      if (isTeamsTimeForm) {
-        ocrData = await ocrTeamsTimeForm({ 
-          file_url: fileUrl,
-          pages_to_show: detection.pages_to_show
-        });
-      } else {
-        ocrData = await ocrProductionForm({ file_url: fileUrl });
-      }
-      
-      setOcrResult({
-        ...ocrData.data,
-        detected_pages: detection.pages,
-        pages_to_show: detection.pages_to_show,
-        form_type: isTeamsTimeForm ? 'teams_time' : 'production'
-      });
+      const result = await ocrProductionForm({ file_url: fileUrl });
+      setOcrResult(result.data);
       setShowOcrModal(true);
     } catch (err) {
       toast.error(`OCR σφάλμα: ${err?.message || "Άγνωστο σφάλμα"}`);
@@ -216,43 +185,24 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssi
     <>
       <FilePreviewDialog file={previewOpen ? item.file : null} onClose={() => setPreviewOpen(false)} />
       {showOcrModal && ocrResult && (
-        ocrResult.form_type === 'teams_time' ? (
-          <OCRTeamsTimeVerificationModal
-            open={showOcrModal}
-            onClose={() => setShowOcrModal(false)}
-            fileUrl={uploadedUrl || URL.createObjectURL(item.file)}
-            fileName={item.file.name}
-            ocrResult={ocrResult}
-            onConfirm={(confirmed) => {
-              setShowOcrModal(false);
-              const batch = batchHeaders.find(b => b.date === date && b.department === dept);
-              if (batch) {
-                saveOCRData(confirmed, batch.id, () => {});
-              } else {
-                toast.warning("Αποθηκεύτηκε OCR αλλά δεν βρέθηκε batch για αποθήκευση δεδομένων.");
-              }
-            }}
-          />
-        ) : (
-          <OCRVerificationModal
-            open={showOcrModal}
-            onClose={() => setShowOcrModal(false)}
-            fileUrl={uploadedUrl || URL.createObjectURL(item.file)}
-            fileName={item.file.name}
-            ocrResult={ocrResult}
-            department={dept}
-            departments={departments}
-            onConfirm={(confirmed) => {
-              setShowOcrModal(false);
-              const batch = batchHeaders.find(b => b.date === date && b.department === dept);
-              if (batch) {
-                saveOCRData(confirmed, batch.id, () => {});
-              } else {
-                toast.warning("Αποθηκεύτηκε OCR αλλά δεν βρέθηκε batch για αποθήκευση δεδομένων.");
-              }
-            }}
-          />
-        )
+        <OCRVerificationModal
+          open={showOcrModal}
+          onClose={() => setShowOcrModal(false)}
+          fileUrl={uploadedUrl || URL.createObjectURL(item.file)}
+          fileName={item.file.name}
+          ocrResult={ocrResult}
+          department={dept}
+          departments={departments}
+          onConfirm={(confirmed) => {
+            setShowOcrModal(false);
+            const batch = batchHeaders.find(b => b.date === date && b.department === dept);
+            if (batch) {
+              saveOCRData(confirmed, batch.id, () => {});
+            } else {
+              toast.warning("Αποθηκεύτηκε OCR αλλά δεν βρέθηκε batch για αποθήκευση δεδομένων.");
+            }
+          }}
+        />
       )}
 
       <div className="border rounded-lg p-3 space-y-2 bg-white text-xs">
@@ -538,9 +488,9 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
       <div className="space-y-2">
         {queue
           .filter(q => q.status === "ready")
-          .map((item) => (
+          .map((item, i) => (
             <FileResultCard
-              key={item.file.name}
+              key={`${item.file.name}-${i}`}
               item={item}
               departments={deptNames}
               batchHeaders={batchHeaders}
@@ -556,8 +506,8 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
       {/* Done items */}
       {doneCount > 0 && (
         <div className="space-y-1">
-          {queue.filter(q => q.status === "done").map((item) => (
-            <div key={item.file.name} className="flex items-center gap-2 text-[10px] text-green-700 bg-green-50 rounded px-2 py-1">
+          {queue.filter(q => q.status === "done").map((item, i) => (
+            <div key={i} className="flex items-center gap-2 text-[10px] text-green-700 bg-green-50 rounded px-2 py-1">
               <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">{item.file.name}</span>
             </div>
