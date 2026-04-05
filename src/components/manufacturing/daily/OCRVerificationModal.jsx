@@ -117,7 +117,8 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     const [imageFullscreen, setImageFullscreen] = useState(false);
     const [imagePanelWidth, setImagePanelWidth] = useState(35); // percent
     const isDragging = useRef(false);
-    const containerRef = useRef(null);
+     const containerRef = useRef(null);
+     const navigating = useRef(false);
 
     // Multi-page support: Track current page
     const [currentPage, setCurrentPage] = useState(0);
@@ -265,7 +266,7 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
   });
 
   return (
-    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+    <Dialog open={open} onOpenChange={v => { if (!v && !navigating.current) onClose(); }}>
       <DialogContent className={`p-0 overflow-hidden transition-all duration-200 ${modalFullscreen ? "max-w-[100vw] w-[100vw] max-h-[100vh] h-[100vh] rounded-none top-0 left-0 translate-x-0 translate-y-0" : "max-w-[98vw] w-[98vw] max-h-[96vh]"}`}
         style={modalFullscreen ? { position: "fixed", top: 0, left: 0, transform: "none", borderRadius: 0 } : {}}>
         <DialogHeader className="px-4 py-2 border-b bg-slate-50 flex-row items-center gap-3">
@@ -549,7 +550,11 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
              <div className="border-t px-4 py-3 flex items-center gap-3 bg-white flex-shrink-0">
                <Button variant="outline" size="sm" className="text-xs" onClick={onClose}>Ακύρωση</Button>
                {totalPages > 1 && currentPage < totalPages - 1 && (
-                 <Button variant="ghost" size="sm" className="text-xs text-slate-500 hover:text-slate-700" onClick={() => setCurrentPage(p => p + 1)}>Skip</Button>
+                 <Button variant="ghost" size="sm" className="text-xs text-slate-500 hover:text-slate-700" onClick={() => {
+                   navigating.current = true;
+                   setCurrentPage(p => p + 1);
+                   setTimeout(() => { navigating.current = false; }, 50);
+                 }}>Skip</Button>
                )}
                <Button variant="outline" size="sm" className="text-xs" 
                  onClick={() => setLines(prev => [...prev, COLUMNS.reduce((acc, col) => ({ ...acc, [col.key]: null }), {})])}>
