@@ -402,7 +402,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       // Step 0: Analyze file type and page count
       const fileAnalysisRaw = await base44.functions.invoke("analyzeFilePages", { file_url: att.file_url });
       console.log("analyzeFilePages raw result:", fileAnalysisRaw);
-      addMsg("bot", `DEBUG analyzeFilePages raw: ${JSON.stringify(fileAnalysisRaw)}`);
 
       const fileAnalysis =
         fileAnalysisRaw?.data ||
@@ -410,16 +409,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         fileAnalysisRaw?.output ||
         fileAnalysisRaw || {};
 
-      const pdfPageCount = Number(fileAnalysis.page_count) || 0;
-
-      console.log("analyzeFilePages parsed:", fileAnalysis);
-
-      // Step 1: Detect which forms exist in the file (with small delay to ensure message appears)
       await new Promise(r => setTimeout(r, 300));
 
       const detectResultRaw = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
       console.log("detectFormType raw result:", detectResultRaw);
-      addMsg("bot", `DEBUG detectFormType raw: ${JSON.stringify(detectResultRaw?.data || detectResultRaw)}`);
 
       const detectResult =
         detectResultRaw?.data ||
@@ -436,17 +429,19 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       const detectedPageCount = Object.keys(detectedPages).length;
 
       const effectivePageCount =
-        detectedPageCount > 0 && detectedPageCount <= pdfPageCount
+        detectedPageCount > 0
           ? detectedPageCount
-          : pdfPageCount;
+          : detectedForms.length > 0
+            ? detectedForms.length
+            : 1;
 
       console.log("Detected pages:", detectedPages);
       console.log("Detected forms:", detectedForms);
-      console.log(`Page counts - PDF: ${pdfPageCount}, Detected: ${detectedPageCount}, Effective: ${effectivePageCount}`);
 
-      addMsg("bot", 
+      addMsg(
+        "bot",
         `📄 Το αρχείο αναγνωρίστηκε ως **${fileAnalysis.file_type || "unknown"}**\n` +
-        `📋 Χρήσιμες σελίδες που βρέθηκαν: **${effectivePageCount || 0}**`
+        `📋 Χρήσιμες σελίδες που βρέθηκαν: **${effectivePageCount}**`
       );
 
       if (detectedForms.length === 0) {
