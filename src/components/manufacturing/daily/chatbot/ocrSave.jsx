@@ -124,6 +124,7 @@ export async function saveOCRData(confirmed, batchHeaderId, onSuccess) {
 
     if (isPositive(line.initial_qc_remake)) {
       const remakeStdTime = getStdTime(itemCode, REMAKE_OPERATION);
+      console.log(`Adding Remake operation for ${itemCode}: ${line.initial_qc_remake} qty`);
       opRecords.push({
         batch_header_id: batchHeaderId,
         item_code: itemCode,
