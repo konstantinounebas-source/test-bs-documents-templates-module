@@ -146,8 +146,8 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   const ocrTitle = ocrResult?.extracted_data?.title || ocrResult?.extracted_data?.form_title || "";
   const titleLower = ocrTitle.toLowerCase();
   
-  const isProductionForm = titleLower.includes("production teams");
-  const isPrepaintForm = titleLower.includes("διεργασία1") && titleLower.includes("προετοιμασία βαφής") ||
+  const isProductionForm = titleLower.includes("production teams time form") || titleLower.includes("production teams");
+  const isPrepaintForm = (titleLower.includes("διεργασία1") && titleLower.includes("προετοιμασία βαφής")) ||
                          titleLower.includes("prepaint") || titleLower.includes("smart bus stop repaint");
 
   // Resolve dept: OCR result > filename (filter out "null" string)
