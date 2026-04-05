@@ -411,6 +411,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         fileAnalysisRaw || {};
 
       console.log("analyzeFilePages parsed:", fileAnalysis);
+      addMsg("bot", `DEBUG analyzeFilePages raw: ${JSON.stringify(fileAnalysisRaw?.data || fileAnalysisRaw)}`);
       addMsg("bot", 
         `📄 Το αρχείο αναγνωρίστηκε ως **${fileAnalysis.file_type || "unknown"}**\n` +
         `📊 Συνολικές σελίδες που βρέθηκαν: **${fileAnalysis.page_count || "unknown"}**`
@@ -421,7 +422,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
       const detectResultRaw = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
       console.log("detectFormType raw result:", detectResultRaw);
-      addMsg("bot", `DEBUG detectFormType raw: ${JSON.stringify(detectResultRaw)}`);
+      addMsg("bot", `DEBUG detectFormType raw: ${JSON.stringify(detectResultRaw?.data || detectResultRaw)}`);
 
       const detectResult =
         detectResultRaw?.data ||
