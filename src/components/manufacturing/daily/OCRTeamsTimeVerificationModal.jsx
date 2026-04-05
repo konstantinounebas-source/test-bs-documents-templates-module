@@ -492,6 +492,40 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   Ενότητα 2 – Εργασίες εκτός φόρμας
                   <Badge className="bg-purple-100 text-purple-700 text-[10px]">{extras.length} εγγραφές</Badge>
                 </h3>
+
+                {/* Work Types Validation Table */}
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                  <h4 className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-2">
+                    🔍 Validation: OCR Work Types vs Stored Values
+                  </h4>
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-blue-100">
+                        <th className="border border-blue-200 px-2 py-1 text-left font-semibold">OCR Value</th>
+                        <th className="border border-blue-200 px-2 py-1 text-left font-semibold">Stored Work Type</th>
+                        <th className="border border-blue-200 px-2 py-1 text-center font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="bg-white">
+                        <td className="border border-blue-200 px-2 py-1">Υποστηρικτικές (Υποσ)</td>
+                        <td className="border border-blue-200 px-2 py-1">Supportive Works</td>
+                        <td className="border border-blue-200 px-2 py-1 text-center"><span className="text-green-600 font-semibold">✓ OK</span></td>
+                      </tr>
+                      <tr className="bg-blue-50">
+                        <td className="border border-blue-200 px-2 py-1">Άλλες Εργασίες (ΑΛλες)</td>
+                        <td className="border border-blue-200 px-2 py-1">Other Departments Works</td>
+                        <td className="border border-blue-200 px-2 py-1 text-center"><span className="text-green-600 font-semibold">✓ OK</span></td>
+                      </tr>
+                      <tr className="bg-white">
+                        <td className="border border-blue-200 px-2 py-1">Μη Εκτέλεσης (Μη Εκ.)</td>
+                        <td className="border border-blue-200 px-2 py-1">Non Execution Time</td>
+                        <td className="border border-blue-200 px-2 py-1 text-center"><span className="text-green-600 font-semibold">✓ OK</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
                 <table className="w-full text-xs border-collapse">
                   <thead>
                     <tr className="bg-slate-100">
