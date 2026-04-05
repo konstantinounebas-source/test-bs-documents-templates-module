@@ -146,7 +146,7 @@ function DropZone({ onFiles, isUploading }) {
 }
 
 // ─── Main Chatbot ─────────────────────────────────────────────────────────────
-export default function DailyProductionChatbot({ departments = [], isSplitLayout = false }) {
+export default function DailyProductionChatbot({ departments = [], isSplitLayout = false, onClose }) {
   const queryClient = useQueryClient();
 
   // panel state
@@ -1507,20 +1507,9 @@ ${context}
         </>
       )}
 
-      {/* Split Layout - Reopen button when closed */}
-      {isSplitLayout && splitClosed && (
-        <button
-          onClick={() => setSplitClosed(false)}
-          className="fixed right-6 bottom-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-2xl transition-all"
-          title="Open AI Production Assistant"
-        >
-          <Bot className="w-6 h-6" />
-        </button>
-      )}
-
       {/* Split Layout - Inline Chat Panel */}
-      {isSplitLayout && !splitClosed && (
-        <div className={`flex flex-col bg-white ${splitFullscreen ? "fixed inset-0 z-50" : "h-full"}`}>
+      {isSplitLayout && (
+        <div className={`flex flex-col bg-white ${splitFullscreen ? "fixed inset-x-0 bottom-0 z-50" : "h-full"}`} style={splitFullscreen ? { top: "64px" } : {}}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white border-b border-blue-700 select-none flex-shrink-0">
             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1539,7 +1528,7 @@ ${context}
               <button onClick={() => setSplitFullscreen(f => !f)} className="hover:bg-blue-700 rounded p-1 opacity-70 hover:opacity-100" title={splitFullscreen ? "Exit Fullscreen" : "Fullscreen"}>
                 {splitFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
               </button>
-              <button onClick={() => setSplitClosed(true)} className="hover:bg-blue-700 rounded p-1 opacity-70 hover:opacity-100" title="Close">
+              <button onClick={() => { setSplitFullscreen(false); onClose && onClose(); }} className="hover:bg-blue-700 rounded p-1 opacity-70 hover:opacity-100" title="Close">
                 <X className="w-4 h-4" />
               </button>
             </div>
