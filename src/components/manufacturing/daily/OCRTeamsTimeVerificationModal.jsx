@@ -681,9 +681,13 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                           </select>
                         </td>
                         <td className="border border-slate-200 p-1">
-                          <input value={h.providing_dept || ""} onChange={e => updateHelpInRow(i, "providing_dept", e.target.value)}
-                            placeholder="π.χ. Assembly"
-                            className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-orange-400" />
+                          <select value={h.providing_dept || ""} onChange={e => updateHelpInRow(i, "providing_dept", e.target.value)}
+                            className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-orange-400">
+                            <option value="">-- Επιλέξτε --</option>
+                            {VALID_DEPARTMENTS.map(d => (
+                              <option key={d} value={d}>{d}</option>
+                            ))}
+                          </select>
                         </td>
                       </tr>
                     ))}
