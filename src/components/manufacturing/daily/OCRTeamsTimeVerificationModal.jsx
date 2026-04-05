@@ -1,27 +1,50 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Maximize2, Minimize2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Maximize2, Minimize2, AlertCircle, Users } from "lucide-react";
 
-// Parse filename e.g. "2-3-26_FA_Prepaint_1Fr.pdf" → date, dept
+// Parse filename → date, dept
 function parseFileName(fileName) {
   if (!fileName) return { date: null, dept: null };
-  // date: leading "D-M-YY" or "DD-MM-YY"
   const dateMatch = fileName.match(/^(\d{1,2})-(\d{1,2})-(\d{2})/);
   let date = null;
   if (dateMatch) {
     const [, d, m, y] = dateMatch;
     date = `${d.padStart(2,'0')}/${m.padStart(2,'0')}/20${y}`;
   }
-  // dept
   const lc = fileName.toLowerCase();
   let dept = null;
   if (lc.includes('prepaint') || lc.includes('pre-paint') || lc.includes('pre_paint')) dept = "Pre-Paint";
-  else if (lc.includes('assembly') || lc.includes('ass')) dept = "Assembly";
   else if (lc.includes('subass') || lc.includes('sub-ass')) dept = "Sub-Assembly";
+  else if (lc.includes('assembly') || lc.includes('ass')) dept = "Assembly";
   else if (lc.includes('refurb') || lc.includes('ref')) dept = "Refurbishment";
   return { date, dept };
+}
+
+// Parse "HH:MM" → total minutes
+function timeToMins(t) {
+  if (!t) return null;
+  const m = t.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  return parseInt(m[1]) * 60 + parseInt(m[2]);
+}
+
+// Calculate available minutes for a person
+function calcAvailableMins(p) {
+  const from = timeToMins(p.time_from);
+  const to = timeToMins(p.time_to);
+  if (from === null || to === null) return null;
+  let diff = to - from;
+  if (diff < 0) diff += 24 * 60; // overnight shift
+  return diff - (p.break_min ?? 45);
+}
+
+function fmtMins(mins) {
+  if (mins === null || mins === undefined) return "–";
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}h ${m > 0 ? m + 'm' : ''}`.trim();
 }
 
 export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, totalPages, defaultPage }) {
@@ -36,9 +59,11 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
 
   const fileParsed = parseFileName(fileName);
 
-  const [date, setDate] = useState(
-    ocrResult?.extracted_data?.date || fileParsed.date || ""
-  );
+  // Resolve dept: OCR result > filename
+  const resolvedDept = ocrResult?.extracted_data?.team || fileParsed.dept || null;
+
+  const [date, setDate] = useState(ocrResult?.extracted_data?.date || fileParsed.date || "");
+  const [dept, setDept] = useState(resolvedDept || "");
 
   const [persons, setPersons] = useState(
     () => (ocrResult?.extracted_data?.team_persons || []).map(p => ({ ...p, break_min: p.break_min ?? 45 }))
@@ -47,12 +72,68 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
     () => ocrResult?.extracted_data?.team_extra || []
   );
 
-  const warnings = ocrResult?.warnings || [];
+  const ocrWarnings = ocrResult?.warnings || [];
+  const dittoRows = useMemo(() => new Set(ocrResult?.extracted_data?.ditto_rows || []), [ocrResult]);
   const confidence = ocrResult?.confidence_score ?? null;
   const isImage = fileName && ['jpg','jpeg','png','gif','webp','bmp'].includes(fileName.split('.').pop().toLowerCase());
   const isPdf = !isImage;
-  // Detect page count from ocrResult or prop
   const pageCount = totalPages || ocrResult?.page_count || (isPdf ? 2 : 1);
+
+  // Set of person names in Section 1 (lowercased for comparison)
+  const section1Names = useMemo(
+    () => new Set(persons.map(p => (p.person_name || "").trim().toLowerCase()).filter(Boolean)),
+    [persons]
+  );
+
+  // Calculate available mins per person name
+  const availableByName = useMemo(() => {
+    const map = {};
+    persons.forEach(p => {
+      const name = (p.person_name || "").trim().toLowerCase();
+      if (!name) return;
+      const avail = calcAvailableMins(p);
+      if (avail !== null) map[name] = (map[name] || 0) + avail;
+    });
+    return map;
+  }, [persons]);
+
+  // Calculate total extra mins per person name in Section 2
+  const extraMinsByName = useMemo(() => {
+    const map = {};
+    extras.forEach(e => {
+      const name = (e.person_name || "").trim().toLowerCase();
+      if (!name) return;
+      const mins = (e.duration_hours || 0) * 60 + (e.duration_mins || 0);
+      map[name] = (map[name] || 0) + mins;
+    });
+    return map;
+  }, [extras]);
+
+  // Auto-derive Help In entries: persons in Section 2 NOT in Section 1
+  const helpInEntries = useMemo(() => {
+    const foreign = {};
+    extras.forEach(e => {
+      const name = (e.person_name || "").trim();
+      if (!name) return;
+      if (!section1Names.has(name.toLowerCase())) {
+        const mins = (e.duration_hours || 0) * 60 + (e.duration_mins || 0);
+        foreign[name] = (foreign[name] || 0) + mins;
+      }
+    });
+    return Object.entries(foreign).map(([name, mins]) => ({
+      person_name: name,
+      help_time_min: mins,
+      receiving_dept: dept || "",
+      providing_dept: ""
+    }));
+  }, [extras, section1Names, dept]);
+
+  const [helpInList, setHelpInList] = useState(helpInEntries);
+
+  // Sync helpInList when extras/persons change
+  const updateHelpIn = useCallback(() => {
+    setHelpInList(helpInEntries);
+  }, [helpInEntries]);
 
   const handleDividerMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -74,6 +155,11 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   const updateExtra = (i, field, val) =>
     setExtras(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: val } : e));
 
+  const updateHelpInRow = (i, field, val) =>
+    setHelpInList(prev => prev.map((h, idx) => idx === i ? { ...h, [field]: val } : h));
+
+  const noDept = !dept;
+
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
       <DialogContent
@@ -94,15 +180,14 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
         </DialogHeader>
 
         <div className={`flex ${modalFullscreen ? "h-[calc(100vh-100px)]" : "h-[calc(96vh-100px)]"}`} ref={containerRef}>
-          {/* LEFT: Image/PDF viewer */}
+          {/* LEFT: PDF/Image viewer */}
           <div className="border-r bg-slate-100 flex flex-col flex-shrink-0" style={{ width: `${imagePanelWidth}%` }}>
             <div className="flex items-center gap-2 px-3 py-2 border-b bg-white text-xs flex-wrap">
               <span className="text-slate-500 font-medium">Αρχείο</span>
               {isPdf && pageCount > 1 && (
                 <div className="flex items-center gap-1 bg-slate-100 rounded px-1">
                   {Array.from({ length: pageCount }, (_, i) => i + 1).map(pg => (
-                    <button key={pg}
-                      onClick={() => setCurrentPage(pg)}
+                    <button key={pg} onClick={() => setCurrentPage(pg)}
                       className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${currentPage === pg ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-200"}`}>
                       Σελ. {pg}
                     </button>
@@ -127,8 +212,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                 />
               ) : (
                 <iframe src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(fileUrl)}#page=${currentPage}`}
-                  key={currentPage}
-                  className="w-full h-full border-0 rounded" title={fileName}
+                  key={currentPage} className="w-full h-full border-0 rounded" title={fileName}
                   style={{ transform: `rotate(${rotation}deg)`, minHeight: "500px" }}
                 />
               )}
@@ -149,9 +233,13 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
               {fileParsed.date && fileParsed.date !== date && (
                 <span className="text-xs text-amber-600">⚠ Αρχείο: {fileParsed.date}</span>
               )}
-              {fileParsed.dept && (
-                <span className="text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1">
-                  Τμήμα: {fileParsed.dept}
+              <span className="text-xs font-semibold text-slate-600">Τμήμα:</span>
+              <input type="text" value={dept} onChange={e => setDept(e.target.value)}
+                placeholder="π.χ. Pre-Paint"
+                className={`text-xs border rounded px-2 py-1 outline-none focus:border-blue-400 w-32 ${noDept ? "border-amber-400 bg-amber-50" : "border-slate-200"}`} />
+              {noDept && (
+                <span className="text-xs text-amber-700 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" /> Δεν βρέθηκε τμήμα
                 </span>
               )}
               {ocrResult?.extracted_data?.completed_by && (
@@ -159,10 +247,10 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
               )}
             </div>
 
-            {/* Warnings */}
-            {warnings.length > 0 && (
+            {/* OCR Warnings */}
+            {ocrWarnings.length > 0 && (
               <div className="px-4 py-2 border-b bg-amber-50 flex-shrink-0 space-y-1">
-                {warnings.map((w, i) => (
+                {ocrWarnings.map((w, i) => (
                   <div key={i} className="flex items-start gap-2 text-xs text-amber-700">
                     <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                     <span>{w}</span>
@@ -186,38 +274,57 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                       <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Από</th>
                       <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Έως</th>
                       <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Break (min)</th>
+                      <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Available</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Σχόλια</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {persons.map((p, i) => (
-                      <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                        <td className="border border-slate-200 p-1">
-                          <input value={p.person_name || ""} onChange={e => updatePerson(i, "person_name", e.target.value)}
-                            className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
-                        </td>
-                        <td className="border border-slate-200 p-1">
-                          <input value={p.time_from || ""} onChange={e => updatePerson(i, "time_from", e.target.value)}
-                            placeholder="HH:MM"
-                            className="w-20 text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400 text-center" />
-                        </td>
-                        <td className="border border-slate-200 p-1">
-                          <input value={p.time_to || ""} onChange={e => updatePerson(i, "time_to", e.target.value)}
-                            placeholder="HH:MM"
-                            className="w-20 text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400 text-center" />
-                        </td>
-                        <td className="border border-slate-200 p-1">
-                          <input type="number" value={p.break_min ?? 45} onChange={e => updatePerson(i, "break_min", parseInt(e.target.value) || 0)}
-                            className="w-16 text-xs border border-blue-200 bg-blue-50 rounded px-1.5 py-1 outline-none focus:border-blue-400 text-center" />
-                        </td>
-                        <td className="border border-slate-200 p-1">
-                          <input value={p.notes || ""} onChange={e => updatePerson(i, "notes", e.target.value)}
-                            className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
-                        </td>
-                      </tr>
-                    ))}
+                    {persons.map((p, i) => {
+                      const avail = calcAvailableMins(p);
+                      const isDitto = dittoRows.has(i);
+                      return (
+                        <tr key={i} className={`${i % 2 === 0 ? "bg-white" : "bg-slate-50"} ${isDitto ? "ring-1 ring-inset ring-amber-300" : ""}`}>
+                          <td className="border border-slate-200 p-1">
+                            <div className="flex items-center gap-1">
+                              <input value={p.person_name || ""} onChange={e => updatePerson(i, "person_name", e.target.value)}
+                                className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
+                              {isDitto && (
+                                <span title="Ditto mark – τιμή αντιγράφηκε αυτόματα">
+                                  <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" />
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="border border-slate-200 p-1">
+                            <input value={p.time_from || ""} onChange={e => updatePerson(i, "time_from", e.target.value)}
+                              placeholder="HH:MM"
+                              className="w-20 text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400 text-center" />
+                          </td>
+                          <td className="border border-slate-200 p-1">
+                            <input value={p.time_to || ""} onChange={e => updatePerson(i, "time_to", e.target.value)}
+                              placeholder="HH:MM"
+                              className="w-20 text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400 text-center" />
+                          </td>
+                          <td className="border border-slate-200 p-1">
+                            <input type="number" value={p.break_min ?? 45} onChange={e => updatePerson(i, "break_min", parseInt(e.target.value) || 0)}
+                              className="w-16 text-xs border border-blue-200 bg-blue-50 rounded px-1.5 py-1 outline-none focus:border-blue-400 text-center" />
+                          </td>
+                          <td className="border border-slate-200 p-1 text-center">
+                            {avail !== null ? (
+                              <span className="text-green-700 font-medium">{fmtMins(avail)}</span>
+                            ) : (
+                              <span className="text-slate-300">–</span>
+                            )}
+                          </td>
+                          <td className="border border-slate-200 p-1">
+                            <input value={p.notes || ""} onChange={e => updatePerson(i, "notes", e.target.value)}
+                              className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {persons.length === 0 && (
-                      <tr><td colSpan={5} className="text-center py-4 text-slate-400">Δεν βρέθηκαν γραμμές</td></tr>
+                      <tr><td colSpan={6} className="text-center py-4 text-slate-400">Δεν βρέθηκαν γραμμές</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -242,39 +349,60 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Είδος</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Περιγραφή</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Τμήμα</th>
+                      <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Status</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {extras.map((e, i) => (
-                      <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                        <td className="border border-slate-200 p-1">
-                          <input value={e.person_name || ""} onChange={ev => updateExtra(i, "person_name", ev.target.value)}
-                            className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
-                        </td>
-                        <td className="border border-slate-200 p-1">
-                          <input type="number" min="0" value={e.duration_hours ?? ""} onChange={ev => updateExtra(i, "duration_hours", parseFloat(ev.target.value) || 0)}
-                            className={`w-12 text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 text-center ${(e.duration_hours || 0) > 4 ? "border-amber-400 bg-amber-50" : "border-slate-200"}`} />
-                        </td>
-                        <td className="border border-slate-200 p-1">
-                          <input type="number" min="0" max="59" value={e.duration_mins ?? ""} onChange={ev => updateExtra(i, "duration_mins", parseFloat(ev.target.value) || 0)}
-                            className="w-12 text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400 text-center" />
-                        </td>
-                        <td className="border border-slate-200 p-1">
-                          <input value={e.work_type || ""} onChange={ev => updateExtra(i, "work_type", ev.target.value)}
-                            className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
-                        </td>
-                        <td className="border border-slate-200 p-1">
-                          <input value={e.description || ""} onChange={ev => updateExtra(i, "description", ev.target.value)}
-                            className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
-                        </td>
-                        <td className="border border-slate-200 p-1">
-                          <input value={e.charge_dept || ""} onChange={ev => updateExtra(i, "charge_dept", ev.target.value)}
-                            className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
-                        </td>
-                      </tr>
-                    ))}
+                    {extras.map((e, i) => {
+                      const name = (e.person_name || "").trim().toLowerCase();
+                      const isExternal = name && !section1Names.has(name);
+                      const totalExtraMins = extraMinsByName[name] || 0;
+                      const availMins = availableByName[name];
+                      const isOvertime = availMins !== undefined && totalExtraMins > availMins;
+                      const rowBg = isOvertime ? "bg-red-50" : isExternal ? "bg-orange-50" : i % 2 === 0 ? "bg-white" : "bg-slate-50";
+                      return (
+                        <tr key={i} className={rowBg}>
+                          <td className="border border-slate-200 p-1">
+                            <input value={e.person_name || ""} onChange={ev => updateExtra(i, "person_name", ev.target.value)}
+                              className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isExternal ? "border-orange-400" : "border-slate-200"}`} />
+                          </td>
+                          <td className="border border-slate-200 p-1">
+                            <input type="number" min="0" value={e.duration_hours ?? ""} onChange={ev => updateExtra(i, "duration_hours", parseFloat(ev.target.value) || 0)}
+                              className={`w-12 text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 text-center ${isOvertime ? "border-red-400 bg-red-100" : (e.duration_hours || 0) > 4 ? "border-amber-400 bg-amber-50" : "border-slate-200"}`} />
+                          </td>
+                          <td className="border border-slate-200 p-1">
+                            <input type="number" min="0" max="59" value={e.duration_mins ?? ""} onChange={ev => updateExtra(i, "duration_mins", parseFloat(ev.target.value) || 0)}
+                              className="w-12 text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400 text-center" />
+                          </td>
+                          <td className="border border-slate-200 p-1">
+                            <input value={e.work_type || ""} onChange={ev => updateExtra(i, "work_type", ev.target.value)}
+                              className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
+                          </td>
+                          <td className="border border-slate-200 p-1">
+                            <input value={e.description || ""} onChange={ev => updateExtra(i, "description", ev.target.value)}
+                              className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
+                          </td>
+                          <td className="border border-slate-200 p-1">
+                            <input value={e.charge_dept || ""} onChange={ev => updateExtra(i, "charge_dept", ev.target.value)}
+                              className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
+                          </td>
+                          <td className="border border-slate-200 p-1 text-center whitespace-nowrap">
+                            {isOvertime && (
+                              <span className="flex items-center gap-1 text-red-600 text-[10px] font-semibold">
+                                <AlertCircle className="w-3 h-3" /> Υπέρβαση
+                              </span>
+                            )}
+                            {isExternal && !isOvertime && (
+                              <span className="flex items-center gap-1 text-orange-600 text-[10px] font-semibold">
+                                <Users className="w-3 h-3" /> Help In
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {extras.length === 0 && (
-                      <tr><td colSpan={6} className="text-center py-4 text-slate-400">Δεν βρέθηκαν εγγραφές</td></tr>
+                      <tr><td colSpan={7} className="text-center py-4 text-slate-400">Δεν βρέθηκαν εγγραφές</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -283,6 +411,55 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   + Προσθήκη
                 </Button>
               </div>
+
+              {/* ── Section 3: Help In (auto-derived) ── */}
+              {helpInList.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-2">
+                    Ενότητα 3 – Help In (Εξωτερικά Άτομα)
+                    <Badge className="bg-orange-100 text-orange-700 text-[10px]">{helpInList.length} εγγραφές</Badge>
+                  </h3>
+                  <p className="text-[10px] text-slate-500 mb-2">Αυτά τα άτομα αναφέρονται στην Ενότητα 2 αλλά όχι στην Ενότητα 1 – θα καταχωρηθούν ως Help In.</p>
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-orange-50">
+                        <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Ονοματεπώνυμο</th>
+                        <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Χρόνος (min)</th>
+                        <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Τμήμα Λήψης</th>
+                        <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Από Τμήμα</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {helpInList.map((h, i) => (
+                        <tr key={i} className="bg-orange-50/50">
+                          <td className="border border-slate-200 p-1">
+                            <input value={h.person_name || ""} onChange={e => updateHelpInRow(i, "person_name", e.target.value)}
+                              className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-orange-400" />
+                          </td>
+                          <td className="border border-slate-200 p-1 text-center">
+                            <input type="number" value={h.help_time_min || 0} onChange={e => updateHelpInRow(i, "help_time_min", parseInt(e.target.value) || 0)}
+                              className="w-20 text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-orange-400 text-center" />
+                          </td>
+                          <td className="border border-slate-200 p-1">
+                            <input value={h.receiving_dept || ""} onChange={e => updateHelpInRow(i, "receiving_dept", e.target.value)}
+                              className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-orange-400" />
+                          </td>
+                          <td className="border border-slate-200 p-1">
+                            <input value={h.providing_dept || ""} onChange={e => updateHelpInRow(i, "providing_dept", e.target.value)}
+                              placeholder="π.χ. Assembly"
+                              className="w-full text-xs border border-amber-300 bg-amber-50 rounded px-1.5 py-1 outline-none focus:border-orange-400" />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <Button variant="outline" size="sm" className="text-xs mt-2"
+                    onClick={() => setHelpInList(h => [...h, { person_name: "", help_time_min: 0, receiving_dept: dept || "", providing_dept: "" }])}>
+                    + Προσθήκη
+                  </Button>
+                </div>
+              )}
+
             </div>
 
             {/* Confirm footer */}
@@ -290,9 +467,10 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
               <Button variant="outline" size="sm" className="text-xs" onClick={onClose}>Ακύρωση</Button>
               <div className="text-xs text-slate-500 flex-1">
                 {persons.length} άτομα · {extras.length} extra
+                {helpInList.length > 0 && ` · ${helpInList.length} help-in`}
               </div>
               <Button size="sm" className="text-xs bg-green-600 hover:bg-green-700"
-                onClick={() => { setConfirmed(true); onConfirm({ date, team_persons: persons, team_extra: extras }); }}
+                onClick={() => { setConfirmed(true); onConfirm({ date, dept, team_persons: persons, team_extra: extras, help_in: helpInList }); }}
                 disabled={confirmed}>
                 {confirmed ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
                 Επιβεβαίωση OCR
