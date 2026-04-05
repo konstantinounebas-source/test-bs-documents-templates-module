@@ -212,8 +212,8 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
     fetchPersons();
   }, []);
 
-  // Sync helpInList when extras/persons change
-  const updateHelpIn = useCallback(() => {
+  // Auto-sync helpInList when helpInEntries change (when extras/persons change)
+  useEffect(() => {
     setHelpInList(helpInEntries);
   }, [helpInEntries]);
 
