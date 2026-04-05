@@ -9,7 +9,7 @@
     "is_current": {
       "type": "boolean",
       "default": true,
-      "description": "Flag indicating if this is the current active OCR record for the attachment"
+      "description": "Indicates the active OCR cache record for this attachment (only one per attachment should be true)"
     },
     "batch_header_id": {
       "type": "string",
@@ -115,7 +115,6 @@
         "attachment_id",
         "is_current"
       ],
-      "unique": true,
       "name": "idx_attachment_current"
     },
     {
