@@ -178,7 +178,8 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
     setIsSaving(true);
     try {
       const itemsToAdd = processedLines.filter(bl => selectedItems.has(bl.item_code));
-      const perPieceMin = parseFloat(form.qc_per_piece_min) || 0;
+      const perPieceMin = form.qc_per_piece_min ? parseFloat(form.qc_per_piece_min) : 0;
+      if (isNaN(perPieceMin)) { toast.error("Per-piece time πρέπει να είναι αριθμός"); return; }
       for (const bl of itemsToAdd) {
         const exists = existingQC.find(q => q.item_code === bl.item_code && q.qc_type === form.qc_type);
         if (exists) continue;
