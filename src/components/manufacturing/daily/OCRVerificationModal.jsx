@@ -548,7 +548,9 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
             {/* Confirm footer */}
              <div className="border-t px-4 py-3 flex items-center gap-3 bg-white flex-shrink-0">
                <Button variant="outline" size="sm" className="text-xs" onClick={onClose}>Ακύρωση</Button>
-               <Button variant="ghost" size="sm" className="text-xs text-slate-500 hover:text-slate-700" onClick={onClose}>Skip</Button>
+               {totalPages > 1 && currentPage < totalPages - 1 && (
+                 <Button variant="ghost" size="sm" className="text-xs text-slate-500 hover:text-slate-700" onClick={() => setCurrentPage(p => p + 1)}>Skip</Button>
+               )}
                <Button variant="outline" size="sm" className="text-xs" 
                  onClick={() => setLines(prev => [...prev, COLUMNS.reduce((acc, col) => ({ ...acc, [col.key]: null }), {})])}>
                  + Προσθήκη Γραμμής
