@@ -1,0 +1,37 @@
+{
+  "name": "Help_In",
+  "type": "object",
+  "properties": {
+    "batch_header_id": {
+      "type": "string",
+      "description": "Reference to Batch_Header"
+    },
+    "person_name": {
+      "type": "string",
+      "description": "Name of the person providing help"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department receiving help"
+    },
+    "from_department": {
+      "type": "string",
+      "description": "Department providing help"
+    },
+    "help_min": {
+      "type": "number",
+      "description": "Help time in minutes"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Help notes"
+    }
+  },
+  "required": [
+    "batch_header_id",
+    "person_name",
+    "department",
+    "from_department",
+    "help_min"
+  ]
+}
