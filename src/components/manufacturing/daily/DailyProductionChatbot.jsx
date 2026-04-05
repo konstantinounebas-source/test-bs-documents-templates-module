@@ -396,10 +396,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const handleOCR = async (att) => {
     setOcrTargetAtt(att);
     setOcrLoading(true);
+    addMsg("bot", `🔍 Σάρωση αρχείου για ανίχνευση φορμών...`);
 
     try {
       // Step 1: Detect which forms exist in the file
-      addMsg("bot", `🔍 Σάρωση αρχείου για ανίχνευση φορμών...`);
       const detectResult = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
       const detectedForms = detectResult?.pages ? Object.values(detectResult.pages).map(p => p?.form_type).filter(Boolean) : [];
       
@@ -413,7 +413,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       const detectionDetails = Object.entries(detectResult.pages || {})
         .map(([page, data]) => `Σελ.${page} = ${data?.form_type || 'unknown'}`)
         .join(', ');
-      addMsg("bot", `🔍 **Σάρωση ολοκληρώθηκε!**\n📋 Ανιχνεύθηκε: ${detectionDetails}`);
+      addMsg("bot", `✅ **Σάρωση ολοκληρώθηκε!**\n📋 Ανιχνεύθηκε: ${detectionDetails}`);
       addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
 
       // Step 2: Call OCR functions for detected forms
