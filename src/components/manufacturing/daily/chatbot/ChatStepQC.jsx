@@ -110,8 +110,19 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
        const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
        const qlQcType = (ql.data?.qc_type || ql.qc_type || '').trim().toLowerCase();
        const qlQcLevel = (ql.data?.qc_level || ql.qc_level || '').trim().toLowerCase();
-       return qlItemCode === trimmedItemCode && qlQcType === trimmedQcType && qlQcLevel === trimmedQcLevel;
+
+       const itemMatch = !itemCode || qlItemCode === trimmedItemCode;
+       const typeMatch = qlQcType === trimmedQcType;
+       const levelMatch = !qcLevel || qlQcLevel === trimmedQcLevel;
+
+       return itemMatch && typeMatch && levelMatch;
      });
+
+     if (!qcRule && trimmedQcType.includes('γδαρ')) {
+       console.warn(`[QC Debug] No rule found for: item="${itemCode}" qcType="${qcType}" qcLevel="${qcLevel}"`);
+       console.warn(`[QC Debug] Available QC types: ${qcSetLines.map(q => q.data?.qc_type || q.qc_type).join(", ")}`);
+     }
+
      return qcRule ? parseFloat(qcRule.calculated_extra_time_min || qcRule.calculated_extra_time || 0) : 0;
    }, [qcSetLines]);
 
