@@ -154,6 +154,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [minimized, setMin]   = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [position, setPosition] = useState("right"); // "left" or "right"
+  const [splitFullscreen, setSplitFullscreen] = useState(false);
+  const [splitClosed, setSplitClosed] = useState(false);
   
   // dragging & resizing state
   const [panelPos, setPanelPos] = useState({ x: window.innerWidth - 450 - 24, y: 64 });
@@ -1505,9 +1507,20 @@ ${context}
         </>
       )}
 
+      {/* Split Layout - Reopen button when closed */}
+      {isSplitLayout && splitClosed && (
+        <button
+          onClick={() => setSplitClosed(false)}
+          className="fixed right-6 bottom-6 z-50 bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-2xl transition-all"
+          title="Open AI Production Assistant"
+        >
+          <Bot className="w-6 h-6" />
+        </button>
+      )}
+
       {/* Split Layout - Inline Chat Panel */}
-      {isSplitLayout && (
-        <div className="flex flex-col h-full bg-white">
+      {isSplitLayout && !splitClosed && (
+        <div className={`flex flex-col bg-white ${splitFullscreen ? "fixed inset-0 z-50" : "h-full"}`}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white border-b border-blue-700 select-none flex-shrink-0">
             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1519,9 +1532,17 @@ ${context}
                 </Badge>
               )}
             </div>
-            <button onClick={handleReset} className="hover:bg-blue-700 rounded p-1 text-xs opacity-70 hover:opacity-100" title="Reset">
-              <RotateCcw className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button onClick={handleReset} className="hover:bg-blue-700 rounded p-1 opacity-70 hover:opacity-100" title="Reset">
+                <RotateCcw className="w-4 h-4" />
+              </button>
+              <button onClick={() => setSplitFullscreen(f => !f)} className="hover:bg-blue-700 rounded p-1 opacity-70 hover:opacity-100" title={splitFullscreen ? "Exit Fullscreen" : "Fullscreen"}>
+                {splitFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+              </button>
+              <button onClick={() => setSplitClosed(true)} className="hover:bg-blue-700 rounded p-1 opacity-70 hover:opacity-100" title="Close">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Chat log */}
