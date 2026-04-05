@@ -111,30 +111,39 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
   };
 
   // Calculate qc_per_piece for each QC record from QCSetLines
-  const getQCPerPiece = useCallback((itemCode, qcType, qcLevel) => {
-     const trimmedItemCode = (itemCode || '').trim().toLowerCase();
-     const trimmedQcType = normalizeGreekText((qcType || '').trim().toLowerCase());
-     const trimmedQcLevel = normalizeGreekText((qcLevel || '').trim().toLowerCase());
+    const getQCPerPiece = useCallback((itemCode, qcType, qcLevel) => {
+  const normalizedItemCode = normalizeItemCode((itemCode || "").trim()).toLowerCase();
+  const normalizedQcType = normalizeGreekText((qcType || "").trim().toLowerCase());
+  const normalizedQcLevel = normalizeGreekText((qcLevel || "").trim().toLowerCase());
 
-     const qcRule = qcSetLines.find(ql => {
-       const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
-       const qlQcType = normalizeGreekText((ql.data?.qc_type || ql.qc_type || '').trim().toLowerCase());
-       const qlQcLevel = normalizeGreekText((ql.data?.qc_level || ql.qc_level || '').trim().toLowerCase());
+  const qcRule = qcSetLines.find(ql => {
+    const qlItemCode = normalizeItemCode((ql.data?.item_code || ql.item_code || "").trim()).toLowerCase();
+    const qlQcType = normalizeGreekText((ql.data?.qc_type || ql.qc_type || "").trim().toLowerCase());
+    const qlQcLevel = normalizeGreekText((ql.data?.qc_level || ql.qc_level || "").trim().toLowerCase());
 
-       const itemMatch = !itemCode || qlItemCode === trimmedItemCode;
-       const typeMatch = qlQcType === trimmedQcType;
-       const levelMatch = !qcLevel || qlQcLevel === trimmedQcLevel;
+    const itemMatch = !normalizedItemCode || qlItemCode === normalizedItemCode;
+    const typeMatch = qlQcType === normalizedQcType;
+    const levelMatch = !normalizedQcLevel || qlQcLevel === normalizedQcLevel;
 
-       return itemMatch && typeMatch && levelMatch;
-     });
+    return itemMatch && typeMatch && levelMatch;
+  });
 
-     if (!qcRule && trimmedQcType.includes('Γδαρ')) {
-       console.warn(`[QC Debug] No rule found for: item="${itemCode}" qcType="${qcType}" qcLevel="${qcLevel}"`);
-       console.warn(`[QC Debug] Available QC types: ${qcSetLines.map(q => q.data?.qc_type || q.qc_type).join(", ")}`);
-     }
+  if (!qcRule && normalizedQcType.includes("γδαρ")) {
+    console.warn(`[QC Debug] No rule found for: item="${itemCode}" qcType="${qcType}" qcLevel="${qcLevel}"`);
+    console.warn(`[QC Debug] Available QC types: ${qcSetLines.map(q => q.data?.qc_type || q.qc_type).join(", ")}`);
+    console.warn(`[QC Debug] Compared item="${normalizedItemCode}", type="${normalizedQcType}", level="${normalizedQcLevel}"`);
+  }
 
-     return qcRule ? parseFloat(qcRule.calculated_extra_time_min || qcRule.calculated_extra_time || 0) : 0;
-   }, [qcSetLines]);
+  return qcRule
+    ? parseFloat(
+        qcRule.data?.calculated_extra_time_min ||
+        qcRule.calculated_extra_time_min ||
+        qcRule.data?.calculated_extra_time ||
+        qcRule.calculated_extra_time ||
+        0
+      )
+    : 0;
+}, [qcSetLines]);
 
   const totalQCTime = useMemo(() => {
     return existingQC.reduce((sum, qc) => {
