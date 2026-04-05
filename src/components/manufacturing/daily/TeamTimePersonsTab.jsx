@@ -115,7 +115,7 @@ export default function TeamTimePersonsTab({ batchId }) {
     }
   };
 
-  const handleInlineAdd = () => {
+  const handleInlineAdd = async () => {
     if (!inlineForm.person_names || inlineForm.person_names.length === 0 || !inlineForm.from_time || !inlineForm.to_time) {
       toast.error('Select at least one person and set time range');
       return;
@@ -127,21 +127,29 @@ export default function TeamTimePersonsTab({ batchId }) {
       return;
     }
     const records = inlineForm.person_names.map(person_name => ({
-      ...inlineForm,
-      person_name
+      batch_header_id: batchId,
+      person_name,
+      from_time: inlineForm.from_time,
+      to_time: inlineForm.to_time,
+      break_time_minutes: inlineForm.break_time_minutes || 0,
+      notes: inlineForm.notes || ''
     }));
-    const addNext = (index) => {
-      if (index >= records.length) {
-        const activeBreakTimes = breakTimes.filter(b => b.is_active !== false);
-        const defaultBreak = activeBreakTimes.length > 0 ? activeBreakTimes[0].duration_minutes || 45 : 45;
-        setInlineForm({ person_names: [], from_time: '07:00', to_time: '15:30', break_time_minutes: defaultBreak, notes: '' });
-        return;
+    
+    try {
+      for (const record of records) {
+        await base44.entities.TeamTimePerson.create(record);
       }
-      createMutation.mutate(records[index], {
-        onSuccess: () => addNext(index + 1)
-      });
-    };
-    addNext(0);
+      queryClient.invalidateQueries(['TeamTimePerson', batchId]);
+      const activeBreakTimes = breakTimes.filter(b => b.is_active !== false);
+      const defaultBreak = activeBreakTimes.length > 0 ? activeBreakTimes[0].duration_minutes || 45 : 45;
+      setInlineForm({ person_names: [], from_time: '07:00', to_time: '15:30', break_time_minutes: defaultBreak, notes: '' });
+      toast.success(`✅ Added ${records.length} person(s)`);
+      saveMetric().catch(console.error);
+      saveNATTimeMetric().catch(console.error);
+    } catch (error) {
+      toast.error('Failed to add team time records');
+      console.error(error);
+    }
   };
 
   const handleEdit = (line) => {
