@@ -658,14 +658,14 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                       <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Χρόνος (min)</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Τμήμα Λήψης (Receiving)</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Από Τμήμα (Providing)</th>
+                      <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Ενέργεια</th>
                     </tr>
                   </thead>
                   <tbody>
                     {helpInList.map((h, i) => (
                       <tr key={i} className="bg-orange-50/50">
-                        <td className="border border-slate-200 p-1">
-                          <input value={h.person_name || ""} onChange={e => updateHelpInRow(i, "person_name", e.target.value)}
-                            className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-orange-400" />
+                        <td className="border border-slate-200 p-1 font-medium">
+                          {h.person_name}
                         </td>
                         <td className="border border-slate-200 p-1 text-center">
                           <input type="number" value={h.help_time_min || 0} onChange={e => updateHelpInRow(i, "help_time_min", parseInt(e.target.value) || 0)}
@@ -688,6 +688,12 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                               <option key={d} value={d}>{d}</option>
                             ))}
                           </select>
+                        </td>
+                        <td className="border border-slate-200 p-1 text-center">
+                          <button onClick={() => setHelpInList(prev => prev.filter((_, idx) => idx !== i))}
+                            className="text-red-500 hover:text-red-700">
+                            ✕
+                          </button>
                         </td>
                       </tr>
                     ))}
