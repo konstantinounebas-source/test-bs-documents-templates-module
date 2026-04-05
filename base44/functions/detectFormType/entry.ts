@@ -15,41 +15,53 @@ Deno.serve(async (req) => {
     ? `\nΑνάλυσε ΜΟΝΟ τη σελίδα ${page_number}.`
     : "";
 
+  // Normalize and detect form type with keyword matching
+  const normalizeTitle = (title) => {
+    if (!title) return "";
+    return title.toUpperCase().trim();
+  };
+
+  const detectFormTypeFromTitle = (title) => {
+    const normalized = normalizeTitle(title);
+    
+    // Keywords for Teams Time Form
+    if (normalized.includes("PRODUCTION TEAMS") || 
+        normalized.includes("TEAM TIME") ||
+        normalized.includes("TEAMS TIME FORM")) {
+      return "teams_time";
+    }
+    
+    // Keywords for Production Form
+    if (normalized.includes("ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ") ||
+        normalized.includes("ΠΑΡΑΓΩΓΗ") ||
+        normalized.includes("ΔΙΕΡΓΑΣΙΑ") ||
+        normalized.includes("ΠΡΟΕΤΟΙΜΑΣΙΑ")) {
+      return "production";
+    }
+    
+    return "unknown";
+  };
+
   let result = await base44.asServiceRole.integrations.Core.InvokeLLM({
     model: model,
-    prompt: `Δες το έγγραφο και αναφέρισε: Ποιος είναι ο τίτλος της φόρμας;${pageInstruction}
-    
-Απάντησε ΜΟΝΟ με έναν από αυτούς τους τίτλους:
-- "PRODUCTION TEAMS TIME FORM V.4"
-- "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ"
-- "UNKNOWN"`,
+    prompt: `Δες το έγγραφο και αναφέρισε: Ποιος είναι ο τίτλος της φόρμας;${pageInstruction}`,
     file_urls: [file_url],
     response_json_schema: {
       type: "object",
       properties: {
-        form_title: { type: "string" },
-        form_type: { 
-          type: "string",
-          enum: ["teams_time", "production", "unknown"]
-        }
+        form_title: { type: "string" }
       }
     }
   });
 
-  // Map title to form type
-  let formType = "unknown";
-  if (result.form_title === "PRODUCTION TEAMS TIME FORM V.4") {
-    formType = "teams_time";
-  } else if (result.form_title === "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ") {
-    formType = "production";
-  }
+  // Map title to form type using keyword detection
+  let formType = detectFormTypeFromTitle(result.form_title);
 
-  // Retry with specific prompts if unknown
+  // Retry with structural detection if keyword match failed
   if (formType === "unknown") {
-    // Try to detect as Teams Time Form
     const teamsCheckResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
       model: model,
-      prompt: `Δες το έγγραφο. Υπάρχει πίνακας με στήλες "Ονοματεπώνυμο", "Από", "Έως" (ώρες εργασίας);${pageInstruction}
+      prompt: `Δες το έγγραφο. Υπάρχει πίνακας με "Ονοματεπώνυμο", "Από", "Έως" ή "Συνολικές Ώρες Εργασίας";${pageInstruction}
       
 Απάντησε "YES" ή "NO".`,
       file_urls: [file_url],
@@ -61,12 +73,10 @@ Deno.serve(async (req) => {
 
     if (teamsCheckResult.answer === "YES") {
       formType = "teams_time";
-      result.form_title = "PRODUCTION TEAMS TIME FORM V.4";
     } else {
-      // Try to detect as Production Form
       const prodCheckResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
         model: model,
-        prompt: `Δες το έγγραφο. Υπάρχει πίνακας με στήλες "Κωδικός Κομματιών", "Παρτίδα", "Ποσότητα" (παραγωγή);${pageInstruction}
+        prompt: `Δες το έγγραφο. Υπάρχει πίνακας με "Κωδικός", "Ποσότητα", "Παρτίδα" ή παραγωγή δεδομένα;${pageInstruction}
         
 Απάντησε "YES" ή "NO".`,
         file_urls: [file_url],
@@ -78,7 +88,6 @@ Deno.serve(async (req) => {
 
       if (prodCheckResult.answer === "YES") {
         formType = "production";
-        result.form_title = "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ";
       }
     }
   }
