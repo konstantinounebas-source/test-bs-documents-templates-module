@@ -409,6 +409,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         fileAnalysisRaw?.output ||
         fileAnalysisRaw || {};
 
+      const actualPageCount = Number(fileAnalysis?.page_count || 1);
+
       await new Promise(r => setTimeout(r, 300));
 
       const detectResultRaw = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
@@ -426,15 +428,9 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         .map(p => p?.form_type)
         .filter(type => type === "production" || type === "teams_time");
 
-      const detectedPageCount = Object.keys(detectedPages).length;
+      const effectivePageCount = actualPageCount;
 
-      const effectivePageCount =
-        detectedPageCount > 0
-          ? detectedPageCount
-          : detectedForms.length > 0
-            ? detectedForms.length
-            : 1;
-
+      console.log("Actual page count:", actualPageCount);
       console.log("Detected pages:", detectedPages);
       console.log("Detected forms:", detectedForms);
 

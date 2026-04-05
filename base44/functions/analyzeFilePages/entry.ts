@@ -16,24 +16,18 @@ Deno.serve(async (req) => {
 
   if (isPDF) {
     try {
-      // Use LLM to count PDF pages
-      const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-        model: "gpt_5_mini",
-        prompt: `Δες αυτό το PDF document και μέτρησε ΑΚΡΙΒΩΣ πόσες σελίδες έχει.
-Απάντησε ΜΟΝΟ με έναν αριθμό (π.χ. "2" ή "15").`,
-        file_urls: [file_url],
-        response_json_schema: {
-          type: "object",
-          properties: {
-            page_count: { type: "number" }
-          }
-        }
-      });
+      const response = await fetch(file_url);
+      if (!response.ok) throw new Error(`Failed to fetch file: ${response.status}`);
 
-      pageCount = Math.max(1, Math.floor(result.page_count || 1));
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      const text = new TextDecoder("latin1").decode(bytes);
+
+      // count "/Type /Page" but not "/Type /Pages"
+      const matches = text.match(/\/Type\s*\/Page\b/g) || [];
+      pageCount = Math.max(1, matches.length);
     } catch (err) {
       console.error("Error counting PDF pages:", err);
-      pageCount = 2; // Default fallback for PDF
+      pageCount = 1; // Default fallback for PDF
     }
   }
 
