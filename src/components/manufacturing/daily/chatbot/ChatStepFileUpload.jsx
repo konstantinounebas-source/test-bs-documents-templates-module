@@ -8,7 +8,7 @@ import { Loader2, Upload, FileText, Image as ImageIcon, CheckCircle2, AlertCircl
 import { toast } from "sonner";
 import { format, subDays } from "date-fns";
 import { ocrProductionForm } from "@/functions/ocrProductionForm";
-import { detectFormType } from "@/functions/detectFormType";
+import { detectFormTypes } from "@/functions/detectFormTypes";
 import OCRVerificationModal from "../OCRVerificationModal";
 import { saveOCRData } from "./ocrSave";
 
@@ -171,24 +171,12 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssi
         setUploadedUrl(file_url);
       }
 
-      // Detect form types for each page
+      // Detect form types for all pages in one call
       const isPdf = item.file.name.toLowerCase().endsWith('.pdf');
       const pageCount = isPdf ? 2 : 1;
-      const detectedPages = [];
-
-      for (let page = 1; page <= pageCount; page++) {
-        const detection = await detectFormType({ file_url: fileUrl, page_number: page });
-        detectedPages.push({
-          page: page,
-          form_type: detection.form_type,
-          form_title: detection.form_title
-        });
-      }
-
-      // Extract only pages that match detected forms
-      const pagesToProcess = detectedPages.filter(p => p.form_type !== "unknown");
+      const detection = await detectFormTypes({ file_url: fileUrl, total_pages: pageCount });
       
-      if (pagesToProcess.length === 0) {
+      if (detection.pages_to_show.length === 0) {
         toast.error("Δεν ανιχνεύθηκε καμία γνωστή φόρμα στο αρχείο");
         return;
       }
@@ -197,8 +185,8 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssi
       const result = await ocrProductionForm({ file_url: fileUrl });
       setOcrResult({
         ...result.data,
-        detected_pages: detectedPages,
-        pages_to_show: pagesToProcess.map(p => p.page)
+        detected_pages: detection.pages,
+        pages_to_show: detection.pages_to_show
       });
       setShowOcrModal(true);
     } catch (err) {
