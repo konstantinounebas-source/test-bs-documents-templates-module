@@ -370,8 +370,13 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                          <tr key={i} className={`${i % 2 === 0 ? "bg-white" : "bg-slate-50"} ${isDitto ? "ring-1 ring-inset ring-amber-300" : ""}`}>
                            <td className="border border-slate-200 p-1">
                              <div className="flex items-center gap-1">
-                               <input value={personName} onChange={e => updatePerson(i, "person_name", e.target.value)}
-                                 className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isMissing ? "border-red-400 bg-red-50" : "border-slate-200"}`} />
+                               <select value={personName} onChange={e => updatePerson(i, "person_name", e.target.value)}
+                                 className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isMissing ? "border-red-400 bg-red-50" : "border-slate-200"}`}>
+                                 <option value={personName}>{personName || "-- Επιλέξτε --"}</option>
+                                 {referencePersons.map(p => (
+                                   <option key={p.id} value={p.name}>{p.name}</option>
+                                 ))}
+                               </select>
                                {isDitto && (
                                  <span title="Ditto mark – τιμή αντιγράφηκε αυτόματα">
                                    <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" />
