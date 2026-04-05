@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Check, Maximize2, Minimize2, AlertCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Check, Maximize2, Minimize2, AlertCircle, Trash2 } from "lucide-react";
 
 function normalizeItemCode(code) {
   if (!code) return code;
@@ -461,22 +461,29 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                              </td>
                            );
                          })}
-                        {/* Accept all issues for this row */}
-                        <td className="border border-slate-200 px-1 py-0.5 text-center">
-                          {lineIssues.length > 0 && (
-                            <button
-                              onClick={() => lineIssues.forEach(iss => acceptIssue(getIssueKey(iss, issues.indexOf(iss))))}
-                              className={`p-0.5 rounded border transition-colors ${
-                                allLineAccepted
-                                  ? "border-green-400 text-green-600 bg-green-50 cursor-default"
-                                  : "border-amber-400 text-amber-500 bg-amber-50 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
-                              }`}
-                              title={allLineAccepted ? "Όλα αποδεκτά" : "Αποδοχή όλων της γραμμής"}
-                            >
-                              <Check className="w-3 h-3" />
-                            </button>
-                          )}
-                        </td>
+                        {/* Accept all issues for this row + Delete button */}
+                         <td className="border border-slate-200 px-1 py-0.5 text-center flex items-center justify-center gap-1">
+                           {lineIssues.length > 0 && (
+                             <button
+                               onClick={() => lineIssues.forEach(iss => acceptIssue(getIssueKey(iss, issues.indexOf(iss))))}
+                               className={`p-0.5 rounded border transition-colors ${
+                                 allLineAccepted
+                                   ? "border-green-400 text-green-600 bg-green-50 cursor-default"
+                                   : "border-amber-400 text-amber-500 bg-amber-50 hover:bg-green-50 hover:text-green-700 hover:border-green-400"
+                               }`}
+                               title={allLineAccepted ? "Όλα αποδεκτά" : "Αποδοχή όλων της γραμμής"}
+                             >
+                               <Check className="w-3 h-3" />
+                             </button>
+                           )}
+                           <button
+                             onClick={() => setLines(prev => prev.filter((_, i) => i !== lineIdx))}
+                             className="p-0.5 rounded border border-slate-300 text-slate-400 hover:border-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                             title="Διαγραφή γραμμής"
+                           >
+                             <Trash2 className="w-3 h-3" />
+                           </button>
+                         </td>
                       </tr>
                     );
                   })}
