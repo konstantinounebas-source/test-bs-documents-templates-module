@@ -411,7 +411,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                       <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Break (min)</th>
                       <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Available</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Σχόλια</th>
-                      <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Ενέργεια</th>
+                      <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Delete</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -466,7 +466,13 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                             <input value={p.notes || ""} onChange={e => updatePerson(i, "notes", e.target.value)}
                               className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
                           </td>
-                        </tr>
+                          <td className="border border-slate-200 p-1 text-center">
+                            <button onClick={() => setPersons(prev => prev.filter((_, idx) => idx !== i))}
+                              className="text-red-500 hover:text-red-700">
+                              ✕
+                            </button>
+                          </td>
+                          </tr>
                       );
                     })}
                     {persons.length === 0 && (
@@ -496,6 +502,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Περιγραφή</th>
                       <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Τμήμα (Charge)</th>
                       <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Help In</th>
+                      <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Delete</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -635,6 +642,12 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                               onChange={ev => updateExtra(i, "is_help_in", ev.target.checked)}
                               className="w-4 h-4 accent-blue-600"
                             />
+                          </td>
+                          <td className="border border-slate-200 p-1 text-center">
+                            <button onClick={() => setExtras(prev => prev.filter((_, idx) => idx !== i))}
+                              className="text-red-500 hover:text-red-700">
+                              ✕
+                            </button>
                           </td>
                         </tr>
                       );
