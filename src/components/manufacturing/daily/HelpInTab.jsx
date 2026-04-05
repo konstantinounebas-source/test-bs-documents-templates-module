@@ -14,6 +14,7 @@ export default function HelpInTab({ batchId, department }) {
   const queryClient = useQueryClient();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [formData, setFormData] = useState({
+    person_name: '',
     department: '',
     from_department: '',
     help_min: ''
@@ -121,13 +122,19 @@ export default function HelpInTab({ batchId, department }) {
       await saveHelpTimeMetric();
       await saveNATTimeMetric();
       setShowAddDialog(false);
-      setFormData({ department: '', from_department: '', help_min: '' });
+      setFormData({ person_name: '', department: '', from_department: '', help_min: '' });
       toast.success('Help-in record added');
-    },
-    onError: () => toast.error('Failed to add help-in record')
-  });
+      },
+      onError: () => toast.error('Failed to add help-in record')
+      });
 
-  const deleteMutation = useMutation({
+      const { data: persons = [] } = useQuery({
+      queryKey: ['Person'],
+      queryFn: () => base44.entities.Person.list(),
+      staleTime: Infinity
+      });
+
+      const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Help_In.delete(id),
     onSuccess: async () => {
       await queryClient.invalidateQueries(['Help_In']);
@@ -139,7 +146,7 @@ export default function HelpInTab({ batchId, department }) {
   });
 
   const handleAdd = () => {
-    if (!formData.department || !formData.from_department || !formData.help_min) {
+    if (!formData.person_name || !formData.department || !formData.from_department || !formData.help_min) {
       toast.error('All fields are required');
       return;
     }
@@ -184,6 +191,7 @@ export default function HelpInTab({ batchId, department }) {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Person Name</TableHead>
               <TableHead>Department (Receiving)</TableHead>
               <TableHead>From Department (Providing)</TableHead>
               <TableHead>Help Time (min)</TableHead>
@@ -193,13 +201,14 @@ export default function HelpInTab({ batchId, department }) {
           <TableBody>
             {lines.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-slate-500">
+                <TableCell colSpan={5} className="text-center text-slate-500">
                   No help-in records defined.
                 </TableCell>
               </TableRow>
             ) : (
               lines.map(line => (
                 <TableRow key={line.id}>
+                  <TableCell className="font-medium">{line.person_name}</TableCell>
                   <TableCell className="font-medium">{line.department}</TableCell>
                   <TableCell>{line.from_department}</TableCell>
                   <TableCell>{line.help_min}</TableCell>
@@ -228,6 +237,20 @@ export default function HelpInTab({ batchId, department }) {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            <div>
+              <Label>Person Name *</Label>
+              <Select value={formData.person_name} onValueChange={(v) => setFormData({ ...formData, person_name: v })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select person" />
+                </SelectTrigger>
+                <SelectContent>
+                  {persons.map(p => (
+                    <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label>Department (Receiving Help) *</Label>
               <Select value={formData.department} onValueChange={(v) => setFormData({ ...formData, department: v })}>
