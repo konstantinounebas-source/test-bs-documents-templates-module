@@ -1505,6 +1505,220 @@ ${context}
         </>
       )}
 
+      {/* Split Layout - Inline Chat Panel */}
+      {isSplitLayout && (
+        <div className="flex flex-col h-full bg-white">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white border-b border-blue-700 select-none flex-shrink-0">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Bot className="w-5 h-5 flex-shrink-0" />
+              <span className="font-semibold text-sm truncate">AI Production Assistant</span>
+              {selBatch && (
+                <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
+                  {selBatch.date} · {selDept}
+                </Badge>
+              )}
+            </div>
+            <button onClick={handleReset} className="hover:bg-blue-700 rounded p-1 text-xs opacity-70 hover:opacity-100" title="Reset">
+              <RotateCcw className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Chat log */}
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-3">
+              {messages.map((m, i) => (
+                <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-[85%] text-sm px-3 py-2 rounded-2xl whitespace-pre-wrap
+                    ${m.role === "user"
+                      ? "bg-blue-600 text-white rounded-br-sm"
+                      : "bg-slate-100 text-slate-800 rounded-bl-sm"}`}>
+                    {m.text}
+                  </div>
+                </div>
+              ))}
+              {(createBatchMutation.isPending || uploadingCount > 0 || isAiThinking || isSavingLine) && (
+                <div className="flex justify-start">
+                  <div className="bg-slate-100 rounded-2xl rounded-bl-sm px-3 py-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+
+          {/* Step UI - same as floating panel */}
+          {step === "file_upload" && (
+            <ChatStepFileUpload
+              departments={departments}
+              batchHeaders={allBatchHeaders}
+              allBundles={allBundles}
+              dailyAssignments={dailyAssignments}
+              scheduledDayHeaders={scheduledDayHeaders}
+              onFilesSaved={(fileName, batch, errorInfo) => {
+                if (errorInfo?.error === "no_bundle") {
+                  addMsg("bot", `❌ Δεν βρέθηκε bundle για το τμήμα "${errorInfo.dept}".`);
+                } else if (batch) {
+                  addMsg("bot", `📎 Αρχείο "${fileName}" αποθηκεύτηκε στο batch ${batch.date} · ${batch.department}.`);
+                }
+              }}
+              onBatchReady={({ dept, date }) => {
+                setSelDept(dept); setSelDate(date);
+                addMsg("user", `${dept} · ${date}`);
+                const existing = allBatchHeaders.find(b => b.date === date && b.department === dept);
+                if (existing) {
+                  setSelBatch(existing); setStep("attachments");
+                  addMsg("bot", `✅ Βρέθηκε batch για ${date} – ${dept}.\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.`);
+                } else {
+                  setStep("batch");
+                  const bundle = resolveBundle(date, dept);
+                  addMsg("bot", `Δεν υπάρχει batch για ${date} – ${dept}.\n` + (bundle ? `Bundle: **${bundle.version_no || bundle.version}**.\nΔημιουργώ batch;` : "⚠️ Δεν βρέθηκε bundle."));
+                }
+              }}
+              onSkip={() => { setStep("dept"); addMsg("bot", "Επέλεξε τμήμα για να ξεκινήσουμε."); }}
+            />
+          )}
+          {step === "dept" && (
+            <div className="border-t p-3 space-y-2 flex-shrink-0">
+              <p className="text-xs text-slate-500 font-medium">Επέλεξε τμήμα:</p>
+              <div className="grid grid-cols-2 gap-2">
+                {departments.map(d => (
+                  <Button key={d.id} variant="outline" size="sm" className="text-xs justify-start" onClick={() => handleDeptSelect(d.name)}>
+                    {d.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
+          {step === "date" && (
+            <div className="border-t p-3 space-y-2 flex-shrink-0">
+              <p className="text-xs text-slate-500 font-medium">Επέλεξε ημερομηνία:</p>
+              <div className="flex flex-wrap gap-2">
+                {quickDates.map(qd => (
+                  <Button key={qd.value} variant="outline" size="sm" className="text-xs" onClick={() => handleDateSelect(qd.value)}>
+                    <Calendar className="w-3 h-3 mr-1" />{qd.label}
+                  </Button>
+                ))}
+              </div>
+              {showPicker && (
+                <div className="flex gap-2 mt-1">
+                  <Input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} className="text-xs h-8 flex-1" max={todayStr()} />
+                  <Button size="sm" className="h-8 text-xs" disabled={!customDate} onClick={() => handleDateSelect(customDate)}>OK</Button>
+                </div>
+              )}
+            </div>
+          )}
+          {step === "batch" && (
+            <div className="border-t p-3 space-y-2 flex-shrink-0">
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700" onClick={handleConfirmCreate} disabled={createBatchMutation.isPending}>
+                  <Plus className="w-3 h-3 mr-1" /> Ναι, δημιούργησε batch
+                </Button>
+                <Button size="sm" variant="outline" className="text-xs" onClick={handleReset}>Ακύρωση</Button>
+              </div>
+            </div>
+          )}
+          {step === "attachments" && selBatch && (
+            <div className="border-t p-3 space-y-3 overflow-y-auto max-h-64 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-700">Attachments · {selBatch.date} · {selDept}{attachments.length > 0 && <Badge className="ml-2 text-[10px]">{attachments.length}</Badge>}</p>
+                <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleReset}>↩ Νέα αναζήτηση</Button>
+              </div>
+              <DropZone onFiles={handleFiles} isUploading={uploadingCount > 0} />
+              {attachments.map(att => (
+                <AttachmentItem key={att.id} att={att} onDelete={id => deleteMutation.mutate(id)} onPreview={setPreviewFile} onOCR={(a) => handleOCR(a)} isOcrLoading={ocrLoading && ocrTargetAtt?.id === att.id} isDeleting={deleteMutation.isPending} />
+              ))}
+              <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700" onClick={startBatchLinesReview}>
+                <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → Batch Lines
+              </Button>
+            </div>
+          )}
+          {step === "batch_lines_review" && blReviewItems.length > 0 && (
+            <div className="border-t p-3 space-y-2 flex-shrink-0">
+              <p className="text-xs text-slate-500 font-medium">Item {blCurrentIdx + 1}/{blReviewItems.length}: <span className="font-bold text-slate-800">{blReviewItems[blCurrentIdx]?.item_code}</span></p>
+              <div className="grid grid-cols-3 gap-1">
+                {["qty_processed","qty_out_good","qty_scrap"].map(field => (
+                  <div key={field}>
+                    <p className="text-[10px] text-slate-500 mb-0.5">{field === "qty_processed" ? "Processed" : field === "qty_out_good" ? "Out Good" : "Scrap"}</p>
+                    <input type="number" min="0" value={blReviewItems[blCurrentIdx]?.[field] ?? ""} onChange={e => { const val = parseFloat(e.target.value) || 0; setBlReviewItems(prev => prev.map((it, i) => i === blCurrentIdx ? { ...it, [field]: val } : it)); }} className="w-full text-sm border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700" disabled={isSavingLine} onClick={() => { const item = blReviewItems[blCurrentIdx]; handleBatchLineConfirm(item); }}>
+                  {isSavingLine ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />} Επιβεβαίωση
+                </Button>
+                <Button size="sm" variant="outline" className="text-xs" disabled={isSavingLine} onClick={() => handleBatchLineConfirm({ ...blReviewItems[blCurrentIdx], _skip: true })}>Skip</Button>
+                <Button size="sm" variant="outline" className="text-xs bg-orange-100 text-orange-700 hover:bg-orange-200" onClick={() => { setStep("batch_lines_add"); }}>
+                  <FastForward className="w-3 h-3 mr-1" /> Skip All
+                </Button>
+              </div>
+            </div>
+          )}
+          {step === "batch_lines_add" && (
+            <div className="border-t p-3 space-y-2 overflow-y-auto max-h-72 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-slate-700">Batch Lines</p>
+                <Button variant="ghost" size="sm" className="text-xs h-6 text-slate-400" onClick={() => skipStep("batch_lines_add")}><SkipForward className="w-3 h-3 mr-1" /> Παράλειψη</Button>
+              </div>
+              <ItemCodeMultiSelect available={bundleItemCodes.filter(c => !existingBatchLines.find(bl => normalizeItemCode(bl.item_code) === c))} selected={blAddForm.item_codes || []} onChange={codes => setBlAddForm(f => ({ ...f, item_codes: codes }))} />
+              <div className="grid grid-cols-3 gap-1">
+                {[["qty_processed","Processed"],["qty_out_good","Out Good"],["qty_scrap","Scrap"]].map(([field, label]) => (
+                  <div key={field}>
+                    <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
+                    <input type="number" min="0" placeholder="0" value={blAddForm[field]} onChange={e => setBlAddForm(f => ({ ...f, [field]: e.target.value }))} className="w-full text-sm border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
+                  </div>
+                ))}
+              </div>
+              <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700" onClick={handleAddExtraLine} disabled={!blAddForm.item_codes?.length}><Plus className="w-3 h-3 mr-1" /> Προσθήκη Line(s)</Button>
+              <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700" onClick={() => goNextStep("batch_lines_add", "✅ Batch Lines ολοκληρώθηκαν!")}>
+                <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → QC
+              </Button>
+            </div>
+          )}
+          {step === "qc" && selBatch && (
+            <ChatStepQC batchId={selBatch.id} department={selDept} onNext={(msg) => goNextStep("qc", msg)} onSkip={() => skipStep("qc")} onBack={() => goPrevStep("qc")} />
+          )}
+          {step === "operations" && selBatch && (
+            <ChatStepOperations batchId={selBatch.id} onNext={(msg) => goNextStep("operations", msg)} onSkip={() => skipStep("operations")} onBack={() => goPrevStep("operations")} />
+          )}
+          {step === "team_persons" && selBatch && (
+            <ChatStepTeamPersons batchId={selBatch.id} onNext={(msg) => goNextStep("team_persons", msg)} onSkip={() => skipStep("team_persons")} onBack={() => goPrevStep("team_persons")} />
+          )}
+          {step === "team_extra" && selBatch && (
+            <ChatStepTeamExtra batchId={selBatch.id} onNext={(msg) => goNextStep("team_extra", msg)} onSkip={() => skipStep("team_extra")} onBack={() => goPrevStep("team_extra")} />
+          )}
+          {step === "help_in" && selBatch && (
+            <ChatStepHelpIn batchId={selBatch.id} department={selDept} onNext={(msg) => goNextStep("help_in", msg)} onSkip={() => skipStep("help_in")} onBack={() => goPrevStep("help_in")} />
+          )}
+          {step === "consumables" && selBatch && (
+            <ChatStepConsumables batchId={selBatch.id} onNext={(msg) => goNextStep("consumables", msg)} onSkip={() => skipStep("consumables")} onBack={() => goPrevStep("consumables")} />
+          )}
+          {step === "done" && (
+            <div className="border-t p-3 flex-shrink-0">
+              <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700" onClick={handleReset}>↩ Νέα Καταχώριση</Button>
+            </div>
+          )}
+
+          {/* Free-text input */}
+          <div className="border-t bg-white p-2 flex gap-2 items-center flex-shrink-0">
+            <input
+              ref={inputRef}
+              type="text"
+              value={userInput}
+              onChange={e => setUserInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } }}
+              placeholder="Γράψε μήνυμα..."
+              className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400 bg-slate-50"
+            />
+            <button onClick={handleUserMessage} disabled={!userInput.trim()} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl p-2 transition-colors">
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Attachments Modal - Accessible from any tab */}
       <Dialog open={showAttachmentsModal} onOpenChange={setShowAttachmentsModal}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
