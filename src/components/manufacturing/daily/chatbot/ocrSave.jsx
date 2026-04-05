@@ -1,10 +1,20 @@
 import { base44 } from "@/api/base44Client";
 import { toast } from "sonner";
 
+// Helper: Normalize Greek text (remove accents)
+const normalizeGreekText = (text) => {
+  if (!text) return text;
+  const map = {
+    'ά': 'α', 'έ': 'ε', 'ή': 'η', 'ί': 'ι', 'ό': 'ο', 'ύ': 'υ', 'ώ': 'ω',
+    'Ά': 'Α', 'Έ': 'Ε', 'Ή': 'Η', 'Ί': 'Ι', 'Ό': 'Ο', 'Ύ': 'Υ', 'Ώ': 'Ω'
+  };
+  return text.replace(/[ά-ώΆ-Ώ]/g, char => map[char] || char);
+};
+
 // OCR field → QC_Initial_Stock qc_type mapping
 const QC_TYPE_MAP = [
   { ocrField: "initial_qc_rusty",             qcType: "Σκουριασμένα" },
-  { ocrField: "initial_qc_scratches_dents",   qcType: "Γδαρίσματα / Κτυπήματα" },
+  { ocrField: "initial_qc_scratches_dents",   qcType: "Γδαρσίματα / Κτυπήματα" },
   { ocrField: "initial_qc_oils_primers_dirt", qcType: "Λάδια / Αστάρια / Ακαθαρσίες" },
   { ocrField: "initial_qc_other_issues",      qcType: "Άλλα" },
 ];
