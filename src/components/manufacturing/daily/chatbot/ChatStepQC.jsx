@@ -102,15 +102,18 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
 
   // Calculate qc_per_piece for each QC record from QCSetLines
   const getQCPerPiece = useCallback((itemCode, qcType, qcLevel) => {
-    const trimmedItemCode = (itemCode || '').trim().toLowerCase();
-    const qcRule = qcSetLines.find(ql => {
-      const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
-      const qlQcType = ql.data?.qc_type || ql.qc_type;
-      const qlQcLevel = ql.data?.qc_level || ql.qc_level;
-      return qlItemCode === trimmedItemCode && qlQcType === qcType && qlQcLevel === qcLevel;
-    });
-    return qcRule ? parseFloat(qcRule.calculated_extra_time_min || qcRule.calculated_extra_time || 0) : 0;
-  }, [qcSetLines]);
+     const trimmedItemCode = (itemCode || '').trim().toLowerCase();
+     const trimmedQcType = (qcType || '').trim().toLowerCase();
+     const trimmedQcLevel = (qcLevel || '').trim().toLowerCase();
+
+     const qcRule = qcSetLines.find(ql => {
+       const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
+       const qlQcType = (ql.data?.qc_type || ql.qc_type || '').trim().toLowerCase();
+       const qlQcLevel = (ql.data?.qc_level || ql.qc_level || '').trim().toLowerCase();
+       return qlItemCode === trimmedItemCode && qlQcType === trimmedQcType && qlQcLevel === trimmedQcLevel;
+     });
+     return qcRule ? parseFloat(qcRule.calculated_extra_time_min || qcRule.calculated_extra_time || 0) : 0;
+   }, [qcSetLines]);
 
   const totalQCTime = useMemo(() => {
     return existingQC.reduce((sum, qc) => {
