@@ -258,8 +258,18 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   const updatePerson = (i, field, val) =>
     setPersons(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: val } : p));
 
-  const updateExtra = (i, field, val) =>
-    setExtras(prev => prev.map((e, idx) => idx === i ? { ...e, [field]: val } : e));
+  const updateExtra = (i, field, val) => {
+    setExtras(prev => prev.map((e, idx) => {
+      if (idx !== i) return e;
+      const updated = { ...e, [field]: val };
+      // Auto-update is_help_in based on whether person is in section1Names
+      if (field === 'person_name') {
+        const personName = (val || "").trim().toLowerCase();
+        updated.is_help_in = personName && !section1Names.has(personName);
+      }
+      return updated;
+    }));
+  };
 
   const updateHelpInRow = (i, field, val) =>
     setHelpInList(prev => prev.map((h, idx) => idx === i ? { ...h, [field]: val } : h));
