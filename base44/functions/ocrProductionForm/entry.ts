@@ -15,7 +15,7 @@ const PRODUCTION_FORM_SCHEMA = {
           initial_qc_stock_pull: { type: "number", description: "Αντληση από Stock" },
           initial_qc_remake: { type: "number", description: "Remake" },
           initial_qc_rusty: { type: "number", description: "Σκουριασμένα" },
-          initial_qc_scratches_dents: { type: "number", description: "Γδαρίσματα / Κτυπήματα" },
+          initial_qc_scratches_dents: { type: "number", description: "Γδαρσίματα / Κτυπήματα" },
           initial_qc_oils_primers_dirt: { type: "number", description: "Λάδια / Αστάρια / Ακαθαρσίες" },
           initial_qc_other_issues: { type: "number", description: "Άλλα" },
           required_treatments_zink: { type: "number", description: "Zink" },
@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
 4. initial_qc_stock_pull (ΑΡΙΘΜΟΣ): Αντλ. από Stock (Πόσα κομμάτια τραβήχτηκαν από το αρχικό stock για QC).
 5. initial_qc_remake (ΑΡΙΘΜΟΣ): Remake (Πόσα κομμάτια προέρχονται από διαδικασία remake).
 6. initial_qc_rusty (ΑΡΙΘΜΟΣ): Σκουριασμένα (Πόσα κομμάτια βρέθηκαν σκουριασμένα).
-7. initial_qc_scratches_dents (ΑΡΙΘΜΟΣ): Γδαρίσματα / Κτυπήματα.
+7. initial_qc_scratches_dents (ΑΡΙΘΜΟΣ): Γδαρσίματα / Κτυπήματα.
 8. initial_qc_oils_primers_dirt (ΑΡΙΘΜΟΣ): Λάδια / Αστάρια / Ακαθαρσίες.
 9. initial_qc_other_issues (ΑΡΙΘΜΟΣ): Άλλα θέματα QC.
 10. required_treatments_zink (ΑΡΙΘΜΟΣ): Zink (Πόσα κομμάτια απαιτούν Zink).
