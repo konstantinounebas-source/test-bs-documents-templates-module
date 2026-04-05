@@ -24,12 +24,12 @@ export async function saveOCRTeamsTimeData(confirmed, batchHeaderId, onSuccess, 
     const fromTime = p.time_from || p.from_time || "";
     const toTime = p.time_to || p.to_time || "";
     if (!p.person_name || !p.person_name.trim()) continue;
-    await base44.entities.Team_Time_Persons.create({
+    await base44.entities.TeamTimePerson.create({
       batch_header_id: batchHeaderId,
       person_name: p.person_name,
       from_time: fromTime,
       to_time: toTime,
-      break_min: p.break_min ?? 45,
+      break_time_minutes: p.break_min ?? 45,
       notes: p.notes || ""
     });
     personsCreated++;
