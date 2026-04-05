@@ -393,83 +393,74 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     onSuccess: () => queryClient.invalidateQueries(["BatchAttachments", selBatch?.id])
   });
 
-  // Detect if file is a dual-form PDF (FA_Prepaint: page1=Production Form, page2=Teams Time Form)
-  const isDualFormPDF = (fileName) => {
-    if (!fileName) return false;
-    const lc = fileName.toLowerCase();
-    return (lc.includes('fa_prepaint') || lc.includes('fa_pre')) && lc.endsWith('.pdf');
-  };
-
-  // Detect if file is ONLY a Teams Time form (not dual)
-  const isTeamsTimeOnlyForm = (fileName) => {
-    if (!fileName) return false;
-    const lc = fileName.toLowerCase();
-    if (isDualFormPDF(fileName)) return false; // dual handled separately
-    return lc.includes('teams') || lc.includes('time_form');
-  };
-
   const handleOCR = async (att) => {
     setOcrTargetAtt(att);
     setOcrLoading(true);
 
-    const dual = isDualFormPDF(att.file_name);
-    const teamsOnly = isTeamsTimeOnlyForm(att.file_name);
-
-    if (dual) {
-      // Dual form: run both OCRs in parallel (page 1 = production, page 2 = teams time)
-      addMsg("bot", `🔍 Εκτελώ OCR στο "${att.file_name}" (2 σελίδες: Παραγωγή + Teams Time)...`);
-      addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
-      try {
-        const [prodResult, teamsResult] = await Promise.all([
-          ocrProductionForm({ file_url: att.file_url, page_number: 1 }),
-          ocrTeamsTimeForm({ file_url: att.file_url, file_name: att.file_name, page_number: 2 })
-        ]);
-        setOcrResult(prodResult.data);
-        // Store teams time result to show after production modal is confirmed
-        setPendingTeamsTimeOcr({ result: teamsResult.data, att });
-        setShowOcrModal(true);
-        addMsg("bot", `✅ OCR ολοκληρώθηκε! Σελ.1: ${prodResult.data?.extracted_data?.production_lines?.length || 0} γραμμές παραγωγής · Σελ.2: ${teamsResult.data?.extracted_data?.team_persons?.length || 0} άτομα Teams Time. Επιβεβαίωσε πρώτα τα δεδομένα παραγωγής.`);
-      } catch (err) {
-        addMsg("bot", `❌ OCR αποτυχία: ${err?.message || "Network error"}`);
-      }
-      setOcrLoading(false);
-      return;
-    }
-
-    addMsg("bot", `🔍 Εκτελώ OCR στο αρχείο "${att.file_name}"${teamsOnly ? " (Teams Time Form)" : ""}...`);
-    if (!teamsOnly) {
-      addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
-    }
-
-    const maxRetries = 3;
-    let lastErr;
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        if (teamsOnly) {
-          const result = await ocrTeamsTimeForm({ file_url: att.file_url, file_name: att.file_name });
-          setTeamsTimeOcrResult(result.data);
-          setShowTeamsTimeOcrModal(true);
-          addMsg("bot", `✅ OCR ολοκληρώθηκε! Βρέθηκαν ${result.data?.extracted_data?.team_persons?.length || 0} άτομα · ${result.data?.extracted_data?.team_extra?.length || 0} extra. Επιβεβαίωσε τα δεδομένα.`);
-        } else {
-          const result = await ocrProductionForm({ file_url: att.file_url });
-          setOcrResult(result.data);
-          setShowOcrModal(true);
-          addMsg("bot", `✅ OCR ολοκληρώθηκε! Βρέθηκαν ${result.data?.extracted_data?.production_lines?.length || 0} γραμμές. Επιβεβαίωσε τα δεδομένα.`);
-        }
+    try {
+      // Step 1: Detect which forms exist in the file
+      addMsg("bot", `🔍 Σάρωση αρχείου για ανίχνευση φορμών...`);
+      const detectResult = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
+      const detectedForms = detectResult?.pages ? Object.values(detectResult.pages).map(p => p?.form_type).filter(Boolean) : [];
+      
+      if (!detectedForms.length) {
+        addMsg("bot", `❌ Δεν ανιχνεύθηκε καμία γνωστή φόρμα στο αρχείο.`);
         setOcrLoading(false);
         return;
-      } catch (err) {
-        lastErr = err;
-        if (attempt < maxRetries) {
-          const waitMs = Math.pow(2, attempt) * 1000;
-          addMsg("bot", `⚠️ Σφάλμα δικτύου. Προσπάθεια ${attempt + 1}/${maxRetries} σε ${waitMs / 1000}s...`);
-          await new Promise(resolve => setTimeout(resolve, waitMs));
+      }
+
+      addMsg("bot", `📋 Ανιχνεύθηκε: ${detectedForms.join(", ")}`);
+      addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
+
+      // Step 2: Call OCR functions for detected forms
+      const ocrPromises = [];
+      
+      if (detectedForms.includes("production")) {
+        ocrPromises.push(
+          ocrProductionForm({ file_url: att.file_url }).then(res => ({ type: "production", data: res.data }))
+        );
+      }
+      
+      if (detectedForms.includes("teams_time")) {
+        ocrPromises.push(
+          ocrTeamsTimeForm({ file_url: att.file_url, file_name: att.file_name }).then(res => ({ type: "teams_time", data: res.data }))
+        );
+      }
+
+      const results = await Promise.all(ocrPromises);
+      
+      // Step 3: Route to correct modals based on what was found
+      const prodResult = results.find(r => r.type === "production");
+      const teamsResult = results.find(r => r.type === "teams_time");
+
+      if (prodResult) {
+        setOcrResult(prodResult.data);
+      }
+      
+      if (teamsResult) {
+        // If production also exists, store teams_time to show after production confirm
+        if (prodResult) {
+          setPendingTeamsTimeOcr({ result: teamsResult.data, att });
+        } else {
+          // If only teams_time, show it directly
+          setTeamsTimeOcrResult(teamsResult.data);
         }
       }
-    }
 
-    addMsg("bot", `❌ OCR αποτυχία μετά από ${maxRetries} προσπάθειες: ${lastErr?.message || "Network error"}`);
-    setOcrLoading(false);
+      // Show modals
+      if (prodResult) {
+        setShowOcrModal(true);
+        addMsg("bot", `✅ OCR ολοκληρώθηκε! ${prodResult.data?.extracted_data?.production_lines?.length || 0} γραμμές παραγωγής${teamsResult ? ` · ${teamsResult.data?.extracted_data?.team_persons?.length || 0} άτομα Teams Time` : ""}. Επιβεβαίωσε τα δεδομένα.`);
+      } else if (teamsResult) {
+        setShowTeamsTimeOcrModal(true);
+        addMsg("bot", `✅ OCR ολοκληρώθηκε! Βρέθηκαν ${teamsResult.data?.extracted_data?.team_persons?.length || 0} άτομα · ${teamsResult.data?.extracted_data?.team_extra?.length || 0} extra. Επιβεβαίωσε τα δεδομένα.`);
+      }
+
+    } catch (err) {
+      addMsg("bot", `❌ OCR αποτυχία: ${err?.message || "Network error"}`);
+    } finally {
+      setOcrLoading(false);
+    }
   };
 
   const handleOcrConfirm = (confirmedData) => {
@@ -1588,8 +1579,8 @@ ${context}
           fileName={ocrTargetAtt.file_name}
           ocrResult={teamsTimeOcrResult}
           onConfirm={handleTeamsTimeOcrConfirm}
-          totalPages={isDualFormPDF(ocrTargetAtt.file_name) ? 2 : (teamsTimeOcrResult?.page_count || 1)}
-          defaultPage={isDualFormPDF(ocrTargetAtt.file_name) ? 2 : 1}
+          totalPages={teamsTimeOcrResult?.page_count || 1}
+          defaultPage={1}
         />
       )}
 
