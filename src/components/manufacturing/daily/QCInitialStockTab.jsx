@@ -186,17 +186,19 @@ export default function QCInitialStockTab({ batchId, department }) {
       
       // Calculate total QC time from fresh data
       const totalQCMin = allQC.reduce((sum, line) => {
-        const trimmedItemCode = (line.item_code || '').trim();
-        
+        const trimmedItemCode = (line.item_code || '').trim().toLowerCase();
+        const trimmedLineQcType = (line.qc_type || '').trim().toLowerCase();
+        const trimmedLineQcLevel = (line.qc_level || '').trim().toLowerCase();
+
         const qcRule = freshQCSetLines.find(
           ql => {
             const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
-            const qlQcType = ql.data?.qc_type || ql.qc_type;
-            const qlQcLevel = ql.data?.qc_level || ql.qc_level;
-            
-            return qlItemCode === trimmedItemCode.toLowerCase() &&
-                   qlQcType === line.qc_type &&
-                   qlQcLevel === line.qc_level;
+            const qlQcType = (ql.data?.qc_type || ql.qc_type || '').trim().toLowerCase();
+            const qlQcLevel = (ql.data?.qc_level || ql.qc_level || '').trim().toLowerCase();
+
+            return qlItemCode === trimmedItemCode &&
+                   qlQcType === trimmedLineQcType &&
+                   qlQcLevel === trimmedLineQcLevel;
           }
         );
         
