@@ -16,7 +16,6 @@ export default function HelpInTab({ batchId, department }) {
   const [formData, setFormData] = useState({
     person_name: '',
     department: '',
-    from_department: '',
     help_min: ''
   });
 
@@ -122,7 +121,7 @@ export default function HelpInTab({ batchId, department }) {
       await saveHelpTimeMetric();
       await saveNATTimeMetric();
       setShowAddDialog(false);
-      setFormData({ person_name: '', department: '', from_department: '', help_min: '' });
+      setFormData({ person_name: '', department: '', help_min: '' });
       toast.success('Help-in record added');
       },
       onError: () => toast.error('Failed to add help-in record')
@@ -146,7 +145,7 @@ export default function HelpInTab({ batchId, department }) {
   });
 
   const handleAdd = () => {
-    if (!formData.person_name || !formData.department || !formData.from_department || !formData.help_min) {
+    if (!formData.person_name || !formData.department || !formData.help_min) {
       toast.error('All fields are required');
       return;
     }
@@ -191,17 +190,16 @@ export default function HelpInTab({ batchId, department }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Person Name</TableHead>
-              <TableHead>Department (Receiving)</TableHead>
-              <TableHead>From Department (Providing)</TableHead>
-              <TableHead>Help Time (min)</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
+                <TableHead>Person Name</TableHead>
+                <TableHead>Department (Receiving)</TableHead>
+                <TableHead>Help Time (min)</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
           </TableHeader>
           <TableBody>
             {lines.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-slate-500">
+                <TableCell colSpan={4} className="text-center text-slate-500">
                   No help-in records defined.
                 </TableCell>
               </TableRow>
@@ -210,7 +208,6 @@ export default function HelpInTab({ batchId, department }) {
                 <TableRow key={line.id}>
                   <TableCell className="font-medium">{line.person_name}</TableCell>
                   <TableCell className="font-medium">{line.department}</TableCell>
-                  <TableCell>{line.from_department}</TableCell>
                   <TableCell>{line.help_min}</TableCell>
                   <TableCell>
                     <Button
@@ -266,21 +263,7 @@ export default function HelpInTab({ batchId, department }) {
             </div>
 
             <div>
-              <Label>From Department (Providing Help) *</Label>
-              <Select value={formData.from_department} onValueChange={(v) => setFormData({ ...formData, from_department: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Department providing help" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map(d => (
-                    <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Help Time (min) *</Label>
+               <Label>Help Time (min) *</Label>
               <Input
                 type="number"
                 value={formData.help_min}
