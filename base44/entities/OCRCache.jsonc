@@ -4,7 +4,12 @@
   "properties": {
     "attachment_id": {
       "type": "string",
-      "description": "Reference to BatchAttachment.id - the source file"
+      "description": "Reference to BatchAttachment.id - the source file (multiple records per attachment allowed for history)"
+    },
+    "is_current": {
+      "type": "boolean",
+      "default": true,
+      "description": "Flag indicating if this is the current active OCR record for the attachment"
     },
     "batch_header_id": {
       "type": "string",
@@ -107,9 +112,16 @@
   "indexes": [
     {
       "fields": [
-        "attachment_id"
+        "attachment_id",
+        "is_current"
       ],
       "unique": true,
+      "name": "idx_attachment_current"
+    },
+    {
+      "fields": [
+        "attachment_id"
+      ],
       "name": "idx_attachment"
     },
     {
