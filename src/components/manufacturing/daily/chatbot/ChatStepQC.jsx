@@ -118,7 +118,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
        return itemMatch && typeMatch && levelMatch;
      });
 
-     if (!qcRule && trimmedQcType.includes('γδαρ')) {
+     if (!qcRule && trimmedQcType.includes('Γδαρ')) {
        console.warn(`[QC Debug] No rule found for: item="${itemCode}" qcType="${qcType}" qcLevel="${qcLevel}"`);
        console.warn(`[QC Debug] Available QC types: ${qcSetLines.map(q => q.data?.qc_type || q.qc_type).join(", ")}`);
      }
