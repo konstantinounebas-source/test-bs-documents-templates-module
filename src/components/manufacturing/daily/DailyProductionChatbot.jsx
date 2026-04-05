@@ -395,11 +395,12 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
   const handleOCR = async (att) => {
     setOcrTargetAtt(att);
-    setOcrLoading(true);
     addMsg("bot", `🔍 Σάρωση αρχείου για ανίχνευση φορμών...`);
+    setOcrLoading(true);
 
     try {
-      // Step 1: Detect which forms exist in the file
+      // Step 1: Detect which forms exist in the file (with small delay to ensure message appears)
+      await new Promise(r => setTimeout(r, 300));
       const detectResult = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
       const detectedForms = detectResult?.pages ? Object.values(detectResult.pages).map(p => p?.form_type).filter(Boolean) : [];
       
