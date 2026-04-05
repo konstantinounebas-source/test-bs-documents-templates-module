@@ -88,6 +88,7 @@ export async function saveOCRData(confirmed, batchHeaderId, onSuccess) {
 
     if (qcRecords.length > 0) {
       await base44.entities.QC_Initial_Stock.bulkCreate(qcRecords);
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
 
     // ── 3. Operations ─────────────────────────────────────────────────────────
@@ -122,6 +123,7 @@ export async function saveOCRData(confirmed, batchHeaderId, onSuccess) {
 
     if (opRecords.length > 0) {
       await base44.entities.Operations.bulkCreate(opRecords);
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
   }
 
