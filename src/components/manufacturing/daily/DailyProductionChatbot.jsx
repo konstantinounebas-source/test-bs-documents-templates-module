@@ -528,8 +528,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       setStep("attachments");
       const bundle = resolveBundle(date, selDept);
       addMsg("bot",
-        `✅ Βρέθηκε batch για ${date} – ${selDept}.\n` +
-        (bundle ? `📦 Bundle: ${bundle.version_no || bundle.version} (${bundle.status})\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.` : "⚠️ Χωρίς bundle.\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.")
+        `✅ Batch ήδη υπάρχει για ${date} – ${selDept}.\n` +
+        (bundle ? `📦 Bundle: ${bundle.version_no || bundle.version}\n\n📎 **Πρόσθεσε αρχεία ή πάτα OCR** | 'Συνέχεια → Batch Lines'` : "⚠️ Χωρίς bundle.\n\n📎 **Πρόσθεσε αρχεία** | 'Συνέχεια → Batch Lines'")
       );
     } else {
       setStep("batch");
