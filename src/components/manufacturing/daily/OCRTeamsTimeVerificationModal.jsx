@@ -1,8 +1,10 @@
 import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Maximize2, Minimize2, AlertCircle, Users } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Maximize2, Minimize2, AlertCircle, Users, Check } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 // Parse filename → date, dept
 function parseFileName(fileName) {
@@ -47,6 +49,9 @@ function fmtMins(mins) {
   return `${h}h ${m > 0 ? m + 'm' : ''}`.trim();
 }
 
+const VALID_WORK_TYPES = ["Non Execution Time", "Other Departments Works", "Supportive Works"];
+const VALID_DEPARTMENTS = ["Delivery", "Refurbishment", "Assembly", "Sub-assembly", "Paint", "Pre-paint"];
+
 export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, totalPages, defaultPage }) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -56,6 +61,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   const isDragging = useRef(false);
   const containerRef = useRef(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [referencePersons, setReferencePersons] = useState([]);
 
   const fileParsed = parseFileName(fileName);
 
@@ -134,10 +140,29 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
 
   const [helpInList, setHelpInList] = useState(helpInEntries);
 
+  // Fetch reference persons on mount
+  useEffect(() => {
+    const fetchPersons = async () => {
+      try {
+        const persons = await base44.entities.Person.list();
+        setReferencePersons(persons || []);
+      } catch (error) {
+        console.error("Failed to fetch reference persons:", error);
+      }
+    };
+    fetchPersons();
+  }, []);
+
   // Sync helpInList when extras/persons change
   const updateHelpIn = useCallback(() => {
     setHelpInList(helpInEntries);
   }, [helpInEntries]);
+
+  // Reference person names (lowercased for matching)
+  const refPersonNames = useMemo(
+    () => new Set(referencePersons.map(p => (p.name || "").trim().toLowerCase()).filter(Boolean)),
+    [referencePersons]
+  );
 
   const handleDividerMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -367,8 +392,19 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                       return (
                         <tr key={i} className={rowBg}>
                           <td className="border border-slate-200 p-1">
-                            <input value={e.person_name || ""} onChange={ev => updateExtra(i, "person_name", ev.target.value)}
-                              className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isExternal ? "border-orange-400" : "border-slate-200"}`} />
+                            {(() => {
+                              const personName = (e.person_name || "").trim();
+                              const isValidPerson = personName && refPersonNames.has(personName.toLowerCase());
+                              const isMissing = personName && !isValidPerson;
+                              return (
+                                <div className="flex items-center gap-1">
+                                  <input value={personName} onChange={ev => updateExtra(i, "person_name", ev.target.value)}
+                                    className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isMissing ? "border-red-400 bg-red-50" : isExternal ? "border-orange-400" : "border-slate-200"}`} />
+                                  {isMissing && <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" title="Δεν βρέθηκε στα αποθηκευμένα άτομα" />}
+                                  {isValidPerson && <Check className="w-3 h-3 text-green-600 flex-shrink-0" />}
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="border border-slate-200 p-1">
                             <input type="number" min="0" value={e.duration_hours ?? ""} onChange={ev => updateExtra(i, "duration_hours", parseFloat(ev.target.value) || 0)}
@@ -379,8 +415,27 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                               className="w-12 text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400 text-center" />
                           </td>
                           <td className="border border-slate-200 p-1">
-                            <input value={e.work_type || ""} onChange={ev => updateExtra(i, "work_type", ev.target.value)}
-                              className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
+                            {(() => {
+                              const workType = e.work_type || "";
+                              const isValid = !workType || VALID_WORK_TYPES.includes(workType);
+                              const isMissing = !workType;
+                              return (
+                                <div className="flex items-center gap-1">
+                                  <select
+                                    value={workType}
+                                    onChange={ev => updateExtra(i, "work_type", ev.target.value)}
+                                    className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isMissing ? "border-amber-400 bg-amber-50" : !isValid ? "border-red-400 bg-red-50" : "border-slate-200"}`}
+                                  >
+                                    <option value="">-- Επιλέξτε --</option>
+                                    {VALID_WORK_TYPES.map(wt => (
+                                      <option key={wt} value={wt}>{wt}</option>
+                                    ))}
+                                  </select>
+                                  {!isValid && <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" title="Μη έγκυρο είδος εργασίας" />}
+                                  {isValid && workType && <Check className="w-3 h-3 text-green-600 flex-shrink-0" />}
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="border border-slate-200 p-1">
                             <input value={e.description || ""} onChange={ev => updateExtra(i, "description", ev.target.value)}
@@ -390,13 +445,19 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                            {(() => {
                              const chargeDept = e.charge_dept || "";
                              const isEmpty = !chargeDept.trim();
+                             const isValid = !chargeDept || VALID_DEPARTMENTS.includes(chargeDept);
                              return (
                                <div className="flex items-center gap-1">
-                                 <input
+                                 <select
                                    value={chargeDept}
                                    onChange={ev => updateExtra(i, "charge_dept", ev.target.value)}
-                                   className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isEmpty ? "border-amber-400 bg-amber-50" : "border-slate-200"}`}
-                                 />
+                                   className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isEmpty ? "border-amber-400 bg-amber-50" : !isValid ? "border-red-400 bg-red-50" : "border-slate-200"}`}
+                                 >
+                                   <option value="">-- Επιλέξτε --</option>
+                                   {VALID_DEPARTMENTS.map(d => (
+                                     <option key={d} value={d}>{d}</option>
+                                   ))}
+                                 </select>
                                  {isEmpty && (
                                    <button
                                      type="button"
@@ -407,6 +468,8 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                                      <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0 cursor-pointer" />
                                    </button>
                                  )}
+                                 {!isEmpty && !isValid && <AlertTriangle className="w-3 h-3 text-red-500 flex-shrink-0" title="Μη έγκυρο τμήμα" />}
+                                 {isValid && chargeDept && <Check className="w-3 h-3 text-green-600 flex-shrink-0" />}
                                </div>
                              );
                            })()}
