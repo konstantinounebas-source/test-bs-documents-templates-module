@@ -140,7 +140,16 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   const [confirmed, setConfirmed] = useState(false);
   const [referencePersons, setReferencePersons] = useState([]);
 
+  // Get pages to show from OCR result or all pages
+  const pagesToShow = ocrResult?.pages_to_show || Array.from({ length: totalPages || 1 }, (_, i) => i + 1);
+  const firstVisiblePage = pagesToShow[0] || 1;
+
   const fileParsed = parseFileName(fileName);
+
+  // Initialize currentPage with first visible page
+  useEffect(() => {
+    setCurrentPage(firstVisiblePage);
+  }, [firstVisiblePage]);
 
   // Resolve dept: OCR result > filename (filter out "null" string)
   const resolvedDept = ocrResult?.extracted_data?.team || fileParsed.dept;
@@ -335,9 +344,9 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
           <div className="border-r bg-slate-100 flex flex-col flex-shrink-0" style={{ width: `${imagePanelWidth}%` }}>
             <div className="flex items-center gap-2 px-3 py-2 border-b bg-white text-xs flex-wrap">
               <span className="text-slate-500 font-medium">Αρχείο</span>
-              {isPdf && pageCount > 1 && (
+              {isPdf && pagesToShow.length > 1 && (
                 <div className="flex items-center gap-1 bg-slate-100 rounded px-1">
-                  {Array.from({ length: pageCount }, (_, i) => i + 1).map(pg => (
+                  {pagesToShow.map(pg => (
                     <button key={pg} onClick={() => setCurrentPage(pg)}
                       className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${currentPage === pg ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-200"}`}>
                       Σελ. {pg}
