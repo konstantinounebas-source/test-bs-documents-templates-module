@@ -399,6 +399,13 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     setOcrLoading(true);
 
     try {
+      // Step 0: Analyze file type and page count
+      const fileAnalysis = await base44.functions.invoke("analyzeFilePages", { file_url: att.file_url });
+      addMsg("bot", 
+        `📄 Το αρχείο αναγνωρίστηκε ως **${fileAnalysis.file_type}**\n` +
+        `📊 Συνολικές σελίδες που βρέθηκαν: **${fileAnalysis.page_count}**`
+      );
+
       // Step 1: Detect which forms exist in the file (with small delay to ensure message appears)
       await new Promise(r => setTimeout(r, 300));
       const detectResult = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
