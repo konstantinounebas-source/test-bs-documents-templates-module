@@ -505,9 +505,9 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
       <div className="space-y-2">
         {queue
           .filter(q => q.status === "ready")
-          .map((item, i) => (
+          .map((item) => (
             <FileResultCard
-              key={`${item.file.name}-${i}`}
+              key={item.file.name}
               item={item}
               departments={deptNames}
               batchHeaders={batchHeaders}
@@ -523,8 +523,8 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
       {/* Done items */}
       {doneCount > 0 && (
         <div className="space-y-1">
-          {queue.filter(q => q.status === "done").map((item, i) => (
-            <div key={i} className="flex items-center gap-2 text-[10px] text-green-700 bg-green-50 rounded px-2 py-1">
+          {queue.filter(q => q.status === "done").map((item) => (
+            <div key={item.file.name} className="flex items-center gap-2 text-[10px] text-green-700 bg-green-50 rounded px-2 py-1">
               <CheckCircle2 className="w-3 h-3 flex-shrink-0" />
               <span className="truncate">{item.file.name}</span>
             </div>
