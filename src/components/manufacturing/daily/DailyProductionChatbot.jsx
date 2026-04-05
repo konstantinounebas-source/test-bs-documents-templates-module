@@ -400,10 +400,14 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
     try {
       // Step 0: Analyze file type and page count
-      const fileAnalysis = await base44.functions.invoke("analyzeFilePages", { file_url: att.file_url });
+      const fileAnalysisRaw = await base44.functions.invoke("analyzeFilePages", { file_url: att.file_url });
+      console.log("analyzeFilePages raw result:", fileAnalysisRaw);
+      const fileAnalysis = fileAnalysisRaw?.data || fileAnalysisRaw || {};
+      console.log("analyzeFilePages parsed:", fileAnalysis);
+      addMsg("bot", `DEBUG analyzeFilePages raw: ${JSON.stringify(fileAnalysisRaw)}`);
       addMsg("bot", 
-        `📄 Το αρχείο αναγνωρίστηκε ως **${fileAnalysis.file_type}**\n` +
-        `📊 Συνολικές σελίδες που βρέθηκαν: **${fileAnalysis.page_count}**`
+        `📄 Το αρχείο αναγνωρίστηκε ως **${fileAnalysis.file_type || "unknown"}**\n` +
+        `📊 Συνολικές σελίδες που βρέθηκαν: **${fileAnalysis.page_count || "unknown"}**`
       );
 
       // Step 1: Detect which forms exist in the file (with small delay to ensure message appears)
