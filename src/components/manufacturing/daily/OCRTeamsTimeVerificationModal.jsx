@@ -322,9 +322,13 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                 <span className="text-xs text-amber-600">⚠ Αρχείο: {fileParsed.date}</span>
               )}
               <span className="text-xs font-semibold text-slate-600">Τμήμα:</span>
-              <input type="text" value={dept} onChange={e => setDept(e.target.value)}
-                placeholder="π.χ. Pre-Paint"
-                className={`text-xs border rounded px-2 py-1 outline-none focus:border-blue-400 w-32 ${noDept ? "border-amber-400 bg-amber-50" : "border-slate-200"}`} />
+              <select value={dept} onChange={e => setDept(e.target.value)}
+                className={`text-xs border rounded px-2 py-1 outline-none focus:border-blue-400 w-40 ${noDept ? "border-amber-400 bg-amber-50" : "border-slate-200"}`}>
+                <option value="">-- Επιλέξτε --</option>
+                {VALID_DEPARTMENTS.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
               {noDept && (
                 <span className="text-xs text-amber-700 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" /> Δεν βρέθηκε τμήμα
