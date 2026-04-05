@@ -419,7 +419,14 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       // Step 1: Detect which forms exist in the file (with small delay to ensure message appears)
       await new Promise(r => setTimeout(r, 300));
       const detectResult = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
-      const detectedForms = detectResult?.pages ? Object.values(detectResult.pages).map(p => p?.form_type).filter(Boolean) : [];
+      const detectedPages = detectResult?.pages || {};
+      
+      const detectedForms = Object.values(detectedPages)
+        .map(p => p?.form_type)
+        .filter(type => type === "production" || type === "teams_time");
+
+      console.log("Detected pages:", detectedPages);
+      console.log("Detected forms:", detectedForms);
       
       if (!detectedForms.length) {
         addMsg("bot", `⚠️ Δεν ανιχνεύθηκαν φόρμες. Θα δοκιμάσω production + teams_time...`);
