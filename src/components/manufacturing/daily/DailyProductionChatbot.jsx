@@ -413,7 +413,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       const pdfPageCount = Number(fileAnalysis.page_count) || 0;
 
       console.log("analyzeFilePages parsed:", fileAnalysis);
-      addMsg("bot", `DEBUG analyzeFilePages raw: ${JSON.stringify(fileAnalysisRaw?.data || fileAnalysisRaw)}`);
 
       // Step 1: Detect which forms exist in the file (with small delay to ensure message appears)
       await new Promise(r => setTimeout(r, 300));
