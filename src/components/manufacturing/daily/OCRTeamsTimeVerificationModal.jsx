@@ -127,10 +127,17 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   const [persons, setPersons] = useState(
     () => (ocrResult?.extracted_data?.team_persons || []).map(p => ({ ...p, break_min: p.break_min ?? 45 }))
   );
+
+  // Calculate section1Names before extras initialization
+  const initialSection1Names = useMemo(
+    () => new Set((ocrResult?.extracted_data?.team_persons || []).map(p => (p.person_name || "").trim().toLowerCase()).filter(Boolean)),
+    [ocrResult]
+  );
+
   const [extras, setExtras] = useState(
     () => (ocrResult?.extracted_data?.team_extra || []).map(e => {
       const personName = (e.person_name || "").trim().toLowerCase();
-      const isExternal = personName && !section1Names.has(personName);
+      const isExternal = personName && !initialSection1Names.has(personName);
       return {
         ...e,
         charge_dept: (e.charge_dept === null || e.charge_dept === undefined || e.charge_dept === "null") ? "" : e.charge_dept,
