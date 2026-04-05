@@ -603,52 +603,58 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
               </div>
 
               {/* ── Section 3: Help In (auto-derived) ── */}
-              {helpInList.length > 0 && (
-                <div>
-                  <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-2">
-                    Ενότητα 3 – Help In (Εξωτερικά Άτομα)
-                    <Badge className="bg-orange-100 text-orange-700 text-[10px]">{helpInList.length} εγγραφές</Badge>
-                  </h3>
-                  <p className="text-[10px] text-slate-500 mb-2">Αυτά τα άτομα αναφέρονται στην Ενότητα 2 αλλά όχι στην Ενότητα 1 – θα καταχωρηθούν ως Help In.</p>
-                  <table className="w-full text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-orange-50">
-                        <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Ονοματεπώνυμο</th>
-                        <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Χρόνος (min)</th>
-                        <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Τμήμα Λήψης</th>
-                        <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Από Τμήμα</th>
+              <div>
+                <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-2">
+                  Ενότητα 3 – Help In (Εξωτερικά Άτομα)
+                  <Badge className="bg-orange-100 text-orange-700 text-[10px]">{helpInList.length} εγγραφές</Badge>
+                </h3>
+                <p className="text-[10px] text-slate-500 mb-2">Άτομα που αναφέρονται στην Ενότητα 2 αλλά όχι στην Ενότητα 1. Επιλέξτε ποιο τμήμα θα λαμβάνει την βοήθεια:</p>
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-orange-50">
+                      <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Ονοματεπώνυμο</th>
+                      <th className="border border-slate-200 px-2 py-1 text-center font-semibold">Χρόνος (min)</th>
+                      <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Τμήμα Λήψης (Receiving)</th>
+                      <th className="border border-slate-200 px-2 py-1 text-left font-semibold">Από Τμήμα (Providing)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {helpInList.map((h, i) => (
+                      <tr key={i} className="bg-orange-50/50">
+                        <td className="border border-slate-200 p-1">
+                          <input value={h.person_name || ""} onChange={e => updateHelpInRow(i, "person_name", e.target.value)}
+                            className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-orange-400" />
+                        </td>
+                        <td className="border border-slate-200 p-1 text-center">
+                          <input type="number" value={h.help_time_min || 0} onChange={e => updateHelpInRow(i, "help_time_min", parseInt(e.target.value) || 0)}
+                            className="w-20 text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-orange-400 text-center" />
+                        </td>
+                        <td className="border border-slate-200 p-1">
+                          <select value={h.receiving_dept || ""} onChange={e => updateHelpInRow(i, "receiving_dept", e.target.value)}
+                            className="w-full text-xs border border-orange-300 bg-orange-50 rounded px-1.5 py-1 outline-none focus:border-orange-400">
+                            <option value="">-- Επιλέξτε --</option>
+                            {VALID_DEPARTMENTS.map(d => (
+                              <option key={d} value={d}>{d}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="border border-slate-200 p-1">
+                          <input value={h.providing_dept || ""} onChange={e => updateHelpInRow(i, "providing_dept", e.target.value)}
+                            placeholder="π.χ. Assembly"
+                            className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-orange-400" />
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {helpInList.map((h, i) => (
-                        <tr key={i} className="bg-orange-50/50">
-                          <td className="border border-slate-200 p-1">
-                            <input value={h.person_name || ""} onChange={e => updateHelpInRow(i, "person_name", e.target.value)}
-                              className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-orange-400" />
-                          </td>
-                          <td className="border border-slate-200 p-1 text-center">
-                            <input type="number" value={h.help_time_min || 0} onChange={e => updateHelpInRow(i, "help_time_min", parseInt(e.target.value) || 0)}
-                              className="w-20 text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-orange-400 text-center" />
-                          </td>
-                          <td className="border border-slate-200 p-1">
-                            <input value={h.receiving_dept || ""} onChange={e => updateHelpInRow(i, "receiving_dept", e.target.value)}
-                              className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-orange-400" />
-                          </td>
-                          <td className="border border-slate-200 p-1">
-                            <input value={h.providing_dept || ""} onChange={e => updateHelpInRow(i, "providing_dept", e.target.value)}
-                              placeholder="π.χ. Assembly"
-                              className="w-full text-xs border border-amber-300 bg-amber-50 rounded px-1.5 py-1 outline-none focus:border-orange-400" />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <Button variant="outline" size="sm" className="text-xs mt-2"
-                    onClick={() => setHelpInList(h => [...h, { person_name: "", help_time_min: 0, receiving_dept: dept || "", providing_dept: "" }])}>
-                    + Προσθήκη
-                  </Button>
-                </div>
-              )}
+                    ))}
+                    {helpInList.length === 0 && (
+                      <tr><td colSpan={4} className="text-center py-4 text-slate-400">Δεν υπάρχουν εξωτερικά άτομα</td></tr>
+                    )}
+                  </tbody>
+                </table>
+                <Button variant="outline" size="sm" className="text-xs mt-2"
+                  onClick={() => setHelpInList(h => [...h, { person_name: "", help_time_min: 0, receiving_dept: "", providing_dept: "" }])}>
+                  + Προσθήκη
+                </Button>
+              </div>
 
             </div>
 
