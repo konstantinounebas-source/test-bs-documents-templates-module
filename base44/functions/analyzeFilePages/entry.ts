@@ -17,17 +17,20 @@ Deno.serve(async (req) => {
   if (isPDF) {
     try {
       const response = await fetch(file_url);
-      if (!response.ok) throw new Error(`Failed to fetch file: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.status}`);
+      }
 
       const bytes = new Uint8Array(await response.arrayBuffer());
       const text = new TextDecoder("latin1").decode(bytes);
 
-      // count "/Type /Page" but not "/Type /Pages"
       const matches = text.match(/\/Type\s*\/Page\b/g) || [];
       pageCount = Math.max(1, matches.length);
+
+      console.log("PDF page count detected:", pageCount);
     } catch (err) {
       console.error("Error counting PDF pages:", err);
-      pageCount = 1; // Default fallback for PDF
+      pageCount = 1;
     }
   }
 
