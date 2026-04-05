@@ -141,24 +141,6 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   const [referencePersons, setReferencePersons] = useState([]);
 
   const fileParsed = parseFileName(fileName);
-  
-  // Determine form type based on OCR title
-  const ocrTitle = ocrResult?.extracted_data?.title || ocrResult?.extracted_data?.form_title || "";
-  const titleLower = ocrTitle.toLowerCase();
-  
-  // Check for Production Teams (any variation)
-  const hasProductionTeamsKeyword = titleLower.includes("production teams time form") || 
-                                    titleLower.includes("production teams") || 
-                                    (titleLower.includes("production") && titleLower.includes("teams"));
-  const hasTeamPersonsData = ocrResult?.extracted_data?.team_persons && ocrResult.extracted_data.team_persons.length > 0;
-  
-  // Check for Prepaint
-  const hasPrepaintKeyword = (titleLower.includes("διεργασία1") && titleLower.includes("προετοιμασία βαφής")) ||
-                             titleLower.includes("prepaint") || titleLower.includes("smart bus stop repaint");
-  const hasOperationsData = ocrResult?.extracted_data?.operations && ocrResult.extracted_data.operations.length > 0;
-  
-  const isProductionForm = hasProductionTeamsKeyword || (hasTeamPersonsData && !hasPrepaintKeyword);
-  const isPrepaintForm = hasPrepaintKeyword || (hasOperationsData && !isProductionForm);
 
   // Resolve dept: OCR result > filename (filter out "null" string)
   const resolvedDept = ocrResult?.extracted_data?.team || fileParsed.dept;
@@ -434,16 +416,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
 
-              {/* Form type indicator */}
-              {(isProductionForm || isPrepaintForm) && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded text-xs font-semibold text-blue-700">
-                  <span>📋 Φόρμα:</span>
-                  <span>{isProductionForm ? "Production Teams Time Form" : isPrepaintForm ? "Prepaint - Βαφή" : "Unknown"}</span>
-                </div>
-              )}
-
-              {/* ── Section 1: Team Persons (Production Form Only) ── */}
-              {isProductionForm && (
+              {/* ── Section 1: Team Persons ── */}
               <div>
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                   Ενότητα 1 – Συνολικές ώρες Εργασίας
@@ -532,10 +505,8 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   + Προσθήκη
                 </Button>
               </div>
-              )}
 
-              {/* ── Section 2: Team Extra (Production Form Only) ── */}
-              {isProductionForm && (
+              {/* ── Section 2: Team Extra ── */}
               <div>
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-2">
                   Ενότητα 2 – Εργασίες εκτός φόρμας
@@ -712,10 +683,8 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   + Προσθήκη
                 </Button>
               </div>
-              )}
 
-              {/* ── Section 3: Help In (Production Form Only, auto-derived) ── */}
-              {isProductionForm && (
+              {/* ── Section 3: Help In (auto-derived) ── */}
               <div>
                 <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-2">
                   Ενότητα 3 – Help In (Εξωτερικά Άτομα)
@@ -778,14 +747,6 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   + Προσθήκη
                 </Button>
               </div>
-              )}
-
-              {/* Placeholder for Prepaint sections (future) */}
-              {isPrepaintForm && (
-                <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
-                  ⚙️ Prepaint form detected - additional sections coming soon
-                </div>
-              )}
 
             </div>
 
