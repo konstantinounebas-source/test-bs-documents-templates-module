@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
     ? `\nΑνάλυσε ΜΟΝΟ τη σελίδα ${page_number}.`
     : "";
 
-  const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+  let result = await base44.asServiceRole.integrations.Core.InvokeLLM({
     model: model,
     prompt: `Δες το έγγραφο και αναφέρισε: Ποιος είναι ο τίτλος της φόρμας;${pageInstruction}
     
@@ -31,8 +31,7 @@ Deno.serve(async (req) => {
         form_type: { 
           type: "string",
           enum: ["teams_time", "production", "unknown"]
-        },
-        detected_page_number: { type: "number" }
+        }
       }
     }
   });
@@ -45,9 +44,49 @@ Deno.serve(async (req) => {
     formType = "production";
   }
 
+  // Retry with specific prompts if unknown
+  if (formType === "unknown") {
+    // Try to detect as Teams Time Form
+    const teamsCheckResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      model: model,
+      prompt: `Δες το έγγραφο. Υπάρχει πίνακας με στήλες "Ονοματεπώνυμο", "Από", "Έως" (ώρες εργασίας);${pageInstruction}
+      
+Απάντησε "YES" ή "NO".`,
+      file_urls: [file_url],
+      response_json_schema: {
+        type: "object",
+        properties: { answer: { type: "string", enum: ["YES", "NO"] } }
+      }
+    });
+
+    if (teamsCheckResult.answer === "YES") {
+      formType = "teams_time";
+      result.form_title = "PRODUCTION TEAMS TIME FORM V.4";
+    } else {
+      // Try to detect as Production Form
+      const prodCheckResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        model: model,
+        prompt: `Δες το έγγραφο. Υπάρχει πίνακας με στήλες "Κωδικός Κομματιών", "Παρτίδα", "Ποσότητα" (παραγωγή);${pageInstruction}
+        
+Απάντησε "YES" ή "NO".`,
+        file_urls: [file_url],
+        response_json_schema: {
+          type: "object",
+          properties: { answer: { type: "string", enum: ["YES", "NO"] } }
+        }
+      });
+
+      if (prodCheckResult.answer === "YES") {
+        formType = "production";
+        result.form_title = "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ";
+      }
+    }
+  }
+
   return Response.json({
     form_type: formType,
-    form_title: result.form_title,
-    detected_page_number: result.detected_page_number || page_number || 1
+    form_title: result.form_title || "UNKNOWN",
+    detected_page_number: page_number || 1,
+    confidence: formType !== "unknown" ? "high" : "low"
   });
 });
