@@ -1,0 +1,37 @@
+{
+  "name": "Team_Time_Persons",
+  "type": "object",
+  "properties": {
+    "batch_header_id": {
+      "type": "string",
+      "description": "Reference to Batch_Header"
+    },
+    "person_name": {
+      "type": "string",
+      "description": "Person name"
+    },
+    "from_time": {
+      "type": "string",
+      "description": "Start time (HH:MM)"
+    },
+    "to_time": {
+      "type": "string",
+      "description": "End time (HH:MM)"
+    },
+    "break_min": {
+      "type": "number",
+      "description": "Break duration in minutes",
+      "default": 45
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notes"
+    }
+  },
+  "required": [
+    "batch_header_id",
+    "person_name",
+    "from_time",
+    "to_time"
+  ]
+}

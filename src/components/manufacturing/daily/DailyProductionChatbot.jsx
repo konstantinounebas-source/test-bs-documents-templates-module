@@ -26,8 +26,11 @@ import ChatStepHelpIn from "./chatbot/ChatStepHelpIn";
 import ChatStepConsumables from "./chatbot/ChatStepConsumables";
 import ChatStepFileUpload from "./chatbot/ChatStepFileUpload";
 import OCRVerificationModal from "./OCRVerificationModal";
+import OCRTeamsTimeVerificationModal from "./OCRTeamsTimeVerificationModal";
 import { ocrProductionForm } from "@/functions/ocrProductionForm";
+import { ocrTeamsTimeForm } from "@/functions/ocrTeamsTimeForm";
 import { saveOCRData } from "./chatbot/ocrSave";
+import { saveOCRTeamsTimeData } from "./chatbot/ocrTeamsTimeSave";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
@@ -189,6 +192,9 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [ocrTargetAtt, setOcrTargetAtt] = useState(null);
   const [ocrResult, setOcrResult] = useState(null);
   const [showOcrModal, setShowOcrModal] = useState(false);
+  // Teams Time OCR state
+  const [showTeamsTimeOcrModal, setShowTeamsTimeOcrModal] = useState(false);
+  const [teamsTimeOcrResult, setTeamsTimeOcrResult] = useState(null);
 
   // free-text input
   const [userInput, setUserInput] = useState("");
@@ -385,37 +391,50 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     onSuccess: () => queryClient.invalidateQueries(["BatchAttachments", selBatch?.id])
   });
 
+  // Detect if file is a Teams Time form based on filename
+  const isTeamsTimeForm = (fileName) => {
+    if (!fileName) return false;
+    const lc = fileName.toLowerCase();
+    return lc.includes('fa_prepaint') || lc.includes('fa_') || lc.includes('teams') || lc.includes('time_form');
+  };
+
   const handleOCR = async (att) => {
     setOcrTargetAtt(att);
     setOcrLoading(true);
-    addMsg("bot", `🔍 Εκτελώ OCR στο αρχείο "${att.file_name}"...`);
-    addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
-    
-    // Retry logic: up to 3 attempts with exponential backoff
+
+    const teamsTime = isTeamsTimeForm(att.file_name);
+    addMsg("bot", `🔍 Εκτελώ OCR στο αρχείο "${att.file_name}"${teamsTime ? " (Teams Time Form)" : ""}...`);
+    if (!teamsTime) {
+      addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
+    }
+
     const maxRetries = 3;
     let lastErr;
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const result = await ocrProductionForm({ file_url: att.file_url });
-        console.log('OCR result received:', result.data);
-        setOcrResult(result.data);
-        setShowOcrModal(true);
-        console.log('OCR Modal opened - passing bundleItemCodes:', bundleItemCodes);
-        addMsg("bot", `✅ OCR ολοκληρώθηκε! Βρέθηκαν ${result.data?.extracted_data?.production_lines?.length || 0} γραμμές. Επιβεβαίωσε τα δεδομένα.`);
+        if (teamsTime) {
+          const result = await ocrTeamsTimeForm({ file_url: att.file_url, file_name: att.file_name });
+          setTeamsTimeOcrResult(result.data);
+          setShowTeamsTimeOcrModal(true);
+          addMsg("bot", `✅ OCR ολοκληρώθηκε! Βρέθηκαν ${result.data?.extracted_data?.team_persons?.length || 0} άτομα · ${result.data?.extracted_data?.team_extra?.length || 0} extra. Επιβεβαίωσε τα δεδομένα.`);
+        } else {
+          const result = await ocrProductionForm({ file_url: att.file_url });
+          setOcrResult(result.data);
+          setShowOcrModal(true);
+          addMsg("bot", `✅ OCR ολοκληρώθηκε! Βρέθηκαν ${result.data?.extracted_data?.production_lines?.length || 0} γραμμές. Επιβεβαίωσε τα δεδομένα.`);
+        }
         setOcrLoading(false);
         return;
       } catch (err) {
         lastErr = err;
-        console.warn(`OCR attempt ${attempt}/${maxRetries} failed:`, err?.message);
         if (attempt < maxRetries) {
-          const waitMs = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+          const waitMs = Math.pow(2, attempt) * 1000;
           addMsg("bot", `⚠️ Σφάλμα δικτύου. Προσπάθεια ${attempt + 1}/${maxRetries} σε ${waitMs / 1000}s...`);
           await new Promise(resolve => setTimeout(resolve, waitMs));
         }
       }
     }
-    
-    console.error('OCR failed after max retries:', lastErr);
+
     addMsg("bot", `❌ OCR αποτυχία μετά από ${maxRetries} προσπάθειες: ${lastErr?.message || "Network error"}`);
     setOcrLoading(false);
   };
@@ -431,6 +450,20 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         queryClient.invalidateQueries(["QC_Initial_Stock", selBatch.id]);
         queryClient.invalidateQueries(["Operations", selBatch.id]);
         addMsg("bot", `📦 OCR δεδομένα αποθηκεύτηκαν στο batch ${selBatch.date} · ${selBatch.department}.`);
+      });
+    } else {
+      addMsg("bot", "⚠️ Δεν υπάρχει ενεργό batch. Επίλεξε batch πρώτα.");
+    }
+  };
+
+  const handleTeamsTimeOcrConfirm = (confirmedData) => {
+    setShowTeamsTimeOcrModal(false);
+    addMsg("bot", `✅ Teams Time OCR επιβεβαιώθηκε! Αποθηκεύω...`);
+    if (selBatch?.id) {
+      saveOCRTeamsTimeData(confirmedData, selBatch.id, () => {
+        queryClient.invalidateQueries(["Team_Time_Persons", selBatch.id]);
+        queryClient.invalidateQueries(["Team_Time_Extra", selBatch.id]);
+        addMsg("bot", `📦 Teams Time δεδομένα αποθηκεύτηκαν στο batch ${selBatch.date} · ${selBatch.department}.`);
       });
     } else {
       addMsg("bot", "⚠️ Δεν υπάρχει ενεργό batch. Επίλεξε batch πρώτα.");
@@ -1490,21 +1523,30 @@ ${context}
         </DialogContent>
       </Dialog>
 
-      {/* OCR Verification Modal */}
+      {/* OCR Verification Modal - Production Form */}
       {showOcrModal && ocrResult && ocrTargetAtt && (
-        <>
-          {console.log('DailyProductionChatbot - Passing to OCR:', { bundleItemCodes, selBatch_id: selBatch?.id })}
-          <OCRVerificationModal
-            open={showOcrModal}
-            onClose={() => setShowOcrModal(false)}
-            fileUrl={ocrTargetAtt.file_url}
-            fileName={ocrTargetAtt.file_name}
-            ocrResult={ocrResult}
-            onConfirm={handleOcrConfirm}
-            department={selDept || ocrTargetAtt?.department}
-            availableItemCodes={bundleItemCodes}
-          />
-        </>
+        <OCRVerificationModal
+          open={showOcrModal}
+          onClose={() => setShowOcrModal(false)}
+          fileUrl={ocrTargetAtt.file_url}
+          fileName={ocrTargetAtt.file_name}
+          ocrResult={ocrResult}
+          onConfirm={handleOcrConfirm}
+          department={selDept || ocrTargetAtt?.department}
+          availableItemCodes={bundleItemCodes}
+        />
+      )}
+
+      {/* OCR Verification Modal - Teams Time Form */}
+      {showTeamsTimeOcrModal && teamsTimeOcrResult && ocrTargetAtt && (
+        <OCRTeamsTimeVerificationModal
+          open={showTeamsTimeOcrModal}
+          onClose={() => setShowTeamsTimeOcrModal(false)}
+          fileUrl={ocrTargetAtt.file_url}
+          fileName={ocrTargetAtt.file_name}
+          ocrResult={teamsTimeOcrResult}
+          onConfirm={handleTeamsTimeOcrConfirm}
+        />
       )}
 
       {/* Split Layout - Inline Chat Panel */}
