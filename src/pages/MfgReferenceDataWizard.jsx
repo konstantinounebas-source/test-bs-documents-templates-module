@@ -216,40 +216,6 @@ export default function MfgReferenceDataWizard() {
                     <PersonManagement />
                   ) : (
                     <>
-                      {tab.id === "work_types" && (
-                        <Card className="bg-blue-50 border-blue-200">
-                          <CardHeader>
-                            <CardTitle className="text-lg">Standard Work Types Reference</CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="border rounded-lg overflow-hidden">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow className="bg-blue-100">
-                                    <TableHead>Work Type</TableHead>
-                                    <TableHead>Status</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {["Supportive Works", "Non Execution Time", "Other Departments Works"].map(wt => {
-                                    const exists = items.some(i => i.name === wt);
-                                    return (
-                                      <TableRow key={wt}>
-                                        <TableCell className="font-medium">{wt}</TableCell>
-                                        <TableCell>
-                                          <Badge className={exists ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
-                                            {exists ? "✓ Defined" : "⚠ Missing"}
-                                          </Badge>
-                                        </TableCell>
-                                      </TableRow>
-                                    );
-                                  })}
-                                </TableBody>
-                              </Table>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
                       <Card>
                         <CardHeader>
                           <CardTitle className="text-lg flex items-center gap-2">
