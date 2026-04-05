@@ -71,7 +71,7 @@ async function saveNATTimeMetric(batchHeaderId) {
 }
 
 export async function saveOCRTeamsTimeData(confirmed, batchHeaderId, onSuccess, currentDept) {
-  const { team_persons = [], team_extra = [] } = confirmed;
+  const { team_persons = [], team_extra = [], help_in = [] } = confirmed;
 
   if (!batchHeaderId) {
     toast.error("Δεν βρέθηκε batch. Αδύνατη αποθήκευση.");
@@ -80,6 +80,7 @@ export async function saveOCRTeamsTimeData(confirmed, batchHeaderId, onSuccess, 
 
   let personsCreated = 0;
   let extraCreated = 0;
+  let helpInCreated = 0;
 
   // ── 1. Team Time Persons ────────────────────────────────────────────────
   for (const p of team_persons) {
@@ -115,10 +116,24 @@ export async function saveOCRTeamsTimeData(confirmed, batchHeaderId, onSuccess, 
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 
-  // ── 3. Update Metrics ───────────────────────────────────────────────────
+  // ── 3. Help In ──────────────────────────────────────────────────────────────
+  for (const h of help_in) {
+    if (!h.person_name) continue;
+    await base44.entities.Help_In.create({
+      batch_header_id: batchHeaderId,
+      person_name: h.person_name,
+      department: h.receiving_dept || currentDept || "",
+      from_department: h.providing_dept || "",
+      help_min: h.help_time_min || 0
+    });
+    helpInCreated++;
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  // ── 4. Update Metrics ───────────────────────────────────────────────────
   await saveGTTimeMetric(batchHeaderId);
   await saveNATTimeMetric(batchHeaderId);
 
-  toast.success(`✅ OCR αποθηκεύτηκε: ${personsCreated} άτομα · ${extraCreated} εργασίες Extra`);
+  toast.success(`✅ OCR αποθηκεύτηκε: ${personsCreated} άτομα · ${extraCreated} εργασίες Extra · ${helpInCreated} Help In`);
   if (onSuccess) onSuccess();
 }
