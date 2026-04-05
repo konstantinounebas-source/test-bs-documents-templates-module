@@ -464,7 +464,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         queryClient.invalidateQueries(["Team_Time_Persons", selBatch.id]);
         queryClient.invalidateQueries(["Team_Time_Extra", selBatch.id]);
         addMsg("bot", `📦 Teams Time δεδομένα αποθηκεύτηκαν στο batch ${selBatch.date} · ${selBatch.department}.`);
-      });
+      }, selBatch.department);
     } else {
       addMsg("bot", "⚠️ Δεν υπάρχει ενεργό batch. Επίλεξε batch πρώτα.");
     }

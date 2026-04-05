@@ -7,7 +7,7 @@ import { toast } from "sonner";
  * @param {string} batchHeaderId
  * @param {function} onSuccess
  */
-export async function saveOCRTeamsTimeData(confirmed, batchHeaderId, onSuccess) {
+export async function saveOCRTeamsTimeData(confirmed, batchHeaderId, onSuccess, currentDept) {
   const { team_persons = [], team_extra = [] } = confirmed;
 
   if (!batchHeaderId) {
@@ -20,12 +20,15 @@ export async function saveOCRTeamsTimeData(confirmed, batchHeaderId, onSuccess) 
 
   // ── 1. Team Time Persons ────────────────────────────────────────────────
   for (const p of team_persons) {
-    if (!p.person_name || !p.time_from || !p.time_to) continue;
+    // Accept time_from or from_time (modal uses time_from)
+    const fromTime = p.time_from || p.from_time;
+    const toTime = p.time_to || p.to_time;
+    if (!p.person_name || !fromTime || !toTime) continue;
     await base44.entities.Team_Time_Persons.create({
       batch_header_id: batchHeaderId,
       person_name: p.person_name,
-      from_time: p.time_from,
-      to_time: p.time_to,
+      from_time: fromTime,
+      to_time: toTime,
       break_min: p.break_min ?? 45,
       notes: p.notes || ""
     });
@@ -39,7 +42,7 @@ export async function saveOCRTeamsTimeData(confirmed, batchHeaderId, onSuccess) 
     await base44.entities.Team_Time_Extra.create({
       batch_header_id: batchHeaderId,
       person_name: e.person_name,
-      charge_dept: e.charge_dept || "",
+      charge_dept: e.charge_dept || currentDept || "",
       work_type: e.work_type || "",
       duration_min: totalMins,
       description: e.description || ""

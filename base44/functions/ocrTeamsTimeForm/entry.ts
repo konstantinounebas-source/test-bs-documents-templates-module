@@ -56,6 +56,8 @@ Deno.serve(async (req) => {
     model: model,
     prompt: `Εξάγαγε δεδομένα από τη φόρμα PRODUCTION TEAMS TIME FORM V.4.
 
+ΣΗΜΑΝΤΙΚΟ: Το PDF μπορεί να έχει 2 σελίδες. Η σελίδα με τον τίτλο "PRODUCTION TEAMS TIME FORM V.4" είναι αυτή που πρέπει να επεξεργαστείς. Αγνόησε σελίδες με τίτλο "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ". Αν υπάρχουν 2 σελίδες, ψάξε ΚΑΙ στις 2 για τον τίτλο "PRODUCTION TEAMS TIME FORM V.4".
+
 HEADER:
 - date: ημερομηνία σε μορφή dd/mm/yyyy (από το πεδίο "Ημερομηνία:")
 - completed_by: όνομα από το πεδίο "Συμπληρώθηκε από:"
