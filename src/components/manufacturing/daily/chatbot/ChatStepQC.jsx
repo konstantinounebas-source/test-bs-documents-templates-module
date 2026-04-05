@@ -100,16 +100,26 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
 
   const processedLines = batchLines.filter(bl => (bl.qty_processed || 0) > 0);
 
+  // Helper: Normalize Greek text (remove accents)
+  const normalizeGreekText = (text) => {
+    if (!text) return text;
+    const map = {
+      'ά': 'α', 'έ': 'ε', 'ή': 'η', 'ί': 'ι', 'ό': 'ο', 'ύ': 'υ', 'ώ': 'ω',
+      'Ά': 'Α', 'Έ': 'Ε', 'Ή': 'Η', 'Ί': 'Ι', 'Ό': 'Ο', 'Ύ': 'Υ', 'Ώ': 'Ω'
+    };
+    return text.replace(/[ά-ώΆ-Ώ]/g, char => map[char] || char);
+  };
+
   // Calculate qc_per_piece for each QC record from QCSetLines
   const getQCPerPiece = useCallback((itemCode, qcType, qcLevel) => {
      const trimmedItemCode = (itemCode || '').trim().toLowerCase();
-     const trimmedQcType = (qcType || '').trim().toLowerCase();
-     const trimmedQcLevel = (qcLevel || '').trim().toLowerCase();
+     const trimmedQcType = normalizeGreekText((qcType || '').trim().toLowerCase());
+     const trimmedQcLevel = normalizeGreekText((qcLevel || '').trim().toLowerCase());
 
      const qcRule = qcSetLines.find(ql => {
        const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
-       const qlQcType = (ql.data?.qc_type || ql.qc_type || '').trim().toLowerCase();
-       const qlQcLevel = (ql.data?.qc_level || ql.qc_level || '').trim().toLowerCase();
+       const qlQcType = normalizeGreekText((ql.data?.qc_type || ql.qc_type || '').trim().toLowerCase());
+       const qlQcLevel = normalizeGreekText((ql.data?.qc_level || ql.qc_level || '').trim().toLowerCase());
 
        const itemMatch = !itemCode || qlItemCode === trimmedItemCode;
        const typeMatch = qlQcType === trimmedQcType;
