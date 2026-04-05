@@ -9,7 +9,7 @@
     "is_current": {
       "type": "boolean",
       "default": true,
-      "description": "Indicates the active OCR cache record for this attachment (only one per attachment should be true)"
+      "description": "Indicates the active OCR cache record for this attachment (only one per attachment should be true, enforced by application logic)"
     },
     "batch_header_id": {
       "type": "string",
