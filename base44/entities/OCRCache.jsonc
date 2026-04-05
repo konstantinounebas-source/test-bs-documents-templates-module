@@ -1,0 +1,154 @@
+{
+  "name": "OCRCache",
+  "type": "object",
+  "properties": {
+    "attachment_id": {
+      "type": "string",
+      "description": "Reference to BatchAttachment.id - the source file"
+    },
+    "batch_header_id": {
+      "type": "string",
+      "description": "Reference to BatchHeader.id for quick filtering"
+    },
+    "department": {
+      "type": "string",
+      "description": "Department name for indexing and filtering"
+    },
+    "form_type": {
+      "type": "string",
+      "enum": [
+        "production",
+        "teams_time"
+      ],
+      "description": "Type of form detected"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Original file name (denormalized for reference)"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "File URL for re-running OCR if needed"
+    },
+    "page_count": {
+      "type": "number",
+      "description": "Total pages detected in the file"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "superseded"
+      ],
+      "default": "pending",
+      "description": "Current lifecycle status of the OCR cache entry"
+    },
+    "ocr_version": {
+      "type": "string",
+      "default": "1.0",
+      "description": "Version number for tracking OCR algorithm changes"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When OCR processing started"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When OCR processing completed (null if not yet completed)"
+    },
+    "last_rerun_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last time this attachment was re-scanned"
+    },
+    "raw_ocr_json": {
+      "type": "object",
+      "description": "Complete unmodified output from OCR backend function"
+    },
+    "extracted_data_json": {
+      "type": "object",
+      "description": "Parsed extracted_data portion from OCR result (production_lines, team_persons, etc.)"
+    },
+    "corrected_data_json": {
+      "type": "object",
+      "description": "User-corrected data after modal review (final data to be saved)"
+    },
+    "validation_json": {
+      "type": "object",
+      "description": "Validation issues and confidence scores from OCR"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Error description if status is 'failed'"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Email of user who created this cache entry"
+    },
+    "updated_by": {
+      "type": "string",
+      "description": "Email of user who last updated this cache entry"
+    }
+  },
+  "required": [
+    "attachment_id",
+    "batch_header_id",
+    "department",
+    "form_type",
+    "file_name",
+    "file_url",
+    "status"
+  ],
+  "indexes": [
+    {
+      "fields": [
+        "attachment_id"
+      ],
+      "unique": true,
+      "name": "idx_attachment"
+    },
+    {
+      "fields": [
+        "batch_header_id"
+      ],
+      "name": "idx_batch"
+    },
+    {
+      "fields": [
+        "department"
+      ],
+      "name": "idx_department"
+    },
+    {
+      "fields": [
+        "status"
+      ],
+      "name": "idx_status"
+    },
+    {
+      "fields": [
+        "form_type"
+      ],
+      "name": "idx_form_type"
+    },
+    {
+      "fields": [
+        "batch_header_id",
+        "status"
+      ],
+      "name": "idx_batch_status"
+    },
+    {
+      "fields": [
+        "department",
+        "status"
+      ],
+      "name": "idx_dept_status"
+    }
+  ]
+}
