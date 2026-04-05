@@ -418,28 +418,34 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
       // Step 1: Detect which forms exist in the file (with small delay to ensure message appears)
       await new Promise(r => setTimeout(r, 300));
-      const detectResult = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
+
+      const detectResultRaw = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
+      console.log("detectFormType raw result:", detectResultRaw);
+      addMsg("bot", `DEBUG detectFormType raw: ${JSON.stringify(detectResultRaw)}`);
+
+      const detectResult =
+        detectResultRaw?.data ||
+        detectResultRaw?.result ||
+        detectResultRaw?.output ||
+        detectResultRaw || {};
+
       const detectedPages = detectResult?.pages || {};
-      
+
       const detectedForms = Object.values(detectedPages)
         .map(p => p?.form_type)
         .filter(type => type === "production" || type === "teams_time");
 
       console.log("Detected pages:", detectedPages);
       console.log("Detected forms:", detectedForms);
-      
-      if (!detectedForms.length) {
-        addMsg("bot", `⚠️ Δεν ανιχνεύθηκαν φόρμες. Θα δοκιμάσω production + teams_time...`);
+
+      if (detectedForms.length === 0) {
+        console.warn("No valid forms detected. Falling back...");
+        addMsg("bot", `⚠️ Δεν ανιχνεύθηκαν έγκυρες φόρμες. Θα δοκιμάσω production + teams_time...`);
         detectedForms.push("production", "teams_time");
-        // Create mock pages for fallback
-        detectResult.pages = {
-          "1": { form_type: "production", confidence: "low" },
-          "2": { form_type: "teams_time", confidence: "low" }
-        };
       }
 
       // Display detailed detection results per page
-      const detectionDetails = Object.entries(detectResult.pages || {})
+      const detectionDetails = Object.entries(detectedPages)
         .map(([page, data]) => `Σελ.${page} = ${data?.form_type || 'unknown'}`)
         .join(', ');
       addMsg("bot", `✅ **Σάρωση ολοκληρώθηκε!**\n📋 Ανιχνεύθηκε: ${detectionDetails}`);
