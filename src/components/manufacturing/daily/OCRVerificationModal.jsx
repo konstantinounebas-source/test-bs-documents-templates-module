@@ -553,7 +553,7 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                  <Button variant="ghost" size="sm" className="text-xs text-slate-500 hover:text-slate-700" onClick={() => {
                    navigating.current = true;
                    setCurrentPage(p => p + 1);
-                   setTimeout(() => { navigating.current = false; }, 50);
+                   setTimeout(() => { navigating.current = false; }, 200);
                  }}>Skip</Button>
                )}
                <Button variant="outline" size="sm" className="text-xs" 
