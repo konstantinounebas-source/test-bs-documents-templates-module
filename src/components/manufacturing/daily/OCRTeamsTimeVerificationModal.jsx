@@ -69,7 +69,11 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
     () => (ocrResult?.extracted_data?.team_persons || []).map(p => ({ ...p, break_min: p.break_min ?? 45 }))
   );
   const [extras, setExtras] = useState(
-    () => ocrResult?.extracted_data?.team_extra || []
+    () => (ocrResult?.extracted_data?.team_extra || []).map(e => ({
+      ...e,
+      // normalize null/"null" charge_dept to empty string
+      charge_dept: (e.charge_dept === null || e.charge_dept === undefined || e.charge_dept === "null") ? "" : e.charge_dept
+    }))
   );
 
   const ocrWarnings = ocrResult?.warnings || [];
@@ -383,17 +387,20 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                               className="w-full text-xs border border-slate-200 rounded px-1.5 py-1 outline-none focus:border-blue-400" />
                           </td>
                           <td className="border border-slate-200 p-1">
-                            {(() => {
-                              const chargeDept = e.charge_dept || "";
-                              const isEmpty = !chargeDept.trim();
-                              return (
-                                <div className="flex items-center gap-1">
-                                  <input value={chargeDept} onChange={ev => updateExtra(i, "charge_dept", ev.target.value)}
-                                    className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isEmpty ? "border-amber-400 bg-amber-50" : "border-slate-200"}`} />
-                                  {isEmpty && <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" title="Κενό τμήμα χρέωσης" />}
-                                </div>
-                              );
-                            })()}
+                           {(() => {
+                             const chargeDept = e.charge_dept || "";
+                             const isEmpty = !chargeDept.trim();
+                             return (
+                               <div className="flex items-center gap-1">
+                                 <input
+                                   value={chargeDept}
+                                   onChange={ev => updateExtra(i, "charge_dept", ev.target.value)}
+                                   className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isEmpty ? "border-amber-400 bg-amber-50" : "border-slate-200"}`}
+                                 />
+                                 {isEmpty && <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" title="Κενό τμήμα χρέωσης" />}
+                               </div>
+                             );
+                           })()}
                           </td>
                           <td className="border border-slate-200 p-1 text-center whitespace-nowrap">
                             {isOvertime && (
