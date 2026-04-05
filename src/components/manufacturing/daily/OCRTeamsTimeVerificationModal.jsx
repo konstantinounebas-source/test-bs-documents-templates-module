@@ -129,7 +129,7 @@ const OCR_WORK_TYPE_MAPPINGS = {
   "Non Execution Time": "Non Execution Time"
 };
 
-export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, totalPages, defaultPage }) {
+export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, totalPages, defaultPage, detectedForms }) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [currentPage, setCurrentPage] = useState(defaultPage || 1);
@@ -139,6 +139,22 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   const containerRef = useRef(null);
   const [confirmed, setConfirmed] = useState(false);
   const [referencePersons, setReferencePersons] = useState([]);
+
+  // Determine which pages to display based on detected form types
+  const visiblePages = [];
+  if (detectedForms) {
+    // Page 1: show only if production or unknown (shouldn't show Teams Time data on page 1)
+    if (detectedForms[1]?.form_type === "production" || detectedForms[1]?.form_type === "unknown") {
+      visiblePages.push(1);
+    }
+    // Page 2: show only if teams_time or unknown (shouldn't show Production data on page 2)
+    if (detectedForms[2]?.form_type === "teams_time" || detectedForms[2]?.form_type === "unknown") {
+      visiblePages.push(2);
+    }
+  } else {
+    // Fallback: show all pages if form detection not provided
+    visiblePages.push(1, 2);
+  }
 
   const fileParsed = parseFileName(fileName);
 
@@ -334,17 +350,21 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
           {/* LEFT: PDF/Image viewer */}
           <div className="border-r bg-slate-100 flex flex-col flex-shrink-0" style={{ width: `${imagePanelWidth}%` }}>
             <div className="flex items-center gap-2 px-3 py-2 border-b bg-white text-xs flex-wrap">
-              <span className="text-slate-500 font-medium">Αρχείο</span>
-              {isPdf && pageCount > 1 && (
-                <div className="flex items-center gap-1 bg-slate-100 rounded px-1">
-                  {Array.from({ length: pageCount }, (_, i) => i + 1).map(pg => (
-                    <button key={pg} onClick={() => setCurrentPage(pg)}
-                      className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${currentPage === pg ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-200"}`}>
-                      Σελ. {pg}
-                    </button>
-                  ))}
-                </div>
-              )}
+               <span className="text-slate-500 font-medium">Αρχείο</span>
+               {isPdf && visiblePages.length > 1 && (
+                 <div className="flex items-center gap-1 bg-slate-100 rounded px-1">
+                   {visiblePages.map(pg => {
+                     const formType = detectedForms?.[pg]?.form_type || "unknown";
+                     const formLabel = formType === "production" ? "Παραγωγή" : formType === "teams_time" ? "Team Time" : "Σελ.";
+                     return (
+                       <button key={pg} onClick={() => setCurrentPage(pg)}
+                         className={`px-2 py-0.5 rounded text-[11px] font-medium transition-colors ${currentPage === pg ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-200"}`}>
+                         {formLabel} {pg}
+                       </button>
+                     );
+                   })}
+                 </div>
+               )}
               <div className="flex-1" />
               {isImage && (
                 <>
@@ -357,17 +377,24 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
               <button onClick={() => setRotation(r => r + 90)} className="p-1 hover:bg-slate-100 rounded"><RotateCw className="w-3.5 h-3.5" /></button>
             </div>
             <div className="flex-1 overflow-auto flex items-start justify-center p-4">
-              {isImage ? (
-                <img src={fileUrl} alt={fileName}
-                  style={{ transform: `rotate(${rotation}deg) scale(${zoom})`, transformOrigin: "top center", transition: "transform 0.2s", maxWidth: zoom > 1 ? "none" : "100%" }}
-                />
-              ) : (
-                <iframe src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(fileUrl)}#page=${currentPage}`}
-                  key={currentPage} className="w-full h-full border-0 rounded" title={fileName}
-                  style={{ transform: `rotate(${rotation}deg)`, minHeight: "500px" }}
-                />
-              )}
-            </div>
+               {isImage ? (
+                 <img src={fileUrl} alt={fileName}
+                   style={{ transform: `rotate(${rotation}deg) scale(${zoom})`, transformOrigin: "top center", transition: "transform 0.2s", maxWidth: zoom > 1 ? "none" : "100%" }}
+                 />
+               ) : (
+                 // Only show page if it's in visiblePages
+                 visiblePages.includes(currentPage) ? (
+                   <iframe src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(fileUrl)}#page=${currentPage}`}
+                     key={currentPage} className="w-full h-full border-0 rounded" title={fileName}
+                     style={{ transform: `rotate(${rotation}deg)`, minHeight: "500px" }}
+                   />
+                 ) : (
+                   <div className="flex items-center justify-center h-full text-slate-500 text-sm">
+                     Σελίδα {currentPage} δεν εμφανίζεται (δεν ανιχνεύθηκε σχετική φόρμα)
+                   </div>
+                 )
+               )}
+             </div>
           </div>
 
           {/* Drag divider */}
