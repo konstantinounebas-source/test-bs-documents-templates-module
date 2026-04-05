@@ -122,8 +122,11 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
 
     // Multi-page support: Track current page
     const [currentPage, setCurrentPage] = useState(0);
-    const totalPages = ocrResult?.extracted_data?.pages?.length || 1;
-    const currentPageData = ocrResult?.extracted_data?.pages?.[currentPage] || ocrResult?.extracted_data || {};
+    // Support both structure: pages array OR treat single data as page 1
+    const pages = ocrResult?.extracted_data?.pages;
+    const totalPages = pages?.length || (ocrResult?.extracted_data ? 1 : 0);
+    const currentPageData = pages?.[currentPage] || ocrResult?.extracted_data || {};
+    console.log('OCR Pages:', { totalPages, currentPage, hasPages: !!pages, hasExtractedData: !!ocrResult?.extracted_data });
 
     // Parse filename for date and type
     const fileParsed = parseFileName(fileName);
