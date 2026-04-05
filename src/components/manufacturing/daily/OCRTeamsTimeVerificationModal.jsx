@@ -8,18 +8,27 @@ import { base44 } from "@/api/base44Client";
 // Parse filename → date, dept
 function parseFileName(fileName) {
   if (!fileName) return { date: null, dept: null };
-  const dateMatch = fileName.match(/^(\d{1,2})-(\d{1,2})-(\d{2})/);
+  
+  // Try both date formats: dd-mm-yy and dd/mm/yyyy
   let date = null;
-  if (dateMatch) {
-    const [, d, m, y] = dateMatch;
+  const dateMatch1 = fileName.match(/^(\d{1,2})-(\d{1,2})-(\d{2})/);
+  const dateMatch2 = fileName.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  
+  if (dateMatch1) {
+    const [, d, m, y] = dateMatch1;
     date = `${d.padStart(2,'0')}/${m.padStart(2,'0')}/20${y}`;
+  } else if (dateMatch2) {
+    const [, d, m, y] = dateMatch2;
+    date = `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
   }
+  
   const lc = fileName.toLowerCase();
   let dept = null;
   if (lc.includes('prepaint') || lc.includes('pre-paint') || lc.includes('pre_paint')) dept = "Pre-Paint";
   else if (lc.includes('subass') || lc.includes('sub-ass')) dept = "Sub-Assembly";
   else if (lc.includes('assembly') || lc.includes('ass')) dept = "Assembly";
   else if (lc.includes('refurb') || lc.includes('ref')) dept = "Refurbishment";
+  
   return { date, dept };
 }
 
