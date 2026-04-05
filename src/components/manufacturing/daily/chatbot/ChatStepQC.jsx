@@ -10,7 +10,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [form, setForm] = useState({ qc_type: "", qc_level: "", qc_per_piece_min: "" });
+  const [form, setForm] = useState({ qc_type: "", qc_level: "" });
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
   const [selectedItems, setSelectedItems] = useState(new Set());
@@ -100,10 +100,25 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
 
   const processedLines = batchLines.filter(bl => (bl.qty_processed || 0) > 0);
 
-  const totalQCTime = existingQC.reduce((sum, qc) => {
-    const timeAdd = parseFloat(qc.time_add_min) || 0;
-    return sum + timeAdd;
-  }, 0);
+  // Calculate qc_per_piece for each QC record from QCSetLines
+  const getQCPerPiece = (itemCode, qcType, qcLevel) => {
+    const trimmedItemCode = (itemCode || '').trim().toLowerCase();
+    const qcRule = qcSetLines.find(ql => {
+      const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
+      const qlQcType = ql.data?.qc_type || ql.qc_type;
+      const qlQcLevel = ql.data?.qc_level || ql.qc_level;
+      return qlItemCode === trimmedItemCode && qlQcType === qcType && qlQcLevel === qcLevel;
+    });
+    return qcRule ? parseFloat(qcRule.calculated_extra_time_min || qcRule.calculated_extra_time || 0) : 0;
+  };
+
+  const totalQCTime = useMemo(() => {
+    return existingQC.reduce((sum, qc) => {
+      const qcPerPiece = getQCPerPiece(qc.item_code, qc.qc_type, qc.qc_level);
+      const qty = parseInt(qc.qty_affected) || 0;
+      return sum + (qcPerPiece * qty);
+    }, 0);
+  }, [existingQC, qcSetLines]);
 
   const handleEditStart = (qc) => {
     setEditingId(qc.id);
@@ -144,20 +159,10 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
         if (!bl || !bl.qty_processed) continue;
         const exists = existingQC.find(q => q.item_code === sd.item_code && q.qc_type === sd.qc_type);
         if (exists) continue;
-        
-        // Find qc_per_piece_min from QCSetLines
-        const trimmedItemCode = (sd.item_code || '').trim().toLowerCase();
-        const qcRule = qcSetLines.find(ql => {
-          const qlItemCode = (ql.data?.item_code || ql.item_code || '').trim().toLowerCase();
-          const qlQcType = ql.data?.qc_type || ql.qc_type;
-          const qlQcLevel = ql.data?.qc_level || ql.qc_level;
-          return qlItemCode === trimmedItemCode && qlQcType === sd.qc_type && qlQcLevel === (sd.qc_level || '');
-        });
-        const perPieceMin = qcRule ? (parseFloat(qcRule.calculated_extra_time_min || qcRule.calculated_extra_time || 0)) : 0;
-        
+
         await base44.entities.QC_Initial_Stock.create({
           batch_header_id: batchId, item_code: sd.item_code,
-          qc_type: sd.qc_type, qc_level: sd.qc_level || "", qc_per_piece_min: perPieceMin, qty_affected: bl.qty_processed
+          qc_type: sd.qc_type, qc_level: sd.qc_level || "", qty_affected: bl.qty_processed
         });
         created++;
       }
@@ -177,20 +182,18 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
     setIsSaving(true);
     try {
       const itemsToAdd = processedLines.filter(bl => selectedItems.has(bl.item_code));
-      const perPieceMin = form.qc_per_piece_min ? parseFloat(form.qc_per_piece_min) : 0;
-      if (isNaN(perPieceMin)) { toast.error("Per-piece time πρέπει να είναι αριθμός"); return; }
       for (const bl of itemsToAdd) {
         const exists = existingQC.find(q => q.item_code === bl.item_code && q.qc_type === form.qc_type);
         if (exists) continue;
         await base44.entities.QC_Initial_Stock.create({
           batch_header_id: batchId, item_code: bl.item_code,
-          qc_type: form.qc_type, qc_level: form.qc_level, qc_per_piece_min: perPieceMin, qty_affected: bl.qty_processed
+          qc_type: form.qc_type, qc_level: form.qc_level, qty_affected: bl.qty_processed
         });
       }
       queryClient.invalidateQueries(["QC_Initial_Stock", batchId]);
       toast.success(`✅ ${selectedItems.size} QC record(s) προστέθηκαν`);
       setSelectedItems(new Set());
-      setForm({ qc_type: "", qc_level: "", qc_per_piece_min: "" });
+      setForm({ qc_type: "", qc_level: "" });
     } catch { toast.error("Σφάλμα αποθήκευσης"); }
     setIsSaving(false);
   };
@@ -228,9 +231,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
                 <div>{qc.qc_level}</div>
                 {editingId === qc.id ? (
                   <>
-                    <input type="number" step="0.01" value={editForm.time_add_min || 0} 
-                      onChange={(e) => setEditForm(f => ({ ...f, time_add_min: e.target.value }))}
-                      className="h-6 px-1 border border-slate-300 rounded text-[10px]" />
+                    <div>{getQCPerPiece(qc.item_code, qc.qc_type, qc.qc_level).toFixed(2)}</div>
                     <input type="number" value={editForm.qty_affected || 0}
                       onChange={(e) => setEditForm(f => ({ ...f, qty_affected: e.target.value }))}
                       className="h-6 px-1 border border-slate-300 rounded text-[10px]" />
@@ -241,7 +242,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
                   </>
                 ) : (
                   <>
-                    <div>{(qc.time_add_min || 0).toFixed(2)}</div>
+                    <div>{getQCPerPiece(qc.item_code, qc.qc_type, qc.qc_level).toFixed(2)}</div>
                     <div>{qc.qty_affected}</div>
                     <div className="flex gap-1">
                       <button onClick={() => handleEditStart(qc)} className="text-blue-600 hover:text-blue-700">✏</button>
@@ -312,18 +313,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
                </Select>
              </div>
            </div>
-           <div>
-             <p className="text-[10px] text-slate-500 mb-0.5">Per-piece (min)</p>
-             <input 
-               type="number" 
-               step="0.01" 
-               min="0"
-               value={form.qc_per_piece_min}
-               onChange={(e) => setForm(f => ({ ...f, qc_per_piece_min: e.target.value }))}
-               placeholder="0.00"
-               className="w-full h-7 px-2 border border-slate-300 rounded text-xs outline-none focus:border-blue-400"
-             />
-           </div>
+
          </div>
 
         <Button 
