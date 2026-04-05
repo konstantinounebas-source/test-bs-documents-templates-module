@@ -407,6 +407,11 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       if (!detectedForms.length) {
         addMsg("bot", `⚠️ Δεν ανιχνεύθηκαν φόρμες. Θα δοκιμάσω production + teams_time...`);
         detectedForms.push("production", "teams_time");
+        // Create mock pages for fallback
+        detectResult.pages = {
+          "1": { form_type: "production", confidence: "low" },
+          "2": { form_type: "teams_time", confidence: "low" }
+        };
       }
 
       // Display detailed detection results per page
