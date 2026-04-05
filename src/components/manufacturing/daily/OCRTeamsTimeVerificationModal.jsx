@@ -163,8 +163,12 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
     () => (ocrResult?.extracted_data?.team_extra || []).map(e => {
       const personName = (e.person_name || "").trim().toLowerCase();
       const isExternal = personName && !initialSection1Names.has(personName);
+      // Auto-map OCR work type variant to stored value
+      const workType = e.work_type || "";
+      const mappedWorkType = OCR_WORK_TYPE_MAPPINGS[workType] || workType;
       return {
         ...e,
+        work_type: mappedWorkType, // Store the mapped value directly
         charge_dept: (e.charge_dept === null || e.charge_dept === undefined || e.charge_dept === "null") ? "" : e.charge_dept,
         is_help_in: isExternal
       };
@@ -508,40 +512,6 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                   Ενότητα 2 – Εργασίες εκτός φόρμας
                   <Badge className="bg-purple-100 text-purple-700 text-[10px]">{extras.length} εγγραφές</Badge>
                 </h3>
-
-                {/* Work Types Validation Table */}
-                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                  <h4 className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-2">
-                    🔍 Validation: OCR Work Types vs Stored Values
-                  </h4>
-                  <table className="w-full text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-blue-100">
-                        <th className="border border-blue-200 px-2 py-1 text-left font-semibold">OCR Variants (Greek & Shorthand)</th>
-                        <th className="border border-blue-200 px-2 py-1 text-left font-semibold">Mapped to Stored Value</th>
-                        <th className="border border-blue-200 px-2 py-1 text-center font-semibold">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr className="bg-white">
-                        <td className="border border-blue-200 px-2 py-1">Υποστηρικτικές (Υποσ) | Υποστρακτικές (OCR typo) | Υποστ | Υποστ.</td>
-                        <td className="border border-blue-200 px-2 py-1">Supportive Works</td>
-                        <td className="border border-blue-200 px-2 py-1 text-center"><span className="text-green-600 font-semibold">✓ Auto-mapped</span></td>
-                      </tr>
-                      <tr className="bg-blue-50">
-                        <td className="border border-blue-200 px-2 py-1">Άλλες Εργασίες (ΑΛλες)</td>
-                        <td className="border border-blue-200 px-2 py-1">Other Departments Works</td>
-                        <td className="border border-blue-200 px-2 py-1 text-center"><span className="text-green-600 font-semibold">✓ Auto-mapped</span></td>
-                      </tr>
-                      <tr className="bg-white">
-                        <td className="border border-blue-200 px-2 py-1">Μη Εκτέλεσης (Μη Εκ.)</td>
-                        <td className="border border-blue-200 px-2 py-1">Non Execution Time</td>
-                        <td className="border border-blue-200 px-2 py-1 text-center"><span className="text-green-600 font-semibold">✓ Auto-mapped</span></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
                 <table className="w-full text-xs border-collapse">
                   <thead>
                     <tr className="bg-slate-100">
@@ -613,12 +583,9 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                           <td className="border border-slate-200 p-1">
                             {(() => {
                               const workType = e.work_type || "";
-                              // Try to auto-map OCR variant to stored value
-                              const mappedWorkType = OCR_WORK_TYPE_MAPPINGS[workType] || workType;
-                              const isValid = !workType || VALID_WORK_TYPES.includes(mappedWorkType);
+                              const isValid = !workType || VALID_WORK_TYPES.includes(workType);
                               const isMissing = !workType;
                               const suggestedWorkType = !isValid && workType ? findClosestMatch(workType, VALID_WORK_TYPES) : null;
-                              const hasMapping = OCR_WORK_TYPE_MAPPINGS[workType] && workType !== mappedWorkType;
                               
                               return (
                                 <div className="space-y-1">
@@ -626,27 +593,16 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                                     <select
                                       value={workType}
                                       onChange={ev => updateExtra(i, "work_type", ev.target.value)}
-                                      className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isMissing ? "border-amber-400 bg-amber-50" : hasMapping ? "border-green-400 bg-green-50" : !isValid ? "border-red-400 bg-red-50" : "border-slate-200"}`}
+                                      className={`w-full text-xs border rounded px-1.5 py-1 outline-none focus:border-blue-400 ${isMissing ? "border-amber-400 bg-amber-50" : !isValid ? "border-red-400 bg-red-50" : "border-slate-200"}`}
                                     >
                                       <option value={workType}>{workType || "-- Επιλέξτε --"}</option>
                                       {VALID_WORK_TYPES.map(wt => (
                                         <option key={wt} value={wt}>{wt}</option>
                                       ))}
                                     </select>
-                                    {hasMapping && <Check className="w-3 h-3 text-green-600 flex-shrink-0" title={`Auto-mapped to: ${mappedWorkType}`} />}
-                                    {isValid && !hasMapping && workType && <Check className="w-3 h-3 text-green-600 flex-shrink-0" />}
+                                    {isValid && workType && <Check className="w-3 h-3 text-green-600 flex-shrink-0" />}
                                   </div>
-                                  {hasMapping && (
-                                    <button
-                                      type="button"
-                                      onClick={() => updateExtra(i, "work_type", mappedWorkType)}
-                                      className="text-xs text-green-600 hover:underline font-medium"
-                                      title="Auto-apply the mapping"
-                                    >
-                                      ✓ Auto-map to: {mappedWorkType}
-                                    </button>
-                                  )}
-                                  {!isValid && suggestedWorkType && !hasMapping && (
+                                  {!isValid && suggestedWorkType && (
                                     <button
                                       type="button"
                                       onClick={() => updateExtra(i, "work_type", suggestedWorkType)}
@@ -656,7 +612,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                                       💡 Υπόδειξη: {suggestedWorkType}
                                     </button>
                                   )}
-                                  {!isValid && !suggestedWorkType && !hasMapping && (
+                                  {!isValid && !suggestedWorkType && (
                                     <span className="text-xs text-red-600">⚠ Μη έγκυρο είδος εργασίας</span>
                                   )}
                                 </div>
