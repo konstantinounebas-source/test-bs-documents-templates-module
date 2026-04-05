@@ -195,18 +195,23 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   // Auto-derive Help In entries: persons in Section 2 marked as is_help_in
   const helpInEntries = useMemo(() => {
     const helpInMap = {};
+    const deptMap = {};
     extras.forEach(e => {
       if (!e.is_help_in) return;
       const name = (e.person_name || "").trim();
       if (!name) return;
       const mins = (e.duration_hours || 0) * 60 + (e.duration_mins || 0);
       helpInMap[name] = (helpInMap[name] || 0) + mins;
+      // Capture charge_dept as providing_dept (where they come from)
+      if (e.charge_dept && !deptMap[name]) {
+        deptMap[name] = e.charge_dept;
+      }
     });
     return Object.entries(helpInMap).map(([name, mins]) => ({
       person_name: name,
       help_time_min: mins,
       receiving_dept: dept || "",
-      providing_dept: ""
+      providing_dept: deptMap[name] || ""
     }));
   }, [extras, dept]);
 
