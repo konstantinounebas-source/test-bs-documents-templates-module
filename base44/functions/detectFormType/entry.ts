@@ -11,6 +11,19 @@ Deno.serve(async (req) => {
   const isPDF = file_url.toLowerCase().includes('.pdf');
   const model = isPDF ? "gemini_3_flash" : "gpt_5_mini";
 
+  // Get actual page count from the file
+  const analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    model: model,
+    prompt: `Δες αυτό το PDF document. Πόσες σελίδες έχει; Απάντησε ΜΟΝΟ με έναν αριθμό (π.χ. "1" ή "2").`,
+    file_urls: [file_url],
+    response_json_schema: {
+      type: "object",
+      properties: { page_count: { type: "number" } }
+    }
+  });
+
+  const pageCount = Number(analysis?.page_count ?? 1) || 1;
+
   // Normalize and detect form type with keyword matching
   const normalizeTitle = (title) => {
     if (!title) return "";
@@ -37,8 +50,8 @@ Deno.serve(async (req) => {
     return "unknown";
   };
 
-  // Detect form types for both pages (1 and 2)
-  const pages = [1, 2];
+  // Detect form types only for pages that actually exist in the file
+  const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
   const detectedForms = {};
 
   for (const pageNum of pages) {
