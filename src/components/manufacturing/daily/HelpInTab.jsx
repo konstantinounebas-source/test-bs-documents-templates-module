@@ -208,9 +208,9 @@ export default function HelpInTab({ batchId, department }) {
             ) : (
               lines.map(line => (
                 <TableRow key={line.id}>
-                  <TableCell className="font-medium">{line.person_name}</TableCell>
+                  <TableCell className="font-medium">{line.person_name || '–'}</TableCell>
                   <TableCell className="font-medium">{line.department}</TableCell>
-                  <TableCell>{line.from_department}</TableCell>
+                  <TableCell className="font-medium">{line.from_department || '–'}</TableCell>
                   <TableCell>{line.help_min}</TableCell>
                   <TableCell>
                     <Button
