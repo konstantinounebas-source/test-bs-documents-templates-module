@@ -117,11 +117,12 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
 
   const fileParsed = parseFileName(fileName);
 
-  // Resolve dept: OCR result > filename
-  const resolvedDept = ocrResult?.extracted_data?.team || fileParsed.dept || null;
+  // Resolve dept: OCR result > filename (filter out "null" string)
+  const resolvedDept = ocrResult?.extracted_data?.team || fileParsed.dept;
+  const cleanDept = (resolvedDept && resolvedDept !== "null") ? resolvedDept : "";
 
   const [date, setDate] = useState(ocrResult?.extracted_data?.date || fileParsed.date || "");
-  const [dept, setDept] = useState(resolvedDept || "");
+  const [dept, setDept] = useState(cleanDept);
 
   const [persons, setPersons] = useState(
     () => (ocrResult?.extracted_data?.team_persons || []).map(p => ({ ...p, break_min: p.break_min ?? 45 }))
