@@ -146,9 +146,17 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   const ocrTitle = ocrResult?.extracted_data?.title || ocrResult?.extracted_data?.form_title || "";
   const titleLower = ocrTitle.toLowerCase();
   
-  const isProductionForm = titleLower.includes("production teams time form") || titleLower.includes("production teams");
-  const isPrepaintForm = (titleLower.includes("διεργασία1") && titleLower.includes("προετοιμασία βαφής")) ||
-                         titleLower.includes("prepaint") || titleLower.includes("smart bus stop repaint");
+  // Check for Production Teams (any variation)
+  const hasProductionTeamsKeyword = titleLower.includes("production teams") || titleLower.includes("production") && titleLower.includes("teams");
+  const hasTeamPersonsData = ocrResult?.extracted_data?.team_persons && ocrResult.extracted_data.team_persons.length > 0;
+  
+  // Check for Prepaint
+  const hasPrepaintKeyword = (titleLower.includes("διεργασία1") && titleLower.includes("προετοιμασία βαφής")) ||
+                             titleLower.includes("prepaint") || titleLower.includes("smart bus stop repaint");
+  const hasOperationsData = ocrResult?.extracted_data?.operations && ocrResult.extracted_data.operations.length > 0;
+  
+  const isProductionForm = hasProductionTeamsKeyword || (hasTeamPersonsData && !hasPrepaintKeyword);
+  const isPrepaintForm = hasPrepaintKeyword || (hasOperationsData && !isProductionForm);
 
   // Resolve dept: OCR result > filename (filter out "null" string)
   const resolvedDept = ocrResult?.extracted_data?.team || fileParsed.dept;
