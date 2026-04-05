@@ -4,7 +4,7 @@ import { toast } from "sonner";
 // OCR field → QC_Initial_Stock qc_type mapping
 const QC_TYPE_MAP = [
   { ocrField: "initial_qc_rusty",             qcType: "Σκουριασμένα" },
-  { ocrField: "initial_qc_scratches_dents",   qcType: "Γδαρίσματα / Κτυπήματα" },
+  { ocrField: "initial_qc_scratches_dents",   qcType: "Γδαρσίματα / Κτυπήματα" },
   { ocrField: "initial_qc_oils_primers_dirt", qcType: "Λάδια / Αστάρια / Ακαθαρσίες" },
   { ocrField: "initial_qc_other_issues",      qcType: "Άλλα" },
 ];
