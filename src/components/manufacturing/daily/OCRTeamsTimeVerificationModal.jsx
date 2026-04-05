@@ -147,7 +147,9 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
   const titleLower = ocrTitle.toLowerCase();
   
   // Check for Production Teams (any variation)
-  const hasProductionTeamsKeyword = titleLower.includes("production teams") || titleLower.includes("production") && titleLower.includes("teams");
+  const hasProductionTeamsKeyword = titleLower.includes("production teams time form") || 
+                                    titleLower.includes("production teams") || 
+                                    (titleLower.includes("production") && titleLower.includes("teams"));
   const hasTeamPersonsData = ocrResult?.extracted_data?.team_persons && ocrResult.extracted_data.team_persons.length > 0;
   
   // Check for Prepaint
