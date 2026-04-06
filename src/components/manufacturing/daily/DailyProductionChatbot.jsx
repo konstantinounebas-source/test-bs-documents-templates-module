@@ -248,8 +248,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [ocrTargetAtt, setOcrTargetAtt] = useState(null);
   const [showOcrModal, setShowOcrModal] = useState(false);
   const [currentProductionCacheId, setCurrentProductionCacheId] = useState(null);
+  const [viewProductionOcrResult, setViewProductionOcrResult] = useState(null);
   const [showTeamsTimeOcrModal, setShowTeamsTimeOcrModal] = useState(false);
   const [currentTeamsTimeCacheId, setCurrentTeamsTimeCacheId] = useState(null);
+  const [viewTeamsTimeOcrResult, setViewTeamsTimeOcrResult] = useState(null);
   // OCR Status Tracking: { attachment_id: { production: { status, cache_id }, teams_time: { status, cache_id } } }
   const [attachmentOcrStatus, setAttachmentOcrStatus] = useState({});
 
@@ -278,27 +280,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Load OCR data when production modal opens
-  useEffect(() => {
-    if (showOcrModal && currentProductionCacheId && ocrTargetAtt) {
-      loadOCRDataFromCache(ocrTargetAtt.id, "production").then(data => {
-        if (data) {
-          // Modals will display this data if passed as prop — for now we rely on cache service
-        }
-      });
-    }
-  }, [showOcrModal, currentProductionCacheId, ocrTargetAtt?.id]);
 
-  // Load OCR data when teams time modal opens
-  useEffect(() => {
-    if (showTeamsTimeOcrModal && currentTeamsTimeCacheId && ocrTargetAtt) {
-      loadOCRDataFromCache(ocrTargetAtt.id, "teams_time").then(data => {
-        if (data) {
-          // Modals will display this data if passed as prop — for now we rely on cache service
-        }
-      });
-    }
-  }, [showTeamsTimeOcrModal, currentTeamsTimeCacheId, ocrTargetAtt?.id]);
 
   // ── data ──────────────────────────────────────────────────────────────────
   // All batch headers (for file upload step batch matching)
@@ -1239,9 +1221,11 @@ CRITICAL SAFETY RULES:
                 setOcrTargetAtt(att);
                 if (prodData) {
                   setCurrentProductionCacheId(prodData.cache_id);
+                  setViewProductionOcrResult(prodData);
                   setShowOcrModal(true);
                 } else if (teamsData) {
                   setCurrentTeamsTimeCacheId(teamsData.cache_id);
+                  setViewTeamsTimeOcrResult(teamsData);
                   setShowTeamsTimeOcrModal(true);
                 }
               }}
@@ -1732,10 +1716,10 @@ CRITICAL SAFETY RULES:
       {currentProductionCacheId && ocrTargetAtt && (
         <OCRVerificationModal
           open={showOcrModal}
-          onClose={() => { setShowOcrModal(false); }}
+          onClose={() => { setShowOcrModal(false); setViewProductionOcrResult(null); }}
           fileUrl={ocrTargetAtt.file_url}
           fileName={ocrTargetAtt.file_name}
-          ocrResult={{}}
+          ocrResult={viewProductionOcrResult || {}}
           onConfirm={handleOcrConfirm}
           onSkip={handleOcrSkip}
           department={selDept || ocrTargetAtt?.department}
@@ -1747,10 +1731,10 @@ CRITICAL SAFETY RULES:
       {currentTeamsTimeCacheId && ocrTargetAtt && (
         <OCRTeamsTimeVerificationModal
           open={showTeamsTimeOcrModal}
-          onClose={() => { setShowTeamsTimeOcrModal(false); }}
+          onClose={() => { setShowTeamsTimeOcrModal(false); setViewTeamsTimeOcrResult(null); }}
           fileUrl={ocrTargetAtt.file_url}
           fileName={ocrTargetAtt.file_name}
-          ocrResult={{}}
+          ocrResult={viewTeamsTimeOcrResult || {}}
           onConfirm={handleTeamsTimeOcrConfirm}
           totalPages={1}
           defaultPage={1}
@@ -1842,17 +1826,19 @@ CRITICAL SAFETY RULES:
                       onPreview={setPreviewFile}
                       onOCR={handleOCR}
                       onViewOCR={async (att) => {
-                        const prodData = await loadOCRDataFromCache(att.id, "production");
-                        const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
-                        setOcrTargetAtt(att);
-                        if (prodData) {
-                          setCurrentProductionCacheId(prodData.cache_id);
-                          setShowOcrModal(true);
-                        } else if (teamsData) {
-                          setCurrentTeamsTimeCacheId(teamsData.cache_id);
-                          setShowTeamsTimeOcrModal(true);
-                        }
-                      }}
+                         const prodData = await loadOCRDataFromCache(att.id, "production");
+                         const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
+                         setOcrTargetAtt(att);
+                         if (prodData) {
+                           setCurrentProductionCacheId(prodData.cache_id);
+                           setViewProductionOcrResult(prodData);
+                           setShowOcrModal(true);
+                         } else if (teamsData) {
+                           setCurrentTeamsTimeCacheId(teamsData.cache_id);
+                           setViewTeamsTimeOcrResult(teamsData);
+                           setShowTeamsTimeOcrModal(true);
+                         }
+                       }}
                       isOcrLoading={runningOcrAttachmentIds.has(att.id)}
                       isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
                       isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
