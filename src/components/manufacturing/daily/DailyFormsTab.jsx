@@ -136,17 +136,19 @@ export default function DailyFormsTab({
                 <button
                   key={dept}
                   onClick={() => setSelectedDept(dept)}
-                  className={`px-4 py-2 rounded text-sm transition-colors whitespace-nowrap flex flex-col items-center gap-1 font-medium ${
+                  className={`px-4 py-2.5 rounded text-sm transition-colors flex flex-col items-center gap-1 font-medium min-w-max ${
                     selectedDept === dept
                       ? "bg-blue-600 text-white"
-                      : hasBatch ? "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300" : "bg-slate-100 text-slate-500 hover:bg-slate-200 border border-slate-300 opacity-50"
+                      : hasBatch ? "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300" : "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300"
                   }`}
                 >
                   <span>{dept}</span>
-                  <span className="text-[10px]">
-                    {bundleAvailable ? "✓ Bundle" : "no bundle"}
-                  </span>
-                  <span className="text-[10px]">({attachmentCount})</span>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className={`${bundleAvailable ? "text-green-600 font-semibold" : "text-red-600 text-lg leading-none"}`}>
+                      {bundleAvailable ? "✓" : "×"}
+                    </span>
+                    <span className="text-slate-500">({attachmentCount})</span>
+                  </div>
                 </button>
               );
             })

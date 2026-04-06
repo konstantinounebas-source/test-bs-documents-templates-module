@@ -88,7 +88,7 @@ export default function DailyDataTab({
                     key={dept.id}
                     variant={selDept === dept.name ? "default" : "outline"}
                     size="lg"
-                    className={`flex flex-col items-center gap-1 whitespace-normal h-auto py-3 px-4 text-center ${!hasBatch ? "opacity-40 cursor-not-allowed" : ""}`}
+                    className={`flex flex-col items-center gap-1 h-auto py-2.5 px-4 text-sm font-medium ${!hasBatch ? "opacity-40 cursor-not-allowed" : ""}`}
                     disabled={!hasBatch}
                     onClick={() => {
                       if (hasBatch) {
@@ -101,9 +101,9 @@ export default function DailyDataTab({
                       }
                     }}
                   >
-                    <span className="font-semibold">{dept.name}</span>
-                    <span className="text-xs">
-                      {bundleAvailable ? "✓ Bundle available" : "no bundle"}
+                    <span>{dept.name}</span>
+                    <span className={`text-xs ${bundleAvailable ? "text-green-600 font-semibold" : "text-red-600 text-lg leading-none"}`}>
+                      {bundleAvailable ? "✓" : "×"}
                     </span>
                   </Button>
                 );
