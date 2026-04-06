@@ -387,12 +387,31 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     staleTime: Infinity
   });
 
-  // ── missing OCR detection ────────────────────────────────────────────────
+  // ── missing OCR detection with filters ────────────────────────────────────
+  const [ocrFilterDept, setOcrFilterDept] = useState("");
+  const [ocrFilterMonth, setOcrFilterMonth] = useState("");
+
   const getAttachmentsMissingOCR = async () => {
     try {
       setIsMissingOcrLoading(true);
       const result = [];
-      const batchesToCheck = allBatchHeaders || [];
+      let batchesToCheck = allBatchHeaders || [];
+
+      // Filter by department
+      if (ocrFilterDept) {
+        batchesToCheck = batchesToCheck.filter(b => b.department === ocrFilterDept);
+      }
+
+      // Filter by month (YYYY-MM)
+      if (ocrFilterMonth) {
+        batchesToCheck = batchesToCheck.filter(b => b.date && b.date.startsWith(ocrFilterMonth));
+      }
+
+      if (batchesToCheck.length === 0) {
+        setMissingOcrResults([]);
+        addMsg("bot", "No batches match the selected filters.");
+        return;
+      }
 
       for (const batch of batchesToCheck) {
         const batchAtts = await base44.entities.BatchAttachment.filter({ batch_header_id: batch.id });
@@ -402,7 +421,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
           const prodStatus = await checkOCRCacheStatus(att.id, "production");
           const teamsStatus = await checkOCRCacheStatus(att.id, "teams_time");
           
-          // Missing OCR if BOTH production and teams_time have no usable cache
           if (!prodStatus?.canUseCache && !teamsStatus?.canUseCache) {
             missingCount++;
           }
@@ -418,6 +436,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       }
 
       setMissingOcrResults(result);
+      addMsg("bot", `✅ Scanned ${batchesToCheck.length} batches. Found ${result.length} with missing OCR.`);
     } catch (error) {
       console.error("Error detecting missing OCR:", error);
       addMsg("bot", `❌ Error detecting missing OCR: ${error?.message || "Unknown error"}`);
@@ -1451,8 +1470,21 @@ CRITICAL SAFETY RULES:
     <>
       {step === "file_upload" && (
         <>
-          <div className="border-t p-3 flex-shrink-0">
-            <Button size="sm" variant="outline" className="w-full text-xs mb-2" onClick={getAttachmentsMissingOCR} disabled={isMissingOcrLoading}>
+          <div className="border-t p-3 space-y-2 flex-shrink-0">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] font-semibold text-slate-500 block mb-1">Department</label>
+                <select value={ocrFilterDept} onChange={e => setOcrFilterDept(e.target.value)} className="w-full text-xs border border-slate-200 rounded px-2 py-1">
+                  <option value="">All</option>
+                  {departments.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-[10px] font-semibold text-slate-500 block mb-1">Month (YYYY-MM)</label>
+                <input type="month" value={ocrFilterMonth} onChange={e => setOcrFilterMonth(e.target.value)} className="w-full text-xs border border-slate-200 rounded px-2 py-1" />
+              </div>
+            </div>
+            <Button size="sm" variant="outline" className="w-full text-xs" onClick={getAttachmentsMissingOCR} disabled={isMissingOcrLoading}>
               {isMissingOcrLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : "🔍"}
               {isMissingOcrLoading ? "Scanning..." : "Find Missing OCR"}
             </Button>
