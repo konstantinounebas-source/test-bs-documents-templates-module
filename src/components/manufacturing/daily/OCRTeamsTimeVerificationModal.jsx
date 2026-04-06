@@ -441,8 +441,8 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
               <input type="text" value={date} onChange={e => setDate(e.target.value)}
                 placeholder="dd/mm/yyyy"
                 className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 w-28" />
-              {fileParsed.date && fileParsed.date !== date && (
-                <span className="text-xs text-amber-600">⚠ Αρχείο: {fileParsed.date}</span>
+              {fileParsed.date && datesMismatch(date, fileParsed.date) && (
+                <span className="text-xs text-amber-600">⚠ Ημερομηνία OCR ≠ Αρχείου: {fileParsed.date}</span>
               )}
               <span className="text-xs font-semibold text-slate-600">Τμήμα:</span>
               <select value={dept} onChange={e => setDept(e.target.value)}
@@ -810,16 +810,12 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
 
             </div>
 
-            {/* Confirm footer */}
-            <div className="border-t px-4 py-3 flex items-center gap-3 bg-white flex-shrink-0">
-              <div className="text-xs text-slate-500 flex-1">
-                {persons.length} άτομα · {extras.length} extra
-                {helpInList.length > 0 && ` · ${helpInList.length} help-in`}
-              </div>
+            {/* Confirm footer - standardized buttons */}
+            <div className="border-t px-4 py-3 flex items-center gap-2 bg-white flex-shrink-0">
               {onSkip && (
                 <Button variant="outline" size="sm" className="text-xs" onClick={onSkip}>Skip χωρίς αποθήκευση</Button>
               )}
-              <Button size="sm" className="text-xs bg-green-600 hover:bg-green-700"
+              <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
                 onClick={() => {
                   setConfirmed(true);
                   // Only save non-help-in extras to team_extra; help_in rows go to help_in section

@@ -607,39 +607,33 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                       </td>
                     </tr>
                   )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Confirm footer */}
-              <div className="border-t px-4 py-3 flex items-center gap-3 bg-white flex-shrink-0">
-                {totalPages > 1 && currentPage < totalPages - 1 && (
-                  <Button variant="ghost" size="sm" className="text-xs text-slate-500 hover:text-slate-700" onClick={() => {
-                    navigating.current = true;
-                    setCurrentPage(p => p + 1);
-                    setTimeout(() => { navigating.current = false; }, 200);
-                  }}>Skip</Button>
-                )}
-                <Button variant="outline" size="sm" className="text-xs" 
+                  </tbody>
+                  </table>
+                  {/* + Προσθήκη Γραμμής button below table */}
+                  <Button variant="outline" size="sm" className="text-xs mt-3" 
                   onClick={() => setLines(prev => [...prev, COLUMNS.reduce((acc, col) => ({ ...acc, [col.key]: null }), {})])}>
                   + Προσθήκη Γραμμής
-                </Button>
-                {totalPages > 1 && currentPage < totalPages - 1 && (
-                  <Button variant="outline" size="sm" className="text-xs" onClick={() => setCurrentPage(p => p + 1)}>
-                    Επόμ. Σελίδα →
                   </Button>
-                )}
-                {totalPages > 1 && currentPage > 0 && (
+                  </div>
+
+                  {/* Confirm footer - standardized buttons */}
+                  <div className="border-t px-4 py-3 flex items-center gap-2 bg-white flex-shrink-0">
+                  {totalPages > 1 && currentPage > 0 && (
                   <Button variant="outline" size="sm" className="text-xs" onClick={() => setCurrentPage(p => p - 1)}>
-                    ← Προηγ. Σελίδα
+                    ← Προηγ.
                   </Button>
-                )}
-                {onSkip && (
+                  )}
+                  {totalPages > 1 && currentPage < totalPages - 1 && (
+                  <Button variant="outline" size="sm" className="text-xs" onClick={() => setCurrentPage(p => p + 1)}>
+                    Επόμ. →
+                  </Button>
+                  )}
+                  {onSkip && (
                   <Button variant="outline" size="sm" className="text-xs" onClick={onSkip}>
                     Skip χωρίς αποθήκευση
                   </Button>
-                )}
-                <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
+                  )}
+                  <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
                   onClick={() => {
                     setConfirmed(true);
                     // Merge all pages data when confirming
@@ -649,8 +643,8 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                   disabled={confirmed}>
                   {confirmed ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
                   Επιβεβαίωση δεδομένων OCR
-                </Button>
-              </div>
+                  </Button>
+                  </div>
           </div>
         </div>
       </DialogContent>
