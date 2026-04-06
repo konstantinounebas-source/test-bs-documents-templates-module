@@ -262,19 +262,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [ocrFilterDept, setOcrFilterDept] = useState("");
   const [ocrFilterMonth, setOcrFilterMonth] = useState("");
 
-  const {
-    isBulkOcrRunning,
-    bulkOcrProgress,
-    bulkOcrDetailedResults,
-    selectedAttachmentIds,
-    setSelectedAttachmentIds,
-    missingOcrAttachmentDetails,
-    setMissingOcrAttachmentDetails,
-    detectMissingOCR,
-    executeSelectedBulkOCR,
-    stopBulkOCR
-  } = useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef);
-
   // free-text input & AI
   const [userInput, setUserInput] = useState("");
   const [isAiThinking, setIsAiThinking] = useState(false);
@@ -540,6 +527,20 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       }
     }
   }, [isMountedRef, addMsg, selBatch?.id, selDept]);
+
+  // useBulkOCRControl MUST come after performOCRInBackground, addMsg, and isMountedRef are defined
+  const {
+    isBulkOcrRunning,
+    bulkOcrProgress,
+    bulkOcrDetailedResults,
+    selectedAttachmentIds,
+    setSelectedAttachmentIds,
+    missingOcrAttachmentDetails,
+    setMissingOcrAttachmentDetails,
+    detectMissingOCR,
+    executeSelectedBulkOCR,
+    stopBulkOCR
+  } = useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef);
 
   const handleDetectMissing = async () => {
     setIsMissingOcrLoading(true);
