@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { format, parse } from "date-fns";
 
 export default function DailyDataTab({
   selDate,
@@ -38,7 +39,7 @@ export default function DailyDataTab({
           Daily Production Data
         </h3>
         <p className="text-xs text-slate-500 mt-0.5">
-          {selDate ? `${selDate}` : "Select a date from Intake"}
+          {selDate ? format(parse(selDate, "yyyy-MM-dd", new Date()), "dd/MM/yyyy") : "Select a date from Intake"}
         </p>
       </div>
 
@@ -50,7 +51,7 @@ export default function DailyDataTab({
           </p>
         ) : departmentsWithBatches.length === 0 ? (
           <p className="text-sm text-slate-500 text-center py-8">
-            No batches found for {selDate}
+            No batches found for {format(parse(selDate, "yyyy-MM-dd", new Date()), "dd/MM/yyyy")}
           </p>
         ) : (
           <div className="space-y-3">
