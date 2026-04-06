@@ -1705,6 +1705,7 @@ CRITICAL SAFETY RULES:
               setCustomDate={setCustomDate}
               onDateSelect={handleDateSelect}
               quickDates={quickDates}
+              onAddMsg={addMsg}
             />
 
             {/* Chat log */}

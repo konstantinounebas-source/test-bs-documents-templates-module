@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 
-export default function IntakeBlock({ selDate, selDept, customDate, setCustomDate, onDateSelect, quickDates }) {
+export default function IntakeBlock({ selDate, selDept, customDate, setCustomDate, onDateSelect, quickDates, onAddMsg }) {
   return (
     <div className="border-b bg-slate-50 p-3 space-y-3 flex-shrink-0">
       <div className="flex items-center gap-2">
@@ -13,10 +13,17 @@ export default function IntakeBlock({ selDate, selDept, customDate, setCustomDat
       </div>
       
       <div className="space-y-2">
-        <Input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} className="text-xs h-8" max={format(new Date(), "yyyy-MM-dd")} />
+        <Input type="date" value={customDate} onChange={e => {
+          setCustomDate(e.target.value);
+          onDateSelect(e.target.value);
+          if (onAddMsg) onAddMsg("user", e.target.value);
+        }} className="text-xs h-8" max={new Date().toISOString().split('T')[0]} />
         <div className="flex flex-wrap gap-2">
           {quickDates.map(qd => (
-            <Button key={qd.value} variant={selDate === qd.value ? "default" : "outline"} size="sm" className="text-xs" onClick={() => onDateSelect(qd.value)}>
+            <Button key={qd.value} variant={selDate === qd.value ? "default" : "outline"} size="sm" className="text-xs" onClick={() => {
+              onDateSelect(qd.value);
+              if (onAddMsg) onAddMsg("user", qd.label);
+            }}>
               {qd.label}
             </Button>
           ))}
@@ -25,7 +32,7 @@ export default function IntakeBlock({ selDate, selDept, customDate, setCustomDat
 
       {selDate && (
         <div className="pt-2 border-t text-xs text-slate-600">
-          <p className="font-medium">{format(new Date(selDate), "dd/MM/yyyy")}</p>
+          <p className="font-medium">{format(new Date(selDate + "T00:00:00"), "dd/MM/yyyy")}</p>
           {selDept && <p className="text-slate-500">{selDept}</p>}
         </div>
       )}
