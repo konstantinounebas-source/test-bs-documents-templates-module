@@ -30,6 +30,13 @@ import { checkOCRCacheStatus, saveCorrectedOCRCacheData } from "@/lib/ocrCacheSe
 import { useBulkOCRControl } from "./hooks/useBulkOCRControl";
 import { usePerformOCRInBackground } from "./hooks/usePerformOCRInBackground";
 import { useOcrFlow } from "./hooks/useOcrFlow";
+import { useOcrSequentialFlow } from "./hooks/useOcrSequentialFlow";
+import {
+  createOcrConfirmHandler,
+  createOcrSkipHandler,
+  createTeamsTimeConfirmHandler,
+  createTeamsTimeSkipHandler
+} from "./chatbot/ocrFlowHandlers";
 import BulkOCRPanel from "./BulkOCRPanel";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -656,70 +663,46 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     }
   };
 
-  const handleOcrConfirm = async (confirmedData) => {
-    addMsg("bot", 
-      `✅ OCR επιβεβαιώθηκε! Αποθηκεύω ${confirmedData.production_lines?.length || 0} γραμμές...`
-    );
+  // Initialize sequential OCR flow
+  const { advanceToNextForm } = useOcrSequentialFlow(
+    loadOCRDataFromCache,
+    setShowOcrModal,
+    setShowTeamsTimeOcrModal,
+    setViewProductionOcrResult,
+    setViewTeamsTimeOcrResult,
+    setCurrentProductionCacheId,
+    setCurrentTeamsTimeCacheId,
+    setOcrFormQueue,
+    ocrFormQueue,
+    ocrTargetAtt,
+    addMsg
+  );
 
-    // Save corrected data to production OCR cache
-    if (currentProductionCacheId) {
-      saveCorrectedOCRCacheData(currentProductionCacheId, confirmedData).catch(() => {});
-    }
+  const handleOcrConfirm = createOcrConfirmHandler({
+    addMsg,
+    selBatch,
+    currentProductionCacheId,
+    advanceToNextForm,
+    queryClient
+  });
 
-    // Wait for save to complete before advancing
-    if (selBatch?.id) {
-      await new Promise(resolve => {
-        saveOCRData(confirmedData, selBatch.id, () => {
-          queryClient.invalidateQueries(["Batch_Lines", selBatch.id]);
-          queryClient.invalidateQueries(["QC_Initial_Stock", selBatch.id]);
-          queryClient.invalidateQueries(["Operations", selBatch.id]);
-          addMsg("bot", `📦 Production δεδομένα αποθηκεύτηκαν.`);
-          resolve();
-        });
-      });
-    } else {
-      addMsg("bot", "⚠️ Δεν υπάρχει ενεργό batch. Επίλεξε batch πρώτα.");
-    }
-    
-    // Advance to next form (passes 'production' as completed form)
-    await advanceOcrFlow('production');
-  };
+  const handleOcrSkip = createOcrSkipHandler({
+    addMsg,
+    advanceToNextForm
+  });
 
-  const handleOcrSkip = async () => {
-    addMsg("bot", "✅ Production φόρμα παραλείφθηκε (δεν αποθηκεύτηκαν δεδομένα).");
-    // Advance to next form (passes 'production' as completed form)
-    await advanceOcrFlow('production');
-  };
+  const handleTeamsTimeOcrConfirm = createTeamsTimeConfirmHandler({
+    addMsg,
+    selBatch,
+    currentTeamsTimeCacheId,
+    advanceToNextForm,
+    queryClient
+  });
 
-  const handleTeamsTimeOcrConfirm = async (confirmedData) => {
-    addMsg("bot", `✅ Teams Time OCR επιβεβαιώθηκε! Αποθηκεύω...`);
-
-    // Save corrected data to teams_time OCR cache
-    if (currentTeamsTimeCacheId) {
-      saveCorrectedOCRCacheData(currentTeamsTimeCacheId, confirmedData).catch(() => {});
-    }
-
-    // Wait for save to complete before advancing
-    if (selBatch?.id) {
-      await new Promise(resolve => {
-        saveOCRTeamsTimeData(confirmedData, selBatch.id, () => {
-          queryClient.invalidateQueries(["TeamTimePerson", selBatch.id]);
-          queryClient.invalidateQueries(["Team_Time_Extra", selBatch.id]);
-          addMsg("bot", `📦 Teams Time δεδομένα αποθηκεύτηκαν.`);
-          resolve();
-        }, selBatch.department);
-      });
-    }
-    
-    // Advance to next form (passes 'teams_time' as completed form)
-    await advanceOcrFlow('teams_time');
-  };
-  
-  const handleTeamsTimeOcrSkip = async () => {
-    addMsg("bot", "✅ Teams Time φόρμα παραλείφθηκε (δεν αποθηκεύτηκαν δεδομένα).");
-    // Advance to next form (passes 'teams_time' as completed form)
-    await advanceOcrFlow('teams_time');
-  };
+  const handleTeamsTimeOcrSkip = createTeamsTimeSkipHandler({
+    addMsg,
+    advanceToNextForm
+  });
 
   // ── step handlers ─────────────────────────────────────────────────────────
   const handleDeptSelect = (dept) => {
