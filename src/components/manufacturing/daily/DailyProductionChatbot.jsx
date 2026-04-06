@@ -986,7 +986,7 @@ ${context}
             <AttachmentItem key={att.id} att={att}
               onDelete={id => deleteMutation.mutate(id)}
               onPreview={setPreviewFile}
-              onOCR={(a) => { setShowAttachmentsModal(false); handleOCR(a); }}
+              onOCR={handleOCR}
               isOcrLoading={ocrLoading && ocrTargetAtt?.id === att.id}
               isDeleting={deleteMutation.isPending} />
           ))}
