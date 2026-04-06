@@ -585,7 +585,10 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                              </button>
                            )}
                            <button
-                             onClick={() => setLines(prev => prev.filter((_, i) => i !== lineIdx))}
+                             onClick={() => {
+                               const newLines = lines.filter((_, i) => i !== lineIdx);
+                               updatePageLines(newLines);
+                             }}
                              className="p-0.5 rounded border border-slate-300 text-slate-400 hover:border-red-400 hover:text-red-600 hover:bg-red-50 transition-colors"
                              title="Διαγραφή γραμμής"
                            >

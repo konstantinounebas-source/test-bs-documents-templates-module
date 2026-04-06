@@ -257,10 +257,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   // OCR Status Tracking: { attachment_id: { production: { status, cache_id }, teams_time: { status, cache_id } } }
   const [attachmentOcrStatus, setAttachmentOcrStatus] = useState({});
   
-  // OCR form queue: track detected/completed forms per attachment for sequential processing
-  const [ocrFormQueue, setOcrFormQueue] = useState({}); // { att_id: { detected: ['production', 'teams_time'], completed: [], current: 'production' } }
+  // Per-attachment OCR flow state
+  // { att_id: { detected: ['production', 'teams_time'], completed: [], currentIndex: 0 } }
+  const [ocrFormQueue, setOcrFormQueue] = useState({});
   const [showManualFormDialog, setShowManualFormDialog] = useState(false);
-  const [pendingManualForm, setPendingManualForm] = useState(null); // { attId, formType }
 
   // missing OCR & bulk OCR control
   const [isMissingOcrLoading, setIsMissingOcrLoading] = useState(false);
@@ -632,14 +632,59 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     performOCRInBackground(att);
   };
   
+  // Advance to next form in queue or close all modals if queue exhausted
+  const advanceOcrFlow = async () => {
+    if (!ocrTargetAtt) return;
+    
+    const queue = ocrFormQueue[ocrTargetAtt.id];
+    if (!queue) return;
+    
+    const { detected, completed } = queue;
+    const remaining = detected.filter(f => !completed.includes(f));
+    
+    if (remaining.length === 0) {
+      // All forms processed
+      setShowOcrModal(false);
+      setShowTeamsTimeOcrModal(false);
+      setOcrTargetAtt(null);
+      addMsg("bot", "🎉 Όλες οι διαθέσιμες φόρμες έχουν ολοκληρωθεί.");
+      return;
+    }
+    
+    const nextForm = remaining[0];
+    if (nextForm === 'production') {
+      setShowTeamsTimeOcrModal(false);
+      const prodData = await loadOCRDataFromCache(ocrTargetAtt.id, 'production');
+      if (prodData) {
+        setCurrentProductionCacheId(prodData.cache_id);
+        setViewProductionOcrResult(prodData);
+        setShowOcrModal(true);
+      } else {
+        // No production data, ask if user wants to enter manually
+        setShowManualFormDialog(true);
+      }
+    } else if (nextForm === 'teams_time') {
+      setShowOcrModal(false);
+      const teamsData = await loadOCRDataFromCache(ocrTargetAtt.id, 'teams_time');
+      if (teamsData) {
+        setCurrentTeamsTimeCacheId(teamsData.cache_id);
+        setViewTeamsTimeOcrResult(teamsData);
+        setShowTeamsTimeOcrModal(true);
+      } else {
+        // No teams_time data, ask if user wants to enter manually
+        setShowManualFormDialog(true);
+      }
+    }
+  };
+  
   const openManualForm = (formType) => {
     if (!ocrTargetAtt) return;
-    // Initialize empty form for manual entry (no cache_id)
+    // Mark as detected if not already
     setOcrFormQueue(prev => ({
       ...prev,
       [ocrTargetAtt.id]: {
         ...prev[ocrTargetAtt.id],
-        detected: [...(prev[ocrTargetAtt.id]?.detected || []), formType]
+        detected: Array.from(new Set([...(prev[ocrTargetAtt.id]?.detected || []), formType]))
       }
     }));
     setShowManualFormDialog(false);
@@ -655,7 +700,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   };
 
   const handleOcrConfirm = async (confirmedData) => {
-    setShowOcrModal(false);
     addMsg("bot", 
       `✅ OCR επιβεβαιώθηκε! Αποθηκεύω ${confirmedData.production_lines?.length || 0} γραμμές...`
     );
@@ -676,7 +720,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       addMsg("bot", "⚠️ Δεν υπάρχει ενεργό batch. Επίλεξε batch πρώτα.");
     }
     
-    // Mark production as completed and continue to next form if exists
+    // Mark production as completed
     if (ocrTargetAtt) {
       setOcrFormQueue(prev => ({
         ...prev,
@@ -685,23 +729,16 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
           completed: [...(prev[ocrTargetAtt.id]?.completed || []), 'production']
         }
       }));
-      
-      const queue = ocrFormQueue[ocrTargetAtt.id] || {};
-      const remaining = (queue.detected || []).filter(f => f !== 'production' && !queue.completed?.includes(f));
-      
-      if (remaining.length > 0 && remaining.includes('teams_time') && currentTeamsTimeCacheId) {
-        // Auto-open teams_time modal if data exists
-        setCurrentTeamsTimeCacheId(currentTeamsTimeCacheId);
-        setShowTeamsTimeOcrModal(true);
-      }
     }
+    
+    // Advance to next form
+    await advanceOcrFlow();
   };
 
-  const handleOcrSkip = () => {
-    setShowOcrModal(false);
+  const handleOcrSkip = async () => {
     addMsg("bot", "✅ Production φόρμα παραλείφθηκε (δεν αποθηκεύτηκαν δεδομένα).");
     
-    // Mark production as skipped and continue to next form if exists
+    // Mark production as skipped (completed without saving)
     if (ocrTargetAtt) {
       setOcrFormQueue(prev => ({
         ...prev,
@@ -710,21 +747,13 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
           completed: [...(prev[ocrTargetAtt.id]?.completed || []), 'production']
         }
       }));
-      
-      const queue = ocrFormQueue[ocrTargetAtt.id] || {};
-      const remaining = (queue.detected || []).filter(f => f !== 'production' && !queue.completed?.includes(f));
-      
-      if (remaining.length > 0 && remaining.includes('teams_time') && currentTeamsTimeCacheId) {
-        // Auto-open teams_time modal if data exists
-        setShowTeamsTimeOcrModal(true);
-      } else if (remaining.length === 0) {
-        addMsg("bot", "🎉 Όλες οι διαθέσιμες φόρμες έχουν ολοκληρωθεί.");
-      }
     }
+    
+    // Advance to next form
+    await advanceOcrFlow();
   };
 
-  const handleTeamsTimeOcrConfirm = (confirmedData) => {
-    setShowTeamsTimeOcrModal(false);
+  const handleTeamsTimeOcrConfirm = async (confirmedData) => {
     addMsg("bot", `✅ Teams Time OCR επιβεβαιώθηκε! Αποθηκεύω...`);
 
     // Save corrected data to teams_time OCR cache
@@ -750,6 +779,27 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         }
       }));
     }
+    
+    // Advance to next form (or close if all done)
+    await advanceOcrFlow();
+  };
+  
+  const handleTeamsTimeOcrSkip = async () => {
+    addMsg("bot", "✅ Teams Time φόρμα παραλείφθηκε (δεν αποθηκεύτηκαν δεδομένα).");
+    
+    // Mark teams_time as skipped
+    if (ocrTargetAtt) {
+      setOcrFormQueue(prev => ({
+        ...prev,
+        [ocrTargetAtt.id]: {
+          ...prev[ocrTargetAtt.id],
+          completed: [...(prev[ocrTargetAtt.id]?.completed || []), 'teams_time']
+        }
+      }));
+    }
+    
+    // Advance to next form (or close if all done)
+    await advanceOcrFlow();
   };
 
   // ── step handlers ─────────────────────────────────────────────────────────
@@ -1221,35 +1271,36 @@ CRITICAL SAFETY RULES:
               onPreview={setPreviewFile}
               onOCR={handleOCR}
               onViewOCR={async (att) => {
-                const prodData = await loadOCRDataFromCache(att.id, "production");
-                const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
-                setOcrTargetAtt(att);
+                 const prodData = await loadOCRDataFromCache(att.id, "production");
+                 const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
+                 setOcrTargetAtt(att);
 
-                // Initialize form queue for this attachment
-                const detected = [];
-                if (prodData) detected.push('production');
-                if (teamsData) detected.push('teams_time');
+                 // Initialize form queue for this attachment
+                 const detected = [];
+                 if (prodData) detected.push('production');
+                 if (teamsData) detected.push('teams_time');
 
-                if (detected.length === 0) {
-                  addMsg("bot", "⚠️ Δεν υπάρχουν OCR δεδομένα για αυτό το αρχείο.");
-                  return;
-                }
+                 if (detected.length === 0) {
+                   addMsg("bot", "⚠️ Δεν υπάρχουν OCR δεδομένα για αυτό το αρχείο.");
+                   return;
+                 }
 
-                setOcrFormQueue(prev => ({
-                  ...prev,
-                  [att.id]: { detected, completed: [], current: detected[0] }
-                }));
+                 setOcrFormQueue(prev => ({
+                   ...prev,
+                   [att.id]: { detected, completed: [] }
+                 }));
 
-                if (prodData) {
-                  setCurrentProductionCacheId(prodData.cache_id);
-                  setViewProductionOcrResult(prodData);
-                  setShowOcrModal(true);
-                } else if (teamsData) {
-                  setCurrentTeamsTimeCacheId(teamsData.cache_id);
-                  setViewTeamsTimeOcrResult(teamsData);
-                  setShowTeamsTimeOcrModal(true);
-                }
-              }}
+                 // Open first detected form
+                 if (prodData) {
+                   setCurrentProductionCacheId(prodData.cache_id);
+                   setViewProductionOcrResult(prodData);
+                   setShowOcrModal(true);
+                 } else if (teamsData) {
+                   setCurrentTeamsTimeCacheId(teamsData.cache_id);
+                   setViewTeamsTimeOcrResult(teamsData);
+                   setShowTeamsTimeOcrModal(true);
+                 }
+               }}
               isOcrLoading={runningOcrAttachmentIds.has(att.id)}
               isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
               isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
@@ -1785,12 +1836,13 @@ CRITICAL SAFETY RULES:
           fileName={ocrTargetAtt.file_name}
           ocrResult={viewTeamsTimeOcrResult || {}}
           onConfirm={handleTeamsTimeOcrConfirm}
+          onSkip={handleTeamsTimeOcrSkip}
           totalPages={1}
           defaultPage={1}
         />
       )}
 
-      {/* Manual Form Dialog - Choose missing form type */}
+      {/* Manual Form Dialog - Open missing form */}
       {showManualFormDialog && ocrTargetAtt && (
         <Dialog open={showManualFormDialog} onOpenChange={setShowManualFormDialog}>
           <DialogContent className="max-w-sm">
@@ -1799,19 +1851,26 @@ CRITICAL SAFETY RULES:
             </DialogHeader>
             <div className="py-4 space-y-3">
               <p className="text-sm text-slate-700">
-                Ποια φόρμα θέλεις να εισάγεις χειροκίνητα για <strong>{ocrTargetAtt.file_name}</strong>;
+                Δεν βρέθηκαν OCR δεδομένα για αυτή τη φόρμα. Θέλεις να την εισάγεις χειροκίνητα;
               </p>
               <div className="flex flex-col gap-2">
-                {(!ocrFormQueue[ocrTargetAtt.id]?.detected?.includes('production')) && (
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => openManualForm('production')}>
-                    📋 Production
-                  </Button>
-                )}
-                {(!ocrFormQueue[ocrTargetAtt.id]?.detected?.includes('teams_time')) && (
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => openManualForm('teams_time')}>
-                    👥 Teams Time
-                  </Button>
-                )}
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700" 
+                  onClick={() => {
+                    const queue = ocrFormQueue[ocrTargetAtt.id];
+                    const nextForm = queue?.detected?.[queue.detected.length - 1];
+                    if (nextForm === 'production') {
+                      openManualForm('production');
+                    } else if (nextForm === 'teams_time') {
+                      openManualForm('teams_time');
+                    } else {
+                      setShowManualFormDialog(false);
+                    }
+                  }}>
+                  ✏️ Χειροκίνητη Εισαγωγή
+                </Button>
+                <Button size="sm" variant="outline" onClick={advanceOcrFlow}>
+                  Παράλειψη
+                </Button>
               </div>
             </div>
           </DialogContent>
