@@ -1238,9 +1238,9 @@ CRITICAL SAFETY RULES:
           </Button>
         </div>
         {existingBatchLines.length > 0 && (
-          <div className="space-y-1">
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Καταχωρημένες Γραμμές</p>
-            <div className="flex gap-1 text-[10px] font-semibold text-slate-400 px-1">
+          <div className="space-y-1 flex-1 overflow-y-auto min-h-0">
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider sticky top-0 bg-white py-1">Καταχωρημένες Γραμμές</p>
+            <div className="flex gap-1 text-[10px] font-semibold text-slate-400 px-1 sticky top-6 bg-white py-1">
               <span className="flex-1 min-w-0">Item</span>
               <span className="w-8 text-center flex-shrink-0">Sched.</span>
               <span className="w-12 text-center flex-shrink-0">Proc.</span>
@@ -1248,12 +1248,14 @@ CRITICAL SAFETY RULES:
               <span className="w-12 text-center flex-shrink-0">Scrap</span>
               <span className="w-4 flex-shrink-0"></span>
             </div>
-            {existingBatchLines.map(bl => (
-              <ExistingLineRow key={bl.id} bl={bl}
-                onSave={async (id, data) => { await base44.entities.Batch_Lines.update(id, data); queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]); }}
-                onDelete={async (id) => { await base44.entities.Batch_Lines.delete(id); queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]); toast.success("Γραμμή διαγράφηκε"); }}
-              />
-            ))}
+            <div className="space-y-1">
+              {existingBatchLines.map(bl => (
+                <ExistingLineRow key={bl.id} bl={bl}
+                  onSave={async (id, data) => { await base44.entities.Batch_Lines.update(id, data); queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]); }}
+                  onDelete={async (id) => { await base44.entities.Batch_Lines.delete(id); queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]); toast.success("Γραμμή διαγράφηκε"); }}
+                />
+              ))}
+            </div>
           </div>
         )}
         <div className="flex gap-2">
