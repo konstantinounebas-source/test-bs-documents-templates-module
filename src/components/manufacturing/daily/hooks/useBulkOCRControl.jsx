@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback } from "react";
-
 /**
  * Custom hook for managing bulk OCR with detailed tracking, selection, and stop capability.
  */

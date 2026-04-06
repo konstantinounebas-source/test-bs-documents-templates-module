@@ -29,10 +29,9 @@ export function usePerformOCRInBackground(
       // Step 1: Analyze file and detect form types FIRST
       failedStep = "analyzeFilePages";
       console.log("[OCR] analyzeFilePages start", { attachmentId: att.id, fileName: att.file_name, failedStep });
-      const fileAnalysisRaw = await base44.functions.invoke("analyzeFilePages", {
+      await base44.functions.invoke("analyzeFilePages", {
         file_url: att.file_url,
       });
-      const fileAnalysis = fileAnalysisRaw?.data || fileAnalysisRaw?.result || fileAnalysisRaw?.output || fileAnalysisRaw || {};
       console.log("[OCR] analyzeFilePages ok", { attachmentId: att.id, elapsedMs: Date.now() - startTime });
 
       await new Promise((r) => setTimeout(r, 300));
@@ -63,6 +62,7 @@ export function usePerformOCRInBackground(
           status: "no_valid_forms",
           attachmentId: att.id,
           fileName: att.file_name,
+          batchHeaderId: att.batch_header_id,
           message: "Δεν ανιχνεύθηκαν έγκυρες φόρμες",
           detectedForms: [],
         };
