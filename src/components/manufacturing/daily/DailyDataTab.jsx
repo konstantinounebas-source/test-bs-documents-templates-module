@@ -80,7 +80,14 @@ export default function DailyDataTab({
         ) : (
           <div className="space-y-3">
             <div className="flex flex-wrap gap-2 mb-3">
-              {departments.map(dept => {
+              {departments.sort((a, b) => {
+                const deptOrder = ["Pre-paint", "Paint", "Sub-assembly", "Assembly", "Refurbishment", "Delivery"];
+                const aIdx = deptOrder.indexOf(a.name);
+                const bIdx = deptOrder.indexOf(b.name);
+                if (aIdx === -1) return 1;
+                if (bIdx === -1) return -1;
+                return aIdx - bIdx;
+              }).map(dept => {
                 const hasBatch = departmentsWithBatches.has(dept.name);
                 const bundleAvailable = hasBatch && selDate ? hasBundleAvailable(dept.name, selDate) : false;
                 return (

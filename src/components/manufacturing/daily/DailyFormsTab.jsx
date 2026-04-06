@@ -99,7 +99,14 @@ export default function DailyFormsTab({
     return groups;
   }, [allDepartments, dailyBatches, allDailyAttachments, allBundles, dailyAssignments]);
 
-  const departments = Object.keys(departmentGroups).sort();
+  const deptOrder = ["Pre-paint", "Paint", "Sub-assembly", "Assembly", "Refurbishment", "Delivery"];
+  const departments = Object.keys(departmentGroups).sort((a, b) => {
+    const aIdx = deptOrder.indexOf(a);
+    const bIdx = deptOrder.indexOf(b);
+    if (aIdx === -1) return 1;
+    if (bIdx === -1) return -1;
+    return aIdx - bIdx;
+  });
   const currentDeptAttachments = selectedDept ? departmentGroups[selectedDept]?.attachments || [] : [];
 
   if (!selDate) {
