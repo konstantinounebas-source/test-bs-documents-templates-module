@@ -146,8 +146,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   // wizard state
   const [step, setStep]         = useState("file_upload");   // file_upload | dept | date | batch | attachments | batch_lines_review | batch_lines_add | qc | operations | team_persons | team_extra | help_in | consumables
   const [selDept, setSelDept]   = useState("");
-  const [selDate, setSelDate]   = useState("");
-  const [customDate, setCustomDate] = useState("");
+  const [selDate, setSelDate]   = useState(todayStr());  // Always init with today
+  const [customDate, setCustomDate] = useState(todayStr());
   const [showPicker, setShowPicker] = useState(false);
   const [selBatch, setSelBatch] = useState(null);
 
@@ -1363,19 +1363,17 @@ CRITICAL SAFETY RULES:
       {step === "date" && (
         <div className="border-t p-3 space-y-2 flex-shrink-0">
           <p className="text-xs text-slate-500 font-medium">Επέλεξε ημερομηνία:</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2">
+            <Input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} className="text-xs h-8 flex-1" max={todayStr()} />
+            <Button size="sm" className="h-8 text-xs bg-blue-600 hover:bg-blue-700" onClick={() => handleDateSelect(customDate)}>OK</Button>
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1 border-t">
             {quickDates.map(qd => (
               <Button key={qd.value} variant="outline" size="sm" className="text-xs" onClick={() => handleDateSelect(qd.value)}>
-                <Calendar className="w-3 h-3 mr-1" />{qd.label}
+                {qd.label}
               </Button>
             ))}
           </div>
-          {showPicker && (
-            <div className="flex gap-2 mt-1">
-              <Input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} className="text-xs h-8 flex-1" max={todayStr()} />
-              <Button size="sm" className="h-8 text-xs" disabled={!customDate} onClick={() => handleDateSelect(customDate)}>OK</Button>
-            </div>
-          )}
         </div>
       )}
       {step === "batch" && (
@@ -1658,9 +1656,9 @@ CRITICAL SAFETY RULES:
 
 
 
-      {/* Split Layout - Inline Chat Panel */}
+      {/* Split Layout - Inline Chat Panel (1/3 width) */}
       {isSplitLayout && (
-        <div className={`flex flex-col bg-white ${splitFullscreen ? "fixed inset-x-0 bottom-0 z-50" : "h-full"}`} style={splitFullscreen ? { top: "64px" } : {}}>
+        <div className={`flex flex-col bg-white ${splitFullscreen ? "fixed inset-x-0 bottom-0 z-50" : "h-full"}`} style={splitFullscreen ? { top: "64px" } : { width: "33.333%" }}>
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white border-b border-blue-700 select-none flex-shrink-0">
             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1681,16 +1679,7 @@ CRITICAL SAFETY RULES:
           </div>
 
           {/* Intake Block */}
-          <IntakeBlock
-            quickDates={quickDates}
-            customDate={customDate}
-            setCustomDate={setCustomDate}
-            showPicker={showPicker}
-            setShowPicker={setShowPicker}
-            onDateSelect={handleDateSelect}
-            selDate={selDate}
-            selDept={selDept}
-          />
+          <IntakeBlock selDate={selDate} selDept={selDept} />
 
           {/* Chat log */}
           <ScrollArea className="flex-1 p-4">
