@@ -14,7 +14,7 @@ import {
   Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward, ZoomIn, ZoomOut, Scan, AlertTriangle, GripHorizontal, Minimize2, Maximize2, Maximize
 } from "lucide-react";
 import { toast } from "sonner";
-import { format, subDays, isMonday } from "date-fns";
+import { format, subDays } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ExistingLineRow from "./chatbot/ExistingLineRow";
 import ItemCodeMultiSelect from "./chatbot/ItemCodeMultiSelect";
@@ -158,7 +158,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [fullscreen, setFullscreen] = useState(false);
   const [position, setPosition] = useState("right"); // "left" or "right"
   const [splitFullscreen, setSplitFullscreen] = useState(false);
-  const [splitClosed, setSplitClosed] = useState(false);
   
   // dragging & resizing state
   const [panelPos, setPanelPos] = useState({ x: window.innerWidth - 450 - 24, y: 64 });
@@ -290,7 +289,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       const lines = await base44.entities.StdSetLines.filter({ bundle_id: bundleId });
       // Return original item codes as-is (without normalization) for OCR comparison
       const codes = [...new Set(lines.map(l => l.item_code))].filter(Boolean).sort();
-      console.log(`✓ Bundle ${bundleId.slice(0,8)}: Loaded ${codes.length} item codes:`, codes.slice(0, 20));
       return codes;
     },
     enabled: !!selBatch,
@@ -1279,7 +1277,6 @@ ${context}
                          const blCode = bl.item_code?.trim() || "";
                          // Exact match only
                          const exists = bundleItemCodes.includes(blCode);
-                         console.log(`Check "${blCode}": exists=${exists}, bundleHas=${bundleItemCodes.slice(0, 5)}`);
                          if (exists) return null;
                          return (
                            <div key={bl.id} className="bg-red-50 border border-red-200 rounded px-2 py-1.5 flex items-start gap-2">
