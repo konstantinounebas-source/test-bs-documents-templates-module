@@ -6,12 +6,22 @@ import { makeBulkOCRRunner } from "../chatbot/BulkOCRExecutor";
  */
 export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, queryClient) {
   const [isBulkOcrRunning, setIsBulkOcrRunning] = useState(false);
-  const [bulkOcrProgress, setBulkOcrProgress] = useState({ processed: 0, total: 0, completed: 0, failed: 0 });
+  // IMPROVEMENT #7: Enhanced progress breakdown (completed/failed/no_valid_forms/skipped)
+  const [bulkOcrProgress, setBulkOcrProgress] = useState({ 
+    processed: 0, 
+    total: 0, 
+    completed: 0, 
+    failed: 0,
+    no_valid_forms: 0,
+    skipped: 0
+  });
   const [bulkOcrDetailedResults, setBulkOcrDetailedResults] = useState([]);
   const [selectedAttachmentIds, setSelectedAttachmentIds] = useState(new Set());
   const [missingOcrAttachmentDetails, setMissingOcrAttachmentDetails] = useState([]);
   
   const bulkOcrStopRequestedRef = useRef(false);
+  // IMPROVEMENT #6: Guard against concurrent duplicate OCR runs
+  const processingAttachmentIdsRef = useRef(new Set());
 
   /**
    * Detect attachments missing OCR.
@@ -86,7 +96,15 @@ export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, 
 
     setIsBulkOcrRunning(true);
     bulkOcrStopRequestedRef.current = false;
-    setBulkOcrProgress({ processed: 0, total: fullAttachments.length, completed: 0, failed: 0 });
+    // IMPROVEMENT #7: Initialize all progress counters
+    setBulkOcrProgress({ 
+      processed: 0, 
+      total: fullAttachments.length, 
+      completed: 0, 
+      failed: 0,
+      no_valid_forms: 0,
+      skipped: 0
+    });
     setBulkOcrDetailedResults([]);
     addMsg("bot", `⏳ Started bulk OCR for ${fullAttachments.length} attachments (3 concurrent)...`);
 
@@ -117,29 +135,60 @@ export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, 
           }
 
           try {
+            // IMPROVEMENT #6: Guard against concurrent duplicate OCR runs
+            if (processingAttachmentIdsRef.current.has(att.id)) {
+              // Skip if already being processed
+              results.push({
+                attachmentId: att.id,
+                fileName: att.file_name,
+                status: "skipped",
+                message: "Already being processed"
+              });
+              if (isMountedRef.current) {
+                setBulkOcrProgress(p => ({ ...p, processed: p.processed + 1, skipped: p.skipped + 1 }));
+              }
+              return;
+            }
+
+            processingAttachmentIdsRef.current.add(att.id);
+
             // Pass FULL attachment object with silentBulk flag
             const result = await performOCRInBackground(att, { silentBulk: true });
+
+            // IMPROVEMENT #2: Validate that success means actual result was produced
+            const actualStatus = result?.status || "unknown";
+            // Map undefined status to failed if no cache IDs exist
+            const finalStatus = !result?.status && !result?.productionCacheId && !result?.teamsTimeCacheId 
+              ? "failed" 
+              : actualStatus;
 
             // Classify result status
             const resultEntry = {
               attachmentId: att.id,
               fileName: att.file_name,
-              status: result?.status || "completed",
-              message: result?.message
+              status: finalStatus,
+              message: result?.message,
+              // IMPROVEMENT #7: Track duration for observability
+              duration: result?.duration
             };
 
             results.push(resultEntry);
 
-            // Update progress and log based on status
-            if (result?.status === "no_valid_forms") {
+            // IMPROVEMENT #7: Update progress with detailed breakdown
+            if (finalStatus === "no_valid_forms") {
               addMsg("bot", `⚠️ ${att.file_name} — ${result.message || "Δεν ανιχνεύθηκαν έγκυρες φόρμες"}`);
               if (isMountedRef.current) {
-                setBulkOcrProgress(p => ({ ...p, processed: p.processed + 1 }));
+                setBulkOcrProgress(p => ({ ...p, processed: p.processed + 1, no_valid_forms: p.no_valid_forms + 1 }));
               }
-            } else if (result?.status === "completed" || !result?.status) {
-              addMsg("bot", `✅ ${att.file_name} — OCR completed`);
+            } else if (finalStatus === "completed") {
+              addMsg("bot", `✅ ${att.file_name} — OCR completed${result?.duration ? ` (${result.duration}ms)` : ""}`);
               if (isMountedRef.current) {
                 setBulkOcrProgress(p => ({ ...p, processed: p.processed + 1, completed: p.completed + 1 }));
+              }
+            } else if (finalStatus === "skipped") {
+              // Silent skip (already processing)
+              if (isMountedRef.current) {
+                setBulkOcrProgress(p => ({ ...p, processed: p.processed + 1, skipped: p.skipped + 1 }));
               }
             } else {
               // Failed
@@ -149,17 +198,23 @@ export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, 
               }
             }
           } catch (err) {
+            // IMPROVEMENT #3 #7: Log failures with structured info
+            const errorMsg = err?.message || "Unknown error";
+            console.error(`[BulkOCR] Failed ${att.id} | error=${errorMsg}`);
+
             // Handle thrown errors
             results.push({
               attachmentId: att.id,
               fileName: att.file_name,
               status: "failed",
-              error: err?.message || "Unknown error"
+              error: errorMsg
             });
-            addMsg("bot", `❌ ${att.file_name} — ${err?.message || "OCR failed"}`);
+            addMsg("bot", `❌ ${att.file_name} — ${errorMsg}`);
             if (isMountedRef.current) {
               setBulkOcrProgress(p => ({ ...p, processed: p.processed + 1, failed: p.failed + 1 }));
             }
+          } finally {
+            processingAttachmentIdsRef.current.delete(att.id);
           }
         });
 
@@ -173,19 +228,31 @@ export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, 
         const skipped = results.filter(r => r.status === "skipped").length;
         const noValidForms = results.filter(r => r.status === "no_valid_forms").length;
 
-        let summary = `✅ Bulk OCR complete. ${completed} completed`;
-        if (failed > 0) summary += `, ${failed} ❌ failed`;
-        if (noValidForms > 0) summary += `, ${noValidForms} ⚠️ no valid forms`;
-        if (skipped > 0) summary += `, ${skipped} skipped`;
+        // IMPROVEMENT #7: Detailed summary with all status categories
+        let summary = `✅ Bulk OCR complete: ${completed} completed`;
+        if (failed > 0) summary += ` | ${failed} ❌ failed`;
+        if (noValidForms > 0) summary += ` | ${noValidForms} ⚠️ no forms`;
+        if (skipped > 0) summary += ` | ${skipped} skipped`;
 
         if (bulkOcrStopRequestedRef.current) {
           addMsg("bot", `⏹ ${summary}`);
         } else {
           addMsg("bot", summary);
         }
-        // After bulk OCR completes, refresh OCR cache for next missing detection
+
+        // IMPROVEMENT #5: Invalidate multiple caches for consistent state
         if (queryClient) {
-          queryClient.invalidateQueries(["OCRCache-All"]);
+          queryClient.invalidateQueries({ queryKey: ["OCRCache-All"], exact: true });
+          queryClient.invalidateQueries({ queryKey: ["BatchAttachments-All"], exact: true });
+          // Also invalidate active batch if available
+          const activeBatchIds = results
+            .map(r => results[0]?.batchHeaderId)
+            .filter(Boolean);
+          if (activeBatchIds.length > 0) {
+            activeBatchIds.forEach(bid => {
+              queryClient.invalidateQueries({ queryKey: ["BatchAttachments", bid], exact: true });
+            });
+          }
         }
         setIsBulkOcrRunning(false);
       }

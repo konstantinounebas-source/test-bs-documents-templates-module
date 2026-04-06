@@ -587,12 +587,20 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const handleDetectMissing = async () => {
     setIsMissingOcrLoading(true);
     try {
-      // Refresh OCR cache data before detection
-      await queryClient.refetchQueries(["OCRCache-All"]);
-      // Optionally refresh attachments too
-      await queryClient.refetchQueries(["BatchAttachments-All"]);
+      // IMPROVEMENT #1: Ensure fresh data by awaiting refetch to completion
+      // This waits for new data to be available, not just marking as stale
+      const refetchResults = await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["OCRCache-All"], exact: true }),
+        queryClient.refetchQueries({ queryKey: ["BatchAttachments-All"], exact: true })
+      ]);
       
-      const { grouped, details } = detectMissingOCR(allBatchHeaders, allBatchAttachments, allOCRCacheRecords, ocrFilterDept, ocrFilterMonth);
+      // After refetch completes, data is guaranteed fresh in React Query cache
+      // Use the latest data from query cache, not stale state variables
+      const freshCacheRecords = queryClient.getQueryData(["OCRCache-All"]) || [];
+      const freshAttachments = queryClient.getQueryData(["BatchAttachments-All"]) || [];
+      const freshBatches = queryClient.getQueryData(["BatchHeader-All"]) || [];
+      
+      const { grouped, details } = detectMissingOCR(freshBatches, freshAttachments, freshCacheRecords, ocrFilterDept, ocrFilterMonth);
       setMissingOcrAttachmentDetails(details);
       setSelectedAttachmentIds(new Set(details.map(d => d.attachmentId)));
       let msg = `✅ Found ${details.length} attachments missing OCR.\n`;
@@ -603,6 +611,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         });
       }
       addMsg("bot", msg);
+    } catch (err) {
+      if (isMountedRef.current) {
+        addMsg("bot", `❌ Missing OCR detection failed: ${err?.message || "Unknown error"}`);
+      }
     } finally {
       setIsMissingOcrLoading(false);
     }
