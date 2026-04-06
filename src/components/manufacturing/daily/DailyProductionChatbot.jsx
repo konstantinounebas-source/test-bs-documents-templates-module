@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Bot, X, Send, Paperclip, Upload, FileText, Image as ImageIcon,
   Download, Eye, Trash2, Calendar,
-  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward, ZoomIn, ZoomOut, Scan, AlertTriangle, GripHorizontal, Minimize2, Maximize2, Maximize
+  Loader2, CheckCircle2, Plus, RotateCw, RotateCcw, SkipForward, FastForward, ZoomIn, ZoomOut, Scan, AlertTriangle, GripHorizontal, Minimize2, Maximize2, Maximize, Settings, Zap, BarChart3
 } from "lucide-react";
 import { toast } from "sonner";
 import { format, subDays } from "date-fns";
@@ -141,6 +141,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isResizing, setIsResizing] = useState(false);
+  const [activeSection, setActiveSection] = useState("daily-forms"); // "daily-forms" | "daily-data"
   const panelRef = useRef();
 
   // wizard state
@@ -1671,6 +1672,40 @@ CRITICAL SAFETY RULES:
             onDateSelect={handleDateSelect}
             quickDates={quickDates}
           />
+
+          {/* Top Navigation */}
+          <div className="flex items-center gap-1 bg-slate-50 border-b border-slate-200 px-3 py-2 flex-shrink-0">
+            <button
+              onClick={() => setActiveSection("daily-forms")}
+              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                activeSection === "daily-forms"
+                  ? "bg-blue-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              Daily Forms
+            </button>
+            <button
+              onClick={() => setActiveSection("daily-data")}
+              className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                activeSection === "daily-data"
+                  ? "bg-blue-600 text-white"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              Daily Data
+            </button>
+            <div className="flex-1" />
+            <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100" title="Processing">
+              <Settings className="w-4 h-4" />
+            </button>
+            <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100" title="OCR Tools">
+              <Zap className="w-4 h-4" />
+            </button>
+            <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100" title="Metrics & KPI">
+              <BarChart3 className="w-4 h-4" />
+            </button>
+          </div>
 
           {/* Chat log */}
           <ScrollArea className="flex-1 p-4">
