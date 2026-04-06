@@ -16,8 +16,9 @@ export function usePerformOCRInBackground(
   return useCallback(async (att, options = {}) => {
     const { silentBulk = false } = options;
     const startTime = Date.now();
-    let failedStep = null;
+    let failedStep = "init";
     let detectedForms = [];
+    let detectedFormsForLog = [];
 
     try {
       // Validate input
@@ -27,22 +28,22 @@ export function usePerformOCRInBackground(
 
       // Step 1: Analyze file and detect form types FIRST
       failedStep = "analyzeFilePages";
-      console.log("[OCR] analyzeFilePages start", att.id, att.file_name);
+      console.log("[OCR] analyzeFilePages start", { attachmentId: att.id, fileName: att.file_name, failedStep });
       const fileAnalysisRaw = await base44.functions.invoke("analyzeFilePages", {
         file_url: att.file_url,
       });
       const fileAnalysis = fileAnalysisRaw?.data || fileAnalysisRaw?.result || fileAnalysisRaw?.output || fileAnalysisRaw || {};
-      console.log("[OCR] analyzeFilePages ok", att.id, `${Date.now() - startTime}ms`);
+      console.log("[OCR] analyzeFilePages ok", { attachmentId: att.id, elapsedMs: Date.now() - startTime });
 
       await new Promise((r) => setTimeout(r, 300));
 
       failedStep = "detectFormType";
-      console.log("[OCR] detectFormType start", att.id, att.file_name);
+      console.log("[OCR] detectFormType start", { attachmentId: att.id, fileName: att.file_name, failedStep });
       const detectResultRaw = await base44.functions.invoke("detectFormType", {
         file_url: att.file_url,
       });
       const detectResult = detectResultRaw?.data || detectResultRaw?.result || detectResultRaw?.output || detectResultRaw || {};
-      console.log("[OCR] detectFormType ok", att.id, `${Date.now() - startTime}ms`);
+      console.log("[OCR] detectFormType ok", { attachmentId: att.id, elapsedMs: Date.now() - startTime });
       const detectedPages = detectResult?.pages || {};
 
       detectedForms = [...new Set(
@@ -50,6 +51,7 @@ export function usePerformOCRInBackground(
           .map((p) => p?.form_type)
           .filter((type) => type === "production" || type === "teams_time")
       )];
+      detectedFormsForLog = detectedForms;
 
       if (detectedForms.length === 0) {
         // NO VALID FORMS DETECTED — Return status, don't treat as success
@@ -82,6 +84,7 @@ export function usePerformOCRInBackground(
           }));
         }
 
+        failedStep = `checkOCRCacheStatus:${formType}`;
         const cacheStatus = await checkOCRCacheStatus(att.id, formType);
 
         if (cacheStatus.isProcessing) {
@@ -115,8 +118,8 @@ export function usePerformOCRInBackground(
           return;
         }
 
-        failedStep = `ocrWithCache (${formType})`;
-        console.log("[OCR] ocrWithCache start", att.id, formType);
+        failedStep = `ocrWithCache:${formType}`;
+        console.log("[OCR] ocrWithCache start", { attachmentId: att.id, formType, failedStep });
         const res = await ocrWithCache({
           attachment_id: att.id,
           batch_header_id: att.batch_header_id || selBatch?.id,
@@ -125,7 +128,7 @@ export function usePerformOCRInBackground(
           file_name: att.file_name,
           file_url: att.file_url,
         });
-        console.log("[OCR] ocrWithCache ok", att.id, formType, `${Date.now() - startTime}ms`);
+        console.log("[OCR] ocrWithCache ok", { attachmentId: att.id, formType, elapsedMs: Date.now() - startTime });
         const data = res?.data || res;
 
         if (isMountedRef.current) {
@@ -194,11 +197,12 @@ export function usePerformOCRInBackground(
         attachmentId: att?.id,
         fileName: att?.file_name,
         batchHeaderId: att?.batch_header_id,
-        detectedForms: detectedForms.length > 0 ? detectedForms : undefined,
         failedStep,
+        detectedForms: detectedFormsForLog,
+        durationMs: Date.now() - startTime,
         message: err?.message,
         status: err?.response?.status,
-        response: err?.response?.data,
+        responseData: err?.response?.data,
       });
 
       if (!silentBulk) {

@@ -121,14 +121,15 @@ export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, 
         const batch = fullAttachments.slice(i, i + concurrency);
         const promises = batch.map(async (att) => {
           if (bulkOcrStopRequestedRef.current) {
-            // Mark as skipped if stop was requested
+            // Mark as skipped if stop was requested — must include batchHeaderId for consistency
             results.push({
               attachmentId: att.id,
               fileName: att.file_name,
+              batchHeaderId: att.batch_header_id,
               status: "skipped"
             });
             if (isMountedRef.current) {
-              setBulkOcrProgress(p => ({ ...p, processed: p.processed + 1 }));
+              setBulkOcrProgress(p => ({ ...p, processed: p.processed + 1, skipped: p.skipped + 1 }));
             }
             return;
           }
