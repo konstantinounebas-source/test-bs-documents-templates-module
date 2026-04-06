@@ -31,6 +31,8 @@ import { ocrProductionForm } from "@/functions/ocrProductionForm";
 import { ocrTeamsTimeForm } from "@/functions/ocrTeamsTimeForm";
 import { saveOCRData } from "./chatbot/ocrSave";
 import { saveOCRTeamsTimeData } from "./chatbot/ocrTeamsTimeSave";
+import { checkOCRCacheStatus, supersedeCurrentOCRCache, saveCorrectedOCRCacheData } from "@/lib/ocrCacheService";
+import { ocrWithCache } from "@/functions/ocrWithCache";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
@@ -192,6 +194,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [ocrTargetAtt, setOcrTargetAtt] = useState(null);
   const [ocrResult, setOcrResult] = useState(null);
   const [showOcrModal, setShowOcrModal] = useState(false);
+  const [currentOcrCacheId, setCurrentOcrCacheId] = useState(null);
   // Teams Time OCR state
   const [showTeamsTimeOcrModal, setShowTeamsTimeOcrModal] = useState(false);
   const [teamsTimeOcrResult, setTeamsTimeOcrResult] = useState(null);
@@ -395,102 +398,108 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
   const handleOCR = async (att) => {
     setOcrTargetAtt(att);
-    addMsg("bot", `🔍 Σάρωση αρχείου για ανίχνευση φορμών...`);
     setOcrLoading(true);
 
     try {
-      // Step 0: Analyze file type and page count
+      // Step 0: Check OCR cache
+      const cacheStatus = await checkOCRCacheStatus(att.id);
+
+      if (cacheStatus.isProcessing) {
+        addMsg("bot", "⏳ OCR is already processing for this file. Please wait.");
+        return;
+      }
+
+      if (cacheStatus.canUseCache) {
+        const cached = cacheStatus.record;
+        addMsg("bot", `✅ Χρήση cached OCR δεδομένων για "${att.file_name}".`);
+        setCurrentOcrCacheId(cached.id);
+        setOcrResult(cached.extracted_data_json);
+        setShowOcrModal(true);
+        return;
+      }
+
+      // Supersede any existing cache record before running fresh OCR
+      await supersedeCurrentOCRCache(att.id);
+
+      addMsg("bot", `🔍 Σάρωση αρχείου για ανίχνευση φορμών...`);
+
+      // Step 1: Analyze file type and page count
       const fileAnalysisRaw = await base44.functions.invoke("analyzeFilePages", { file_url: att.file_url });
-      console.log("analyzeFilePages raw result:", fileAnalysisRaw);
-
-      const fileAnalysis =
-        fileAnalysisRaw?.data ||
-        fileAnalysisRaw?.result ||
-        fileAnalysisRaw?.output ||
-        fileAnalysisRaw || {};
-
+      const fileAnalysis = fileAnalysisRaw?.data || fileAnalysisRaw?.result || fileAnalysisRaw?.output || fileAnalysisRaw || {};
       const actualPageCount = Number(fileAnalysis?.page_count || 1);
 
       await new Promise(r => setTimeout(r, 300));
 
       const detectResultRaw = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
-      console.log("detectFormType raw result:", detectResultRaw);
-
-      const detectResult =
-        detectResultRaw?.data ||
-        detectResultRaw?.result ||
-        detectResultRaw?.output ||
-        detectResultRaw || {};
-
+      const detectResult = detectResultRaw?.data || detectResultRaw?.result || detectResultRaw?.output || detectResultRaw || {};
       const detectedPages = detectResult?.pages || {};
 
       const detectedForms = Object.values(detectedPages)
         .map(p => p?.form_type)
         .filter(type => type === "production" || type === "teams_time");
 
-      const effectivePageCount = actualPageCount;
-
-      console.log("Actual page count:", actualPageCount);
-      console.log("Detected pages:", detectedPages);
-      console.log("Detected forms:", detectedForms);
-
-      addMsg(
-        "bot",
-        `📄 Το αρχείο αναγνωρίστηκε ως **${fileAnalysis.file_type || "unknown"}**\n` +
-        `📋 Συνολικές σελίδες αρχείου: **${effectivePageCount}**`
+      addMsg("bot",
+        `📄 Τύπος: **${fileAnalysis.file_type || "unknown"}** · Σελίδες: **${actualPageCount}**`
       );
 
       if (detectedForms.length === 0) {
-        console.warn("No valid forms detected.");
         addMsg("bot", "⚠️ Δεν ανιχνεύθηκαν έγκυρες φόρμες στο αρχείο.");
         return;
       }
 
-      // Display detailed detection results per page
       const detectionDetails = Object.entries(detectedPages).length
-        ? Object.entries(detectedPages)
-            .map(([page, data]) => `Σελ.${page} = ${data?.form_type || "unknown"}`)
-            .join(", ")
+        ? Object.entries(detectedPages).map(([page, data]) => `Σελ.${page} = ${data?.form_type || "unknown"}`).join(", ")
         : "Δεν εντοπίστηκαν συγκεκριμένες σελίδες";
       addMsg("bot", `✅ **Σάρωση ολοκληρώθηκε!**\n📋 Ανιχνεύθηκε: ${detectionDetails}`);
       addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
 
-      // Step 2: Call OCR functions for detected forms
+      // Step 2: Run OCR via cache function
       const ocrPromises = [];
-      
+
       if (detectedForms.includes("production")) {
         ocrPromises.push(
-          ocrProductionForm({ file_url: att.file_url }).then(res => ({ type: "production", data: res.data }))
+          ocrWithCache({
+            attachment_id: att.id,
+            batch_header_id: att.batch_header_id,
+            department: att.department || selDept,
+            form_type: "production",
+            file_name: att.file_name,
+            file_url: att.file_url
+          }).then(res => {
+            const data = res?.data || res;
+            return { type: "production", data, cache_id: data?.cache_id };
+          })
         );
       }
-      
+
       if (detectedForms.includes("teams_time")) {
         ocrPromises.push(
-          ocrTeamsTimeForm({ file_url: att.file_url, file_name: att.file_name }).then(res => ({ type: "teams_time", data: res.data }))
+          ocrTeamsTimeForm({ file_url: att.file_url, file_name: att.file_name })
+            .then(res => ({ type: "teams_time", data: res.data }))
         );
       }
 
       const results = await Promise.all(ocrPromises);
-      
-      // Step 3: Route to correct modals based on what was found
+
+      // Step 3: Route to correct modals
       const prodResult = results.find(r => r.type === "production");
       const teamsResult = results.find(r => r.type === "teams_time");
 
       if (prodResult) {
-        setOcrResult(prodResult.data);
+        if (prodResult.cache_id) setCurrentOcrCacheId(prodResult.cache_id);
+        // ocrWithCache returns extracted_data directly
+        const ocrData = prodResult.data?.extracted_data ? prodResult.data : { extracted_data: prodResult.data, validation: prodResult.data?.validation };
+        setOcrResult(ocrData);
       }
-      
+
       if (teamsResult) {
-        // If production also exists, store teams_time to show after production confirm
         if (prodResult) {
           setPendingTeamsTimeOcr({ result: teamsResult.data, att });
         } else {
-          // If only teams_time, show it directly
           setTeamsTimeOcrResult(teamsResult.data);
         }
       }
 
-      // Show modals
       if (prodResult) {
         setShowOcrModal(true);
         addMsg("bot", `✅ OCR ολοκληρώθηκε! ${prodResult.data?.extracted_data?.production_lines?.length || 0} γραμμές παραγωγής${teamsResult ? ` · ${teamsResult.data?.extracted_data?.team_persons?.length || 0} άτομα Teams Time` : ""}. Επιβεβαίωσε τα δεδομένα.`);
@@ -511,6 +520,14 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     addMsg("bot", 
       `✅ OCR επιβεβαιώθηκε! Αποθηκεύω ${confirmedData.production_lines?.length || 0} γραμμές...`
     );
+
+    // Save corrected data to OCR cache
+    if (currentOcrCacheId) {
+      saveCorrectedOCRCacheData(currentOcrCacheId, confirmedData).catch(err =>
+        console.error("Failed to save corrected OCR cache data:", err)
+      );
+    }
+
     if (selBatch?.id) {
       saveOCRData(confirmedData, selBatch.id, () => {
         queryClient.invalidateQueries(["Batch_Lines", selBatch.id]);
