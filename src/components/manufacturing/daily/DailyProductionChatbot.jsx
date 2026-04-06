@@ -438,6 +438,24 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     stopBulkOCR
   } = useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, queryClient);
 
+  const loadOCRDataFromCache = async (attachmentId, formType) => {
+    try {
+      const cacheStatus = await checkOCRCacheStatus(attachmentId, formType);
+      if (cacheStatus.canUseCache) {
+        const cached = cacheStatus.record;
+        return {
+          extracted_data: cached.extracted_data_json,
+          validation: cached.validation_json,
+          page_count: cached.page_count,
+          cache_id: cached.id
+        };
+      }
+    } catch (err) {
+      console.error(`Failed to load OCR cache for ${formType}:`, err);
+    }
+    return null;
+  };
+
   const handleDetectMissing = async () => {
     setIsMissingOcrLoading(true);
     try {
@@ -590,24 +608,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     mutationFn: (id) => base44.entities.BatchAttachment.delete(id),
     onSuccess: () => queryClient.invalidateQueries(["BatchAttachments", selBatch?.id])
   });
-
-  const loadOCRDataFromCache = async (attachmentId, formType) => {
-    try {
-      const cacheStatus = await checkOCRCacheStatus(attachmentId, formType);
-      if (cacheStatus.canUseCache) {
-        const cached = cacheStatus.record;
-        return {
-          extracted_data: cached.extracted_data_json,
-          validation: cached.validation_json,
-          page_count: cached.page_count,
-          cache_id: cached.id
-        };
-      }
-    } catch (err) {
-      console.error(`Failed to load OCR cache for ${formType}:`, err);
-    }
-    return null;
-  };
 
   const handleOCR = (att) => {
     // FIX #3: Verify attachment ownership before OCR
