@@ -16,8 +16,11 @@ export function useOcrSequentialFlow(
   setOcrFormQueue,
   ocrFormQueue,
   ocrTargetAtt,
-  addMsg
+  addMsg,
+  isPrePaint = false
 ) {
+  // For Pre-paint, always enforce production -> teams_time order
+  // For other depts, same order (no variation needed)
   const FORM_ORDER = ['production', 'teams_time'];
 
   const markFormComplete = useCallback((formType) => {

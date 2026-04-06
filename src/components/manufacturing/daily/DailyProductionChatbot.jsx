@@ -552,6 +552,15 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   // Explicit form opening handlers — always open forms regardless of OCR status
   const openProductionForm = async (att) => {
     setOcrTargetAtt(att);
+    
+    // For Pre-paint, initialize sequential flow queue so teams_time follows
+    if (selDept === "Pre-paint") {
+      setOcrFormQueue(prev => ({
+        ...prev,
+        [att.id]: { completed: [] }
+      }));
+    }
+    
     const prodData = await loadOCRDataFromCache(att.id, "production");
     if (prodData) {
       setCurrentProductionCacheId(prodData.cache_id);
@@ -603,7 +612,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     setOcrFormQueue,
     ocrFormQueue,
     ocrTargetAtt,
-    addMsg
+    addMsg,
+    selDept === "Pre-paint"
   );
 
   const handleOcrConfirm = createOcrConfirmHandler({

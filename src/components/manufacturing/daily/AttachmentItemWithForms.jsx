@@ -39,17 +39,17 @@ export default function AttachmentItemWithForms({
   // Build status tooltip
   let statusTooltip = "No OCR data";
   if (isProcessing) {
-    statusTooltip = "OCR Processing";
+    statusTooltip = "OCR Processing...";
   } else if (hasCompleted) {
     if (prodStatus === "completed" && teamsStatus === "completed") {
-      statusTooltip = "OCR completed for Production and Teams Time";
+      statusTooltip = "✓ OCR completed for both Production and Teams Time forms";
     } else if (prodStatus === "completed") {
-      statusTooltip = "Partial OCR: Production completed, Teams Time missing";
+      statusTooltip = "✓ Production form OCR ready (Teams Time missing)";
     } else if (teamsStatus === "completed") {
-      statusTooltip = "Partial OCR: Teams Time completed, Production missing";
+      statusTooltip = "✓ Teams Time form OCR ready (Production missing)";
     }
   } else if (hasFailed) {
-    statusTooltip = "OCR Failed";
+    statusTooltip = "✗ OCR extraction failed - retry recommended";
   }
 
   // Status badge styling
