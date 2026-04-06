@@ -249,21 +249,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   // OCR state
   const [runningOcrAttachmentIds, setRunningOcrAttachmentIds] = useState(new Set());
   const [attachmentOcrStatus, setAttachmentOcrStatus] = useState({});
-  
-  // OCR flow management (no stale state)
-  const ocrFlow = useOcrFlow(loadOCRDataFromCache, addMsg);
-  const {
-    ocrTargetAtt, setOcrTargetAtt,
-    showOcrModal, setShowOcrModal,
-    currentProductionCacheId, setCurrentProductionCacheId,
-    viewProductionOcrResult, setViewProductionOcrResult,
-    showTeamsTimeOcrModal, setShowTeamsTimeOcrModal,
-    currentTeamsTimeCacheId, setCurrentTeamsTimeCacheId,
-    viewTeamsTimeOcrResult, setViewTeamsTimeOcrResult,
-    ocrFormQueue, setOcrFormQueue,
-    showManualFormDialog, setShowManualFormDialog,
-    advanceOcrFlow, getNextForm
-  } = ocrFlow;
 
   // missing OCR & bulk OCR control
   const [isMissingOcrLoading, setIsMissingOcrLoading] = useState(false);
@@ -455,6 +440,21 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     }
     return null;
   };
+
+  // OCR flow management (no stale state) — initialized after loadOCRDataFromCache and addMsg are defined
+  const ocrFlow = useOcrFlow(loadOCRDataFromCache, addMsg);
+  const {
+    ocrTargetAtt, setOcrTargetAtt,
+    showOcrModal, setShowOcrModal,
+    currentProductionCacheId, setCurrentProductionCacheId,
+    viewProductionOcrResult, setViewProductionOcrResult,
+    showTeamsTimeOcrModal, setShowTeamsTimeOcrModal,
+    currentTeamsTimeCacheId, setCurrentTeamsTimeCacheId,
+    viewTeamsTimeOcrResult, setViewTeamsTimeOcrResult,
+    ocrFormQueue, setOcrFormQueue,
+    showManualFormDialog, setShowManualFormDialog,
+    advanceOcrFlow, getNextForm
+  } = ocrFlow;
 
   const handleDetectMissing = async () => {
     setIsMissingOcrLoading(true);
