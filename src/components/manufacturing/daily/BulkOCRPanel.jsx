@@ -25,6 +25,7 @@ export default function BulkOCRPanel({
   onStopBulkOCR,
   onAddMsg
 }) {
+  const [expandPanel, setExpandPanel] = useState(false);
   const [expandResults, setExpandResults] = useState(false);
   const [expandAttachments, setExpandAttachments] = useState(false);
 
@@ -42,7 +43,18 @@ export default function BulkOCRPanel({
   const selectedCount = selectedAttachmentIds.size;
 
   return (
-    <div className="border-t p-3 space-y-3 flex-shrink-0">
+    <div className="border-t flex-shrink-0">
+      {/* Collapsible Panel Header */}
+      <button
+        onClick={() => setExpandPanel(!expandPanel)}
+        className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-50 font-semibold text-xs text-slate-700 border-b border-slate-100"
+      >
+        <span>🔍 Find Missing OCR {!expandPanel && missingOcrAttachmentDetails.length > 0 && <span className="ml-1 text-[10px] text-slate-500">({missingOcrAttachmentDetails.length})</span>}</span>
+        {expandPanel ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+      </button>
+
+      {expandPanel && (
+      <div className="p-3 space-y-3">
       {/* Filters */}
       <div className="grid grid-cols-2 gap-2">
         <div>
@@ -210,7 +222,9 @@ export default function BulkOCRPanel({
             </div>
           )}
         </div>
-      )}
-    </div>
-  );
-}
+        )}
+        </div>
+        )}
+        </div>
+        );
+        }
