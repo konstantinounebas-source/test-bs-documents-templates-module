@@ -1,6 +1,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, Square } from "lucide-react";
+import { Loader2, CheckCircle2, Square, ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 /**
  * BulkOCRPanel: UI for missing OCR detection, selection, and execution.
@@ -24,6 +25,9 @@ export default function BulkOCRPanel({
   onStopBulkOCR,
   onAddMsg
 }) {
+  const [expandResults, setExpandResults] = useState(false);
+  const [expandAttachments, setExpandAttachments] = useState(false);
+
   const handleSelectAll = () => {
     if (selectedAttachmentIds.size === missingOcrAttachmentDetails.length) {
       // Deselect all
@@ -123,68 +127,88 @@ export default function BulkOCRPanel({
         </div>
       )}
 
-      {/* Results after OCR completes */}
+      {/* Results after OCR completes - Collapsible */}
       {bulkOcrDetailedResults.length > 0 && !isBulkOcrRunning && (
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 space-y-1 max-h-48 overflow-y-auto text-[10px]">
-          <p className="font-semibold text-slate-700">OCR Results:</p>
-          {bulkOcrDetailedResults.map((result, i) => (
-            <div key={i} className={`flex items-start gap-1 px-1 py-0.5 rounded ${
-              result.status === "completed" ? "bg-green-50 text-green-700" :
-              result.status === "failed" ? "bg-red-50 text-red-700" :
-              "bg-slate-50 text-slate-600"
-            }`}>
-              {result.status === "completed" && <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" />}
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{result.fileName}</p>
-                {result.error && <p className="text-[9px]">{result.error}</p>}
-              </div>
+        <div className="bg-slate-50 border border-slate-200 rounded-lg">
+          <button
+            onClick={() => setExpandResults(!expandResults)}
+            className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-slate-100 font-semibold text-xs text-slate-700"
+          >
+            <span>OCR Results: {bulkOcrDetailedResults.filter(r => r.status === "completed").length} ✅ {bulkOcrDetailedResults.filter(r => r.status === "failed").length} ❌</span>
+            {expandResults ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+          </button>
+          {expandResults && (
+            <div className="p-2 space-y-1 max-h-40 overflow-y-auto border-t border-slate-200 text-[10px]">
+              {bulkOcrDetailedResults.map((result, i) => (
+                <div key={i} className={`flex items-start gap-1 px-1 py-0.5 rounded ${
+                  result.status === "completed" ? "bg-green-50 text-green-700" :
+                  result.status === "failed" ? "bg-red-50 text-red-700" :
+                  "bg-slate-50 text-slate-600"
+                }`}>
+                  {result.status === "completed" && <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" />}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{result.fileName}</p>
+                    {result.error && <p className="text-[9px]">{result.error}</p>}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* Attachment list with selection */}
+      {/* Attachment list with selection - Collapsible */}
       {missingOcrAttachmentDetails.length > 0 && !isBulkOcrRunning && (
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 space-y-1 max-h-64 overflow-y-auto">
-          <div className="flex items-center justify-between sticky top-0 bg-slate-50 pb-1 border-b border-slate-200">
-            <p className="font-semibold text-slate-700 text-xs">{missingOcrAttachmentDetails.length} Attachments</p>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-5 px-2 text-[10px]"
-              onClick={handleSelectAll}
-            >
-              {allSelected ? "Deselect All" : "Select All"}
-            </Button>
-          </div>
-          {missingOcrAttachmentDetails.map(att => (
-            <div
-              key={att.attachmentId}
-              className="flex items-start gap-2 px-1 py-0.5 rounded hover:bg-slate-100 text-[10px] cursor-pointer"
-              onClick={() => {
-                if (selectedAttachmentIds.has(att.attachmentId)) {
-                  selectedAttachmentIds.delete(att.attachmentId);
-                } else {
-                  selectedAttachmentIds.add(att.attachmentId);
-                }
-              }}
-            >
-              <div className="mt-0.5">
-                {selectedAttachmentIds.has(att.attachmentId) ? (
-                  <CheckCircle2 className="w-3 h-3 text-blue-600" />
-                ) : (
-                  <Square className="w-3 h-3 text-slate-400" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-slate-700 truncate">{att.fileName}</p>
-                <p className="text-slate-500">{att.date} • {att.department}</p>
-                <p className="text-[9px] text-slate-400">
-                  {att.missingProduction && "Prod"}{att.missingProduction && att.missingTeamsTime ? " + " : ""}{att.missingTeamsTime && "Teams"}
-                </p>
-              </div>
+        <div className="bg-slate-50 border border-slate-200 rounded-lg">
+          <button
+            onClick={() => setExpandAttachments(!expandAttachments)}
+            className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-slate-100 font-semibold text-xs text-slate-700"
+          >
+            <span>{missingOcrAttachmentDetails.length} Attachments</span>
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-5 px-1 text-[10px]"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectAll();
+                }}
+              >
+                {allSelected ? "Deselect All" : "Select All"}
+              </Button>
+              {expandAttachments ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
             </div>
-          ))}
+          </button>
+          {expandAttachments && (
+            <div className="p-2 space-y-1 max-h-40 overflow-y-auto border-t border-slate-200">
+              {missingOcrAttachmentDetails.map(att => (
+                <div
+                  key={att.attachmentId}
+                  className="flex items-start gap-2 px-1 py-0.5 rounded hover:bg-slate-100 text-[10px] cursor-pointer"
+                  onClick={() => {
+                    if (selectedAttachmentIds.has(att.attachmentId)) {
+                      selectedAttachmentIds.delete(att.attachmentId);
+                    } else {
+                      selectedAttachmentIds.add(att.attachmentId);
+                    }
+                  }}
+                >
+                  <div className="mt-0.5">
+                    {selectedAttachmentIds.has(att.attachmentId) ? (
+                      <CheckCircle2 className="w-3 h-3 text-blue-600" />
+                    ) : (
+                      <Square className="w-3 h-3 text-slate-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-slate-700 truncate">{att.fileName}</p>
+                    <p className="text-slate-500 text-[9px]">{att.date} • {att.department}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
