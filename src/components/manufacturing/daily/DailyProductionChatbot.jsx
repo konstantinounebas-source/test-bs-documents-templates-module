@@ -76,7 +76,7 @@ function getFileType(fileName) {
 }
 
 // ─── Attachment item ─────────────────────────────────────────────────────────
-function AttachmentItem({ att, onDelete, onPreview, onOCR, isDeleting, isOcrLoading, isAnyOcrLoading, ocrStatus = {} }) {
+function AttachmentItem({ att, onDelete, onPreview, onOCR, onViewOCR, isDeleting, isOcrLoading, isAnyOcrLoading, ocrStatus = {} }) {
   const fileType = getFileType(att.file_name);
   
   // Determine overall OCR status (any completed counts as at least partial success)
@@ -112,15 +112,39 @@ function AttachmentItem({ att, onDelete, onPreview, onOCR, isDeleting, isOcrLoad
         <span>{prodStatus === "completed" && teamsStatus === "completed" ? "✓" : prodStatus === "failed" || teamsStatus === "failed" ? "✗" : "◦"}</span>
       </div>
       <div className="flex gap-1">
-        {(prodStatus === "completed" || teamsStatus === "completed") ? (
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600 hover:bg-blue-50" onClick={() => { /* Will be passed handleViewOCRResults via prop */ onOCR(att); }} disabled={isOcrLoading} title="View OCR Results">
-            <Eye className="w-3 h-3" />
-          </Button>
-        ) : (
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} disabled={isProcessing || isAnyOcrLoading} title={isAnyOcrLoading && !isProcessing ? "OCR σε εξέλιξη" : "Start OCR"}>
-            {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Scan className="w-3 h-3" />}
+        {/* Status: None */}
+        {prodStatus === "none" && teamsStatus === "none" && (
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} disabled={isAnyOcrLoading} title="Start OCR extraction">
+            <Scan className="w-3 h-3 mr-1" /> Run OCR
           </Button>
         )}
+        
+        {/* Status: Processing */}
+        {isProcessing && (
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-amber-600 hover:bg-amber-50 cursor-wait" disabled>
+            <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Processing...
+          </Button>
+        )}
+        
+        {/* Status: Completed */}
+        {hasCompleted && !isProcessing && (
+          <div className="flex gap-0.5">
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" onClick={() => onViewOCR(att)} title="View extracted data">
+              <Eye className="w-3 h-3 mr-1" /> View OCR
+            </Button>
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} title="Run OCR again">
+              <RotateCw className="w-3 h-3 mr-1" /> Re-run
+            </Button>
+          </div>
+        )}
+        
+        {/* Status: Failed */}
+        {hasFailed && !isProcessing && (
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-red-600 hover:bg-red-50" onClick={() => onOCR(att)} title="Retry OCR extraction">
+            <AlertTriangle className="w-3 h-3 mr-1" /> Retry OCR
+          </Button>
+        )}
+        
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onPreview(att)} title="Preview">
           <Eye className="w-3 h-3" />
@@ -1071,14 +1095,21 @@ CRITICAL SAFETY RULES:
     });
   };
 
-  const handleViewOCRResults = (att) => {
-    setOcrTargetAtt(att);
-    // Show production modal if available, otherwise teams_time
-    if (ocrResult) {
-      setShowOcrModal(true);
-    } else if (teamsTimeOcrResult) {
-      setShowTeamsTimeOcrModal(true);
+  const handleOCRButtonClick = (att, action = "start") => {
+    // action: "start" (initial run), "rerun" (start again), "view" (show modal)
+    if (action === "view") {
+      // Open modal with existing results — NO rerun
+      setOcrTargetAtt(att);
+      if (ocrResult) {
+        setShowOcrModal(true);
+      } else if (teamsTimeOcrResult) {
+        setShowTeamsTimeOcrModal(true);
+      }
+      return;
     }
+    
+    // "start" or "rerun" — trigger background OCR
+    handleOCR(att);
   };
 
   const handleUserMessage = () => {
@@ -1152,6 +1183,7 @@ CRITICAL SAFETY RULES:
               onDelete={id => deleteMutation.mutate(id)}
               onPreview={setPreviewFile}
               onOCR={handleOCR}
+              onViewOCR={(att) => { setOcrTargetAtt(att); if (ocrResult) setShowOcrModal(true); else if (teamsTimeOcrResult) setShowTeamsTimeOcrModal(true); }}
               isOcrLoading={ocrLoading && ocrTargetAtt?.id === att.id}
               isAnyOcrLoading={ocrLoading}
               isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
@@ -1748,6 +1780,7 @@ CRITICAL SAFETY RULES:
                       onDelete={id => deleteMutation.mutate(id)}
                       onPreview={setPreviewFile}
                       onOCR={handleOCR}
+                      onViewOCR={(att) => { setOcrTargetAtt(att); if (ocrResult) setShowOcrModal(true); else if (teamsTimeOcrResult) setShowTeamsTimeOcrModal(true); }}
                       isOcrLoading={ocrLoading && ocrTargetAtt?.id === att.id}
                       isAnyOcrLoading={ocrLoading}
                       isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
