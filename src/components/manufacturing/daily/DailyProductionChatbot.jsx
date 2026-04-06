@@ -680,8 +680,9 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         addMsg("bot", `⏳ Δημιουργία batch για ${dateVal} – ${selDept} με bundle **${bundle.version_no || bundle.version}**...`);
         createBatchMutation.mutate({ date: dateVal, dept: selDept, bundleId: bundle.id });
       } else {
-        setStep("batch");
-        addMsg("bot", `⚠️ Δεν βρέθηκε ενεργό bundle για ${selDept}. Δεν είναι δυνατή η δημιουργία batch.`);
+        // Skip batch creation if no bundle, but allow user to proceed
+        addMsg("bot", `Δεν υπάρχει ενεργό bundle για ${selDept}. Μπορείς να συνεχίσεις με χειροκίνητη διαχείριση.`);
+        setStep("attachments");
       }
     }
   };
@@ -1920,6 +1921,7 @@ CRITICAL SAFETY RULES:
                       onPreview={setPreviewFile}
                       onOCR={handleOCR}
                       onDelete={att => deleteMutation.mutate(att)}
+                      onHandleFiles={handleFiles}
                       runningOcrAttachmentIds={runningOcrAttachmentIds}
                       attachmentOcrStatus={attachmentOcrStatus}
                       deleteMutation={deleteMutation}

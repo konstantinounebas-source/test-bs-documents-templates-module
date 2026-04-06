@@ -1,10 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 
 export default function IntakeBlock({ selDate, selDept, customDate, setCustomDate, onDateSelect, quickDates, onAddMsg }) {
+  const [tempDate, setTempDate] = React.useState(customDate);
+
   return (
     <div className="border-b bg-slate-50 p-3 space-y-3 flex-shrink-0">
       <div className="flex items-center gap-2">
@@ -13,14 +15,19 @@ export default function IntakeBlock({ selDate, selDept, customDate, setCustomDat
       </div>
       
       <div className="space-y-2">
-        <Input type="date" value={customDate} onChange={e => {
-          setCustomDate(e.target.value);
-          onDateSelect(e.target.value);
-          if (onAddMsg) onAddMsg("user", e.target.value);
-        }} className="text-xs h-8" max={new Date().toISOString().split('T')[0]} />
+        <div className="flex gap-2">
+          <Input type="date" value={tempDate} onChange={e => setTempDate(e.target.value)} className="text-xs h-8 flex-1" max={new Date().toISOString().split('T')[0]} />
+          <Button size="sm" className="text-xs px-3 bg-blue-600 hover:bg-blue-700" onClick={() => {
+            onDateSelect(tempDate);
+            if (onAddMsg) onAddMsg("user", tempDate);
+          }}>
+            OK
+          </Button>
+        </div>
         <div className="flex flex-wrap gap-2">
-          {quickDates.map(qd => (
+          {quickDates.filter(qd => qd.value !== "__picker__").map(qd => (
             <Button key={qd.value} variant={selDate === qd.value ? "default" : "outline"} size="sm" className="text-xs" onClick={() => {
+              setTempDate(qd.value);
               onDateSelect(qd.value);
               if (onAddMsg) onAddMsg("user", qd.label);
             }}>
