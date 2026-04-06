@@ -467,9 +467,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
           return;
         }
 
-        // No usable cache — supersede old record for this form_type and run fresh OCR
-        await supersedeCurrentOCRCache(att.id, formType);
-
+        // No usable cache — run fresh OCR (backend supersedes automatically)
         const res = await ocrWithCache({
           attachment_id: att.id,
           batch_header_id: att.batch_header_id || selBatch?.id,
