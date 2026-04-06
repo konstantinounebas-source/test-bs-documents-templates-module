@@ -28,7 +28,8 @@ import { saveOCRData } from "./chatbot/ocrSave";
 import { saveOCRTeamsTimeData } from "./chatbot/ocrTeamsTimeSave";
 import { checkOCRCacheStatus, saveCorrectedOCRCacheData } from "@/lib/ocrCacheService";
 import { ocrWithCache } from "@/functions/ocrWithCache";
-import { makeBulkOCRRunner } from "./chatbot/BulkOCRExecutor";
+import { useBulkOCRControl } from "./hooks/useBulkOCRControl";
+import BulkOCRPanel from "./BulkOCRPanel";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
@@ -256,11 +257,23 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   // OCR Status Tracking: { attachment_id: { production: { status, cache_id }, teams_time: { status, cache_id } } }
   const [attachmentOcrStatus, setAttachmentOcrStatus] = useState({});
 
-  // missing OCR detection
-  const [missingOcrResults, setMissingOcrResults] = useState(null);
+  // missing OCR & bulk OCR control
   const [isMissingOcrLoading, setIsMissingOcrLoading] = useState(false);
-  const [isBulkOcrRunning, setIsBulkOcrRunning] = useState(false);
-  const [bulkOcrProgress, setBulkOcrProgress] = useState({ processed: 0, total: 0 });
+  const [ocrFilterDept, setOcrFilterDept] = useState("");
+  const [ocrFilterMonth, setOcrFilterMonth] = useState("");
+
+  const {
+    isBulkOcrRunning,
+    bulkOcrProgress,
+    bulkOcrDetailedResults,
+    selectedAttachmentIds,
+    setSelectedAttachmentIds,
+    missingOcrAttachmentDetails,
+    setMissingOcrAttachmentDetails,
+    detectMissingOCR,
+    executeSelectedBulkOCR,
+    stopBulkOCR
+  } = useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef);
 
   // free-text input & AI
   const [userInput, setUserInput] = useState("");
@@ -404,88 +417,22 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     staleTime: Infinity
   });
 
-  // ── missing OCR detection with filters ────────────────────────────────────
-  const [ocrFilterDept, setOcrFilterDept] = useState("");
-  const [ocrFilterMonth, setOcrFilterMonth] = useState("");
 
-  // Bulk OCR runner - wraps makeBulkOCRRunner with current dependencies
-  const runBulkOCR = async () => 
-    makeBulkOCRRunner(performOCRInBackground, addMsg, setBulkOcrProgress, setIsBulkOcrRunning, isMountedRef, allBatchAttachments, allOCRCacheRecords)();
 
-  const getAttachmentsMissingOCR = async () => {
+  const handleDetectMissing = async () => {
+    setIsMissingOcrLoading(true);
     try {
-      setIsMissingOcrLoading(true);
-      let batchesToCheck = allBatchHeaders || [];
-
-      // Filter by department
-      if (ocrFilterDept) {
-        batchesToCheck = batchesToCheck.filter(b => b.department === ocrFilterDept);
-      }
-
-      // Filter by month (YYYY-MM)
-      if (ocrFilterMonth) {
-        batchesToCheck = batchesToCheck.filter(b => b.date && b.date.startsWith(ocrFilterMonth));
-      }
-
-      if (batchesToCheck.length === 0) {
-        addMsg("bot", "No batches match the selected filters.");
-        return;
-      }
-
-      // Build lookup: attachmentId -> { production: bool, teams_time: bool }
-      const cacheByAttId = {};
-      for (const cache of allOCRCacheRecords) {
-        if (!cacheByAttId[cache.attachment_id]) {
-          cacheByAttId[cache.attachment_id] = { production: false, teams_time: false };
-        }
-        // Mark as completed if it's the current record for its form_type
-        if (cache.form_type === "production" && cache.status === "completed") {
-          cacheByAttId[cache.attachment_id].production = true;
-        }
-        if (cache.form_type === "teams_time" && cache.status === "completed") {
-          cacheByAttId[cache.attachment_id].teams_time = true;
-        }
-      }
-
-      // GROUP by date + department, detect missing OCR in memory
-      const grouped = {};
-
-      for (const batch of batchesToCheck) {
-        // Get attachments for this batch from bulk-loaded data
-        const batchAtts = allBatchAttachments.filter(a => a.batch_header_id === batch.id);
-        let missingCount = 0;
-
-        for (const att of batchAtts) {
-          const cacheInfo = cacheByAttId[att.id];
-          // Missing OCR if no completed production AND no completed teams_time
-          if ((!cacheInfo || !cacheInfo.production) && (!cacheInfo || !cacheInfo.teams_time)) {
-            missingCount++;
-          }
-        }
-
-        if (missingCount > 0) {
-          const key = `${batch.date}__${batch.department}`;
-          if (!grouped[key]) {
-            grouped[key] = { date: batch.date, department: batch.department, attachmentsWithoutOCRCount: 0 };
-          }
-          grouped[key].attachmentsWithoutOCRCount += missingCount;
-        }
-      }
-
-      const result = Object.values(grouped);
-
-      // Build chat message with results
-      let msg = `✅ Scanned ${batchesToCheck.length} batches. Found ${result.length} with missing OCR.\n`;
-      if (result.length > 0) {
-        msg += "\n📋 Missing OCR Attachments:\n";
-        result.forEach(item => {
-          msg += `• ${item.date} | ${item.department} | ⚠️ ${item.attachmentsWithoutOCRCount} attachment${item.attachmentsWithoutOCRCount > 1 ? 's' : ''}\n`;
+      const { grouped, details } = detectMissingOCR(allBatchHeaders, allBatchAttachments, allOCRCacheRecords, ocrFilterDept, ocrFilterMonth);
+      setMissingOcrAttachmentDetails(details);
+      setSelectedAttachmentIds(new Set(details.map(d => d.attachmentId)));
+      let msg = `✅ Found ${details.length} attachments missing OCR.\n`;
+      if (grouped.length > 0) {
+        msg += `\n📋 Grouped by date + department:\n`;
+        grouped.forEach(item => {
+          msg += `• ${item.date} | ${item.department} | ${item.attachmentsWithoutOCRCount}\n`;
         });
       }
       addMsg("bot", msg);
-    } catch (error) {
-      console.error("Error detecting missing OCR:", error);
-      addMsg("bot", `❌ Error detecting missing OCR: ${error?.message || "Unknown error"}`);
     } finally {
       setIsMissingOcrLoading(false);
     }
@@ -1515,33 +1462,25 @@ CRITICAL SAFETY RULES:
   const renderSharedSteps = () => (
     <>
       {step === "file_upload" && (
-        <>
-          <div className="border-t p-3 space-y-2 flex-shrink-0">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[10px] font-semibold text-slate-500 block mb-1">Department</label>
-                <select value={ocrFilterDept} onChange={e => setOcrFilterDept(e.target.value)} className="w-full text-xs border border-slate-200 rounded px-2 py-1">
-                  <option value="">All</option>
-                  {departments.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] font-semibold text-slate-500 block mb-1">Month (YYYY-MM)</label>
-                <input type="month" value={ocrFilterMonth} onChange={e => setOcrFilterMonth(e.target.value)} className="w-full text-xs border border-slate-200 rounded px-2 py-1" />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={getAttachmentsMissingOCR} disabled={isMissingOcrLoading || isBulkOcrRunning}>
-                {isMissingOcrLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : "🔍"}
-                {isMissingOcrLoading ? "Scanning..." : "Find Missing OCR"}
-              </Button>
-              <Button size="sm" className="flex-1 text-xs bg-purple-600 hover:bg-purple-700 text-white" onClick={runBulkOCR} disabled={isBulkOcrRunning || !allBatchAttachments.length}>
-                {isBulkOcrRunning ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : "⚡"}
-                {isBulkOcrRunning ? `${bulkOcrProgress.processed}/${bulkOcrProgress.total}` : "Run OCR"}
-              </Button>
-            </div>
-          </div>
-          <ChatStepFileUpload
+       <>
+         <BulkOCRPanel
+           departments={departments}
+           isMissingOcrLoading={isMissingOcrLoading}
+           isBulkOcrRunning={isBulkOcrRunning}
+           bulkOcrProgress={bulkOcrProgress}
+           bulkOcrDetailedResults={bulkOcrDetailedResults}
+           missingOcrAttachmentDetails={missingOcrAttachmentDetails}
+           selectedAttachmentIds={selectedAttachmentIds}
+           ocrFilterDept={ocrFilterDept}
+           ocrFilterMonth={ocrFilterMonth}
+           onFilterDeptChange={setOcrFilterDept}
+           onFilterMonthChange={setOcrFilterMonth}
+           onDetectMissing={handleDetectMissing}
+           onRunSelected={executeSelectedBulkOCR}
+           onStopBulkOCR={stopBulkOCR}
+           onAddMsg={addMsg}
+         />
+         <ChatStepFileUpload
           departments={departments}
           batchHeaders={allBatchHeaders}
           allBundles={allBundles}
