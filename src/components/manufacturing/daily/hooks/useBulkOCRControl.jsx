@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback } from "react";
-import { makeBulkOCRRunner } from "../chatbot/BulkOCRExecutor";
 
 /**
  * Custom hook for managing bulk OCR with detailed tracking, selection, and stop capability.
@@ -162,10 +161,11 @@ export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, 
               ? "failed" 
               : actualStatus;
 
-            // Classify result status
+            // FIX #2: Include batchHeaderId in every result entry
             const resultEntry = {
               attachmentId: att.id,
               fileName: att.file_name,
+              batchHeaderId: att.batch_header_id,
               status: finalStatus,
               message: result?.message,
               // IMPROVEMENT #7: Track duration for observability
@@ -244,10 +244,10 @@ export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, 
         if (queryClient) {
           queryClient.invalidateQueries({ queryKey: ["OCRCache-All"], exact: true });
           queryClient.invalidateQueries({ queryKey: ["BatchAttachments-All"], exact: true });
-          // Also invalidate active batch if available
-          const activeBatchIds = results
-            .map(r => results[0]?.batchHeaderId)
-            .filter(Boolean);
+          // FIX #2: Correctly extract unique batch IDs from results
+          const activeBatchIds = [...new Set(
+            results.map(r => r.batchHeaderId).filter(Boolean)
+          )];
           if (activeBatchIds.length > 0) {
             activeBatchIds.forEach(bid => {
               queryClient.invalidateQueries({ queryKey: ["BatchAttachments", bid], exact: true });

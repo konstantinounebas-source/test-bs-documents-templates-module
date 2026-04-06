@@ -524,8 +524,26 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       if (prodCacheId) setCurrentProductionCacheId(prodCacheId);
       if (teamsCacheId) setCurrentTeamsTimeCacheId(teamsCacheId);
       
+      // FIX #1: Return completed ONLY if at least one real OCR result was produced
+      const hasRealResult = prodCacheId || teamsCacheId;
+      
+      if (!hasRealResult) {
+        // No cache_id produced — return as failed even if forms were detected
+        return {
+          success: false,
+          status: "failed",
+          attachmentId: att.id,
+          fileName: att.file_name,
+          productionCacheId: null,
+          teamsTimeCacheId: null,
+          detectedForms,
+          completedForms: [],
+          message: "No OCR result was completed"
+        };
+      }
+      
       // Return success result (do NOT open modals during bulk OCR)
-      if (!silentBulk && isMountedRef.current && (prodCacheId || teamsCacheId)) {
+      if (!silentBulk && isMountedRef.current) {
         addMsg("bot", `✅ OCR ολοκληρώθηκε! Κάνε κλικ στο "View OCR" για να δεις τα αποτελέσματα.`);
       }
 
