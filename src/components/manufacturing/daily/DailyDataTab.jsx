@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -11,14 +11,18 @@ export default function DailyDataTab({
   renderSharedSteps,
   batchHeaders
 }) {
-  // Get batches for the selected date
-  const { data: dateBatches = [] } = useQuery({
-    queryKey: ["BatchHeader", "byDate", selDate],
-    queryFn: () =>
-      base44.entities.BatchHeader.filter({ date: selDate }),
-    enabled: !!selDate,
+  // Get all batches and filter by selected date
+  const { data: allBatches = [] } = useQuery({
+    queryKey: ["BatchHeader-All"],
+    queryFn: () => base44.entities.BatchHeader.list(),
     staleTime: 0
   });
+
+  // Filter batches by selected date
+  const dateBatches = React.useMemo(() => {
+    if (!selDate) return [];
+    return allBatches.filter(b => b.date === selDate);
+  }, [allBatches, selDate]);
 
   // Get unique departments that have batches for this date
   const departmentsWithBatches = React.useMemo(() => {
