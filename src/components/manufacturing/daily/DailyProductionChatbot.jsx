@@ -998,7 +998,7 @@ ${context}
     </div>
   );
 
-  const renderBatchLinesReview = () => blReviewItems.length > 0 && (
+  const renderBatchLinesReview = () => blReviewItems.length > 0 ? (
     <div className="border-t p-3 space-y-2 flex-shrink-0">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs text-slate-500 font-medium">
@@ -1047,7 +1047,7 @@ ${context}
         </Button>
       </div>
     </div>
-  );
+  ) : null;
 
   const renderBatchLinesAdd = () => (
     <div className="space-y-3">
