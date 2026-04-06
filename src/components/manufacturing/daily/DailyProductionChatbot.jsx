@@ -28,6 +28,7 @@ import { saveOCRData } from "./chatbot/ocrSave";
 import { saveOCRTeamsTimeData } from "./chatbot/ocrTeamsTimeSave";
 import { checkOCRCacheStatus, saveCorrectedOCRCacheData } from "@/lib/ocrCacheService";
 import { ocrWithCache } from "@/functions/ocrWithCache";
+import { makeBulkOCRRunner } from "./chatbot/BulkOCRExecutor";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
@@ -258,6 +259,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   // missing OCR detection
   const [missingOcrResults, setMissingOcrResults] = useState(null);
   const [isMissingOcrLoading, setIsMissingOcrLoading] = useState(false);
+  const [isBulkOcrRunning, setIsBulkOcrRunning] = useState(false);
+  const [bulkOcrProgress, setBulkOcrProgress] = useState({ processed: 0, total: 0 });
 
   // free-text input & AI
   const [userInput, setUserInput] = useState("");
@@ -404,6 +407,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   // ── missing OCR detection with filters ────────────────────────────────────
   const [ocrFilterDept, setOcrFilterDept] = useState("");
   const [ocrFilterMonth, setOcrFilterMonth] = useState("");
+
+  // Bulk OCR runner - wraps makeBulkOCRRunner with current dependencies
+  const runBulkOCR = async () => 
+    makeBulkOCRRunner(performOCRInBackground, addMsg, setBulkOcrProgress, setIsBulkOcrRunning, isMountedRef, allBatchAttachments, allOCRCacheRecords)();
 
   const getAttachmentsMissingOCR = async () => {
     try {
@@ -1523,10 +1530,16 @@ CRITICAL SAFETY RULES:
                 <input type="month" value={ocrFilterMonth} onChange={e => setOcrFilterMonth(e.target.value)} className="w-full text-xs border border-slate-200 rounded px-2 py-1" />
               </div>
             </div>
-            <Button size="sm" variant="outline" className="w-full text-xs" onClick={getAttachmentsMissingOCR} disabled={isMissingOcrLoading}>
-              {isMissingOcrLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : "🔍"}
-              {isMissingOcrLoading ? "Scanning..." : "Find Missing OCR"}
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={getAttachmentsMissingOCR} disabled={isMissingOcrLoading || isBulkOcrRunning}>
+                {isMissingOcrLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : "🔍"}
+                {isMissingOcrLoading ? "Scanning..." : "Find Missing OCR"}
+              </Button>
+              <Button size="sm" className="flex-1 text-xs bg-purple-600 hover:bg-purple-700 text-white" onClick={runBulkOCR} disabled={isBulkOcrRunning || !allBatchAttachments.length}>
+                {isBulkOcrRunning ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : "⚡"}
+                {isBulkOcrRunning ? `${bulkOcrProgress.processed}/${bulkOcrProgress.total}` : "Run OCR"}
+              </Button>
+            </div>
           </div>
           <ChatStepFileUpload
           departments={departments}
