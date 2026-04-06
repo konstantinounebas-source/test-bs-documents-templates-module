@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -147,6 +147,9 @@ function DropZone({ onFiles, isUploading }) {
   );
 }
 
+// ─── Step sequence — constant, defined once outside component ─────────────────
+const STEP_SEQUENCE = ["batch_lines_add", "qc", "operations", "team_persons", "team_extra", "help_in", "consumables"];
+
 // ─── Main Chatbot Component ───────────────────────────────────────────────────
 export default function DailyProductionChatbot({ departments = [], isSplitLayout = false, onClose }) {
   const queryClient = useQueryClient();
@@ -158,7 +161,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [splitFullscreen, setSplitFullscreen] = useState(false);
   
   // dragging & resizing state
-  const [panelPos, setPanelPos] = useState({ x: window.innerWidth - 450 - 24, y: 64 });
+  const [panelPos, setPanelPos] = useState(() => ({ x: window.innerWidth - 450 - 24, y: 64 }));
   const [panelSize, setPanelSize] = useState({ width: 450, height: 600 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -202,13 +205,20 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [isAiThinking, setIsAiThinking] = useState(false);
   const inputRef = useRef();
 
+  // unmount guard — prevents state updates after component is gone
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
   // messages (chat log)
   const [messages, setMessages] = useState([
     { role: "bot", text: "Γεια σου! 👋 Μπορείς να ανεβάσεις αρχεία παραγωγής ή να επιλέξεις τμήμα για να ξεκινήσουμε." }
   ]);
 
-  const addMsg = (role, text, extra = {}) =>
-    setMessages(p => [...p, { role, text, ...extra }]);
+  const addMsg = useCallback((role, text, extra = {}) =>
+    setMessages(p => [...p, { role, text, ...extra }]), []);
 
   const messagesEndRef = useRef();
   useEffect(() => {
@@ -392,6 +402,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   });
 
   const handleOCR = async (att) => {
+    if (ocrLoading) return; // prevent double-invocation
     setOcrTargetAtt(att);
     setOcrLoading(true);
 
@@ -490,6 +501,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
       await Promise.all(ocrTasks);
 
+      if (!isMountedRef.current) return;
+
       // Step 3: Store cache IDs
       if (prodCacheId) setCurrentProductionCacheId(prodCacheId);
       if (teamsCacheId) setCurrentTeamsTimeCacheId(teamsCacheId);
@@ -509,9 +522,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       }
 
     } catch (err) {
+      if (!isMountedRef.current) return;
       addMsg("bot", `❌ OCR αποτυχία: ${err?.message || "Network error"}`);
     } finally {
-      setOcrLoading(false);
+      if (isMountedRef.current) setOcrLoading(false);
     }
   };
 
@@ -634,18 +648,18 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
   const handleReset = () => {
     setStep("file_upload"); setSelDept(""); setSelDate(""); setSelBatch(null);
+    blReviewItemsRef.current = []; blCurrentIdxRef.current = 0;
     setBlReviewItems([]); setBlCurrentIdx(0);
     setBlAddForm({ item_code: "", qty_processed: "", qty_out_good: "", qty_scrap: "" });
     setMessages([{ role: "bot", text: "Γεια σου! 👋 Επέλεξε τμήμα για να ξεκινήσουμε." }]);
   };
 
   // ── step navigation helpers ───────────────────────────────────────────────
-  const stepSequence = ["batch_lines_add", "qc", "operations", "team_persons", "team_extra", "help_in", "consumables"];
   const goNextStep = (fromStep, botMsg) => {
     if (botMsg) addMsg("bot", botMsg);
-    const idx = stepSequence.indexOf(fromStep);
-    if (idx >= 0 && idx < stepSequence.length - 1) {
-      const next = stepSequence[idx + 1];
+    const idx = STEP_SEQUENCE.indexOf(fromStep);
+    if (idx >= 0 && idx < STEP_SEQUENCE.length - 1) {
+      const next = STEP_SEQUENCE[idx + 1];
       setStep(next);
       const labels = {
         qc: "QC Initial Stock",
@@ -668,9 +682,9 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   };
 
   const goPrevStep = (fromStep) => {
-    const idx = stepSequence.indexOf(fromStep);
+    const idx = STEP_SEQUENCE.indexOf(fromStep);
     if (idx > 0) {
-      const prev = stepSequence[idx - 1];
+      const prev = STEP_SEQUENCE[idx - 1];
       setStep(prev);
       addMsg("bot", `↩ Επιστροφή στο προηγούμενο βήμα.`);
     } else {
@@ -696,6 +710,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       qty_out_good:  bl.qty_out_good  > 0 ? bl.qty_out_good  : (bl.scheduled_qty || 0),
       qty_scrap:     bl.qty_scrap     || 0,
     }));
+    blReviewItemsRef.current = items;
+    blCurrentIdxRef.current = 0;
     setBlReviewItems(items);
     setBlCurrentIdx(0);
     setStep("batch_lines_review");
@@ -728,6 +744,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     }
   };
 
+  // Refs to avoid stale closures in handleBatchLineConfirm
+  const blCurrentIdxRef = useRef(0);
+  const blReviewItemsRef = useRef([]);
+
   const handleBatchLineConfirm = async (updatedItem) => {
     if (!updatedItem._skip) {
       await saveBatchLine(updatedItem);
@@ -735,13 +755,14 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     } else {
       addMsg("bot", `⏭️ Item **${updatedItem.item_code}** - Παράλειψη`);
     }
-    const nextIdx = blCurrentIdx + 1;
-    if (nextIdx >= blReviewItems.length) {
+    const nextIdx = blCurrentIdxRef.current + 1;
+    if (nextIdx >= blReviewItemsRef.current.length) {
       setStep("batch_lines_add");
       addMsg("bot", `✅ Όλα τα items καταχωρήθηκαν!\nΘέλεις να προσθέσεις επιπλέον item code; Επέλεξε από τη λίστα ή πες "τέλος".`);
     } else {
+      blCurrentIdxRef.current = nextIdx;
       setBlCurrentIdx(nextIdx);
-      showBatchLinePrompt(blReviewItems, nextIdx);
+      showBatchLinePrompt(blReviewItemsRef.current, nextIdx);
     }
   };
 
@@ -935,7 +956,7 @@ ${context}
 
     // ── Direct command shortcuts (no AI needed) ──────────────────────────
     // "next" / "συνέχεια" → advance from current step
-    if ((lower === "next" || lower === "συνέχεια") && stepSequence.includes(step)) {
+    if ((lower === "next" || lower === "συνέχεια") && STEP_SEQUENCE.includes(step)) {
       goNextStep(step, null);
       return;
     }
@@ -947,8 +968,8 @@ ${context}
     if ((lower === "go to operations" || lower === "operations") && selBatch) {
       setStep("operations"); addMsg("bot", "📋 Βήμα: **Operations**"); return;
     }
-    // "finish" — only safe if we're in stepSequence and batch exists
-    if ((lower === "finish" || lower === "τέλος") && selBatch && stepSequence.includes(step)) {
+    // "finish" — only safe if we're in STEP_SEQUENCE and batch exists
+    if ((lower === "finish" || lower === "τέλος") && selBatch && STEP_SEQUENCE.includes(step)) {
       setStep("done");
       addMsg("bot", "🎉 Η καταχώριση ολοκληρώθηκε! Μπορείς να κλείσεις το chat ή να ξεκινήσεις νέα καταχώριση.");
       return;
