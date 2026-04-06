@@ -112,9 +112,15 @@ function AttachmentItem({ att, onDelete, onPreview, onOCR, isDeleting, isOcrLoad
         <span>{prodStatus === "completed" && teamsStatus === "completed" ? "✓" : prodStatus === "failed" || teamsStatus === "failed" ? "✗" : "◦"}</span>
       </div>
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" className="h-6 w-6 text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} disabled={isOcrLoading || isAnyOcrLoading} title={isAnyOcrLoading && !isOcrLoading ? "OCR σε εξέλιξη για άλλο αρχείο" : "OCR Εξαγωγή"}>
-          {isOcrLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Scan className="w-3 h-3" />}
-        </Button>
+        {(prodStatus === "completed" || teamsStatus === "completed") ? (
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600 hover:bg-blue-50" onClick={() => { /* Will be passed handleViewOCRResults via prop */ onOCR(att); }} disabled={isOcrLoading} title="View OCR Results">
+            <Eye className="w-3 h-3" />
+          </Button>
+        ) : (
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} disabled={isProcessing || isAnyOcrLoading} title={isAnyOcrLoading && !isProcessing ? "OCR σε εξέλιξη" : "Start OCR"}>
+            {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Scan className="w-3 h-3" />}
+          </Button>
+        )}
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onPreview(att)} title="Preview">
           <Eye className="w-3 h-3" />
@@ -448,15 +454,12 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     onSuccess: () => queryClient.invalidateQueries(["BatchAttachments", selBatch?.id])
   });
 
-  const handleOCR = async (att) => {
-    if (ocrLoading) return; // prevent double-invocation
+  const handleOCR = (att) => {
     // FIX #3: Verify attachment ownership before OCR
     if (att.batch_header_id !== selBatch?.id) {
       addMsg("bot", "❌ Unauthorized access to attachment.");
       return;
     }
-    setOcrTargetAtt(att);
-    setOcrLoading(true);
     
     // Initialize OCR status for this attachment
     setAttachmentOcrStatus(prev => ({
@@ -464,10 +467,16 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       [att.id]: prev[att.id] || { production: { status: "none" }, teams_time: { status: "none" } }
     }));
 
+    // Start OCR in background WITHOUT blocking UI
+    addMsg("bot", `🔍 Έναρξη OCR για ${att.file_name}...`);
+    
+    // Fire-and-forget background task
+    performOCRInBackground(att);
+  };
+
+  const performOCRInBackground = async (att) => {
     try {
       // Step 1: Analyze file and detect form types FIRST
-      addMsg("bot", `🔍 Σάρωση αρχείου για ανίχνευση φορμών...`);
-
       const fileAnalysisRaw = await base44.functions.invoke("analyzeFilePages", { file_url: att.file_url });
       const fileAnalysis = fileAnalysisRaw?.data || fileAnalysisRaw?.result || fileAnalysisRaw?.output || fileAnalysisRaw || {};
       const actualPageCount = Number(fileAnalysis?.page_count || 1);
@@ -485,14 +494,9 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       )];
 
       if (detectedForms.length === 0) {
-        addMsg("bot", `⚠️ Δεν ανιχνεύθηκαν έγκυρες φόρμες. (${fileAnalysis.file_type || "unknown"} · ${actualPageCount} σελίδες)`);
+        if (isMountedRef.current) addMsg("bot", `⚠️ Δεν ανιχνεύθηκαν έγκυρες φόρμες.`);
         return;
       }
-
-      const detectionDetails = Object.entries(detectedPages).length
-        ? Object.entries(detectedPages).map(([page, data]) => `Σελ.${page}=${data?.form_type || "unknown"}`).join(", ")
-        : "";
-      addMsg("bot", `📄 ${fileAnalysis.file_type || "unknown"} · ${actualPageCount} σελίδες · ${detectionDetails}`);
 
       // Step 2: For each detected form_type, check cache independently
       let prodOcrData = null;
@@ -502,32 +506,35 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
       const ocrTasks = detectedForms.map(async (formType) => {
         // Mark as processing before starting
-        setAttachmentOcrStatus(prev => ({
-          ...prev,
-          [att.id]: {
-            ...prev[att.id],
-            [formType]: { status: "processing", cache_id: null }
-          }
-        }));
-
-        const cacheStatus = await checkOCRCacheStatus(att.id, formType);
-
-        if (cacheStatus.isProcessing) {
-          addMsg("bot", `⏳ OCR για "${formType}" ήδη σε εξέλιξη. Παρακαλώ περίμενε.`);
-          return;
-        }
-
-        if (cacheStatus.canUseCache) {
-          addMsg("bot", `✅ Χρήση cached δεδομένων για "${formType}".`);
-          const cached = cacheStatus.record;
-          // Mark as completed with cache_id
+        if (isMountedRef.current) {
           setAttachmentOcrStatus(prev => ({
             ...prev,
             [att.id]: {
               ...prev[att.id],
-              [formType]: { status: "completed", cache_id: cached.id }
+              [formType]: { status: "processing", cache_id: null }
             }
           }));
+        }
+
+        const cacheStatus = await checkOCRCacheStatus(att.id, formType);
+
+        if (cacheStatus.isProcessing) {
+          if (isMountedRef.current) addMsg("bot", `⏳ OCR για "${formType}" ήδη σε εξέλιξη.`);
+          return;
+        }
+
+        if (cacheStatus.canUseCache) {
+          const cached = cacheStatus.record;
+          // Mark as completed with cache_id
+          if (isMountedRef.current) {
+            setAttachmentOcrStatus(prev => ({
+              ...prev,
+              [att.id]: {
+                ...prev[att.id],
+                [formType]: { status: "completed", cache_id: cached.id }
+              }
+            }));
+          }
           if (formType === "production") {
             prodCacheId = cached.id;
             prodOcrData = {
@@ -546,7 +553,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
           return;
         }
 
-        // No usable cache — run fresh OCR (backend supersedes automatically)
+        // No usable cache — run fresh OCR
         const res = await ocrWithCache({
           attachment_id: att.id,
           batch_header_id: att.batch_header_id || selBatch?.id,
@@ -558,13 +565,15 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         const data = res?.data || res;
 
         // Mark as completed after successful OCR
-        setAttachmentOcrStatus(prev => ({
-          ...prev,
-          [att.id]: {
-            ...prev[att.id],
-            [formType]: { status: "completed", cache_id: data.cache_id }
-          }
-        }));
+        if (isMountedRef.current) {
+          setAttachmentOcrStatus(prev => ({
+            ...prev,
+            [att.id]: {
+              ...prev[att.id],
+              [formType]: { status: "completed", cache_id: data.cache_id }
+            }
+          }));
+        }
 
         if (formType === "production") {
           prodCacheId = data.cache_id;
@@ -583,50 +592,31 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         }
       });
 
-      const ocrResults = await Promise.allSettled(ocrTasks);
-      // Surface any per-task failures without losing the successful ones
-      ocrResults.forEach((r, i) => {
-        if (r.status === "rejected") {
-          const formType = detectedForms[i];
-          addMsg("bot", `⚠️ OCR για "${formType}" απέτυχε: ${r.reason?.message || "άγνωστο σφάλμα"}`);
-          // Mark as failed
-          setAttachmentOcrStatus(prev => ({
-            ...prev,
-            [att.id]: {
-              ...prev[att.id],
-              [formType]: { status: "failed", cache_id: null }
-            }
-          }));
-        }
-      });
-
-      if (!isMountedRef.current) return;
-      // Guard: if user reset mid-OCR, abort showing modals
-      if (!selBatch) return;
-
-      // Step 3: Store cache IDs
+      await Promise.allSettled(ocrTasks);
+      
+      // Store results for on-demand viewing
       if (prodCacheId) setCurrentProductionCacheId(prodCacheId);
       if (teamsCacheId) setCurrentTeamsTimeCacheId(teamsCacheId);
-
-      // Step 4: Route to modals — production first, then teams_time
-      if (prodOcrData) {
-        setOcrResult(prodOcrData);
-        if (teamsOcrData) {
-          setPendingTeamsTimeOcr({ result: teamsOcrData, att });
-        }
-        setShowOcrModal(true);
-        addMsg("bot", `✅ OCR ολοκληρώθηκε! ${prodOcrData?.extracted_data?.production_lines?.length || 0} γραμμές παραγωγής${teamsOcrData ? ` · ${teamsOcrData?.extracted_data?.team_persons?.length || 0} άτομα Teams Time` : ""}. Επιβεβαίωσε τα δεδομένα.`);
-      } else if (teamsOcrData) {
-        setTeamsTimeOcrResult(teamsOcrData);
-        setShowTeamsTimeOcrModal(true);
-        addMsg("bot", `✅ OCR ολοκληρώθηκε! Βρέθηκαν ${teamsOcrData?.extracted_data?.team_persons?.length || 0} άτομα · ${teamsOcrData?.extracted_data?.team_extra?.length || 0} extra. Επιβεβαίωσε τα δεδομένα.`);
+      if (prodOcrData) setOcrResult(prodOcrData);
+      if (teamsOcrData) setTeamsTimeOcrResult(teamsOcrData);
+      if (prodOcrData || teamsOcrData) setOcrTargetAtt(att);
+      
+      // Notify user that OCR is ready (non-blocking)
+      if (isMountedRef.current && (prodOcrData || teamsOcrData)) {
+        addMsg("bot", `✅ OCR ολοκληρώθηκε! Κάνε κλικ στο "View OCR" για να δεις τα αποτελέσματα.`);
       }
 
     } catch (err) {
       if (!isMountedRef.current) return;
       addMsg("bot", `❌ OCR αποτυχία: ${err?.message || "Network error"}`);
-    } finally {
-      if (isMountedRef.current) setOcrLoading(false);
+      // Mark all forms as failed
+      setAttachmentOcrStatus(prev => {
+        const newStatus = { ...prev, [att.id]: { ...prev[att.id] } };
+        Object.keys(newStatus[att.id]).forEach(formType => {
+          newStatus[att.id][formType] = { status: "failed", cache_id: null };
+        });
+        return newStatus;
+      });
     }
   };
 
@@ -651,28 +641,18 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     } else {
       addMsg("bot", "⚠️ Δεν υπάρχει ενεργό batch. Επίλεξε batch πρώτα.");
     }
-    // If this was a dual-form OCR, automatically open Teams Time modal next
-    if (pendingTeamsTimeOcr) {
-      const { result, att } = pendingTeamsTimeOcr;
-      setPendingTeamsTimeOcr(null);
-      setTeamsTimeOcrResult(result);
-      setOcrTargetAtt(att);
-      setShowTeamsTimeOcrModal(true);
-      addMsg("bot", `📋 Τώρα επιβεβαίωσε τα δεδομένα Teams Time: ${result?.extracted_data?.team_persons?.length || 0} άτομα · ${result?.extracted_data?.team_extra?.length || 0} extra.`);
+    // If there are teams_time results, notify user they can view them
+    if (teamsTimeOcrResult) {
+      addMsg("bot", `📋 Teams Time δεδομένα διαθέσιμα. Κάνε κλικ "View OCR" για να δεις.`);
     }
   };
 
   const handleOcrSkip = () => {
     setShowOcrModal(false);
-    if (pendingTeamsTimeOcr) {
-      const { result, att } = pendingTeamsTimeOcr;
-      setPendingTeamsTimeOcr(null);
-      setTeamsTimeOcrResult(result);
-      setOcrTargetAtt(att);
-      setShowTeamsTimeOcrModal(true);
-      addMsg("bot", `📋 Παραλείφθηκε η αποθήκευση της πρώτης φόρμας. Συνέχεια με Teams Time: ${result?.extracted_data?.team_persons?.length || 0} άτομα · ${result?.extracted_data?.team_extra?.length || 0} extra.`);
-    } else {
-      addMsg("bot", "✅ Φόρμα παραλείφθηκε. Μπορείς να συνεχίσεις με τα επόμενα βήματα.");
+    addMsg("bot", "✅ Production φόρμα παραλείφθηκε.");
+    // If there are teams_time results, notify user they can view them
+    if (teamsTimeOcrResult) {
+      addMsg("bot", `📋 Teams Time δεδομένα διαθέσιμα. Κάνε κλικ "View OCR" για να δεις.`);
     }
   };
 
@@ -689,10 +669,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       saveOCRTeamsTimeData(confirmedData, selBatch.id, () => {
         queryClient.invalidateQueries(["TeamTimePerson", selBatch.id]);
         queryClient.invalidateQueries(["Team_Time_Extra", selBatch.id]);
-        addMsg("bot", `📦 Teams Time δεδομένα αποθηκεύτηκαν στο batch ${selBatch.date} · ${selBatch.department}.`);
+        addMsg("bot", `📦 Teams Time δεδομένα αποθηκεύτηκαν.`);
       }, selBatch.department);
-    } else {
-      addMsg("bot", "⚠️ Δεν υπάρχει ενεργό batch. Επίλεξε batch πρώτα.");
     }
   };
 
@@ -1091,6 +1069,16 @@ CRITICAL SAFETY RULES:
       x: e.clientX - panelPos.x,
       y: e.clientY - panelPos.y
     });
+  };
+
+  const handleViewOCRResults = (att) => {
+    setOcrTargetAtt(att);
+    // Show production modal if available, otherwise teams_time
+    if (ocrResult) {
+      setShowOcrModal(true);
+    } else if (teamsTimeOcrResult) {
+      setShowTeamsTimeOcrModal(true);
+    }
   };
 
   const handleUserMessage = () => {
@@ -1647,11 +1635,11 @@ CRITICAL SAFETY RULES:
         </DialogContent>
       </Dialog>
 
-      {/* OCR Verification Modal - Production Form */}
-      {showOcrModal && ocrResult && ocrTargetAtt && (
+      {/* OCR Verification Modal - Production Form (On-Demand) */}
+      {ocrResult && ocrTargetAtt && (
         <OCRVerificationModal
           open={showOcrModal}
-          onClose={() => setShowOcrModal(false)}
+          onClose={() => { setShowOcrModal(false); setOcrTargetAtt(null); setOcrResult(null); }}
           fileUrl={ocrTargetAtt.file_url}
           fileName={ocrTargetAtt.file_name}
           ocrResult={ocrResult}
@@ -1662,11 +1650,11 @@ CRITICAL SAFETY RULES:
         />
       )}
 
-      {/* OCR Verification Modal - Teams Time Form */}
-      {showTeamsTimeOcrModal && teamsTimeOcrResult && ocrTargetAtt && (
+      {/* OCR Verification Modal - Teams Time Form (On-Demand) */}
+      {teamsTimeOcrResult && ocrTargetAtt && (
         <OCRTeamsTimeVerificationModal
           open={showTeamsTimeOcrModal}
-          onClose={() => setShowTeamsTimeOcrModal(false)}
+          onClose={() => { setShowTeamsTimeOcrModal(false); setOcrTargetAtt(null); setTeamsTimeOcrResult(null); }}
           fileUrl={ocrTargetAtt.file_url}
           fileName={ocrTargetAtt.file_name}
           ocrResult={teamsTimeOcrResult}
