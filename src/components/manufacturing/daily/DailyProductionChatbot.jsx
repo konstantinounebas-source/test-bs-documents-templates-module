@@ -86,7 +86,7 @@ function getFileType(fileName) {
 }
 
 // ─── Attachment item ─────────────────────────────────────────────────────────
-function AttachmentItem({ att, onDelete, onPreview, onOCR, onViewOCR, isDeleting, isOcrLoading, isAnyOcrLoading, ocrStatus = {} }) {
+function AttachmentItem({ att, onDelete, onPreview, onOCR, onOpenProduction, onOpenTeams, isDeleting, isOcrLoading, isAnyOcrLoading, ocrStatus = {} }) {
   const fileType = getFileType(att.file_name);
   
   // Determine overall OCR status (any completed counts as at least partial success)
@@ -137,23 +137,34 @@ function AttachmentItem({ att, onDelete, onPreview, onOCR, onViewOCR, isDeleting
         )}
         
         {/* Status: Completed */}
-        {hasCompleted && !isProcessing && (
-          <div className="flex gap-0.5">
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" onClick={() => onViewOCR(att)} title="View extracted data">
-              <Eye className="w-3 h-3 mr-1" /> View OCR
-            </Button>
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} title="Run OCR again">
-              <RotateCw className="w-3 h-3 mr-1" /> Re-run
-            </Button>
-          </div>
-        )}
+         {hasCompleted && !isProcessing && (
+           <div className="flex gap-0.5">
+             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" onClick={onOpenProduction} title="Open Production form">
+               <Eye className="w-3 h-3 mr-1" /> Production
+             </Button>
+             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" onClick={onOpenTeams} title="Open Teams Time form">
+               <Eye className="w-3 h-3 mr-1" /> Teams
+             </Button>
+             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} title="Run OCR again">
+               <RotateCw className="w-3 h-3 mr-1" /> Re-run
+             </Button>
+           </div>
+         )}
         
         {/* Status: Failed */}
-        {hasFailed && !isProcessing && (
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-red-600 hover:bg-red-50" onClick={() => onOCR(att)} title="Retry OCR extraction">
-            <AlertTriangle className="w-3 h-3 mr-1" /> Retry OCR
-          </Button>
-        )}
+         {hasFailed && !isProcessing && (
+           <div className="flex gap-0.5">
+             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" onClick={onOpenProduction} title="Open Production form">
+               <Eye className="w-3 h-3 mr-1" /> Production
+             </Button>
+             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" onClick={onOpenTeams} title="Open Teams Time form">
+               <Eye className="w-3 h-3 mr-1" /> Teams
+             </Button>
+             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-red-600 hover:bg-red-50" onClick={() => onOCR(att)} title="Retry OCR extraction">
+               <AlertTriangle className="w-3 h-3 mr-1" /> Retry OCR
+             </Button>
+           </div>
+         )}
         
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onPreview(att)} title="Preview">
@@ -266,7 +277,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [viewTeamsTimeOcrResult, setViewTeamsTimeOcrResult] = useState(null);
   const [ocrTargetAtt, setOcrTargetAtt] = useState(null);
   const [ocrFormQueue, setOcrFormQueue] = useState({});
-  const [showManualFormDialog, setShowManualFormDialog] = useState(false);
 
   // missing OCR & bulk OCR control
   const [isMissingOcrLoading, setIsMissingOcrLoading] = useState(false);
@@ -640,27 +650,32 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     // Fire-and-forget background task
     performOCRInBackground(att);
   };
-  
-  const openManualForm = (formType) => {
-    if (!ocrTargetAtt) return;
-    // Mark as detected if not already
-    setOcrFormQueue(prev => ({
-      ...prev,
-      [ocrTargetAtt.id]: {
-        ...prev[ocrTargetAtt.id],
-        detected: Array.from(new Set([...(prev[ocrTargetAtt.id]?.detected || []), formType]))
-      }
-    }));
-    setShowManualFormDialog(false);
-    if (formType === 'production') {
+
+  // Explicit form opening handlers — independent of OCR flow
+  const openProductionForm = async (att) => {
+    setOcrTargetAtt(att);
+    const prodData = await loadOCRDataFromCache(att.id, "production");
+    if (prodData) {
+      setCurrentProductionCacheId(prodData.cache_id);
+      setViewProductionOcrResult(prodData);
+    } else {
       setCurrentProductionCacheId(null);
       setViewProductionOcrResult({ production_lines: [] });
-      setShowOcrModal(true);
-    } else if (formType === 'teams_time') {
+    }
+    setShowOcrModal(true);
+  };
+
+  const openTeamsTimeForm = async (att) => {
+    setOcrTargetAtt(att);
+    const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
+    if (teamsData) {
+      setCurrentTeamsTimeCacheId(teamsData.cache_id);
+      setViewTeamsTimeOcrResult(teamsData);
+    } else {
       setCurrentTeamsTimeCacheId(null);
       setViewTeamsTimeOcrResult({ team_persons: [], team_extra_lines: [] });
-      setShowTeamsTimeOcrModal(true);
     }
+    setShowTeamsTimeOcrModal(true);
   };
 
   // Initialize sequential OCR flow
@@ -1172,36 +1187,8 @@ CRITICAL SAFETY RULES:
               onDelete={id => deleteMutation.mutate(id)}
               onPreview={setPreviewFile}
               onOCR={handleOCR}
-              onViewOCR={async (att) => {
-                 const prodData = await loadOCRDataFromCache(att.id, "production");
-                 const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
-                 setOcrTargetAtt(att);
-
-                 const detected = [];
-                 if (prodData) detected.push('production');
-                 if (teamsData) detected.push('teams_time');
-
-                 if (detected.length === 0) {
-                   addMsg("bot", "⚠️ Δεν υπάρχουν OCR δεδομένα για αυτό το αρχείο.");
-                   return;
-                 }
-
-                 setOcrFormQueue(prev => ({
-                   ...prev,
-                   [att.id]: { detected, completed: [] }
-                 }));
-
-                 // Open first detected form
-                 if (detected[0] === 'production' && prodData) {
-                   setCurrentProductionCacheId(prodData.cache_id);
-                   setViewProductionOcrResult(prodData);
-                   setShowOcrModal(true);
-                 } else if (detected[0] === 'teams_time' && teamsData) {
-                   setCurrentTeamsTimeCacheId(teamsData.cache_id);
-                   setViewTeamsTimeOcrResult(teamsData);
-                   setShowTeamsTimeOcrModal(true);
-                 }
-               }}
+              onOpenProduction={() => openProductionForm(att)}
+              onOpenTeams={() => openTeamsTimeForm(att)}
               isOcrLoading={runningOcrAttachmentIds.has(att.id)}
               isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
               isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
@@ -1743,48 +1730,7 @@ CRITICAL SAFETY RULES:
         />
       )}
 
-      {/* Manual Form Dialog - Open missing form */}
-      {showManualFormDialog && ocrTargetAtt && (
-        <Dialog open={showManualFormDialog} onOpenChange={setShowManualFormDialog}>
-          <DialogContent className="max-w-sm">
-            <DialogHeader>
-              <DialogTitle>Ανοιχτή Φόρμα</DialogTitle>
-            </DialogHeader>
-            <div className="py-4 space-y-3">
-              <p className="text-sm text-slate-700">
-                Δεν βρέθηκαν OCR δεδομένα για αυτή τη φόρμα. Θέλεις να την εισάγεις χειροκίνητα;
-              </p>
-              <div className="flex flex-col gap-2">
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700" 
-                  onClick={() => {
-                    const queue = ocrFormQueue[ocrTargetAtt.id];
-                    const nextForm = getNextForm(queue, '');
-                    if (nextForm === 'production') {
-                      openManualForm('production');
-                    } else if (nextForm === 'teams_time') {
-                      openManualForm('teams_time');
-                    } else {
-                      setShowManualFormDialog(false);
-                    }
-                  }}>
-                  ✏️ Χειροκίνητη Εισαγωγή
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => {
-                  const queue = ocrFormQueue[ocrTargetAtt.id];
-                  const nextForm = getNextForm(queue, '');
-                  if (nextForm) {
-                    advanceOcrFlow('');
-                  } else {
-                    setShowManualFormDialog(false);
-                  }
-                }}>
-                  Παράλειψη
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+
 
       {/* Split Layout - Inline Chat Panel */}
       {isSplitLayout && (
@@ -1870,41 +1816,14 @@ CRITICAL SAFETY RULES:
                       onDelete={id => deleteMutation.mutate(id)}
                       onPreview={setPreviewFile}
                       onOCR={handleOCR}
-                      onViewOCR={async (att) => {
-                         const prodData = await loadOCRDataFromCache(att.id, "production");
-                         const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
-                         setOcrTargetAtt(att);
-                         
-                         const detected = [];
-                         if (prodData) detected.push('production');
-                         if (teamsData) detected.push('teams_time');
-                         
-                         if (detected.length === 0) {
-                           addMsg("bot", "⚠️ Δεν υπάρχουν OCR δεδομένα για αυτό το αρχείο.");
-                           return;
-                         }
-                         
-                         setOcrFormQueue(prev => ({
-                           ...prev,
-                           [att.id]: { detected, completed: [] }
-                         }));
-                         
-                         if (detected[0] === 'production' && prodData) {
-                           setCurrentProductionCacheId(prodData.cache_id);
-                           setViewProductionOcrResult(prodData);
-                           setShowOcrModal(true);
-                         } else if (detected[0] === 'teams_time' && teamsData) {
-                           setCurrentTeamsTimeCacheId(teamsData.cache_id);
-                           setViewTeamsTimeOcrResult(teamsData);
-                           setShowTeamsTimeOcrModal(true);
-                         }
-                       }}
+                      onOpenProduction={() => openProductionForm(att)}
+                      onOpenTeams={() => openTeamsTimeForm(att)}
                       isOcrLoading={runningOcrAttachmentIds.has(att.id)}
                       isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
                       isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
                       ocrStatus={attachmentOcrStatus[att.id] || {}} />
                   ))}
-                </div>
+                  </div>
               </div>
             )}
           </div>
