@@ -1162,23 +1162,6 @@ CRITICAL SAFETY RULES:
     });
   };
 
-  const handleOCRButtonClick = (att, action = "start") => {
-    // action: "start" (initial run), "rerun" (start again), "view" (show modal)
-    if (action === "view") {
-      // Open modal with existing results — NO rerun
-      setOcrTargetAtt(att);
-      if (ocrResult) {
-        setShowOcrModal(true);
-      } else if (teamsTimeOcrResult) {
-        setShowTeamsTimeOcrModal(true);
-      }
-      return;
-    }
-    
-    // "start" or "rerun" — trigger background OCR
-    handleOCR(att);
-  };
-
   const handleUserMessage = () => {
     const text = userInput.trim();
     if (!text) return;
