@@ -1880,8 +1880,8 @@ CRITICAL SAFETY RULES:
                   onAddMsg={addMsg}
                 />
               ) : activeUtility === "processing" ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="space-y-4 flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-2 flex-shrink-0">
                     <h3 className="text-sm font-semibold text-slate-800">Processing Queue</h3>
                     <button 
                       onClick={() => setActiveUtility(null)}
@@ -1890,21 +1890,30 @@ CRITICAL SAFETY RULES:
                       <X className="w-4 h-4" />
                     </button>
                   </div>
-                  {runningOcrAttachmentIds.size > 0 ? (
-                    <div className="space-y-2">
-                      {attachments.filter(a => runningOcrAttachmentIds.has(a.id)).map(att => (
-                        <div key={att.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <p className="text-xs font-medium text-slate-700">{att.file_name}</p>
-                            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                  
+                  {/* Upload zone */}
+                  <div className="flex-shrink-0">
+                    <DropZone onFiles={handleFiles} isUploading={uploadingCount > 0} />
+                  </div>
+
+                  {/* Processing list */}
+                  <div className="flex-1 overflow-y-auto">
+                    {runningOcrAttachmentIds.size > 0 ? (
+                      <div className="space-y-2">
+                        {attachments.filter(a => runningOcrAttachmentIds.has(a.id)).map(att => (
+                          <div key={att.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs font-medium text-slate-700">{att.file_name}</p>
+                              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                            </div>
+                            <div className="text-xs text-slate-500">Processing...</div>
                           </div>
-                          <div className="text-xs text-slate-500">Processing...</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-500 text-center py-8">No files processing. Upload files to begin.</p>
-                  )}
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-500 text-center py-4">No files processing.</p>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <>
