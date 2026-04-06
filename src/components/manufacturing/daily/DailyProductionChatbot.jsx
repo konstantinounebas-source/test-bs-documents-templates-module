@@ -142,6 +142,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isResizing, setIsResizing] = useState(false);
   const [activeSection, setActiveSection] = useState("daily-forms"); // "daily-forms" | "daily-data"
+  const [activeUtility, setActiveUtility] = useState(null); // null | "processing"
   const panelRef = useRef();
 
   // wizard state
@@ -512,6 +513,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       });
       queryClient.invalidateQueries(["BatchAttachments", selBatch?.id]);
       addMsg("bot", `📎 Αρχείο "${att.file_name}" ανέβηκε επιτυχώς!`);
+      // Auto-open Processing utility when file is uploaded
+      if (isSplitLayout) setActiveUtility("processing");
     } catch (err) {
       addMsg("bot", `❌ Αποτυχία ανεβάσματος "${file.name}": ${err?.message || "Άγνωστο σφάλμα"}`);
     } finally {
@@ -1728,7 +1731,15 @@ CRITICAL SAFETY RULES:
                 Daily Data
               </button>
               <div className="flex-1" />
-              <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100" title="Processing">
+              <button 
+                onClick={() => setActiveUtility(activeUtility === "processing" ? null : "processing")}
+                className={`p-1 rounded transition-colors ${
+                  activeUtility === "processing" 
+                    ? "bg-blue-100 text-blue-600" 
+                    : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                }`}
+                title="Processing"
+              >
                 <Settings className="w-4 h-4" />
               </button>
               <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100" title="OCR Tools">
@@ -1741,11 +1752,42 @@ CRITICAL SAFETY RULES:
 
             {/* Tab Content Area */}
             <ScrollArea className="flex-1 p-4 overflow-y-auto">
-              {activeSection === "daily-forms" && renderAttachmentsStep()}
-              {activeSection === "daily-data" && (
-                <div className="space-y-3">
-                  {renderSharedSteps()}
+              {activeUtility === "processing" ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-slate-800">Processing Queue</h3>
+                    <button 
+                      onClick={() => setActiveUtility(null)}
+                      className="text-slate-400 hover:text-slate-600 p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {runningOcrAttachmentIds.size > 0 ? (
+                    <div className="space-y-2">
+                      {attachments.filter(a => runningOcrAttachmentIds.has(a.id)).map(att => (
+                        <div key={att.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-medium text-slate-700">{att.file_name}</p>
+                            <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                          </div>
+                          <div className="text-xs text-slate-500">Processing...</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 text-center py-8">No files processing. Upload files to begin.</p>
+                  )}
                 </div>
+              ) : (
+                <>
+                  {activeSection === "daily-forms" && renderAttachmentsStep()}
+                  {activeSection === "daily-data" && (
+                    <div className="space-y-3">
+                      {renderSharedSteps()}
+                    </div>
+                  )}
+                </>
               )}
             </ScrollArea>
           </div>
