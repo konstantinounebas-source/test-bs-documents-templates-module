@@ -1105,7 +1105,8 @@ CRITICAL SAFETY RULES:
               isOcrLoading={runningOcrAttachmentIds.has(att.id)}
               isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
               isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
-              ocrStatus={attachmentOcrStatus[att.id] || {}} />
+              ocrStatus={attachmentOcrStatus[att.id] || {}}
+              selDept={selDept} />
           ))}
         </div>
       )}
@@ -1734,7 +1735,8 @@ CRITICAL SAFETY RULES:
                        isOcrLoading={runningOcrAttachmentIds.has(att.id)}
                        isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
                        isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
-                       ocrStatus={attachmentOcrStatus[att.id] || {}} />
+                       ocrStatus={attachmentOcrStatus[att.id] || {}}
+                       selDept={selDept} />
                    ))}
                    </div>
               </div>

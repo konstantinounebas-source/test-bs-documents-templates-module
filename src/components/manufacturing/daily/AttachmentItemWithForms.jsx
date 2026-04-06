@@ -23,9 +23,10 @@ function getFileType(fileName) {
 
 export default function AttachmentItemWithForms({ 
   att, onDelete, onPreview, onOCR, onOpenProduction, onOpenTeams, 
-  isDeleting, isOcrLoading, isAnyOcrLoading, ocrStatus = {} 
+  isDeleting, isOcrLoading, isAnyOcrLoading, ocrStatus = {}, selDept = ""
 }) {
   const [showFormsMenu, setShowFormsMenu] = useState(false);
+  const isPrePaint = selDept === "Pre-paint";
   const fileType = getFileType(att.file_name);
   
   // Determine overall OCR status
@@ -91,27 +92,41 @@ export default function AttachmentItemWithForms({
 
       {/* Action Buttons */}
       <div className="flex gap-1">
-        {/* Forms Menu — Always visible */}
-        <DropdownMenu open={showFormsMenu} onOpenChange={setShowFormsMenu}>
-          <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" 
-              title="Open form"
-            >
-              📄 Forms
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem onClick={() => { onOpenProduction(); setShowFormsMenu(false); }}>
-              📋 Production Form
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { onOpenTeams(); setShowFormsMenu(false); }}>
-              👥 Teams Time Form
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Forms — Always visible */}
+        {isPrePaint ? (
+          // Pre-paint: Direct button, no dropdown
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" 
+            title="Open Production Form"
+            onClick={onOpenProduction}
+          >
+            📄 Forms
+          </Button>
+        ) : (
+          // Other depts: Dropdown menu
+          <DropdownMenu open={showFormsMenu} onOpenChange={setShowFormsMenu}>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" 
+                title="Open form"
+              >
+                📄 Forms
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onClick={() => { onOpenProduction(); setShowFormsMenu(false); }}>
+                📋 Production Form
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { onOpenTeams(); setShowFormsMenu(false); }}>
+                👥 Teams Time Form
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         {/* Run/Re-run/Retry OCR — conditional */}
         {prodStatus === "none" && teamsStatus === "none" && (
