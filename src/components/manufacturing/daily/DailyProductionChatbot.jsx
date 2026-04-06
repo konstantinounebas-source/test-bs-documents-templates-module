@@ -162,7 +162,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [blReviewItems, setBlReviewItems]   = useState([]); // [{item_code, scheduled_qty, qty_processed, qty_out_good, qty_scrap}]
   const [blCurrentIdx, setBlCurrentIdx]     = useState(0);
   const [blAddForm, setBlAddForm]           = useState({ item_code: "", qty_processed: "", qty_out_good: "", qty_scrap: "" });
-  const [blAddFormExpanded, setBlAddFormExpanded] = useState(true);
+  const [blAddFormExpanded, setBlAddFormExpanded] = useState(false);
 
   // attachment preview
   const [previewFile, setPreviewFile] = useState(null);
