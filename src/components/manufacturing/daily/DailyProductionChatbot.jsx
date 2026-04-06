@@ -1935,6 +1935,7 @@ CRITICAL SAFETY RULES:
                       batchHeaders={batchHeaders}
                       setStep={setStep}
                       selBatch={selBatch}
+                      setSelBatch={setSelBatch}
                     />
                   )}
                 </>

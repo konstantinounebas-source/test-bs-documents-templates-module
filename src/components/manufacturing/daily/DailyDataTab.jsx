@@ -12,7 +12,8 @@ export default function DailyDataTab({
   renderSharedSteps,
   batchHeaders,
   setStep,
-  selBatch
+  selBatch,
+  setSelBatch
 }) {
   // Get all batches and filter by selected date
   const { data: allBatches = [] } = useQuery({
@@ -64,17 +65,22 @@ export default function DailyDataTab({
             <div className="grid grid-cols-2 gap-2">
               {departmentsWithBatches.map(dept => (
                 <Button
-                  key={dept.id}
-                  variant={selDept === dept.name ? "default" : "outline"}
-                  size="sm"
-                  className="text-xs justify-start"
-                  onClick={() => {
-                      setSelDept(dept.name);
-                      if (setStep) setStep("batch_lines_add");
-                    }}
-                >
-                  {dept.name}
-                </Button>
+                    key={dept.id}
+                    variant={selDept === dept.name ? "default" : "outline"}
+                    size="sm"
+                    className="text-xs justify-start"
+                    onClick={() => {
+                        setSelDept(dept.name);
+                        if (setStep) setStep("batch_lines_add");
+                        // Auto-find and set the batch for this dept+date
+                        const batch = dateBatches.find(b => b.department === dept.name);
+                        if (batch && setSelBatch) {
+                          setSelBatch(batch);
+                        }
+                      }}
+                  >
+                    {dept.name}
+                  </Button>
               ))}
             </div>
 
