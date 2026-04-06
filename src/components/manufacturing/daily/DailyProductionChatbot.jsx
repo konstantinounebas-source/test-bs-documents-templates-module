@@ -1280,7 +1280,23 @@ CRITICAL SAFETY RULES:
   );
 
   const renderChatInput = () => (
-    <div className="border-t bg-white p-2 flex gap-2 items-center flex-shrink-0">
+    <div className="border-t bg-white p-2 flex gap-2 items-center flex-shrink-0"
+      onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add("bg-blue-50"); }}
+      onDragLeave={e => e.currentTarget.classList.remove("bg-blue-50")}
+      onDrop={e => {
+        e.preventDefault();
+        e.currentTarget.classList.remove("bg-blue-50");
+        if (selBatch) handleFiles(e.dataTransfer.files);
+      }}
+    >
+      <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf" className="hidden"
+        onChange={e => { if (selBatch && e.target.files) handleFiles(e.target.files); e.target.value = ""; }}
+      />
+      <button onClick={() => fileInputRef.current?.click()} disabled={!selBatch}
+        className="bg-slate-200 hover:bg-slate-300 disabled:opacity-40 text-slate-700 rounded-xl p-2 transition-colors flex-shrink-0"
+        title="Attach file">
+        <Paperclip className="w-4 h-4" />
+      </button>
       <input ref={inputRef} type="text" value={userInput}
         onChange={e => setUserInput(e.target.value)}
         onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } }}
@@ -1288,7 +1304,7 @@ CRITICAL SAFETY RULES:
         className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400 bg-slate-50"
       />
       <button onClick={handleUserMessage} disabled={!userInput.trim()}
-        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl p-2 transition-colors">
+        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl p-2 transition-colors flex-shrink-0">
         <Send className="w-4 h-4" />
       </button>
     </div>
@@ -1474,7 +1490,15 @@ CRITICAL SAFETY RULES:
         {!minimized && (
           <div className="flex flex-col flex-1 overflow-hidden">
             {/* Chat log */}
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="flex-1 p-4"
+              onDragOver={e => { if (selBatch) { e.preventDefault(); e.currentTarget.classList.add("bg-blue-50"); } }}
+              onDragLeave={e => e.currentTarget.classList.remove("bg-blue-50")}
+              onDrop={e => {
+                e.preventDefault();
+                e.currentTarget.classList.remove("bg-blue-50");
+                if (selBatch) handleFiles(e.dataTransfer.files);
+              }}
+            >
               <div className="space-y-3">
                 {messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -1681,7 +1705,15 @@ CRITICAL SAFETY RULES:
             />
 
             {/* Chat log */}
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="flex-1 p-4"
+              onDragOver={e => { if (selBatch) { e.preventDefault(); e.currentTarget.classList.add("bg-blue-50"); } }}
+              onDragLeave={e => e.currentTarget.classList.remove("bg-blue-50")}
+              onDrop={e => {
+                e.preventDefault();
+                e.currentTarget.classList.remove("bg-blue-50");
+                if (selBatch) handleFiles(e.dataTransfer.files);
+              }}
+            >
               <div className="space-y-3">
                 {messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
