@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { format, subDays } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import AttachmentItemWithForms from "./AttachmentItemWithForms";
+import DailyFormsTab from "./DailyFormsTab";
 import ExistingLineRow from "./chatbot/ExistingLineRow";
 import ItemCodeMultiSelect from "./chatbot/ItemCodeMultiSelect";
 import ChatStepQC from "./chatbot/ChatStepQC";
@@ -1781,7 +1782,19 @@ CRITICAL SAFETY RULES:
                 </div>
               ) : (
                 <>
-                  {activeSection === "daily-forms" && renderAttachmentsStep()}
+                  {activeSection === "daily-forms" && (
+                    <DailyFormsTab
+                      selDate={selDate}
+                      onOpenProduction={openProductionForm}
+                      onOpenTeams={openTeamsTimeForm}
+                      onPreview={setPreviewFile}
+                      onOCR={handleOCR}
+                      onDelete={att => deleteMutation.mutate(att)}
+                      runningOcrAttachmentIds={runningOcrAttachmentIds}
+                      attachmentOcrStatus={attachmentOcrStatus}
+                      deleteMutation={deleteMutation}
+                    />
+                  )}
                   {activeSection === "daily-data" && (
                     <div className="space-y-3">
                       {renderSharedSteps()}
