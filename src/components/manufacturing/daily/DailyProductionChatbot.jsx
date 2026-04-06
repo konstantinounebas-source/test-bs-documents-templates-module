@@ -1796,8 +1796,22 @@ CRITICAL SAFETY RULES:
                     />
                   )}
                   {activeSection === "daily-data" && (
-                    <div className="space-y-3">
-                      {renderSharedSteps()}
+                    <div className="space-y-0 flex flex-col h-full">
+                      {/* Daily Data Header */}
+                      <div className="px-4 py-3 border-b border-slate-200 flex-shrink-0">
+                        <h3 className="text-sm font-semibold text-slate-800">
+                          Daily Production Data
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Batch lines · QC · Operations · Team · Consumables
+                        </p>
+                      </div>
+                      {/* Daily Data Content */}
+                      <div className="flex-1 overflow-y-auto p-4">
+                        <div className="space-y-3">
+                          {renderSharedSteps()}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </>
