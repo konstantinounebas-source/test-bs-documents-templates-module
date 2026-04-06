@@ -319,6 +319,20 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     staleTime: 5 * 60 * 1000
   });
 
+  // Bulk load all batch attachments for missing OCR detection
+  const { data: allBatchAttachments = [] } = useQuery({
+    queryKey: ["BatchAttachments-All"],
+    queryFn: () => base44.entities.BatchAttachment.list(),
+    staleTime: 5 * 60 * 1000
+  });
+
+  // Bulk load all OCR cache records for missing OCR detection
+  const { data: allOCRCacheRecords = [] } = useQuery({
+    queryKey: ["OCRCache-All"],
+    queryFn: () => base44.entities.OCRCache.list(),
+    staleTime: 5 * 60 * 1000
+  });
+
   const { data: attachments = [], isLoading: loadingAtts } = useQuery({
     queryKey: ["BatchAttachments", selBatch?.id],
     queryFn: async () => {
@@ -411,23 +425,33 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         return;
       }
 
-      // Limit to 50 batches to avoid rate limit
-      const maxBatches = 50;
-      const batchesToScan = batchesToCheck.slice(0, maxBatches);
-      const isTruncated = batchesToCheck.length > maxBatches;
+      // Build lookup: attachmentId -> { production: bool, teams_time: bool }
+      const cacheByAttId = {};
+      for (const cache of allOCRCacheRecords) {
+        if (!cacheByAttId[cache.attachment_id]) {
+          cacheByAttId[cache.attachment_id] = { production: false, teams_time: false };
+        }
+        // Mark as completed if it's the current record for its form_type
+        if (cache.form_type === "production" && cache.status === "completed") {
+          cacheByAttId[cache.attachment_id].production = true;
+        }
+        if (cache.form_type === "teams_time" && cache.status === "completed") {
+          cacheByAttId[cache.attachment_id].teams_time = true;
+        }
+      }
 
-      // GROUP by date + department, accumulate missing counts
+      // GROUP by date + department, detect missing OCR in memory
       const grouped = {};
 
-      for (const batch of batchesToScan) {
-        const batchAtts = await base44.entities.BatchAttachment.filter({ batch_header_id: batch.id });
+      for (const batch of batchesToCheck) {
+        // Get attachments for this batch from bulk-loaded data
+        const batchAtts = allBatchAttachments.filter(a => a.batch_header_id === batch.id);
         let missingCount = 0;
 
         for (const att of batchAtts) {
-          const prodStatus = await checkOCRCacheStatus(att.id, "production");
-          const teamsStatus = await checkOCRCacheStatus(att.id, "teams_time");
-          
-          if (!prodStatus?.canUseCache && !teamsStatus?.canUseCache) {
+          const cacheInfo = cacheByAttId[att.id];
+          // Missing OCR if no completed production AND no completed teams_time
+          if ((!cacheInfo || !cacheInfo.production) && (!cacheInfo || !cacheInfo.teams_time)) {
             missingCount++;
           }
         }
@@ -444,15 +468,12 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       const result = Object.values(grouped);
 
       // Build chat message with results
-      let msg = `✅ Scanned ${batchesToScan.length} batches. Found ${result.length} with missing OCR.\n`;
+      let msg = `✅ Scanned ${batchesToCheck.length} batches. Found ${result.length} with missing OCR.\n`;
       if (result.length > 0) {
         msg += "\n📋 Missing OCR Attachments:\n";
         result.forEach(item => {
           msg += `• ${item.date} | ${item.department} | ⚠️ ${item.attachmentsWithoutOCRCount} attachment${item.attachmentsWithoutOCRCount > 1 ? 's' : ''}\n`;
         });
-      }
-      if (isTruncated) {
-        msg += `\n⚠️ Limited to first ${maxBatches} batches. Refine filters to scan remaining ${batchesToCheck.length - maxBatches} batches.`;
       }
       addMsg("bot", msg);
     } catch (error) {
