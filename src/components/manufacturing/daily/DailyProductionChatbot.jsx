@@ -408,12 +408,16 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       }
 
       if (batchesToCheck.length === 0) {
-        setMissingOcrResults([]);
         addMsg("bot", "No batches match the selected filters.");
         return;
       }
 
-      for (const batch of batchesToCheck) {
+      // Limit to 50 batches to avoid rate limit
+      const maxBatches = 50;
+      const batchesToScan = batchesToCheck.slice(0, maxBatches);
+      const isTruncated = batchesToCheck.length > maxBatches;
+
+      for (const batch of batchesToScan) {
         const batchAtts = await base44.entities.BatchAttachment.filter({ batch_header_id: batch.id });
         let missingCount = 0;
 
@@ -435,8 +439,18 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         }
       }
 
-      setMissingOcrResults(result);
-      addMsg("bot", `✅ Scanned ${batchesToCheck.length} batches. Found ${result.length} with missing OCR.`);
+      // Build chat message with results
+      let msg = `✅ Scanned ${batchesToScan.length} batches. Found ${result.length} with missing OCR.\n`;
+      if (result.length > 0) {
+        msg += "\n📋 Missing OCR Attachments:\n";
+        result.forEach(item => {
+          msg += `• ${item.date} | ${item.department} | ⚠️ ${item.attachmentsWithoutOCRCount} attachment${item.attachmentsWithoutOCRCount > 1 ? 's' : ''}\n`;
+        });
+      }
+      if (isTruncated) {
+        msg += `\n⚠️ Limited to first ${maxBatches} batches. Refine filters to scan remaining ${batchesToCheck.length - maxBatches} batches.`;
+      }
+      addMsg("bot", msg);
     } catch (error) {
       console.error("Error detecting missing OCR:", error);
       addMsg("bot", `❌ Error detecting missing OCR: ${error?.message || "Unknown error"}`);
@@ -1824,27 +1838,6 @@ CRITICAL SAFETY RULES:
           totalPages={1}
           defaultPage={1}
         />
-      )}
-
-      {/* Missing OCR Detection Results */}
-      {missingOcrResults && (
-        <div className="fixed bottom-6 right-6 z-50 bg-white border border-amber-200 rounded-lg shadow-lg p-4 max-w-sm">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-sm text-amber-900">Attachments Missing OCR</h3>
-            <button onClick={() => setMissingOcrResults(null)} className="text-amber-600 hover:text-amber-800 text-lg leading-none">×</button>
-          </div>
-          {missingOcrResults.length === 0 ? (
-            <p className="text-xs text-amber-700">✓ No batches with missing OCR found.</p>
-          ) : (
-            <div className="space-y-1 max-h-64 overflow-y-auto">
-              {missingOcrResults.map((item, i) => (
-                <div key={i} className="text-xs text-amber-800 bg-amber-50 rounded px-2 py-1.5">
-                  <span className="font-medium">{item.date}</span> | <span className="font-medium">{item.department}</span> | <span className="text-amber-900">⚠ {item.attachmentsWithoutOCRCount} attachment{item.attachmentsWithoutOCRCount > 1 ? 's' : ''}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       )}
 
       {/* Split Layout - Inline Chat Panel */}
