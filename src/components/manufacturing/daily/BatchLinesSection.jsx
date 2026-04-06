@@ -43,10 +43,7 @@ export default function BatchLinesSection({
           const isMissing = bundleItemCodes.length > 0 && !bundleItemCodes.includes(blCode);
           
           return (
-            <div key={bl.id} className="flex items-center gap-1">
-              {showMissingWarnings && isMissing && (
-                <AlertTriangle className="w-3 h-3 flex-shrink-0 text-red-600" />
-              )}
+            <div key={bl.id} className="flex items-center gap-1 group">
               <div className="flex-1">
                 <ExistingLineRow 
                   bl={bl}
@@ -61,6 +58,9 @@ export default function BatchLinesSection({
                   }}
                 />
               </div>
+              {showMissingWarnings && isMissing && (
+                <AlertTriangle className="w-3 h-3 flex-shrink-0 text-red-600" />
+              )}
             </div>
           );
         })}
