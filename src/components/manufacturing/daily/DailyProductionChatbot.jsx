@@ -39,6 +39,7 @@ import {
   createTeamsTimeSkipHandler
 } from "./chatbot/ocrFlowHandlers";
 import BulkOCRPanel from "./BulkOCRPanel";
+import IntakeBlock from "./IntakeBlock";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
@@ -1665,11 +1666,6 @@ CRITICAL SAFETY RULES:
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <Bot className="w-5 h-5 flex-shrink-0" />
               <span className="font-semibold text-sm truncate">AI Production Assistant</span>
-              {selBatch && (
-                <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0 flex-shrink-0">
-                  {selBatch.date} · {selDept}
-                </Badge>
-              )}
             </div>
             <div className="flex items-center gap-1">
               <button onClick={handleReset} className="hover:bg-blue-700 rounded p-1 opacity-70 hover:opacity-100" title="Reset">
@@ -1683,6 +1679,18 @@ CRITICAL SAFETY RULES:
               </button>
             </div>
           </div>
+
+          {/* Intake Block */}
+          <IntakeBlock
+            quickDates={quickDates}
+            customDate={customDate}
+            setCustomDate={setCustomDate}
+            showPicker={showPicker}
+            setShowPicker={setShowPicker}
+            onDateSelect={handleDateSelect}
+            selDate={selDate}
+            selDept={selDept}
+          />
 
           {/* Chat log */}
           <ScrollArea className="flex-1 p-4">
