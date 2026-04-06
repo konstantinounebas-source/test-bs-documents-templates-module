@@ -256,6 +256,11 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [viewTeamsTimeOcrResult, setViewTeamsTimeOcrResult] = useState(null);
   // OCR Status Tracking: { attachment_id: { production: { status, cache_id }, teams_time: { status, cache_id } } }
   const [attachmentOcrStatus, setAttachmentOcrStatus] = useState({});
+  
+  // OCR form queue: track detected/completed forms per attachment for sequential processing
+  const [ocrFormQueue, setOcrFormQueue] = useState({}); // { att_id: { detected: ['production', 'teams_time'], completed: [], current: 'production' } }
+  const [showManualFormDialog, setShowManualFormDialog] = useState(false);
+  const [pendingManualForm, setPendingManualForm] = useState(null); // { attId, formType }
 
   // missing OCR & bulk OCR control
   const [isMissingOcrLoading, setIsMissingOcrLoading] = useState(false);
@@ -626,6 +631,28 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     // Fire-and-forget background task
     performOCRInBackground(att);
   };
+  
+  const openManualForm = (formType) => {
+    if (!ocrTargetAtt) return;
+    // Initialize empty form for manual entry (no cache_id)
+    setOcrFormQueue(prev => ({
+      ...prev,
+      [ocrTargetAtt.id]: {
+        ...prev[ocrTargetAtt.id],
+        detected: [...(prev[ocrTargetAtt.id]?.detected || []), formType]
+      }
+    }));
+    setShowManualFormDialog(false);
+    if (formType === 'production') {
+      setCurrentProductionCacheId(null);
+      setViewProductionOcrResult({ production_lines: [] });
+      setShowOcrModal(true);
+    } else if (formType === 'teams_time') {
+      setCurrentTeamsTimeCacheId(null);
+      setViewTeamsTimeOcrResult({ team_persons: [], team_extra_lines: [] });
+      setShowTeamsTimeOcrModal(true);
+    }
+  };
 
   const handleOcrConfirm = async (confirmedData) => {
     setShowOcrModal(false);
@@ -643,23 +670,56 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         queryClient.invalidateQueries(["Batch_Lines", selBatch.id]);
         queryClient.invalidateQueries(["QC_Initial_Stock", selBatch.id]);
         queryClient.invalidateQueries(["Operations", selBatch.id]);
-        addMsg("bot", `📦 OCR δεδομένα αποθηκεύτηκαν στο batch ${selBatch.date} · ${selBatch.department}.`);
+        addMsg("bot", `📦 Production δεδομένα αποθηκεύτηκαν.`);
       });
     } else {
       addMsg("bot", "⚠️ Δεν υπάρχει ενεργό batch. Επίλεξε batch πρώτα.");
     }
-    // Check if teams_time data exists
-    if (ocrTargetAtt && currentTeamsTimeCacheId) {
-      addMsg("bot", `📋 Teams Time δεδομένα διαθέσιμα. Κάνε κλικ "View OCR" για να δεις.`);
+    
+    // Mark production as completed and continue to next form if exists
+    if (ocrTargetAtt) {
+      setOcrFormQueue(prev => ({
+        ...prev,
+        [ocrTargetAtt.id]: {
+          ...prev[ocrTargetAtt.id],
+          completed: [...(prev[ocrTargetAtt.id]?.completed || []), 'production']
+        }
+      }));
+      
+      const queue = ocrFormQueue[ocrTargetAtt.id] || {};
+      const remaining = (queue.detected || []).filter(f => f !== 'production' && !queue.completed?.includes(f));
+      
+      if (remaining.length > 0 && remaining.includes('teams_time') && currentTeamsTimeCacheId) {
+        // Auto-open teams_time modal if data exists
+        setCurrentTeamsTimeCacheId(currentTeamsTimeCacheId);
+        setShowTeamsTimeOcrModal(true);
+      }
     }
   };
 
   const handleOcrSkip = () => {
     setShowOcrModal(false);
-    addMsg("bot", "✅ Production φόρμα παραλείφθηκε.");
-    // Check if teams_time data exists
-    if (ocrTargetAtt && currentTeamsTimeCacheId) {
-      addMsg("bot", `📋 Teams Time δεδομένα διαθέσιμα. Κάνε κλικ "View OCR" για να δεις.`);
+    addMsg("bot", "✅ Production φόρμα παραλείφθηκε (δεν αποθηκεύτηκαν δεδομένα).");
+    
+    // Mark production as skipped and continue to next form if exists
+    if (ocrTargetAtt) {
+      setOcrFormQueue(prev => ({
+        ...prev,
+        [ocrTargetAtt.id]: {
+          ...prev[ocrTargetAtt.id],
+          completed: [...(prev[ocrTargetAtt.id]?.completed || []), 'production']
+        }
+      }));
+      
+      const queue = ocrFormQueue[ocrTargetAtt.id] || {};
+      const remaining = (queue.detected || []).filter(f => f !== 'production' && !queue.completed?.includes(f));
+      
+      if (remaining.length > 0 && remaining.includes('teams_time') && currentTeamsTimeCacheId) {
+        // Auto-open teams_time modal if data exists
+        setShowTeamsTimeOcrModal(true);
+      } else if (remaining.length === 0) {
+        addMsg("bot", "🎉 Όλες οι διαθέσιμες φόρμες έχουν ολοκληρωθεί.");
+      }
     }
   };
 
@@ -678,6 +738,17 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         queryClient.invalidateQueries(["Team_Time_Extra", selBatch.id]);
         addMsg("bot", `📦 Teams Time δεδομένα αποθηκεύτηκαν.`);
       }, selBatch.department);
+    }
+    
+    // Mark teams_time as completed
+    if (ocrTargetAtt) {
+      setOcrFormQueue(prev => ({
+        ...prev,
+        [ocrTargetAtt.id]: {
+          ...prev[ocrTargetAtt.id],
+          completed: [...(prev[ocrTargetAtt.id]?.completed || []), 'teams_time']
+        }
+      }));
     }
   };
 
@@ -1153,6 +1224,22 @@ CRITICAL SAFETY RULES:
                 const prodData = await loadOCRDataFromCache(att.id, "production");
                 const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
                 setOcrTargetAtt(att);
+
+                // Initialize form queue for this attachment
+                const detected = [];
+                if (prodData) detected.push('production');
+                if (teamsData) detected.push('teams_time');
+
+                if (detected.length === 0) {
+                  addMsg("bot", "⚠️ Δεν υπάρχουν OCR δεδομένα για αυτό το αρχείο.");
+                  return;
+                }
+
+                setOcrFormQueue(prev => ({
+                  ...prev,
+                  [att.id]: { detected, completed: [], current: detected[0] }
+                }));
+
                 if (prodData) {
                   setCurrentProductionCacheId(prodData.cache_id);
                   setViewProductionOcrResult(prodData);
@@ -1689,9 +1776,9 @@ CRITICAL SAFETY RULES:
       )}
 
       {/* OCR Verification Modal - Teams Time Form (On-Demand) */}
-      {currentTeamsTimeCacheId && ocrTargetAtt && (
+      {(currentTeamsTimeCacheId || viewTeamsTimeOcrResult?.team_persons !== undefined) && ocrTargetAtt && (
         <OCRTeamsTimeVerificationModal
-          key={`${ocrTargetAtt?.id || "none"}-${currentTeamsTimeCacheId || "none"}`}
+          key={`${ocrTargetAtt?.id || "none"}-${currentTeamsTimeCacheId || "manual"}`}
           open={showTeamsTimeOcrModal}
           onClose={() => { setShowTeamsTimeOcrModal(false); setViewTeamsTimeOcrResult(null); }}
           fileUrl={ocrTargetAtt.file_url}
@@ -1701,6 +1788,34 @@ CRITICAL SAFETY RULES:
           totalPages={1}
           defaultPage={1}
         />
+      )}
+
+      {/* Manual Form Dialog - Choose missing form type */}
+      {showManualFormDialog && ocrTargetAtt && (
+        <Dialog open={showManualFormDialog} onOpenChange={setShowManualFormDialog}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Ανοιχτή Φόρμα</DialogTitle>
+            </DialogHeader>
+            <div className="py-4 space-y-3">
+              <p className="text-sm text-slate-700">
+                Ποια φόρμα θέλεις να εισάγεις χειροκίνητα για <strong>{ocrTargetAtt.file_name}</strong>;
+              </p>
+              <div className="flex flex-col gap-2">
+                {(!ocrFormQueue[ocrTargetAtt.id]?.detected?.includes('production')) && (
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => openManualForm('production')}>
+                    📋 Production
+                  </Button>
+                )}
+                {(!ocrFormQueue[ocrTargetAtt.id]?.detected?.includes('teams_time')) && (
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => openManualForm('teams_time')}>
+                    👥 Teams Time
+                  </Button>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {/* Split Layout - Inline Chat Panel */}
