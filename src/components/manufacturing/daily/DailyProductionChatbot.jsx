@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -76,7 +76,7 @@ function getFileType(fileName) {
 }
 
 // ─── Attachment item ─────────────────────────────────────────────────────────
-function AttachmentItem({ att, onDelete, onPreview, onOCR, isDeleting, isOcrLoading }) {
+function AttachmentItem({ att, onDelete, onPreview, onOCR, isDeleting, isOcrLoading, isAnyOcrLoading }) {
   const fileType = getFileType(att.file_name);
   return (
     <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg group hover:bg-slate-100 transition-colors">
@@ -86,7 +86,7 @@ function AttachmentItem({ att, onDelete, onPreview, onOCR, isDeleting, isOcrLoad
       <a href={att.file_url} target="_blank" rel="noopener noreferrer"
          className="text-xs text-blue-600 hover:underline truncate flex-1">{att.file_name}</a>
       <div className="flex gap-1">
-        <Button variant="ghost" size="icon" className="h-6 w-6 text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} disabled={isOcrLoading} title="OCR Εξαγωγή">
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} disabled={isOcrLoading || isAnyOcrLoading} title={isAnyOcrLoading && !isOcrLoading ? "OCR σε εξέλιξη για άλλο αρχείο" : "OCR Εξαγωγή"}>
           {isOcrLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Scan className="w-3 h-3" />}
         </Button>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -379,8 +379,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     }
     setUploadingCount(c => c + 1);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const me = await base44.auth.me();
+      const [{ file_url }, me] = await Promise.all([
+        base44.integrations.Core.UploadFile({ file }),
+        base44.auth.me()
+      ]);
       const att = await base44.entities.BatchAttachment.create({
         batch_header_id: selBatch.id, department: selBatch.department,
         file_url, file_name: file.name, uploaded_by: me.email, notes: ""
@@ -988,6 +990,12 @@ ${context}
 
   const quickDates = getQuickDates();
 
+  // Memoized: avoids O(n*m) recomputation on every keystroke when batch has many lines
+  const availableItemCodes = React.useMemo(
+    () => bundleItemCodes.filter(c => !existingBatchLines.find(bl => normalizeItemCode(bl.item_code) === c)),
+    [bundleItemCodes, existingBatchLines]
+  );
+
   // ── Shared step renderers ─────────────────────────────────────────────────
 
   const renderAttachmentsStep = () => selBatch && (
@@ -1012,7 +1020,8 @@ ${context}
               onPreview={setPreviewFile}
               onOCR={handleOCR}
               isOcrLoading={ocrLoading && ocrTargetAtt?.id === att.id}
-              isDeleting={deleteMutation.isPending} />
+              isAnyOcrLoading={ocrLoading}
+              isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id} />
           ))}
         </div>
       )}
@@ -1047,9 +1056,9 @@ ${context}
         onClick={async () => {
           setIsSavingLine(true);
           const itemsToSave = [...blReviewItems];
-          for (const item of itemsToSave) {
-            await base44.entities.Batch_Lines.update(item.id, { qty_processed: item.qty_processed, qty_out_good: item.qty_out_good, qty_scrap: item.qty_scrap });
-          }
+          await Promise.all(itemsToSave.map(item =>
+            base44.entities.Batch_Lines.update(item.id, { qty_processed: item.qty_processed, qty_out_good: item.qty_out_good, qty_scrap: item.qty_scrap })
+          ));
           queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
           if (!isMountedRef.current) return;
           setIsSavingLine(false);
@@ -1112,7 +1121,7 @@ ${context}
         <div className="space-y-1 pt-1 border-b pb-3">
           <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Προσθήκη Νέας Γραμμής</p>
           <ItemCodeMultiSelect
-            available={bundleItemCodes.filter(c => !existingBatchLines.find(bl => normalizeItemCode(bl.item_code) === c))}
+            available={availableItemCodes}
             selected={blAddForm.item_codes || []}
             onChange={codes => setBlAddForm(f => ({ ...f, item_codes: codes }))}
           />
@@ -1606,7 +1615,8 @@ ${context}
                       onPreview={setPreviewFile}
                       onOCR={handleOCR}
                       isOcrLoading={ocrLoading && ocrTargetAtt?.id === att.id}
-                      isDeleting={deleteMutation.isPending} />
+                      isAnyOcrLoading={ocrLoading}
+                      isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id} />
                   ))}
                 </div>
               </div>
