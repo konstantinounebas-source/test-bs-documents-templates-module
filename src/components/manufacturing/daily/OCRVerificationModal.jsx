@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Check, Maximize2, Minimize2, AlertCircle, Trash2 } from "lucide-react";
+import { datesMismatch } from "@/lib/ocrDateValidationHelpers";
 
 function normalizeItemCode(code) {
   if (!code) return code;
@@ -182,31 +183,32 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     setDate(convertedDate || fileParsed.date || "");
     setDepartment(initialDepartment || "");
     setFileValidationIssues(() => {
-      const issues = [];
-      if (fileParsed.date && convertedDate && convertedDate.trim() && fileParsed.date.trim() && convertedDate !== fileParsed.date) {
-        issues.push({
-          field: "date",
-          severity: "warning",
-          message: `Ημερομηνία OCR (${convertedDate}) ≠ Ημερομηνία Αρχείου (${fileParsed.date})`
-        });
-      }
-      const formText = ocrResult?.extracted_data?.production_lines?.map(l => JSON.stringify(l)).join('') || "";
-      const isPrepaint = formText.includes('Προετοιμασία Βαφής');
-      if (fileParsed.type === 'Prepaint' && !isPrepaint) {
-        issues.push({
-          field: "type",
-          severity: "warning",
-          message: "Αρχείο λέει Prepaint αλλά φόρμα δεν περιέχει 'Προετοιμασία Βαφής'"
-        });
-      } else if (fileParsed.type !== 'Prepaint' && isPrepaint) {
-        issues.push({
-          field: "type",
-          severity: "warning",
-          message: "Φόρμα περιέχει 'Προετοιμασία Βαφής' αλλά αρχείο δεν λέει Prepaint"
-        });
-      }
-      return issues;
-    });
+       const issues = [];
+       // Use helper to detect actual date mismatch (not false positives from parsing differences)
+       if (datesMismatch(convertedDate, fileParsed.date)) {
+         issues.push({
+           field: "date",
+           severity: "warning",
+           message: `Ημερομηνία OCR (${convertedDate}) ≠ Ημερομηνία Αρχείου (${fileParsed.date})`
+         });
+       }
+       const formText = ocrResult?.extracted_data?.production_lines?.map(l => JSON.stringify(l)).join('') || "";
+       const isPrepaint = formText.includes('Προετοιμασία Βαφής');
+       if (fileParsed.type === 'Prepaint' && !isPrepaint) {
+         issues.push({
+           field: "type",
+           severity: "warning",
+           message: "Αρχείο λέει Prepaint αλλά φόρμα δεν περιέχει 'Προετοιμασία Βαφής'"
+         });
+       } else if (fileParsed.type !== 'Prepaint' && isPrepaint) {
+         issues.push({
+           field: "type",
+           severity: "warning",
+           message: "Φόρμα περιέχει 'Προετοιμασία Βαφής' αλλά αρχείο δεν λέει Prepaint"
+         });
+       }
+       return issues;
+     });
     setAcceptedIssues(new Set());
     setAcceptedItemCodes(new Set());
     setConfirmed(false);
@@ -259,8 +261,8 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
   const [fileValidationIssues, setFileValidationIssues] = useState(() => {
     const issues = [];
 
-    // Check if OCR date matches filename date (only if both exist and are different)
-    if (fileParsed.date && convertedOcrDate && convertedOcrDate.trim() && fileParsed.date.trim() && convertedOcrDate !== fileParsed.date) {
+    // Check if OCR date matches filename date (using helper to avoid parsing false positives)
+    if (datesMismatch(convertedOcrDate, fileParsed.date)) {
       issues.push({
         field: "date",
         severity: "warning",
@@ -611,7 +613,6 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
 
             {/* Confirm footer */}
               <div className="border-t px-4 py-3 flex items-center gap-3 bg-white flex-shrink-0">
-                <Button variant="outline" size="sm" className="text-xs" onClick={onClose}>Ακύρωση</Button>
                 {totalPages > 1 && currentPage < totalPages - 1 && (
                   <Button variant="ghost" size="sm" className="text-xs text-slate-500 hover:text-slate-700" onClick={() => {
                     navigating.current = true;
@@ -635,7 +636,7 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                 )}
                 {onSkip && (
                   <Button variant="outline" size="sm" className="text-xs" onClick={onSkip}>
-                    Μην αποθηκεύσεις
+                    Skip χωρίς αποθήκευση
                   </Button>
                 )}
                 <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"

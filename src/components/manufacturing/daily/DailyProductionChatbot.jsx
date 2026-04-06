@@ -1651,6 +1651,7 @@ CRITICAL SAFETY RULES:
           onSkip={handleTeamsTimeOcrSkip}
           totalPages={1}
           defaultPage={1}
+          detectedForms={null}
         />
       )}
 

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Maximize2, Minimize2, AlertCircle, Users, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { datesMismatch } from "@/lib/ocrDateValidationHelpers";
 
 // Parse filename → date, dept
 function parseFileName(fileName) {
@@ -129,7 +130,7 @@ const OCR_WORK_TYPE_MAPPINGS = {
   "Non Execution Time": "Non Execution Time"
 };
 
-export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, totalPages, defaultPage, detectedForms }) {
+export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, onSkip, totalPages, defaultPage, detectedForms }) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [currentPage, setCurrentPage] = useState(defaultPage || 1);
@@ -811,11 +812,13 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
 
             {/* Confirm footer */}
             <div className="border-t px-4 py-3 flex items-center gap-3 bg-white flex-shrink-0">
-              <Button variant="outline" size="sm" className="text-xs" onClick={onClose}>Ακύρωση</Button>
               <div className="text-xs text-slate-500 flex-1">
                 {persons.length} άτομα · {extras.length} extra
                 {helpInList.length > 0 && ` · ${helpInList.length} help-in`}
               </div>
+              {onSkip && (
+                <Button variant="outline" size="sm" className="text-xs" onClick={onSkip}>Skip χωρίς αποθήκευση</Button>
+              )}
               <Button size="sm" className="text-xs bg-green-600 hover:bg-green-700"
                 onClick={() => {
                   setConfirmed(true);
@@ -825,7 +828,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
                 }}
                 disabled={confirmed}>
                 {confirmed ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : <CheckCircle2 className="w-3.5 h-3.5 mr-1" />}
-                Επιβεβαίωση OCR
+                Επιβεβαίωση δεδομένων OCR
               </Button>
             </div>
           </div>
