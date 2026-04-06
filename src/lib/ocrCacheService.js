@@ -101,17 +101,10 @@ export async function supersedeCurrentOCRCache(attachmentId) {
  */
 export async function saveCorrectedOCRCacheData(cacheId, correctedData) {
   try {
-    const response = await fetch(`${window.location.origin}/api/functions/saveCorrectedOCRData`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cache_id: cacheId, corrected_data: correctedData })
+    return await base44.functions.invoke("saveCorrectedOCRData", {
+      cache_id: cacheId,
+      corrected_data: correctedData
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to save corrected OCR data');
-    }
-
-    return await response.json();
   } catch (error) {
     console.error('Error saving corrected OCR data:', error);
     throw error;
