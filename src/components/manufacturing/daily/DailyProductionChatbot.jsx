@@ -414,13 +414,17 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       }
 
       // Step 1: Analyze file and detect form types FIRST
+      console.log("[OCR] analyzeFilePages start", att.id, att.file_name);
       const fileAnalysisRaw = await base44.functions.invoke("analyzeFilePages", { file_url: att.file_url });
       const fileAnalysis = fileAnalysisRaw?.data || fileAnalysisRaw?.result || fileAnalysisRaw?.output || fileAnalysisRaw || {};
+      console.log("[OCR] analyzeFilePages ok", att.id);
 
       await new Promise(r => setTimeout(r, 300));
 
+      console.log("[OCR] detectFormType start", att.id, att.file_name);
       const detectResultRaw = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
       const detectResult = detectResultRaw?.data || detectResultRaw?.result || detectResultRaw?.output || detectResultRaw || {};
+      console.log("[OCR] detectFormType ok", att.id);
       const detectedPages = detectResult?.pages || {};
 
       const detectedForms = [...new Set(
@@ -492,6 +496,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
           if (isMountedRef.current) addMsg("bot", `❌ Δεν υπάρχει τμήμα για ${att.file_name}. Απαιτείται τμήμα.`);
           return;
         }
+        console.log("[OCR] ocrWithCache start", att.id, formType);
         const res = await ocrWithCache({
           attachment_id: att.id,
           batch_header_id: att.batch_header_id || selBatch?.id,
@@ -500,6 +505,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
           file_name: att.file_name,
           file_url: att.file_url
         });
+        console.log("[OCR] ocrWithCache ok", att.id, formType);
         const data = res?.data || res;
 
         if (isMountedRef.current) {
@@ -563,6 +569,14 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         // Still throw so bulk OCR can classify as failed
         throw err;
       }
+      
+      console.error("[OCR] failed", {
+        attachmentId: att?.id,
+        fileName: att?.file_name,
+        message: err?.message,
+        status: err?.response?.status,
+        response: err?.response?.data
+      });
       
       if (!silentBulk) {
         addMsg("bot", `❌ OCR αποτυχία: ${err?.message || "Network error"}`);
