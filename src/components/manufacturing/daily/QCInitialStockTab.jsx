@@ -466,7 +466,7 @@ export default function QCInitialStockTab({ batchId, department }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full space-y-4">
       {!hasItemCodes && !itemCodesLoading && (
         <Alert variant="destructive">
           <AlertCircle className="w-4 h-4" />
@@ -476,7 +476,7 @@ export default function QCInitialStockTab({ batchId, department }) {
         </Alert>
       )}
 
-      <div className="flex justify-between items-center gap-4">
+      <div className="flex justify-between items-center gap-4 flex-shrink-0">
         <h3 className="text-lg font-semibold">QC Initial Stock</h3>
         <div className="flex gap-2 items-center flex-1 max-w-md">
           <div className="relative flex-1">
@@ -489,7 +489,7 @@ export default function QCInitialStockTab({ batchId, department }) {
             />
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <Button onClick={handleSyncFromBatchLines} variant="outline" size="sm" disabled={isSyncing}>
             {isSyncing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
             Sync from Schedule
@@ -502,7 +502,7 @@ export default function QCInitialStockTab({ batchId, department }) {
       </div>
 
       {filteredLines.length > 0 && (
-        <div className="border rounded-lg bg-blue-50 p-4">
+        <div className="border rounded-lg bg-blue-50 p-4 flex-shrink-0">
           <div className="flex justify-between items-center">
             <span className="font-semibold text-slate-700">Total QC Time</span>
             <span className="text-lg font-bold text-blue-700">
@@ -512,10 +512,10 @@ export default function QCInitialStockTab({ batchId, department }) {
         </div>
       )}
 
-      <div className="border rounded-lg overflow-auto bg-white shadow-sm">
+      <div className="border rounded-lg overflow-auto bg-white shadow-sm flex-1 min-h-0">
         <Table>
           <TableHeader>
-            <TableRow className="bg-slate-50">
+            <TableRow className="bg-slate-50 sticky top-0 z-10">
               <TableHead className="font-semibold">Item Code</TableHead>
               <TableHead className="font-semibold">QC Type</TableHead>
               <TableHead className="font-semibold">QC Level</TableHead>
@@ -561,7 +561,7 @@ export default function QCInitialStockTab({ batchId, department }) {
                     </TableCell>
                   </TableRow>
                 ))}
-                <TableRow className="bg-blue-50 font-semibold border-t-2">
+                <TableRow className="bg-blue-50 font-semibold border-t-2 sticky bottom-0">
                   <TableCell colSpan={3} className="text-right">Total:</TableCell>
                   <TableCell></TableCell>
                   <TableCell className="font-mono font-bold">
