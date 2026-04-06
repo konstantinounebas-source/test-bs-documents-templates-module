@@ -162,6 +162,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [blReviewItems, setBlReviewItems]   = useState([]); // [{item_code, scheduled_qty, qty_processed, qty_out_good, qty_scrap}]
   const [blCurrentIdx, setBlCurrentIdx]     = useState(0);
   const [blAddForm, setBlAddForm]           = useState({ item_code: "", qty_processed: "", qty_out_good: "", qty_scrap: "" });
+  const [blAddFormExpanded, setBlAddFormExpanded] = useState(true);
 
   // attachment preview
   const [previewFile, setPreviewFile] = useState(null);
@@ -1202,25 +1203,32 @@ CRITICAL SAFETY RULES:
           </div>
         </div>
         <div className="space-y-1 pt-1 border-b pb-3">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Προσθήκη Νέας Γραμμής</p>
-          <ItemCodeMultiSelect
-            available={availableItemCodes}
-            selected={blAddForm.item_codes || []}
-            onChange={codes => setBlAddForm(f => ({ ...f, item_codes: codes }))}
-          />
-          <div className="grid grid-cols-3 gap-1">
-            {[["qty_processed","Processed"],["qty_out_good","Out Good"],["qty_scrap","Scrap"]].map(([field, label]) => (
-              <div key={field}>
-                <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
-                <input type="number" min="0" placeholder="0" value={blAddForm[field]}
-                  onChange={e => setBlAddForm(f => ({ ...f, [field]: e.target.value }))}
-                  className="w-full text-sm border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
-              </div>
-            ))}
+          <div className="flex items-center justify-between cursor-pointer" onClick={() => setBlAddFormExpanded(!blAddFormExpanded)}>
+            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Προσθήκη Νέας Γραμμής</p>
+            <span className="text-xs text-slate-400">{blAddFormExpanded ? '▼' : '▶'}</span>
           </div>
-          <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700" onClick={handleAddExtraLine} disabled={!blAddForm.item_codes?.length}>
-            <Plus className="w-3 h-3 mr-1" /> Προσθήκη Line(s)
-          </Button>
+          {blAddFormExpanded && (
+            <>
+              <ItemCodeMultiSelect
+                available={availableItemCodes}
+                selected={blAddForm.item_codes || []}
+                onChange={codes => setBlAddForm(f => ({ ...f, item_codes: codes }))}
+              />
+              <div className="grid grid-cols-3 gap-1">
+                {[["qty_processed","Processed"],["qty_out_good","Out Good"],["qty_scrap","Scrap"]].map(([field, label]) => (
+                  <div key={field}>
+                    <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
+                    <input type="number" min="0" placeholder="0" value={blAddForm[field]}
+                      onChange={e => setBlAddForm(f => ({ ...f, [field]: e.target.value }))}
+                      className="w-full text-sm border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
+                  </div>
+                ))}
+              </div>
+              <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700" onClick={handleAddExtraLine} disabled={!blAddForm.item_codes?.length}>
+                <Plus className="w-3 h-3 mr-1" /> Προσθήκη Line(s)
+              </Button>
+            </>
+          )}
         </div>
         <BatchLinesSection 
           existingBatchLines={existingBatchLines}
