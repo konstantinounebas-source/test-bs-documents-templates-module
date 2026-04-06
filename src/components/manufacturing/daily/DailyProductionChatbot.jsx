@@ -147,7 +147,7 @@ function DropZone({ onFiles, isUploading }) {
   );
 }
 
-// ─── Main Chatbot ─────────────────────────────────────────────────────────────
+// ─── Main Chatbot Component ───────────────────────────────────────────────────
 export default function DailyProductionChatbot({ departments = [], isSplitLayout = false, onClose }) {
   const queryClient = useQueryClient();
 
