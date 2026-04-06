@@ -50,23 +50,24 @@ export default function DailyFormsTab({
     staleTime: 0
   });
 
-  // Group data by department
+  // Group data by department with batch info
   const departmentGroups = useMemo(() => {
     const groups = {};
     dailyBatches.forEach(batch => {
       if (!groups[batch.department]) {
-        groups[batch.department] = [];
+        groups[batch.department] = { attachments: [], hasBatch: false };
       }
+      groups[batch.department].hasBatch = true;
       const deptAttachments = allDailyAttachments.filter(
         att => att.batch_header_id === batch.id
       );
-      groups[batch.department].push(...deptAttachments);
+      groups[batch.department].attachments.push(...deptAttachments);
     });
     return groups;
   }, [dailyBatches, allDailyAttachments]);
 
   const departments = Object.keys(departmentGroups).sort();
-  const currentDeptAttachments = selectedDept ? departmentGroups[selectedDept] || [] : [];
+  const currentDeptAttachments = selectedDept ? departmentGroups[selectedDept]?.attachments || [] : [];
 
   if (!selDate) {
     return (
@@ -96,28 +97,40 @@ export default function DailyFormsTab({
             {departments.length === 0 ? (
               <p className="text-xs text-slate-400 text-center py-4">No departments</p>
             ) : (
-              departments.map(dept => (
-                <button
-                  key={dept}
-                  onClick={() => setSelectedDept(dept)}
-                  className={`w-full text-left px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center justify-between ${
-                    selectedDept === dept
-                      ? "bg-blue-600 text-white"
-                      : "text-slate-600 hover:bg-slate-100"
-                  }`}
-                >
-                  <span>{dept}</span>
-                  <Badge
-                    className={`text-[10px] px-1.5 py-0 ${
+              departments.map(dept => {
+                const deptData = departmentGroups[dept];
+                const attachmentCount = deptData.attachments.length;
+                const hasBatch = deptData.hasBatch;
+                return (
+                  <button
+                    key={dept}
+                    onClick={() => setSelectedDept(dept)}
+                    className={`w-full text-left px-2 py-2 rounded text-xs transition-colors ${
                       selectedDept === dept
-                        ? "bg-blue-500 text-white"
-                        : "bg-slate-200 text-slate-700"
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-600 hover:bg-slate-100"
                     }`}
                   >
-                    {departmentGroups[dept].length}
-                  </Badge>
-                </button>
-              ))
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{dept}</p>
+                        <p className={`text-[10px] ${selectedDept === dept ? "text-blue-100" : "text-slate-500"}`}>
+                          {hasBatch ? "✓ Batch" : "✗ No batch"} · {attachmentCount} file(s)
+                        </p>
+                      </div>
+                      <Badge
+                        className={`text-[10px] px-1.5 py-0 flex-shrink-0 ${
+                          selectedDept === dept
+                            ? "bg-blue-500 text-white"
+                            : hasBatch ? "bg-green-100 text-green-700" : "bg-slate-200 text-slate-700"
+                        }`}
+                      >
+                        {attachmentCount}
+                      </Badge>
+                    </div>
+                  </button>
+                );
+              })
             )}
           </div>
         </ScrollArea>
