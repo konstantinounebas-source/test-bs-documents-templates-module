@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { format, subDays } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import AttachmentItemWithForms from "./AttachmentItemWithForms";
 import ExistingLineRow from "./chatbot/ExistingLineRow";
 import ItemCodeMultiSelect from "./chatbot/ItemCodeMultiSelect";
 import ChatStepQC from "./chatbot/ChatStepQC";
@@ -85,111 +86,7 @@ function getFileType(fileName) {
   return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext) ? 'image' : 'pdf';
 }
 
-// ─── Attachment item ─────────────────────────────────────────────────────────
-function AttachmentItem({ att, onDelete, onPreview, onOCR, onOpenProduction, onOpenTeams, isDeleting, isOcrLoading, isAnyOcrLoading, ocrStatus = {} }) {
-  const fileType = getFileType(att.file_name);
-  
-  // Determine overall OCR status (any completed counts as at least partial success)
-  const prodStatus = ocrStatus.production?.status || "none";
-  const teamsStatus = ocrStatus.teams_time?.status || "none";
-  const hasCompleted = prodStatus === "completed" || teamsStatus === "completed";
-  const hasFailed = prodStatus === "failed" || teamsStatus === "failed";
-  const isProcessing = prodStatus === "processing" || teamsStatus === "processing";
-  
-  // Status badge styling
-  let statusBgColor = "bg-slate-100 text-slate-600"; // none
-  let statusIcon = null;
-  if (isProcessing) {
-    statusBgColor = "bg-amber-100 text-amber-700";
-    statusIcon = <Loader2 className="w-2.5 h-2.5 animate-spin" />;
-  } else if (hasCompleted) {
-    statusBgColor = "bg-green-100 text-green-700";
-    statusIcon = <CheckCircle2 className="w-2.5 h-2.5" />;
-  } else if (hasFailed) {
-    statusBgColor = "bg-red-100 text-red-700";
-    statusIcon = <AlertTriangle className="w-2.5 h-2.5" />;
-  }
-  
-  return (
-    <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg group hover:bg-slate-100 transition-colors">
-      {fileType === "image"
-        ? <ImageIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
-        : <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />}
-      <a href={att.file_url} target="_blank" rel="noopener noreferrer"
-         className="text-xs text-blue-600 hover:underline truncate flex-1">{att.file_name}</a>
-      <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium ${statusBgColor}`}>
-        {statusIcon}
-        <span>{prodStatus === "completed" && teamsStatus === "completed" ? "✓" : prodStatus === "failed" || teamsStatus === "failed" ? "✗" : "◦"}</span>
-      </div>
-      <div className="flex gap-1">
-        {/* Status: None */}
-        {prodStatus === "none" && teamsStatus === "none" && (
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} disabled={isAnyOcrLoading} title="Start OCR extraction">
-            <Scan className="w-3 h-3 mr-1" /> Run OCR
-          </Button>
-        )}
-        
-        {/* Status: Processing */}
-        {isProcessing && (
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-amber-600 hover:bg-amber-50 cursor-wait" disabled>
-            <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Processing...
-          </Button>
-        )}
-        
-        {/* Status: Completed */}
-         {hasCompleted && !isProcessing && (
-           <div className="flex gap-0.5">
-             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" onClick={onOpenProduction} title="Open Production form">
-               <Eye className="w-3 h-3 mr-1" /> Production
-             </Button>
-             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" onClick={onOpenTeams} title="Open Teams Time form">
-               <Eye className="w-3 h-3 mr-1" /> Teams
-             </Button>
-             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} title="Run OCR again">
-               <RotateCw className="w-3 h-3 mr-1" /> Re-run
-             </Button>
-           </div>
-         )}
-        
-        {/* Status: Failed */}
-         {hasFailed && !isProcessing && (
-           <div className="flex gap-0.5">
-             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" onClick={onOpenProduction} title="Open Production form">
-               <Eye className="w-3 h-3 mr-1" /> Production
-             </Button>
-             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" onClick={onOpenTeams} title="Open Teams Time form">
-               <Eye className="w-3 h-3 mr-1" /> Teams
-             </Button>
-             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-red-600 hover:bg-red-50" onClick={() => onOCR(att)} title="Retry OCR extraction">
-               <AlertTriangle className="w-3 h-3 mr-1" /> Retry OCR
-             </Button>
-           </div>
-         )}
-        
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onPreview(att)} title="Preview">
-          <Eye className="w-3 h-3" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-6 w-6" title="Download"
-          onClick={async () => {
-            const res = await fetch(att.file_url);
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url; a.download = att.file_name; a.click();
-            URL.revokeObjectURL(url);
-          }}>
-          <Download className="w-3 h-3" />
-        </Button>
-        <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500 hover:text-red-700 hover:bg-red-50"
-          onClick={() => onDelete(att.id)} disabled={isDeleting} title="Delete">
-          <Trash2 className="w-3 h-3" />
-        </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── Attachment item is now in AttachmentItemWithForms.jsx ──────────────────
 
 // ─── Drop zone ───────────────────────────────────────────────────────────────
 function DropZone({ onFiles, isUploading }) {
@@ -652,6 +549,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   };
 
   // Explicit form opening handlers — independent of OCR flow
+  // Explicit form opening handlers — always open forms regardless of OCR status
   const openProductionForm = async (att) => {
     setOcrTargetAtt(att);
     const prodData = await loadOCRDataFromCache(att.id, "production");
@@ -659,8 +557,13 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       setCurrentProductionCacheId(prodData.cache_id);
       setViewProductionOcrResult(prodData);
     } else {
+      // No cache — open empty form for manual entry
       setCurrentProductionCacheId(null);
-      setViewProductionOcrResult({ production_lines: [] });
+      setViewProductionOcrResult({
+        extracted_data: { production_lines: [] },
+        validation: { issues: [], confidence_score: null },
+        page_count: 1
+      });
     }
     setShowOcrModal(true);
   };
@@ -672,8 +575,18 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       setCurrentTeamsTimeCacheId(teamsData.cache_id);
       setViewTeamsTimeOcrResult(teamsData);
     } else {
+      // No cache — open empty form for manual entry
       setCurrentTeamsTimeCacheId(null);
-      setViewTeamsTimeOcrResult({ team_persons: [], team_extra_lines: [] });
+      setViewTeamsTimeOcrResult({
+        extracted_data: {
+          team_persons: [],
+          team_extra_lines: [],
+          date: "",
+          team: att.department || selDept || ""
+        },
+        validation: { issues: [], confidence_score: null },
+        page_count: 1
+      });
     }
     setShowTeamsTimeOcrModal(true);
   };
@@ -1183,7 +1096,7 @@ CRITICAL SAFETY RULES:
       ) : (
         <div className="space-y-1">
           {attachments.map(att => (
-            <AttachmentItem key={att.id} att={att}
+            <AttachmentItemWithForms key={att.id} att={att}
               onDelete={id => deleteMutation.mutate(id)}
               onPreview={setPreviewFile}
               onOCR={handleOCR}
@@ -1812,18 +1725,18 @@ CRITICAL SAFETY RULES:
                 </p>
                 <div className="space-y-1">
                   {attachments.map(att => (
-                    <AttachmentItem key={att.id} att={att}
-                      onDelete={id => deleteMutation.mutate(id)}
-                      onPreview={setPreviewFile}
-                      onOCR={handleOCR}
-                      onOpenProduction={() => openProductionForm(att)}
-                      onOpenTeams={() => openTeamsTimeForm(att)}
-                      isOcrLoading={runningOcrAttachmentIds.has(att.id)}
-                      isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
-                      isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
-                      ocrStatus={attachmentOcrStatus[att.id] || {}} />
-                  ))}
-                  </div>
+                     <AttachmentItemWithForms key={att.id} att={att}
+                       onDelete={id => deleteMutation.mutate(id)}
+                       onPreview={setPreviewFile}
+                       onOCR={handleOCR}
+                       onOpenProduction={() => openProductionForm(att)}
+                       onOpenTeams={() => openTeamsTimeForm(att)}
+                       isOcrLoading={runningOcrAttachmentIds.has(att.id)}
+                       isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
+                       isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
+                       ocrStatus={attachmentOcrStatus[att.id] || {}} />
+                   ))}
+                   </div>
               </div>
             )}
           </div>
