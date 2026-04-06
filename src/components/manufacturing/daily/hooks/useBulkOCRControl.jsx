@@ -206,6 +206,7 @@ export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, 
             results.push({
               attachmentId: att.id,
               fileName: att.file_name,
+              batchHeaderId: att.batch_header_id,
               status: "failed",
               error: errorMsg
             });
