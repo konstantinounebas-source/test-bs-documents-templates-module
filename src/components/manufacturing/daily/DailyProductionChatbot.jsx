@@ -76,8 +76,30 @@ function getFileType(fileName) {
 }
 
 // ─── Attachment item ─────────────────────────────────────────────────────────
-function AttachmentItem({ att, onDelete, onPreview, onOCR, isDeleting, isOcrLoading, isAnyOcrLoading }) {
+function AttachmentItem({ att, onDelete, onPreview, onOCR, isDeleting, isOcrLoading, isAnyOcrLoading, ocrStatus = {} }) {
   const fileType = getFileType(att.file_name);
+  
+  // Determine overall OCR status (any completed counts as at least partial success)
+  const prodStatus = ocrStatus.production?.status || "none";
+  const teamsStatus = ocrStatus.teams_time?.status || "none";
+  const hasCompleted = prodStatus === "completed" || teamsStatus === "completed";
+  const hasFailed = prodStatus === "failed" || teamsStatus === "failed";
+  const isProcessing = prodStatus === "processing" || teamsStatus === "processing";
+  
+  // Status badge styling
+  let statusBgColor = "bg-slate-100 text-slate-600"; // none
+  let statusIcon = null;
+  if (isProcessing) {
+    statusBgColor = "bg-amber-100 text-amber-700";
+    statusIcon = <Loader2 className="w-2.5 h-2.5 animate-spin" />;
+  } else if (hasCompleted) {
+    statusBgColor = "bg-green-100 text-green-700";
+    statusIcon = <CheckCircle2 className="w-2.5 h-2.5" />;
+  } else if (hasFailed) {
+    statusBgColor = "bg-red-100 text-red-700";
+    statusIcon = <AlertTriangle className="w-2.5 h-2.5" />;
+  }
+  
   return (
     <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg group hover:bg-slate-100 transition-colors">
       {fileType === "image"
@@ -85,6 +107,10 @@ function AttachmentItem({ att, onDelete, onPreview, onOCR, isDeleting, isOcrLoad
         : <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />}
       <a href={att.file_url} target="_blank" rel="noopener noreferrer"
          className="text-xs text-blue-600 hover:underline truncate flex-1">{att.file_name}</a>
+      <div className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium ${statusBgColor}`}>
+        {statusIcon}
+        <span>{prodStatus === "completed" && teamsStatus === "completed" ? "✓" : prodStatus === "failed" || teamsStatus === "failed" ? "✗" : "◦"}</span>
+      </div>
       <div className="flex gap-1">
         <Button variant="ghost" size="icon" className="h-6 w-6 text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} disabled={isOcrLoading || isAnyOcrLoading} title={isAnyOcrLoading && !isOcrLoading ? "OCR σε εξέλιξη για άλλο αρχείο" : "OCR Εξαγωγή"}>
           {isOcrLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Scan className="w-3 h-3" />}
@@ -199,6 +225,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [teamsTimeOcrResult, setTeamsTimeOcrResult] = useState(null);
   // Dual-form: pending teams time result to show after production modal confirmed
   const [pendingTeamsTimeOcr, setPendingTeamsTimeOcr] = useState(null);
+  // OCR Status Tracking: { attachment_id: { production: { status, cache_id }, teams_time: { status, cache_id } } }
+  const [attachmentOcrStatus, setAttachmentOcrStatus] = useState({});
 
   // free-text input & AI
   const [userInput, setUserInput] = useState("");
@@ -429,6 +457,12 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     }
     setOcrTargetAtt(att);
     setOcrLoading(true);
+    
+    // Initialize OCR status for this attachment
+    setAttachmentOcrStatus(prev => ({
+      ...prev,
+      [att.id]: prev[att.id] || { production: { status: "none" }, teams_time: { status: "none" } }
+    }));
 
     try {
       // Step 1: Analyze file and detect form types FIRST
@@ -467,6 +501,15 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       let teamsCacheId = null;
 
       const ocrTasks = detectedForms.map(async (formType) => {
+        // Mark as processing before starting
+        setAttachmentOcrStatus(prev => ({
+          ...prev,
+          [att.id]: {
+            ...prev[att.id],
+            [formType]: { status: "processing", cache_id: null }
+          }
+        }));
+
         const cacheStatus = await checkOCRCacheStatus(att.id, formType);
 
         if (cacheStatus.isProcessing) {
@@ -477,6 +520,14 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         if (cacheStatus.canUseCache) {
           addMsg("bot", `✅ Χρήση cached δεδομένων για "${formType}".`);
           const cached = cacheStatus.record;
+          // Mark as completed with cache_id
+          setAttachmentOcrStatus(prev => ({
+            ...prev,
+            [att.id]: {
+              ...prev[att.id],
+              [formType]: { status: "completed", cache_id: cached.id }
+            }
+          }));
           if (formType === "production") {
             prodCacheId = cached.id;
             prodOcrData = {
@@ -506,6 +557,15 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         });
         const data = res?.data || res;
 
+        // Mark as completed after successful OCR
+        setAttachmentOcrStatus(prev => ({
+          ...prev,
+          [att.id]: {
+            ...prev[att.id],
+            [formType]: { status: "completed", cache_id: data.cache_id }
+          }
+        }));
+
         if (formType === "production") {
           prodCacheId = data.cache_id;
           prodOcrData = {
@@ -527,7 +587,16 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       // Surface any per-task failures without losing the successful ones
       ocrResults.forEach((r, i) => {
         if (r.status === "rejected") {
-          addMsg("bot", `⚠️ OCR για "${detectedForms[i]}" απέτυχε: ${r.reason?.message || "άγνωστο σφάλμα"}`);
+          const formType = detectedForms[i];
+          addMsg("bot", `⚠️ OCR για "${formType}" απέτυχε: ${r.reason?.message || "άγνωστο σφάλμα"}`);
+          // Mark as failed
+          setAttachmentOcrStatus(prev => ({
+            ...prev,
+            [att.id]: {
+              ...prev[att.id],
+              [formType]: { status: "failed", cache_id: null }
+            }
+          }));
         }
       });
 
@@ -1097,7 +1166,8 @@ CRITICAL SAFETY RULES:
               onOCR={handleOCR}
               isOcrLoading={ocrLoading && ocrTargetAtt?.id === att.id}
               isAnyOcrLoading={ocrLoading}
-              isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id} />
+              isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
+              ocrStatus={attachmentOcrStatus[att.id] || {}} />
           ))}
         </div>
       )}
@@ -1692,7 +1762,8 @@ CRITICAL SAFETY RULES:
                       onOCR={handleOCR}
                       isOcrLoading={ocrLoading && ocrTargetAtt?.id === att.id}
                       isAnyOcrLoading={ocrLoading}
-                      isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id} />
+                      isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
+                      ocrStatus={attachmentOcrStatus[att.id] || {}} />
                   ))}
                 </div>
               </div>
