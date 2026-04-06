@@ -1782,14 +1782,70 @@ CRITICAL SAFETY RULES:
               <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100" title="OCR Tools">
                 <Zap className="w-4 h-4" />
               </button>
-              <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100" title="Metrics & KPI">
+              <button 
+                onClick={() => setActiveUtility(activeUtility === "metrics" ? null : "metrics")}
+                className={`p-1 rounded transition-colors ${
+                  activeUtility === "metrics" 
+                    ? "bg-blue-100 text-blue-600" 
+                    : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                }`}
+                title="Metrics & KPI">
                 <BarChart3 className="w-4 h-4" />
               </button>
             </div>
 
             {/* Tab Content Area */}
             <ScrollArea className="flex-1 p-4 overflow-y-auto">
-              {activeUtility === "processing" ? (
+              {activeUtility === "metrics" ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-slate-800">Metrics & KPI</h3>
+                    <button 
+                      onClick={() => setActiveUtility(null)}
+                      className="text-slate-400 hover:text-slate-600 p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                      <p className="text-[10px] font-semibold text-slate-500 uppercase">Batches</p>
+                      <p className="text-2xl font-bold text-slate-900 mt-2">{batchHeaders.length}</p>
+                      <p className="text-xs text-slate-500 mt-1">for {selDate}</p>
+                    </div>
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                      <p className="text-[10px] font-semibold text-slate-500 uppercase">Attachments</p>
+                      <p className="text-2xl font-bold text-slate-900 mt-2">{attachments.length}</p>
+                      <p className="text-xs text-slate-500 mt-1">uploaded</p>
+                    </div>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-[10px] font-semibold text-green-700 uppercase">OCR Ready</p>
+                      <p className="text-2xl font-bold text-green-900 mt-2">
+                        {attachments.filter(a => {
+                          const status = attachmentOcrStatus[a.id];
+                          return status && (status.production?.status === "completed" || status.teams_time?.status === "completed");
+                        }).length}
+                      </p>
+                      <p className="text-xs text-green-600 mt-1">processed</p>
+                    </div>
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                      <p className="text-[10px] font-semibold text-orange-700 uppercase">Processing</p>
+                      <p className="text-2xl font-bold text-orange-900 mt-2">{runningOcrAttachmentIds.size}</p>
+                      <p className="text-xs text-orange-600 mt-1">in progress</p>
+                    </div>
+                  </div>
+                  {selBatch && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                      <p className="text-xs font-semibold text-blue-700 mb-2">Active Batch</p>
+                      <div className="space-y-1">
+                        <p className="text-xs text-blue-900"><span className="font-semibold">Date:</span> {selBatch.date}</p>
+                        <p className="text-xs text-blue-900"><span className="font-semibold">Dept:</span> {selBatch.department}</p>
+                        <p className="text-xs text-blue-900"><span className="font-semibold">Lines:</span> {existingBatchLines.length}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : activeUtility === "processing" ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-slate-800">Processing Queue</h3>
