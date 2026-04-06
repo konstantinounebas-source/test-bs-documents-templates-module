@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Loader2, Trash2 } from "lucide-react";
 
-export default function ExistingLineRow({ bl, onSave, onDelete }) {
+export default function ExistingLineRow({ bl, onSave, onDelete, hideItemCode }) {
   const [vals, setVals] = useState({
     qty_processed: bl.qty_processed ?? 0,
     qty_out_good:  bl.qty_out_good  ?? 0,
@@ -29,7 +29,7 @@ export default function ExistingLineRow({ bl, onSave, onDelete }) {
 
   return (
     <div className="flex items-center gap-1 px-1">
-      <span className="text-[10px] font-medium text-slate-700 truncate flex-1 min-w-0" title={bl.item_code}>{bl.item_code}</span>
+      {!hideItemCode && <span className="text-[10px] font-medium text-slate-700 truncate flex-1 min-w-0" title={bl.item_code}>{bl.item_code}</span>}
       {/* Scheduled - read only */}
       <span className="text-[10px] text-slate-400 w-8 text-center flex-shrink-0">{bl.scheduled_qty ?? 0}</span>
       {/* Processed */}

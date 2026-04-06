@@ -1192,18 +1192,6 @@ CRITICAL SAFETY RULES:
 
   const renderBatchLinesAdd = () => (
     <div className="border-t p-3 space-y-3 overflow-y-auto flex-1">
-        {existingBatchLines.length > 0 && bundleItemCodes.length > 0 && (
-          <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
-            <p className="font-semibold mb-1">Missing from Bundle:</p>
-            <div className="flex flex-wrap gap-1">
-              {existingBatchLines.map((bl) => {
-                const blCode = bl.item_code?.trim() || "";
-                if (bundleItemCodes.includes(blCode)) return null;
-                return <span key={bl.id} className="inline-block bg-red-100 px-2 py-0.5 rounded">{blCode}</span>;
-              })}
-            </div>
-          </div>
-        )}
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold text-slate-700">Batch Lines</p>
           <div className="flex gap-1">
