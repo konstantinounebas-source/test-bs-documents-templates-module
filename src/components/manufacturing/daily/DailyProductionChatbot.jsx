@@ -1360,7 +1360,7 @@ CRITICAL SAFETY RULES:
             } else {
               setStep("batch");
               const bundle = resolveBundle(date, dept);
-              addMsg("bot", `Δεν υπάρχει batch για ${date} – ${dept}.\n` + (bundle ? `Θα χρησιμοποιηθεί bundle: **${bundle.version_no || bundle.version}** (${bundle.status}).\nΔημιουργώ batch;` : "⚠️ Δεν βρέθηκε ενεργό bundle για αυτό το τμήμα."));
+              addMsg("bot", `Δεν υπάρχει batch για ${date} – ${dept}.\n` + (bundle ? `Θα χρησιμοποιηθεί bundle: **${bundle.version_no || bundle.version}** (${bundle.status}).\nΔημιουργώ batch;` : `⚠️ Δεν βρέθηκε ενεργό bundle για ${dept} στις ${date}. Μπορείς να συνεχίσεις με χειροκίνητη διαχείριση.`));
             }
           }}
           onSkip={() => { setStep("dept"); addMsg("bot", "Επέλεξε τμήμα για να ξεκινήσουμε."); }}
