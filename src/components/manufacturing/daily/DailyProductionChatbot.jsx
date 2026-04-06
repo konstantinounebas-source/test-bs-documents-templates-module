@@ -497,9 +497,17 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         }
       });
 
-      await Promise.all(ocrTasks);
+      const ocrResults = await Promise.allSettled(ocrTasks);
+      // Surface any per-task failures without losing the successful ones
+      ocrResults.forEach((r, i) => {
+        if (r.status === "rejected") {
+          addMsg("bot", `⚠️ OCR για "${detectedForms[i]}" απέτυχε: ${r.reason?.message || "άγνωστο σφάλμα"}`);
+        }
+      });
 
       if (!isMountedRef.current) return;
+      // Guard: if user reset mid-OCR, abort showing modals
+      if (!selBatch) return;
 
       // Step 3: Store cache IDs
       if (prodCacheId) setCurrentProductionCacheId(prodCacheId);
