@@ -137,10 +137,11 @@ export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, 
           try {
             // IMPROVEMENT #6: Guard against concurrent duplicate OCR runs
             if (processingAttachmentIdsRef.current.has(att.id)) {
-              // Skip if already being processed
+              // Skip if already being processed — must include batchHeaderId for consistency
               results.push({
                 attachmentId: att.id,
                 fileName: att.file_name,
+                batchHeaderId: att.batch_header_id,
                 status: "skipped",
                 message: "Already being processed"
               });

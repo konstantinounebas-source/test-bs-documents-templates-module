@@ -1,6 +1,6 @@
 import { useCallback, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { checkOCRCacheStatus, saveCorrectedOCRCacheData } from "@/lib/ocrCacheService";
+import { checkOCRCacheStatus } from "@/lib/ocrCacheService";
 import { ocrWithCache } from "@/functions/ocrWithCache";
 
 export function usePerformOCRInBackground(
@@ -210,10 +210,13 @@ export function usePerformOCRInBackground(
       }
 
       setAttachmentOcrStatus((prev) => {
-        const newStatus = { ...prev, [att.id]: { ...prev[att.id] } };
-        Object.keys(newStatus[att.id]).forEach((formType) => {
-          newStatus[att.id][formType] = { status: "failed", cache_id: null };
-        });
+        const newStatus = { 
+          ...prev, 
+          [att.id]: {
+            production: { status: "failed", cache_id: null },
+            teams_time: { status: "failed", cache_id: null }
+          } 
+        };
         return newStatus;
       });
       // RETHROW so bulk OCR can catch and mark as failed
