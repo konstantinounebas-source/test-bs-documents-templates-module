@@ -106,11 +106,11 @@ export async function saveCorrectedOCRCacheData(cacheId, correctedData) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cache_id: cacheId, corrected_data: correctedData })
     });
-    
+
     if (!response.ok) {
       throw new Error('Failed to save corrected OCR data');
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error('Error saving corrected OCR data:', error);
@@ -125,7 +125,7 @@ export async function saveCorrectedOCRCacheData(cacheId, correctedData) {
 export async function checkOCRCacheStatus(attachmentId) {
   try {
     const current = await getCurrentOCRCacheByAttachment(attachmentId);
-    
+
     if (!current) {
       return { hasCached: false, record: null };
     }
