@@ -25,6 +25,7 @@ import ChatStepHelpIn from "./chatbot/ChatStepHelpIn";
 import ChatStepConsumables from "./chatbot/ChatStepConsumables";
 import ChatStepFileUpload from "./chatbot/ChatStepFileUpload";
 import OCRVerificationModal from "./OCRVerificationModal";
+import BatchLinesSection from "./BatchLinesSection";
 import OCRTeamsTimeVerificationModal from "./OCRTeamsTimeVerificationModal";
 import { saveOCRData } from "./chatbot/ocrSave";
 import { saveOCRTeamsTimeData } from "./chatbot/ocrTeamsTimeSave";
@@ -1192,19 +1193,15 @@ CRITICAL SAFETY RULES:
   const renderBatchLinesAdd = () => (
     <div className="border-t p-3 space-y-3 overflow-y-auto flex-1">
         {existingBatchLines.length > 0 && bundleItemCodes.length > 0 && (
-          <div className="space-y-1.5">
-            {existingBatchLines.map((bl) => {
-              const blCode = bl.item_code?.trim() || "";
-              if (bundleItemCodes.includes(blCode)) return null;
-              return (
-                <div key={bl.id} className="bg-red-50 border border-red-200 rounded px-2 py-1.5 flex items-start gap-2">
-                  <AlertTriangle className="w-3 h-3 flex-shrink-0 mt-1 text-red-600" />
-                  <div className="text-xs text-red-700 flex-1">
-                    <p className="font-semibold">{blCode}</p>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
+            <p className="font-semibold mb-1">Missing from Bundle:</p>
+            <div className="flex flex-wrap gap-1">
+              {existingBatchLines.map((bl) => {
+                const blCode = bl.item_code?.trim() || "";
+                if (bundleItemCodes.includes(blCode)) return null;
+                return <span key={bl.id} className="inline-block bg-red-100 px-2 py-0.5 rounded">{blCode}</span>;
+              })}
+            </div>
           </div>
         )}
         <div className="flex items-center justify-between">
@@ -1237,27 +1234,12 @@ CRITICAL SAFETY RULES:
             <Plus className="w-3 h-3 mr-1" /> Προσθήκη Line(s)
           </Button>
         </div>
-        {existingBatchLines.length > 0 && (
-          <div className="space-y-1 flex-1 overflow-y-auto min-h-0">
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider sticky top-0 bg-white py-1">Καταχωρημένες Γραμμές</p>
-            <div className="flex gap-1 text-[10px] font-semibold text-slate-400 px-1 sticky top-6 bg-white py-1">
-              <span className="flex-1 min-w-0">Item</span>
-              <span className="w-8 text-center flex-shrink-0">Sched.</span>
-              <span className="w-12 text-center flex-shrink-0">Proc.</span>
-              <span className="w-12 text-center flex-shrink-0">Good</span>
-              <span className="w-12 text-center flex-shrink-0">Scrap</span>
-              <span className="w-4 flex-shrink-0"></span>
-            </div>
-            <div className="space-y-1">
-              {existingBatchLines.map(bl => (
-                <ExistingLineRow key={bl.id} bl={bl}
-                  onSave={async (id, data) => { await base44.entities.Batch_Lines.update(id, data); queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]); }}
-                  onDelete={async (id) => { await base44.entities.Batch_Lines.delete(id); queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]); toast.success("Γραμμή διαγράφηκε"); }}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        <BatchLinesSection 
+          existingBatchLines={existingBatchLines}
+          bundleItemCodes={bundleItemCodes}
+          selBatch={selBatch}
+          queryClient={queryClient}
+        />
         <div className="flex gap-2">
           <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700" onClick={() => goNextStep("batch_lines_add", "✅ Batch Lines ολοκληρώθηκαν!")}>
             <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → QC
