@@ -3,6 +3,12 @@ import { AlertTriangle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import ExistingLineRow from "./chatbot/ExistingLineRow";
 import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function BatchLinesSection({ 
   existingBatchLines, 
@@ -49,8 +55,17 @@ export default function BatchLinesSection({
               <div className="flex items-center gap-1 w-12 flex-shrink-0">
                 <span className="text-xs font-medium text-slate-700 truncate">{blCode}</span>
                 {showMissingWarnings && isMissing && (
-                  <AlertTriangle className="w-3 h-3 flex-shrink-0 text-red-600" />
-                )}
+                   <TooltipProvider>
+                     <Tooltip>
+                       <TooltipTrigger asChild>
+                         <AlertTriangle className="w-3 h-3 flex-shrink-0 text-red-600 cursor-help" />
+                       </TooltipTrigger>
+                       <TooltipContent>
+                         <p>Item δεν υπάρχει στο bundle</p>
+                       </TooltipContent>
+                     </Tooltip>
+                   </TooltipProvider>
+                 )}
               </div>
               <ExistingLineRow 
                 bl={bl}
