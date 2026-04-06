@@ -19,10 +19,14 @@ export default function DailyDataTab({
     staleTime: 0
   });
 
-  // Filter batches by selected date
+  // Filter batches by selected date (normalize both to yyyy-MM-dd format)
   const dateBatches = React.useMemo(() => {
     if (!selDate) return [];
-    return allBatches.filter(b => b.date === selDate);
+    const normalizedSelDate = selDate.includes('-') ? selDate : format(parse(selDate, "dd/MM/yyyy", new Date()), "yyyy-MM-dd");
+    return allBatches.filter(b => {
+      const normalizedBatchDate = b.date.includes('-') ? b.date : format(parse(b.date, "dd/MM/yyyy", new Date()), "yyyy-MM-dd");
+      return normalizedBatchDate === normalizedSelDate;
+    });
   }, [allBatches, selDate]);
 
   // Get unique departments that have batches for this date
