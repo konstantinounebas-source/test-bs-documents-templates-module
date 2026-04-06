@@ -29,7 +29,7 @@ import OCRVerificationModal from "./OCRVerificationModal";
 import OCRTeamsTimeVerificationModal from "./OCRTeamsTimeVerificationModal";
 import { saveOCRData } from "./chatbot/ocrSave";
 import { saveOCRTeamsTimeData } from "./chatbot/ocrTeamsTimeSave";
-import { checkOCRCacheStatus, supersedeCurrentOCRCache, saveCorrectedOCRCacheData } from "@/lib/ocrCacheService";
+import { checkOCRCacheStatus, saveCorrectedOCRCacheData } from "@/lib/ocrCacheService";
 import { ocrWithCache } from "@/functions/ocrWithCache";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
