@@ -126,7 +126,7 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
   };
 
   return (
-    <div className="border-t p-3 space-y-2 overflow-y-auto max-h-[420px]">
+    <div className="border-t p-3 space-y-2 overflow-y-auto flex-1 min-h-0 flex flex-col">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>
@@ -145,7 +145,7 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
 
       {/* Existing persons */}
       {lines.length > 0 && (
-        <div className="border rounded divide-y max-h-36 overflow-y-auto">
+        <div className="border rounded divide-y flex-1 min-h-0 overflow-y-auto">
           {lines.map(l => (
             <PersonRow key={l.id} line={l} onDelete={handleDelete} onUpdate={handleUpdate} />
           ))}

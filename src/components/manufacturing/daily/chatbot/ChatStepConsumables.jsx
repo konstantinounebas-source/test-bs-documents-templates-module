@@ -175,7 +175,7 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
   const totalExpected = lines.reduce((s, l) => s + (l.expected_qty || 0), 0);
 
   return (
-    <div className="border-t p-3 space-y-2 overflow-y-auto max-h-[420px]">
+    <div className="border-t p-3 space-y-2 overflow-y-auto flex-1 min-h-0 flex flex-col">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>
@@ -191,7 +191,7 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
           <div className="bg-indigo-50 border border-indigo-200 rounded p-2 text-xs text-indigo-700">
             ✅ {lines.length} εγγραφές · EXP: {totalExpected.toFixed(2)} · ACT: {totalActual.toFixed(2)}
           </div>
-          <div className="border rounded divide-y max-h-40 overflow-y-auto">
+          <div className="border rounded divide-y flex-1 min-h-0 overflow-y-auto">
             <div className="grid grid-cols-4 px-2 py-1 text-[9px] font-semibold text-slate-400 uppercase">
               <span>Consumable</span><span>Item</span><span className="text-right">EXP</span><span className="text-right">ACT</span>
             </div>

@@ -56,7 +56,7 @@ export default function ChatStepHelpIn({ batchId, department, onNext, onSkip, on
   };
 
   return (
-    <div className="border-t p-3 space-y-2 overflow-y-auto max-h-[420px]">
+    <div className="border-t p-3 space-y-2 overflow-y-auto flex-1 min-h-0 flex flex-col">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>
@@ -73,7 +73,7 @@ export default function ChatStepHelpIn({ batchId, department, onNext, onSkip, on
           <div className="bg-green-50 border border-green-200 rounded p-2 text-xs text-green-700">
             ✅ {lines.length} εγγραφές · Σύνολο: {totalHelp} min
           </div>
-          <div className="border rounded divide-y max-h-32 overflow-y-auto">
+          <div className="border rounded divide-y flex-1 min-h-0 overflow-y-auto">
             {lines.map(l => (
               <div key={l.id} className="flex items-center gap-1 px-2 py-1.5 text-[10px] text-slate-700 hover:bg-slate-50 group">
                 <span className="flex-1 truncate font-medium">{l.department}</span>

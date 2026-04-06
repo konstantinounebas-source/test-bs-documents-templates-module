@@ -281,7 +281,7 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
   };
 
   return (
-    <div className="border-t p-3 space-y-2 overflow-y-auto max-h-[480px]">
+    <div className="border-t p-3 space-y-2 overflow-y-auto flex-1 min-h-0 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
@@ -309,7 +309,7 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
           return acc;
         }, {});
         return (
-          <div className="border rounded max-h-48 overflow-y-auto text-[10px]">
+          <div className="border rounded flex-1 min-h-0 overflow-y-auto text-[10px]">
             {/* Header */}
             <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 text-[9px] font-semibold text-slate-400 uppercase sticky top-0">
               <span className="flex-1">Operation</span>
