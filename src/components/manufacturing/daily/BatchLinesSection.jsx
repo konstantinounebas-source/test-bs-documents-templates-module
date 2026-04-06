@@ -28,13 +28,15 @@ export default function BatchLinesSection({
         )}
       </div>
 
-      <div className="flex gap-1 text-[10px] font-semibold text-slate-400 px-1 sticky top-6 bg-white py-1">
-        <span className="flex-1 min-w-0">Item</span>
-        <span className="w-8 text-center flex-shrink-0">Sched.</span>
-        <span className="w-12 text-center flex-shrink-0">Proc.</span>
-        <span className="w-12 text-center flex-shrink-0">Good</span>
-        <span className="w-12 text-center flex-shrink-0">Scrap</span>
-        <span className="w-4 flex-shrink-0"></span>
+      <div className="flex items-center gap-1 text-[10px] font-semibold text-slate-400 px-1 sticky top-6 bg-white py-1">
+        <span className="w-12 flex-shrink-0">Item</span>
+        <div className="flex-1 flex gap-1">
+          <span className="w-8 text-center flex-shrink-0">Sched.</span>
+          <span className="w-12 text-center flex-shrink-0">Proc.</span>
+          <span className="w-12 text-center flex-shrink-0">Good</span>
+          <span className="w-12 text-center flex-shrink-0">Scrap</span>
+          <span className="w-4 flex-shrink-0"></span>
+        </div>
       </div>
 
       <div className="space-y-1">
@@ -44,27 +46,25 @@ export default function BatchLinesSection({
           
           return (
             <div key={bl.id} className="flex items-center gap-1">
-              <div className="flex items-center gap-1 w-12">
-                <span className="text-xs font-medium text-slate-700">{blCode}</span>
+              <div className="flex items-center gap-1 w-12 flex-shrink-0">
+                <span className="text-xs font-medium text-slate-700 truncate">{blCode}</span>
                 {showMissingWarnings && isMissing && (
                   <AlertTriangle className="w-3 h-3 flex-shrink-0 text-red-600" />
                 )}
               </div>
-              <div className="flex-1">
-                <ExistingLineRow 
-                  bl={bl}
-                  hideItemCode={true}
-                  onSave={async (id, data) => { 
-                    await base44.entities.Batch_Lines.update(id, data); 
-                    queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]); 
-                  }}
-                  onDelete={async (id) => { 
-                    await base44.entities.Batch_Lines.delete(id); 
-                    queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]); 
-                    toast.success("Γραμμή διαγράφηκε"); 
-                  }}
-                />
-              </div>
+              <ExistingLineRow 
+                bl={bl}
+                hideItemCode={true}
+                onSave={async (id, data) => { 
+                  await base44.entities.Batch_Lines.update(id, data); 
+                  queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]); 
+                }}
+                onDelete={async (id) => { 
+                  await base44.entities.Batch_Lines.delete(id); 
+                  queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]); 
+                  toast.success("Γραμμή διαγράφηκε"); 
+                }}
+              />
             </div>
           );
         })}
