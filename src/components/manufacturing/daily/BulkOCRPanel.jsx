@@ -109,6 +109,7 @@ export default function BulkOCRPanel({
                 onAddMsg("bot", "⚠️ No attachments selected. Select at least one.");
                 return;
               }
+              // Selected detail items contain attachmentId only - caller must map to full attachment objects
               const selected = missingOcrAttachmentDetails.filter(d => selectedAttachmentIds.has(d.attachmentId));
               onRunSelected(selected);
             }}

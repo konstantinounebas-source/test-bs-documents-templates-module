@@ -522,6 +522,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         });
         return newStatus;
       });
+      // RETHROW so bulk OCR can catch and mark as failed
+      throw err;
     } finally {
       if (isMountedRef.current) {
         setRunningOcrAttachmentIds(prev => {
@@ -1452,7 +1454,13 @@ CRITICAL SAFETY RULES:
            onFilterDeptChange={setOcrFilterDept}
            onFilterMonthChange={setOcrFilterMonth}
            onDetectMissing={handleDetectMissing}
-           onRunSelected={executeSelectedBulkOCR}
+           onRunSelected={(selectedDetails) => {
+             // Map selected detail items to full attachment objects from database
+             const fullAttachments = selectedDetails
+               .map(detail => allBatchAttachments.find(att => att.id === detail.attachmentId))
+               .filter(Boolean); // Remove unfound entries
+             executeSelectedBulkOCR(fullAttachments);
+           }}
            onStopBulkOCR={stopBulkOCR}
            onAddMsg={addMsg}
          />
