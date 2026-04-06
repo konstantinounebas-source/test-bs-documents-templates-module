@@ -91,10 +91,10 @@ Deno.serve(async (req) => {
     });
 
     // 5. Call the appropriate OCR function based on form_type
-    let ocrResult;
+    let rawInvokeResult;
     try {
       const ocrFunctionName = form_type === 'production' ? 'ocrProductionForm' : 'ocrTeamsTimeForm';
-      ocrResult = await base44.asServiceRole.functions.invoke(ocrFunctionName, {
+      rawInvokeResult = await base44.asServiceRole.functions.invoke(ocrFunctionName, {
         file_url,
         page_number
       });
@@ -108,6 +108,9 @@ Deno.serve(async (req) => {
       throw error;
     }
 
+    // Normalize OCR function result shape
+    const ocrResult = rawInvokeResult?.data || rawInvokeResult?.result || rawInvokeResult?.output || rawInvokeResult;
+
     // 6. Update cache record with OCR results
     await base44.asServiceRole.entities.OCRCache.update(newCacheRecord.id, {
       status: 'completed',
@@ -115,7 +118,7 @@ Deno.serve(async (req) => {
       raw_ocr_json: ocrResult,
       extracted_data_json: ocrResult.extracted_data || null,
       validation_json: ocrResult.validation || null,
-      page_count: ocrResult.file_page_count || null
+      page_count: ocrResult.file_page_count || ocrResult.page_count || null
     });
 
     // 7. Return the result
@@ -125,7 +128,7 @@ Deno.serve(async (req) => {
       extracted_data: ocrResult.extracted_data,
       validation: ocrResult.validation,
       raw_ocr_json: ocrResult,
-      page_count: ocrResult.file_page_count
+      page_count: ocrResult.file_page_count || ocrResult.page_count
     });
 
   } catch (error) {

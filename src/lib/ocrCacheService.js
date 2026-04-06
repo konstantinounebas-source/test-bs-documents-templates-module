@@ -54,10 +54,6 @@ export async function completeOCRCacheRecord(cacheId, data) {
       page_count: data.page_count || null
     };
 
-    if (data.confidence_score !== undefined) {
-      updateData.confidence_score = data.confidence_score;
-    }
-
     await base44.entities.OCRCache.update(cacheId, updateData);
   } catch (error) {
     console.error('Error completing OCR cache record:', error);
@@ -101,13 +97,21 @@ export async function supersedeCurrentOCRCache(attachmentId) {
 }
 
 /**
- * Save user-corrected data to OCR cache record
+ * Save user-corrected data to OCR cache record (frontend-accessible wrapper)
  */
 export async function saveCorrectedOCRCacheData(cacheId, correctedData) {
   try {
-    await base44.entities.OCRCache.update(cacheId, {
-      corrected_data_json: correctedData
+    const response = await fetch(`${window.location.origin}/api/functions/saveCorrectedOCRData`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cache_id: cacheId, corrected_data: correctedData })
     });
+    
+    if (!response.ok) {
+      throw new Error('Failed to save corrected OCR data');
+    }
+    
+    return await response.json();
   } catch (error) {
     console.error('Error saving corrected OCR data:', error);
     throw error;
@@ -153,7 +157,7 @@ export async function getOCRCacheHistory(attachmentId) {
     const records = await base44.entities.OCRCache.filter({
       attachment_id: attachmentId
     });
-    return records.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    return records.sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
   } catch (error) {
     console.error('Error getting OCR cache history:', error);
     return [];
