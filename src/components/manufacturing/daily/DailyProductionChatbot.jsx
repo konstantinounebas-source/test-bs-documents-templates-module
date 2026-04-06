@@ -29,6 +29,7 @@ import { saveOCRTeamsTimeData } from "./chatbot/ocrTeamsTimeSave";
 import { checkOCRCacheStatus, saveCorrectedOCRCacheData } from "@/lib/ocrCacheService";
 import { useBulkOCRControl } from "./hooks/useBulkOCRControl";
 import { usePerformOCRInBackground } from "./hooks/usePerformOCRInBackground";
+import { useOcrFlow } from "./hooks/useOcrFlow";
 import BulkOCRPanel from "./BulkOCRPanel";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -247,20 +248,22 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
   // OCR state
   const [runningOcrAttachmentIds, setRunningOcrAttachmentIds] = useState(new Set());
-  const [ocrTargetAtt, setOcrTargetAtt] = useState(null);
-  const [showOcrModal, setShowOcrModal] = useState(false);
-  const [currentProductionCacheId, setCurrentProductionCacheId] = useState(null);
-  const [viewProductionOcrResult, setViewProductionOcrResult] = useState(null);
-  const [showTeamsTimeOcrModal, setShowTeamsTimeOcrModal] = useState(false);
-  const [currentTeamsTimeCacheId, setCurrentTeamsTimeCacheId] = useState(null);
-  const [viewTeamsTimeOcrResult, setViewTeamsTimeOcrResult] = useState(null);
-  // OCR Status Tracking: { attachment_id: { production: { status, cache_id }, teams_time: { status, cache_id } } }
   const [attachmentOcrStatus, setAttachmentOcrStatus] = useState({});
   
-  // Per-attachment OCR flow state
-  // { att_id: { detected: ['production', 'teams_time'], completed: [], currentIndex: 0 } }
-  const [ocrFormQueue, setOcrFormQueue] = useState({});
-  const [showManualFormDialog, setShowManualFormDialog] = useState(false);
+  // OCR flow management (no stale state)
+  const ocrFlow = useOcrFlow(loadOCRDataFromCache, addMsg);
+  const {
+    ocrTargetAtt, setOcrTargetAtt,
+    showOcrModal, setShowOcrModal,
+    currentProductionCacheId, setCurrentProductionCacheId,
+    viewProductionOcrResult, setViewProductionOcrResult,
+    showTeamsTimeOcrModal, setShowTeamsTimeOcrModal,
+    currentTeamsTimeCacheId, setCurrentTeamsTimeCacheId,
+    viewTeamsTimeOcrResult, setViewTeamsTimeOcrResult,
+    ocrFormQueue, setOcrFormQueue,
+    showManualFormDialog, setShowManualFormDialog,
+    advanceOcrFlow, getNextForm
+  } = ocrFlow;
 
   // missing OCR & bulk OCR control
   const [isMissingOcrLoading, setIsMissingOcrLoading] = useState(false);
@@ -632,51 +635,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     performOCRInBackground(att);
   };
   
-  // Advance to next form in queue or close all modals if queue exhausted
-  const advanceOcrFlow = async () => {
-    if (!ocrTargetAtt) return;
-    
-    const queue = ocrFormQueue[ocrTargetAtt.id];
-    if (!queue) return;
-    
-    const { detected, completed } = queue;
-    const remaining = detected.filter(f => !completed.includes(f));
-    
-    if (remaining.length === 0) {
-      // All forms processed
-      setShowOcrModal(false);
-      setShowTeamsTimeOcrModal(false);
-      setOcrTargetAtt(null);
-      addMsg("bot", "🎉 Όλες οι διαθέσιμες φόρμες έχουν ολοκληρωθεί.");
-      return;
-    }
-    
-    const nextForm = remaining[0];
-    if (nextForm === 'production') {
-      setShowTeamsTimeOcrModal(false);
-      const prodData = await loadOCRDataFromCache(ocrTargetAtt.id, 'production');
-      if (prodData) {
-        setCurrentProductionCacheId(prodData.cache_id);
-        setViewProductionOcrResult(prodData);
-        setShowOcrModal(true);
-      } else {
-        // No production data, ask if user wants to enter manually
-        setShowManualFormDialog(true);
-      }
-    } else if (nextForm === 'teams_time') {
-      setShowOcrModal(false);
-      const teamsData = await loadOCRDataFromCache(ocrTargetAtt.id, 'teams_time');
-      if (teamsData) {
-        setCurrentTeamsTimeCacheId(teamsData.cache_id);
-        setViewTeamsTimeOcrResult(teamsData);
-        setShowTeamsTimeOcrModal(true);
-      } else {
-        // No teams_time data, ask if user wants to enter manually
-        setShowManualFormDialog(true);
-      }
-    }
-  };
-  
   const openManualForm = (formType) => {
     if (!ocrTargetAtt) return;
     // Mark as detected if not already
@@ -709,48 +667,29 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       saveCorrectedOCRCacheData(currentProductionCacheId, confirmedData).catch(() => {});
     }
 
+    // Wait for save to complete before advancing
     if (selBatch?.id) {
-      saveOCRData(confirmedData, selBatch.id, () => {
-        queryClient.invalidateQueries(["Batch_Lines", selBatch.id]);
-        queryClient.invalidateQueries(["QC_Initial_Stock", selBatch.id]);
-        queryClient.invalidateQueries(["Operations", selBatch.id]);
-        addMsg("bot", `📦 Production δεδομένα αποθηκεύτηκαν.`);
+      await new Promise(resolve => {
+        saveOCRData(confirmedData, selBatch.id, () => {
+          queryClient.invalidateQueries(["Batch_Lines", selBatch.id]);
+          queryClient.invalidateQueries(["QC_Initial_Stock", selBatch.id]);
+          queryClient.invalidateQueries(["Operations", selBatch.id]);
+          addMsg("bot", `📦 Production δεδομένα αποθηκεύτηκαν.`);
+          resolve();
+        });
       });
     } else {
       addMsg("bot", "⚠️ Δεν υπάρχει ενεργό batch. Επίλεξε batch πρώτα.");
     }
     
-    // Mark production as completed
-    if (ocrTargetAtt) {
-      setOcrFormQueue(prev => ({
-        ...prev,
-        [ocrTargetAtt.id]: {
-          ...prev[ocrTargetAtt.id],
-          completed: [...(prev[ocrTargetAtt.id]?.completed || []), 'production']
-        }
-      }));
-    }
-    
-    // Advance to next form
-    await advanceOcrFlow();
+    // Advance to next form (passes 'production' as completed form)
+    await advanceOcrFlow('production');
   };
 
   const handleOcrSkip = async () => {
     addMsg("bot", "✅ Production φόρμα παραλείφθηκε (δεν αποθηκεύτηκαν δεδομένα).");
-    
-    // Mark production as skipped (completed without saving)
-    if (ocrTargetAtt) {
-      setOcrFormQueue(prev => ({
-        ...prev,
-        [ocrTargetAtt.id]: {
-          ...prev[ocrTargetAtt.id],
-          completed: [...(prev[ocrTargetAtt.id]?.completed || []), 'production']
-        }
-      }));
-    }
-    
-    // Advance to next form
-    await advanceOcrFlow();
+    // Advance to next form (passes 'production' as completed form)
+    await advanceOcrFlow('production');
   };
 
   const handleTeamsTimeOcrConfirm = async (confirmedData) => {
@@ -761,45 +700,26 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       saveCorrectedOCRCacheData(currentTeamsTimeCacheId, confirmedData).catch(() => {});
     }
 
+    // Wait for save to complete before advancing
     if (selBatch?.id) {
-      saveOCRTeamsTimeData(confirmedData, selBatch.id, () => {
-        queryClient.invalidateQueries(["TeamTimePerson", selBatch.id]);
-        queryClient.invalidateQueries(["Team_Time_Extra", selBatch.id]);
-        addMsg("bot", `📦 Teams Time δεδομένα αποθηκεύτηκαν.`);
-      }, selBatch.department);
+      await new Promise(resolve => {
+        saveOCRTeamsTimeData(confirmedData, selBatch.id, () => {
+          queryClient.invalidateQueries(["TeamTimePerson", selBatch.id]);
+          queryClient.invalidateQueries(["Team_Time_Extra", selBatch.id]);
+          addMsg("bot", `📦 Teams Time δεδομένα αποθηκεύτηκαν.`);
+          resolve();
+        }, selBatch.department);
+      });
     }
     
-    // Mark teams_time as completed
-    if (ocrTargetAtt) {
-      setOcrFormQueue(prev => ({
-        ...prev,
-        [ocrTargetAtt.id]: {
-          ...prev[ocrTargetAtt.id],
-          completed: [...(prev[ocrTargetAtt.id]?.completed || []), 'teams_time']
-        }
-      }));
-    }
-    
-    // Advance to next form (or close if all done)
-    await advanceOcrFlow();
+    // Advance to next form (passes 'teams_time' as completed form)
+    await advanceOcrFlow('teams_time');
   };
   
   const handleTeamsTimeOcrSkip = async () => {
     addMsg("bot", "✅ Teams Time φόρμα παραλείφθηκε (δεν αποθηκεύτηκαν δεδομένα).");
-    
-    // Mark teams_time as skipped
-    if (ocrTargetAtt) {
-      setOcrFormQueue(prev => ({
-        ...prev,
-        [ocrTargetAtt.id]: {
-          ...prev[ocrTargetAtt.id],
-          completed: [...(prev[ocrTargetAtt.id]?.completed || []), 'teams_time']
-        }
-      }));
-    }
-    
-    // Advance to next form (or close if all done)
-    await advanceOcrFlow();
+    // Advance to next form (passes 'teams_time' as completed form)
+    await advanceOcrFlow('teams_time');
   };
 
   // ── step handlers ─────────────────────────────────────────────────────────
@@ -1275,7 +1195,6 @@ CRITICAL SAFETY RULES:
                  const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
                  setOcrTargetAtt(att);
 
-                 // Initialize form queue for this attachment
                  const detected = [];
                  if (prodData) detected.push('production');
                  if (teamsData) detected.push('teams_time');
@@ -1291,11 +1210,11 @@ CRITICAL SAFETY RULES:
                  }));
 
                  // Open first detected form
-                 if (prodData) {
+                 if (detected[0] === 'production' && prodData) {
                    setCurrentProductionCacheId(prodData.cache_id);
                    setViewProductionOcrResult(prodData);
                    setShowOcrModal(true);
-                 } else if (teamsData) {
+                 } else if (detected[0] === 'teams_time' && teamsData) {
                    setCurrentTeamsTimeCacheId(teamsData.cache_id);
                    setViewTeamsTimeOcrResult(teamsData);
                    setShowTeamsTimeOcrModal(true);
@@ -1811,9 +1730,9 @@ CRITICAL SAFETY RULES:
       </Dialog>
 
       {/* OCR Verification Modal - Production Form (On-Demand) */}
-      {currentProductionCacheId && ocrTargetAtt && (
+      {(currentProductionCacheId || viewProductionOcrResult) && ocrTargetAtt && (
         <OCRVerificationModal
-          key={`${ocrTargetAtt?.id || "none"}-${currentProductionCacheId || "none"}`}
+          key={`${ocrTargetAtt?.id || "none"}-${currentProductionCacheId || "manual"}`}
           open={showOcrModal}
           onClose={() => { setShowOcrModal(false); setViewProductionOcrResult(null); }}
           fileUrl={ocrTargetAtt.file_url}
@@ -1857,7 +1776,7 @@ CRITICAL SAFETY RULES:
                 <Button size="sm" className="bg-blue-600 hover:bg-blue-700" 
                   onClick={() => {
                     const queue = ocrFormQueue[ocrTargetAtt.id];
-                    const nextForm = queue?.detected?.[queue.detected.length - 1];
+                    const nextForm = getNextForm(queue, '');
                     if (nextForm === 'production') {
                       openManualForm('production');
                     } else if (nextForm === 'teams_time') {
@@ -1868,7 +1787,15 @@ CRITICAL SAFETY RULES:
                   }}>
                   ✏️ Χειροκίνητη Εισαγωγή
                 </Button>
-                <Button size="sm" variant="outline" onClick={advanceOcrFlow}>
+                <Button size="sm" variant="outline" onClick={() => {
+                  const queue = ocrFormQueue[ocrTargetAtt.id];
+                  const nextForm = getNextForm(queue, '');
+                  if (nextForm) {
+                    advanceOcrFlow('');
+                  } else {
+                    setShowManualFormDialog(false);
+                  }
+                }}>
                   Παράλειψη
                 </Button>
               </div>
@@ -1965,11 +1892,26 @@ CRITICAL SAFETY RULES:
                          const prodData = await loadOCRDataFromCache(att.id, "production");
                          const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
                          setOcrTargetAtt(att);
-                         if (prodData) {
+                         
+                         const detected = [];
+                         if (prodData) detected.push('production');
+                         if (teamsData) detected.push('teams_time');
+                         
+                         if (detected.length === 0) {
+                           addMsg("bot", "⚠️ Δεν υπάρχουν OCR δεδομένα για αυτό το αρχείο.");
+                           return;
+                         }
+                         
+                         setOcrFormQueue(prev => ({
+                           ...prev,
+                           [att.id]: { detected, completed: [] }
+                         }));
+                         
+                         if (detected[0] === 'production' && prodData) {
                            setCurrentProductionCacheId(prodData.cache_id);
                            setViewProductionOcrResult(prodData);
                            setShowOcrModal(true);
-                         } else if (teamsData) {
+                         } else if (detected[0] === 'teams_time' && teamsData) {
                            setCurrentTeamsTimeCacheId(teamsData.cache_id);
                            setViewTeamsTimeOcrResult(teamsData);
                            setShowTeamsTimeOcrModal(true);
