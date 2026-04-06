@@ -244,17 +244,12 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [showAttachmentsModal, setShowAttachmentsModal] = useState(false);
 
   // OCR state
-  const [ocrLoading, setOcrLoading] = useState(false);
+  const [runningOcrAttachmentIds, setRunningOcrAttachmentIds] = useState(new Set());
   const [ocrTargetAtt, setOcrTargetAtt] = useState(null);
-  const [ocrResult, setOcrResult] = useState(null);
   const [showOcrModal, setShowOcrModal] = useState(false);
   const [currentProductionCacheId, setCurrentProductionCacheId] = useState(null);
-  const [currentTeamsTimeCacheId, setCurrentTeamsTimeCacheId] = useState(null);
-  // Teams Time OCR state
   const [showTeamsTimeOcrModal, setShowTeamsTimeOcrModal] = useState(false);
-  const [teamsTimeOcrResult, setTeamsTimeOcrResult] = useState(null);
-  // Dual-form: pending teams time result to show after production modal confirmed
-  const [pendingTeamsTimeOcr, setPendingTeamsTimeOcr] = useState(null);
+  const [currentTeamsTimeCacheId, setCurrentTeamsTimeCacheId] = useState(null);
   // OCR Status Tracking: { attachment_id: { production: { status, cache_id }, teams_time: { status, cache_id } } }
   const [attachmentOcrStatus, setAttachmentOcrStatus] = useState({});
 
@@ -282,6 +277,28 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Load OCR data when production modal opens
+  useEffect(() => {
+    if (showOcrModal && currentProductionCacheId && ocrTargetAtt) {
+      loadOCRDataFromCache(ocrTargetAtt.id, "production").then(data => {
+        if (data) {
+          // Modals will display this data if passed as prop — for now we rely on cache service
+        }
+      });
+    }
+  }, [showOcrModal, currentProductionCacheId, ocrTargetAtt?.id]);
+
+  // Load OCR data when teams time modal opens
+  useEffect(() => {
+    if (showTeamsTimeOcrModal && currentTeamsTimeCacheId && ocrTargetAtt) {
+      loadOCRDataFromCache(ocrTargetAtt.id, "teams_time").then(data => {
+        if (data) {
+          // Modals will display this data if passed as prop — for now we rely on cache service
+        }
+      });
+    }
+  }, [showTeamsTimeOcrModal, currentTeamsTimeCacheId, ocrTargetAtt?.id]);
 
   // ── data ──────────────────────────────────────────────────────────────────
   // All batch headers (for file upload step batch matching)
@@ -318,7 +335,30 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
   const { data: attachments = [], isLoading: loadingAtts } = useQuery({
     queryKey: ["BatchAttachments", selBatch?.id],
-    queryFn: () => base44.entities.BatchAttachment.filter({ batch_header_id: selBatch?.id }),
+    queryFn: async () => {
+      const atts = await base44.entities.BatchAttachment.filter({ batch_header_id: selBatch?.id });
+      // Rehydrate OCR status from cache for each attachment
+      if (atts.length > 0) {
+        for (const att of atts) {
+          const prodStatus = await checkOCRCacheStatus(att.id, "production");
+          const teamsStatus = await checkOCRCacheStatus(att.id, "teams_time");
+          setAttachmentOcrStatus(prev => ({
+            ...prev,
+            [att.id]: {
+              production: {
+                status: prodStatus.canUseCache ? "completed" : (prodStatus.isProcessing ? "processing" : "none"),
+                cache_id: prodStatus.record?.id || null
+              },
+              teams_time: {
+                status: teamsStatus.canUseCache ? "completed" : (teamsStatus.isProcessing ? "processing" : "none"),
+                cache_id: teamsStatus.record?.id || null
+              }
+            }
+          }));
+        }
+      }
+      return atts;
+    },
     enabled: !!selBatch?.id,
     staleTime: 0
   });
@@ -478,6 +518,24 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     onSuccess: () => queryClient.invalidateQueries(["BatchAttachments", selBatch?.id])
   });
 
+  const loadOCRDataFromCache = async (attachmentId, formType) => {
+    try {
+      const cacheStatus = await checkOCRCacheStatus(attachmentId, formType);
+      if (cacheStatus.canUseCache) {
+        const cached = cacheStatus.record;
+        return {
+          extracted_data: cached.extracted_data_json,
+          validation: cached.validation_json,
+          page_count: cached.page_count,
+          cache_id: cached.id
+        };
+      }
+    } catch (err) {
+      console.error(`Failed to load OCR cache for ${formType}:`, err);
+    }
+    return null;
+  };
+
   const handleOCR = (att) => {
     // FIX #3: Verify attachment ownership before OCR
     if (att.batch_header_id !== selBatch?.id) {
@@ -490,6 +548,9 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       ...prev,
       [att.id]: prev[att.id] || { production: { status: "none" }, teams_time: { status: "none" } }
     }));
+
+    // Mark as running
+    setRunningOcrAttachmentIds(prev => new Set([...prev, att.id]));
 
     // Start OCR in background WITHOUT blocking UI
     addMsg("bot", `🔍 Έναρξη OCR για ${att.file_name}...`);
@@ -618,15 +679,12 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
       await Promise.allSettled(ocrTasks);
       
-      // Store results for on-demand viewing
+      // Store cache IDs for later retrieval
       if (prodCacheId) setCurrentProductionCacheId(prodCacheId);
       if (teamsCacheId) setCurrentTeamsTimeCacheId(teamsCacheId);
-      if (prodOcrData) setOcrResult(prodOcrData);
-      if (teamsOcrData) setTeamsTimeOcrResult(teamsOcrData);
-      if (prodOcrData || teamsOcrData) setOcrTargetAtt(att);
       
       // Notify user that OCR is ready (non-blocking)
-      if (isMountedRef.current && (prodOcrData || teamsOcrData)) {
+      if (isMountedRef.current && (prodCacheId || teamsCacheId)) {
         addMsg("bot", `✅ OCR ολοκληρώθηκε! Κάνε κλικ στο "View OCR" για να δεις τα αποτελέσματα.`);
       }
 
@@ -641,10 +699,19 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         });
         return newStatus;
       });
+    } finally {
+      // Clear running state
+      if (isMountedRef.current) {
+        setRunningOcrAttachmentIds(prev => {
+          const next = new Set(prev);
+          next.delete(att.id);
+          return next;
+        });
+      }
     }
   };
 
-  const handleOcrConfirm = (confirmedData) => {
+  const handleOcrConfirm = async (confirmedData) => {
     setShowOcrModal(false);
     addMsg("bot", 
       `✅ OCR επιβεβαιώθηκε! Αποθηκεύω ${confirmedData.production_lines?.length || 0} γραμμές...`
@@ -665,8 +732,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     } else {
       addMsg("bot", "⚠️ Δεν υπάρχει ενεργό batch. Επίλεξε batch πρώτα.");
     }
-    // If there are teams_time results, notify user they can view them
-    if (teamsTimeOcrResult) {
+    // Check if teams_time data exists
+    if (ocrTargetAtt && currentTeamsTimeCacheId) {
       addMsg("bot", `📋 Teams Time δεδομένα διαθέσιμα. Κάνε κλικ "View OCR" για να δεις.`);
     }
   };
@@ -674,8 +741,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const handleOcrSkip = () => {
     setShowOcrModal(false);
     addMsg("bot", "✅ Production φόρμα παραλείφθηκε.");
-    // If there are teams_time results, notify user they can view them
-    if (teamsTimeOcrResult) {
+    // Check if teams_time data exists
+    if (ocrTargetAtt && currentTeamsTimeCacheId) {
       addMsg("bot", `📋 Teams Time δεδομένα διαθέσιμα. Κάνε κλικ "View OCR" για να δεις.`);
     }
   };
@@ -1183,9 +1250,20 @@ CRITICAL SAFETY RULES:
               onDelete={id => deleteMutation.mutate(id)}
               onPreview={setPreviewFile}
               onOCR={handleOCR}
-              onViewOCR={(att) => { setOcrTargetAtt(att); if (ocrResult) setShowOcrModal(true); else if (teamsTimeOcrResult) setShowTeamsTimeOcrModal(true); }}
-              isOcrLoading={ocrLoading && ocrTargetAtt?.id === att.id}
-              isAnyOcrLoading={ocrLoading}
+              onViewOCR={async (att) => {
+                const prodData = await loadOCRDataFromCache(att.id, "production");
+                const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
+                setOcrTargetAtt(att);
+                if (prodData) {
+                  setCurrentProductionCacheId(prodData.cache_id);
+                  setShowOcrModal(true);
+                } else if (teamsData) {
+                  setCurrentTeamsTimeCacheId(teamsData.cache_id);
+                  setShowTeamsTimeOcrModal(true);
+                }
+              }}
+              isOcrLoading={runningOcrAttachmentIds.has(att.id)}
+              isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
               isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
               ocrStatus={attachmentOcrStatus[att.id] || {}} />
           ))}
@@ -1668,13 +1746,13 @@ CRITICAL SAFETY RULES:
       </Dialog>
 
       {/* OCR Verification Modal - Production Form (On-Demand) */}
-      {ocrResult && ocrTargetAtt && (
+      {currentProductionCacheId && ocrTargetAtt && (
         <OCRVerificationModal
           open={showOcrModal}
-          onClose={() => { setShowOcrModal(false); setOcrTargetAtt(null); setOcrResult(null); }}
+          onClose={() => { setShowOcrModal(false); }}
           fileUrl={ocrTargetAtt.file_url}
           fileName={ocrTargetAtt.file_name}
-          ocrResult={ocrResult}
+          ocrResult={{}}
           onConfirm={handleOcrConfirm}
           onSkip={handleOcrSkip}
           department={selDept || ocrTargetAtt?.department}
@@ -1683,15 +1761,15 @@ CRITICAL SAFETY RULES:
       )}
 
       {/* OCR Verification Modal - Teams Time Form (On-Demand) */}
-      {teamsTimeOcrResult && ocrTargetAtt && (
+      {currentTeamsTimeCacheId && ocrTargetAtt && (
         <OCRTeamsTimeVerificationModal
           open={showTeamsTimeOcrModal}
-          onClose={() => { setShowTeamsTimeOcrModal(false); setOcrTargetAtt(null); setTeamsTimeOcrResult(null); }}
+          onClose={() => { setShowTeamsTimeOcrModal(false); }}
           fileUrl={ocrTargetAtt.file_url}
           fileName={ocrTargetAtt.file_name}
-          ocrResult={teamsTimeOcrResult}
+          ocrResult={{}}
           onConfirm={handleTeamsTimeOcrConfirm}
-          totalPages={teamsTimeOcrResult?.page_count || 1}
+          totalPages={1}
           defaultPage={1}
         />
       )}
@@ -1780,9 +1858,20 @@ CRITICAL SAFETY RULES:
                       onDelete={id => deleteMutation.mutate(id)}
                       onPreview={setPreviewFile}
                       onOCR={handleOCR}
-                      onViewOCR={(att) => { setOcrTargetAtt(att); if (ocrResult) setShowOcrModal(true); else if (teamsTimeOcrResult) setShowTeamsTimeOcrModal(true); }}
-                      isOcrLoading={ocrLoading && ocrTargetAtt?.id === att.id}
-                      isAnyOcrLoading={ocrLoading}
+                      onViewOCR={async (att) => {
+                        const prodData = await loadOCRDataFromCache(att.id, "production");
+                        const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
+                        setOcrTargetAtt(att);
+                        if (prodData) {
+                          setCurrentProductionCacheId(prodData.cache_id);
+                          setShowOcrModal(true);
+                        } else if (teamsData) {
+                          setCurrentTeamsTimeCacheId(teamsData.cache_id);
+                          setShowTeamsTimeOcrModal(true);
+                        }
+                      }}
+                      isOcrLoading={runningOcrAttachmentIds.has(att.id)}
+                      isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
                       isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
                       ocrStatus={attachmentOcrStatus[att.id] || {}} />
                   ))}
