@@ -3,9 +3,6 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -212,7 +209,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const addMsg = (role, text, extra = {}) =>
     setMessages(p => [...p, { role, text, ...extra }]);
 
-  const scrollRef = useRef();
   const messagesEndRef = useRef();
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -931,23 +927,39 @@ ${context}
     if (!text) return;
     setUserInput("");
     addMsg("user", text);
+    const lower = text.toLowerCase();
 
     // batch lines review: handle inline without AI call
     if (step === "batch_lines_review") {
       handleBatchLineMessage(text);
       return;
     }
-    // batch lines add: "τέλος" or similar → reset
-    if (step === "batch_lines_add") {
-      const lower = text.toLowerCase();
-      if (lower.includes("τέλος") || lower.includes("done") || lower.includes("finish") || lower.includes("ok") || lower.includes("ναι") === false) {
-        addMsg("bot", "Εντάξει! Η καταχώριση Batch Lines ολοκληρώθηκε. 🎉\nΜπορείς να συνεχίσεις με τις υπόλοιπες καρτέλες από τη σελίδα.");
-        return;
-      }
+
+    // ── Direct command shortcuts (no AI needed) ──────────────────────────
+    // "next" / "συνέχεια" → advance from current step
+    if ((lower === "next" || lower === "συνέχεια") && stepSequence.includes(step)) {
+      goNextStep(step, null);
+      return;
     }
+    // "skip qc"
+    if (lower === "skip qc" && step === "qc") { skipStep("qc"); return; }
+    // "skip operations"
+    if ((lower === "skip operations" || lower === "skip ops") && step === "operations") { skipStep("operations"); return; }
+    // "go to operations" — only if batch exists and we're past batch_lines_add
+    if ((lower === "go to operations" || lower === "operations") && selBatch) {
+      setStep("operations"); addMsg("bot", "📋 Βήμα: **Operations**"); return;
+    }
+    // "finish" — only safe if we're in stepSequence and batch exists
+    if ((lower === "finish" || lower === "τέλος") && selBatch && stepSequence.includes(step)) {
+      setStep("done");
+      addMsg("bot", "🎉 Η καταχώριση ολοκληρώθηκε! Μπορείς να κλείσεις το chat ή να ξεκινήσεις νέα καταχώριση.");
+      return;
+    }
+    // "reset" / "αρχή"
+    if (lower === "reset" || lower === "αρχή") { handleReset(); return; }
 
     // default: AI
-    askAI(text, text.toLowerCase());
+    askAI(text, lower);
   };
 
   const quickDates = getQuickDates();
