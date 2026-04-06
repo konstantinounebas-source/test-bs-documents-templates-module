@@ -266,6 +266,38 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
     fetchPersons();
   }, []);
 
+  // Rehydrate all state from ocrResult when it changes, open status changes, or fileName changes
+  useEffect(() => {
+    // Rehydrate persons from ocrResult
+    const newPersons = (ocrResult?.extracted_data?.team_persons || []).map(p => ({ ...p, break_min: p.break_min ?? 45 }));
+    setPersons(newPersons);
+    
+    // Rehydrate extras from ocrResult
+    const initialSectionNames = new Set((ocrResult?.extracted_data?.team_persons || []).map(p => (p.person_name || "").trim().toLowerCase()).filter(Boolean));
+    const newExtras = (ocrResult?.extracted_data?.team_extra || []).map(e => {
+      const personName = (e.person_name || "").trim().toLowerCase();
+      const isExternal = personName && !initialSectionNames.has(personName);
+      const workType = e.work_type || "";
+      const mappedWorkType = OCR_WORK_TYPE_MAPPINGS[workType] || workType;
+      return {
+        ...e,
+        work_type: mappedWorkType,
+        charge_dept: (e.charge_dept === null || e.charge_dept === undefined || e.charge_dept === "null") ? "" : e.charge_dept,
+        is_help_in: isExternal
+      };
+    });
+    setExtras(newExtras);
+    
+    // Rehydrate date and dept
+    const resolvedDept = ocrResult?.extracted_data?.team || fileParsed.dept;
+    const cleanDept = (resolvedDept && resolvedDept !== "null") ? resolvedDept : "";
+    setDate(ocrResult?.extracted_data?.date || fileParsed.date || "");
+    setDept(cleanDept);
+    
+    // Reset other form state
+    setConfirmed(false);
+  }, [ocrResult, open, fileName]);
+
   // Auto-sync helpInList when helpInEntries change (when extras/persons change)
   // But preserve user-edited providing_dept values
   useEffect(() => {

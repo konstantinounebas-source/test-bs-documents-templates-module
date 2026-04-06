@@ -1715,6 +1715,7 @@ CRITICAL SAFETY RULES:
       {/* OCR Verification Modal - Production Form (On-Demand) */}
       {currentProductionCacheId && ocrTargetAtt && (
         <OCRVerificationModal
+          key={`${ocrTargetAtt?.id || "none"}-${currentProductionCacheId || "none"}`}
           open={showOcrModal}
           onClose={() => { setShowOcrModal(false); setViewProductionOcrResult(null); }}
           fileUrl={ocrTargetAtt.file_url}
@@ -1730,6 +1731,7 @@ CRITICAL SAFETY RULES:
       {/* OCR Verification Modal - Teams Time Form (On-Demand) */}
       {currentTeamsTimeCacheId && ocrTargetAtt && (
         <OCRTeamsTimeVerificationModal
+          key={`${ocrTargetAtt?.id || "none"}-${currentTeamsTimeCacheId || "none"}`}
           open={showTeamsTimeOcrModal}
           onClose={() => { setShowTeamsTimeOcrModal(false); setViewTeamsTimeOcrResult(null); }}
           fileUrl={ocrTargetAtt.file_url}

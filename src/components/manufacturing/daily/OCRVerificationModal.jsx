@@ -155,6 +155,63 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
   
   const [lines, setLines] = useState(() => allPagesData[currentPage] || []);
 
+  // Rehydrate all state from ocrResult when it changes, open status changes, or fileName changes
+  useEffect(() => {
+    // Rehydrate allPagesData from ocrResult
+    const pages = ocrResult?.extracted_data?.pages || [ocrResult?.extracted_data || {}];
+    const newAllPagesData = pages.map(pageData => {
+      const rawLines = pageData?.production_lines || [];
+      return rawLines.map(line => {
+        const updated = { ...line };
+        numericKeys.forEach(key => {
+          if (updated[key] === true) {
+            updated[key] = updated.total_delivery_quantity || null;
+          }
+        });
+        return updated;
+      });
+    });
+    setAllPagesData(newAllPagesData);
+    
+    // Reset page to 0
+    setCurrentPage(0);
+    
+    // Reset other form state
+    const ocrDate = ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "";
+    const convertedDate = convertDdMmToMmDd(ocrDate);
+    setDate(convertedDate || fileParsed.date || "");
+    setDepartment(initialDepartment || "");
+    setFileValidationIssues(() => {
+      const issues = [];
+      if (fileParsed.date && convertedDate && convertedDate.trim() && fileParsed.date.trim() && convertedDate !== fileParsed.date) {
+        issues.push({
+          field: "date",
+          severity: "warning",
+          message: `Ημερομηνία OCR (${convertedDate}) ≠ Ημερομηνία Αρχείου (${fileParsed.date})`
+        });
+      }
+      const formText = ocrResult?.extracted_data?.production_lines?.map(l => JSON.stringify(l)).join('') || "";
+      const isPrepaint = formText.includes('Προετοιμασία Βαφής');
+      if (fileParsed.type === 'Prepaint' && !isPrepaint) {
+        issues.push({
+          field: "type",
+          severity: "warning",
+          message: "Αρχείο λέει Prepaint αλλά φόρμα δεν περιέχει 'Προετοιμασία Βαφής'"
+        });
+      } else if (fileParsed.type !== 'Prepaint' && isPrepaint) {
+        issues.push({
+          field: "type",
+          severity: "warning",
+          message: "Φόρμα περιέχει 'Προετοιμασία Βαφής' αλλά αρχείο δεν λέει Prepaint"
+        });
+      }
+      return issues;
+    });
+    setAcceptedIssues(new Set());
+    setAcceptedItemCodes(new Set());
+    setConfirmed(false);
+  }, [ocrResult, open, fileName]);
+
   // Sync lines when page changes
   useEffect(() => {
     setLines(allPagesData[currentPage] || []);
