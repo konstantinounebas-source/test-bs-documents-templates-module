@@ -157,7 +157,7 @@ export async function getOCRCacheHistory(attachmentId) {
     const records = await base44.entities.OCRCache.filter({
       attachment_id: attachmentId
     });
-    return records.sort((a, b) => new Date(b.started_at) - new Date(a.started_at));
+    return records.sort((a, b) => new Date(b.started_at || 0) - new Date(a.started_at || 0));
   } catch (error) {
     console.error('Error getting OCR cache history:', error);
     return [];
