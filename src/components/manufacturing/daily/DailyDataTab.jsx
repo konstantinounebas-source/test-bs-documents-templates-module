@@ -35,8 +35,8 @@ export default function DailyDataTab({
   // Get unique departments that have batches for this date
   const departmentsWithBatches = React.useMemo(() => {
     const deptSet = new Set(dateBatches.map(b => b.department));
-    return departments.filter(d => deptSet.has(d.name));
-  }, [dateBatches, departments]);
+    return deptSet;
+  }, [dateBatches]);
 
   return (
     <div className="space-y-0 flex flex-col h-full">
@@ -56,32 +56,34 @@ export default function DailyDataTab({
           <p className="text-sm text-slate-500 text-center py-8">
             Select a date from the Intake block
           </p>
-        ) : departmentsWithBatches.length === 0 ? (
-          <p className="text-sm text-slate-500 text-center py-8">
-            No batches found for {format(parse(selDate, "yyyy-MM-dd", new Date()), "dd/MM/yyyy")}
-          </p>
         ) : (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
-              {departmentsWithBatches.map(dept => (
-                <Button
+              {departments.map(dept => {
+                const hasBatch = departmentsWithBatches.has(dept.name);
+                return (
+                  <Button
                     key={dept.id}
                     variant={selDept === dept.name ? "default" : "outline"}
                     size="sm"
                     className="text-xs justify-start"
+                    disabled={!hasBatch}
                     onClick={() => {
+                      if (hasBatch) {
                         setSelDept(dept.name);
                         if (setStep) setStep("batch_lines_add");
-                        // Auto-find and set the batch for this dept+date
                         const batch = dateBatches.find(b => b.department === dept.name);
                         if (batch && setSelBatch) {
                           setSelBatch(batch);
                         }
-                      }}
+                      }
+                    }}
                   >
                     {dept.name}
+                    {!hasBatch && <span className="text-[10px] text-slate-400 ml-1">(no batch)</span>}
                   </Button>
-              ))}
+                );
+              })}
             </div>
 
             {selDept && (
