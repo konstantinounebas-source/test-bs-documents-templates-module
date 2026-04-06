@@ -177,7 +177,7 @@ export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, 
 
             // IMPROVEMENT #7: Update progress with detailed breakdown
             if (finalStatus === "no_valid_forms") {
-              addMsg("bot", `⚠️ ${att.file_name} — ${result.message || "Δεν ανιχνεύθηκαν έγκυρες φόρμες"}`);
+              addMsg("bot", `⚠️ ${att.file_name} — ${result?.message || "Δεν ανιχνεύθηκαν έγκυρες φόρμες"}`);
               if (isMountedRef.current) {
                 setBulkOcrProgress(p => ({ ...p, processed: p.processed + 1, no_valid_forms: p.no_valid_forms + 1 }));
               }
