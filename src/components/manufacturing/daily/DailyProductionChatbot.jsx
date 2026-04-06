@@ -417,7 +417,129 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     staleTime: Infinity
   });
 
+  // Define performOCRInBackground as a callback BEFORE useBulkOCRControl uses it
+  const performOCRInBackground = useCallback(async (att) => {
+    try {
+      // Step 1: Analyze file and detect form types FIRST
+      const fileAnalysisRaw = await base44.functions.invoke("analyzeFilePages", { file_url: att.file_url });
+      const fileAnalysis = fileAnalysisRaw?.data || fileAnalysisRaw?.result || fileAnalysisRaw?.output || fileAnalysisRaw || {};
 
+      await new Promise(r => setTimeout(r, 300));
+
+      const detectResultRaw = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
+      const detectResult = detectResultRaw?.data || detectResultRaw?.result || detectResultRaw?.output || detectResultRaw || {};
+      const detectedPages = detectResult?.pages || {};
+
+      const detectedForms = [...new Set(
+        Object.values(detectedPages)
+          .map(p => p?.form_type)
+          .filter(type => type === "production" || type === "teams_time")
+      )];
+
+      if (detectedForms.length === 0) {
+        if (isMountedRef.current) addMsg("bot", `⚠️ Δεν ανιχνεύθηκαν έγκυρες φόρμες.`);
+        return;
+      }
+
+      // Step 2: For each detected form_type, check cache independently
+      let prodCacheId = null;
+      let teamsCacheId = null;
+
+      const ocrTasks = detectedForms.map(async (formType) => {
+        // Mark as processing before starting
+        if (isMountedRef.current) {
+          setAttachmentOcrStatus(prev => ({
+            ...prev,
+            [att.id]: {
+              ...prev[att.id],
+              [formType]: { status: "processing", cache_id: null }
+            }
+          }));
+        }
+
+        const cacheStatus = await checkOCRCacheStatus(att.id, formType);
+
+        if (cacheStatus.isProcessing) {
+          if (isMountedRef.current) addMsg("bot", `⏳ OCR για "${formType}" ήδη σε εξέλιξη.`);
+          return;
+        }
+
+        if (cacheStatus.canUseCache) {
+          const cached = cacheStatus.record;
+          if (isMountedRef.current) {
+            setAttachmentOcrStatus(prev => ({
+              ...prev,
+              [att.id]: {
+                ...prev[att.id],
+                [formType]: { status: "completed", cache_id: cached.id }
+              }
+            }));
+          }
+          if (formType === "production") {
+            prodCacheId = cached.id;
+          } else {
+            teamsCacheId = cached.id;
+          }
+          return;
+        }
+
+        // No usable cache — run fresh OCR
+        const res = await ocrWithCache({
+          attachment_id: att.id,
+          batch_header_id: att.batch_header_id || selBatch?.id,
+          department: att.department || selDept,
+          form_type: formType,
+          file_name: att.file_name,
+          file_url: att.file_url
+        });
+        const data = res?.data || res;
+
+        if (isMountedRef.current) {
+          setAttachmentOcrStatus(prev => ({
+            ...prev,
+            [att.id]: {
+              ...prev[att.id],
+              [formType]: { status: "completed", cache_id: data.cache_id }
+            }
+          }));
+        }
+
+        if (formType === "production") {
+          prodCacheId = data.cache_id;
+        } else {
+          teamsCacheId = data.cache_id;
+        }
+      });
+
+      await Promise.allSettled(ocrTasks);
+      
+      if (prodCacheId) setCurrentProductionCacheId(prodCacheId);
+      if (teamsCacheId) setCurrentTeamsTimeCacheId(teamsCacheId);
+      
+      if (isMountedRef.current && (prodCacheId || teamsCacheId)) {
+        addMsg("bot", `✅ OCR ολοκληρώθηκε! Κάνε κλικ στο "View OCR" για να δεις τα αποτελέσματα.`);
+      }
+
+    } catch (err) {
+      if (!isMountedRef.current) return;
+      addMsg("bot", `❌ OCR αποτυχία: ${err?.message || "Network error"}`);
+      setAttachmentOcrStatus(prev => {
+        const newStatus = { ...prev, [att.id]: { ...prev[att.id] } };
+        Object.keys(newStatus[att.id]).forEach(formType => {
+          newStatus[att.id][formType] = { status: "failed", cache_id: null };
+        });
+        return newStatus;
+      });
+    } finally {
+      if (isMountedRef.current) {
+        setRunningOcrAttachmentIds(prev => {
+          const next = new Set(prev);
+          next.delete(att.id);
+          return next;
+        });
+      }
+    }
+  }, [isMountedRef, addMsg, selBatch?.id, selDept]);
 
   const handleDetectMissing = async () => {
     setIsMissingOcrLoading(true);
@@ -594,158 +716,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     
     // Fire-and-forget background task
     performOCRInBackground(att);
-  };
-
-  const performOCRInBackground = async (att) => {
-    try {
-      // Step 1: Analyze file and detect form types FIRST
-      const fileAnalysisRaw = await base44.functions.invoke("analyzeFilePages", { file_url: att.file_url });
-      const fileAnalysis = fileAnalysisRaw?.data || fileAnalysisRaw?.result || fileAnalysisRaw?.output || fileAnalysisRaw || {};
-      const actualPageCount = Number(fileAnalysis?.page_count || 1);
-
-      await new Promise(r => setTimeout(r, 300));
-
-      const detectResultRaw = await base44.functions.invoke("detectFormType", { file_url: att.file_url });
-      const detectResult = detectResultRaw?.data || detectResultRaw?.result || detectResultRaw?.output || detectResultRaw || {};
-      const detectedPages = detectResult?.pages || {};
-
-      const detectedForms = [...new Set(
-        Object.values(detectedPages)
-          .map(p => p?.form_type)
-          .filter(type => type === "production" || type === "teams_time")
-      )];
-
-      if (detectedForms.length === 0) {
-        if (isMountedRef.current) addMsg("bot", `⚠️ Δεν ανιχνεύθηκαν έγκυρες φόρμες.`);
-        return;
-      }
-
-      // Step 2: For each detected form_type, check cache independently
-      let prodOcrData = null;
-      let teamsOcrData = null;
-      let prodCacheId = null;
-      let teamsCacheId = null;
-
-      const ocrTasks = detectedForms.map(async (formType) => {
-        // Mark as processing before starting
-        if (isMountedRef.current) {
-          setAttachmentOcrStatus(prev => ({
-            ...prev,
-            [att.id]: {
-              ...prev[att.id],
-              [formType]: { status: "processing", cache_id: null }
-            }
-          }));
-        }
-
-        const cacheStatus = await checkOCRCacheStatus(att.id, formType);
-
-        if (cacheStatus.isProcessing) {
-          if (isMountedRef.current) addMsg("bot", `⏳ OCR για "${formType}" ήδη σε εξέλιξη.`);
-          return;
-        }
-
-        if (cacheStatus.canUseCache) {
-          const cached = cacheStatus.record;
-          // Mark as completed with cache_id
-          if (isMountedRef.current) {
-            setAttachmentOcrStatus(prev => ({
-              ...prev,
-              [att.id]: {
-                ...prev[att.id],
-                [formType]: { status: "completed", cache_id: cached.id }
-              }
-            }));
-          }
-          if (formType === "production") {
-            prodCacheId = cached.id;
-            prodOcrData = {
-              extracted_data: cached.extracted_data_json,
-              validation: cached.validation_json,
-              file_page_count: cached.page_count
-            };
-          } else {
-            teamsCacheId = cached.id;
-            teamsOcrData = {
-              extracted_data: cached.extracted_data_json,
-              validation: cached.validation_json,
-              page_count: cached.page_count
-            };
-          }
-          return;
-        }
-
-        // No usable cache — run fresh OCR
-        const res = await ocrWithCache({
-          attachment_id: att.id,
-          batch_header_id: att.batch_header_id || selBatch?.id,
-          department: att.department || selDept,
-          form_type: formType,
-          file_name: att.file_name,
-          file_url: att.file_url
-        });
-        const data = res?.data || res;
-
-        // Mark as completed after successful OCR
-        if (isMountedRef.current) {
-          setAttachmentOcrStatus(prev => ({
-            ...prev,
-            [att.id]: {
-              ...prev[att.id],
-              [formType]: { status: "completed", cache_id: data.cache_id }
-            }
-          }));
-        }
-
-        if (formType === "production") {
-          prodCacheId = data.cache_id;
-          prodOcrData = {
-            extracted_data: data.extracted_data,
-            validation: data.validation,
-            file_page_count: data.page_count
-          };
-        } else {
-          teamsCacheId = data.cache_id;
-          teamsOcrData = {
-            extracted_data: data.extracted_data,
-            validation: data.validation,
-            page_count: data.page_count
-          };
-        }
-      });
-
-      await Promise.allSettled(ocrTasks);
-      
-      // Store cache IDs for later retrieval
-      if (prodCacheId) setCurrentProductionCacheId(prodCacheId);
-      if (teamsCacheId) setCurrentTeamsTimeCacheId(teamsCacheId);
-      
-      // Notify user that OCR is ready (non-blocking)
-      if (isMountedRef.current && (prodCacheId || teamsCacheId)) {
-        addMsg("bot", `✅ OCR ολοκληρώθηκε! Κάνε κλικ στο "View OCR" για να δεις τα αποτελέσματα.`);
-      }
-
-    } catch (err) {
-      if (!isMountedRef.current) return;
-      addMsg("bot", `❌ OCR αποτυχία: ${err?.message || "Network error"}`);
-      // Mark all forms as failed
-      setAttachmentOcrStatus(prev => {
-        const newStatus = { ...prev, [att.id]: { ...prev[att.id] } };
-        Object.keys(newStatus[att.id]).forEach(formType => {
-          newStatus[att.id][formType] = { status: "failed", cache_id: null };
-        });
-        return newStatus;
-      });
-    } finally {
-      // Clear running state
-      if (isMountedRef.current) {
-        setRunningOcrAttachmentIds(prev => {
-          const next = new Set(prev);
-          next.delete(att.id);
-          return next;
-        });
-      }
-    }
   };
 
   const handleOcrConfirm = async (confirmedData) => {
