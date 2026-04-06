@@ -1663,16 +1663,6 @@ CRITICAL SAFETY RULES:
             </div>
           </div>
 
-          {/* Intake Block */}
-          <IntakeBlock 
-            selDate={selDate} 
-            selDept={selDept} 
-            customDate={customDate}
-            setCustomDate={setCustomDate}
-            onDateSelect={handleDateSelect}
-            quickDates={quickDates}
-          />
-
           {/* Top Navigation */}
           <div className="flex items-center gap-1 bg-slate-50 border-b border-slate-200 px-3 py-2 flex-shrink-0">
             <button
@@ -1705,9 +1695,19 @@ CRITICAL SAFETY RULES:
             <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100" title="Metrics & KPI">
               <BarChart3 className="w-4 h-4" />
             </button>
-          </div>
+            </div>
 
-          {/* Chat log */}
+            {/* Intake Block */}
+            <IntakeBlock 
+            selDate={selDate} 
+            selDept={selDept} 
+            customDate={customDate}
+            setCustomDate={setCustomDate}
+            onDateSelect={handleDateSelect}
+            quickDates={quickDates}
+            />
+
+            {/* Chat log */}
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-3">
               {messages.map((m, i) => (
