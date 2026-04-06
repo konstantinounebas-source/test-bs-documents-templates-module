@@ -10,7 +10,9 @@ export default function DailyDataTab({
   setSelDept,
   departments,
   renderSharedSteps,
-  batchHeaders
+  batchHeaders,
+  setStep,
+  selBatch
 }) {
   // Get all batches and filter by selected date
   const { data: allBatches = [] } = useQuery({
@@ -66,7 +68,10 @@ export default function DailyDataTab({
                   variant={selDept === dept.name ? "default" : "outline"}
                   size="sm"
                   className="text-xs justify-start"
-                  onClick={() => setSelDept(dept.name)}
+                  onClick={() => {
+                      setSelDept(dept.name);
+                      if (setStep) setStep("batch_lines_add");
+                    }}
                 >
                   {dept.name}
                 </Button>

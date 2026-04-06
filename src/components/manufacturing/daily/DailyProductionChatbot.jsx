@@ -1938,6 +1938,8 @@ CRITICAL SAFETY RULES:
                       departments={departments}
                       renderSharedSteps={renderSharedSteps}
                       batchHeaders={batchHeaders}
+                      setStep={setStep}
+                      selBatch={selBatch}
                     />
                   )}
                 </>
