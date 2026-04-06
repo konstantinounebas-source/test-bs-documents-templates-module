@@ -250,6 +250,17 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [runningOcrAttachmentIds, setRunningOcrAttachmentIds] = useState(new Set());
   const [attachmentOcrStatus, setAttachmentOcrStatus] = useState({});
 
+  // OCR modal state (declare early for usePerformOCRInBackground)
+  const [showOcrModal, setShowOcrModal] = useState(false);
+  const [currentProductionCacheId, setCurrentProductionCacheId] = useState(null);
+  const [viewProductionOcrResult, setViewProductionOcrResult] = useState(null);
+  const [showTeamsTimeOcrModal, setShowTeamsTimeOcrModal] = useState(false);
+  const [currentTeamsTimeCacheId, setCurrentTeamsTimeCacheId] = useState(null);
+  const [viewTeamsTimeOcrResult, setViewTeamsTimeOcrResult] = useState(null);
+  const [ocrTargetAtt, setOcrTargetAtt] = useState(null);
+  const [ocrFormQueue, setOcrFormQueue] = useState({});
+  const [showManualFormDialog, setShowManualFormDialog] = useState(false);
+
   // missing OCR & bulk OCR control
   const [isMissingOcrLoading, setIsMissingOcrLoading] = useState(false);
   const [ocrFilterDept, setOcrFilterDept] = useState("");
@@ -442,19 +453,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   };
 
   // OCR flow management (no stale state) — initialized after loadOCRDataFromCache and addMsg are defined
-  const ocrFlow = useOcrFlow(loadOCRDataFromCache, addMsg);
-  const {
-    ocrTargetAtt, setOcrTargetAtt,
-    showOcrModal, setShowOcrModal,
-    currentProductionCacheId, setCurrentProductionCacheId,
-    viewProductionOcrResult, setViewProductionOcrResult,
-    showTeamsTimeOcrModal, setShowTeamsTimeOcrModal,
-    currentTeamsTimeCacheId, setCurrentTeamsTimeCacheId,
-    viewTeamsTimeOcrResult, setViewTeamsTimeOcrResult,
-    ocrFormQueue, setOcrFormQueue,
-    showManualFormDialog, setShowManualFormDialog,
-    advanceOcrFlow, getNextForm
-  } = ocrFlow;
+  const { advanceOcrFlow, getNextForm } = useOcrFlow(loadOCRDataFromCache, addMsg);
 
   const handleDetectMissing = async () => {
     setIsMissingOcrLoading(true);
