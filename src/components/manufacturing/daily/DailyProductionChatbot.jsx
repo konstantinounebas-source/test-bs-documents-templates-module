@@ -1779,7 +1779,15 @@ CRITICAL SAFETY RULES:
               >
                 <Settings className="w-4 h-4" />
               </button>
-              <button className="text-slate-400 hover:text-slate-600 p-1 rounded hover:bg-slate-100" title="OCR Tools">
+              <button 
+                onClick={() => setActiveUtility(activeUtility === "ocr_tools" ? null : "ocr_tools")}
+                className={`p-1 rounded transition-colors ${
+                  activeUtility === "ocr_tools" 
+                    ? "bg-blue-100 text-blue-600" 
+                    : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                }`}
+                title="OCR Tools"
+              >
                 <Zap className="w-4 h-4" />
               </button>
               <button 
@@ -1845,6 +1853,30 @@ CRITICAL SAFETY RULES:
                     </div>
                   )}
                 </div>
+              ) : activeUtility === "ocr_tools" ? (
+                <BulkOCRPanel
+                  departments={departments}
+                  isMissingOcrLoading={isMissingOcrLoading}
+                  isBulkOcrRunning={isBulkOcrRunning}
+                  bulkOcrProgress={bulkOcrProgress}
+                  bulkOcrDetailedResults={bulkOcrDetailedResults}
+                  missingOcrAttachmentDetails={missingOcrAttachmentDetails}
+                  selectedAttachmentIds={selectedAttachmentIds}
+                  setSelectedAttachmentIds={setSelectedAttachmentIds}
+                  ocrFilterDept={ocrFilterDept}
+                  ocrFilterMonth={ocrFilterMonth}
+                  onFilterDeptChange={setOcrFilterDept}
+                  onFilterMonthChange={setOcrFilterMonth}
+                  onDetectMissing={handleDetectMissing}
+                  onRunSelected={(selectedDetails) => {
+                    const fullAttachments = selectedDetails
+                      .map(detail => allBatchAttachments.find(att => att.id === detail.attachmentId))
+                      .filter(Boolean);
+                    executeSelectedBulkOCR(fullAttachments);
+                  }}
+                  onStopBulkOCR={stopBulkOCR}
+                  onAddMsg={addMsg}
+                />
               ) : activeUtility === "processing" ? (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between mb-4">
