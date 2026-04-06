@@ -4,34 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Maximize2, Minimize2, AlertCircle, Users, Check } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { datesMismatch } from "@/lib/ocrDateValidationHelpers";
-
-// Parse filename → date, dept
-function parseFileName(fileName) {
-  if (!fileName) return { date: null, dept: null };
-  
-  // Try both date formats: dd-mm-yy and dd/mm/yyyy
-  let date = null;
-  const dateMatch1 = fileName.match(/^(\d{1,2})-(\d{1,2})-(\d{2})/);
-  const dateMatch2 = fileName.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  
-  if (dateMatch1) {
-    const [, d, m, y] = dateMatch1;
-    date = `${d.padStart(2,'0')}/${m.padStart(2,'0')}/20${y}`;
-  } else if (dateMatch2) {
-    const [, d, m, y] = dateMatch2;
-    date = `${d.padStart(2,'0')}/${m.padStart(2,'0')}/${y}`;
-  }
-  
-  const lc = fileName.toLowerCase();
-  let dept = null;
-  if (lc.includes('prepaint') || lc.includes('pre-paint') || lc.includes('pre_paint')) dept = "Pre-Paint";
-  else if (lc.includes('subass') || lc.includes('sub-ass')) dept = "Sub-Assembly";
-  else if (lc.includes('assembly') || lc.includes('ass')) dept = "Assembly";
-  else if (lc.includes('refurb') || lc.includes('ref')) dept = "Refurbishment";
-  
-  return { date, dept };
-}
+import {
+  parseFilenameDate,
+  parseOcrDate,
+  formatDateForDisplay,
+  datesMismatch,
+  normalizeDepartment,
+  parseFilenameDepartment
+} from "@/lib/ocrDateValidationHelpers";
 
 // Parse "HH:MM" → total minutes
 function timeToMins(t) {
@@ -157,13 +137,20 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
     visiblePages.push(1, 2);
   }
 
-  const fileParsed = parseFileName(fileName);
+  // Parse filename for date and department
+  const fileDate = parseFilenameDate(fileName);
+  const fileDepartment = parseFilenameDepartment(fileName);
 
-  // Resolve dept: OCR result > filename (filter out "null" string)
-  const resolvedDept = ocrResult?.extracted_data?.team || fileParsed.dept;
-  const cleanDept = (resolvedDept && resolvedDept !== "null") ? resolvedDept : "";
+  // Parse OCR date to canonical format
+  const ocrRawDate = ocrResult?.extracted_data?.date || "";
+  const ocrDateParsed = parseOcrDate(ocrRawDate);
 
-  const [date, setDate] = useState(ocrResult?.extracted_data?.date || fileParsed.date || "");
+  // Resolve dept: normalize OCR result > filename
+  const ocrDeptRaw = ocrResult?.extracted_data?.team;
+  const resolvedDeptNorm = ocrDeptRaw && ocrDeptRaw !== "null" ? normalizeDepartment(ocrDeptRaw) : fileDepartment;
+  const cleanDept = resolvedDeptNorm || "";
+
+  const [date, setDate] = useState(ocrDateParsed || fileDate || "");
   const [dept, setDept] = useState(cleanDept);
 
   const [persons, setPersons] = useState(
@@ -289,11 +276,15 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
     });
     setExtras(newExtras);
     
-    // Rehydrate date and dept
-    const resolvedDept = ocrResult?.extracted_data?.team || fileParsed.dept;
-    const cleanDept = (resolvedDept && resolvedDept !== "null") ? resolvedDept : "";
-    setDate(ocrResult?.extracted_data?.date || fileParsed.date || "");
-    setDept(cleanDept);
+    // Rehydrate date and dept using shared helpers
+    const ocrDateStr = ocrResult?.extracted_data?.date || "";
+    const ocrDateCanon = parseOcrDate(ocrDateStr);
+    const ocrDeptStr = ocrResult?.extracted_data?.team;
+    const normDept = ocrDeptStr && ocrDeptStr !== "null" ? normalizeDepartment(ocrDeptStr) : fileDepartment;
+    const cleanDeptVal = normDept || "";
+    
+    setDate(ocrDateCanon || fileDate || "");
+    setDept(cleanDeptVal);
     
     // Reset other form state
     setConfirmed(false);
@@ -438,18 +429,17 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
             {/* Header row */}
             <div className="px-4 py-2 border-b bg-slate-50 flex items-center gap-3 flex-shrink-0 flex-wrap">
               <span className="text-xs font-semibold text-slate-600">Ημερομηνία:</span>
-              <input type="text" value={date} onChange={e => setDate(e.target.value)}
-                placeholder="dd/mm/yyyy"
+              <input type="date" value={date || ""} onChange={e => setDate(e.target.value)}
                 className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 w-28" />
-              {fileParsed.date && datesMismatch(date, fileParsed.date) && (
-                <span className="text-xs text-amber-600">⚠ Ημερομηνία OCR ≠ Αρχείου: {fileParsed.date}</span>
+              {fileDate && datesMismatch(date, fileDate) && (
+                <span className="text-xs text-amber-600">⚠ Ημερομηνία OCR ≠ Αρχείου: {formatDateForDisplay(fileDate)}</span>
               )}
               <span className="text-xs font-semibold text-slate-600">Τμήμα:</span>
-              <select value={dept} onChange={e => setDept(e.target.value)}
+              <select value={dept} onChange={e => setDept(normalizeDepartment(e.target.value) || e.target.value)}
                 className={`text-xs border rounded px-2 py-1 outline-none focus:border-blue-400 w-40 ${noDept ? "border-amber-400 bg-amber-50" : "border-slate-200"}`}>
                 <option value="">-- Επιλέξτε --</option>
                 {VALID_DEPARTMENTS.map(d => (
-                  <option key={d} value={d}>{d}</option>
+                  <option key={d} value={normalizeDepartment(d) || d}>{d}</option>
                 ))}
               </select>
               {noDept && (

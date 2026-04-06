@@ -4,7 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Check, Maximize2, Minimize2, AlertCircle, Trash2 } from "lucide-react";
-import { datesMismatch } from "@/lib/ocrDateValidationHelpers";
+import { 
+  parseFilenameDate, 
+  parseOcrDate, 
+  formatDateForDisplay, 
+  datesMismatch,
+  normalizeDepartment,
+  parseFilenameDepartment
+} from "@/lib/ocrDateValidationHelpers";
 
 function normalizeItemCode(code) {
   if (!code) return code;
@@ -55,61 +62,7 @@ const GROUP_COLORS = {
   "Λοιπά":                    "bg-rose-50 text-rose-800",
 };
 
-// Helper: Μετατροπή dd/mm/yyyy → mm/dd/yyyy
-const convertDdMmToMmDd = (dateStr) => {
-  if (!dateStr || typeof dateStr !== 'string') return dateStr;
-  const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (!match) return dateStr; // If not dd/mm/yyyy format, return as is
-  const [, day, month, year] = match;
-  return `${month}/${day}/${year}`;
-};
 
-// Helper: Μετατροπή mm/dd/yyyy ή yyyy-mm-dd → yyyy-mm-dd (για input type="date")
-const toDateInputFormat = (dateStr) => {
-  if (!dateStr) return "";
-  // If already yyyy-mm-dd, return as is
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-  // Convert mm/dd/yyyy to yyyy-mm-dd
-  const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (match) {
-    const [, month, day, year] = match;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-  }
-  return dateStr;
-};
-
-// Helper: Μετατροπή yyyy-mm-dd → mm/dd/yyyy (για storage)
-const fromDateInputFormat = (dateStr) => {
-  if (!dateStr) return "";
-  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (match) {
-    const [, year, month, day] = match;
-    return `${month}/${day}/${year}`;
-  }
-  return dateStr;
-};
-
-// Helper: Parse filename (e.g., "4-3-26.FA.Prepaint.1From2.pdf")
-const parseFileName = (fileName) => {
-  if (!fileName) return { date: null, type: null };
-  const namePart = fileName.split('.').slice(0, -1).join('.');
-  const parts = namePart.split('.');
-  const dateStr = parts[0]; // "4-3-26"
-  const type = parts.includes('Prepaint') ? 'Prepaint' : null;
-
-  // Parse date: 4-3-26 → 04/03/2026
-  const dateParts = dateStr.split('-');
-  if (dateParts.length === 3) {
-    const day = dateParts[0].padStart(2, '0');
-    const month = dateParts[1].padStart(2, '0');
-    const year = `20${dateParts[2]}`;
-    return { 
-      date: `${month}/${day}/${year}`, // stored as mm/dd/yyyy
-      type 
-    };
-  }
-  return { date: null, type: null };
-};
 
 export default function OCRVerificationModal({ open, onClose, fileUrl, fileName, ocrResult, onConfirm, onSkip, department: initialDepartment, departments = [], availableItemCodes = [] }) {
     const [zoom, setZoom] = useState(1);
@@ -129,8 +82,9 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     const totalPages = filePageCount || pages?.length || (ocrResult?.extracted_data ? 1 : 0);
     const currentPageData = pages?.[currentPage] || ocrResult?.extracted_data || {};
 
-    // Parse filename for date and type
-    const fileParsed = parseFileName(fileName);
+    // Parse filename for date and department
+    const fileDate = parseFilenameDate(fileName);
+    const fileDepartment = parseFilenameDepartment(fileName);
 
     // Use available item codes as-is from bundle (no normalization)
     const availableSet = new Set(availableItemCodes || []);
@@ -177,30 +131,30 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     // Reset page to 0
     setCurrentPage(0);
     
-    // Reset other form state
-    const ocrDate = ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "";
-    const convertedDate = convertDdMmToMmDd(ocrDate);
-    setDate(convertedDate || fileParsed.date || "");
-    setDepartment(initialDepartment || "");
+    // Reset other form state using shared helpers
+    const ocrRawDate = ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "";
+    const ocrDate = parseOcrDate(ocrRawDate);
+    setDate(ocrDate || fileDate || "");
+    setDepartment(normalizeDepartment(initialDepartment || fileDepartment || ""));
     setFileValidationIssues(() => {
        const issues = [];
        // Use helper to detect actual date mismatch (not false positives from parsing differences)
-       if (datesMismatch(convertedDate, fileParsed.date)) {
+       if (datesMismatch(ocrDate, fileDate)) {
          issues.push({
            field: "date",
            severity: "warning",
-           message: `Ημερομηνία OCR (${convertedDate}) ≠ Ημερομηνία Αρχείου (${fileParsed.date})`
+           message: `Ημερομηνία OCR (${formatDateForDisplay(ocrDate)}) ≠ Ημερομηνία Αρχείου (${formatDateForDisplay(fileDate)})`
          });
        }
        const formText = ocrResult?.extracted_data?.production_lines?.map(l => JSON.stringify(l)).join('') || "";
        const isPrepaint = formText.includes('Προετοιμασία Βαφής');
-       if (fileParsed.type === 'Prepaint' && !isPrepaint) {
+       if (fileDepartment === 'Pre-paint' && !isPrepaint) {
          issues.push({
            field: "type",
            severity: "warning",
            message: "Αρχείο λέει Prepaint αλλά φόρμα δεν περιέχει 'Προετοιμασία Βαφής'"
          });
-       } else if (fileParsed.type !== 'Prepaint' && isPrepaint) {
+       } else if (fileDepartment !== 'Pre-paint' && isPrepaint) {
          issues.push({
            field: "type",
            severity: "warning",
@@ -244,15 +198,12 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     window.addEventListener("mouseup", onUp);
   }, []);
 
-  // Convert OCR date from dd/mm/yyyy to mm/dd/yyyy for storage
-  const ocrDate = ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "";
-  const convertedOcrDate = convertDdMmToMmDd(ocrDate);
+  // Parse OCR date to canonical format
+  const ocrRawDate = ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "";
+  const ocrDateParsed = parseOcrDate(ocrRawDate);
 
-  const [date, setDate] = useState(convertedOcrDate || fileParsed.date || "");
-
-  // For the date input field (yyyy-mm-dd format)
-  const dateInputValue = toDateInputFormat(date);
-  const [department, setDepartment] = useState(initialDepartment || "");
+  const [date, setDate] = useState(ocrDateParsed || fileDate || "");
+  const [department, setDepartment] = useState(normalizeDepartment(initialDepartment || fileDepartment || ""));
   const [confirmed, setConfirmed] = useState(false);
   const [acceptedIssues, setAcceptedIssues] = useState(new Set());
   const [acceptedItemCodes, setAcceptedItemCodes] = useState(new Set());
@@ -262,11 +213,11 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     const issues = [];
 
     // Check if OCR date matches filename date (using helper to avoid parsing false positives)
-    if (datesMismatch(convertedOcrDate, fileParsed.date)) {
+    if (datesMismatch(ocrDateParsed, fileDate)) {
       issues.push({
         field: "date",
         severity: "warning",
-        message: `Ημερομηνία OCR (${convertedOcrDate}) ≠ Ημερομηνία Αρχείου (${fileParsed.date})`
+        message: `Ημερομηνία OCR (${formatDateForDisplay(ocrDateParsed)}) ≠ Ημερομηνία Αρχείου (${formatDateForDisplay(fileDate)})`
       });
     }
 
@@ -274,13 +225,13 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     const formText = ocrResult?.extracted_data?.production_lines?.map(l => JSON.stringify(l)).join('') || "";
     const isPrepaint = formText.includes('Προετοιμασία Βαφής');
 
-    if (fileParsed.type === 'Prepaint' && !isPrepaint) {
+    if (fileDepartment === 'Pre-paint' && !isPrepaint) {
       issues.push({
         field: "type",
         severity: "warning",
         message: "Αρχείο λέει Prepaint αλλά φόρμα δεν περιέχει 'Προετοιμασία Βαφής'"
       });
-    } else if (fileParsed.type !== 'Prepaint' && isPrepaint) {
+    } else if (fileDepartment !== 'Pre-paint' && isPrepaint) {
       issues.push({
         field: "type",
         severity: "warning",
@@ -414,11 +365,11 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
             {/* Date + department row */}
             <div className="px-4 py-2 border-b bg-slate-50 flex items-center gap-3 flex-shrink-0">
               <span className="text-xs font-semibold text-slate-600">Ημερομηνία:</span>
-              <input type="date" value={dateInputValue} onChange={e => setDate(fromDateInputFormat(e.target.value))}
-                className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
-              {fileParsed.date && (
-                <span className="text-xs text-slate-500">Αρχείου: {fileParsed.date}</span>
-              )}
+               <input type="date" value={date || ""} onChange={e => setDate(e.target.value)}
+                 className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
+               {fileDate && (
+                 <span className="text-xs text-slate-500">Αρχείου: {formatDateForDisplay(fileDate)}</span>
+               )}
               {departments.length > 0 ? (
                 <Select value={department} onValueChange={setDepartment}>
                   <SelectTrigger className="h-7 text-xs w-36 border-slate-200">
