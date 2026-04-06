@@ -22,6 +22,27 @@ export default function DailyDataTab({
     staleTime: 0
   });
 
+  // Query all bundles to check availability
+  const { data: allBundles = [] } = useQuery({
+    queryKey: ["StandardsBundle-All"],
+    queryFn: () => base44.entities.StandardsBundle.list(),
+    staleTime: Infinity
+  });
+
+  // Query daily assignments for bundle lookups
+  const { data: dailyAssignments = [] } = useQuery({
+    queryKey: ["DailyStandardsAssignment-All"],
+    queryFn: () => base44.entities.DailyStandardsAssignment.list(),
+    staleTime: Infinity
+  });
+
+  // Check if bundle is available for a department on a given date
+  const hasBundleAvailable = (dept, date) => {
+    const da = dailyAssignments.find(a => a.assignment_date === date && a.department_id === dept);
+    if (da?.standards_bundle_id) return true;
+    return allBundles.some(b => b.department === dept && b.status === "ACTIVE");
+  };
+
   // Filter batches by selected date (normalize both to yyyy-MM-dd format)
   const dateBatches = React.useMemo(() => {
     if (!selDate) return [];
@@ -58,15 +79,16 @@ export default function DailyDataTab({
           </p>
         ) : (
           <div className="space-y-3">
-            <div className="flex flex-wrap gap-1.5 mb-3">
+            <div className="flex flex-wrap gap-2 mb-3">
               {departments.map(dept => {
                 const hasBatch = departmentsWithBatches.has(dept.name);
+                const bundleAvailable = hasBatch && selDate ? hasBundleAvailable(dept.name, selDate) : false;
                 return (
                   <Button
                     key={dept.id}
-                    variant={selDept === dept.name ? "default" : hasBatch ? "outline" : "secondary"}
-                    size="sm"
-                    className="text-xs whitespace-nowrap flex-1 min-w-max"
+                    variant={selDept === dept.name ? "default" : "outline"}
+                    size="lg"
+                    className={`flex flex-col items-center gap-1 whitespace-normal h-auto py-3 px-4 text-center ${!hasBatch ? "opacity-40 cursor-not-allowed" : ""}`}
                     disabled={!hasBatch}
                     onClick={() => {
                       if (hasBatch) {
@@ -79,7 +101,10 @@ export default function DailyDataTab({
                       }
                     }}
                   >
-                    {dept.name}
+                    <span className="font-semibold">{dept.name}</span>
+                    <span className="text-xs">
+                      {bundleAvailable ? "✓ Bundle available" : "no bundle"}
+                    </span>
                   </Button>
                 );
               })}

@@ -29,6 +29,20 @@ export default function DailyFormsTab({
     staleTime: Infinity
   });
 
+  // Query all bundles to check availability
+  const { data: allBundles = [] } = useQuery({
+    queryKey: ["StandardsBundle-All"],
+    queryFn: () => base44.entities.StandardsBundle.list(),
+    staleTime: Infinity
+  });
+
+  // Query daily assignments for bundle lookups
+  const { data: dailyAssignments = [] } = useQuery({
+    queryKey: ["DailyStandardsAssignment-All"],
+    queryFn: () => base44.entities.DailyStandardsAssignment.list(),
+    staleTime: Infinity
+  });
+
   // Query all batches for the selected date
   const { data: dailyBatches = [], isLoading: loadingBatches } = useQuery({
     queryKey: ["BatchHeaders-by-date", selDate],
@@ -59,15 +73,23 @@ export default function DailyFormsTab({
     staleTime: 0
   });
 
+  // Check if bundle is available for a department on a given date
+  const hasBundleAvailable = (dept, date) => {
+    const da = dailyAssignments.find(a => a.assignment_date === date && a.department_id === dept);
+    if (da?.standards_bundle_id) return true;
+    return allBundles.some(b => b.department === dept && b.status === "ACTIVE");
+  };
+
   // Group data by department
   const departmentGroups = useMemo(() => {
     const groups = {};
     allDepartments.forEach(dept => {
-      groups[dept.name] = { attachments: [], hasBatch: false };
+      groups[dept.name] = { attachments: [], hasBatch: false, bundleAvailable: false };
     });
     dailyBatches.forEach(batch => {
       if (groups[batch.department]) {
         groups[batch.department].hasBatch = true;
+        groups[batch.department].bundleAvailable = hasBundleAvailable(batch.department, batch.date);
         const deptAttachments = allDailyAttachments.filter(
           att => att.batch_header_id === batch.id
         );
@@ -75,7 +97,7 @@ export default function DailyFormsTab({
       }
     });
     return groups;
-  }, [allDepartments, dailyBatches, allDailyAttachments]);
+  }, [allDepartments, dailyBatches, allDailyAttachments, allBundles, dailyAssignments]);
 
   const departments = Object.keys(departmentGroups).sort();
   const currentDeptAttachments = selectedDept ? departmentGroups[selectedDept]?.attachments || [] : [];
@@ -109,20 +131,22 @@ export default function DailyFormsTab({
               const deptData = departmentGroups[dept];
               const attachmentCount = deptData.attachments.length;
               const hasBatch = deptData.hasBatch;
+              const bundleAvailable = deptData.bundleAvailable;
               return (
                 <button
                   key={dept}
                   onClick={() => setSelectedDept(dept)}
-                  className={`px-3 py-1.5 rounded text-xs transition-colors whitespace-nowrap ${
+                  className={`px-4 py-2 rounded text-sm transition-colors whitespace-nowrap flex flex-col items-center gap-1 font-medium ${
                     selectedDept === dept
                       ? "bg-blue-600 text-white"
-                      : hasBatch ? "bg-green-100 text-green-700 hover:bg-green-200" : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                      : hasBatch ? "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300" : "bg-slate-100 text-slate-500 hover:bg-slate-200 border border-slate-300 opacity-50"
                   }`}
                 >
-                  <div className="flex items-center gap-1">
-                    <span className="font-medium">{dept}</span>
-                    <span className="text-[10px]">({attachmentCount})</span>
-                  </div>
+                  <span>{dept}</span>
+                  <span className="text-[10px]">
+                    {bundleAvailable ? "✓ Bundle" : "no bundle"}
+                  </span>
+                  <span className="text-[10px]">({attachmentCount})</span>
                 </button>
               );
             })
