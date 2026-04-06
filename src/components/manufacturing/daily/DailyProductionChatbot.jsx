@@ -197,8 +197,9 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   // Dual-form: pending teams time result to show after production modal confirmed
   const [pendingTeamsTimeOcr, setPendingTeamsTimeOcr] = useState(null);
 
-  // free-text input
+  // free-text input & AI
   const [userInput, setUserInput] = useState("");
+  const [isAiThinking, setIsAiThinking] = useState(false);
   const inputRef = useRef();
 
   // messages (chat log)
@@ -594,25 +595,24 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
   const handleDateSelect = (dateVal) => {
     if (dateVal === "__picker__") { setShowPicker(true); return; }
-    const date = dateVal;
-    setSelDate(date);
+    setSelDate(dateVal);
     setShowPicker(false);
-    addMsg("user", date);
+    addMsg("user", dateVal);
 
-    const existing = batchHeaders.find(b => b.date === date && b.department === selDept);
+    const existing = batchHeaders.find(b => b.date === dateVal && b.department === selDept);
     if (existing) {
       setSelBatch(existing);
       setStep("attachments");
-      const bundle = resolveBundle(date, selDept);
+      const bundle = resolveBundle(dateVal, selDept);
       addMsg("bot",
-        `✅ Βρέθηκε batch για ${date} – ${selDept}.\n` +
+        `✅ Βρέθηκε batch για ${dateVal} – ${selDept}.\n` +
         (bundle ? `📦 Bundle: ${bundle.version_no || bundle.version} (${bundle.status})\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.` : "⚠️ Χωρίς bundle.\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.")
       );
     } else {
-      const bundle = resolveBundle(date, selDept);
+      const bundle = resolveBundle(dateVal, selDept);
       if (bundle) {
-        addMsg("bot", `⏳ Δημιουργία batch για ${date} – ${selDept} με bundle **${bundle.version_no || bundle.version}**...`);
-        createBatchMutation.mutate({ date, dept: selDept, bundleId: bundle.id });
+        addMsg("bot", `⏳ Δημιουργία batch για ${dateVal} – ${selDept} με bundle **${bundle.version_no || bundle.version}**...`);
+        createBatchMutation.mutate({ date: dateVal, dept: selDept, bundleId: bundle.id });
       } else {
         setStep("batch");
         addMsg("bot", `⚠️ Δεν βρέθηκε ενεργό bundle για ${selDept}. Δεν είναι δυνατή η δημιουργία batch.`);
@@ -631,8 +631,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const handleFiles = (files) => {
     files.forEach(f => uploadFile(f));
   };
-
-  const [isAiThinking, setIsAiThinking] = useState(false);
 
   const handleReset = () => {
     setStep("file_upload"); setSelDept(""); setSelDate(""); setSelBatch(null);
@@ -803,7 +801,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     }
   };
 
-  const askAI = async (text, lower) => {
+  const askAI = async (text) => {
     setIsAiThinking(true);
     try {
       const deptList = departments.map(d => d.name);
@@ -959,7 +957,7 @@ ${context}
     if (lower === "reset" || lower === "αρχή") { handleReset(); return; }
 
     // default: AI
-    askAI(text, lower);
+    askAI(text);
   };
 
   const quickDates = getQuickDates();
