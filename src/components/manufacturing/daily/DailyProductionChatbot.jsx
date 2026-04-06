@@ -88,10 +88,11 @@ function AttachmentItem({ att, onDelete, onPreview, onOCR, isDeleting, isOcrLoad
         : <FileText className="w-4 h-4 text-red-500 flex-shrink-0" />}
       <a href={att.file_url} target="_blank" rel="noopener noreferrer"
          className="text-xs text-blue-600 hover:underline truncate flex-1">{att.file_name}</a>
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex gap-1">
         <Button variant="ghost" size="icon" className="h-6 w-6 text-purple-600 hover:bg-purple-50" onClick={() => onOCR(att)} disabled={isOcrLoading} title="OCR Εξαγωγή">
           {isOcrLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Scan className="w-3 h-3" />}
         </Button>
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onPreview(att)} title="Preview">
           <Eye className="w-3 h-3" />
         </Button>
@@ -110,6 +111,7 @@ function AttachmentItem({ att, onDelete, onPreview, onOCR, isDeleting, isOcrLoad
           onClick={() => onDelete(att.id)} disabled={isDeleting} title="Delete">
           <Trash2 className="w-3 h-3" />
         </Button>
+        </div>
       </div>
     </div>
   );
@@ -156,7 +158,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [open, setOpen]       = useState(false);
   const [minimized, setMin]   = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  const [position, setPosition] = useState("right"); // "left" or "right"
   const [splitFullscreen, setSplitFullscreen] = useState(false);
   
   // dragging & resizing state
@@ -417,18 +418,15 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
           .filter(type => type === "production" || type === "teams_time")
       )];
 
-      addMsg("bot", `📄 Τύπος: **${fileAnalysis.file_type || "unknown"}** · Σελίδες: **${actualPageCount}**`);
-
       if (detectedForms.length === 0) {
-        addMsg("bot", "⚠️ Δεν ανιχνεύθηκαν έγκυρες φόρμες στο αρχείο.");
+        addMsg("bot", `⚠️ Δεν ανιχνεύθηκαν έγκυρες φόρμες. (${fileAnalysis.file_type || "unknown"} · ${actualPageCount} σελίδες)`);
         return;
       }
 
       const detectionDetails = Object.entries(detectedPages).length
-        ? Object.entries(detectedPages).map(([page, data]) => `Σελ.${page} = ${data?.form_type || "unknown"}`).join(", ")
-        : "Δεν εντοπίστηκαν συγκεκριμένες σελίδες";
-      addMsg("bot", `✅ **Σάρωση ολοκληρώθηκε!**\n📋 Ανιχνεύθηκε: ${detectionDetails}`);
-      addMsg("bot", `📋 Διαθέσιμα item codes (${bundleItemCodes?.length || 0}): ${bundleItemCodes?.join(", ") || "Κανένα"}`);
+        ? Object.entries(detectedPages).map(([page, data]) => `Σελ.${page}=${data?.form_type || "unknown"}`).join(", ")
+        : "";
+      addMsg("bot", `📄 ${fileAnalysis.file_type || "unknown"} · ${actualPageCount} σελίδες · ${detectionDetails}`);
 
       // Step 2: For each detected form_type, check cache independently
       let prodOcrData = null;
@@ -615,14 +613,14 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         (bundle ? `📦 Bundle: ${bundle.version_no || bundle.version} (${bundle.status})\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.` : "⚠️ Χωρίς bundle.\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.")
       );
     } else {
-      setStep("batch");
       const bundle = resolveBundle(date, selDept);
-      addMsg("bot",
-        `Δεν υπάρχει batch για ${date} – ${selDept}.\n` +
-        (bundle
-          ? `Θα χρησιμοποιηθεί bundle: **${bundle.version_no || bundle.version}** (${bundle.status}).\nΔημιουργώ batch;`
-          : "⚠️ Δεν βρέθηκε ενεργό bundle για αυτό το τμήμα.")
-      );
+      if (bundle) {
+        addMsg("bot", `⏳ Δημιουργία batch για ${date} – ${selDept} με bundle **${bundle.version_no || bundle.version}**...`);
+        createBatchMutation.mutate({ date, dept: selDept, bundleId: bundle.id });
+      } else {
+        setStep("batch");
+        addMsg("bot", `⚠️ Δεν βρέθηκε ενεργό bundle για ${selDept}. Δεν είναι δυνατή η δημιουργία batch.`);
+      }
     }
   };
 
@@ -1226,6 +1224,24 @@ ${context}
                     </div>
                   ))}
                 </div>
+                <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+                  disabled={isSavingLine}
+                  onClick={async () => {
+                    setIsSavingLine(true);
+                    for (const item of blReviewItems) {
+                      await base44.entities.Batch_Lines.update(item.id, {
+                        qty_processed: item.qty_processed,
+                        qty_out_good: item.qty_out_good,
+                        qty_scrap: item.qty_scrap,
+                      });
+                    }
+                    queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
+                    setIsSavingLine(false);
+                    setStep("batch_lines_add");
+                    addMsg("bot", `✅ Όλα τα ${blReviewItems.length} items αποθηκεύτηκαν.`);
+                  }}>
+                  <FastForward className="w-3 h-3 mr-1" /> Επιβεβαίωση Όλων & Συνέχεια
+                </Button>
                 <div className="flex gap-2 flex-wrap">
                    <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700"
                      disabled={isSavingLine}
@@ -1243,11 +1259,11 @@ ${context}
                        addMsg("user", "Skip - next item");
                        handleBatchLineConfirm({ ...blReviewItems[blCurrentIdx], _skip: true });
                      }}>
-                     Skip - next item
+                     Skip
                    </Button>
                    <Button size="sm" variant="outline" className="flex-1 text-xs bg-orange-100 text-orange-700 hover:bg-orange-200"
                      onClick={() => {
-                       addMsg("user", "⏭️ Skip All Confirmations");
+                       addMsg("user", "⏭️ Skip All");
                        setStep("batch_lines_add");
                      }}>
                      <FastForward className="w-3 h-3 mr-1" /> Skip All
