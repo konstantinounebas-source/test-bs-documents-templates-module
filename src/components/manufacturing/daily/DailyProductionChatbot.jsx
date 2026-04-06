@@ -96,8 +96,10 @@ function DropZone({ onFiles, isUploading }) {
   const inputRef = useRef();
 
   const handle = (files) => {
+    const validMimes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
     const valid = Array.from(files).filter(f => {
       if (f.size > 50 * 1024 * 1024) { toast.error(`${f.name} exceeds 50 MB`); return false; }
+      if (!validMimes.includes(f.type)) { toast.error(`${f.name} - Invalid type`); return false; }
       return true;
     });
     if (valid.length) onFiles(valid);
@@ -105,20 +107,20 @@ function DropZone({ onFiles, isUploading }) {
 
   return (
     <div
-      onDragOver={e => { e.preventDefault(); setDragging(true); }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={e => { e.preventDefault(); setDragging(false); handle(e.dataTransfer.files); }}
+      onDragOver={e => { e.preventDefault(); e.stopPropagation(); setDragging(true); }}
+      onDragLeave={e => { e.preventDefault(); e.stopPropagation(); setDragging(false); }}
+      onDrop={e => { e.preventDefault(); e.stopPropagation(); setDragging(false); handle(e.dataTransfer.files); }}
       onClick={() => inputRef.current?.click()}
-      className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors
+      className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
         ${dragging ? "border-blue-500 bg-blue-50" : "border-slate-300 bg-slate-50 hover:border-slate-400"}`}
     >
       <input ref={inputRef} type="file" multiple accept="image/*,.pdf" className="hidden"
-        onChange={e => handle(e.target.files)} />
+        onChange={e => { handle(e.target.files); e.target.value = ""; }} />
       {isUploading
         ? <Loader2 className="w-5 h-5 animate-spin mx-auto text-slate-400 mb-1" />
         : <Upload className="w-5 h-5 mx-auto text-slate-400 mb-1" />}
-      <p className="text-xs font-medium text-slate-600">Drag & drop files here</p>
-      <p className="text-xs text-slate-400">or click to browse</p>
+      <p className="text-xs font-medium text-slate-600">Drag & drop ή κάνε κλικ εδώ</p>
+      <p className="text-xs text-slate-400">PDF & εικόνες - max 50MB</p>
     </div>
   );
 }
@@ -1281,21 +1283,22 @@ CRITICAL SAFETY RULES:
 
   const renderChatInput = () => (
     <div className="border-t bg-white p-2 flex gap-2 items-center flex-shrink-0"
-      onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add("bg-blue-50"); }}
-      onDragLeave={e => e.currentTarget.classList.remove("bg-blue-50")}
+      onDragOver={e => { e.preventDefault(); e.stopPropagation(); if (selBatch) e.currentTarget.classList.add("bg-blue-50"); }}
+      onDragLeave={e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove("bg-blue-50"); }}
       onDrop={e => {
         e.preventDefault();
+        e.stopPropagation();
         e.currentTarget.classList.remove("bg-blue-50");
         if (selBatch) handleFiles(e.dataTransfer.files);
       }}
     >
       <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf" className="hidden"
-        onChange={e => { if (selBatch && e.target.files) handleFiles(e.target.files); e.target.value = ""; }}
+        onChange={e => { if (selBatch && e.target.files) { const files = Array.from(e.target.files); handleFiles(files); } e.target.value = ""; }}
       />
       <button onClick={() => fileInputRef.current?.click()} disabled={!selBatch}
         className="bg-slate-200 hover:bg-slate-300 disabled:opacity-40 text-slate-700 rounded-xl p-2 transition-colors flex-shrink-0"
-        title="Attach file">
-        <Paperclip className="w-4 h-4" />
+        title="Ανέβασμα αρχείου">
+        <Plus className="w-4 h-4" />
       </button>
       <input ref={inputRef} type="text" value={userInput}
         onChange={e => setUserInput(e.target.value)}
