@@ -652,9 +652,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   };
 
   const handleDateSelect = (dateVal) => {
-    if (dateVal === "__picker__") { setShowPicker(true); return; }
     setSelDate(dateVal);
-    setShowPicker(false);
+    setCustomDate(dateVal);
     addMsg("user", dateVal);
 
     const existing = batchHeaders.find(b => b.date === dateVal && b.department === selDept);
@@ -1360,22 +1359,7 @@ CRITICAL SAFETY RULES:
           </div>
         </div>
       )}
-      {step === "date" && (
-        <div className="border-t p-3 space-y-2 flex-shrink-0">
-          <p className="text-xs text-slate-500 font-medium">Επέλεξε ημερομηνία:</p>
-          <div className="flex gap-2">
-            <Input type="date" value={customDate} onChange={e => setCustomDate(e.target.value)} className="text-xs h-8 flex-1" max={todayStr()} />
-            <Button size="sm" className="h-8 text-xs bg-blue-600 hover:bg-blue-700" onClick={() => handleDateSelect(customDate)}>OK</Button>
-          </div>
-          <div className="flex flex-wrap gap-2 pt-1 border-t">
-            {quickDates.map(qd => (
-              <Button key={qd.value} variant="outline" size="sm" className="text-xs" onClick={() => handleDateSelect(qd.value)}>
-                {qd.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
+
       {step === "batch" && (
         <div className="border-t p-3 space-y-2 flex-shrink-0">
           <div className="flex gap-2">
@@ -1679,7 +1663,14 @@ CRITICAL SAFETY RULES:
           </div>
 
           {/* Intake Block */}
-          <IntakeBlock selDate={selDate} selDept={selDept} />
+          <IntakeBlock 
+            selDate={selDate} 
+            selDept={selDept} 
+            customDate={customDate}
+            setCustomDate={setCustomDate}
+            onDateSelect={handleDateSelect}
+            quickDates={quickDates}
+          />
 
           {/* Chat log */}
           <ScrollArea className="flex-1 p-4">
