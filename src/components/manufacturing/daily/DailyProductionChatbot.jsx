@@ -1490,7 +1490,15 @@ CRITICAL SAFETY RULES:
         {!minimized && (
           <div className="flex flex-col flex-1 overflow-hidden">
             {/* Chat log */}
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="flex-1 p-4"
+              onDragOver={e => { if (selBatch) { e.preventDefault(); e.currentTarget.classList.add("bg-blue-50"); } }}
+              onDragLeave={e => e.currentTarget.classList.remove("bg-blue-50")}
+              onDrop={e => {
+                e.preventDefault();
+                e.currentTarget.classList.remove("bg-blue-50");
+                if (selBatch) handleFiles(e.dataTransfer.files);
+              }}
+            >
               <div className="space-y-3">
                 {messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -1697,7 +1705,15 @@ CRITICAL SAFETY RULES:
             />
 
             {/* Chat log */}
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="flex-1 p-4"
+              onDragOver={e => { if (selBatch) { e.preventDefault(); e.currentTarget.classList.add("bg-blue-50"); } }}
+              onDragLeave={e => e.currentTarget.classList.remove("bg-blue-50")}
+              onDrop={e => {
+                e.preventDefault();
+                e.currentTarget.classList.remove("bg-blue-50");
+                if (selBatch) handleFiles(e.dataTransfer.files);
+              }}
+            >
               <div className="space-y-3">
                 {messages.map((m, i) => (
                   <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
