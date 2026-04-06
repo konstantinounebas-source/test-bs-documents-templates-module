@@ -132,18 +132,22 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     setCurrentPage(0);
     
     // Reset other form state using shared helpers
+    // IMPORTANT: Recalculate inside effect, don't reuse stale module-level variables
     const ocrRawDate = ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "";
-    const ocrDate = parseOcrDate(ocrRawDate);
-    setDate(ocrDate || fileDate || "");
-    setDepartment(normalizeDepartment(initialDepartment || fileDepartment || ""));
+    const freshOcrDate = parseOcrDate(ocrRawDate);
+    const freshFileDate = parseFilenameDate(fileName);
+    const freshFileDept = parseFilenameDepartment(fileName);
+
+    setDate(freshOcrDate || freshFileDate || "");
+    setDepartment(normalizeDepartment(initialDepartment || freshFileDept || ""));
     setFileValidationIssues(() => {
        const issues = [];
        // Use helper to detect actual date mismatch (not false positives from parsing differences)
-       if (datesMismatch(ocrDate, fileDate)) {
+       if (datesMismatch(freshOcrDate, freshFileDate)) {
          issues.push({
            field: "date",
            severity: "warning",
-           message: `Ημερομηνία OCR (${formatDateForDisplay(ocrDate)}) ≠ Ημερομηνία Αρχείου (${formatDateForDisplay(fileDate)})`
+           message: `Ημερομηνία OCR (${formatDateForDisplay(freshOcrDate)}) ≠ Ημερομηνία Αρχείου (${formatDateForDisplay(freshFileDate)})`
          });
        }
        const formText = ocrResult?.extracted_data?.production_lines?.map(l => JSON.stringify(l)).join('') || "";
@@ -198,11 +202,11 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     window.addEventListener("mouseup", onUp);
   }, []);
 
-  // Parse OCR date to canonical format
-  const ocrRawDate = ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "";
-  const ocrDateParsed = parseOcrDate(ocrRawDate);
-
-  const [date, setDate] = useState(ocrDateParsed || fileDate || "");
+  const [date, setDate] = useState(() => {
+    const ocrRawDate = ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "";
+    const ocrDateParsed = parseOcrDate(ocrRawDate);
+    return ocrDateParsed || fileDate || "";
+  });
   const [department, setDepartment] = useState(normalizeDepartment(initialDepartment || fileDepartment || ""));
   const [confirmed, setConfirmed] = useState(false);
   const [acceptedIssues, setAcceptedIssues] = useState(new Set());
@@ -211,13 +215,17 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
   // Validation issues from filename & form mismatch
   const [fileValidationIssues, setFileValidationIssues] = useState(() => {
     const issues = [];
+    const ocrRawDate = ocrResult?.corrected_data?.date || ocrResult?.extracted_data?.date || "";
+    const ocrDateParsed = parseOcrDate(ocrRawDate);
+    const fileDateParsed = parseFilenameDate(fileName);
+    const fileDepartmentParsed = parseFilenameDepartment(fileName);
 
     // Check if OCR date matches filename date (using helper to avoid parsing false positives)
-    if (datesMismatch(ocrDateParsed, fileDate)) {
+    if (datesMismatch(ocrDateParsed, fileDateParsed)) {
       issues.push({
         field: "date",
         severity: "warning",
-        message: `Ημερομηνία OCR (${formatDateForDisplay(ocrDateParsed)}) ≠ Ημερομηνία Αρχείου (${formatDateForDisplay(fileDate)})`
+        message: `Ημερομηνία OCR (${formatDateForDisplay(ocrDateParsed)}) ≠ Ημερομηνία Αρχείου (${formatDateForDisplay(fileDateParsed)})`
       });
     }
 
@@ -225,13 +233,13 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     const formText = ocrResult?.extracted_data?.production_lines?.map(l => JSON.stringify(l)).join('') || "";
     const isPrepaint = formText.includes('Προετοιμασία Βαφής');
 
-    if (fileDepartment === 'Pre-paint' && !isPrepaint) {
+    if (fileDepartmentParsed === 'Pre-paint' && !isPrepaint) {
       issues.push({
         field: "type",
         severity: "warning",
         message: "Αρχείο λέει Prepaint αλλά φόρμα δεν περιέχει 'Προετοιμασία Βαφής'"
       });
-    } else if (fileDepartment !== 'Pre-paint' && isPrepaint) {
+    } else if (fileDepartmentParsed !== 'Pre-paint' && isPrepaint) {
       issues.push({
         field: "type",
         severity: "warning",

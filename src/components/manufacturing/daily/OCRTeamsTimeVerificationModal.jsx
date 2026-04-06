@@ -277,13 +277,16 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
     setExtras(newExtras);
     
     // Rehydrate date and dept using shared helpers
+    // IMPORTANT: Recalculate inside effect, don't reuse stale variables
+    const freshFileDate = parseFilenameDate(fileName);
+    const freshFileDept = parseFilenameDepartment(fileName);
     const ocrDateStr = ocrResult?.extracted_data?.date || "";
-    const ocrDateCanon = parseOcrDate(ocrDateStr);
+    const freshOcrDate = parseOcrDate(ocrDateStr);
     const ocrDeptStr = ocrResult?.extracted_data?.team;
-    const normDept = ocrDeptStr && ocrDeptStr !== "null" ? normalizeDepartment(ocrDeptStr) : fileDepartment;
-    const cleanDeptVal = normDept || "";
+    const freshNormDept = ocrDeptStr && ocrDeptStr !== "null" ? normalizeDepartment(ocrDeptStr) : freshFileDept;
+    const cleanDeptVal = freshNormDept || "";
     
-    setDate(ocrDateCanon || fileDate || "");
+    setDate(freshOcrDate || freshFileDate || "");
     setDept(cleanDeptVal);
     
     // Reset other form state
