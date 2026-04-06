@@ -1295,7 +1295,7 @@ CRITICAL SAFETY RULES:
       <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf" className="hidden"
         onChange={e => { if (selBatch && e.target.files) { const files = Array.from(e.target.files); handleFiles(files); } e.target.value = ""; }}
       />
-      <button onClick={() => fileInputRef.current?.click()} disabled={!selBatch}
+      <button onClick={() => fileInputRef.current?.click()} disabled={step !== "file_upload" && !selBatch}
         className="bg-slate-200 hover:bg-slate-300 disabled:opacity-40 text-slate-700 rounded-xl p-2 transition-colors flex-shrink-0"
         title="Ανέβασμα αρχείου">
         <Plus className="w-4 h-4" />
