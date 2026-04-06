@@ -16,6 +16,7 @@ export default function BulkOCRPanel({
   bulkOcrDetailedResults,
   missingOcrAttachmentDetails,
   selectedAttachmentIds,
+  setSelectedAttachmentIds,
   ocrFilterDept,
   ocrFilterMonth,
   onFilterDeptChange,
@@ -31,11 +32,13 @@ export default function BulkOCRPanel({
 
   const handleSelectAll = () => {
     if (selectedAttachmentIds.size === missingOcrAttachmentDetails.length) {
-      // Deselect all
-      selectedAttachmentIds.clear();
+      // Deselect all — immutable update
+      setSelectedAttachmentIds(new Set());
     } else {
-      // Select all
-      missingOcrAttachmentDetails.forEach(d => selectedAttachmentIds.add(d.attachmentId));
+      // Select all — immutable update
+      const next = new Set(selectedAttachmentIds);
+      missingOcrAttachmentDetails.forEach(d => next.add(d.attachmentId));
+      setSelectedAttachmentIds(next);
     }
   };
 
@@ -147,7 +150,7 @@ export default function BulkOCRPanel({
             onClick={() => setExpandResults(!expandResults)}
             className="w-full flex items-center justify-between px-2 py-1.5 hover:bg-slate-100 font-semibold text-xs text-slate-700"
           >
-            <span>OCR Results: {bulkOcrDetailedResults.filter(r => r.status === "completed").length} ✅ {bulkOcrDetailedResults.filter(r => r.status === "failed").length} ❌</span>
+            <span>OCR Results: {bulkOcrDetailedResults.filter(r => r.status === "completed").length} ✅ {bulkOcrDetailedResults.filter(r => r.status === "failed").length} ❌ {bulkOcrDetailedResults.filter(r => r.status === "no_valid_forms").length} ⚠️</span>
             {expandResults ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
           </button>
           {expandResults && (
@@ -156,12 +159,14 @@ export default function BulkOCRPanel({
                 <div key={i} className={`flex items-start gap-1 px-1 py-0.5 rounded ${
                   result.status === "completed" ? "bg-green-50 text-green-700" :
                   result.status === "failed" ? "bg-red-50 text-red-700" :
+                  result.status === "no_valid_forms" ? "bg-amber-50 text-amber-700" :
                   "bg-slate-50 text-slate-600"
                 }`}>
                   {result.status === "completed" && <CheckCircle2 className="w-3 h-3 flex-shrink-0 mt-0.5" />}
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{result.fileName}</p>
                     {result.error && <p className="text-[9px]">{result.error}</p>}
+                    {result.message && <p className="text-[9px]">{result.message}</p>}
                   </div>
                 </div>
               ))}
@@ -200,11 +205,16 @@ export default function BulkOCRPanel({
                   key={att.attachmentId}
                   className="flex items-start gap-2 px-1 py-0.5 rounded hover:bg-slate-100 text-[10px] cursor-pointer"
                   onClick={() => {
-                    if (selectedAttachmentIds.has(att.attachmentId)) {
-                      selectedAttachmentIds.delete(att.attachmentId);
-                    } else {
-                      selectedAttachmentIds.add(att.attachmentId);
-                    }
+                    // Immutable Set update
+                    setSelectedAttachmentIds(prev => {
+                      const next = new Set(prev);
+                      if (next.has(att.attachmentId)) {
+                        next.delete(att.attachmentId);
+                      } else {
+                        next.add(att.attachmentId);
+                      }
+                      return next;
+                    });
                   }}
                 >
                   <div className="mt-0.5">

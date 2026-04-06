@@ -405,8 +405,14 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   });
 
   // Define performOCRInBackground as a callback BEFORE useBulkOCRControl uses it
-  const performOCRInBackground = useCallback(async (att) => {
+  const performOCRInBackground = useCallback(async (att, options = {}) => {
+    const { silentBulk = false } = options;
     try {
+      // Validate input
+      if (!att || !att.id || !att.file_url) {
+        throw new Error("Invalid attachment object: missing id or file_url");
+      }
+
       // Step 1: Analyze file and detect form types FIRST
       const fileAnalysisRaw = await base44.functions.invoke("analyzeFilePages", { file_url: att.file_url });
       const fileAnalysis = fileAnalysisRaw?.data || fileAnalysisRaw?.result || fileAnalysisRaw?.output || fileAnalysisRaw || {};
@@ -424,8 +430,18 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       )];
 
       if (detectedForms.length === 0) {
-        if (isMountedRef.current) addMsg("bot", `⚠️ Δεν ανιχνεύθηκαν έγκυρες φόρμες.`);
-        return;
+        // NO VALID FORMS DETECTED — Return status, don't treat as success
+        if (!silentBulk && isMountedRef.current) {
+          addMsg("bot", `⚠️ ${att.file_name || att.id} — Δεν ανιχνεύθηκαν έγκυρες φόρμες.`);
+        }
+        return {
+          success: false,
+          status: "no_valid_forms",
+          attachmentId: att.id,
+          fileName: att.file_name,
+          message: "Δεν ανιχνεύθηκαν έγκυρες φόρμες",
+          detectedForms: []
+        };
       }
 
       // Step 2: For each detected form_type, check cache independently
@@ -508,13 +524,32 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       if (prodCacheId) setCurrentProductionCacheId(prodCacheId);
       if (teamsCacheId) setCurrentTeamsTimeCacheId(teamsCacheId);
       
-      if (isMountedRef.current && (prodCacheId || teamsCacheId)) {
+      // Return success result (do NOT open modals during bulk OCR)
+      if (!silentBulk && isMountedRef.current && (prodCacheId || teamsCacheId)) {
         addMsg("bot", `✅ OCR ολοκληρώθηκε! Κάνε κλικ στο "View OCR" για να δεις τα αποτελέσματα.`);
       }
 
+      return {
+        success: true,
+        status: "completed",
+        attachmentId: att.id,
+        fileName: att.file_name,
+        productionCacheId: prodCacheId,
+        teamsTimeCacheId: teamsCacheId,
+        detectedForms,
+        completedForms: (prodCacheId ? ["production"] : []).concat(teamsCacheId ? ["teams_time"] : [])
+      };
+
     } catch (err) {
-      if (!isMountedRef.current) return;
-      addMsg("bot", `❌ OCR αποτυχία: ${err?.message || "Network error"}`);
+      if (!isMountedRef.current) {
+        // Still throw so bulk OCR can classify as failed
+        throw err;
+      }
+      
+      if (!silentBulk) {
+        addMsg("bot", `❌ OCR αποτυχία: ${err?.message || "Network error"}`);
+      }
+      
       setAttachmentOcrStatus(prev => {
         const newStatus = { ...prev, [att.id]: { ...prev[att.id] } };
         Object.keys(newStatus[att.id]).forEach(formType => {
@@ -547,11 +582,16 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     detectMissingOCR,
     executeSelectedBulkOCR,
     stopBulkOCR
-  } = useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef);
+  } = useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, queryClient);
 
   const handleDetectMissing = async () => {
     setIsMissingOcrLoading(true);
     try {
+      // Refresh OCR cache data before detection
+      await queryClient.refetchQueries(["OCRCache-All"]);
+      // Optionally refresh attachments too
+      await queryClient.refetchQueries(["BatchAttachments-All"]);
+      
       const { grouped, details } = detectMissingOCR(allBatchHeaders, allBatchAttachments, allOCRCacheRecords, ocrFilterDept, ocrFilterMonth);
       setMissingOcrAttachmentDetails(details);
       setSelectedAttachmentIds(new Set(details.map(d => d.attachmentId)));
@@ -1449,6 +1489,7 @@ CRITICAL SAFETY RULES:
            bulkOcrDetailedResults={bulkOcrDetailedResults}
            missingOcrAttachmentDetails={missingOcrAttachmentDetails}
            selectedAttachmentIds={selectedAttachmentIds}
+           setSelectedAttachmentIds={setSelectedAttachmentIds}
            ocrFilterDept={ocrFilterDept}
            ocrFilterMonth={ocrFilterMonth}
            onFilterDeptChange={setOcrFilterDept}
