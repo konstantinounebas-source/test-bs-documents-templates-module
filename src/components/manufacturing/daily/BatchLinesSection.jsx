@@ -16,7 +16,7 @@ export default function BatchLinesSection({
 
   return (
     <div className="space-y-1 flex-1 overflow-y-auto min-h-0">
-      <div className="flex items-center justify-between sticky top-0 bg-white py-1">
+      <div className="flex items-center justify-between sticky top-0 bg-white py-1 border-b border-slate-200">
         <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Καταχωρημένες Γραμμές</p>
         {bundleItemCodes.length > 0 && (
           <button 
@@ -43,10 +43,17 @@ export default function BatchLinesSection({
           const isMissing = bundleItemCodes.length > 0 && !bundleItemCodes.includes(blCode);
           
           return (
-            <div key={bl.id} className="flex items-center gap-1 group">
+            <div key={bl.id} className="flex items-center gap-1">
+              <div className="flex items-center gap-1 w-12">
+                <span className="text-xs font-medium text-slate-700">{blCode}</span>
+                {showMissingWarnings && isMissing && (
+                  <AlertTriangle className="w-3 h-3 flex-shrink-0 text-red-600" />
+                )}
+              </div>
               <div className="flex-1">
                 <ExistingLineRow 
                   bl={bl}
+                  hideItemCode={true}
                   onSave={async (id, data) => { 
                     await base44.entities.Batch_Lines.update(id, data); 
                     queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]); 
@@ -58,9 +65,6 @@ export default function BatchLinesSection({
                   }}
                 />
               </div>
-              {showMissingWarnings && isMissing && (
-                <AlertTriangle className="w-3 h-3 flex-shrink-0 text-red-600" />
-              )}
             </div>
           );
         })}
