@@ -143,7 +143,7 @@ export default function DailyFormsTab({
               onDrop={e => {
                 e.preventDefault();
                 setDragging(false);
-                if (onHandleFiles) onHandleFiles(e.dataTransfer.files);
+                if (onHandleFiles) onHandleFiles(Array.from(e.dataTransfer.files));
               }}
               className={`flex-1 border-2 border-dashed rounded-lg p-4 transition-colors min-h-0 overflow-y-auto flex flex-col ${
                 dragging ? "border-blue-500 bg-blue-50" : "border-slate-300 bg-slate-50 hover:border-slate-400"
