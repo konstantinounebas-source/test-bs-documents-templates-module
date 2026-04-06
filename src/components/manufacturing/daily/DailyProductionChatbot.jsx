@@ -394,7 +394,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const getAttachmentsMissingOCR = async () => {
     try {
       setIsMissingOcrLoading(true);
-      const result = [];
       let batchesToCheck = allBatchHeaders || [];
 
       // Filter by department
@@ -417,6 +416,9 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       const batchesToScan = batchesToCheck.slice(0, maxBatches);
       const isTruncated = batchesToCheck.length > maxBatches;
 
+      // GROUP by date + department, accumulate missing counts
+      const grouped = {};
+
       for (const batch of batchesToScan) {
         const batchAtts = await base44.entities.BatchAttachment.filter({ batch_header_id: batch.id });
         let missingCount = 0;
@@ -431,13 +433,15 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         }
 
         if (missingCount > 0) {
-          result.push({
-            date: batch.date,
-            department: batch.department,
-            attachmentsWithoutOCRCount: missingCount
-          });
+          const key = `${batch.date}__${batch.department}`;
+          if (!grouped[key]) {
+            grouped[key] = { date: batch.date, department: batch.department, attachmentsWithoutOCRCount: 0 };
+          }
+          grouped[key].attachmentsWithoutOCRCount += missingCount;
         }
       }
+
+      const result = Object.values(grouped);
 
       // Build chat message with results
       let msg = `✅ Scanned ${batchesToScan.length} batches. Found ${result.length} with missing OCR.\n`;
