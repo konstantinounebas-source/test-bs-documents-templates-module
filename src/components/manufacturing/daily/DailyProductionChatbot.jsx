@@ -471,10 +471,15 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         }
 
         // No usable cache — run fresh OCR
+        const dept = att.department || selDept;
+        if (!dept) {
+          if (isMountedRef.current) addMsg("bot", `❌ Δεν υπάρχει τμήμα για ${att.file_name}. Απαιτείται τμήμα.`);
+          return;
+        }
         const res = await ocrWithCache({
           attachment_id: att.id,
           batch_header_id: att.batch_header_id || selBatch?.id,
-          department: att.department || selDept,
+          department: dept,
           form_type: formType,
           file_name: att.file_name,
           file_url: att.file_url
