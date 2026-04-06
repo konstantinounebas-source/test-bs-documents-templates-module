@@ -10,7 +10,22 @@ export async function getCurrentOCRCacheByAttachmentAndFormType(attachmentId, fo
       form_type: formType,
       is_current: true
     });
-    return records.length > 0 ? records[0] : null;
+    
+    if (records.length === 0) return null;
+    
+    // Warn if multiple is_current=true records exist (data integrity issue)
+    if (records.length > 1) {
+      console.warn(`[OCRCache] Multiple is_current=true records found for attachment ${attachmentId} + ${formType}. Expected exactly 1.`);
+    }
+    
+    // Return newest by started_at (fallback to created_date)
+    const sorted = records.sort((a, b) => {
+      const aTime = new Date(a.started_at || a.created_date || 0).getTime();
+      const bTime = new Date(b.started_at || b.created_date || 0).getTime();
+      return bTime - aTime;
+    });
+    
+    return sorted[0];
   } catch (error) {
     console.error('Error getting current OCR cache:', error);
     return null;
@@ -81,13 +96,24 @@ export async function failOCRCacheRecord(cacheId, errorMessage) {
  */
 export async function supersedeCurrentOCRCache(attachmentId, formType) {
   try {
-    const current = await getCurrentOCRCacheByAttachmentAndFormType(attachmentId, formType);
-    if (current) {
-      await base44.entities.OCRCache.update(current.id, {
-        is_current: false,
-        status: 'superseded',
-        last_rerun_at: new Date().toISOString()
-      });
+    // Fetch ALL is_current=true records (not just the newest)
+    const allCurrent = await base44.entities.OCRCache.filter({
+      attachment_id: attachmentId,
+      form_type: formType,
+      is_current: true
+    });
+    
+    // Mark all of them as superseded
+    if (allCurrent.length > 0) {
+      await Promise.all(
+        allCurrent.map(record =>
+          base44.entities.OCRCache.update(record.id, {
+            is_current: false,
+            status: 'superseded',
+            last_rerun_at: new Date().toISOString()
+          })
+        )
+      );
     }
   } catch (error) {
     console.error('Error superseding OCR cache record:', error);
