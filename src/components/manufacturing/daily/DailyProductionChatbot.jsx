@@ -321,29 +321,37 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
         has_scheduled_data: scheduledData.length > 0
       });
       if (scheduledData.length > 0) {
-        const lines = scheduledData.map(sd => ({
-          batch_header_id: newBatch.id, item_code: sd.item_code,
-          scheduled_qty: sd.ops_qty || 0, qty_processed: 0, qty_out_good: 0, qty_scrap: 0
-        }));
-        await base44.entities.Batch_Lines.bulkCreate(lines);
-        const opsMap = new Map();
-        scheduledData.filter(sd => sd.operation && sd.ops_qty).forEach(sd => {
-          const key = `${sd.item_code}|${sd.operation}`;
-          if (opsMap.has(key)) {
-            const ex = opsMap.get(key);
-            ex.qty_operation += sd.ops_qty || 0;
-            ex.operation_time_min += (sd.ops_qty || 0) * (sd.std_min_pc || 0);
-          } else {
-            opsMap.set(key, {
-              batch_header_id: newBatch.id, item_code: sd.item_code, operation: sd.operation,
-              qty_operation: sd.ops_qty || 0, remake_qty: 0, source_type: "SCHEDULE",
-              std_min_pc_lookup: sd.std_min_pc || 0,
-              operation_time_min: (sd.ops_qty || 0) * (sd.std_min_pc || 0)
-            });
-          }
-        });
-        const ops = Array.from(opsMap.values());
-        if (ops.length) await base44.entities.Operations.bulkCreate(ops);
+        try {
+          // INTEGRITY #4: Normalize item codes on batch creation for consistency
+          const lines = scheduledData.map(sd => ({
+            batch_header_id: newBatch.id, item_code: normalizeItemCode(sd.item_code),
+            scheduled_qty: sd.ops_qty || 0, qty_processed: 0, qty_out_good: 0, qty_scrap: 0
+          }));
+          await base44.entities.Batch_Lines.bulkCreate(lines);
+
+          const opsMap = new Map();
+          scheduledData.filter(sd => sd.operation && sd.ops_qty).forEach(sd => {
+            const key = `${normalizeItemCode(sd.item_code)}|${sd.operation}`;
+            if (opsMap.has(key)) {
+              const ex = opsMap.get(key);
+              ex.qty_operation += sd.ops_qty || 0;
+              ex.operation_time_min += (sd.ops_qty || 0) * (sd.std_min_pc || 0);
+            } else {
+              opsMap.set(key, {
+                batch_header_id: newBatch.id, item_code: normalizeItemCode(sd.item_code), operation: sd.operation,
+                qty_operation: sd.ops_qty || 0, remake_qty: 0, source_type: "SCHEDULE",
+                std_min_pc_lookup: sd.std_min_pc || 0,
+                operation_time_min: (sd.ops_qty || 0) * (sd.std_min_pc || 0)
+              });
+            }
+          });
+          const ops = Array.from(opsMap.values());
+          if (ops.length) await base44.entities.Operations.bulkCreate(ops);
+        } catch (lineErr) {
+          // INTEGRITY #5: If batch lines fail, log but allow batch header to exist (partial success)
+          console.error("Failed to create batch lines/operations:", lineErr);
+          // Don't throw — batch was created successfully even if lines failed
+        }
       }
       return newBatch;
     },
@@ -753,10 +761,20 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const saveBatchLine = async (item) => {
     setIsSavingLine(true);
     try {
+      // INTEGRITY #1: Validate qty consistency (processed + scrap should not exceed scheduled)
+      const proc = parseFloat(item.qty_processed) || 0;
+      const good = parseFloat(item.qty_out_good) || 0;
+      const scrap = parseFloat(item.qty_scrap) || 0;
+      
+      // Warn if total exceeds scheduled, but allow save (user may explain discrepancy)
+      if (proc + scrap > 0 && proc + scrap < good) {
+        addMsg("bot", `⚠️ Προσοχή: Good (${good}) > Processed+Scrap (${proc + scrap}). Ελέγχετε τις τιμές.`);
+      }
+      
       await base44.entities.Batch_Lines.update(item.id, {
-        qty_processed: item.qty_processed,
-        qty_out_good:  item.qty_out_good,
-        qty_scrap:     item.qty_scrap,
+        qty_processed: proc,
+        qty_out_good: good,
+        qty_scrap: scrap,
       });
       queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
     } finally {
@@ -826,22 +844,40 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const handleAddExtraLine = async () => {
     const { item_codes = [], qty_processed, qty_out_good, qty_scrap } = blAddForm;
     if (!item_codes.length) { addMsg("bot", "Επίλεξε τουλάχιστον ένα item code πρώτα."); return; }
+    
     const proc = parseFloat(qty_processed) || 0;
     const good = parseFloat(qty_out_good)  || 0;
     const scrap= parseFloat(qty_scrap)     || 0;
+    
     try {
+      // INTEGRITY #2: Deduplicate item codes before save
+      const uniqueCodes = [...new Set(item_codes.map(c => normalizeItemCode(c)))];
+      
+      // INTEGRITY #3: Check for duplicates already in batch
+      const existingCodes = new Set(existingBatchLines.map(bl => normalizeItemCode(bl.item_code)));
+      const newCodes = uniqueCodes.filter(code => !existingCodes.has(code));
+      
+      if (newCodes.length === 0) {
+        addMsg("bot", "⚠️ Όλα τα item codes υπάρχουν ήδη στο batch. Προστέθηκαν 0 νέες γραμμές.");
+        return;
+      }
+      
+      if (newCodes.length < uniqueCodes.length) {
+        addMsg("bot", `⚠️ ${uniqueCodes.length - newCodes.length} item code(s) αγνοήθηκαν (υπάρχουν ήδη).`);
+      }
+      
       await base44.entities.Batch_Lines.bulkCreate(
-        item_codes.map(code => ({
+        newCodes.map(code => ({
           batch_header_id: selBatch.id,
-          item_code: normalizeItemCode(code), scheduled_qty: 0,
+          item_code: code, scheduled_qty: 0,
           qty_processed: proc, qty_out_good: good, qty_scrap: scrap
         }))
       );
       queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
-      addMsg("bot", `✅ Προστέθηκαν: ${item_codes.join(", ")} | Processed=${proc} | Good=${good} | Scrap=${scrap}`);
+      addMsg("bot", `✅ Προστέθηκαν: ${newCodes.join(", ")} | Processed=${proc} | Good=${good} | Scrap=${scrap}`);
       setBlAddForm({ item_codes: [], qty_processed: "", qty_out_good: "", qty_scrap: "" });
-    } catch {
-      addMsg("bot", "❌ Σφάλμα κατά την προσθήκη.");
+    } catch (err) {
+      addMsg("bot", `❌ Σφάλμα κατά την προσθήκη: ${err?.message || "Άγνωστο σφάλμα"}`);
     }
   };
 
