@@ -32,7 +32,7 @@ export default function IntakeBlock({ selDate, selDept, customDate, setCustomDat
 
       {selDate && (
         <div className="pt-2 border-t text-xs text-slate-600">
-          <p className="font-medium">{format(new Date(selDate + "T00:00:00"), "dd/MM/yyyy")}</p>
+          <p className="font-medium">{format(new Date(selDate), "dd/MM/yyyy")}</p>
           {selDept && <p className="text-slate-500">{selDept}</p>}
         </div>
       )}
