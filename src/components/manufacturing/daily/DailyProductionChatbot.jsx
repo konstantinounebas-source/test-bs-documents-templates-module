@@ -255,6 +255,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   // OCR Status Tracking: { attachment_id: { production: { status, cache_id }, teams_time: { status, cache_id } } }
   const [attachmentOcrStatus, setAttachmentOcrStatus] = useState({});
 
+  // missing OCR detection
+  const [missingOcrResults, setMissingOcrResults] = useState(null);
+  const [isMissingOcrLoading, setIsMissingOcrLoading] = useState(false);
+
   // free-text input & AI
   const [userInput, setUserInput] = useState("");
   const [isAiThinking, setIsAiThinking] = useState(false);
@@ -382,6 +386,45 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     enabled: !!selBatch,
     staleTime: Infinity
   });
+
+  // ── missing OCR detection ────────────────────────────────────────────────
+  const getAttachmentsMissingOCR = async () => {
+    try {
+      setIsMissingOcrLoading(true);
+      const result = [];
+      const batchesToCheck = allBatchHeaders || [];
+
+      for (const batch of batchesToCheck) {
+        const batchAtts = await base44.entities.BatchAttachment.filter({ batch_header_id: batch.id });
+        let missingCount = 0;
+
+        for (const att of batchAtts) {
+          const prodStatus = await checkOCRCacheStatus(att.id, "production");
+          const teamsStatus = await checkOCRCacheStatus(att.id, "teams_time");
+          
+          // Missing OCR if BOTH production and teams_time have no usable cache
+          if (!prodStatus?.canUseCache && !teamsStatus?.canUseCache) {
+            missingCount++;
+          }
+        }
+
+        if (missingCount > 0) {
+          result.push({
+            date: batch.date,
+            department: batch.department,
+            attachmentsWithoutOCRCount: missingCount
+          });
+        }
+      }
+
+      setMissingOcrResults(result);
+    } catch (error) {
+      console.error("Error detecting missing OCR:", error);
+      addMsg("bot", `❌ Error detecting missing OCR: ${error?.message || "Unknown error"}`);
+    } finally {
+      setIsMissingOcrLoading(false);
+    }
+  };
 
   // ── bundle resolver ───────────────────────────────────────────────────────
   const resolveBundle = (date, dept) => {
@@ -1407,7 +1450,14 @@ CRITICAL SAFETY RULES:
   const renderSharedSteps = () => (
     <>
       {step === "file_upload" && (
-        <ChatStepFileUpload
+        <>
+          <div className="border-t p-3 flex-shrink-0">
+            <Button size="sm" variant="outline" className="w-full text-xs mb-2" onClick={getAttachmentsMissingOCR} disabled={isMissingOcrLoading}>
+              {isMissingOcrLoading ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : "🔍"}
+              {isMissingOcrLoading ? "Scanning..." : "Find Missing OCR"}
+            </Button>
+          </div>
+          <ChatStepFileUpload
           departments={departments}
           batchHeaders={allBatchHeaders}
           allBundles={allBundles}
@@ -1434,8 +1484,9 @@ CRITICAL SAFETY RULES:
             }
           }}
           onSkip={() => { setStep("dept"); addMsg("bot", "Επέλεξε τμήμα για να ξεκινήσουμε."); }}
-        />
-      )}
+          />
+          </>
+          )}
       {step === "dept" && (
         <div className="border-t p-3 space-y-2 flex-shrink-0">
           <div className="flex items-center justify-between">
@@ -1741,6 +1792,27 @@ CRITICAL SAFETY RULES:
           totalPages={1}
           defaultPage={1}
         />
+      )}
+
+      {/* Missing OCR Detection Results */}
+      {missingOcrResults && (
+        <div className="fixed bottom-6 right-6 z-50 bg-white border border-amber-200 rounded-lg shadow-lg p-4 max-w-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-sm text-amber-900">Attachments Missing OCR</h3>
+            <button onClick={() => setMissingOcrResults(null)} className="text-amber-600 hover:text-amber-800 text-lg leading-none">×</button>
+          </div>
+          {missingOcrResults.length === 0 ? (
+            <p className="text-xs text-amber-700">✓ No batches with missing OCR found.</p>
+          ) : (
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              {missingOcrResults.map((item, i) => (
+                <div key={i} className="text-xs text-amber-800 bg-amber-50 rounded px-2 py-1.5">
+                  <span className="font-medium">{item.date}</span> | <span className="font-medium">{item.department}</span> | <span className="text-amber-900">⚠ {item.attachmentsWithoutOCRCount} attachment{item.attachmentsWithoutOCRCount > 1 ? 's' : ''}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Split Layout - Inline Chat Panel */}
