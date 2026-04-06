@@ -1,12 +1,13 @@
 import { base44 } from '@/api/base44Client';
 
 /**
- * Get current active OCR cache record for an attachment
+ * Get current active OCR cache record for an attachment + form_type combination
  */
-export async function getCurrentOCRCacheByAttachment(attachmentId) {
+export async function getCurrentOCRCacheByAttachmentAndFormType(attachmentId, formType) {
   try {
     const records = await base44.entities.OCRCache.filter({
       attachment_id: attachmentId,
+      form_type: formType,
       is_current: true
     });
     return records.length > 0 ? records[0] : null;
@@ -45,16 +46,14 @@ export async function createOCRCacheProcessingRecord(data) {
  */
 export async function completeOCRCacheRecord(cacheId, data) {
   try {
-    const updateData = {
+    await base44.entities.OCRCache.update(cacheId, {
       status: 'completed',
       completed_at: new Date().toISOString(),
       raw_ocr_json: data.raw_ocr_json || null,
       extracted_data_json: data.extracted_data_json || null,
       validation_json: data.validation_json || null,
       page_count: data.page_count || null
-    };
-
-    await base44.entities.OCRCache.update(cacheId, updateData);
+    });
   } catch (error) {
     console.error('Error completing OCR cache record:', error);
     throw error;
@@ -78,11 +77,11 @@ export async function failOCRCacheRecord(cacheId, errorMessage) {
 }
 
 /**
- * Supersede current OCR cache record (mark as superseded when rerunning)
+ * Supersede current OCR cache record for a specific attachment + form_type
  */
-export async function supersedeCurrentOCRCache(attachmentId) {
+export async function supersedeCurrentOCRCache(attachmentId, formType) {
   try {
-    const current = await getCurrentOCRCacheByAttachment(attachmentId);
+    const current = await getCurrentOCRCacheByAttachmentAndFormType(attachmentId, formType);
     if (current) {
       await base44.entities.OCRCache.update(current.id, {
         is_current: false,
@@ -112,12 +111,12 @@ export async function saveCorrectedOCRCacheData(cacheId, correctedData) {
 }
 
 /**
- * Check if attachment has cached OCR result ready to use
- * Returns: { hasCached: boolean, record: OCRCacheRecord | null }
+ * Check if attachment + form_type has a usable cached OCR result.
+ * Returns: { hasCached, canUseCache, isProcessing, isFailed, record }
  */
-export async function checkOCRCacheStatus(attachmentId) {
+export async function checkOCRCacheStatus(attachmentId, formType) {
   try {
-    const current = await getCurrentOCRCacheByAttachment(attachmentId);
+    const current = await getCurrentOCRCacheByAttachmentAndFormType(attachmentId, formType);
 
     if (!current) {
       return { hasCached: false, record: null };
@@ -143,13 +142,13 @@ export async function checkOCRCacheStatus(attachmentId) {
 }
 
 /**
- * Get all OCR cache records for an attachment (including historical)
+ * Get all OCR cache records for an attachment (optionally filtered by form_type)
  */
-export async function getOCRCacheHistory(attachmentId) {
+export async function getOCRCacheHistory(attachmentId, formType = null) {
   try {
-    const records = await base44.entities.OCRCache.filter({
-      attachment_id: attachmentId
-    });
+    const filterObj = { attachment_id: attachmentId };
+    if (formType) filterObj.form_type = formType;
+    const records = await base44.entities.OCRCache.filter(filterObj);
     return records.sort((a, b) => new Date(b.started_at || 0) - new Date(a.started_at || 0));
   } catch (error) {
     console.error('Error getting OCR cache history:', error);
