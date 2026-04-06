@@ -740,7 +740,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       });
       queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
     } finally {
-      setIsSavingLine(false);
+      if (isMountedRef.current) setIsSavingLine(false);
     }
   };
 
@@ -791,10 +791,13 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   };
 
   const handleBatchLineMessage = async (text) => {
-    const currentItem = blReviewItems[blCurrentIdx];
+    // Use refs to avoid stale closure — state may not have committed yet
+    const currentItem = blReviewItemsRef.current[blCurrentIdxRef.current];
+    if (!currentItem) return;
     const updated = parseBatchLineInput(text, currentItem);
-    // update local state
-    const newItems = blReviewItems.map((it, i) => i === blCurrentIdx ? updated : it);
+    // sync both state and ref
+    const newItems = blReviewItemsRef.current.map((it, i) => i === blCurrentIdxRef.current ? updated : it);
+    blReviewItemsRef.current = newItems;
     setBlReviewItems(newItems);
     addMsg("bot", `💾 Αποθηκεύω: Processed=${updated.qty_processed} | Good=${updated.qty_out_good} | Scrap=${updated.qty_scrap}...`);
     await handleBatchLineConfirm(updated);
@@ -896,9 +899,9 @@ ${context}
       }
       addMsg("bot", result.reply || "Δεν κατάλαβα. Δοκίμασε ξανά.");
     } catch (err) {
-      addMsg("bot", "❌ Σφάλμα επικοινωνίας με AI.");
+      if (isMountedRef.current) addMsg("bot", "❌ Σφάλμα επικοινωνίας με AI.");
     } finally {
-      setIsAiThinking(false);
+      if (isMountedRef.current) setIsAiThinking(false);
     }
   };
 
@@ -1033,7 +1036,7 @@ ${context}
             <p className="text-[10px] text-slate-500 mb-0.5">{field === "qty_processed" ? "Processed" : field === "qty_out_good" ? "Out Good" : "Scrap"}</p>
             <input type="number" min="0"
               value={blReviewItems[blCurrentIdx]?.[field] ?? ""}
-              onChange={e => { const val = parseFloat(e.target.value) || 0; setBlReviewItems(prev => prev.map((it, i) => i === blCurrentIdx ? { ...it, [field]: val } : it)); }}
+              onChange={e => { const val = parseFloat(e.target.value) || 0; setBlReviewItems(prev => { const next = prev.map((it, i) => i === blCurrentIdx ? { ...it, [field]: val } : it); blReviewItemsRef.current = next; return next; }); }}
               className="w-full text-sm border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
           </div>
         ))}
