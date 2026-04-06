@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, SkipForward, Plus, X, Trash2, Pencil, Check, ChevronLeft } from "lucide-react";
+import { Loader2, CheckCircle2, SkipForward, Plus, X, Trash2, Pencil, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 function PersonRow({ line, onDelete, onUpdate }) {
@@ -125,9 +125,11 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
     toast.success("Ενημερώθηκε");
   };
 
+  const [showAddForm, setShowAddForm] = React.useState(false);
+
   return (
     <div className="border-t p-3 space-y-2 overflow-y-auto flex-1 min-h-0 flex flex-col">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-1">
           <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>
           <p className="text-xs font-semibold text-slate-700">Team Time - Persons</p>
@@ -137,8 +139,63 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
         </Button>
       </div>
 
+      {/* Expandable Add Form Section */}
+      <details className="group flex-shrink-0">
+        <summary className="cursor-pointer flex items-center justify-between px-2 py-1.5 bg-blue-600 text-white rounded text-xs font-medium">
+          <span>Προσθήκη Ατόμων</span>
+          <ChevronRight className="w-4 h-4 group-open:rotate-90 transition-transform" />
+        </summary>
+        <div className="mt-2 border rounded p-2 space-y-1 bg-slate-50">
+          <p className="text-[10px] font-semibold text-slate-400 uppercase">Χρόνοι Εργασίας</p>
+          <div className="grid grid-cols-3 gap-1">
+            {[["from_time","Από","time"],["to_time","Έως","time"],["break_time_minutes","Διάλ.(min)","number"]].map(([field, label, type]) => (
+              <div key={field}>
+                <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
+                <input type={type} value={form[field]}
+                  onChange={e => setForm(f => ({ ...f, [field]: type === "number" ? Number(e.target.value) : e.target.value }))}
+                  className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
+                />
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] text-slate-500">Διαθέσιμος: <strong>{calcAvail(form.from_time, form.to_time, form.break_time_minutes)} min</strong></p>
+          <input type="text" placeholder="Search..." value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
+          />
+          {form.person_names.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {form.person_names.map(n => (
+                <span key={n} className="flex items-center gap-1 bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full">
+                  {n}
+                  <button onClick={() => togglePerson(n)}><X className="w-2.5 h-2.5" /></button>
+                </span>
+              ))}
+            </div>
+          )}
+          <div className="border rounded max-h-28 overflow-y-auto">
+            {filteredPersons.length === 0
+              ? <p className="text-[10px] text-slate-400 p-2 text-center">No persons found</p>
+              : filteredPersons.map(p => (
+                <button key={p.id} onClick={() => togglePerson(p.name)}
+                  className={`w-full text-left text-xs px-2 py-1.5 hover:bg-slate-50 flex items-center gap-2
+                    ${form.person_names.includes(p.name) ? "bg-blue-50 text-blue-700" : "text-slate-700"}`}>
+                  <span className={`w-3 h-3 rounded border flex-shrink-0 ${form.person_names.includes(p.name) ? "bg-blue-500 border-blue-500" : "border-slate-300"}`} />
+                  {p.name}
+                </button>
+              ))
+            }
+          </div>
+          <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+            onClick={handleAdd} disabled={isSaving || !form.person_names.length}>
+            {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
+            Προσθήκη ({form.person_names.length})
+          </Button>
+        </div>
+      </details>
+
       {lines.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
+        <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700 flex-shrink-0">
           ✅ {lines.length} άτομα · Σύνολο: {totalAvail} min ({(totalAvail / 60).toFixed(1)} hrs)
         </div>
       )}
@@ -152,60 +209,6 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
         </div>
       )}
 
-      {/* Time inputs for new entries */}
-      <div className="border-t pt-2 space-y-1">
-        <p className="text-[10px] font-semibold text-slate-400 uppercase">Προσθήκη ατόμων</p>
-        <div className="grid grid-cols-3 gap-1">
-          {[["from_time","Από","time"],["to_time","Έως","time"],["break_time_minutes","Διάλ.(min)","number"]].map(([field, label, type]) => (
-            <div key={field}>
-              <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
-              <input type={type} value={form[field]}
-                onChange={e => setForm(f => ({ ...f, [field]: type === "number" ? Number(e.target.value) : e.target.value }))}
-                className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
-              />
-            </div>
-          ))}
-        </div>
-        <p className="text-[10px] text-slate-500">
-          Διαθέσιμος: <strong>{calcAvail(form.from_time, form.to_time, form.break_time_minutes)} min</strong>
-        </p>
-
-        <input type="text" placeholder="Αναζήτηση ατόμου..." value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
-        />
-
-        {form.person_names.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {form.person_names.map(n => (
-              <span key={n} className="flex items-center gap-1 bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full">
-                {n}
-                <button onClick={() => togglePerson(n)}><X className="w-2.5 h-2.5" /></button>
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="border rounded max-h-28 overflow-y-auto">
-          {filteredPersons.length === 0
-            ? <p className="text-[10px] text-slate-400 p-2 text-center">Δεν βρέθηκαν άτομα</p>
-            : filteredPersons.map(p => (
-              <button key={p.id} onClick={() => togglePerson(p.name)}
-                className={`w-full text-left text-xs px-2 py-1.5 hover:bg-slate-50 flex items-center gap-2
-                  ${form.person_names.includes(p.name) ? "bg-blue-50 text-blue-700" : "text-slate-700"}`}>
-                <span className={`w-3 h-3 rounded border flex-shrink-0 ${form.person_names.includes(p.name) ? "bg-blue-500 border-blue-500" : "border-slate-300"}`} />
-                {p.name}
-              </button>
-            ))
-          }
-        </div>
-
-        <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
-          onClick={handleAdd} disabled={isSaving || !form.person_names.length}>
-          {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
-          Προσθήκη ({form.person_names.length})
-        </Button>
-      </div>
 
       <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
         onClick={() => onNext("⏭ Team Time Persons – Συνέχεια...")}>

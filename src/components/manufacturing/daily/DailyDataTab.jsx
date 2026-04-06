@@ -58,30 +58,30 @@ export default function DailyDataTab({
           </p>
         ) : (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
+            <p className="text-xs font-semibold text-slate-600 mb-2">Departments</p>
+            <div className="flex flex-wrap gap-2 mb-3">
               {departments.map(dept => {
                 const hasBatch = departmentsWithBatches.has(dept.name);
                 return (
                   <Button
-                    key={dept.id}
-                    variant={selDept === dept.name ? "default" : "outline"}
-                    size="sm"
-                    className="text-xs justify-start"
-                    disabled={!hasBatch}
-                    onClick={() => {
-                      if (hasBatch) {
-                        setSelDept(dept.name);
-                        if (setStep) setStep("batch_lines_add");
-                        const batch = dateBatches.find(b => b.department === dept.name);
-                        if (batch && setSelBatch) {
-                          setSelBatch(batch);
-                        }
-                      }
-                    }}
-                  >
-                    {dept.name}
-                    {!hasBatch && <span className="text-[10px] text-slate-400 ml-1">(no batch)</span>}
-                  </Button>
+                     key={dept.id}
+                     variant={selDept === dept.name ? "default" : hasBatch ? "outline" : "secondary"}
+                     size="sm"
+                     className="text-xs whitespace-nowrap"
+                     disabled={!hasBatch}
+                     onClick={() => {
+                       if (hasBatch) {
+                         setSelDept(dept.name);
+                         if (setStep) setStep("batch_lines_add");
+                         const batch = dateBatches.find(b => b.department === dept.name);
+                         if (batch && setSelBatch) {
+                           setSelBatch(batch);
+                         }
+                       }
+                     }}
+                   >
+                     {dept.name}
+                   </Button>
                 );
               })}
             </div>

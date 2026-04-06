@@ -1198,10 +1198,9 @@ CRITICAL SAFETY RULES:
               if (bundleItemCodes.includes(blCode)) return null;
               return (
                 <div key={bl.id} className="bg-red-50 border border-red-200 rounded px-2 py-1.5 flex items-start gap-2">
-                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-red-600" />
-                  <div className="text-xs text-red-700">
-                    <p className="font-semibold">{blCode} - Δεν υπάρχει στα standards</p>
-                    <p className="text-red-600 mt-0.5">Διαθέσιμα: {bundleItemCodes.slice(0, 3).join(", ")}{bundleItemCodes.length > 3 ? "..." : ""}</p>
+                  <AlertTriangle className="w-3 h-3 flex-shrink-0 mt-1 text-red-600" />
+                  <div className="text-xs text-red-700 flex-1">
+                    <p className="font-semibold">{blCode}</p>
                   </div>
                 </div>
               );

@@ -283,7 +283,7 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
   return (
     <div className="border-t p-3 space-y-2 overflow-y-auto flex-1 min-h-0 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-1">
           <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>
           <p className="text-xs font-semibold text-slate-700">Operations</p>
@@ -293,9 +293,30 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
         </Button>
       </div>
 
+      {/* Sync & Add Buttons - Top Priority */}
+      <div className="flex gap-2 flex-shrink-0">
+        <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={handleSync} disabled={isSyncing}>
+          {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+          Sync ({processedCount})
+        </Button>
+        <Button
+          size="sm" variant="outline" className="flex-1 text-xs"
+          onClick={() => {
+            if (!showAddForm && itemCodes.length === 1) {
+              setFormData(f => ({ ...f, item_code: itemCodes[0] }));
+            }
+            setErrorMsg("");
+            setShowAddForm(v => !v);
+          }}
+        >
+          <Plus className="w-3 h-3 mr-1" />
+          {showAddForm ? "Close" : "Add"}
+        </Button>
+      </div>
+
       {/* Summary */}
       {existingOps.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
+        <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700 flex-shrink-0">
           ✅ {existingOps.length} operations · Σύνολο: {totalOpTime.toFixed(1)} min
         </div>
       )}
@@ -335,22 +356,6 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
           </div>
         );
       })()}
-
-      {/* Toggle Add Form */}
-      <Button
-        size="sm" variant="outline"
-        className="w-full text-xs"
-        onClick={() => {
-          if (!showAddForm && itemCodes.length === 1) {
-            setFormData(f => ({ ...f, item_code: itemCodes[0] }));
-          }
-          setErrorMsg("");
-          setShowAddForm(v => !v);
-        }}
-      >
-        <Plus className="w-3 h-3 mr-1" />
-        {showAddForm ? "Κλείσιμο Φόρμας" : "Προσθήκη Operations (Profile)"}
-      </Button>
 
       {/* Add Form */}
       {showAddForm && (
@@ -494,12 +499,6 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
           </Button>
         </div>
       )}
-
-      {/* Sync Button */}
-      <Button size="sm" variant="outline" className="w-full text-xs" onClick={handleSync} disabled={isSyncing}>
-        {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-        Sync από Batch Lines ({processedCount} items)
-      </Button>
 
       {/* Continue */}
       <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
