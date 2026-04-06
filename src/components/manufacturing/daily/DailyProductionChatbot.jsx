@@ -358,7 +358,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       );
     },
     onError: (err) => { 
-      console.error("Batch creation error:", err);
       toast.error("Αποτυχία δημιουργίας batch: " + (err?.message || "Άγνωστο σφάλμα")); 
       addMsg("bot", "❌ Σφάλμα κατά τη δημιουργία batch: " + (err?.message || "Άγνωστο σφάλμα")); 
     }
@@ -389,7 +388,6 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       queryClient.invalidateQueries(["BatchAttachments", selBatch?.id]);
       addMsg("bot", `📎 Αρχείο "${att.file_name}" ανέβηκε επιτυχώς!`);
     } catch (err) {
-      console.error("Upload error:", err);
       addMsg("bot", `❌ Αποτυχία ανεβάσματος "${file.name}": ${err?.message || "Άγνωστο σφάλμα"}`);
     } finally {
       setUploadingCount(c => c - 1);
@@ -537,9 +535,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
     // Save corrected data to production OCR cache
     if (currentProductionCacheId) {
-      saveCorrectedOCRCacheData(currentProductionCacheId, confirmedData).catch(err =>
-        console.error("Failed to save corrected production OCR cache data:", err)
-      );
+      saveCorrectedOCRCacheData(currentProductionCacheId, confirmedData).catch(() => {});
     }
 
     if (selBatch?.id) {
@@ -583,9 +579,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
     // Save corrected data to teams_time OCR cache
     if (currentTeamsTimeCacheId) {
-      saveCorrectedOCRCacheData(currentTeamsTimeCacheId, confirmedData).catch(err =>
-        console.error("Failed to save corrected teams_time OCR cache data:", err)
-      );
+      saveCorrectedOCRCacheData(currentTeamsTimeCacheId, confirmedData).catch(() => {});
     }
 
     if (selBatch?.id) {
@@ -1044,13 +1038,15 @@ ${context}
       <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700" disabled={isSavingLine}
         onClick={async () => {
           setIsSavingLine(true);
-          for (const item of blReviewItems) {
+          const itemsToSave = [...blReviewItems];
+          for (const item of itemsToSave) {
             await base44.entities.Batch_Lines.update(item.id, { qty_processed: item.qty_processed, qty_out_good: item.qty_out_good, qty_scrap: item.qty_scrap });
           }
           queryClient.invalidateQueries(["Batch_Lines", selBatch?.id]);
+          if (!isMountedRef.current) return;
           setIsSavingLine(false);
           setStep("batch_lines_add");
-          addMsg("bot", `✅ Όλα τα ${blReviewItems.length} items αποθηκεύτηκαν.`);
+          addMsg("bot", `✅ Όλα τα ${itemsToSave.length} items αποθηκεύτηκαν.`);
         }}>
         <FastForward className="w-3 h-3 mr-1" /> Επιβεβαίωση Όλων & Συνέχεια
       </Button>
