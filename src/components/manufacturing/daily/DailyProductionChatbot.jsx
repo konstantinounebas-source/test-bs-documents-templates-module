@@ -1189,13 +1189,7 @@ CRITICAL SAFETY RULES:
   ) : null;
 
   const renderBatchLinesAdd = () => (
-    <div className="space-y-3">
-      <div className="flex justify-end px-3 pt-3">
-        <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => setShowAttachmentsModal(true)}>
-          <Paperclip className="w-3 h-3 mr-1" /> Attachments
-        </Button>
-      </div>
-      <div className="border-t p-3 space-y-3 overflow-y-auto max-h-80">
+    <div className="border-t p-3 space-y-3 overflow-y-auto flex-1">
         {existingBatchLines.length > 0 && bundleItemCodes.length > 0 && (
           <div className="space-y-1.5">
             {existingBatchLines.map((bl) => {
@@ -1267,7 +1261,6 @@ CRITICAL SAFETY RULES:
             <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → QC
           </Button>
         </div>
-      </div>
     </div>
   );
 
