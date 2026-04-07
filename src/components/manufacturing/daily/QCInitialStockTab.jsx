@@ -466,7 +466,7 @@ export default function QCInitialStockTab({ batchId, department }) {
   }
 
   return (
-    <div className="flex flex-col h-full space-y-4">
+    <div className="flex flex-col h-full space-y-4 overflow-hidden">
       {!hasItemCodes && !itemCodesLoading && (
         <Alert variant="destructive">
           <AlertCircle className="w-4 h-4" />
@@ -512,7 +512,7 @@ export default function QCInitialStockTab({ batchId, department }) {
         </div>
       )}
 
-      <div className="border rounded-lg overflow-auto bg-white shadow-sm flex-1 min-h-0">
+      <div className="border rounded-lg overflow-auto bg-white shadow-sm flex-1">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50 sticky top-0 z-10">
