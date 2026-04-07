@@ -51,6 +51,7 @@ export default function FactoryFinancialCalculations() {
     const [totalWorkingDays, setTotalWorkingDays] = useState(0);
     const [avgWorkingDaysPerMonth, setAvgWorkingDaysPerMonth] = useState(22);
     const [avgWorkingDaysPerYear, setAvgWorkingDaysPerYear] = useState(260);
+    const [testRevenueAmount, setTestRevenueAmount] = useState(0);
     
     // Income section
     const [shelterRevenueItems, setShelterRevenueItems] = useState([]);
@@ -964,6 +965,63 @@ export default function FactoryFinancialCalculations() {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Depreciation Rate on Revenue */}
+                        {(() => {
+                            const totalRevenue = calculateTotalIncome();
+                            const totalDepreciationCost = calculateInvestmentTotal();
+                            const depreciationRate = totalRevenue > 0 ? totalDepreciationCost / totalRevenue : 0;
+                            const depreciationRatePercent = depreciationRate * 100;
+                            const depreciationOnTestRevenue = (parseFloat(testRevenueAmount) || 0) * depreciationRate;
+
+                            return (
+                                <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+                                    <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                            <TrendingUp className="w-5 h-5 text-amber-600" />
+                                            Depreciation Rate on Revenue
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="p-3 bg-white rounded-lg border border-amber-100">
+                                                <Label className="text-xs text-slate-600">Total Revenue</Label>
+                                                <p className="text-lg font-semibold text-amber-700">{formatCurrency(totalRevenue)}</p>
+                                            </div>
+                                            <div className="p-3 bg-white rounded-lg border border-amber-100">
+                                                <Label className="text-xs text-slate-600">Total Depreciation Cost</Label>
+                                                <p className="text-lg font-semibold text-amber-700">{formatCurrency(totalDepreciationCost)}</p>
+                                            </div>
+                                            <div className="p-3 bg-white rounded-lg border border-amber-100">
+                                                <Label className="text-xs text-slate-600">Depreciation Factor</Label>
+                                                <p className="text-lg font-semibold text-amber-700">{depreciationRate.toFixed(4)}</p>
+                                            </div>
+                                            <div className="p-3 bg-white rounded-lg border border-amber-100">
+                                                <Label className="text-xs text-slate-600">Depreciation %</Label>
+                                                <p className="text-lg font-semibold text-amber-700">{depreciationRatePercent.toFixed(2)}%</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="pt-4 border-t border-amber-200 space-y-3">
+                                            <div>
+                                                <Label className="text-sm font-semibold">Test Revenue Amount</Label>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0.00"
+                                                    value={testRevenueAmount}
+                                                    onChange={(e) => setTestRevenueAmount(parseFloat(e.target.value) || 0)}
+                                                    className="mt-1"
+                                                />
+                                            </div>
+                                            <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                                                <Label className="text-xs text-slate-600">Depreciation on Test Revenue</Label>
+                                                <p className="text-lg font-semibold text-amber-700">{formatCurrency(depreciationOnTestRevenue)}</p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })()}
                     </>
                 )}
             </div>
