@@ -69,6 +69,11 @@ export default function FactoryFinancialCalculations() {
     const [busStopTypes, setBusStopTypes] = useState([]);
     const [dailyMetrics, setDailyMetrics] = useState([]);
     
+    // Depreciation module states
+    const [depreciationInvestments, setDepreciationInvestments] = useState([]);
+    const [estimatedRevenues, setEstimatedRevenues] = useState([]);
+    const [additionalRevenues, setAdditionalRevenues] = useState([]);
+    
     // Collapsible sections state
     const [expandedSections, setExpandedSections] = useState({
         operational: true,
@@ -142,6 +147,11 @@ export default function FactoryFinancialCalculations() {
             setInvestmentAmortization(record.investment_amortization || []);
             setMaintenanceCosts(record.maintenance_costs || []);
             
+            // Load depreciation module data
+            setDepreciationInvestments(record.depreciation_module?.investments || []);
+            setEstimatedRevenues(record.depreciation_module?.estimated_revenues || []);
+            setAdditionalRevenues(record.depreciation_module?.additional_revenues || []);
+            
         } catch (error) {
             console.error('Failed to load record data:', error);
             toast.error('Σφάλμα φόρτωσης δεδομένων εγγραφής');
@@ -169,7 +179,12 @@ export default function FactoryFinancialCalculations() {
                 fixed_costs: fixedCosts,
                 overhead_costs: overheadCosts,
                 investment_amortization: investmentAmortization,
-                maintenance_costs: maintenanceCosts
+                maintenance_costs: maintenanceCosts,
+                depreciation_module: {
+                    investments: depreciationInvestments,
+                    estimated_revenues: estimatedRevenues,
+                    additional_revenues: additionalRevenues
+                }
             };
 
             await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
@@ -206,6 +221,11 @@ export default function FactoryFinancialCalculations() {
                 overhead_costs: overheadCosts,
                 investment_amortization: investmentAmortization,
                 maintenance_costs: maintenanceCosts,
+                depreciation_module: {
+                    investments: depreciationInvestments,
+                    estimated_revenues: estimatedRevenues,
+                    additional_revenues: additionalRevenues
+                },
                 is_active: true
             };
 
@@ -240,6 +260,11 @@ export default function FactoryFinancialCalculations() {
                 overhead_costs: [],
                 investment_amortization: [],
                 maintenance_costs: [],
+                depreciation_module: {
+                    investments: [],
+                    estimated_revenues: [],
+                    additional_revenues: []
+                },
                 is_active: true
             });
             
