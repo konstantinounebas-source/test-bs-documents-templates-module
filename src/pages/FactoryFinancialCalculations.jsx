@@ -58,6 +58,8 @@ import {
     DEFAULT_OPERATIONAL_COSTS,
     ensureRowsWithDefaults,
     normalizeLoadedExpenseRows,
+    initializeFixedExpenseRows,
+    initializeOperationalExpenseRows,
 } from "@/components/factory-financial/utils/expenseRowDefaults";
 
 export default function FactoryFinancialCalculations() {
@@ -302,8 +304,8 @@ export default function FactoryFinancialCalculations() {
                 shelter_revenue_items: [],
                 personnel_costs: [],
                 bill_of_materials_costs: [],
-                fixed_costs: ensureRowsWithDefaults([], 'with_defaults'),
-                operational_costs: ensureRowsWithDefaults([], 'with_defaults'),
+                fixed_costs: initializeFixedExpenseRows('with_defaults'),
+                operational_costs: initializeOperationalExpenseRows('with_defaults'),
                 overhead_costs: [],
                 investment_amortization: [],
                 maintenance_costs: [],
@@ -591,12 +593,12 @@ export default function FactoryFinancialCalculations() {
                                  convertCostToDaily={(amount, freq) => convertCostToDaily(amount, freq, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays)}
                                  calculateCostTotal={() => calculateCostTotal(fixedCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear)}
                                  onToggleSection={toggleSection}
-                                 onAddItem={() => setFixedCosts(addArrayItem(fixedCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
-                                 onRemoveItem={(idx) => setFixedCosts(removeArrayItem(fixedCosts, idx))}
-                                 onUpdateItem={(idx, field, value) => setFixedCosts(updateArrayItem(fixedCosts, idx, field, value))}
-                                 onAddDeptAlloc={(idx) => setFixedCosts(addDeptAllocation(fixedCosts, idx))}
-                                 onUpdateDeptAlloc={(idx, allocIdx, field, value) => setFixedCosts(updateDeptAllocation(fixedCosts, idx, allocIdx, field, value))}
-                                 onRemoveDeptAlloc={(idx, allocIdx) => setFixedCosts(removeDeptAllocation(fixedCosts, idx, allocIdx))}
+                                 onAddItem={() => setFixedCosts(prev => addArrayItem(prev, { description: '', amount: 0, frequency_type: 'monthly', category: 'fixed', department_allocations: [] }))}
+                                 onRemoveItem={(idx) => setFixedCosts(prev => removeArrayItem(prev, idx))}
+                                 onUpdateItem={(idx, field, value) => setFixedCosts(prev => updateArrayItem(prev, idx, field, value))}
+                                 onAddDeptAlloc={(idx) => setFixedCosts(prev => addDeptAllocation(prev, idx))}
+                                 onUpdateDeptAlloc={(idx, allocIdx, field, value) => setFixedCosts(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
+                                 onRemoveDeptAlloc={(idx, allocIdx) => setFixedCosts(prev => removeDeptAllocation(prev, idx, allocIdx))}
                              />
 
                              {/* Operational Costs - Table Style */}
@@ -609,12 +611,12 @@ export default function FactoryFinancialCalculations() {
                                  convertCostToDaily={(amount, freq) => convertCostToDaily(amount, freq, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays)}
                                  calculateCostTotal={() => calculateCostTotal(operationalCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear)}
                                  onToggleSection={toggleSection}
-                                 onAddItem={() => setOperationalCosts(addArrayItem(operationalCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
-                                 onRemoveItem={(idx) => setOperationalCosts(removeArrayItem(operationalCosts, idx))}
-                                 onUpdateItem={(idx, field, value) => setOperationalCosts(updateArrayItem(operationalCosts, idx, field, value))}
-                                 onAddDeptAlloc={(idx) => setOperationalCosts(addDeptAllocation(operationalCosts, idx))}
-                                 onUpdateDeptAlloc={(idx, allocIdx, field, value) => setOperationalCosts(updateDeptAllocation(operationalCosts, idx, allocIdx, field, value))}
-                                 onRemoveDeptAlloc={(idx, allocIdx) => setOperationalCosts(removeDeptAllocation(operationalCosts, idx, allocIdx))}
+                                 onAddItem={() => setOperationalCosts(prev => addArrayItem(prev, { description: '', amount: 0, frequency_type: 'monthly', category: 'operational', department_allocations: [] }))}
+                                 onRemoveItem={(idx) => setOperationalCosts(prev => removeArrayItem(prev, idx))}
+                                 onUpdateItem={(idx, field, value) => setOperationalCosts(prev => updateArrayItem(prev, idx, field, value))}
+                                 onAddDeptAlloc={(idx) => setOperationalCosts(prev => addDeptAllocation(prev, idx))}
+                                 onUpdateDeptAlloc={(idx, allocIdx, field, value) => setOperationalCosts(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
+                                 onRemoveDeptAlloc={(idx, allocIdx) => setOperationalCosts(prev => removeDeptAllocation(prev, idx, allocIdx))}
                              />
 
                              {/* Other Costs - Using FactoryCostSectionsCard */}

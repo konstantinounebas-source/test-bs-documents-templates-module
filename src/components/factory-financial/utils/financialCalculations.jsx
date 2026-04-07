@@ -173,5 +173,6 @@ export const calculateDepartmentSummary = (
             ...d,
             grand_total: d.personnel_total + d.fixed_total + d.operational_total + d.overhead_total + d.maintenance_total + d.investment_amortization_total + d.depreciation_investments_total
         }))
+        .sort((a, b) => a.department_name.localeCompare(b.department_name))
         .filter(d => d.grand_total > 0);
 };

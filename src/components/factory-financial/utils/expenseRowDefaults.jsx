@@ -128,6 +128,30 @@ export function getAllDefaultExpenseRows() {
 }
 
 /**
+ * Initialize fixed expense rows for a new record
+ * @param {string} mode - "with_defaults" | "empty"
+ * @returns {Array} Initialized fixed expense rows
+ */
+export function initializeFixedExpenseRows(mode = 'with_defaults') {
+  if (mode === 'with_defaults') {
+    return [...DEFAULT_FIXED_COSTS];
+  }
+  return [];
+}
+
+/**
+ * Initialize operational expense rows for a new record
+ * @param {string} mode - "with_defaults" | "empty"
+ * @returns {Array} Initialized operational expense rows
+ */
+export function initializeOperationalExpenseRows(mode = 'with_defaults') {
+  if (mode === 'with_defaults') {
+    return [...DEFAULT_OPERATIONAL_COSTS];
+  }
+  return [];
+}
+
+/**
  * Initialize expense rows for a new record
  * Returns full set of defaults or empty array based on mode
  * @param {string} mode - "with_defaults" | "empty"
