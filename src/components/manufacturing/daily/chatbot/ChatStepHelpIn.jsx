@@ -10,6 +10,7 @@ export default function ChatStepHelpIn({ batchId, department, onNext, onSkip, on
   const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({ department: department || "", from_department: "", help_min: "" });
+  const [addExpanded, setAddExpanded] = useState(false);
 
   const { data: departments = [] } = useQuery({
     queryKey: ["Department"],
@@ -67,6 +68,41 @@ export default function ChatStepHelpIn({ batchId, department, onNext, onSkip, on
         </Button>
       </div>
 
+      {/* Add form - Collapsible at top */}
+      <div className="border border-slate-200 rounded p-2 bg-slate-50 space-y-1">
+        <div className="flex items-center justify-between cursor-pointer" onClick={() => setAddExpanded(e => !e)}>
+          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Προσθήκη</p>
+          <span className="text-xs text-slate-400">{addExpanded ? '▼' : '▶'}</span>
+        </div>
+        {addExpanded && (
+          <>
+            {[["department","Τμήμα (Λαμβάνει)"],["from_department","Από Τμήμα"]].map(([field, label]) => (
+              <div key={field}>
+                <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
+                <Select value={form[field]} onValueChange={v => setForm(f => ({ ...f, [field]: v }))}>
+                  <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε τμήμα..." /></SelectTrigger>
+                  <SelectContent>
+                    {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
+            <div>
+              <p className="text-[10px] text-slate-500 mb-0.5">Help Time (min)</p>
+              <input type="number" min="0" placeholder="0" value={form.help_min}
+                onChange={e => setForm(f => ({ ...f, help_min: e.target.value }))}
+                className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 bg-white"
+              />
+            </div>
+            <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+              onClick={handleAdd} disabled={isSaving}>
+              {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
+              Προσθήκη
+            </Button>
+          </>
+        )}
+      </div>
+
       {/* Existing entries */}
       {lines.length > 0 && (
         <>
@@ -87,35 +123,6 @@ export default function ChatStepHelpIn({ batchId, department, onNext, onSkip, on
           </div>
         </>
       )}
-
-      {/* Add form */}
-      <div className="border-t pt-2 space-y-1">
-        <p className="text-[10px] font-semibold text-slate-400 uppercase">Προσθήκη</p>
-        {[["department","Τμήμα (Λαμβάνει)"],["from_department","Από Τμήμα"]].map(([field, label]) => (
-          <div key={field}>
-            <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
-            <Select value={form[field]} onValueChange={v => setForm(f => ({ ...f, [field]: v }))}>
-              <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε τμήμα..." /></SelectTrigger>
-              <SelectContent>
-                {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        ))}
-        <div>
-          <p className="text-[10px] text-slate-500 mb-0.5">Help Time (min)</p>
-          <input type="number" min="0" placeholder="0" value={form.help_min}
-            onChange={e => setForm(f => ({ ...f, help_min: e.target.value }))}
-            className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
-          />
-        </div>
-      </div>
-
-      <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
-        onClick={handleAdd} disabled={isSaving}>
-        {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
-        Προσθήκη
-      </Button>
 
       <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
         onClick={() => onNext("⏭ Help In – Συνέχεια...")}>
