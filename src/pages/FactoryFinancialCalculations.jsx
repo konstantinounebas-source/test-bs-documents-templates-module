@@ -51,7 +51,6 @@ export default function FactoryFinancialCalculations() {
     const [totalWorkingDays, setTotalWorkingDays] = useState(0);
     const [avgWorkingDaysPerMonth, setAvgWorkingDaysPerMonth] = useState(22);
     const [avgWorkingDaysPerYear, setAvgWorkingDaysPerYear] = useState(260);
-    const [testRevenueAmount, setTestRevenueAmount] = useState(0);
     
     // Income section
     const [shelterRevenueItems, setShelterRevenueItems] = useState([]);
@@ -541,12 +540,30 @@ export default function FactoryFinancialCalculations() {
         return `€${parseFloat(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
-    // Depreciation calculation values
-    const totalRevenue = calculateTotalIncome();
-    const totalDepreciationCost = calculateInvestmentTotal();
-    const depreciationRate = totalRevenue > 0 ? totalDepreciationCost / totalRevenue : 0;
-    const depreciationRatePercent = depreciationRate * 100;
-    const depreciationOnTestRevenue = (parseFloat(testRevenueAmount) || 0) * depreciationRate;
+    // Depreciation module calculations
+    const calculateDepreciationInvestmentsTotal = () => {
+        return depreciationInvestments.reduce((sum, item) => sum + (parseFloat(item.total_amount) || 0), 0);
+    };
+
+    const calculateEstimatedRevenuesTotal = () => {
+        return estimatedRevenues.reduce((sum, item) => {
+            const total = item.total_revenue || (parseFloat(item.pending_quantity) || 0) * (parseFloat(item.unit_revenue) || 0);
+            return sum + total;
+        }, 0);
+    };
+
+    const calculateAdditionalRevenuesTotal = () => {
+        return additionalRevenues.reduce((sum, item) => sum + (parseFloat(item.total_amount) || 0), 0);
+    };
+
+    const calculateTotalDepreciationRevenueBase = () => {
+        return calculateEstimatedRevenuesTotal() + calculateAdditionalRevenuesTotal();
+    };
+
+    const calculateDepreciationFactor = () => {
+        const revenueBase = calculateTotalDepreciationRevenueBase();
+        return revenueBase > 0 ? calculateDepreciationInvestmentsTotal() / revenueBase : 0;
+    };
 
     if (accessLoading || isLoading) {
         return (
@@ -1010,36 +1027,19 @@ export default function FactoryFinancialCalculations() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="p-3 bg-white rounded-lg border border-amber-100">
                                         <Label className="text-xs text-slate-600">Total Revenue</Label>
-                                        <p className="text-lg font-semibold text-amber-700">{formatCurrency(totalRevenue)}</p>
+                                        <p className="text-lg font-semibold text-amber-700">{formatCurrency(calculateTotalDepreciationRevenueBase())}</p>
                                     </div>
                                     <div className="p-3 bg-white rounded-lg border border-amber-100">
                                         <Label className="text-xs text-slate-600">Total Depreciation Cost</Label>
-                                        <p className="text-lg font-semibold text-amber-700">{formatCurrency(totalDepreciationCost)}</p>
+                                        <p className="text-lg font-semibold text-amber-700">{formatCurrency(calculateDepreciationInvestmentsTotal())}</p>
                                     </div>
                                     <div className="p-3 bg-white rounded-lg border border-amber-100">
                                         <Label className="text-xs text-slate-600">Depreciation Factor</Label>
-                                        <p className="text-lg font-semibold text-amber-700">{depreciationRate.toFixed(4)}</p>
+                                        <p className="text-lg font-semibold text-amber-700">{calculateDepreciationFactor().toFixed(4)}</p>
                                     </div>
                                     <div className="p-3 bg-white rounded-lg border border-amber-100">
                                         <Label className="text-xs text-slate-600">Depreciation %</Label>
-                                        <p className="text-lg font-semibold text-amber-700">{depreciationRatePercent.toFixed(2)}%</p>
-                                    </div>
-                                </div>
-                                
-                                <div className="pt-4 border-t border-amber-200 space-y-3">
-                                    <div>
-                                        <Label className="text-sm font-semibold">Test Revenue Amount</Label>
-                                        <Input
-                                            type="number"
-                                            placeholder="0.00"
-                                            value={testRevenueAmount}
-                                            onChange={(e) => setTestRevenueAmount(parseFloat(e.target.value) || 0)}
-                                            className="mt-1"
-                                        />
-                                    </div>
-                                    <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
-                                        <Label className="text-xs text-slate-600">Depreciation on Test Revenue</Label>
-                                        <p className="text-lg font-semibold text-amber-700">{formatCurrency(depreciationOnTestRevenue)}</p>
+                                        <p className="text-lg font-semibold text-amber-700">{(calculateDepreciationFactor() * 100).toFixed(2)}%</p>
                                     </div>
                                 </div>
                             </CardContent>
