@@ -19,13 +19,13 @@ function ConsumableRow({ line, onDelete, onUpdate }) {
   };
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1 text-[10px] text-slate-700 hover:bg-slate-50 group">
+    <div className="flex items-center gap-1 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 group">
       <span className="flex-1 truncate font-medium">{line.consumable}</span>
       <span className="text-slate-400 truncate max-w-[40px]">{line.item_code}</span>
       {editing ? (
         <>
           <input type="number" value={val} onChange={e => setVal(e.target.value)}
-            className="w-14 border rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-400" />
+            className="w-14 border rounded px-1 py-0.5 text-xs outline-none focus:border-blue-400" />
           <button onClick={save} disabled={saving} className="text-green-600 hover:text-green-800">
             {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
           </button>
@@ -192,7 +192,7 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
             ✅ {lines.length} εγγραφές · EXP: {totalExpected.toFixed(2)} · ACT: {totalActual.toFixed(2)}
           </div>
           <div className="border rounded divide-y flex-1 min-h-0 overflow-y-auto">
-            <div className="grid grid-cols-4 px-2 py-1 text-[9px] font-semibold text-slate-400 uppercase">
+            <div className="grid grid-cols-4 px-2 py-1 text-xs font-semibold text-slate-400 uppercase">
               <span>Consumable</span><span>Item</span><span className="text-right">EXP</span><span className="text-right">ACT</span>
             </div>
             {lines.map(l => (
@@ -211,11 +211,11 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
       {expectedRows.length > 0 && (
         <>
           {autoGenerateMutation.isError && (
-            <div className="bg-red-50 border border-red-200 rounded p-2 text-xs text-red-700">
+            <div className="bg-red-50 border border-red-200 rounded p-2 text-sm text-red-700">
               ❌ {autoGenerateMutation.error?.message || "Σφάλμα κατά τη δημιουργία"}
             </div>
           )}
-          <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => {
+          <Button size="sm" variant="outline" className="w-full text-sm" onClick={() => {
             setErrorMsg("");
             autoGenerateMutation.mutate();
           }}
@@ -227,20 +227,20 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
       )}
 
       {/* Manual Add */}
-      <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => setShowAddForm(f => !f)}>
+      <Button size="sm" variant="outline" className="w-full text-sm" onClick={() => setShowAddForm(f => !f)}>
         <Plus className="w-3 h-3 mr-1" /> Add Manual
       </Button>
 
       {showAddForm && (
         <div className="border rounded p-2 space-y-1.5 bg-slate-50">
           {errorMsg && (
-            <div className="bg-red-50 border border-red-200 rounded p-1.5 text-xs text-red-700 mb-1">
+            <div className="bg-red-50 border border-red-200 rounded p-1.5 text-sm text-red-700 mb-1">
               ❌ {errorMsg}
             </div>
           )}
-          <p className="text-[10px] font-semibold text-slate-400 uppercase">Add Consumable</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase">Add Consumable</p>
           <div>
-            <p className="text-[10px] text-slate-500 mb-0.5">Consumable *</p>
+            <p className="text-xs text-slate-500 mb-0.5">Consumable *</p>
             <Select value={manualForm.consumable} onValueChange={v => setManualForm(f => ({ ...f, consumable: v }))}>
               <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Select consumable" /></SelectTrigger>
               <SelectContent>
@@ -250,7 +250,7 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
           </div>
           {operationOptions.length > 0 && (
             <div>
-              <p className="text-[10px] text-slate-500 mb-0.5">Item Code + Operation</p>
+              <p className="text-xs text-slate-500 mb-0.5">Item Code + Operation</p>
               <Select onValueChange={v => {
                 const [item_code, operation] = v.split("||");
                 setManualForm(f => ({ ...f, item_code, operation }));
@@ -265,33 +265,33 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
             </div>
           )}
           <div>
-            <p className="text-[10px] text-slate-500 mb-0.5">Unit *</p>
+            <p className="text-xs text-slate-500 mb-0.5">Unit *</p>
             <input placeholder="e.g., kg, ltr, pcs" value={manualForm.unit}
               onChange={e => setManualForm(f => ({ ...f, unit: e.target.value }))}
               className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-500 mb-0.5">Actual Qty *</p>
+            <p className="text-xs text-slate-500 mb-0.5">Actual Qty *</p>
             <input type="number" step="0.01" placeholder="0.00" value={manualForm.actual_qty}
               onChange={e => setManualForm(f => ({ ...f, actual_qty: e.target.value }))}
               className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-500 mb-0.5">Notes</p>
+            <p className="text-xs text-slate-500 mb-0.5">Notes</p>
             <input placeholder="Optional notes..." value={manualForm.notes}
               onChange={e => setManualForm(f => ({ ...f, notes: e.target.value }))}
               className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
           </div>
           <div className="flex gap-1 pt-1">
-            <Button size="sm" variant="outline" className="flex-1 text-xs h-7" onClick={() => setShowAddForm(false)}>Ακύρωση</Button>
-            <Button size="sm" className="flex-1 text-xs h-7 bg-slate-800 hover:bg-slate-900" onClick={handleAddManual} disabled={isSavingManual}>
+            <Button size="sm" variant="outline" className="flex-1 text-sm h-7" onClick={() => setShowAddForm(false)}>Ακύρωση</Button>
+            <Button size="sm" className="flex-1 text-sm h-7 bg-slate-800 hover:bg-slate-900" onClick={handleAddManual} disabled={isSavingManual}>
               {isSavingManual ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null} Add
             </Button>
           </div>
         </div>
       )}
 
-      <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
+      <Button size="sm" className="w-full text-sm bg-green-600 hover:bg-green-700"
         onClick={() => onNext("🎉 Η καταχώριση ολοκληρώθηκε! Όλα τα βήματα εκτελέστηκαν.")}>
         <CheckCircle2 className="w-3 h-3 mr-1" /> Ολοκλήρωση
       </Button>

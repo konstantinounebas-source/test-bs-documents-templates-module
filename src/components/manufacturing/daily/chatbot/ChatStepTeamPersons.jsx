@@ -29,8 +29,8 @@ function PersonRow({ line, onDelete, onUpdate }) {
   return (
     <div className="px-2 py-1.5 hover:bg-slate-50 group">
       <div className="flex items-center gap-1">
-        <span className="text-[10px] font-medium text-slate-700 flex-1 truncate">{line.person_name}</span>
-        <span className="text-[10px] text-slate-400">{line.from_time}–{line.to_time} ({avail}m)</span>
+        <span className="text-xs font-medium text-slate-700 flex-1 truncate">{line.person_name}</span>
+        <span className="text-xs text-slate-400">{line.from_time}–{line.to_time} ({avail}m)</span>
         <button onClick={() => setEditing(e => !e)} className="opacity-0 group-hover:opacity-100 text-blue-400 hover:text-blue-600 ml-1"><Pencil className="w-3 h-3" /></button>
         <button onClick={() => onDelete(line.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600"><Trash2 className="w-3 h-3" /></button>
       </div>
@@ -141,7 +141,7 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
       {/* Time inputs for new entries - Collapsible */}
       <div className="border border-slate-200 rounded p-2 bg-slate-50 space-y-1">
         <div className="flex items-center justify-between cursor-pointer" onClick={() => setAddExpanded(e => !e)}>
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Προσθήκη ατόμων</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Προσθήκη ατόμων</p>
           <span className="text-xs text-slate-400">{addExpanded ? '▼' : '▶'}</span>
         </div>
         {addExpanded && (
@@ -149,7 +149,7 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
             <div className="grid grid-cols-3 gap-1">
               {[["from_time","Από","time"],["to_time","Έως","time"],["break_time_minutes","Διάλ.(min)","number"]].map(([field, label, type]) => (
                 <div key={field}>
-                  <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
+                  <p className="text-xs text-slate-500 mb-0.5">{label}</p>
                   <input type={type} value={form[field]}
                     onChange={e => setForm(f => ({ ...f, [field]: type === "number" ? Number(e.target.value) : e.target.value }))}
                     className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 bg-white"
@@ -157,7 +157,7 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
                 </div>
               ))}
             </div>
-            <p className="text-[10px] text-slate-500">
+            <p className="text-xs text-slate-500">
               Διαθέσιμος: <strong>{calcAvail(form.from_time, form.to_time, form.break_time_minutes)} min</strong>
             </p>
             <input type="text" placeholder="Αναζήτηση ατόμου..." value={searchTerm}
@@ -167,7 +167,7 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
             {form.person_names.length > 0 && (
               <div className="flex flex-wrap gap-1">
                 {form.person_names.map(n => (
-                  <span key={n} className="flex items-center gap-1 bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full">
+                  <span key={n} className="flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">
                     {n}
                     <button onClick={() => togglePerson(n)}><X className="w-2.5 h-2.5" /></button>
                   </span>
@@ -176,7 +176,7 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
             )}
             <div className="border rounded overflow-y-auto bg-white">
               {filteredPersons.length === 0
-                ? <p className="text-[10px] text-slate-400 p-2 text-center">Δεν βρέθηκαν άτομα</p>
+                ? <p className="text-xs text-slate-400 p-2 text-center">Δεν βρέθηκαν άτομα</p>
                 : filteredPersons.map(p => (
                   <button key={p.id} onClick={() => togglePerson(p.name)}
                     className={`w-full text-left text-xs px-2 py-1.5 hover:bg-slate-50 flex items-center gap-2
@@ -187,7 +187,7 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
                 ))
               }
             </div>
-            <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+            <Button size="sm" className="w-full text-sm bg-blue-600 hover:bg-blue-700"
               onClick={handleAdd} disabled={isSaving || !form.person_names.length}>
               {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
               Προσθήκη ({form.person_names.length})
@@ -210,7 +210,7 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
         </div>
       )}
 
-      <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
+      <Button size="sm" className="w-full text-sm bg-green-600 hover:bg-green-700"
         onClick={() => onNext("⏭ Team Time Persons – Συνέχεια...")}>
         <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → Team Time - Extra
       </Button>

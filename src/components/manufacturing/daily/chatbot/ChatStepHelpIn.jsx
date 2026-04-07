@@ -71,14 +71,14 @@ export default function ChatStepHelpIn({ batchId, department, onNext, onSkip, on
       {/* Add form - Collapsible at top */}
       <div className="border border-slate-200 rounded p-2 bg-slate-50 space-y-1">
         <div className="flex items-center justify-between cursor-pointer" onClick={() => setAddExpanded(e => !e)}>
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Προσθήκη</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Προσθήκη</p>
           <span className="text-xs text-slate-400">{addExpanded ? '▼' : '▶'}</span>
         </div>
         {addExpanded && (
           <>
             {[["department","Τμήμα (Λαμβάνει)"],["from_department","Από Τμήμα"]].map(([field, label]) => (
               <div key={field}>
-                <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
+                <p className="text-xs text-slate-500 mb-0.5">{label}</p>
                 <Select value={form[field]} onValueChange={v => setForm(f => ({ ...f, [field]: v }))}>
                   <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε τμήμα..." /></SelectTrigger>
                   <SelectContent>
@@ -88,13 +88,13 @@ export default function ChatStepHelpIn({ batchId, department, onNext, onSkip, on
               </div>
             ))}
             <div>
-              <p className="text-[10px] text-slate-500 mb-0.5">Help Time (min)</p>
+              <p className="text-xs text-slate-500 mb-0.5">Help Time (min)</p>
               <input type="number" min="0" placeholder="0" value={form.help_min}
                 onChange={e => setForm(f => ({ ...f, help_min: e.target.value }))}
                 className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 bg-white"
               />
             </div>
-            <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+            <Button size="sm" className="w-full text-sm bg-blue-600 hover:bg-blue-700"
               onClick={handleAdd} disabled={isSaving}>
               {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
               Προσθήκη
@@ -111,7 +111,7 @@ export default function ChatStepHelpIn({ batchId, department, onNext, onSkip, on
           </div>
           <div className="border rounded divide-y flex-1 min-h-0 overflow-y-auto">
             {lines.map(l => (
-              <div key={l.id} className="flex items-center gap-1 px-2 py-1.5 text-[10px] text-slate-700 hover:bg-slate-50 group">
+              <div key={l.id} className="flex items-center gap-1 px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50 group">
                 <span className="flex-1 truncate font-medium">{l.department}</span>
                 <span className="text-slate-400">← {l.from_department}</span>
                 <span className="text-slate-500 w-12 text-right">{l.help_min}m</span>
@@ -124,7 +124,7 @@ export default function ChatStepHelpIn({ batchId, department, onNext, onSkip, on
         </>
       )}
 
-      <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
+      <Button size="sm" className="w-full text-sm bg-green-600 hover:bg-green-700"
         onClick={() => onNext("⏭ Help In – Συνέχεια...")}>
         <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → Consumables
       </Button>
