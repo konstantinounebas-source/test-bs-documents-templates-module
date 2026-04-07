@@ -52,6 +52,11 @@ import {
     updateDeptAllocation,
     removeDeptAllocation,
 } from "@/components/factory-financial/utils/stateHelpers";
+import {
+    DEFAULT_FIXED_COSTS,
+    ensureRowsWithDefaults,
+    normalizeLoadedExpenseRows,
+} from "@/components/factory-financial/utils/expenseRowDefaults";
 
 export default function FactoryFinancialCalculations() {
     const { hasAccess, isLoading: accessLoading } = usePageAccess('FactoryFinancialCalculations');
@@ -153,10 +158,7 @@ export default function FactoryFinancialCalculations() {
         }
     };
 
-    const PREDEFINED_FIXED_COSTS = [
-        { description: 'Ενοίκιο', amount: 0, frequency_type: 'monthly', department_allocations: [] },
-        { description: 'Άλλα Σταθερά Κόστη', amount: 0, frequency_type: 'monthly', department_allocations: [] },
-    ];
+
 
     const loadRecordData = async (record) => {
         try {
@@ -170,12 +172,12 @@ export default function FactoryFinancialCalculations() {
             
             setShelterRevenueItems(record.shelter_revenue_items || []);
             
-            setPersonnelCosts(record.personnel_costs || []);
+            setPersonnelCosts(normalizeLoadedExpenseRows(record.personnel_costs || []));
             setBomCosts(record.bill_of_materials_costs || []);
-            setFixedCosts(record.fixed_costs && record.fixed_costs.length > 0 ? record.fixed_costs : PREDEFINED_FIXED_COSTS);
-            setOverheadCosts(record.overhead_costs || []);
-            setInvestmentAmortization(record.investment_amortization || []);
-            setMaintenanceCosts(record.maintenance_costs || []);
+            setFixedCosts(normalizeLoadedExpenseRows(record.fixed_costs && record.fixed_costs.length > 0 ? record.fixed_costs : DEFAULT_FIXED_COSTS));
+            setOverheadCosts(normalizeLoadedExpenseRows(record.overhead_costs || []));
+            setInvestmentAmortization(normalizeLoadedExpenseRows(record.investment_amortization || []));
+            setMaintenanceCosts(normalizeLoadedExpenseRows(record.maintenance_costs || []));
             
             setDepreciationInvestments(record.depreciation_module?.investments || []);
             setEstimatedRevenues(record.depreciation_module?.estimated_revenues || []);
@@ -295,7 +297,7 @@ export default function FactoryFinancialCalculations() {
                 shelter_revenue_items: [],
                 personnel_costs: [],
                 bill_of_materials_costs: [],
-                fixed_costs: [],
+                fixed_costs: ensureRowsWithDefaults([], 'with_defaults'),
                 overhead_costs: [],
                 investment_amortization: [],
                 maintenance_costs: [],
