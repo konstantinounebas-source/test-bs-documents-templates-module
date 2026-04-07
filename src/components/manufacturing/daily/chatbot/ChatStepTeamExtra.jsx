@@ -165,7 +165,7 @@ export default function ChatStepTeamExtra({ batchId, onNext, onSkip, onBack }) {
           <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
             ✅ {lines.length} εγγραφές extra time
           </div>
-          <div className="border rounded divide-y max-h-32 overflow-y-auto">
+          <div className="border rounded divide-y overflow-y-auto">
             {lines.map(l => (
               <div key={l.id} className="flex items-center gap-1 px-2 py-1.5 text-[10px] text-slate-700 hover:bg-slate-50 group">
                 <span className="flex-1 truncate font-medium">{l.person_name}</span>
