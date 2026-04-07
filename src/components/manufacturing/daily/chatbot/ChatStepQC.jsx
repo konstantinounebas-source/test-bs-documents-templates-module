@@ -242,6 +242,8 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
     setIsSaving(false);
   };
 
+  const [addSectionExpanded, setAddSectionExpanded] = useState(true);
+
   return (
     <div className="border-t p-3 space-y-3 overflow-y-auto">
       <div className="flex items-center justify-between">
@@ -253,6 +255,84 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
           <SkipForward className="w-3 h-3 mr-1" /> Παράλειψη
         </Button>
       </div>
+
+      {/* Manual add with item selection - COLLAPSIBLE, at top */}
+      <div className="space-y-2 border border-slate-200 rounded p-2 bg-slate-50">
+        <div
+          className="flex items-center justify-between cursor-pointer"
+          onClick={() => setAddSectionExpanded(e => !e)}
+        >
+          <p className="text-[10px] text-slate-500 uppercase font-semibold tracking-wide">Προσθήκη QC - Επίλεξε Items</p>
+          <span className="text-xs text-slate-400">{addSectionExpanded ? '▼' : '▶'}</span>
+        </div>
+
+        {addSectionExpanded && (
+          <>
+            {/* Item selection */}
+            <div className="bg-white border border-slate-200 rounded p-2 max-h-32 overflow-y-auto">
+              <div className="space-y-1">
+                {processedLines.map(bl => (
+                  <label key={bl.item_code} className="flex items-center gap-2 p-1 hover:bg-slate-100 rounded cursor-pointer text-xs">
+                    <input
+                      type="checkbox"
+                      checked={selectedItems.has(bl.item_code)}
+                      onChange={(e) => {
+                        const newSelected = new Set(selectedItems);
+                        if (e.target.checked) newSelected.add(bl.item_code);
+                        else newSelected.delete(bl.item_code);
+                        setSelectedItems(newSelected);
+                      }}
+                      className="w-3 h-3"
+                    />
+                    <span className="font-semibold text-slate-700">{bl.item_code}</span>
+                    <span className="text-slate-500">({bl.qty_processed})</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* QC Type & Level */}
+            <div className="grid grid-cols-2 gap-1">
+              <div>
+                <p className="text-[10px] text-slate-500 mb-0.5">QC Type</p>
+                <Select value={form.qc_type} onValueChange={v => setForm(f => ({ ...f, qc_type: v }))}>
+                  <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε..." /></SelectTrigger>
+                  <SelectContent>
+                    {filteredQcTypes.map(qt => <SelectItem key={qt.id} value={qt.name}>{qt.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500 mb-0.5">QC Level</p>
+                <Select value={form.qc_level} onValueChange={v => setForm(f => ({ ...f, qc_level: v }))}>
+                  <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε..." /></SelectTrigger>
+                  <SelectContent>
+                    {filteredQcLevels.map(ql => <SelectItem key={ql.id} value={ql.name}>{ql.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Button
+              size="sm"
+              className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+              onClick={handleAddSelected}
+              disabled={isSaving || !form.qc_type || !form.qc_level || selectedItems.size === 0}
+            >
+              {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
+              Προσθήκη QC για {selectedItems.size} item(s)
+            </Button>
+          </>
+        )}
+      </div>
+
+      {/* Sync from schedule */}
+      {scheduledData.some(sd => sd.qc_type) && (
+        <Button size="sm" variant="outline" className="w-full text-xs" onClick={handleSync} disabled={isSyncing}>
+          {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+          Sync από Schedule
+        </Button>
+      )}
 
       {existingQC.length > 0 && (
         <div className="space-y-2">
@@ -299,77 +379,6 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
           </div>
         </div>
       )}
-
-      {/* Sync from schedule */}
-      {scheduledData.some(sd => sd.qc_type) && (
-        <Button size="sm" variant="outline" className="w-full text-xs" onClick={handleSync} disabled={isSyncing}>
-          {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-          Sync από Schedule
-        </Button>
-      )}
-
-      {/* Manual add with item selection */}
-      <div className="space-y-2">
-        <p className="text-[10px] text-slate-500 uppercase font-semibold tracking-wide">Προσθήκη QC - Επίλεξε Items</p>
-        
-        {/* Item selection */}
-        <div className="bg-slate-50 border border-slate-200 rounded p-2 max-h-32 overflow-y-auto">
-          <div className="space-y-1">
-            {processedLines.map(bl => (
-              <label key={bl.item_code} className="flex items-center gap-2 p-1 hover:bg-slate-100 rounded cursor-pointer text-xs">
-                <input
-                  type="checkbox"
-                  checked={selectedItems.has(bl.item_code)}
-                  onChange={(e) => {
-                    const newSelected = new Set(selectedItems);
-                    if (e.target.checked) newSelected.add(bl.item_code);
-                    else newSelected.delete(bl.item_code);
-                    setSelectedItems(newSelected);
-                  }}
-                  className="w-3 h-3"
-                />
-                <span className="font-semibold text-slate-700">{bl.item_code}</span>
-                <span className="text-slate-500">({bl.qty_processed})</span>
-              </label>
-            ))}
-          </div>
-        </div>
-
-        {/* QC Type, Level & Per-piece min */}
-         <div className="space-y-1">
-           <div className="grid grid-cols-2 gap-1">
-             <div>
-               <p className="text-[10px] text-slate-500 mb-0.5">QC Type</p>
-               <Select value={form.qc_type} onValueChange={v => setForm(f => ({ ...f, qc_type: v }))}>
-                 <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε..." /></SelectTrigger>
-                 <SelectContent>
-                   {filteredQcTypes.map(qt => <SelectItem key={qt.id} value={qt.name}>{qt.name}</SelectItem>)}
-                 </SelectContent>
-               </Select>
-             </div>
-             <div>
-               <p className="text-[10px] text-slate-500 mb-0.5">QC Level</p>
-               <Select value={form.qc_level} onValueChange={v => setForm(f => ({ ...f, qc_level: v }))}>
-                 <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε..." /></SelectTrigger>
-                 <SelectContent>
-                   {filteredQcLevels.map(ql => <SelectItem key={ql.id} value={ql.name}>{ql.name}</SelectItem>)}
-                 </SelectContent>
-               </Select>
-             </div>
-           </div>
-
-         </div>
-
-        <Button 
-          size="sm" 
-          className="w-full text-xs bg-blue-600 hover:bg-blue-700" 
-          onClick={handleAddSelected} 
-          disabled={isSaving || !form.qc_type || !form.qc_level || selectedItems.size === 0}
-        >
-          {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />}
-          Προσθήκη QC για {selectedItems.size} item(s)
-        </Button>
-      </div>
 
       <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
         onClick={() => onNext("⏭ QC Initial Stock – Συνέχεια...")}>
