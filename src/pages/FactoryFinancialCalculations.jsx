@@ -567,6 +567,86 @@ export default function FactoryFinancialCalculations() {
         return revenueBase > 0 ? calculateDepreciationInvestmentsTotal() / revenueBase : 0;
     };
 
+    // Depreciation module helpers
+    const addDepreciationInvestment = () => {
+        setDepreciationInvestments([...depreciationInvestments, {
+            description: '',
+            category: 'materials',
+            total_amount: 0,
+            allocation_production_percent: 100,
+            allocation_administration_percent: 0,
+            department_id: ''
+        }]);
+    };
+
+    const updateDepreciationInvestment = (idx, field, value) => {
+        const updated = [...depreciationInvestments];
+        updated[idx][field] = value;
+        
+        // Auto-calculate complementary allocation
+        if (field === 'allocation_production_percent') {
+            updated[idx].allocation_administration_percent = 100 - parseFloat(value || 0);
+        } else if (field === 'allocation_administration_percent') {
+            updated[idx].allocation_production_percent = 100 - parseFloat(value || 0);
+        }
+        
+        setDepreciationInvestments(updated);
+    };
+
+    const removeDepreciationInvestment = (idx) => {
+        setDepreciationInvestments(depreciationInvestments.filter((_, i) => i !== idx));
+    };
+
+    const addEstimatedRevenue = () => {
+        setEstimatedRevenues([...estimatedRevenues, {
+            bus_stop_type_id: '',
+            description: '',
+            pending_quantity: 0,
+            unit_revenue: 0,
+            total_revenue: 0
+        }]);
+    };
+
+    const updateEstimatedRevenue = (idx, field, value) => {
+        const updated = [...estimatedRevenues];
+        
+        if (field === 'bus_stop_type_id') {
+            updated[idx].bus_stop_type_id = value;
+            const selectedType = busStopTypes.find(t => t.id === value);
+            if (selectedType && !updated[idx].description) {
+                updated[idx].description = selectedType.type_name;
+            }
+        } else if (field === 'pending_quantity' || field === 'unit_revenue') {
+            updated[idx][field] = parseFloat(value) || 0;
+            updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (parseFloat(updated[idx].unit_revenue) || 0);
+        } else {
+            updated[idx][field] = value;
+        }
+        
+        setEstimatedRevenues(updated);
+    };
+
+    const removeEstimatedRevenue = (idx) => {
+        setEstimatedRevenues(estimatedRevenues.filter((_, i) => i !== idx));
+    };
+
+    const addAdditionalRevenue = () => {
+        setAdditionalRevenues([...additionalRevenues, {
+            description: '',
+            total_amount: 0
+        }]);
+    };
+
+    const updateAdditionalRevenue = (idx, field, value) => {
+        const updated = [...additionalRevenues];
+        updated[idx][field] = value;
+        setAdditionalRevenues(updated);
+    };
+
+    const removeAdditionalRevenue = (idx) => {
+        setAdditionalRevenues(additionalRevenues.filter((_, i) => i !== idx));
+    };
+
     if (accessLoading || isLoading) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -1012,6 +1092,268 @@ export default function FactoryFinancialCalculations() {
                                                 {formatCurrency(calculateTotalIncome() - calculateTotalCosts())}
                                             </span>
                                         </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        {/* Depreciation Module */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <TrendingUp className="w-5 h-5 text-amber-600" />
+                                    Depreciation Module
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {/* A. Investments */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-semibold text-slate-900">A. Investments</h3>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={addDepreciationInvestment}
+                                        >
+                                            <Plus className="w-4 h-4 mr-1" />
+                                            Προσθήκη Επένδυσης
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {depreciationInvestments.map((item, idx) => (
+                                            <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <Label className="text-xs">Περιγραφή</Label>
+                                                        <Input
+                                                            placeholder="Περιγραφή επένδυσης"
+                                                            value={item.description}
+                                                            onChange={(e) => updateDepreciationInvestment(idx, 'description', e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <Label className="text-xs">Κατηγορία</Label>
+                                                        <Select
+                                                            value={item.category}
+                                                            onValueChange={(value) => updateDepreciationInvestment(idx, 'category', value)}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="materials">Materials</SelectItem>
+                                                                <SelectItem value="labor">Labor</SelectItem>
+                                                                <SelectItem value="other">Other</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <Label className="text-xs">Τμήμα</Label>
+                                                        <Select
+                                                            value={item.department_id}
+                                                            onValueChange={(value) => updateDepreciationInvestment(idx, 'department_id', value)}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Επιλέξτε τμήμα" />
+                                                            </SelectTrigger>
+                                                            <SelectContent position="popper" sideOffset={5}>
+                                                                {departments.map(dept => (
+                                                                    <SelectItem key={dept.id} value={dept.id}>
+                                                                        {dept.department_name}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div>
+                                                        <Label className="text-xs">Συνολικό Ποσό</Label>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="0.00"
+                                                            value={item.total_amount}
+                                                            onChange={(e) => updateDepreciationInvestment(idx, 'total_amount', e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <Label className="text-xs">Κατανομή Παραγωγής (%)</Label>
+                                                        <Input
+                                                            type="number"
+                                                            min="0"
+                                                            max="100"
+                                                            value={item.allocation_production_percent}
+                                                            onChange={(e) => updateDepreciationInvestment(idx, 'allocation_production_percent', e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <Label className="text-xs">Κατανομή Διοίκησης (%)</Label>
+                                                        <Input
+                                                            type="number"
+                                                            min="0"
+                                                            max="100"
+                                                            value={item.allocation_administration_percent}
+                                                            onChange={(e) => updateDepreciationInvestment(idx, 'allocation_administration_percent', e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-end">
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        onClick={() => removeDepreciationInvestment(idx)}
+                                                    >
+                                                        <Trash2 className="w-4 h-4 text-red-500" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="pt-2 text-sm font-medium text-slate-700">
+                                        Σύνολο Επενδύσεων: {formatCurrency(calculateDepreciationInvestmentsTotal())}
+                                    </div>
+                                </div>
+
+                                {/* B. Estimated Revenues */}
+                                <div className="border-t pt-4 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-semibold text-slate-900">B. Estimated Revenues</h3>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={addEstimatedRevenue}
+                                        >
+                                            <Plus className="w-4 h-4 mr-1" />
+                                            Προσθήκη Εκτιμώμενου Εσόδου
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {estimatedRevenues.map((item, idx) => (
+                                            <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <div>
+                                                        <Label className="text-xs">Τύπος Στάσης</Label>
+                                                        <Select
+                                                            value={item.bus_stop_type_id}
+                                                            onValueChange={(value) => updateEstimatedRevenue(idx, 'bus_stop_type_id', value)}
+                                                        >
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Επιλέξτε τύπο" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {busStopTypes.map(type => (
+                                                                    <SelectItem key={type.id} value={type.id}>
+                                                                        {type.type_code} - {type.type_name}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div>
+                                                        <Label className="text-xs">Περιγραφή</Label>
+                                                        <Input
+                                                            placeholder="Περιγραφή"
+                                                            value={item.description}
+                                                            onChange={(e) => updateEstimatedRevenue(idx, 'description', e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-3">
+                                                    <div>
+                                                        <Label className="text-xs">Εκκρεμής Ποσότητα</Label>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="0"
+                                                            value={item.pending_quantity}
+                                                            onChange={(e) => updateEstimatedRevenue(idx, 'pending_quantity', e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <Label className="text-xs">Ποσό Ανά Μονάδα</Label>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="0.00"
+                                                            value={item.unit_revenue}
+                                                            onChange={(e) => updateEstimatedRevenue(idx, 'unit_revenue', e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <Label className="text-xs">Συνολικό Έσοδο</Label>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="0.00"
+                                                            value={item.total_revenue}
+                                                            disabled
+                                                            className="bg-blue-50"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="flex justify-end">
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        onClick={() => removeEstimatedRevenue(idx)}
+                                                    >
+                                                        <Trash2 className="w-4 h-4 text-red-500" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="pt-2 text-sm font-medium text-slate-700">
+                                        Σύνολο Εκτιμώμενων Εσόδων: {formatCurrency(calculateEstimatedRevenuesTotal())}
+                                    </div>
+                                </div>
+
+                                {/* C. Additional Revenues */}
+                                <div className="border-t pt-4 space-y-3">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-semibold text-slate-900">C. Additional Revenues</h3>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={addAdditionalRevenue}
+                                        >
+                                            <Plus className="w-4 h-4 mr-1" />
+                                            Προσθήκη Πρόσθετου Εσόδου
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {additionalRevenues.map((item, idx) => (
+                                            <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
+                                                <div className="flex items-end gap-2">
+                                                    <div className="flex-1">
+                                                        <Label className="text-xs">Περιγραφή</Label>
+                                                        <Input
+                                                            placeholder="Περιγραφή πρόσθετου εσόδου"
+                                                            value={item.description}
+                                                            onChange={(e) => updateAdditionalRevenue(idx, 'description', e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div className="w-32">
+                                                        <Label className="text-xs">Ποσό</Label>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="0.00"
+                                                            value={item.total_amount}
+                                                            onChange={(e) => updateAdditionalRevenue(idx, 'total_amount', e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <Button
+                                                        size="icon"
+                                                        variant="ghost"
+                                                        onClick={() => removeAdditionalRevenue(idx)}
+                                                    >
+                                                        <Trash2 className="w-4 h-4 text-red-500" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="pt-2 text-sm font-medium text-slate-700">
+                                        Σύνολο Πρόσθετων Εσόδων: {formatCurrency(calculateAdditionalRevenuesTotal())}
                                     </div>
                                 </div>
                             </CardContent>
