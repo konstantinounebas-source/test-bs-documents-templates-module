@@ -54,6 +54,7 @@ export default function FactoryFinancialCalculations() {
     
     // Income section
     const [salesRevenueItems, setSalesRevenueItems] = useState([]);
+    const [shelterRevenueItems, setShelterRevenueItems] = useState([]);
     const [contractAmount, setContractAmount] = useState(0);
     const [approvedVariations, setApprovedVariations] = useState([]);
     const [potentialVariations, setPotentialVariations] = useState([]);
@@ -135,6 +136,7 @@ export default function FactoryFinancialCalculations() {
             
             // Load income data
             setSalesRevenueItems(record.sales_revenue_items || []);
+            setShelterRevenueItems(record.shelter_revenue_items || []);
             setContractAmount(record.contract_amount || 0);
             setApprovedVariations(record.approved_variations || []);
             setPotentialVariations(record.potential_variations || []);
@@ -169,6 +171,7 @@ export default function FactoryFinancialCalculations() {
                 average_working_days_per_month: avgWorkingDaysPerMonth,
                 average_working_days_per_year: avgWorkingDaysPerYear,
                 sales_revenue_items: salesRevenueItems,
+                shelter_revenue_items: shelterRevenueItems,
                 contract_amount: contractAmount,
                 approved_variations: approvedVariations,
                 potential_variations: potentialVariations,
@@ -208,6 +211,7 @@ export default function FactoryFinancialCalculations() {
                 average_working_days_per_month: avgWorkingDaysPerMonth,
                 average_working_days_per_year: avgWorkingDaysPerYear,
                 sales_revenue_items: salesRevenueItems,
+                shelter_revenue_items: shelterRevenueItems,
                 contract_amount: contractAmount,
                 approved_variations: approvedVariations,
                 potential_variations: potentialVariations,
@@ -245,6 +249,7 @@ export default function FactoryFinancialCalculations() {
                 average_working_days_per_month: 22,
                 average_working_days_per_year: 260,
                 sales_revenue_items: [],
+                shelter_revenue_items: [],
                 contract_amount: 0,
                 approved_variations: [],
                 potential_variations: [],
