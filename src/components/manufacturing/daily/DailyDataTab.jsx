@@ -137,8 +137,8 @@ export default function DailyDataTab({
   return (
     <div className="flex flex-col h-full gap-3">
       {/* Department selector — matches intake styling */}
-      <div className="bg-slate-100 border border-slate-200 rounded-lg p-3 flex-shrink-0 overflow-y-auto" style={{ maxHeight: "140px" }}>
-        <div className="flex flex-wrap gap-2">
+      <div className="bg-slate-100 border-b border-slate-200 p-3 flex-shrink-0 -mt-px" style={{ minHeight: "110px" }}>
+        <div className="grid grid-cols-3 gap-2">
           {sortedDepts.map(dept => {
             const hasBatch = departmentsWithBatches.has(dept.name);
             const bundleAvailable = hasBatch && selDate ? hasBundleAvailable(dept.name, selDate) : false;
