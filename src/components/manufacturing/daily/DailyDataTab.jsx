@@ -135,9 +135,68 @@ export default function DailyDataTab({
   });
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full gap-3">
+      {/* Department selector — identical style to DailyFormsTab */}
+      <div className="border-b border-slate-200 px-3 py-2 flex-shrink-0">
+        <p className="text-sm font-semibold text-slate-500 uppercase mb-2">Departments</p>
+        <div className="flex flex-wrap gap-2">
+          {sortedDepts.map(dept => {
+            const hasBatch = departmentsWithBatches.has(dept.name);
+            const bundleAvailable = hasBatch && selDate ? hasBundleAvailable(dept.name, selDate) : false;
+            const attachmentCount = hasBatch
+              ? allDailyAttachments.filter(att => {
+                  const batch = dateBatches.find(b => b.department === dept.name);
+                  return batch && att.batch_header_id === batch.id;
+                }).length
+              : 0;
+            return (
+              <div key={dept.id} className="flex flex-col items-center gap-1">
+                <button
+                  onClick={() => {
+                    if (hasBatch) {
+                      setSelDept(dept.name);
+                      if (setStep) setStep("batch_lines_add");
+                      const batch = dateBatches.find(b => b.department === dept.name);
+                      if (batch && setSelBatch) setSelBatch(batch);
+                    }
+                  }}
+                  disabled={!hasBatch}
+                  className={`px-4 py-2.5 rounded text-base transition-colors flex flex-col items-center gap-1 font-medium min-w-max ${
+                    selDept === dept.name
+                      ? "bg-blue-600 text-white"
+                      : hasBatch
+                        ? "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300"
+                        : "bg-slate-100 text-slate-400 border border-slate-200 cursor-default"
+                  }`}
+                >
+                  <span>{dept.name}</span>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={`${bundleAvailable ? (selDept === dept.name ? "text-green-300" : "text-green-600") : "text-red-500 text-xl leading-none"}`}>
+                      {hasBatch ? (bundleAvailable ? "✓" : "×") : "×"}
+                    </span>
+                    <span className={selDept === dept.name ? "text-blue-200" : "text-slate-500"}>({attachmentCount})</span>
+                  </div>
+                </button>
+                {!hasBatch && (
+                  <button
+                    onClick={() => handleCreateBatch(dept.name)}
+                    disabled={creatingBatch === dept.name}
+                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-0.5 disabled:opacity-50"
+                  >
+                    {creatingBatch === dept.name
+                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                      : <Plus className="w-3 h-3" />}
+                    Νέο Batch
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Steps Content */}
-      <div className="flex-1 overflow-y-auto px-3 py-3">
+      <div className="flex-1 overflow-y-auto px-3">
         {!selDate ? (
           <p className="text-base text-slate-500 text-center py-8">Select a date from the Intake block</p>
         ) : selDept ? (
