@@ -39,6 +39,16 @@ export default function DailyDataTab({
     staleTime: Infinity
   });
 
+  // Filter batches by selected date (normalize both to yyyy-MM-dd format) — move before attachments query
+  const dateBatches = useMemo(() => {
+    if (!selDate) return [];
+    const normalizedSelDate = selDate.includes('-') ? selDate : format(parse(selDate, "dd/MM/yyyy", new Date()), "yyyy-MM-dd");
+    return allBatches.filter(b => {
+      const normalizedBatchDate = b.date.includes('-') ? b.date : format(parse(b.date, "dd/MM/yyyy", new Date()), "yyyy-MM-dd");
+      return normalizedBatchDate === normalizedSelDate;
+    });
+  }, [allBatches, selDate]);
+
   // Query attachments for the selected date's batches
   const { data: allDailyAttachments = [] } = useQuery({
     queryKey: ["BatchAttachments-by-date", selDate],
@@ -51,7 +61,7 @@ export default function DailyDataTab({
       }
       return allAtts;
     },
-    enabled: !!selDate && allBatches.length > 0,
+    enabled: !!selDate && dateBatches.length > 0,
     staleTime: 0
   });
 
@@ -103,15 +113,7 @@ export default function DailyDataTab({
     }
   };
 
-  // Filter batches by selected date (normalize both to yyyy-MM-dd format)
-  const dateBatches = React.useMemo(() => {
-    if (!selDate) return [];
-    const normalizedSelDate = selDate.includes('-') ? selDate : format(parse(selDate, "dd/MM/yyyy", new Date()), "yyyy-MM-dd");
-    return allBatches.filter(b => {
-      const normalizedBatchDate = b.date.includes('-') ? b.date : format(parse(b.date, "dd/MM/yyyy", new Date()), "yyyy-MM-dd");
-      return normalizedBatchDate === normalizedSelDate;
-    });
-  }, [allBatches, selDate]);
+
 
   // Clear selBatch and selDept whenever date changes (fresh start for new date)
   React.useEffect(() => {
