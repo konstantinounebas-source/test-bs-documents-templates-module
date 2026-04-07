@@ -1785,7 +1785,7 @@ CRITICAL SAFETY RULES:
             </div>
 
             {/* Processing Queue - always mounted to preserve state */}
-            <div style={{ display: activeUtility === "processing" ? "block" : "none" }} className="flex-1 overflow-y-auto">
+            <div style={{ display: activeUtility === "processing" ? "flex" : "none", flexDirection: "column", flex: 1, overflowY: "auto" }}>
               <div className="p-4 space-y-2">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold text-slate-800">Processing Queue</h3>
@@ -1831,7 +1831,7 @@ CRITICAL SAFETY RULES:
             </div>
 
             {/* Tab Content Area */}
-            <ScrollArea className="flex-1 p-4 overflow-y-auto" style={{ display: activeUtility === "processing" ? "none" : "block" }}>
+            <ScrollArea className="flex-1 p-4 overflow-y-auto" style={{ display: activeUtility === "processing" ? "none" : "flex", flexDirection: "column" }}>
               {activeUtility === "metrics" ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between mb-4">
