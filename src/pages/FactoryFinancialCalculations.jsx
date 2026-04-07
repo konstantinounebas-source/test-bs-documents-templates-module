@@ -580,8 +580,8 @@ export default function FactoryFinancialCalculations() {
                                  expandedSections={expandedSections}
                                  totalWorkingDays={totalWorkingDays}
                                  formatCurrency={formatCurrency}
-                                 convertCostToDaily={getConvertCostToDaily}
-                                 calculateCostTotal={getCalculateCostTotal}
+                                 convertCostToDaily={(amount, freq) => convertCostToDaily(amount, freq, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays)}
+                                 calculateCostTotal={() => calculateCostTotal(fixedCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear)}
                                  onToggleSection={toggleSection}
                                  onAddItem={() => setFixedCosts(addArrayItem(fixedCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
                                  onRemoveItem={(idx) => setFixedCosts(removeArrayItem(fixedCosts, idx))}
