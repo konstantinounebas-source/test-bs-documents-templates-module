@@ -39,16 +39,6 @@ export default function DailyDataTab({
     staleTime: Infinity
   });
 
-  // Filter batches by selected date (normalize both to yyyy-MM-dd format) — move before attachments query
-  const dateBatches = useMemo(() => {
-    if (!selDate) return [];
-    const normalizedSelDate = selDate.includes('-') ? selDate : format(parse(selDate, "dd/MM/yyyy", new Date()), "yyyy-MM-dd");
-    return allBatches.filter(b => {
-      const normalizedBatchDate = b.date.includes('-') ? b.date : format(parse(b.date, "dd/MM/yyyy", new Date()), "yyyy-MM-dd");
-      return normalizedBatchDate === normalizedSelDate;
-    });
-  }, [allBatches, selDate]);
-
   // Query attachments for the selected date's batches
   const { data: allDailyAttachments = [] } = useQuery({
     queryKey: ["BatchAttachments-by-date", selDate],
@@ -61,7 +51,7 @@ export default function DailyDataTab({
       }
       return allAtts;
     },
-    enabled: !!selDate && dateBatches.length > 0,
+    enabled: !!selDate && allBatches.length > 0,
     staleTime: 0
   });
 
@@ -113,7 +103,15 @@ export default function DailyDataTab({
     }
   };
 
-
+  // Filter batches by selected date (normalize both to yyyy-MM-dd format)
+  const dateBatches = React.useMemo(() => {
+    if (!selDate) return [];
+    const normalizedSelDate = selDate.includes('-') ? selDate : format(parse(selDate, "dd/MM/yyyy", new Date()), "yyyy-MM-dd");
+    return allBatches.filter(b => {
+      const normalizedBatchDate = b.date.includes('-') ? b.date : format(parse(b.date, "dd/MM/yyyy", new Date()), "yyyy-MM-dd");
+      return normalizedBatchDate === normalizedSelDate;
+    });
+  }, [allBatches, selDate]);
 
   // Clear selBatch and selDept whenever date changes (fresh start for new date)
   React.useEffect(() => {
@@ -137,11 +135,10 @@ export default function DailyDataTab({
   });
 
   return (
-    <div className="flex flex-col h-full gap-0">
+    <div className="flex flex-col h-full gap-3">
       {/* Department selector — matches intake styling */}
-      <div className="bg-slate-100 border-b border-slate-200 p-2 flex-shrink-0 flex flex-col gap-1" style={{ height: "120px" }}>
-        <div className="text-xs font-semibold text-slate-700">Depts</div>
-        <div className="grid grid-cols-3 gap-1.5 flex-1 min-h-0">
+      <div className="bg-slate-100 border-b border-slate-200 p-3 flex-shrink-0 -mt-px" style={{ minHeight: "110px" }}>
+        <div className="grid grid-cols-3 gap-2">
           {sortedDepts.map(dept => {
             const hasBatch = departmentsWithBatches.has(dept.name);
             const bundleAvailable = hasBatch && selDate ? hasBundleAvailable(dept.name, selDate) : false;
@@ -163,7 +160,7 @@ export default function DailyDataTab({
                     }
                   }}
                   disabled={!hasBatch}
-                  className={`px-1.5 py-1.5 rounded text-xs transition-colors flex flex-col items-center gap-0.5 font-medium w-full h-full ${
+                  className={`px-4 py-2.5 rounded text-base transition-colors flex flex-col items-center gap-1 font-medium min-w-max ${
                     selDept === dept.name
                       ? "bg-blue-600 text-white"
                       : hasBatch
@@ -171,8 +168,8 @@ export default function DailyDataTab({
                         : "bg-slate-100 text-slate-400 border border-slate-200 cursor-default"
                   }`}
                 >
-                  <span className="text-xs">{dept.name}</span>
-                  <div className="flex items-center gap-1 text-xs">
+                  <span>{dept.name}</span>
+                  <div className="flex items-center gap-2 text-sm">
                     <span className={`${bundleAvailable ? (selDept === dept.name ? "text-green-300" : "text-green-600") : "text-red-500 text-xl leading-none"}`}>
                       {hasBatch ? (bundleAvailable ? "✓" : "×") : "×"}
                     </span>
@@ -183,7 +180,7 @@ export default function DailyDataTab({
                   <button
                     onClick={() => handleCreateBatch(dept.name)}
                     disabled={creatingBatch === dept.name}
-                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-0.5 disabled:opacity-50 whitespace-nowrap"
+                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-0.5 disabled:opacity-50"
                   >
                     {creatingBatch === dept.name
                       ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -198,7 +195,7 @@ export default function DailyDataTab({
       </div>
 
       {/* Steps Content */}
-      <div className="flex-1 overflow-y-auto px-3 pt-0">
+      <div className="flex-1 overflow-y-auto px-3">
         {!selDate ? (
           <p className="text-base text-slate-500 text-center py-8">Select a date from the Intake block</p>
         ) : selDept ? (

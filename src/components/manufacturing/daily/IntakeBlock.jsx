@@ -8,13 +8,13 @@ export default function IntakeBlock({ selDate, selDept, customDate, setCustomDat
   const [tempDate, setTempDate] = React.useState(customDate);
 
   return (
-    <div className="bg-slate-100 border-b border-slate-200 p-3 flex-shrink-0 flex flex-col gap-0" style={{ height: "120px" }}>
-      <div className="flex items-center gap-2 flex-shrink-0">
+    <div className="bg-slate-100 border-b border-slate-200 p-3 space-y-3 flex-shrink-0" style={{ minHeight: "110px" }}>
+      <div className="flex items-center gap-2">
         <Calendar className="w-4 h-4 text-slate-600" />
         <p className="text-xs font-semibold text-slate-700">Intake</p>
       </div>
       
-      <div className="flex-1 flex flex-col gap-1 min-h-0">
+      <div className="space-y-2">
         <div className="flex gap-2">
           <Input type="date" value={tempDate} onChange={e => setTempDate(e.target.value)} className="text-xs h-8 flex-1" max={new Date().toISOString().split('T')[0]} />
           <Button size="sm" className="text-xs px-3 bg-blue-600 hover:bg-blue-700 text-white font-medium" onClick={() => {
