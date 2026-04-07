@@ -724,167 +724,187 @@ export default function FactoryFinancialCalculations() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                {/* Sales Revenue Items */}
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <Label>Έσοδα Πωλήσεων ανά Προϊόν/Τύπο Στάσης</Label>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={addSalesRevenueItem}
-                                        >
-                                            <Plus className="w-4 h-4 mr-1" />
-                                            Προσθήκη
-                                        </Button>
-                                    </div>
-                                    <div className="space-y-2">
-                                        {salesRevenueItems.map((item, idx) => (
-                                            <div key={idx} className="flex items-center gap-2">
-                                                <Input
-                                                    placeholder="Product ID"
-                                                    value={item.product_identifier}
-                                                    onChange={(e) => {
-                                                        const updated = [...salesRevenueItems];
-                                                        updated[idx].product_identifier = e.target.value;
-                                                        setSalesRevenueItems(updated);
-                                                    }}
-                                                    className="w-32"
-                                                />
-                                                <Input
-                                                    placeholder="Περιγραφή"
-                                                    value={item.description}
-                                                    onChange={(e) => {
-                                                        const updated = [...salesRevenueItems];
-                                                        updated[idx].description = e.target.value;
-                                                        setSalesRevenueItems(updated);
-                                                    }}
-                                                    className="flex-1"
-                                                />
-                                                <Input
-                                                    type="number"
-                                                    placeholder="Ποσότητα"
-                                                    value={item.quantity_sold}
-                                                    onChange={(e) => {
-                                                        const updated = [...salesRevenueItems];
-                                                        updated[idx].quantity_sold = e.target.value;
-                                                        setSalesRevenueItems(updated);
-                                                    }}
-                                                    className="w-24"
-                                                />
-                                                <Input
-                                                    type="number"
-                                                    placeholder="Τιμή Μονάδας"
-                                                    value={item.unit_selling_price}
-                                                    onChange={(e) => {
-                                                        const updated = [...salesRevenueItems];
-                                                        updated[idx].unit_selling_price = e.target.value;
-                                                        setSalesRevenueItems(updated);
-                                                    }}
-                                                    className="w-32"
-                                                />
+                                {/* Shelter Revenue Items Header */}
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="text-lg font-semibold">Έσοδα ανά Τύπο Στάσης</h3>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={addShelterRevenueItem}
+                                    >
+                                        <Plus className="w-4 h-4 mr-1" />
+                                        Προσθήκη
+                                    </Button>
+                                </div>
+
+                                {/* Shelter Revenue Items */}
+                                <div className="space-y-4">
+                                    {shelterRevenueItems.map((item, itemIdx) => (
+                                        <div key={itemIdx} className="p-4 border border-slate-200 rounded-lg space-y-3">
+                                            {/* Top Row: Bus Shelter Type, Description, Delete */}
+                                            <div className="flex items-end gap-2">
+                                                <div className="flex-1">
+                                                    <Label className="text-xs">Τύπος Στάσης</Label>
+                                                    <Select
+                                                        value={item.bus_shelter_type_id}
+                                                        onValueChange={(value) => {
+                                                            updateShelterRevenueItem(itemIdx, 'bus_shelter_type_id', value);
+                                                            const selectedType = busStopTypes.find(t => t.id === value);
+                                                            if (selectedType) {
+                                                                updateShelterRevenueItem(itemIdx, 'description', selectedType.type_name);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Επιλέξτε τύπο" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {busStopTypes.map(type => (
+                                                                <SelectItem key={type.id} value={type.id}>
+                                                                    {type.type_code} - {type.type_name}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <Label className="text-xs">Περιγραφή</Label>
+                                                    <Input
+                                                        placeholder="Περιγραφή"
+                                                        value={item.description}
+                                                        onChange={(e) => updateShelterRevenueItem(itemIdx, 'description', e.target.value)}
+                                                    />
+                                                </div>
                                                 <Button
                                                     size="icon"
                                                     variant="ghost"
-                                                    onClick={() => setSalesRevenueItems(salesRevenueItems.filter((_, i) => i !== idx))}
+                                                    onClick={() => removeShelterRevenueItem(itemIdx)}
                                                 >
                                                     <Trash2 className="w-4 h-4 text-red-500" />
                                                 </Button>
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
 
-                                {/* Contract Amount */}
-                                <div>
-                                    <Label>Contract Amount</Label>
-                                    <Input
-                                        type="number"
-                                        value={contractAmount}
-                                        onChange={(e) => setContractAmount(e.target.value)}
-                                        placeholder="0.00"
-                                    />
-                                </div>
-
-                                {/* Approved Variations */}
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <Label>Approved Variations</Label>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => addVariation(setApprovedVariations, approvedVariations)}
-                                        >
-                                            <Plus className="w-4 h-4 mr-1" />
-                                            Προσθήκη
-                                        </Button>
-                                    </div>
-                                    <div className="space-y-2">
-                                        {approvedVariations.map((variation, idx) => (
-                                            <div key={idx} className="flex items-center gap-2">
-                                                <Input
-                                                    placeholder="Περιγραφή"
-                                                    value={variation.description}
-                                                    onChange={(e) => updateVariation(setApprovedVariations, approvedVariations, idx, 'description', e.target.value)}
-                                                    className="flex-1"
-                                                />
-                                                <Input
-                                                    type="number"
-                                                    placeholder="Ποσό"
-                                                    value={variation.amount}
-                                                    onChange={(e) => updateVariation(setApprovedVariations, approvedVariations, idx, 'amount', e.target.value)}
-                                                    className="w-32"
-                                                />
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    onClick={() => removeVariation(setApprovedVariations, approvedVariations, idx)}
-                                                >
-                                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                                </Button>
+                                            {/* Second Row: Contract Amount, Amount from JV */}
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div>
+                                                    <Label className="text-xs">Ποσό Σύμβασης</Label>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="0.00"
+                                                        value={item.contract_amount}
+                                                        onChange={(e) => updateShelterRevenueItem(itemIdx, 'contract_amount', e.target.value)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label className="text-xs">Ποσό από JV</Label>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="0.00"
+                                                        value={item.amount_from_jv}
+                                                        onChange={(e) => updateShelterRevenueItem(itemIdx, 'amount_from_jv', e.target.value)}
+                                                    />
+                                                </div>
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
 
-                                {/* Potential Variations */}
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <Label>Potential Variations</Label>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => addVariation(setPotentialVariations, potentialVariations)}
-                                        >
-                                            <Plus className="w-4 h-4 mr-1" />
-                                            Προσθήκη
-                                        </Button>
-                                    </div>
-                                    <div className="space-y-2">
-                                        {potentialVariations.map((variation, idx) => (
-                                            <div key={idx} className="flex items-center gap-2">
-                                                <Input
-                                                    placeholder="Περιγραφή"
-                                                    value={variation.description}
-                                                    onChange={(e) => updateVariation(setPotentialVariations, potentialVariations, idx, 'description', e.target.value)}
-                                                    className="flex-1"
-                                                />
-                                                <Input
-                                                    type="number"
-                                                    placeholder="Ποσό"
-                                                    value={variation.amount}
-                                                    onChange={(e) => updateVariation(setPotentialVariations, potentialVariations, idx, 'amount', e.target.value)}
-                                                    className="w-32"
-                                                />
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    onClick={() => removeVariation(setPotentialVariations, potentialVariations, idx)}
-                                                >
-                                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                                </Button>
+                                            {/* Approved Variations */}
+                                            <div className="bg-slate-50 p-3 rounded-lg space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <Label className="text-sm font-semibold">Εγκεκριμένες Παραλλαγές</Label>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => addShelterApprovedVariation(itemIdx)}
+                                                    >
+                                                        <Plus className="w-3 h-3 mr-1" />
+                                                        Προσθήκη
+                                                    </Button>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {item.approved_variations.map((variation, varIdx) => (
+                                                        <div key={varIdx} className="flex items-end gap-2">
+                                                            <Input
+                                                                placeholder="Περιγραφή"
+                                                                value={variation.description}
+                                                                onChange={(e) => updateShelterVariation(itemIdx, 'approved_variations', varIdx, 'description', e.target.value)}
+                                                                className="flex-1"
+                                                            />
+                                                            <Input
+                                                                type="number"
+                                                                placeholder="Ποσό"
+                                                                value={variation.amount}
+                                                                onChange={(e) => updateShelterVariation(itemIdx, 'approved_variations', varIdx, 'amount', e.target.value)}
+                                                                className="w-28"
+                                                            />
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                onClick={() => removeShelterVariation(itemIdx, 'approved_variations', varIdx)}
+                                                            >
+                                                                <Trash2 className="w-4 h-4 text-red-500" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        ))}
-                                    </div>
+
+                                            {/* Potential Variations */}
+                                            <div className="bg-slate-50 p-3 rounded-lg space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <Label className="text-sm font-semibold">Δυνητικές Παραλλαγές</Label>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() => addShelterPotentialVariation(itemIdx)}
+                                                    >
+                                                        <Plus className="w-3 h-3 mr-1" />
+                                                        Προσθήκη
+                                                    </Button>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {item.potential_variations.map((variation, varIdx) => (
+                                                        <div key={varIdx} className="flex items-end gap-2">
+                                                            <Input
+                                                                placeholder="Περιγραφή"
+                                                                value={variation.description}
+                                                                onChange={(e) => updateShelterVariation(itemIdx, 'potential_variations', varIdx, 'description', e.target.value)}
+                                                                className="flex-1"
+                                                            />
+                                                            <Input
+                                                                type="number"
+                                                                placeholder="Ποσό"
+                                                                value={variation.amount}
+                                                                onChange={(e) => updateShelterVariation(itemIdx, 'potential_variations', varIdx, 'amount', e.target.value)}
+                                                                className="w-28"
+                                                            />
+                                                            <Button
+                                                                size="icon"
+                                                                variant="ghost"
+                                                                onClick={() => removeShelterVariation(itemIdx, 'potential_variations', varIdx)}
+                                                            >
+                                                                <Trash2 className="w-4 h-4 text-red-500" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Item Totals */}
+                                            <div className="pt-2 border-t border-slate-200 grid grid-cols-3 gap-4 text-sm">
+                                                <div className="bg-blue-50 p-2 rounded">
+                                                    <Label className="text-xs font-semibold">Σύνολο Εγκ. Παραλλαγών</Label>
+                                                    <p className="text-lg font-bold text-blue-700">{formatCurrency(getApprovedVariationsTotal(item))}</p>
+                                                </div>
+                                                <div className="bg-orange-50 p-2 rounded">
+                                                    <Label className="text-xs font-semibold">Σύνολο Δυν. Παραλλαγών</Label>
+                                                    <p className="text-lg font-bold text-orange-700">{formatCurrency(getPotentialVariationsTotal(item))}</p>
+                                                </div>
+                                                <div className="bg-green-50 p-2 rounded">
+                                                    <Label className="text-xs font-semibold">Σύνολο Στάσης</Label>
+                                                    <p className="text-lg font-bold text-green-700">{formatCurrency(getShelterRevenueTotal(item))}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
 
                                 {/* Total Income */}
