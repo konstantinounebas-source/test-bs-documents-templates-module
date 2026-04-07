@@ -232,7 +232,7 @@ export default function MfgDailyProduction() {
                         <TabsTrigger value="consumables">Consumables</TabsTrigger>
                       </TabsList>
 
-                      <div className="mt-6">
+                      <div>
                         {activeTab === 'batch_lines' && (
                           <BatchLinesTab batchId={selectedBatch?.id} department={selectedBatch?.department} selectedBundle={selectedBundle} />
                         )}
