@@ -175,7 +175,7 @@ export default function ChatStepConsumables({ batchId, onNext, onSkip, onBack })
   const totalExpected = lines.reduce((s, l) => s + (l.expected_qty || 0), 0);
 
   return (
-    <div className="border-t p-3 space-y-2 overflow-y-auto flex-1 min-h-0 flex flex-col">
+    <div className="border-t p-3 space-y-2 overflow-y-auto flex flex-col">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>

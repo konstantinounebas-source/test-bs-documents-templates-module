@@ -78,7 +78,7 @@ export default function ChatStepTeamExtra({ batchId, onNext, onSkip, onBack }) {
   };
 
   return (
-    <div className="border-t p-3 space-y-2 overflow-y-auto max-h-[420px]">
+    <div className="border-t p-3 space-y-2 overflow-y-auto">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>
