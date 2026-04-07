@@ -114,7 +114,7 @@ export default function DailyFormsTab({
       }
       await queryClient.invalidateQueries({ queryKey: ["BatchHeaders-by-date", selDate] });
       await queryClient.invalidateQueries({ queryKey: ["BatchHeader-All"] });
-      toast.success(`✅ Batch δημιουργήθηκε: ${selDate} · ${deptName}`);
+      // Success is communicated via the chat only
     } catch (err) {
       toast.error(`Σφάλμα: ${err?.message}`);
     } finally {

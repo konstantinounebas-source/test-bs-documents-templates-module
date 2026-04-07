@@ -95,7 +95,7 @@ export default function DailyDataTab({
       }
       // Invalidate queries so the new batch appears — do NOT auto-select dept/batch
       await queryClient.invalidateQueries({ queryKey: ["BatchHeader-All"] });
-      toast.success(`✅ Batch δημιουργήθηκε: ${selDate} · ${deptName}`);
+      // Success is communicated via the chat only
     } catch (err) {
       toast.error(`Σφάλμα: ${err?.message}`);
     } finally {
