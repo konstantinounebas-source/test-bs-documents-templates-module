@@ -38,6 +38,22 @@ export default function DailyDataTab({
     staleTime: Infinity
   });
 
+  // Query attachments for the selected date's batches
+  const { data: allDailyAttachments = [] } = useQuery({
+    queryKey: ["BatchAttachments-by-date", selDate],
+    queryFn: async () => {
+      if (!selDate || dateBatches.length === 0) return [];
+      const allAtts = [];
+      for (const batch of dateBatches) {
+        const atts = await base44.entities.BatchAttachment.filter({ batch_header_id: batch.id });
+        allAtts.push(...atts);
+      }
+      return allAtts;
+    },
+    enabled: !!selDate && allBatches.length > 0,
+    staleTime: 0
+  });
+
   const queryClient = useQueryClient();
   const [creatingBatch, setCreatingBatch] = useState(null); // dept name being created
 
@@ -105,82 +121,84 @@ export default function DailyDataTab({
     return deptSet;
   }, [dateBatches]);
 
+  const deptOrder = ["Pre-paint", "Paint", "Sub-assembly", "Assembly", "Refurbishment", "Delivery"];
+  const sortedDepts = [...departments].sort((a, b) => {
+    const aIdx = deptOrder.indexOf(a.name);
+    const bIdx = deptOrder.indexOf(b.name);
+    if (aIdx === -1) return 1;
+    if (bIdx === -1) return -1;
+    return aIdx - bIdx;
+  });
+
   return (
-    <div className="space-y-0 flex flex-col h-full">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-slate-200 flex-shrink-0">
-        <h3 className="text-sm font-semibold text-slate-800">
-          Daily Production Data
-        </h3>
-        <p className="text-xs text-slate-500 mt-0.5">
-          {selDate ? format(parse(selDate, "yyyy-MM-dd", new Date()), "dd/MM/yyyy") : "Select a date from Intake"}
-        </p>
+    <div className="flex flex-col h-full gap-3">
+      {/* Department selector — identical style to DailyFormsTab */}
+      <div className="border-b border-slate-200 px-3 py-2 flex-shrink-0">
+        <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Departments</p>
+        <div className="flex flex-wrap gap-2">
+          {sortedDepts.map(dept => {
+            const hasBatch = departmentsWithBatches.has(dept.name);
+            const bundleAvailable = hasBatch && selDate ? hasBundleAvailable(dept.name, selDate) : false;
+            const attachmentCount = hasBatch
+              ? allDailyAttachments.filter(att => {
+                  const batch = dateBatches.find(b => b.department === dept.name);
+                  return batch && att.batch_header_id === batch.id;
+                }).length
+              : 0;
+            return (
+              <div key={dept.id} className="flex flex-col items-center gap-1">
+                <button
+                  onClick={() => {
+                    if (hasBatch) {
+                      setSelDept(dept.name);
+                      if (setStep) setStep("batch_lines_add");
+                      const batch = dateBatches.find(b => b.department === dept.name);
+                      if (batch && setSelBatch) setSelBatch(batch);
+                    }
+                  }}
+                  disabled={!hasBatch}
+                  className={`px-4 py-2.5 rounded text-sm transition-colors flex flex-col items-center gap-1 font-medium min-w-max ${
+                    selDept === dept.name
+                      ? "bg-blue-600 text-white"
+                      : hasBatch
+                        ? "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300"
+                        : "bg-slate-100 text-slate-400 border border-slate-200 cursor-default"
+                  }`}
+                >
+                  <span>{dept.name}</span>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className={`${bundleAvailable ? (selDept === dept.name ? "text-green-300" : "text-green-600") : "text-red-500 text-lg leading-none"}`}>
+                      {hasBatch ? (bundleAvailable ? "✓" : "×") : "×"}
+                    </span>
+                    <span className={selDept === dept.name ? "text-blue-200" : "text-slate-500"}>({attachmentCount})</span>
+                  </div>
+                </button>
+                {!hasBatch && (
+                  <button
+                    onClick={() => handleCreateBatch(dept.name)}
+                    disabled={creatingBatch === dept.name}
+                    className="text-[10px] text-blue-600 hover:text-blue-800 flex items-center gap-0.5 disabled:opacity-50"
+                  >
+                    {creatingBatch === dept.name
+                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                      : <Plus className="w-3 h-3" />}
+                    Νέο Batch
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
+      {/* Steps Content */}
+      <div className="flex-1 overflow-y-auto px-3">
         {!selDate ? (
-          <p className="text-sm text-slate-500 text-center py-8">
-            Select a date from the Intake block
-          </p>
+          <p className="text-sm text-slate-500 text-center py-8">Select a date from the Intake block</p>
+        ) : selDept ? (
+          renderSharedSteps()
         ) : (
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2 mb-3">
-              {departments.sort((a, b) => {
-                const deptOrder = ["Pre-paint", "Paint", "Sub-assembly", "Assembly", "Refurbishment", "Delivery"];
-                const aIdx = deptOrder.indexOf(a.name);
-                const bIdx = deptOrder.indexOf(b.name);
-                if (aIdx === -1) return 1;
-                if (bIdx === -1) return -1;
-                return aIdx - bIdx;
-              }).map(dept => {
-                const hasBatch = departmentsWithBatches.has(dept.name);
-                const bundleAvailable = hasBatch && selDate ? hasBundleAvailable(dept.name, selDate) : false;
-                return (
-                  <div key={dept.id} className="flex flex-col items-center gap-1">
-                    <Button
-                      variant={selDept === dept.name ? "default" : "outline"}
-                      size="lg"
-                      className={`flex flex-col items-center gap-1 h-auto py-2.5 px-4 text-sm font-medium ${!hasBatch ? "opacity-50" : ""}`}
-                      disabled={!hasBatch}
-                      onClick={() => {
-                        if (hasBatch) {
-                          setSelDept(dept.name);
-                          if (setStep) setStep("batch_lines_add");
-                          const batch = dateBatches.find(b => b.department === dept.name);
-                          if (batch && setSelBatch) setSelBatch(batch);
-                        }
-                      }}
-                    >
-                      <span>{dept.name}</span>
-                      <span className={`text-xs ${bundleAvailable ? "text-green-600 font-semibold" : "text-slate-400"}`}>
-                        {hasBatch ? "✓" : "—"}
-                      </span>
-                    </Button>
-                    {!hasBatch && (
-                      <button
-                        onClick={() => handleCreateBatch(dept.name)}
-                        disabled={creatingBatch === dept.name}
-                        className="text-[10px] text-blue-600 hover:text-blue-800 flex items-center gap-0.5 disabled:opacity-50"
-                        title={`Δημιουργία batch για ${dept.name}`}
-                      >
-                        {creatingBatch === dept.name
-                          ? <Loader2 className="w-3 h-3 animate-spin" />
-                          : <Plus className="w-3 h-3" />}
-                        Νέο Batch
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {selDept && (
-              <div className="border-t pt-3">
-                {renderSharedSteps()}
-              </div>
-            )}
-          </div>
+          <p className="text-sm text-slate-500 text-center py-8">Select a department to view data.</p>
         )}
       </div>
     </div>
