@@ -8,7 +8,7 @@ export default function IntakeBlock({ selDate, selDept, customDate, setCustomDat
   const [tempDate, setTempDate] = React.useState(customDate);
 
   return (
-    <div className="bg-slate-100 border-b border-slate-200 p-3 space-y-3 flex-shrink-0" style={{ minHeight: "110px" }}>
+    <div className="bg-slate-100 border-b border-slate-200 p-3 space-y-2 flex-shrink-0" style={{ height: "120px" }}>
       <div className="flex items-center gap-2">
         <Calendar className="w-4 h-4 text-slate-600" />
         <p className="text-xs font-semibold text-slate-700">Intake</p>

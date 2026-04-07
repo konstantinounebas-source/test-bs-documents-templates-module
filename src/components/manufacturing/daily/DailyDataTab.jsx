@@ -137,7 +137,7 @@ export default function DailyDataTab({
   return (
     <div className="flex flex-col h-full gap-3">
       {/* Department selector — matches intake styling */}
-      <div className="bg-slate-100 border-b border-slate-200 p-3 flex-shrink-0 -mt-px" style={{ minHeight: "110px" }}>
+      <div className="bg-slate-100 border-b border-slate-200 p-3 flex-shrink-0" style={{ height: "120px", marginTop: "-4px" }}>
         <div className="grid grid-cols-3 gap-2">
           {sortedDepts.map(dept => {
             const hasBatch = departmentsWithBatches.has(dept.name);
