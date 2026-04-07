@@ -32,12 +32,12 @@ export default function FixedCostsTableSection({
     onRemoveDeptAlloc
 }) {
     return (
-        <Collapsible open={expandedSections['fixed_costs']} onOpenChange={() => onToggleSection('fixed_costs')}>
+        <Collapsible open={expandedSections['fixedCosts']} onOpenChange={() => onToggleSection('fixedCosts')}>
             <div>
                 <div className="flex items-center justify-between mb-4">
                     <CollapsibleTrigger asChild>
                         <div className="flex items-center gap-2 cursor-pointer hover:text-blue-700 transition-colors">
-                            {expandedSections['fixed_costs'] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                            {expandedSections['fixedCosts'] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                             <Label className="text-base font-semibold cursor-pointer">Σταθερά Κόστη (Fixed Costs)</Label>
                         </div>
                     </CollapsibleTrigger>
@@ -54,7 +54,7 @@ export default function FixedCostsTableSection({
                             <div className="col-span-3">Τύπος Κόστους</div>
                             <div className="col-span-2">Ποσό</div>
                             <div className="col-span-2">Συχνότητα</div>
-                            <div className="col-span-3">Ημερήσιο Ποσό</div>
+                            <div className="col-span-3">Περίοδος</div>
                             <div className="col-span-2 text-right">Ενέργειες</div>
                         </div>
 
@@ -94,9 +94,8 @@ export default function FixedCostsTableSection({
                                                 </SelectContent>
                                             </Select>
                                             <div className="col-span-3 text-xs bg-blue-50 p-2 rounded">
-                                                <span>{formatCurrency(dailyAmount)}/ημέρα</span>
-                                                <br />
-                                                <span className="text-slate-600">× {totalWorkingDays} ημέρες = {formatCurrency(periodTotal)}</span>
+                                                <div className="font-medium">{formatCurrency(dailyAmount)}/ημέρα</div>
+                                                <div className="text-slate-600">Περίοδος: {formatCurrency(periodTotal)}</div>
                                             </div>
                                             <div className="col-span-2 flex justify-end">
                                                 <Button
@@ -110,21 +109,19 @@ export default function FixedCostsTableSection({
                                             </div>
                                         </div>
 
-                                        {/* Department Allocations Row (Expandable) */}
-                                        {item.department_allocations && item.department_allocations.length > 0 && (
-                                            <div className="bg-slate-50 px-3 py-2 border-t border-slate-200">
-                                                <div className="text-xs font-semibold text-slate-600 mb-2">Κατανομή ανά Τμήμα:</div>
-                                                <DeptAllocationRows
-                                                    allocations={item.department_allocations}
-                                                    departments={departments}
-                                                    totalAmount={periodTotal}
-                                                    formatCurrency={formatCurrency}
-                                                    onAdd={() => onAddDeptAlloc(idx)}
-                                                    onUpdate={(allocIdx, field, value) => onUpdateDeptAlloc(idx, allocIdx, field, value)}
-                                                    onRemove={(allocIdx) => onRemoveDeptAlloc(idx, allocIdx)}
-                                                />
-                                            </div>
-                                        )}
+                                        {/* Department Allocations Row - Always Rendered */}
+                                        <div className="bg-slate-50 px-3 py-2 border-t border-slate-200">
+                                            <div className="text-xs font-semibold text-slate-600 mb-2">Κατανομή ανά Τμήμα:</div>
+                                            <DeptAllocationRows
+                                                allocations={item.department_allocations || []}
+                                                departments={departments}
+                                                totalAmount={periodTotal}
+                                                formatCurrency={formatCurrency}
+                                                onAdd={() => onAddDeptAlloc(idx)}
+                                                onUpdate={(allocIdx, field, value) => onUpdateDeptAlloc(idx, allocIdx, field, value)}
+                                                onRemove={(allocIdx) => onRemoveDeptAlloc(idx, allocIdx)}
+                                            />
+                                        </div>
                                     </div>
                                 );
                             })}
