@@ -1672,7 +1672,7 @@ CRITICAL SAFETY RULES:
               </div>
             </div>
 
-            {/* Intake Block */}
+            {/* Intake Block with Departments */}
             <IntakeBlock 
               selDate={selDate} 
               selDept={selDept} 
@@ -1681,6 +1681,12 @@ CRITICAL SAFETY RULES:
               onDateSelect={handleDateSelect}
               quickDates={quickDates}
               onAddMsg={addMsg}
+              departments={departments}
+              currentDept={selDept}
+              setSelDept={setSelDept}
+              dateBatches={allBatchHeaders.filter(b => b.date === selDate)}
+              setSelBatch={setSelBatch}
+              setStep={setStep}
             />
 
             {/* Chat log */}
