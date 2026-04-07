@@ -131,8 +131,8 @@ export default function MfgDailyProduction() {
 
   // Content component to be wrapped in split layout
   const PageContent = (
-    <div className="min-h-screen bg-slate-50 p-6 overflow-y-auto">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50 overflow-y-auto">
+      <div className="max-w-7xl mx-auto space-y-0 p-6">
         <div className="flex items-center gap-4">
           <Button variant="outline" onClick={() => navigate(createPageUrl("MfgPlanningWizard"))}>
             <ArrowLeft className="w-4 h-4 mr-2" />
