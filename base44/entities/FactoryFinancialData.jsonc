@@ -340,6 +340,107 @@
       },
       "default": []
     },
+    "depreciation_module": {
+      "type": "object",
+      "description": "Depreciation module for calculating depreciation rate on revenue",
+      "properties": {
+        "investments": {
+          "type": "array",
+          "description": "Array of investment items for depreciation calculation",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string",
+                "enum": [
+                  "materials",
+                  "labor",
+                  "other"
+                ]
+              },
+              "total_amount": {
+                "type": "number"
+              },
+              "allocation_production_percent": {
+                "type": "number"
+              },
+              "allocation_administration_percent": {
+                "type": "number"
+              },
+              "department_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "description",
+              "category",
+              "total_amount"
+            ]
+          },
+          "default": []
+        },
+        "estimated_revenues": {
+          "type": "array",
+          "description": "Array of estimated revenue items for depreciation calculation",
+          "items": {
+            "type": "object",
+            "properties": {
+              "bus_stop_type_id": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "pending_quantity": {
+                "type": "number"
+              },
+              "unit_revenue": {
+                "type": "number"
+              },
+              "total_revenue": {
+                "type": "number",
+                "description": "Auto-calculated: pending_quantity * unit_revenue"
+              }
+            },
+            "required": [
+              "bus_stop_type_id",
+              "description",
+              "pending_quantity",
+              "unit_revenue"
+            ]
+          },
+          "default": []
+        },
+        "additional_revenues": {
+          "type": "array",
+          "description": "Array of additional revenue items for depreciation calculation",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "total_amount": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "description",
+              "total_amount"
+            ]
+          },
+          "default": []
+        }
+      },
+      "default": {
+        "investments": [],
+        "estimated_revenues": [],
+        "additional_revenues": []
+      }
+    },
     "is_active": {
       "type": "boolean",
       "description": "Whether this record is active",
