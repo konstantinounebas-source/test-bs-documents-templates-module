@@ -195,7 +195,7 @@ export default function DailyDataTab({
       </div>
 
       {/* Steps Content */}
-      <div className="flex-1 overflow-y-auto px-3">
+      <div className="flex-1 overflow-y-auto px-3 pt-0">
         {!selDate ? (
           <p className="text-base text-slate-500 text-center py-8">Select a date from the Intake block</p>
         ) : selDept ? (
