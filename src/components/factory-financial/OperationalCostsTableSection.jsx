@@ -1,11 +1,12 @@
 import ExpenseTableSection from './ExpenseTableSection';
 
 /**
- * Fixed Costs Table Section
- * Wrapper for ExpenseTableSection configured for fixed costs
+ * Operational Costs Table Section
+ * Wrapper for ExpenseTableSection configured for operational costs
+ * Uses predefined default rows
  */
-export default function FixedCostsTableSection({
-    fixedCosts,
+export default function OperationalCostsTableSection({
+    operationalCosts,
     departments,
     expandedSections,
     totalWorkingDays,
@@ -22,9 +23,9 @@ export default function FixedCostsTableSection({
 }) {
     return (
         <ExpenseTableSection
-            title="Σταθερά Κόστη (Fixed Costs)"
-            sectionKey="fixedCosts"
-            expenseItems={fixedCosts}
+            title="Λειτουργικά Κόστη (Operational Costs)"
+            sectionKey="operational"
+            expenseItems={operationalCosts}
             departments={departments}
             expandedSections={expandedSections}
             totalWorkingDays={totalWorkingDays}

@@ -78,12 +78,13 @@ export const calculateCostTotal = (costArray, totalWorkingDays, avgMonthDays, av
     calculateCostWithAlloc(costArray, item => item.amount, totalWorkingDays, false, avgMonthDays, avgYearDays);
 
 export const calculateTotalCosts = (
-    personnelCosts, bomCosts, fixedCosts, overheadCosts, investmentAmortization, maintenanceCosts,
+    personnelCosts, bomCosts, fixedCosts, operationalCosts, overheadCosts, investmentAmortization, maintenanceCosts,
     totalWorkingDays, avgMonthDays, avgYearDays
 ) => {
     return calculatePersonnelCostTotal(personnelCosts, totalWorkingDays, avgMonthDays, avgYearDays) +
            calculateBomTotal(bomCosts) +
            calculateCostTotal(fixedCosts, totalWorkingDays, avgMonthDays, avgYearDays) +
+           calculateCostTotal(operationalCosts, totalWorkingDays, avgMonthDays, avgYearDays) +
            calculateCostTotal(overheadCosts, totalWorkingDays, avgMonthDays, avgYearDays) +
            calculateInvestmentTotal(investmentAmortization, totalWorkingDays, avgMonthDays, avgYearDays) +
            calculateCostTotal(maintenanceCosts, totalWorkingDays, avgMonthDays, avgYearDays);
@@ -124,7 +125,7 @@ export const calculateDepreciationFactor = (depreciationInvestments, estimatedRe
 };
 
 export const calculateDepartmentSummary = (
-    personnelCosts, fixedCosts, overheadCosts, maintenanceCosts, investmentAmortization, depreciationInvestments,
+    personnelCosts, fixedCosts, operationalCosts, overheadCosts, maintenanceCosts, investmentAmortization, depreciationInvestments,
     departments, totalWorkingDays, avgMonthDays, avgYearDays
 ) => {
     const deptMap = {};
@@ -137,6 +138,7 @@ export const calculateDepartmentSummary = (
                 department_name: dept ? dept.department_name : deptId,
                 personnel_total: 0,
                 fixed_total: 0,
+                operational_total: 0,
                 overhead_total: 0,
                 maintenance_total: 0,
                 investment_amortization_total: 0,
@@ -160,6 +162,7 @@ export const calculateDepartmentSummary = (
 
     distribute(personnelCosts, item => convertCostToDaily(item.calculated_amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays) * totalWorkingDays, 'personnel_total');
     distribute(fixedCosts, item => convertCostToDaily(item.amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays) * totalWorkingDays, 'fixed_total');
+    distribute(operationalCosts, item => convertCostToDaily(item.amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays) * totalWorkingDays, 'operational_total');
     distribute(overheadCosts, item => convertCostToDaily(item.amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays) * totalWorkingDays, 'overhead_total');
     distribute(maintenanceCosts, item => convertCostToDaily(item.amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays) * totalWorkingDays, 'maintenance_total');
     distribute(investmentAmortization, item => (parseFloat(item.calculated_daily_cost) || 0) * totalWorkingDays, 'investment_amortization_total');
@@ -168,7 +171,7 @@ export const calculateDepartmentSummary = (
     return Object.values(deptMap)
         .map(d => ({
             ...d,
-            grand_total: d.personnel_total + d.fixed_total + d.overhead_total + d.maintenance_total + d.investment_amortization_total + d.depreciation_investments_total
+            grand_total: d.personnel_total + d.fixed_total + d.operational_total + d.overhead_total + d.maintenance_total + d.investment_amortization_total + d.depreciation_investments_total
         }))
         .filter(d => d.grand_total > 0);
 };

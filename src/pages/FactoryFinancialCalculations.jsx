@@ -24,6 +24,7 @@ import DepreciationRateCard from "@/components/factory-financial/DepreciationRat
 import ValidationWarningCard from "@/components/factory-financial/ValidationWarningCard";
 import FactoryCostSectionsCard from "@/components/factory-financial/FactoryCostSectionsCard";
 import FixedCostsTableSection from "@/components/factory-financial/FixedCostsTableSection";
+import OperationalCostsTableSection from "@/components/factory-financial/OperationalCostsTableSection";
 import {
     getAllocationTotal,
     hasInvalidAllocation,
@@ -54,6 +55,7 @@ import {
 } from "@/components/factory-financial/utils/stateHelpers";
 import {
     DEFAULT_FIXED_COSTS,
+    DEFAULT_OPERATIONAL_COSTS,
     ensureRowsWithDefaults,
     normalizeLoadedExpenseRows,
 } from "@/components/factory-financial/utils/expenseRowDefaults";
@@ -93,6 +95,7 @@ export default function FactoryFinancialCalculations() {
     const [personnelCosts, setPersonnelCosts] = useState([]);
     const [bomCosts, setBomCosts] = useState([]);
     const [fixedCosts, setFixedCosts] = useState([]);
+    const [operationalCosts, setOperationalCosts] = useState([]);
     const [overheadCosts, setOverheadCosts] = useState([]);
     const [investmentAmortization, setInvestmentAmortization] = useState([]);
     const [maintenanceCosts, setMaintenanceCosts] = useState([]);
@@ -109,11 +112,10 @@ export default function FactoryFinancialCalculations() {
     
     // Collapsible sections state
     const [expandedSections, setExpandedSections] = useState({
+        fixedCosts: true,
         operational: true,
-        fixed: true,
         personnel: true,
         bom: true,
-        fixedCosts: true,
         overhead: true,
         investment: true,
         maintenance: true
@@ -175,6 +177,7 @@ export default function FactoryFinancialCalculations() {
             setPersonnelCosts(normalizeLoadedExpenseRows(record.personnel_costs || []));
             setBomCosts(record.bill_of_materials_costs || []);
             setFixedCosts(normalizeLoadedExpenseRows(record.fixed_costs && record.fixed_costs.length > 0 ? record.fixed_costs : DEFAULT_FIXED_COSTS));
+            setOperationalCosts(normalizeLoadedExpenseRows(record.operational_costs && record.operational_costs.length > 0 ? record.operational_costs : DEFAULT_OPERATIONAL_COSTS));
             setOverheadCosts(normalizeLoadedExpenseRows(record.overhead_costs || []));
             setInvestmentAmortization(normalizeLoadedExpenseRows(record.investment_amortization || []));
             setMaintenanceCosts(normalizeLoadedExpenseRows(record.maintenance_costs || []));
@@ -213,6 +216,7 @@ export default function FactoryFinancialCalculations() {
                 personnel_costs: personnelCosts,
                 bill_of_materials_costs: bomCosts,
                 fixed_costs: fixedCosts,
+                operational_costs: operationalCosts,
                 overhead_costs: overheadCosts,
                 investment_amortization: investmentAmortization,
                 maintenance_costs: maintenanceCosts,
@@ -236,7 +240,7 @@ export default function FactoryFinancialCalculations() {
     };
 
     const validateAllAllocations = () => {
-        return ![personnelCosts, fixedCosts, overheadCosts, maintenanceCosts, investmentAmortization, depreciationInvestments]
+        return ![personnelCosts, fixedCosts, operationalCosts, overheadCosts, maintenanceCosts, investmentAmortization, depreciationInvestments]
             .some(hasInvalidAllocation);
     };
 
@@ -259,6 +263,7 @@ export default function FactoryFinancialCalculations() {
                 personnel_costs: personnelCosts,
                 bill_of_materials_costs: bomCosts,
                 fixed_costs: fixedCosts,
+                operational_costs: operationalCosts,
                 overhead_costs: overheadCosts,
                 investment_amortization: investmentAmortization,
                 maintenance_costs: maintenanceCosts,
@@ -298,6 +303,7 @@ export default function FactoryFinancialCalculations() {
                 personnel_costs: [],
                 bill_of_materials_costs: [],
                 fixed_costs: ensureRowsWithDefaults([], 'with_defaults'),
+                operational_costs: ensureRowsWithDefaults([], 'with_defaults'),
                 overhead_costs: [],
                 investment_amortization: [],
                 maintenance_costs: [],
@@ -397,7 +403,7 @@ export default function FactoryFinancialCalculations() {
 
     const getCalculateTotalCosts = () => 
         calculateTotalCosts(
-            personnelCosts, bomCosts, fixedCosts, overheadCosts, investmentAmortization, maintenanceCosts,
+            personnelCosts, bomCosts, fixedCosts, operationalCosts, overheadCosts, investmentAmortization, maintenanceCosts,
             totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear
         );
 
@@ -415,7 +421,7 @@ export default function FactoryFinancialCalculations() {
 
     const getCalculateDepartmentSummary = () => 
         calculateDepartmentSummary(
-            personnelCosts, fixedCosts, overheadCosts, maintenanceCosts, investmentAmortization, depreciationInvestments,
+            personnelCosts, fixedCosts, operationalCosts, overheadCosts, maintenanceCosts, investmentAmortization, depreciationInvestments,
             departments, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear
         );
 
@@ -575,7 +581,7 @@ export default function FactoryFinancialCalculations() {
 
                         {/* SECTION B - Costs */}
                          <div className="space-y-6">
-                             {/* Fixed Costs - New Table Style */}
+                             {/* Fixed Costs - Table Style */}
                              <FixedCostsTableSection
                                  fixedCosts={fixedCosts}
                                  departments={departments}
@@ -591,6 +597,24 @@ export default function FactoryFinancialCalculations() {
                                  onAddDeptAlloc={(idx) => setFixedCosts(addDeptAllocation(fixedCosts, idx))}
                                  onUpdateDeptAlloc={(idx, allocIdx, field, value) => setFixedCosts(updateDeptAllocation(fixedCosts, idx, allocIdx, field, value))}
                                  onRemoveDeptAlloc={(idx, allocIdx) => setFixedCosts(removeDeptAllocation(fixedCosts, idx, allocIdx))}
+                             />
+
+                             {/* Operational Costs - Table Style */}
+                             <OperationalCostsTableSection
+                                 operationalCosts={operationalCosts}
+                                 departments={departments}
+                                 expandedSections={expandedSections}
+                                 totalWorkingDays={totalWorkingDays}
+                                 formatCurrency={formatCurrency}
+                                 convertCostToDaily={(amount, freq) => convertCostToDaily(amount, freq, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays)}
+                                 calculateCostTotal={() => calculateCostTotal(operationalCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear)}
+                                 onToggleSection={toggleSection}
+                                 onAddItem={() => setOperationalCosts(addArrayItem(operationalCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                                 onRemoveItem={(idx) => setOperationalCosts(removeArrayItem(operationalCosts, idx))}
+                                 onUpdateItem={(idx, field, value) => setOperationalCosts(updateArrayItem(operationalCosts, idx, field, value))}
+                                 onAddDeptAlloc={(idx) => setOperationalCosts(addDeptAllocation(operationalCosts, idx))}
+                                 onUpdateDeptAlloc={(idx, allocIdx, field, value) => setOperationalCosts(updateDeptAllocation(operationalCosts, idx, allocIdx, field, value))}
+                                 onRemoveDeptAlloc={(idx, allocIdx) => setOperationalCosts(removeDeptAllocation(operationalCosts, idx, allocIdx))}
                              />
 
                              {/* Other Costs - Using FactoryCostSectionsCard */}
