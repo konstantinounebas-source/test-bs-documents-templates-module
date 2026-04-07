@@ -542,7 +542,11 @@ export default function FactoryFinancialCalculations() {
 
     // Depreciation module calculations
     const calculateDepreciationInvestmentsTotal = () => {
-        return depreciationInvestments.reduce((sum, item) => sum + (parseFloat(item.total_amount) || 0), 0);
+        return depreciationInvestments.reduce((sum, item) => {
+            const amount = parseFloat(item.total_amount) || 0;
+            const allocation = parseFloat(item.allocation_production_percent) || 0;
+            return sum + (amount * allocation / 100);
+        }, 0);
     };
 
     const calculateEstimatedRevenuesTotal = () => {
@@ -1198,6 +1202,9 @@ export default function FactoryFinancialCalculations() {
                                                             onChange={(e) => updateDepreciationInvestment(idx, 'allocation_administration_percent', e.target.value)}
                                                         />
                                                     </div>
+                                                </div>
+                                                <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
+                                                    <strong>Allocated amount:</strong> {formatCurrency(item.total_amount)} × {item.allocation_production_percent}% = {formatCurrency((parseFloat(item.total_amount) || 0) * (parseFloat(item.allocation_production_percent) || 0) / 100)}
                                                 </div>
                                                 <div className="flex justify-end">
                                                     <Button
