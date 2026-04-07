@@ -688,9 +688,11 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       if (bundle) {
         addMsg("bot", `⏳ Δημιουργία batch για ${dateVal} – ${selDept} με bundle **${bundle.version_no || bundle.version}**...`);
         createBatchMutation.mutate({ date: dateVal, dept: selDept, bundleId: bundle.id });
+      } else if (selDept) {
+        // Only show error if a specific department was selected and has no bundle
+        addMsg("bot", `⚠️ Το τμήμα **${selDept}** δεν έχει ενεργό bundle για ${dateVal}.`);
+        setStep("attachments");
       } else {
-        // Skip batch creation if no bundle, but allow user to proceed
-        addMsg("bot", `Δεν υπάρχει ενεργό bundle για ${selDept}. Μπορείς να συνεχίσεις με χειροκίνητη διαχείριση.`);
         setStep("attachments");
       }
     }
