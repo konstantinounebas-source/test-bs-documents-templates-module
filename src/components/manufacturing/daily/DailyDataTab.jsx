@@ -113,13 +113,11 @@ export default function DailyDataTab({
     });
   }, [allBatches, selDate]);
 
-  // Clear selBatch if date changes and no batch exists for new date
+  // Clear selBatch and selDept whenever date changes (fresh start for new date)
   React.useEffect(() => {
-    if (selDate && dateBatches.length === 0 && selBatch) {
-      setSelBatch(null);
-      setStep("batch_lines_add");
-    }
-  }, [selDate, dateBatches, selBatch, setSelBatch, setStep]);
+    setSelBatch(null);
+    setSelDept("");
+  }, [selDate]);
 
   // Get unique departments that have batches for this date
   const departmentsWithBatches = React.useMemo(() => {
