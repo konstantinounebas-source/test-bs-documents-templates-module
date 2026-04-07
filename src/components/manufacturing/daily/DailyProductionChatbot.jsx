@@ -471,10 +471,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       queryClient.invalidateQueries(["BatchHeader", selDept]);
       queryClient.invalidateQueries(["Batch_Lines", batch.id]);
       setSelBatch(batch);
-      setStep("attachments");
+      setStep("batch_lines_add");
       addMsg("bot",
         `✅ Batch δημιουργήθηκε για ${batch.date} – ${batch.department}.\n` +
-        (batch.has_scheduled_data ? "Οι γραμμές παραγωγής προσυμπληρώθηκαν από το πρόγραμμα.\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'." : "⚠️ Δεν βρέθηκαν δεδομένα προγράμματος.\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.")
+        (batch.has_scheduled_data ? `${batch.has_scheduled_data ? "Προστέθηκαν γραμμές από το πρόγραμμα." : "⚠️ Δεν βρέθηκαν δεδομένα προγράμματος."}` : "")
       );
     },
     onError: (err) => { 
@@ -677,24 +677,11 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     const existing = batchHeaders.find(b => b.date === dateVal && b.department === selDept);
     if (existing) {
       setSelBatch(existing);
-      setStep("attachments");
-      const bundle = resolveBundle(dateVal, selDept);
-      addMsg("bot",
-        `✅ Βρέθηκε batch για ${dateVal} – ${selDept}.\n` +
-        (bundle ? `📦 Bundle: ${bundle.version_no || bundle.version} (${bundle.status})\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.` : "⚠️ Χωρίς bundle.\n\nΠρόσθεσε συνημμένα ή πάτα 'Συνέχεια → Batch Lines'.")
-      );
+      setStep("batch_lines_add");
+      addMsg("bot", `✅ Βρέθηκε batch για ${dateVal} – ${selDept}. Πήγαινε στα Batch Lines.`);
     } else {
-      const bundle = resolveBundle(dateVal, selDept);
-      if (bundle) {
-        addMsg("bot", `⏳ Δημιουργία batch για ${dateVal} – ${selDept} με bundle **${bundle.version_no || bundle.version}**...`);
-        createBatchMutation.mutate({ date: dateVal, dept: selDept, bundleId: bundle.id });
-      } else if (selDept) {
-        // Only show error if a specific department was selected and has no bundle
-        addMsg("bot", `⚠️ Το τμήμα **${selDept}** δεν έχει ενεργό bundle για ${dateVal}.`);
-        setStep("attachments");
-      } else {
-        setStep("attachments");
-      }
+      // Don't auto-create batch on date change
+      addMsg("bot", `ℹ️ Δεν υπάρχει batch για ${dateVal} – ${selDept}. Δημιούργησε με το κουμπί "Νέο Batch".`);
     }
   };
 
