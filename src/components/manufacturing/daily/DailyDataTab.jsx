@@ -15,7 +15,8 @@ export default function DailyDataTab({
   batchHeaders,
   setStep,
   selBatch,
-  setSelBatch
+  setSelBatch,
+  onAddMsg
 }) {
   // Get all batches and filter by selected date
   const { data: allBatches = [] } = useQuery({
@@ -73,7 +74,7 @@ export default function DailyDataTab({
   const handleCreateBatch = async (deptName) => {
     const bundle = resolveBundle(deptName, selDate);
     if (!bundle) {
-      toast.error(`Δεν βρέθηκε ενεργό bundle για το τμήμα "${deptName}"`);
+      if (onAddMsg) onAddMsg("bot", `❌ Δεν βρέθηκε ενεργό bundle για το τμήμα "${deptName}".`);
       return;
     }
     setCreatingBatch(deptName);
@@ -93,11 +94,10 @@ export default function DailyDataTab({
           }))
         );
       }
-      // Invalidate queries so the new batch appears — do NOT auto-select dept/batch
       await queryClient.invalidateQueries({ queryKey: ["BatchHeader-All"] });
-      // Success is communicated via the chat only
+      if (onAddMsg) onAddMsg("bot", `✅ Batch δημιουργήθηκε: ${selDate} · ${deptName}${scheduledData.length > 0 ? `\nΠροστέθηκαν ${scheduledData.length} γραμμές από το πρόγραμμα.` : "\n⚠️ Δεν βρέθηκαν δεδομένα προγράμματος."}`);
     } catch (err) {
-      toast.error(`Σφάλμα: ${err?.message}`);
+      if (onAddMsg) onAddMsg("bot", `❌ Σφάλμα κατά τη δημιουργία batch: ${err?.message}`);
     } finally {
       setCreatingBatch(null);
     }

@@ -1916,6 +1916,7 @@ CRITICAL SAFETY RULES:
                       runningOcrAttachmentIds={runningOcrAttachmentIds}
                       attachmentOcrStatus={attachmentOcrStatus}
                       deleteMutation={deleteMutation}
+                      onAddMsg={addMsg}
                     />
                   )}
                   {activeSection === "daily-data" && (
@@ -1929,6 +1930,7 @@ CRITICAL SAFETY RULES:
                       setStep={setStep}
                       selBatch={selBatch}
                       setSelBatch={setSelBatch}
+                      onAddMsg={addMsg}
                     />
                   )}
                 </>

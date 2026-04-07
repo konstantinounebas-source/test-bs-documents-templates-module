@@ -18,7 +18,8 @@ export default function DailyFormsTab({
   onHandleFiles,
   runningOcrAttachmentIds,
   attachmentOcrStatus,
-  deleteMutation
+  deleteMutation,
+  onAddMsg
 }) {
   const [selectedDept, setSelectedDept] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -92,7 +93,7 @@ export default function DailyFormsTab({
   const handleCreateBatch = async (deptName) => {
     const bundle = resolveBundle(deptName, selDate);
     if (!bundle) {
-      toast.error(`Δεν βρέθηκε ενεργό bundle για το τμήμα "${deptName}"`);
+      if (onAddMsg) onAddMsg("bot", `❌ Δεν βρέθηκε ενεργό bundle για το τμήμα "${deptName}".`);
       return;
     }
     setCreatingBatch(deptName);
@@ -114,9 +115,9 @@ export default function DailyFormsTab({
       }
       await queryClient.invalidateQueries({ queryKey: ["BatchHeaders-by-date", selDate] });
       await queryClient.invalidateQueries({ queryKey: ["BatchHeader-All"] });
-      // Success is communicated via the chat only
+      if (onAddMsg) onAddMsg("bot", `✅ Batch δημιουργήθηκε: ${selDate} · ${deptName}${scheduledData.length > 0 ? `\nΠροστέθηκαν ${scheduledData.length} γραμμές από το πρόγραμμα.` : "\n⚠️ Δεν βρέθηκαν δεδομένα προγράμματος."}`);
     } catch (err) {
-      toast.error(`Σφάλμα: ${err?.message}`);
+      if (onAddMsg) onAddMsg("bot", `❌ Σφάλμα κατά τη δημιουργία batch: ${err?.message}`);
     } finally {
       setCreatingBatch(null);
     }
