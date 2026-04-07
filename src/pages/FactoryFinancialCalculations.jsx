@@ -53,11 +53,7 @@ export default function FactoryFinancialCalculations() {
     const [avgWorkingDaysPerYear, setAvgWorkingDaysPerYear] = useState(260);
     
     // Income section
-    const [salesRevenueItems, setSalesRevenueItems] = useState([]);
     const [shelterRevenueItems, setShelterRevenueItems] = useState([]);
-    const [contractAmount, setContractAmount] = useState(0);
-    const [approvedVariations, setApprovedVariations] = useState([]);
-    const [potentialVariations, setPotentialVariations] = useState([]);
     
     // Cost sections
     const [personnelCosts, setPersonnelCosts] = useState([]);
@@ -135,11 +131,7 @@ export default function FactoryFinancialCalculations() {
             setAvgWorkingDaysPerYear(record.average_working_days_per_year || 260);
             
             // Load income data
-            setSalesRevenueItems(record.sales_revenue_items || []);
             setShelterRevenueItems(record.shelter_revenue_items || []);
-            setContractAmount(record.contract_amount || 0);
-            setApprovedVariations(record.approved_variations || []);
-            setPotentialVariations(record.potential_variations || []);
             
             // Load cost data
             setPersonnelCosts(record.personnel_costs || []);
@@ -170,11 +162,7 @@ export default function FactoryFinancialCalculations() {
                 total_working_days_in_period: totalWorkingDays,
                 average_working_days_per_month: avgWorkingDaysPerMonth,
                 average_working_days_per_year: avgWorkingDaysPerYear,
-                sales_revenue_items: salesRevenueItems,
                 shelter_revenue_items: shelterRevenueItems,
-                contract_amount: contractAmount,
-                approved_variations: approvedVariations,
-                potential_variations: potentialVariations,
                 personnel_costs: personnelCosts,
                 bill_of_materials_costs: bomCosts,
                 fixed_costs: fixedCosts,
@@ -210,11 +198,7 @@ export default function FactoryFinancialCalculations() {
                 total_working_days_in_period: totalWorkingDays,
                 average_working_days_per_month: avgWorkingDaysPerMonth,
                 average_working_days_per_year: avgWorkingDaysPerYear,
-                sales_revenue_items: salesRevenueItems,
                 shelter_revenue_items: shelterRevenueItems,
-                contract_amount: contractAmount,
-                approved_variations: approvedVariations,
-                potential_variations: potentialVariations,
                 personnel_costs: personnelCosts,
                 bill_of_materials_costs: bomCosts,
                 fixed_costs: fixedCosts,
@@ -248,11 +232,7 @@ export default function FactoryFinancialCalculations() {
                 total_working_days_in_period: 0,
                 average_working_days_per_month: 22,
                 average_working_days_per_year: 260,
-                sales_revenue_items: [],
                 shelter_revenue_items: [],
-                contract_amount: 0,
-                approved_variations: [],
-                potential_variations: [],
                 personnel_costs: [],
                 bill_of_materials_costs: [],
                 fixed_costs: [],
@@ -383,15 +363,6 @@ export default function FactoryFinancialCalculations() {
         setInvestmentAmortization(updated);
     };
     
-    const addSalesRevenueItem = () => {
-        setSalesRevenueItems([...salesRevenueItems, {
-            product_identifier: '',
-            description: '',
-            quantity_sold: 0,
-            unit_selling_price: 0
-        }]);
-    };
-
     const addShelterRevenueItem = () => {
         setShelterRevenueItems([...shelterRevenueItems, {
             bus_shelter_type_id: '',
@@ -452,20 +423,6 @@ export default function FactoryFinancialCalculations() {
     };
 
     const removeCostItem = (setter, currentArray, index) => {
-        setter(currentArray.filter((_, i) => i !== index));
-    };
-
-    const addVariation = (setter, currentArray) => {
-        setter([...currentArray, { description: '', amount: 0 }]);
-    };
-
-    const updateVariation = (setter, currentArray, index, field, value) => {
-        const updated = [...currentArray];
-        updated[index] = { ...updated[index], [field]: value };
-        setter(updated);
-    };
-
-    const removeVariation = (setter, currentArray, index) => {
         setter(currentArray.filter((_, i) => i !== index));
     };
 
