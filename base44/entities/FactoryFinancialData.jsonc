@@ -365,12 +365,21 @@
                 "type": "number",
                 "default": 0
               },
-              "allocation_percent": {
-                "type": "number",
-                "default": 100
-              },
-              "department_id": {
-                "type": "string"
+              "department_allocations": {
+                "type": "array",
+                "default": [],
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "department_id": {
+                      "type": "string"
+                    },
+                    "allocation_percent": {
+                      "type": "number",
+                      "default": 0
+                    }
+                  }
+                }
               }
             }
           }

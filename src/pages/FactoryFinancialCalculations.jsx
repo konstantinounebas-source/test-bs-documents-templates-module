@@ -544,9 +544,19 @@ export default function FactoryFinancialCalculations() {
     const calculateDepreciationInvestmentsTotal = () => {
         return depreciationInvestments.reduce((sum, item) => {
             const amount = parseFloat(item.total_amount) || 0;
-            const allocation = parseFloat(item.allocation_production_percent) || 0;
-            return sum + (amount * allocation / 100);
+            const allocations = item.department_allocations || [];
+            const totalAllocation = allocations.reduce((allSum, alloc) => allSum + (parseFloat(alloc.allocation_percent) || 0), 0);
+            return sum + (amount * totalAllocation / 100);
         }, 0);
+    };
+
+    const calculateInvestmentAllocationTotal = (departmentAllocations) => {
+        return (departmentAllocations || []).reduce((sum, alloc) => sum + (parseFloat(alloc.allocation_percent) || 0), 0);
+    };
+
+    const getInvestmentDepartmentName = (departmentId) => {
+        const dept = departments.find(d => d.id === departmentId);
+        return dept ? dept.department_name : departmentId;
     };
 
     const calculateEstimatedRevenuesTotal = () => {
@@ -577,23 +587,34 @@ export default function FactoryFinancialCalculations() {
             description: '',
             category: 'materials',
             total_amount: 0,
-            allocation_production_percent: 100,
-            allocation_administration_percent: 0,
-            department_id: ''
+            department_allocations: []
         }]);
     };
 
     const updateDepreciationInvestment = (idx, field, value) => {
         const updated = [...depreciationInvestments];
         updated[idx][field] = value;
-        
-        // Auto-calculate complementary allocation
-        if (field === 'allocation_production_percent') {
-            updated[idx].allocation_administration_percent = 100 - parseFloat(value || 0);
-        } else if (field === 'allocation_administration_percent') {
-            updated[idx].allocation_production_percent = 100 - parseFloat(value || 0);
-        }
-        
+        setDepreciationInvestments(updated);
+    };
+
+    const addDepartmentAllocation = (investmentIdx) => {
+        const updated = [...depreciationInvestments];
+        updated[investmentIdx].department_allocations = [...(updated[investmentIdx].department_allocations || []), {
+            department_id: '',
+            allocation_percent: 0
+        }];
+        setDepreciationInvestments(updated);
+    };
+
+    const updateDepartmentAllocation = (investmentIdx, allocIdx, field, value) => {
+        const updated = [...depreciationInvestments];
+        updated[investmentIdx].department_allocations[allocIdx][field] = value;
+        setDepreciationInvestments(updated);
+    };
+
+    const removeDepartmentAllocation = (investmentIdx, allocIdx) => {
+        const updated = [...depreciationInvestments];
+        updated[investmentIdx].department_allocations = updated[investmentIdx].department_allocations.filter((_, i) => i !== allocIdx);
         setDepreciationInvestments(updated);
     };
 
@@ -1124,26 +1145,20 @@ export default function FactoryFinancialCalculations() {
                                         </Button>
                                     </div>
                                     <div className="space-y-3">
-                                        {depreciationInvestments.map((item, idx) => (
+                                        {depreciationInvestments.map((item, idx) => {
+                                            const totalAlloc = calculateInvestmentAllocationTotal(item.department_allocations);
+                                            const totalAmount = parseFloat(item.total_amount) || 0;
+                                            return (
                                             <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div>
                                                         <Label className="text-xs">Περιγραφή</Label>
-                                                        <Input
-                                                            placeholder="Περιγραφή επένδυσης"
-                                                            value={item.description}
-                                                            onChange={(e) => updateDepreciationInvestment(idx, 'description', e.target.value)}
-                                                        />
+                                                        <Input placeholder="Περιγραφή επένδυσης" value={item.description} onChange={(e) => updateDepreciationInvestment(idx, 'description', e.target.value)} />
                                                     </div>
                                                     <div>
                                                         <Label className="text-xs">Κατηγορία</Label>
-                                                        <Select
-                                                            value={item.category}
-                                                            onValueChange={(value) => updateDepreciationInvestment(idx, 'category', value)}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue />
-                                                            </SelectTrigger>
+                                                        <Select value={item.category} onValueChange={(value) => updateDepreciationInvestment(idx, 'category', value)}>
+                                                            <SelectTrigger><SelectValue /></SelectTrigger>
                                                             <SelectContent>
                                                                 <SelectItem value="materials">Materials</SelectItem>
                                                                 <SelectItem value="labor">Labor</SelectItem>
@@ -1152,71 +1167,58 @@ export default function FactoryFinancialCalculations() {
                                                         </Select>
                                                     </div>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <Label className="text-xs">Τμήμα</Label>
-                                                        <Select
-                                                            value={item.department_id}
-                                                            onValueChange={(value) => updateDepreciationInvestment(idx, 'department_id', value)}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Επιλέξτε τμήμα" />
-                                                            </SelectTrigger>
-                                                            <SelectContent position="popper" sideOffset={5}>
-                                                                {departments.map(dept => (
-                                                                    <SelectItem key={dept.id} value={dept.id}>
-                                                                        {dept.department_name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    <div>
-                                                        <Label className="text-xs">Συνολικό Ποσό</Label>
-                                                        <Input
-                                                            type="number"
-                                                            placeholder="0.00"
-                                                            value={item.total_amount}
-                                                            onChange={(e) => updateDepreciationInvestment(idx, 'total_amount', e.target.value)}
-                                                        />
-                                                    </div>
+                                                <div>
+                                                    <Label className="text-xs">Συνολικό Ποσό</Label>
+                                                    <Input type="number" placeholder="0.00" value={item.total_amount} onChange={(e) => updateDepreciationInvestment(idx, 'total_amount', e.target.value)} />
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <Label className="text-xs">Κατανομή Παραγωγής (%)</Label>
-                                                        <Input
-                                                            type="number"
-                                                            min="0"
-                                                            max="100"
-                                                            value={item.allocation_production_percent}
-                                                            onChange={(e) => updateDepreciationInvestment(idx, 'allocation_production_percent', e.target.value)}
-                                                        />
+                                                <div className="border-t pt-3 space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <Label className="text-sm font-semibold">Department Allocations</Label>
+                                                        <Button size="sm" variant="outline" onClick={() => addDepartmentAllocation(idx)}>
+                                                            <Plus className="w-3 h-3 mr-1" />
+                                                            Add Department
+                                                        </Button>
                                                     </div>
-                                                    <div>
-                                                        <Label className="text-xs">Κατανομή Διοίκησης (%)</Label>
-                                                        <Input
-                                                            type="number"
-                                                            min="0"
-                                                            max="100"
-                                                            value={item.allocation_administration_percent}
-                                                            onChange={(e) => updateDepreciationInvestment(idx, 'allocation_administration_percent', e.target.value)}
-                                                        />
+                                                    {(item.department_allocations || []).map((alloc, allocIdx) => (
+                                                        <div key={allocIdx} className="flex items-end gap-2 bg-white p-2 rounded border border-slate-200">
+                                                            <div className="flex-1">
+                                                                <Label className="text-xs">Τμήμα</Label>
+                                                                <Select value={alloc.department_id} onValueChange={(value) => updateDepartmentAllocation(idx, allocIdx, 'department_id', value)}>
+                                                                    <SelectTrigger className="h-8"><SelectValue placeholder="Επιλέξτε τμήμα" /></SelectTrigger>
+                                                                    <SelectContent position="popper" sideOffset={5}>{departments.map(dept => (<SelectItem key={dept.id} value={dept.id}>{dept.department_name}</SelectItem>))}</SelectContent>
+                                                                </Select>
+                                                            </div>
+                                                            <div className="w-24">
+                                                                <Label className="text-xs">Allocation %</Label>
+                                                                <Input type="number" placeholder="0" min="0" max="100" value={alloc.allocation_percent} onChange={(e) => updateDepartmentAllocation(idx, allocIdx, 'allocation_percent', e.target.value)} className="h-8" />
+                                                            </div>
+                                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => removeDepartmentAllocation(idx, allocIdx)}>
+                                                                <Trash2 className="w-3 h-3 text-red-500" />
+                                                            </Button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className={`p-2 rounded text-xs font-semibold ${totalAlloc === 100 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                                                    Total Allocation: {totalAlloc.toFixed(1)}% {totalAlloc === 100 ? '✓' : '(must equal 100%)'}
+                                                </div>
+                                                {totalAlloc > 0 && (
+                                                    <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded space-y-1">
+                                                        <strong>Allocated amount split:</strong>
+                                                        {(item.department_allocations || []).map((alloc, allocIdx) => {
+                                                            const deptName = getInvestmentDepartmentName(alloc.department_id);
+                                                            const allocAmount = totalAmount * (parseFloat(alloc.allocation_percent) || 0) / 100;
+                                                            return <div key={allocIdx}>{deptName}: {formatCurrency(allocAmount)}</div>;
+                                                        })}
                                                     </div>
-                                                </div>
-                                                <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
-                                                    <strong>Allocated amount:</strong> {formatCurrency(item.total_amount)} × {item.allocation_production_percent}% = {formatCurrency((parseFloat(item.total_amount) || 0) * (parseFloat(item.allocation_production_percent) || 0) / 100)}
-                                                </div>
+                                                )}
                                                 <div className="flex justify-end">
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        onClick={() => removeDepreciationInvestment(idx)}
-                                                    >
+                                                    <Button size="icon" variant="ghost" onClick={() => removeDepreciationInvestment(idx)}>
                                                         <Trash2 className="w-4 h-4 text-red-500" />
                                                     </Button>
                                                 </div>
                                             </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                     <div className="pt-2 text-sm font-medium text-slate-700">
                                         Σύνολο Επενδύσεων: {formatCurrency(calculateDepreciationInvestmentsTotal())}
