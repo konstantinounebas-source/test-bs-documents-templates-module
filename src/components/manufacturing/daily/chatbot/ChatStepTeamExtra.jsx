@@ -89,27 +89,6 @@ export default function ChatStepTeamExtra({ batchId, onNext, onSkip, onBack }) {
         </Button>
       </div>
 
-      {/* Existing entries */}
-      {lines.length > 0 && (
-        <>
-          <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
-            ✅ {lines.length} εγγραφές extra time
-          </div>
-          <div className="border rounded divide-y max-h-32 overflow-y-auto">
-            {lines.map(l => (
-              <div key={l.id} className="flex items-center gap-1 px-2 py-1.5 text-[10px] text-slate-700 hover:bg-slate-50 group">
-                <span className="flex-1 truncate font-medium">{l.person_name}</span>
-                <span className="text-slate-400 truncate max-w-[50px]">{l.work_type}</span>
-                <span className="text-slate-500 w-10 text-right">{l.duration_min}m</span>
-                <button onClick={() => handleDelete(l.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 ml-1">
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
       {/* Add form - Collapsible */}
       <div className="border border-slate-200 rounded p-2 bg-slate-50 space-y-1">
         <div className="flex items-center justify-between cursor-pointer" onClick={() => setAddExpanded(e => !e)}>
@@ -180,6 +159,26 @@ export default function ChatStepTeamExtra({ batchId, onNext, onSkip, onBack }) {
           </>
         )}
       </div>
+
+      {lines.length > 0 && (
+        <>
+          <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
+            ✅ {lines.length} εγγραφές extra time
+          </div>
+          <div className="border rounded divide-y max-h-32 overflow-y-auto">
+            {lines.map(l => (
+              <div key={l.id} className="flex items-center gap-1 px-2 py-1.5 text-[10px] text-slate-700 hover:bg-slate-50 group">
+                <span className="flex-1 truncate font-medium">{l.person_name}</span>
+                <span className="text-slate-400 truncate max-w-[50px]">{l.work_type}</span>
+                <span className="text-slate-500 w-10 text-right">{l.duration_min}m</span>
+                <button onClick={() => handleDelete(l.id)} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600 ml-1">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
         onClick={() => onNext("⏭ Team Time Extra – Συνέχεια...")}>

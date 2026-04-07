@@ -138,21 +138,6 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
         </Button>
       </div>
 
-      {lines.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
-          ✅ {lines.length} άτομα · Σύνολο: {totalAvail} min ({(totalAvail / 60).toFixed(1)} hrs)
-        </div>
-      )}
-
-      {/* Existing persons */}
-      {lines.length > 0 && (
-        <div className="border rounded divide-y flex-1 min-h-0 overflow-y-auto">
-          {lines.map(l => (
-            <PersonRow key={l.id} line={l} onDelete={handleDelete} onUpdate={handleUpdate} />
-          ))}
-        </div>
-      )}
-
       {/* Time inputs for new entries - Collapsible */}
       <div className="border border-slate-200 rounded p-2 bg-slate-50 space-y-1">
         <div className="flex items-center justify-between cursor-pointer" onClick={() => setAddExpanded(e => !e)}>
@@ -210,6 +195,20 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
           </>
         )}
       </div>
+
+      {lines.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700">
+          ✅ {lines.length} άτομα · Σύνολο: {totalAvail} min ({(totalAvail / 60).toFixed(1)} hrs)
+        </div>
+      )}
+
+      {lines.length > 0 && (
+        <div className="border rounded divide-y flex-1 min-h-0 overflow-y-auto">
+          {lines.map(l => (
+            <PersonRow key={l.id} line={l} onDelete={handleDelete} onUpdate={handleUpdate} />
+          ))}
+        </div>
+      )}
 
       <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
         onClick={() => onNext("⏭ Team Time Persons – Συνέχεια...")}>
