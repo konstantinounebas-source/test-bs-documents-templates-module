@@ -17,15 +17,40 @@ import {
 import VersionSelector from "@/components/factory-financial/VersionSelector";
 import PeriodSettingsCard from "@/components/factory-financial/PeriodSettingsCard";
 import ShelterRevenueSection from "@/components/factory-financial/ShelterRevenueSection";
-import PersonnelCostSection from "@/components/factory-financial/PersonnelCostSection";
-import BomCostSection from "@/components/factory-financial/BomCostSection";
-import GenericCostSection from "@/components/factory-financial/GenericCostSection";
-import InvestmentAmortizationSection from "@/components/factory-financial/InvestmentAmortizationSection";
 import SummarySection from "@/components/factory-financial/SummarySection";
 import DepartmentSummarySection from "@/components/factory-financial/DepartmentSummarySection";
 import DepreciationModuleSection from "@/components/factory-financial/DepreciationModuleSection";
 import DepreciationRateCard from "@/components/factory-financial/DepreciationRateCard";
 import ValidationWarningCard from "@/components/factory-financial/ValidationWarningCard";
+import FactoryCostSectionsCard from "@/components/factory-financial/FactoryCostSectionsCard";
+import {
+    getAllocationTotal,
+    hasInvalidAllocation,
+    convertCostToDaily,
+    getVariationsTotal,
+    getShelterRevenueTotal,
+    calculateCostWithAlloc,
+    calculatePersonnelCostTotal,
+    calculateBomTotal,
+    calculateInvestmentTotal,
+    calculateCostTotal,
+    calculateTotalCosts,
+    calculateDepreciationInvestmentsTotal,
+    calculateEstimatedRevenuesTotal,
+    calculateAdditionalRevenuesTotal,
+    calculateTotalDepreciationRevenueBase,
+    calculateDepreciationFactor,
+    calculateDepartmentSummary,
+    formatCurrency,
+} from "@/components/factory-financial/utils/financialCalculations";
+import {
+    updateArrayItem,
+    addArrayItem,
+    removeArrayItem,
+    addDeptAllocation,
+    updateDeptAllocation,
+    removeDeptAllocation,
+} from "@/components/factory-financial/utils/stateHelpers";
 
 export default function FactoryFinancialCalculations() {
     const { hasAccess, isLoading: accessLoading } = usePageAccess('FactoryFinancialCalculations');
@@ -202,59 +227,9 @@ export default function FactoryFinancialCalculations() {
         }
     };
 
-    // ===== ALLOCATION HELPERS =====
-    const getAllocationTotal = (allocations) => {
-        return (allocations || []).reduce((sum, a) => sum + (parseFloat(a.allocation_percent) || 0), 0);
-    };
-
-    const hasInvalidAllocation = (items) => {
-        if (!items || items.length === 0) return false;
-        return items.some(item => {
-            const allocations = item.department_allocations || [];
-            if (allocations.length === 0) return false;
-            const total = getAllocationTotal(allocations);
-            return total < 99.99 || total > 100.01;
-        });
-    };
-
     const validateAllAllocations = () => {
         return ![personnelCosts, fixedCosts, overheadCosts, maintenanceCosts, investmentAmortization, depreciationInvestments]
             .some(hasInvalidAllocation);
-    };
-
-    // ===== GENERIC STATE UPDATE UTILITIES =====
-    const updateArrayItem = (setter, array, index, field, value) => {
-        const updated = [...array];
-        updated[index] = { ...updated[index], [field]: value };
-        setter(updated);
-    };
-
-    const addArrayItem = (setter, array, newItem) => {
-        setter([...array, newItem]);
-    };
-
-    const removeArrayItem = (setter, array, index) => {
-        setter(array.filter((_, i) => i !== index));
-    };
-
-    const addDeptAllocation = (setter, array, itemIdx) => {
-        const updated = [...array];
-        updated[itemIdx].department_allocations = [...(updated[itemIdx].department_allocations || []), 
-            { department_id: '', allocation_percent: 0 }];
-        setter(updated);
-    };
-
-    const updateDeptAllocation = (setter, array, itemIdx, allocIdx, field, value) => {
-        const updated = [...array];
-        updated[itemIdx].department_allocations[allocIdx][field] = value;
-        setter(updated);
-    };
-
-    const removeDeptAllocation = (setter, array, itemIdx, allocIdx) => {
-        const updated = [...array];
-        updated[itemIdx].department_allocations = updated[itemIdx].department_allocations
-            .filter((_, i) => i !== allocIdx);
-        setter(updated);
     };
 
     const handleClone = async () => {
@@ -391,185 +366,54 @@ export default function FactoryFinancialCalculations() {
         setInvestmentAmortization(updated);
     };
 
-    // ===== SHELTER REVENUE HELPERS =====
-    const updateShelterRevenueItem = (index, field, value) => {
-        const updated = [...shelterRevenueItems];
-        updated[index] = { ...updated[index], [field]: value };
-        setShelterRevenueItems(updated);
-    };
 
-    const updateShelterVariation = (itemIndex, variationType, variationIndex, field, value) => {
-        const updated = [...shelterRevenueItems];
-        updated[itemIndex][variationType][variationIndex] = { ...updated[itemIndex][variationType][variationIndex], [field]: value };
-        setShelterRevenueItems(updated);
-    };
-
-    const removeShelterVariation = (itemIndex, variationType, variationIndex) => {
-        const updated = [...shelterRevenueItems];
-        updated[itemIndex][variationType] = updated[itemIndex][variationType].filter((_, i) => i !== variationIndex);
-        setShelterRevenueItems(updated);
-    };
-
-    // ===== COST CONVERSION =====
-    const convertCostToDaily = (amount, frequencyType) => {
-        const amt = parseFloat(amount) || 0;
-        switch(frequencyType) {
-            case 'daily':
-            case 'per_production_day':
-                return amt;
-            case 'monthly':
-                return amt / (avgWorkingDaysPerMonth || 22);
-            case 'yearly':
-                return amt / (avgWorkingDaysPerYear || 260);
-            case 'one_time':
-                return totalWorkingDays > 0 ? amt / totalWorkingDays : 0;
-            default:
-                return amt;
-        }
-    };
-
-    // ===== SHELTER REVENUE CALCULATIONS =====
-    const getVariationsTotal = (variations) => {
-        return variations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
-    };
-
-    const getShelterRevenueTotal = (item) => {
-        const contract = parseFloat(item.contract_amount) || 0;
-        const jv = parseFloat(item.amount_from_jv) || 0;
-        const approved = getVariationsTotal(item.approved_variations);
-        const potential = getVariationsTotal(item.potential_variations);
-        return contract + jv + approved + potential;
-    };
 
     const calculateTotalIncome = () => {
         return shelterRevenueItems.reduce((sum, item) => sum + getShelterRevenueTotal(item), 0);
     };
 
-    // ===== COST CALCULATIONS =====
-    const getTotalAllocPct = (allocations) =>
-        (allocations || []).reduce((sum, a) => sum + (parseFloat(a.allocation_percent) || 0), 0);
+    // Helper wrappers for calculation functions that need component state parameters
+    const getConvertCostToDaily = (amount, frequencyType) => 
+        convertCostToDaily(amount, frequencyType, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays);
 
-    const calculateCostWithAlloc = (items, getAmountField, isDailyAlready = false) => {
-        return items.reduce((sum, item) => {
-            const amount = getAmountField(item);
-            const dailyCost = isDailyAlready ? amount : convertCostToDaily(amount, item.frequency_type);
-            const totalForPeriod = dailyCost * (totalWorkingDays || 0);
-            const totalAlloc = getTotalAllocPct(item.department_allocations);
-            return sum + (totalForPeriod * totalAlloc / 100);
-        }, 0);
-    };
+    const getCalculatePersonnelCostTotal = () => 
+        calculatePersonnelCostTotal(personnelCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear);
 
-    const calculatePersonnelCostTotal = () => 
-        calculateCostWithAlloc(personnelCosts, item => item.calculated_amount);
-    
-    const calculateBomTotal = () => {
-        return bomCosts.reduce((sum, item) => {
-            const cost = parseFloat(item.calculated_bom_cost) || 0;
-            const qty = parseFloat(item.quantity) || 1;
-            return sum + (cost * qty);
-        }, 0);
-    };
-    
-    const calculateInvestmentTotal = () => 
-        calculateCostWithAlloc(investmentAmortization, item => item.calculated_daily_cost, true);
-    
-    const calculateCostTotal = (costArray) => 
-        calculateCostWithAlloc(costArray, item => item.amount);
+    const getCalculateBomTotal = () => calculateBomTotal(bomCosts);
 
-    const calculateTotalCosts = () => {
-        return calculatePersonnelCostTotal() +
-               calculateBomTotal() +
-               calculateCostTotal(fixedCosts) +
-               calculateCostTotal(overheadCosts) +
-               calculateInvestmentTotal() +
-               calculateCostTotal(maintenanceCosts);
-    };
+    const getCalculateInvestmentTotal = () => 
+        calculateInvestmentTotal(investmentAmortization, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear);
 
-    const formatCurrency = (value) => {
-        return `€${parseFloat(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    };
+    const getCalculateCostTotal = (costArray) => 
+        calculateCostTotal(costArray, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear);
 
-    // ===== DEPRECIATION CALCULATIONS =====
-    const calculateDepreciationInvestmentsTotal = () => {
-        return depreciationInvestments.reduce((sum, item) => {
-            const amount = parseFloat(item.total_amount) || 0;
-            const totalAllocation = getAllocationTotal(item.department_allocations);
-            return sum + (amount * totalAllocation / 100);
-        }, 0);
-    };
+    const getCalculateTotalCosts = () => 
+        calculateTotalCosts(
+            personnelCosts, bomCosts, fixedCosts, overheadCosts, investmentAmortization, maintenanceCosts,
+            totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear
+        );
 
-    const calculateEstimatedRevenuesTotal = () => {
-        return estimatedRevenues.reduce((sum, item) => {
-            const totalRevenue = item.total_revenue != null
-                ? parseFloat(item.total_revenue) || 0
-                : (parseFloat(item.pending_quantity) || 0) * (parseFloat(item.unit_revenue) || 0);
-            return sum + totalRevenue;
-        }, 0);
-    };
+    const getCalculateDepreciationInvestmentsTotal = () => calculateDepreciationInvestmentsTotal(depreciationInvestments);
 
-    const calculateAdditionalRevenuesTotal = () => {
-        return additionalRevenues.reduce((sum, item) => sum + (parseFloat(item.total_amount) || 0), 0);
-    };
+    const getCalculateEstimatedRevenuesTotal = () => calculateEstimatedRevenuesTotal(estimatedRevenues);
 
-    const calculateTotalDepreciationRevenueBase = () => {
-        return calculateEstimatedRevenuesTotal() + calculateAdditionalRevenuesTotal();
-    };
+    const getCalculateAdditionalRevenuesTotal = () => calculateAdditionalRevenuesTotal(additionalRevenues);
 
-    const calculateDepreciationFactor = () => {
-        const revenueBase = calculateTotalDepreciationRevenueBase();
-        return revenueBase > 0 ? calculateDepreciationInvestmentsTotal() / revenueBase : 0;
-    };
+    const getCalculateTotalDepreciationRevenueBase = () => 
+        calculateTotalDepreciationRevenueBase(estimatedRevenues, additionalRevenues);
 
-    const calculateDepartmentSummary = () => {
-        const deptMap = {};
+    const getCalculateDepreciationFactor = () => 
+        calculateDepreciationFactor(depreciationInvestments, estimatedRevenues, additionalRevenues);
 
-        const ensureDept = (deptId) => {
-            if (!deptMap[deptId]) {
-                const dept = departments.find(d => d.id === deptId);
-                deptMap[deptId] = {
-                    department_id: deptId,
-                    department_name: dept ? dept.department_name : deptId,
-                    personnel_total: 0,
-                    fixed_total: 0,
-                    overhead_total: 0,
-                    maintenance_total: 0,
-                    investment_amortization_total: 0,
-                    depreciation_investments_total: 0,
-                };
-            }
-        };
+    const getCalculateDepartmentSummary = () => 
+        calculateDepartmentSummary(
+            personnelCosts, fixedCosts, overheadCosts, maintenanceCosts, investmentAmortization, depreciationInvestments,
+            departments, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear
+        );
 
-        const distribute = (items, getItemTotal, field) => {
-            items.forEach(item => {
-                const allocs = item.department_allocations || [];
-                if (allocs.length === 0) return;
-                const itemTotal = getItemTotal(item);
-                allocs.forEach(alloc => {
-                    if (!alloc.department_id) return;
-                    ensureDept(alloc.department_id);
-                    deptMap[alloc.department_id][field] += itemTotal * (parseFloat(alloc.allocation_percent) || 0) / 100;
-                });
-            });
-        };
-
-        distribute(personnelCosts, item => convertCostToDaily(item.calculated_amount, item.frequency_type) * totalWorkingDays, 'personnel_total');
-        distribute(fixedCosts, item => convertCostToDaily(item.amount, item.frequency_type) * totalWorkingDays, 'fixed_total');
-        distribute(overheadCosts, item => convertCostToDaily(item.amount, item.frequency_type) * totalWorkingDays, 'overhead_total');
-        distribute(maintenanceCosts, item => convertCostToDaily(item.amount, item.frequency_type) * totalWorkingDays, 'maintenance_total');
-        distribute(investmentAmortization, item => (parseFloat(item.calculated_daily_cost) || 0) * totalWorkingDays, 'investment_amortization_total');
-        distribute(depreciationInvestments, item => parseFloat(item.total_amount) || 0, 'depreciation_investments_total');
-
-        return Object.values(deptMap)
-            .map(d => ({
-                ...d,
-                grand_total: d.personnel_total + d.fixed_total + d.overhead_total + d.maintenance_total + d.investment_amortization_total + d.depreciation_investments_total
-            }))
-            .filter(d => d.grand_total > 0);
-    };
-
-    // ===== DEPRECIATION HELPERS =====
+    // ===== DEPRECIATION & SHELTER REVENUE HANDLERS =====
     const updateDepreciationInvestment = (idx, field, value) => {
-        updateArrayItem(setDepreciationInvestments, depreciationInvestments, idx, field, value);
+        setDepreciationInvestments(updateArrayItem(depreciationInvestments, idx, field, value));
     };
 
     const updateEstimatedRevenue = (idx, field, value) => {
@@ -592,7 +436,25 @@ export default function FactoryFinancialCalculations() {
     };
 
     const updateAdditionalRevenue = (idx, field, value) => {
-        updateArrayItem(setAdditionalRevenues, additionalRevenues, idx, field, value);
+        setAdditionalRevenues(updateArrayItem(additionalRevenues, idx, field, value));
+    };
+
+    const updateShelterRevenueItem = (index, field, value) => {
+        const updated = [...shelterRevenueItems];
+        updated[index] = { ...updated[index], [field]: value };
+        setShelterRevenueItems(updated);
+    };
+
+    const updateShelterVariation = (itemIndex, variationType, variationIndex, field, value) => {
+        const updated = [...shelterRevenueItems];
+        updated[itemIndex][variationType][variationIndex] = { ...updated[itemIndex][variationType][variationIndex], [field]: value };
+        setShelterRevenueItems(updated);
+    };
+
+    const removeShelterVariation = (itemIndex, variationType, variationIndex) => {
+        const updated = [...shelterRevenueItems];
+        updated[itemIndex][variationType] = updated[itemIndex][variationType].filter((_, i) => i !== variationIndex);
+        setShelterRevenueItems(updated);
     };
 
     const getDeptName = (departmentId) => {
@@ -703,65 +565,111 @@ export default function FactoryFinancialCalculations() {
                             }}
                         />
 
-                        {/* SECTION B - Costs (with render functions inline for now) */}
-                        {renderCostSectionsCard()}
+                        {/* SECTION B - Costs */}
+                         <FactoryCostSectionsCard
+                             personnelCosts={personnelCosts}
+                             dailyMetrics={dailyMetrics}
+                             bomCosts={bomCosts}
+                             busStopTypes={busStopTypes}
+                             overheadCosts={overheadCosts}
+                             maintenanceCosts={maintenanceCosts}
+                             investmentAmortization={investmentAmortization}
+                             departments={departments}
+                             expandedSections={expandedSections}
+                             totalWorkingDays={totalWorkingDays}
+                             formatCurrency={formatCurrency}
+                             convertCostToDaily={getConvertCostToDaily}
+                             calculatePersonnelCostTotal={getCalculatePersonnelCostTotal}
+                             calculateBomTotal={getCalculateBomTotal}
+                             calculateCostTotal={getCalculateCostTotal}
+                             calculateInvestmentTotal={getCalculateInvestmentTotal}
+                             toggleSection={toggleSection}
+                             onAddPersonnel={() => setPersonnelCosts(addArrayItem(personnelCosts, { metric_id: '', description: '', calculated_amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                             onRemovePersonnel={(idx) => setPersonnelCosts(removeArrayItem(personnelCosts, idx))}
+                             onUpdatePersonnel={(idx, field, value) => setPersonnelCosts(updateArrayItem(personnelCosts, idx, field, value))}
+                             onAddPersonnelDeptAlloc={(idx) => setPersonnelCosts(addDeptAllocation(personnelCosts, idx))}
+                             onUpdatePersonnelDeptAlloc={(idx, allocIdx, field, value) => setPersonnelCosts(updateDeptAllocation(personnelCosts, idx, allocIdx, field, value))}
+                             onRemovePersonnelDeptAlloc={(idx, allocIdx) => setPersonnelCosts(removeDeptAllocation(personnelCosts, idx, allocIdx))}
+                             onAddBom={() => setBomCosts(addArrayItem(bomCosts, { bus_stop_type_id: '', product_identifier: '', description: '', calculated_bom_cost: 0, quantity: 1 }))}
+                             onRemoveBom={(idx) => setBomCosts(removeArrayItem(bomCosts, idx))}
+                             onUpdateBom={(idx, field, value) => setBomCosts(updateArrayItem(bomCosts, idx, field, value))}
+                             onBusStopTypeChange={handleBusStopTypeChange}
+                             onAddOverhead={() => setOverheadCosts(addArrayItem(overheadCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                             onRemoveOverhead={(idx) => setOverheadCosts(removeArrayItem(overheadCosts, idx))}
+                             onUpdateOverhead={(idx, field, value) => setOverheadCosts(updateArrayItem(overheadCosts, idx, field, value))}
+                             onAddOverheadDeptAlloc={(idx) => setOverheadCosts(addDeptAllocation(overheadCosts, idx))}
+                             onUpdateOverheadDeptAlloc={(idx, allocIdx, field, value) => setOverheadCosts(updateDeptAllocation(overheadCosts, idx, allocIdx, field, value))}
+                             onRemoveOverheadDeptAlloc={(idx, allocIdx) => setOverheadCosts(removeDeptAllocation(overheadCosts, idx, allocIdx))}
+                             onAddMaintenance={() => setMaintenanceCosts(addArrayItem(maintenanceCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                             onRemoveMaintenance={(idx) => setMaintenanceCosts(removeArrayItem(maintenanceCosts, idx))}
+                             onUpdateMaintenance={(idx, field, value) => setMaintenanceCosts(updateArrayItem(maintenanceCosts, idx, field, value))}
+                             onAddMaintenanceDeptAlloc={(idx) => setMaintenanceCosts(addDeptAllocation(maintenanceCosts, idx))}
+                             onUpdateMaintenanceDeptAlloc={(idx, allocIdx, field, value) => setMaintenanceCosts(updateDeptAllocation(maintenanceCosts, idx, allocIdx, field, value))}
+                             onRemoveMaintenanceDeptAlloc={(idx, allocIdx) => setMaintenanceCosts(removeDeptAllocation(maintenanceCosts, idx, allocIdx))}
+                             onAddInvestment={() => setInvestmentAmortization(addArrayItem(investmentAmortization, { description: '', total_investment_amount: 0, project_duration_months: 12, calculated_daily_cost: 0, department_allocations: [] }))}
+                             onRemoveInvestment={(idx) => setInvestmentAmortization(removeArrayItem(investmentAmortization, idx))}
+                             onUpdateInvestment={handleInvestmentChange}
+                             onAddInvestmentDeptAlloc={(idx) => setInvestmentAmortization(addDeptAllocation(investmentAmortization, idx))}
+                             onUpdateInvestmentDeptAlloc={(idx, allocIdx, field, value) => setInvestmentAmortization(updateDeptAllocation(investmentAmortization, idx, allocIdx, field, value))}
+                             onRemoveInvestmentDeptAlloc={(idx, allocIdx) => setInvestmentAmortization(removeDeptAllocation(investmentAmortization, idx, allocIdx))}
+                         />
 
                         {/* Allocation Validation Warning */}
-                        {!validateAllAllocations() && <ValidationWarningCard />}
+                         {!validateAllAllocations() && <ValidationWarningCard />}
 
-                        {/* SECTION C - Summary */}
-                        <SummarySection
-                            totalIncome={calculateTotalIncome()}
-                            totalCosts={calculateTotalCosts()}
-                            formatCurrency={formatCurrency}
-                        />
+                         {/* SECTION C - Summary */}
+                         <SummarySection
+                             totalIncome={calculateTotalIncome()}
+                             totalCosts={getCalculateTotalCosts()}
+                             formatCurrency={formatCurrency}
+                         />
 
-                        {/* SECTION D - Department Summary */}
-                        <DepartmentSummarySection
-                            summary={calculateDepartmentSummary()}
-                            formatCurrency={formatCurrency}
-                        />
+                         {/* SECTION D - Department Summary */}
+                         <DepartmentSummarySection
+                             summary={getCalculateDepartmentSummary()}
+                             formatCurrency={formatCurrency}
+                         />
 
-                        {/* Depreciation Module */}
-                        <DepreciationModuleSection
-                            depreciationInvestments={depreciationInvestments}
-                            estimatedRevenues={estimatedRevenues}
-                            additionalRevenues={additionalRevenues}
-                            departments={departments}
-                            busStopTypes={busStopTypes}
-                            formatCurrency={formatCurrency}
-                            getAllocationTotal={getAllocationTotal}
-                            getDeptName={getDeptName}
-                            calculateDepreciationInvestmentsTotal={calculateDepreciationInvestmentsTotal}
-                            calculateEstimatedRevenuesTotal={calculateEstimatedRevenuesTotal}
-                            calculateAdditionalRevenuesTotal={calculateAdditionalRevenuesTotal}
-                            onAddDeprecInv={() => addArrayItem(setDepreciationInvestments, depreciationInvestments, {
-                                description: '', category: 'materials', total_amount: 0, department_allocations: []
-                            })}
-                            onRemoveDeprecInv={(idx) => removeArrayItem(setDepreciationInvestments, depreciationInvestments, idx)}
-                            onUpdateDeprecInv={(idx, field, value) => updateArrayItem(setDepreciationInvestments, depreciationInvestments, idx, field, value)}
-                            onAddDeptAllocDepr={(idx) => addDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx)}
-                            onRemoveDeptAllocDepr={(idx, allocIdx) => removeDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx, allocIdx)}
-                            onUpdateDeptAllocDepr={(idx, allocIdx, field, value) => updateDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx, allocIdx, field, value)}
-                            onAddEstRevenue={() => addArrayItem(setEstimatedRevenues, estimatedRevenues, {
-                                bus_stop_type_id: '', description: '', pending_quantity: 0, unit_revenue: 0, total_revenue: 0
-                            })}
-                            onRemoveEstRevenue={(idx) => removeArrayItem(setEstimatedRevenues, estimatedRevenues, idx)}
-                            onUpdateEstRevenue={(idx, field, value) => updateEstimatedRevenue(idx, field, value)}
-                            onAddAddRevenue={() => addArrayItem(setAdditionalRevenues, additionalRevenues, {
-                                description: '', total_amount: 0
-                            })}
-                            onRemoveAddRevenue={(idx) => removeArrayItem(setAdditionalRevenues, additionalRevenues, idx)}
-                            onUpdateAddRevenue={(idx, field, value) => updateArrayItem(setAdditionalRevenues, additionalRevenues, idx, field, value)}
-                        />
+                         {/* Depreciation Module */}
+                         <DepreciationModuleSection
+                             depreciationInvestments={depreciationInvestments}
+                             estimatedRevenues={estimatedRevenues}
+                             additionalRevenues={additionalRevenues}
+                             departments={departments}
+                             busStopTypes={busStopTypes}
+                             formatCurrency={formatCurrency}
+                             getAllocationTotal={getAllocationTotal}
+                             getDeptName={getDeptName}
+                             calculateDepreciationInvestmentsTotal={getCalculateDepreciationInvestmentsTotal}
+                             calculateEstimatedRevenuesTotal={getCalculateEstimatedRevenuesTotal}
+                             calculateAdditionalRevenuesTotal={getCalculateAdditionalRevenuesTotal}
+                             onAddDeprecInv={() => setDepreciationInvestments(addArrayItem(depreciationInvestments, {
+                                 description: '', category: 'materials', total_amount: 0, department_allocations: []
+                             }))}
+                             onRemoveDeprecInv={(idx) => setDepreciationInvestments(removeArrayItem(depreciationInvestments, idx))}
+                             onUpdateDeprecInv={(idx, field, value) => setDepreciationInvestments(updateArrayItem(depreciationInvestments, idx, field, value))}
+                             onAddDeptAllocDepr={(idx) => setDepreciationInvestments(addDeptAllocation(depreciationInvestments, idx))}
+                             onRemoveDeptAllocDepr={(idx, allocIdx) => setDepreciationInvestments(removeDeptAllocation(depreciationInvestments, idx, allocIdx))}
+                             onUpdateDeptAllocDepr={(idx, allocIdx, field, value) => setDepreciationInvestments(updateDeptAllocation(depreciationInvestments, idx, allocIdx, field, value))}
+                             onAddEstRevenue={() => setEstimatedRevenues(addArrayItem(estimatedRevenues, {
+                                 bus_stop_type_id: '', description: '', pending_quantity: 0, unit_revenue: 0, total_revenue: 0
+                             }))}
+                             onRemoveEstRevenue={(idx) => setEstimatedRevenues(removeArrayItem(estimatedRevenues, idx))}
+                             onUpdateEstRevenue={(idx, field, value) => updateEstimatedRevenue(idx, field, value)}
+                             onAddAddRevenue={() => setAdditionalRevenues(addArrayItem(additionalRevenues, {
+                                 description: '', total_amount: 0
+                             }))}
+                             onRemoveAddRevenue={(idx) => setAdditionalRevenues(removeArrayItem(additionalRevenues, idx))}
+                             onUpdateAddRevenue={(idx, field, value) => setAdditionalRevenues(updateArrayItem(additionalRevenues, idx, field, value))}
+                         />
 
-                        {/* Depreciation Rate on Revenue */}
-                        <DepreciationRateCard
-                            totalRevenueBase={calculateTotalDepreciationRevenueBase()}
-                            totalDepreciationCost={calculateDepreciationInvestmentsTotal()}
-                            depreciationFactor={calculateDepreciationFactor()}
-                            formatCurrency={formatCurrency}
-                        />
+                         {/* Depreciation Rate on Revenue */}
+                         <DepreciationRateCard
+                             totalRevenueBase={getCalculateTotalDepreciationRevenueBase()}
+                             totalDepreciationCost={getCalculateDepreciationInvestmentsTotal()}
+                             depreciationFactor={getCalculateDepreciationFactor()}
+                             formatCurrency={formatCurrency}
+                         />
                     </>
                 )}
             </div>
@@ -853,25 +761,4 @@ export default function FactoryFinancialCalculations() {
             </Dialog>
         </div>
     );
-
-    function renderCostSectionsCard() {
-        return (
-            <div className="space-y-6">
-                <PersonnelCostSection
-                    personnelCosts={personnelCosts} dailyMetrics={dailyMetrics} departments={departments} expandedSections={expandedSections} totalWorkingDays={totalWorkingDays} formatCurrency={formatCurrency} convertCostToDaily={convertCostToDaily} calculatePersonnelCostTotal={calculatePersonnelCostTotal} onToggleSection={toggleSection}
-                    onAddItem={() => addArrayItem(setPersonnelCosts, personnelCosts, { metric_id: '', description: '', calculated_amount: 0, frequency_type: 'monthly', department_allocations: [] })}
-                    onRemoveItem={(idx) => removeArrayItem(setPersonnelCosts, personnelCosts, idx)}
-                    onUpdateItem={(idx, field, value) => { const u = [...personnelCosts]; u[idx][field] = value; setPersonnelCosts(u); }}
-                    onAddDeptAlloc={(idx) => addDeptAllocation(setPersonnelCosts, personnelCosts, idx)}
-                    onUpdateDeptAlloc={(idx, allocIdx, field, value) => updateDeptAllocation(setPersonnelCosts, personnelCosts, idx, allocIdx, field, value)}
-                    onRemoveDeptAlloc={(idx, allocIdx) => removeDeptAllocation(setPersonnelCosts, personnelCosts, idx, allocIdx)}
-                />
-                <BomCostSection bomCosts={bomCosts} busStopTypes={busStopTypes} expandedSections={expandedSections} formatCurrency={formatCurrency} calculateBomTotal={calculateBomTotal} onToggleSection={toggleSection} onAddItem={() => addArrayItem(setBomCosts, bomCosts, { bus_stop_type_id: '', product_identifier: '', description: '', calculated_bom_cost: 0, quantity: 1 })} onRemoveItem={(idx) => removeArrayItem(setBomCosts, bomCosts, idx)} onUpdateItem={(idx, field, value) => updateArrayItem(setBomCosts, bomCosts, idx, field, value)} onBusStopTypeChange={handleBusStopTypeChange} />
-                <GenericCostSection title="Γενικά Έξοδα (Overhead Costs)" sectionKey="overhead" costArray={overheadCosts} departments={departments} expandedSections={expandedSections} totalWorkingDays={totalWorkingDays} formatCurrency={formatCurrency} convertCostToDaily={convertCostToDaily} calculateCostTotal={calculateCostTotal} onToggleSection={toggleSection} onAddItem={() => addArrayItem(setOverheadCosts, overheadCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] })} onRemoveItem={(idx) => removeArrayItem(setOverheadCosts, overheadCosts, idx)} onUpdateItem={(idx, field, value) => updateArrayItem(setOverheadCosts, overheadCosts, idx, field, value)} onAddDeptAlloc={(idx) => addDeptAllocation(setOverheadCosts, overheadCosts, idx)} onUpdateDeptAlloc={(idx, allocIdx, field, value) => updateDeptAllocation(setOverheadCosts, overheadCosts, idx, allocIdx, field, value)} onRemoveDeptAlloc={(idx, allocIdx) => removeDeptAllocation(setOverheadCosts, overheadCosts, idx, allocIdx)} />
-                <GenericCostSection title="Κόστη Συντήρησης (Maintenance Costs)" sectionKey="maintenance" costArray={maintenanceCosts} departments={departments} expandedSections={expandedSections} totalWorkingDays={totalWorkingDays} formatCurrency={formatCurrency} convertCostToDaily={convertCostToDaily} calculateCostTotal={calculateCostTotal} onToggleSection={toggleSection} onAddItem={() => addArrayItem(setMaintenanceCosts, maintenanceCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] })} onRemoveItem={(idx) => removeArrayItem(setMaintenanceCosts, maintenanceCosts, idx)} onUpdateItem={(idx, field, value) => updateArrayItem(setMaintenanceCosts, maintenanceCosts, idx, field, value)} onAddDeptAlloc={(idx) => addDeptAllocation(setMaintenanceCosts, maintenanceCosts, idx)} onUpdateDeptAlloc={(idx, allocIdx, field, value) => updateDeptAllocation(setMaintenanceCosts, maintenanceCosts, idx, allocIdx, field, value)} onRemoveDeptAlloc={(idx, allocIdx) => removeDeptAllocation(setMaintenanceCosts, maintenanceCosts, idx, allocIdx)} />
-                <InvestmentAmortizationSection investmentAmortization={investmentAmortization} departments={departments} expandedSections={expandedSections} totalWorkingDays={totalWorkingDays} formatCurrency={formatCurrency} calculateInvestmentTotal={calculateInvestmentTotal} onToggleSection={toggleSection} onAddItem={() => addArrayItem(setInvestmentAmortization, investmentAmortization, { description: '', total_investment_amount: 0, project_duration_months: 12, calculated_daily_cost: 0, department_allocations: [] })} onRemoveItem={(idx) => removeArrayItem(setInvestmentAmortization, investmentAmortization, idx)} onUpdateItem={(idx, field, value) => handleInvestmentChange(idx, field, value)} onAddDeptAlloc={(idx) => addDeptAllocation(setInvestmentAmortization, investmentAmortization, idx)} onUpdateDeptAlloc={(idx, allocIdx, field, value) => updateDeptAllocation(setInvestmentAmortization, investmentAmortization, idx, allocIdx, field, value)} onRemoveDeptAlloc={(idx, allocIdx) => removeDeptAllocation(setInvestmentAmortization, investmentAmortization, idx, allocIdx)} />
-            </div>
-        );
-    }
-
 }
