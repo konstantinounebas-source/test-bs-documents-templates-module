@@ -131,15 +131,12 @@ export default function FactoryFinancialCalculations() {
             setSelectedRecord(record);
             setCurrentData(record);
             
-            // Load period settings
             setTotalWorkingDays(record.total_working_days_in_period || 0);
             setAvgWorkingDaysPerMonth(record.average_working_days_per_month || 22);
             setAvgWorkingDaysPerYear(record.average_working_days_per_year || 260);
             
-            // Load income data
             setShelterRevenueItems(record.shelter_revenue_items || []);
             
-            // Load cost data
             setPersonnelCosts(record.personnel_costs || []);
             setBomCosts(record.bill_of_materials_costs || []);
             setFixedCosts(record.fixed_costs || []);
@@ -147,7 +144,6 @@ export default function FactoryFinancialCalculations() {
             setInvestmentAmortization(record.investment_amortization || []);
             setMaintenanceCosts(record.maintenance_costs || []);
             
-            // Load depreciation module data
             setDepreciationInvestments(record.depreciation_module?.investments || []);
             setEstimatedRevenues(record.depreciation_module?.estimated_revenues || []);
             setAdditionalRevenues(record.depreciation_module?.additional_revenues || []);
@@ -204,6 +200,7 @@ export default function FactoryFinancialCalculations() {
         }
     };
 
+    // ===== ALLOCATION HELPERS =====
     const getAllocationTotal = (allocations) => {
         return (allocations || []).reduce((sum, a) => sum + (parseFloat(a.allocation_percent) || 0), 0);
     };
@@ -219,20 +216,43 @@ export default function FactoryFinancialCalculations() {
     };
 
     const validateAllAllocations = () => {
-        const sections = [
-            { data: personnelCosts, name: 'Personnel Costs' },
-            { data: fixedCosts, name: 'Fixed Costs' },
-            { data: overheadCosts, name: 'Overhead Costs' },
-            { data: maintenanceCosts, name: 'Maintenance Costs' },
-            { data: investmentAmortization, name: 'Investment Amortization' },
-            { data: depreciationInvestments, name: 'Depreciation Investments' }
-        ];
-
-        return sections.every(({ data }) => !hasInvalidAllocation(data));
+        return ![personnelCosts, fixedCosts, overheadCosts, maintenanceCosts, investmentAmortization, depreciationInvestments]
+            .some(hasInvalidAllocation);
     };
 
-    const hasAnyInvalidAllocation = () => {
-        return !validateAllAllocations();
+    // ===== GENERIC STATE UPDATE UTILITIES =====
+    const updateArrayItem = (setter, array, index, field, value) => {
+        const updated = [...array];
+        updated[index] = { ...updated[index], [field]: value };
+        setter(updated);
+    };
+
+    const addArrayItem = (setter, array, newItem) => {
+        setter([...array, newItem]);
+    };
+
+    const removeArrayItem = (setter, array, index) => {
+        setter(array.filter((_, i) => i !== index));
+    };
+
+    const addDeptAllocation = (setter, array, itemIdx) => {
+        const updated = [...array];
+        updated[itemIdx].department_allocations = [...(updated[itemIdx].department_allocations || []), 
+            { department_id: '', allocation_percent: 0 }];
+        setter(updated);
+    };
+
+    const updateDeptAllocation = (setter, array, itemIdx, allocIdx, field, value) => {
+        const updated = [...array];
+        updated[itemIdx].department_allocations[allocIdx][field] = value;
+        setter(updated);
+    };
+
+    const removeDeptAllocation = (setter, array, itemIdx, allocIdx) => {
+        const updated = [...array];
+        updated[itemIdx].department_allocations = updated[itemIdx].department_allocations
+            .filter((_, i) => i !== allocIdx);
+        setter(updated);
     };
 
     const handleClone = async () => {
@@ -314,7 +334,6 @@ export default function FactoryFinancialCalculations() {
             });
             await loadFinancialRecords();
             
-            // Load the newly created record
             const records = await base44.entities.FactoryFinancialData.list('-created_date');
             const newlyCreated = records.find(r => r.id === created.id);
             if (newlyCreated) {
@@ -326,68 +345,11 @@ export default function FactoryFinancialCalculations() {
         }
     };
 
-    const addCostItem = (setter, currentArray) => {
-        setter([...currentArray, {
-            description: '',
-            amount: 0,
-            frequency_type: 'monthly',
-            department_allocations: []
-        }]);
-    };
-    
-    const addPersonnelCostItem = () => {
-        setPersonnelCosts([...personnelCosts, {
-            metric_id: '',
-            description: '',
-            calculated_amount: 0,
-            frequency_type: 'monthly',
-            department_allocations: []
-        }]);
-    };
-    
     const toggleSection = (section) => {
         setExpandedSections(prev => ({
             ...prev,
             [section]: !prev[section]
         }));
-    };
-    
-    const addBomCostItem = () => {
-        setBomCosts([...bomCosts, {
-            bus_stop_type_id: '',
-            product_identifier: '',
-            description: '',
-            calculated_bom_cost: 0,
-            quantity: 1
-        }]);
-    };
-    
-    const addInvestmentItem = () => {
-        setInvestmentAmortization([...investmentAmortization, {
-            description: '',
-            total_investment_amount: 0,
-            project_duration_months: 12,
-            calculated_daily_cost: 0,
-            department_allocations: []
-        }]);
-    };
-
-    const addInvDeptAlloc = (itemIdx) => {
-        const updated = [...investmentAmortization];
-        updated[itemIdx].department_allocations = [...(updated[itemIdx].department_allocations || []), { department_id: '', allocation_percent: 0 }];
-        setInvestmentAmortization(updated);
-    };
-
-    const updateInvDeptAlloc = (itemIdx, allocIdx, field, value) => {
-        const updated = [...investmentAmortization];
-        updated[itemIdx].department_allocations[allocIdx][field] = value;
-        setInvestmentAmortization(updated);
-    };
-
-    const removeInvDeptAlloc = (itemIdx, allocIdx) => {
-        const updated = [...investmentAmortization];
-        updated[itemIdx].department_allocations = updated[itemIdx].department_allocations.filter((_, i) => i !== allocIdx);
-        setInvestmentAmortization(updated);
     };
     
     const handleBusStopTypeChange = async (idx, busStopTypeId) => {
@@ -400,7 +362,6 @@ export default function FactoryFinancialCalculations() {
                 updated[idx].product_identifier = selectedType.type_code || '';
                 updated[idx].description = selectedType.type_name || '';
                 
-                // Fetch BOM cost
                 try {
                     const components = await base44.entities.BusStopTypeComponent.filter({ bus_stop_type_id: busStopTypeId });
                     const totalCost = components.reduce((sum, comp) => {
@@ -427,33 +388,11 @@ export default function FactoryFinancialCalculations() {
         }
         setInvestmentAmortization(updated);
     };
-    
-    const addShelterRevenueItem = () => {
-        setShelterRevenueItems([...shelterRevenueItems, {
-            bus_shelter_type_id: '',
-            description: '',
-            contract_amount: 0,
-            amount_from_jv: 0,
-            approved_variations: [],
-            potential_variations: []
-        }]);
-    };
 
+    // ===== SHELTER REVENUE HELPERS =====
     const updateShelterRevenueItem = (index, field, value) => {
         const updated = [...shelterRevenueItems];
         updated[index] = { ...updated[index], [field]: value };
-        setShelterRevenueItems(updated);
-    };
-
-    const addShelterApprovedVariation = (itemIndex) => {
-        const updated = [...shelterRevenueItems];
-        updated[itemIndex].approved_variations = [...updated[itemIndex].approved_variations, { description: '', amount: 0 }];
-        setShelterRevenueItems(updated);
-    };
-
-    const addShelterPotentialVariation = (itemIndex) => {
-        const updated = [...shelterRevenueItems];
-        updated[itemIndex].potential_variations = [...updated[itemIndex].potential_variations, { description: '', amount: 0 }];
         setShelterRevenueItems(updated);
     };
 
@@ -463,50 +402,17 @@ export default function FactoryFinancialCalculations() {
         setShelterRevenueItems(updated);
     };
 
-    const removeShelterRevenueItem = (index) => {
-        setShelterRevenueItems(shelterRevenueItems.filter((_, i) => i !== index));
-    };
-
     const removeShelterVariation = (itemIndex, variationType, variationIndex) => {
         const updated = [...shelterRevenueItems];
         updated[itemIndex][variationType] = updated[itemIndex][variationType].filter((_, i) => i !== variationIndex);
         setShelterRevenueItems(updated);
     };
 
-    const updateCostItem = (setter, currentArray, index, field, value) => {
-        const updated = [...currentArray];
-        updated[index] = { ...updated[index], [field]: value };
-        setter(updated);
-    };
-
-    const addCostDeptAlloc = (setter, costArray, itemIdx) => {
-        const updated = [...costArray];
-        updated[itemIdx].department_allocations = [...(updated[itemIdx].department_allocations || []), { department_id: '', allocation_percent: 0 }];
-        setter(updated);
-    };
-
-    const updateCostDeptAlloc = (setter, costArray, itemIdx, allocIdx, field, value) => {
-        const updated = [...costArray];
-        updated[itemIdx].department_allocations[allocIdx][field] = value;
-        setter(updated);
-    };
-
-    const removeCostDeptAlloc = (setter, costArray, itemIdx, allocIdx) => {
-        const updated = [...costArray];
-        updated[itemIdx].department_allocations = updated[itemIdx].department_allocations.filter((_, i) => i !== allocIdx);
-        setter(updated);
-    };
-
-    const removeCostItem = (setter, currentArray, index) => {
-        setter(currentArray.filter((_, i) => i !== index));
-    };
-
-    // Helper to convert cost to daily based on frequency
+    // ===== COST CONVERSION =====
     const convertCostToDaily = (amount, frequencyType) => {
         const amt = parseFloat(amount) || 0;
         switch(frequencyType) {
             case 'daily':
-                return amt;
             case 'per_production_day':
                 return amt;
             case 'monthly':
@@ -520,44 +426,39 @@ export default function FactoryFinancialCalculations() {
         }
     };
 
-    // Calculation helpers for shelter revenue items
-    const getApprovedVariationsTotal = (item) => {
-        return item.approved_variations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
-    };
-
-    const getPotentialVariationsTotal = (item) => {
-        return item.potential_variations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+    // ===== SHELTER REVENUE CALCULATIONS =====
+    const getVariationsTotal = (variations) => {
+        return variations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
     };
 
     const getShelterRevenueTotal = (item) => {
         const contract = parseFloat(item.contract_amount) || 0;
         const jv = parseFloat(item.amount_from_jv) || 0;
-        const approved = getApprovedVariationsTotal(item);
-        const potential = getPotentialVariationsTotal(item);
+        const approved = getVariationsTotal(item.approved_variations);
+        const potential = getVariationsTotal(item.potential_variations);
         return contract + jv + approved + potential;
     };
 
-    // Calculations
     const calculateTotalIncome = () => {
         return shelterRevenueItems.reduce((sum, item) => sum + getShelterRevenueTotal(item), 0);
     };
 
-    const getDeptName = (departmentId) => {
-        const dept = departments.find(d => d.id === departmentId);
-        return dept ? dept.department_name : departmentId;
-    };
-
+    // ===== COST CALCULATIONS =====
     const getTotalAllocPct = (allocations) =>
         (allocations || []).reduce((sum, a) => sum + (parseFloat(a.allocation_percent) || 0), 0);
 
-    const calculatePersonnelCostTotal = () => {
-        return personnelCosts.reduce((sum, item) => {
-            const dailyCost = convertCostToDaily(item.calculated_amount, item.frequency_type);
+    const calculateCostWithAlloc = (items, getAmountField, isDailyAlready = false) => {
+        return items.reduce((sum, item) => {
+            const amount = getAmountField(item);
+            const dailyCost = isDailyAlready ? amount : convertCostToDaily(amount, item.frequency_type);
             const totalForPeriod = dailyCost * (totalWorkingDays || 0);
             const totalAlloc = getTotalAllocPct(item.department_allocations);
             return sum + (totalForPeriod * totalAlloc / 100);
         }, 0);
     };
+
+    const calculatePersonnelCostTotal = () => 
+        calculateCostWithAlloc(personnelCosts, item => item.calculated_amount);
     
     const calculateBomTotal = () => {
         return bomCosts.reduce((sum, item) => {
@@ -567,23 +468,11 @@ export default function FactoryFinancialCalculations() {
         }, 0);
     };
     
-    const calculateInvestmentTotal = () => {
-        return investmentAmortization.reduce((sum, item) => {
-            const dailyCost = parseFloat(item.calculated_daily_cost) || 0;
-            const totalForPeriod = dailyCost * (totalWorkingDays || 0);
-            const totalAlloc = getTotalAllocPct(item.department_allocations);
-            return sum + (totalForPeriod * totalAlloc / 100);
-        }, 0);
-    };
+    const calculateInvestmentTotal = () => 
+        calculateCostWithAlloc(investmentAmortization, item => item.calculated_daily_cost, true);
     
-    const calculateCostTotal = (costArray) => {
-        return costArray.reduce((sum, item) => {
-            const dailyCost = convertCostToDaily(item.amount, item.frequency_type);
-            const totalForPeriod = dailyCost * (totalWorkingDays || 0);
-            const totalAlloc = getTotalAllocPct(item.department_allocations);
-            return sum + (totalForPeriod * totalAlloc / 100);
-        }, 0);
-    };
+    const calculateCostTotal = (costArray) => 
+        calculateCostWithAlloc(costArray, item => item.amount);
 
     const calculateTotalCosts = () => {
         return calculatePersonnelCostTotal() +
@@ -598,23 +487,13 @@ export default function FactoryFinancialCalculations() {
         return `€${parseFloat(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 
-    // Depreciation module calculations
+    // ===== DEPRECIATION CALCULATIONS =====
     const calculateDepreciationInvestmentsTotal = () => {
         return depreciationInvestments.reduce((sum, item) => {
             const amount = parseFloat(item.total_amount) || 0;
-            const allocations = item.department_allocations || [];
-            const totalAllocation = allocations.reduce((allSum, alloc) => allSum + (parseFloat(alloc.allocation_percent) || 0), 0);
+            const totalAllocation = getAllocationTotal(item.department_allocations);
             return sum + (amount * totalAllocation / 100);
         }, 0);
-    };
-
-    const calculateInvestmentAllocationTotal = (departmentAllocations) => {
-        return (departmentAllocations || []).reduce((sum, alloc) => sum + (parseFloat(alloc.allocation_percent) || 0), 0);
-    };
-
-    const getInvestmentDepartmentName = (departmentId) => {
-        const dept = departments.find(d => d.id === departmentId);
-        return dept ? dept.department_name : departmentId;
     };
 
     const calculateEstimatedRevenuesTotal = () => {
@@ -686,55 +565,9 @@ export default function FactoryFinancialCalculations() {
             .filter(d => d.grand_total > 0);
     };
 
-    // Depreciation module helpers
-    const addDepreciationInvestment = () => {
-        setDepreciationInvestments([...depreciationInvestments, {
-            description: '',
-            category: 'materials',
-            total_amount: 0,
-            department_allocations: []
-        }]);
-    };
-
+    // ===== DEPRECIATION HELPERS =====
     const updateDepreciationInvestment = (idx, field, value) => {
-        const updated = [...depreciationInvestments];
-        updated[idx][field] = value;
-        setDepreciationInvestments(updated);
-    };
-
-    const addDepartmentAllocation = (investmentIdx) => {
-        const updated = [...depreciationInvestments];
-        updated[investmentIdx].department_allocations = [...(updated[investmentIdx].department_allocations || []), {
-            department_id: '',
-            allocation_percent: 0
-        }];
-        setDepreciationInvestments(updated);
-    };
-
-    const updateDepartmentAllocation = (investmentIdx, allocIdx, field, value) => {
-        const updated = [...depreciationInvestments];
-        updated[investmentIdx].department_allocations[allocIdx][field] = value;
-        setDepreciationInvestments(updated);
-    };
-
-    const removeDepartmentAllocation = (investmentIdx, allocIdx) => {
-        const updated = [...depreciationInvestments];
-        updated[investmentIdx].department_allocations = updated[investmentIdx].department_allocations.filter((_, i) => i !== allocIdx);
-        setDepreciationInvestments(updated);
-    };
-
-    const removeDepreciationInvestment = (idx) => {
-        setDepreciationInvestments(depreciationInvestments.filter((_, i) => i !== idx));
-    };
-
-    const addEstimatedRevenue = () => {
-        setEstimatedRevenues([...estimatedRevenues, {
-            bus_stop_type_id: '',
-            description: '',
-            pending_quantity: 0,
-            unit_revenue: 0,
-            total_revenue: 0
-        }]);
+        updateArrayItem(setDepreciationInvestments, depreciationInvestments, idx, field, value);
     };
 
     const updateEstimatedRevenue = (idx, field, value) => {
@@ -756,25 +589,13 @@ export default function FactoryFinancialCalculations() {
         setEstimatedRevenues(updated);
     };
 
-    const removeEstimatedRevenue = (idx) => {
-        setEstimatedRevenues(estimatedRevenues.filter((_, i) => i !== idx));
-    };
-
-    const addAdditionalRevenue = () => {
-        setAdditionalRevenues([...additionalRevenues, {
-            description: '',
-            total_amount: 0
-        }]);
-    };
-
     const updateAdditionalRevenue = (idx, field, value) => {
-        const updated = [...additionalRevenues];
-        updated[idx][field] = value;
-        setAdditionalRevenues(updated);
+        updateArrayItem(setAdditionalRevenues, additionalRevenues, idx, field, value);
     };
 
-    const removeAdditionalRevenue = (idx) => {
-        setAdditionalRevenues(additionalRevenues.filter((_, i) => i !== idx));
+    const getDeptName = (departmentId) => {
+        const dept = departments.find(d => d.id === departmentId);
+        return dept ? dept.department_name : departmentId;
     };
 
     if (accessLoading || isLoading) {
@@ -830,7 +651,7 @@ export default function FactoryFinancialCalculations() {
                     </div>
                 </div>
 
-{/* Version Selection */}
+                {/* Version Selection */}
                 {financialRecords.length > 0 ? (
                     <Card>
                         <CardHeader>
@@ -943,24 +764,28 @@ export default function FactoryFinancialCalculations() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                {/* Shelter Revenue Items Header */}
                                 <div className="flex items-center justify-between mb-2">
                                     <h3 className="text-lg font-semibold">Έσοδα ανά Τύπο Στάσης</h3>
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        onClick={addShelterRevenueItem}
+                                        onClick={() => addArrayItem(setShelterRevenueItems, shelterRevenueItems, {
+                                            bus_shelter_type_id: '',
+                                            description: '',
+                                            contract_amount: 0,
+                                            amount_from_jv: 0,
+                                            approved_variations: [],
+                                            potential_variations: []
+                                        })}
                                     >
                                         <Plus className="w-4 h-4 mr-1" />
                                         Προσθήκη
                                     </Button>
                                 </div>
 
-                                {/* Shelter Revenue Items */}
                                 <div className="space-y-4">
                                     {shelterRevenueItems.map((item, itemIdx) => (
                                         <div key={itemIdx} className="p-4 border border-slate-200 rounded-lg space-y-3">
-                                            {/* Top Row: Bus Shelter Type, Description, Delete */}
                                             <div className="flex items-end gap-2">
                                                 <div className="flex-1">
                                                     <Label className="text-xs">Τύπος Στάσης</Label>
@@ -997,13 +822,12 @@ export default function FactoryFinancialCalculations() {
                                                 <Button
                                                     size="icon"
                                                     variant="ghost"
-                                                    onClick={() => removeShelterRevenueItem(itemIdx)}
+                                                    onClick={() => removeArrayItem(setShelterRevenueItems, shelterRevenueItems, itemIdx)}
                                                 >
                                                     <Trash2 className="w-4 h-4 text-red-500" />
                                                 </Button>
                                             </div>
 
-                                            {/* Second Row: Contract Amount, Amount from JV */}
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
                                                     <Label className="text-xs">Ποσό Σύμβασης</Label>
@@ -1032,7 +856,11 @@ export default function FactoryFinancialCalculations() {
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        onClick={() => addShelterApprovedVariation(itemIdx)}
+                                                        onClick={() => {
+                                                            const updated = [...shelterRevenueItems];
+                                                            updated[itemIdx].approved_variations = [...updated[itemIdx].approved_variations, { description: '', amount: 0 }];
+                                                            setShelterRevenueItems(updated);
+                                                        }}
                                                     >
                                                         <Plus className="w-3 h-3 mr-1" />
                                                         Προσθήκη
@@ -1073,7 +901,11 @@ export default function FactoryFinancialCalculations() {
                                                     <Button
                                                         size="sm"
                                                         variant="outline"
-                                                        onClick={() => addShelterPotentialVariation(itemIdx)}
+                                                        onClick={() => {
+                                                            const updated = [...shelterRevenueItems];
+                                                            updated[itemIdx].potential_variations = [...updated[itemIdx].potential_variations, { description: '', amount: 0 }];
+                                                            setShelterRevenueItems(updated);
+                                                        }}
                                                     >
                                                         <Plus className="w-3 h-3 mr-1" />
                                                         Προσθήκη
@@ -1111,11 +943,11 @@ export default function FactoryFinancialCalculations() {
                                             <div className="pt-2 border-t border-slate-200 grid grid-cols-3 gap-4 text-sm">
                                                 <div className="bg-blue-50 p-2 rounded">
                                                     <Label className="text-xs font-semibold">Σύνολο Εγκ. Παραλλαγών</Label>
-                                                    <p className="text-lg font-bold text-blue-700">{formatCurrency(getApprovedVariationsTotal(item))}</p>
+                                                    <p className="text-lg font-bold text-blue-700">{formatCurrency(getVariationsTotal(item.approved_variations))}</p>
                                                 </div>
                                                 <div className="bg-orange-50 p-2 rounded">
                                                     <Label className="text-xs font-semibold">Σύνολο Δυν. Παραλλαγών</Label>
-                                                    <p className="text-lg font-bold text-orange-700">{formatCurrency(getPotentialVariationsTotal(item))}</p>
+                                                    <p className="text-lg font-bold text-orange-700">{formatCurrency(getVariationsTotal(item.potential_variations))}</p>
                                                 </div>
                                                 <div className="bg-green-50 p-2 rounded">
                                                     <Label className="text-xs font-semibold">Σύνολο Στάσης</Label>
@@ -1145,7 +977,6 @@ export default function FactoryFinancialCalculations() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                {/* Operational Costs */}
                                 <Collapsible open={expandedSections.operational} onOpenChange={() => toggleSection('operational')}>
                                     <CollapsibleTrigger asChild>
                                         <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors">
@@ -1159,21 +990,13 @@ export default function FactoryFinancialCalculations() {
                                         </div>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="space-y-6 mt-4">
-                                        {/* Personnel Costs */}
                                         {renderPersonnelCostSection()}
-
-                                        {/* BOM Costs */}
                                         {renderBomCostSection()}
-
-                                        {/* Overhead Costs */}
                                         {renderCostSection('Γενικά Έξοδα (Overhead Costs)', overheadCosts, setOverheadCosts, 'overhead')}
-
-                                        {/* Maintenance Costs */}
                                         {renderCostSection('Κόστη Συντήρησης (Maintenance Costs)', maintenanceCosts, setMaintenanceCosts, 'maintenance')}
                                     </CollapsibleContent>
                                 </Collapsible>
 
-                                {/* Fixed Costs */}
                                 <Collapsible open={expandedSections.fixed} onOpenChange={() => toggleSection('fixed')}>
                                     <CollapsibleTrigger asChild>
                                         <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors">
@@ -1187,10 +1010,7 @@ export default function FactoryFinancialCalculations() {
                                         </div>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="space-y-6 mt-4">
-                                        {/* Fixed Costs */}
                                         {renderCostSection('Πάγια Κόστη (Fixed Costs)', fixedCosts, setFixedCosts, 'fixedCosts')}
-
-                                        {/* Investment Amortization */}
                                         {renderInvestmentAmortizationSection()}
                                     </CollapsibleContent>
                                 </Collapsible>
@@ -1198,7 +1018,7 @@ export default function FactoryFinancialCalculations() {
                         </Card>
 
                         {/* Allocation Validation Warning */}
-                        {hasAnyInvalidAllocation() && (
+                        {!validateAllAllocations() && (
                             <Card className="bg-red-50 border-red-300">
                                 <CardContent className="pt-6">
                                     <div className="flex items-start gap-3">
@@ -1328,7 +1148,12 @@ export default function FactoryFinancialCalculations() {
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={addDepreciationInvestment}
+                                            onClick={() => addArrayItem(setDepreciationInvestments, depreciationInvestments, {
+                                                description: '',
+                                                category: 'materials',
+                                                total_amount: 0,
+                                                department_allocations: []
+                                            })}
                                         >
                                             <Plus className="w-4 h-4 mr-1" />
                                             Προσθήκη Επένδυσης
@@ -1336,7 +1161,7 @@ export default function FactoryFinancialCalculations() {
                                     </div>
                                     <div className="space-y-3">
                                         {depreciationInvestments.map((item, idx) => {
-                                            const totalAlloc = calculateInvestmentAllocationTotal(item.department_allocations);
+                                            const totalAlloc = getAllocationTotal(item.department_allocations);
                                             const totalAmount = parseFloat(item.total_amount) || 0;
                                             return (
                                             <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
@@ -1364,7 +1189,7 @@ export default function FactoryFinancialCalculations() {
                                                 <div className="border-t pt-3 space-y-2">
                                                     <div className="flex items-center justify-between">
                                                         <Label className="text-sm font-semibold">Department Allocations</Label>
-                                                        <Button size="sm" variant="outline" onClick={() => addDepartmentAllocation(idx)}>
+                                                        <Button size="sm" variant="outline" onClick={() => addDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx)}>
                                                             <Plus className="w-3 h-3 mr-1" />
                                                             Add Department
                                                         </Button>
@@ -1373,16 +1198,16 @@ export default function FactoryFinancialCalculations() {
                                                         <div key={allocIdx} className="flex items-end gap-2 bg-white p-2 rounded border border-slate-200">
                                                             <div className="flex-1">
                                                                 <Label className="text-xs">Τμήμα</Label>
-                                                                <Select value={alloc.department_id} onValueChange={(value) => updateDepartmentAllocation(idx, allocIdx, 'department_id', value)}>
+                                                                <Select value={alloc.department_id} onValueChange={(value) => updateDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx, allocIdx, 'department_id', value)}>
                                                                     <SelectTrigger className="h-8"><SelectValue placeholder="Επιλέξτε τμήμα" /></SelectTrigger>
                                                                     <SelectContent position="popper" sideOffset={5}>{departments.map(dept => (<SelectItem key={dept.id} value={dept.id}>{dept.department_name}</SelectItem>))}</SelectContent>
                                                                 </Select>
                                                             </div>
                                                             <div className="w-24">
                                                                 <Label className="text-xs">Allocation %</Label>
-                                                                <Input type="number" placeholder="0" min="0" max="100" value={alloc.allocation_percent} onChange={(e) => updateDepartmentAllocation(idx, allocIdx, 'allocation_percent', e.target.value)} className="h-8" />
+                                                                <Input type="number" placeholder="0" min="0" max="100" value={alloc.allocation_percent} onChange={(e) => updateDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx, allocIdx, 'allocation_percent', e.target.value)} className="h-8" />
                                                             </div>
-                                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => removeDepartmentAllocation(idx, allocIdx)}>
+                                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => removeDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx, allocIdx)}>
                                                                 <Trash2 className="w-3 h-3 text-red-500" />
                                                             </Button>
                                                         </div>
@@ -1395,14 +1220,14 @@ export default function FactoryFinancialCalculations() {
                                                     <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded space-y-1">
                                                         <strong>Allocated amount split:</strong>
                                                         {(item.department_allocations || []).map((alloc, allocIdx) => {
-                                                            const deptName = getInvestmentDepartmentName(alloc.department_id);
+                                                            const deptName = getDeptName(alloc.department_id);
                                                             const allocAmount = totalAmount * (parseFloat(alloc.allocation_percent) || 0) / 100;
                                                             return <div key={allocIdx}>{deptName}: {formatCurrency(allocAmount)}</div>;
                                                         })}
                                                     </div>
                                                 )}
                                                 <div className="flex justify-end">
-                                                    <Button size="icon" variant="ghost" onClick={() => removeDepreciationInvestment(idx)}>
+                                                    <Button size="icon" variant="ghost" onClick={() => removeArrayItem(setDepreciationInvestments, depreciationInvestments, idx)}>
                                                         <Trash2 className="w-4 h-4 text-red-500" />
                                                     </Button>
                                                 </div>
@@ -1422,7 +1247,13 @@ export default function FactoryFinancialCalculations() {
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={addEstimatedRevenue}
+                                            onClick={() => addArrayItem(setEstimatedRevenues, estimatedRevenues, {
+                                                bus_stop_type_id: '',
+                                                description: '',
+                                                pending_quantity: 0,
+                                                unit_revenue: 0,
+                                                total_revenue: 0
+                                            })}
                                         >
                                             <Plus className="w-4 h-4 mr-1" />
                                             Προσθήκη Εκτιμώμενου Εσόδου
@@ -1493,7 +1324,7 @@ export default function FactoryFinancialCalculations() {
                                                     <Button
                                                         size="icon"
                                                         variant="ghost"
-                                                        onClick={() => removeEstimatedRevenue(idx)}
+                                                        onClick={() => removeArrayItem(setEstimatedRevenues, estimatedRevenues, idx)}
                                                     >
                                                         <Trash2 className="w-4 h-4 text-red-500" />
                                                     </Button>
@@ -1513,7 +1344,10 @@ export default function FactoryFinancialCalculations() {
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            onClick={addAdditionalRevenue}
+                                            onClick={() => addArrayItem(setAdditionalRevenues, additionalRevenues, {
+                                                description: '',
+                                                total_amount: 0
+                                            })}
                                         >
                                             <Plus className="w-4 h-4 mr-1" />
                                             Προσθήκη Πρόσθετου Εσόδου
@@ -1543,7 +1377,7 @@ export default function FactoryFinancialCalculations() {
                                                     <Button
                                                         size="icon"
                                                         variant="ghost"
-                                                        onClick={() => removeAdditionalRevenue(idx)}
+                                                        onClick={() => removeArrayItem(setAdditionalRevenues, additionalRevenues, idx)}
                                                     >
                                                         <Trash2 className="w-4 h-4 text-red-500" />
                                                     </Button>
@@ -1690,7 +1524,13 @@ export default function FactoryFinancialCalculations() {
                                 <Label className="text-base font-semibold cursor-pointer">Κόστος Προσωπικού (Personnel Costs) - από Manufacturing</Label>
                             </div>
                         </CollapsibleTrigger>
-                        <Button size="sm" variant="outline" onClick={addPersonnelCostItem}>
+                        <Button size="sm" variant="outline" onClick={() => addArrayItem(setPersonnelCosts, personnelCosts, {
+                            metric_id: '',
+                            description: '',
+                            calculated_amount: 0,
+                            frequency_type: 'monthly',
+                            department_allocations: []
+                        })}>
                             <Plus className="w-4 h-4 mr-1" />
                             Προσθήκη
                         </Button>
@@ -1724,7 +1564,7 @@ export default function FactoryFinancialCalculations() {
                                             <Label className="text-xs">Συχνότητα</Label>
                                             <Select
                                                 value={item.frequency_type}
-                                                onValueChange={(value) => { const u = [...personnelCosts]; u[idx].frequency_type = value; setPersonnelCosts(u); }}
+                                                onValueChange={(value) => updateArrayItem(setPersonnelCosts, personnelCosts, idx, 'frequency_type', value)}
                                             >
                                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                                 <SelectContent>
@@ -1739,12 +1579,12 @@ export default function FactoryFinancialCalculations() {
                                     </div>
                                     <div className="flex items-start gap-2">
                                         <Input placeholder="Περιγραφή" value={item.description}
-                                            onChange={(e) => { const u = [...personnelCosts]; u[idx].description = e.target.value; setPersonnelCosts(u); }}
+                                            onChange={(e) => updateArrayItem(setPersonnelCosts, personnelCosts, idx, 'description', e.target.value)}
                                             className="flex-1" />
                                         <Input type="number" placeholder="Ποσό" value={item.calculated_amount}
-                                            onChange={(e) => { const u = [...personnelCosts]; u[idx].calculated_amount = e.target.value; setPersonnelCosts(u); }}
+                                            onChange={(e) => updateArrayItem(setPersonnelCosts, personnelCosts, idx, 'calculated_amount', e.target.value)}
                                             className="w-32" />
-                                        <Button size="icon" variant="ghost" onClick={() => setPersonnelCosts(personnelCosts.filter((_, i) => i !== idx))}>
+                                        <Button size="icon" variant="ghost" onClick={() => removeArrayItem(setPersonnelCosts, personnelCosts, idx)}>
                                             <Trash2 className="w-4 h-4 text-red-500" />
                                         </Button>
                                     </div>
@@ -1756,9 +1596,9 @@ export default function FactoryFinancialCalculations() {
                                         departments={departments}
                                         totalAmount={convertCostToDaily(item.calculated_amount, item.frequency_type) * totalWorkingDays}
                                         formatCurrency={formatCurrency}
-                                        onAdd={() => { const u = [...personnelCosts]; u[idx].department_allocations = [...(u[idx].department_allocations || []), { department_id: '', allocation_percent: 0 }]; setPersonnelCosts(u); }}
-                                        onUpdate={(allocIdx, field, value) => { const u = [...personnelCosts]; u[idx].department_allocations[allocIdx][field] = value; setPersonnelCosts(u); }}
-                                        onRemove={(allocIdx) => { const u = [...personnelCosts]; u[idx].department_allocations = u[idx].department_allocations.filter((_, i) => i !== allocIdx); setPersonnelCosts(u); }}
+                                        onAdd={() => addDeptAllocation(setPersonnelCosts, personnelCosts, idx)}
+                                        onUpdate={(allocIdx, field, value) => updateDeptAllocation(setPersonnelCosts, personnelCosts, idx, allocIdx, field, value)}
+                                        onRemove={(allocIdx) => removeDeptAllocation(setPersonnelCosts, personnelCosts, idx, allocIdx)}
                                     />
                                 </div>
                             ))}
@@ -1783,93 +1623,91 @@ export default function FactoryFinancialCalculations() {
                                 <Label className="text-base font-semibold cursor-pointer">Κόστος Υλικών (Bill of Materials) - από Warehouse</Label>
                             </div>
                         </CollapsibleTrigger>
-                        <Button size="sm" variant="outline" onClick={addBomCostItem}>
+                        <Button size="sm" variant="outline" onClick={() => addArrayItem(setBomCosts, bomCosts, {
+                            bus_stop_type_id: '',
+                            product_identifier: '',
+                            description: '',
+                            calculated_bom_cost: 0,
+                            quantity: 1
+                        })}>
                             <Plus className="w-4 h-4 mr-1" />
                             Προσθήκη
                         </Button>
                     </div>
                     <CollapsibleContent>
-                <div className="space-y-2">
-                    {bomCosts.map((item, idx) => (
-                        <div key={idx} className="p-3 bg-slate-50 rounded-lg space-y-2">
-                            <div className="flex items-center gap-2">
-                                <Select
-                                    value={item.bus_stop_type_id}
-                                    onValueChange={(value) => handleBusStopTypeChange(idx, value)}
-                                >
-                                    <SelectTrigger className="w-64">
-                                        <SelectValue placeholder="Επιλέξτε Τύπο Στάσης" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {busStopTypes.map(type => (
-                                            <SelectItem key={type.id} value={type.id}>
-                                                {type.type_code} - {type.type_name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Input
-                                    placeholder="Product ID"
-                                    value={item.product_identifier}
-                                    onChange={(e) => {
-                                        const updated = [...bomCosts];
-                                        updated[idx].product_identifier = e.target.value;
-                                        setBomCosts(updated);
-                                    }}
-                                    className="w-32"
-                                    disabled
-                                />
-                                <Input
-                                    placeholder="Περιγραφή"
-                                    value={item.description}
-                                    onChange={(e) => {
-                                        const updated = [...bomCosts];
-                                        updated[idx].description = e.target.value;
-                                        setBomCosts(updated);
-                                    }}
-                                    className="flex-1"
-                                />
-                                <Input
-                                    type="number"
-                                    placeholder="Ποσότητα"
-                                    value={item.quantity}
-                                    onChange={(e) => {
-                                        const updated = [...bomCosts];
-                                        updated[idx].quantity = e.target.value;
-                                        setBomCosts(updated);
-                                    }}
-                                    className="w-24"
-                                />
-                                <Input
-                                    type="number"
-                                    placeholder="Κόστος BOM"
-                                    value={item.calculated_bom_cost}
-                                    className="w-32 bg-blue-50"
-                                    disabled
-                                />
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => setBomCosts(bomCosts.filter((_, i) => i !== idx))}
-                                >
-                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                </Button>
-                            </div>
-                            <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
-                                <strong>Υπολογισμός:</strong> {formatCurrency(item.calculated_bom_cost)} × {item.quantity} τεμάχια = {formatCurrency((parseFloat(item.calculated_bom_cost) || 0) * (parseFloat(item.quantity) || 1))}
-                            </div>
+                        <div className="space-y-2">
+                            {bomCosts.map((item, idx) => (
+                                <div key={idx} className="p-3 bg-slate-50 rounded-lg space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Select
+                                            value={item.bus_stop_type_id}
+                                            onValueChange={(value) => handleBusStopTypeChange(idx, value)}
+                                        >
+                                            <SelectTrigger className="w-64">
+                                                <SelectValue placeholder="Επιλέξτε Τύπο Στάσης" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {busStopTypes.map(type => (
+                                                    <SelectItem key={type.id} value={type.id}>
+                                                        {type.type_code} - {type.type_name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <Input
+                                            placeholder="Product ID"
+                                            value={item.product_identifier}
+                                            onChange={(e) => {
+                                                const updated = [...bomCosts];
+                                                updated[idx].product_identifier = e.target.value;
+                                                setBomCosts(updated);
+                                            }}
+                                            className="w-32"
+                                            disabled
+                                        />
+                                        <Input
+                                            placeholder="Περιγραφή"
+                                            value={item.description}
+                                            onChange={(e) => updateArrayItem(setBomCosts, bomCosts, idx, 'description', e.target.value)}
+                                            className="flex-1"
+                                        />
+                                        <Input
+                                            type="number"
+                                            placeholder="Ποσότητα"
+                                            value={item.quantity}
+                                            onChange={(e) => updateArrayItem(setBomCosts, bomCosts, idx, 'quantity', e.target.value)}
+                                            className="w-24"
+                                        />
+                                        <Input
+                                            type="number"
+                                            placeholder="Κόστος BOM"
+                                            value={item.calculated_bom_cost}
+                                            className="w-32 bg-blue-50"
+                                            disabled
+                                        />
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            onClick={() => removeArrayItem(setBomCosts, bomCosts, idx)}
+                                        >
+                                            <Trash2 className="w-4 h-4 text-red-500" />
+                                        </Button>
+                                    </div>
+                                    <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
+                                        <strong>Υπολογισμός:</strong> {formatCurrency(item.calculated_bom_cost)} × {item.quantity} τεμάχια = {formatCurrency((parseFloat(item.calculated_bom_cost) || 0) * (parseFloat(item.quantity) || 1))}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                    </div>
                     </CollapsibleContent>
                     <div className="mt-2 text-sm font-medium text-slate-700">
-                    Σύνολο Υλικών: {formatCurrency(calculateBomTotal())}
+                        Σύνολο Υλικών: {formatCurrency(calculateBomTotal())}
                     </div>
-                    </div>
-                    </Collapsible>
-                    );
-                    }
-    
+                </div>
+            </Collapsible>
+        );
+    }
+
     function renderInvestmentAmortizationSection() {
         return (
             <Collapsible open={expandedSections.investment} onOpenChange={() => toggleSection('investment')}>
@@ -1881,7 +1719,13 @@ export default function FactoryFinancialCalculations() {
                                 <Label className="text-base font-semibold cursor-pointer">Απόσβεση Επενδύσεων (Investment Amortization)</Label>
                             </div>
                         </CollapsibleTrigger>
-                        <Button size="sm" variant="outline" onClick={addInvestmentItem}>
+                        <Button size="sm" variant="outline" onClick={() => addArrayItem(setInvestmentAmortization, investmentAmortization, {
+                            description: '',
+                            total_investment_amount: 0,
+                            project_duration_months: 12,
+                            calculated_daily_cost: 0,
+                            department_allocations: []
+                        })}>
                             <Plus className="w-4 h-4 mr-1" />
                             Προσθήκη
                         </Button>
@@ -1904,7 +1748,7 @@ export default function FactoryFinancialCalculations() {
                                             <Label className="text-xs">Ημερήσιο Κόστος</Label>
                                             <Input type="number" value={item.calculated_daily_cost} className="w-32 bg-blue-50" disabled />
                                         </div>
-                                        <Button size="icon" variant="ghost" onClick={() => setInvestmentAmortization(investmentAmortization.filter((_, i) => i !== idx))}>
+                                        <Button size="icon" variant="ghost" onClick={() => removeArrayItem(setInvestmentAmortization, investmentAmortization, idx)}>
                                             <Trash2 className="w-4 h-4 text-red-500" />
                                         </Button>
                                     </div>
@@ -1916,9 +1760,9 @@ export default function FactoryFinancialCalculations() {
                                         departments={departments}
                                         totalAmount={(parseFloat(item.calculated_daily_cost) || 0) * totalWorkingDays}
                                         formatCurrency={formatCurrency}
-                                        onAdd={() => addInvDeptAlloc(idx)}
-                                        onUpdate={(allocIdx, field, value) => updateInvDeptAlloc(idx, allocIdx, field, value)}
-                                        onRemove={(allocIdx) => removeInvDeptAlloc(idx, allocIdx)}
+                                        onAdd={() => addDeptAllocation(setInvestmentAmortization, investmentAmortization, idx)}
+                                        onUpdate={(allocIdx, field, value) => updateDeptAllocation(setInvestmentAmortization, investmentAmortization, idx, allocIdx, field, value)}
+                                        onRemove={(allocIdx) => removeDeptAllocation(setInvestmentAmortization, investmentAmortization, idx, allocIdx)}
                                     />
                                 </div>
                             ))}
@@ -1943,7 +1787,12 @@ export default function FactoryFinancialCalculations() {
                                 <Label className="text-base font-semibold cursor-pointer">{title}</Label>
                             </div>
                         </CollapsibleTrigger>
-                        <Button size="sm" variant="outline" onClick={() => addCostItem(setter, costArray)}>
+                        <Button size="sm" variant="outline" onClick={() => addArrayItem(setter, costArray, {
+                            description: '',
+                            amount: 0,
+                            frequency_type: 'monthly',
+                            department_allocations: []
+                        })}>
                             <Plus className="w-4 h-4 mr-1" />
                             Προσθήκη
                         </Button>
@@ -1953,9 +1802,9 @@ export default function FactoryFinancialCalculations() {
                             {costArray.map((item, idx) => (
                                 <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
                                     <div className="flex items-start gap-2">
-                                        <Input placeholder="Περιγραφή" value={item.description} onChange={(e) => updateCostItem(setter, costArray, idx, 'description', e.target.value)} className="flex-1" />
-                                        <Input type="number" placeholder="Ποσό" value={item.amount} onChange={(e) => updateCostItem(setter, costArray, idx, 'amount', e.target.value)} className="w-32" />
-                                        <Select value={item.frequency_type} onValueChange={(value) => updateCostItem(setter, costArray, idx, 'frequency_type', value)}>
+                                        <Input placeholder="Περιγραφή" value={item.description} onChange={(e) => updateArrayItem(setter, costArray, idx, 'description', e.target.value)} className="flex-1" />
+                                        <Input type="number" placeholder="Ποσό" value={item.amount} onChange={(e) => updateArrayItem(setter, costArray, idx, 'amount', e.target.value)} className="w-32" />
+                                        <Select value={item.frequency_type} onValueChange={(value) => updateArrayItem(setter, costArray, idx, 'frequency_type', value)}>
                                             <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="daily">Ημερήσιο</SelectItem>
@@ -1965,7 +1814,7 @@ export default function FactoryFinancialCalculations() {
                                                 <SelectItem value="one_time">Εφάπαξ</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <Button size="icon" variant="ghost" onClick={() => removeCostItem(setter, costArray, idx)}>
+                                        <Button size="icon" variant="ghost" onClick={() => removeArrayItem(setter, costArray, idx)}>
                                             <Trash2 className="w-4 h-4 text-red-500" />
                                         </Button>
                                     </div>
@@ -1977,9 +1826,9 @@ export default function FactoryFinancialCalculations() {
                                         departments={departments}
                                         totalAmount={convertCostToDaily(item.amount, item.frequency_type) * totalWorkingDays}
                                         formatCurrency={formatCurrency}
-                                        onAdd={() => addCostDeptAlloc(setter, costArray, idx)}
-                                        onUpdate={(allocIdx, field, value) => updateCostDeptAlloc(setter, costArray, idx, allocIdx, field, value)}
-                                        onRemove={(allocIdx) => removeCostDeptAlloc(setter, costArray, idx, allocIdx)}
+                                        onAdd={() => addDeptAllocation(setter, costArray, idx)}
+                                        onUpdate={(allocIdx, field, value) => updateDeptAllocation(setter, costArray, idx, allocIdx, field, value)}
+                                        onRemove={(allocIdx) => removeDeptAllocation(setter, costArray, idx, allocIdx)}
                                     />
                                 </div>
                             ))}
