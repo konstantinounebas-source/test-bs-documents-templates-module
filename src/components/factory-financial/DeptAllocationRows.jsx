@@ -13,42 +13,46 @@ export default function DeptAllocationRows({ allocations, departments, onAdd, on
         <div className="space-y-2">
             {/* Allocations List */}
             <div className="space-y-2">
-                {(allocations || []).map((alloc, allocIdx) => (
-                    <div key={allocIdx} className="flex items-end gap-2 bg-white p-2 rounded border border-slate-200 hover:border-slate-300 transition-colors">
-                        <div className="flex-1">
-                            <Label className="text-xs text-slate-600">Τμήμα</Label>
-                            <Select value={alloc.department_id || ''} onValueChange={(value) => onUpdate(allocIdx, 'department_id', value)}>
-                                <SelectTrigger className="h-8"><SelectValue placeholder="Επιλέξτε..." /></SelectTrigger>
-                                <SelectContent position="popper" sideOffset={5}>
-                                    {departments.map(dept => (
-                                        <SelectItem key={dept.id} value={dept.id}>{dept.department_name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="w-24">
-                            <Label className="text-xs text-slate-600">%</Label>
-                            <Input
-                                type="number" placeholder="0" min="0" max="100"
-                                value={alloc.allocation_percent || ''}
-                                onChange={(e) => onUpdate(allocIdx, 'allocation_percent', parseFloat(e.target.value) || 0)}
-                                className="h-8"
-                            />
-                        </div>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 flex-shrink-0" onClick={() => onRemove(allocIdx)}>
-                            <Trash2 className="w-3 h-3 text-red-500" />
-                        </Button>
+                {(allocations || []).length === 0 ? (
+                    <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded border border-slate-200 text-center">
+                        Δεν υπάρχουν κατανομές τμημάτων
                     </div>
-                ))}
+                ) : (
+                    (allocations || []).map((alloc, allocIdx) => (
+                        <div key={allocIdx} className="flex items-end gap-2 bg-white p-2 rounded border border-slate-200 hover:border-slate-300 transition-colors">
+                            <div className="flex-1">
+                                <Label className="text-xs text-slate-600">Τμήμα</Label>
+                                <Select value={alloc.department_id || ''} onValueChange={(value) => onUpdate(allocIdx, 'department_id', value)}>
+                                    <SelectTrigger className="h-8"><SelectValue placeholder="Επιλέξτε..." /></SelectTrigger>
+                                    <SelectContent position="popper" sideOffset={5}>
+                                        {departments.map(dept => (
+                                            <SelectItem key={dept.id} value={dept.id}>{dept.department_name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="w-24">
+                                <Label className="text-xs text-slate-600">%</Label>
+                                <Input
+                                    type="number" placeholder="0" min="0" max="100"
+                                    value={alloc.allocation_percent || ''}
+                                    onChange={(e) => onUpdate(allocIdx, 'allocation_percent', parseFloat(e.target.value) || 0)}
+                                    className="h-8"
+                                />
+                            </div>
+                            <Button size="icon" variant="ghost" className="h-8 w-8 flex-shrink-0" onClick={() => onRemove(allocIdx)}>
+                                <Trash2 className="w-3 h-3 text-red-500" />
+                            </Button>
+                        </div>
+                    ))
+                )}
             </div>
 
-            {/* Add Button */}
-            {allocations && allocations.length > 0 && (
-                <Button size="sm" variant="outline" onClick={onAdd} className="w-full gap-2">
-                    <Plus className="w-3 h-3" />
-                    Προσθήκη Τμήματος
-                </Button>
-            )}
+            {/* Add Button - Always Visible */}
+            <Button size="sm" variant="outline" onClick={onAdd} className="w-full gap-2">
+                <Plus className="w-3 h-3" />
+                Προσθήκη Τμήματος
+            </Button>
 
             {/* Validation Status */}
             <div className={`p-2 rounded flex items-center gap-2 text-xs font-medium ${isValid ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
