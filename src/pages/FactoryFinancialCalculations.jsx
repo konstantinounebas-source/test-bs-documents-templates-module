@@ -23,6 +23,7 @@ import DepreciationModuleSection from "@/components/factory-financial/Depreciati
 import DepreciationRateCard from "@/components/factory-financial/DepreciationRateCard";
 import ValidationWarningCard from "@/components/factory-financial/ValidationWarningCard";
 import FactoryCostSectionsCard from "@/components/factory-financial/FactoryCostSectionsCard";
+import FixedCostsTableSection from "@/components/factory-financial/FixedCostsTableSection";
 import {
     getAllocationTotal,
     hasInvalidAllocation,
@@ -152,6 +153,11 @@ export default function FactoryFinancialCalculations() {
         }
     };
 
+    const PREDEFINED_FIXED_COSTS = [
+        { description: 'Ενοίκιο', amount: 0, frequency_type: 'monthly', department_allocations: [] },
+        { description: 'Άλλα Σταθερά Κόστη', amount: 0, frequency_type: 'monthly', department_allocations: [] },
+    ];
+
     const loadRecordData = async (record) => {
         try {
             setIsLoading(true);
@@ -166,7 +172,7 @@ export default function FactoryFinancialCalculations() {
             
             setPersonnelCosts(record.personnel_costs || []);
             setBomCosts(record.bill_of_materials_costs || []);
-            setFixedCosts(record.fixed_costs || []);
+            setFixedCosts(record.fixed_costs && record.fixed_costs.length > 0 ? record.fixed_costs : PREDEFINED_FIXED_COSTS);
             setOverheadCosts(record.overhead_costs || []);
             setInvestmentAmortization(record.investment_amortization || []);
             setMaintenanceCosts(record.maintenance_costs || []);
@@ -566,53 +572,74 @@ export default function FactoryFinancialCalculations() {
                         />
 
                         {/* SECTION B - Costs */}
-                         <FactoryCostSectionsCard
-                             personnelCosts={personnelCosts}
-                             dailyMetrics={dailyMetrics}
-                             bomCosts={bomCosts}
-                             busStopTypes={busStopTypes}
-                             overheadCosts={overheadCosts}
-                             maintenanceCosts={maintenanceCosts}
-                             investmentAmortization={investmentAmortization}
-                             departments={departments}
-                             expandedSections={expandedSections}
-                             totalWorkingDays={totalWorkingDays}
-                             formatCurrency={formatCurrency}
-                             convertCostToDaily={getConvertCostToDaily}
-                             calculatePersonnelCostTotal={getCalculatePersonnelCostTotal}
-                             calculateBomTotal={getCalculateBomTotal}
-                             calculateCostTotal={getCalculateCostTotal}
-                             calculateInvestmentTotal={getCalculateInvestmentTotal}
-                             toggleSection={toggleSection}
-                             onAddPersonnel={() => setPersonnelCosts(addArrayItem(personnelCosts, { metric_id: '', description: '', calculated_amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
-                             onRemovePersonnel={(idx) => setPersonnelCosts(removeArrayItem(personnelCosts, idx))}
-                             onUpdatePersonnel={(idx, field, value) => setPersonnelCosts(updateArrayItem(personnelCosts, idx, field, value))}
-                             onAddPersonnelDeptAlloc={(idx) => setPersonnelCosts(addDeptAllocation(personnelCosts, idx))}
-                             onUpdatePersonnelDeptAlloc={(idx, allocIdx, field, value) => setPersonnelCosts(updateDeptAllocation(personnelCosts, idx, allocIdx, field, value))}
-                             onRemovePersonnelDeptAlloc={(idx, allocIdx) => setPersonnelCosts(removeDeptAllocation(personnelCosts, idx, allocIdx))}
-                             onAddBom={() => setBomCosts(addArrayItem(bomCosts, { bus_stop_type_id: '', product_identifier: '', description: '', calculated_bom_cost: 0, quantity: 1 }))}
-                             onRemoveBom={(idx) => setBomCosts(removeArrayItem(bomCosts, idx))}
-                             onUpdateBom={(idx, field, value) => setBomCosts(updateArrayItem(bomCosts, idx, field, value))}
-                             onBusStopTypeChange={handleBusStopTypeChange}
-                             onAddOverhead={() => setOverheadCosts(addArrayItem(overheadCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
-                             onRemoveOverhead={(idx) => setOverheadCosts(removeArrayItem(overheadCosts, idx))}
-                             onUpdateOverhead={(idx, field, value) => setOverheadCosts(updateArrayItem(overheadCosts, idx, field, value))}
-                             onAddOverheadDeptAlloc={(idx) => setOverheadCosts(addDeptAllocation(overheadCosts, idx))}
-                             onUpdateOverheadDeptAlloc={(idx, allocIdx, field, value) => setOverheadCosts(updateDeptAllocation(overheadCosts, idx, allocIdx, field, value))}
-                             onRemoveOverheadDeptAlloc={(idx, allocIdx) => setOverheadCosts(removeDeptAllocation(overheadCosts, idx, allocIdx))}
-                             onAddMaintenance={() => setMaintenanceCosts(addArrayItem(maintenanceCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
-                             onRemoveMaintenance={(idx) => setMaintenanceCosts(removeArrayItem(maintenanceCosts, idx))}
-                             onUpdateMaintenance={(idx, field, value) => setMaintenanceCosts(updateArrayItem(maintenanceCosts, idx, field, value))}
-                             onAddMaintenanceDeptAlloc={(idx) => setMaintenanceCosts(addDeptAllocation(maintenanceCosts, idx))}
-                             onUpdateMaintenanceDeptAlloc={(idx, allocIdx, field, value) => setMaintenanceCosts(updateDeptAllocation(maintenanceCosts, idx, allocIdx, field, value))}
-                             onRemoveMaintenanceDeptAlloc={(idx, allocIdx) => setMaintenanceCosts(removeDeptAllocation(maintenanceCosts, idx, allocIdx))}
-                             onAddInvestment={() => setInvestmentAmortization(addArrayItem(investmentAmortization, { description: '', total_investment_amount: 0, project_duration_months: 12, calculated_daily_cost: 0, department_allocations: [] }))}
-                             onRemoveInvestment={(idx) => setInvestmentAmortization(removeArrayItem(investmentAmortization, idx))}
-                             onUpdateInvestment={handleInvestmentChange}
-                             onAddInvestmentDeptAlloc={(idx) => setInvestmentAmortization(addDeptAllocation(investmentAmortization, idx))}
-                             onUpdateInvestmentDeptAlloc={(idx, allocIdx, field, value) => setInvestmentAmortization(updateDeptAllocation(investmentAmortization, idx, allocIdx, field, value))}
-                             onRemoveInvestmentDeptAlloc={(idx, allocIdx) => setInvestmentAmortization(removeDeptAllocation(investmentAmortization, idx, allocIdx))}
-                         />
+                         <div className="space-y-6">
+                             {/* Fixed Costs - New Table Style */}
+                             <FixedCostsTableSection
+                                 fixedCosts={fixedCosts}
+                                 departments={departments}
+                                 expandedSections={expandedSections}
+                                 totalWorkingDays={totalWorkingDays}
+                                 formatCurrency={formatCurrency}
+                                 convertCostToDaily={getConvertCostToDaily}
+                                 calculateCostTotal={getCalculateCostTotal}
+                                 onToggleSection={toggleSection}
+                                 onAddItem={() => setFixedCosts(addArrayItem(fixedCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                                 onRemoveItem={(idx) => setFixedCosts(removeArrayItem(fixedCosts, idx))}
+                                 onUpdateItem={(idx, field, value) => setFixedCosts(updateArrayItem(fixedCosts, idx, field, value))}
+                                 onAddDeptAlloc={(idx) => setFixedCosts(addDeptAllocation(fixedCosts, idx))}
+                                 onUpdateDeptAlloc={(idx, allocIdx, field, value) => setFixedCosts(updateDeptAllocation(fixedCosts, idx, allocIdx, field, value))}
+                                 onRemoveDeptAlloc={(idx, allocIdx) => setFixedCosts(removeDeptAllocation(fixedCosts, idx, allocIdx))}
+                             />
+
+                             {/* Other Costs - Using FactoryCostSectionsCard */}
+                             <FactoryCostSectionsCard
+                                 personnelCosts={personnelCosts}
+                                 dailyMetrics={dailyMetrics}
+                                 bomCosts={bomCosts}
+                                 busStopTypes={busStopTypes}
+                                 overheadCosts={overheadCosts}
+                                 maintenanceCosts={maintenanceCosts}
+                                 investmentAmortization={investmentAmortization}
+                                 departments={departments}
+                                 expandedSections={expandedSections}
+                                 totalWorkingDays={totalWorkingDays}
+                                 formatCurrency={formatCurrency}
+                                 convertCostToDaily={getConvertCostToDaily}
+                                 calculatePersonnelCostTotal={getCalculatePersonnelCostTotal}
+                                 calculateBomTotal={getCalculateBomTotal}
+                                 calculateCostTotal={getCalculateCostTotal}
+                                 calculateInvestmentTotal={getCalculateInvestmentTotal}
+                                 toggleSection={toggleSection}
+                                 onAddPersonnel={() => setPersonnelCosts(addArrayItem(personnelCosts, { metric_id: '', description: '', calculated_amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                                 onRemovePersonnel={(idx) => setPersonnelCosts(removeArrayItem(personnelCosts, idx))}
+                                 onUpdatePersonnel={(idx, field, value) => setPersonnelCosts(updateArrayItem(personnelCosts, idx, field, value))}
+                                 onAddPersonnelDeptAlloc={(idx) => setPersonnelCosts(addDeptAllocation(personnelCosts, idx))}
+                                 onUpdatePersonnelDeptAlloc={(idx, allocIdx, field, value) => setPersonnelCosts(updateDeptAllocation(personnelCosts, idx, allocIdx, field, value))}
+                                 onRemovePersonnelDeptAlloc={(idx, allocIdx) => setPersonnelCosts(removeDeptAllocation(personnelCosts, idx, allocIdx))}
+                                 onAddBom={() => setBomCosts(addArrayItem(bomCosts, { bus_stop_type_id: '', product_identifier: '', description: '', calculated_bom_cost: 0, quantity: 1 }))}
+                                 onRemoveBom={(idx) => setBomCosts(removeArrayItem(bomCosts, idx))}
+                                 onUpdateBom={(idx, field, value) => setBomCosts(updateArrayItem(bomCosts, idx, field, value))}
+                                 onBusStopTypeChange={handleBusStopTypeChange}
+                                 onAddOverhead={() => setOverheadCosts(addArrayItem(overheadCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                                 onRemoveOverhead={(idx) => setOverheadCosts(removeArrayItem(overheadCosts, idx))}
+                                 onUpdateOverhead={(idx, field, value) => setOverheadCosts(updateArrayItem(overheadCosts, idx, field, value))}
+                                 onAddOverheadDeptAlloc={(idx) => setOverheadCosts(addDeptAllocation(overheadCosts, idx))}
+                                 onUpdateOverheadDeptAlloc={(idx, allocIdx, field, value) => setOverheadCosts(updateDeptAllocation(overheadCosts, idx, allocIdx, field, value))}
+                                 onRemoveOverheadDeptAlloc={(idx, allocIdx) => setOverheadCosts(removeDeptAllocation(overheadCosts, idx, allocIdx))}
+                                 onAddMaintenance={() => setMaintenanceCosts(addArrayItem(maintenanceCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                                 onRemoveMaintenance={(idx) => setMaintenanceCosts(removeArrayItem(maintenanceCosts, idx))}
+                                 onUpdateMaintenance={(idx, field, value) => setMaintenanceCosts(updateArrayItem(maintenanceCosts, idx, field, value))}
+                                 onAddMaintenanceDeptAlloc={(idx) => setMaintenanceCosts(addDeptAllocation(maintenanceCosts, idx))}
+                                 onUpdateMaintenanceDeptAlloc={(idx, allocIdx, field, value) => setMaintenanceCosts(updateDeptAllocation(maintenanceCosts, idx, allocIdx, field, value))}
+                                 onRemoveMaintenanceDeptAlloc={(idx, allocIdx) => setMaintenanceCosts(removeDeptAllocation(maintenanceCosts, idx, allocIdx))}
+                                 onAddInvestment={() => setInvestmentAmortization(addArrayItem(investmentAmortization, { description: '', total_investment_amount: 0, project_duration_months: 12, calculated_daily_cost: 0, department_allocations: [] }))}
+                                 onRemoveInvestment={(idx) => setInvestmentAmortization(removeArrayItem(investmentAmortization, idx))}
+                                 onUpdateInvestment={handleInvestmentChange}
+                                 onAddInvestmentDeptAlloc={(idx) => setInvestmentAmortization(addDeptAllocation(investmentAmortization, idx))}
+                                 onUpdateInvestmentDeptAlloc={(idx, allocIdx, field, value) => setInvestmentAmortization(updateDeptAllocation(investmentAmortization, idx, allocIdx, field, value))}
+                                 onRemoveInvestmentDeptAlloc={(idx, allocIdx) => setInvestmentAmortization(removeDeptAllocation(investmentAmortization, idx, allocIdx))}
+                             />
+                         </div>
 
                         {/* Allocation Validation Warning */}
                          {!validateAllAllocations() && <ValidationWarningCard />}
