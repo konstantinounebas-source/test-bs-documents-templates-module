@@ -11,7 +11,7 @@ export default function ChatStepTeamExtra({ batchId, onNext, onSkip, onBack }) {
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({ person_names: [], charge_dept: "", work_type: "", duration_min: "" });
   const [searchTerm, setSearchTerm] = useState("");
-  const [addExpanded, setAddExpanded] = useState(true);
+  const [addExpanded, setAddExpanded] = useState(false);
 
   const { data: departments = [] } = useQuery({
     queryKey: ["Department"],

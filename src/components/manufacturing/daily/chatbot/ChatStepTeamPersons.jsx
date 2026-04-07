@@ -59,7 +59,7 @@ export default function ChatStepTeamPersons({ batchId, onNext, onSkip, onBack })
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({ person_names: [], from_time: "07:00", to_time: "15:30", break_time_minutes: 45 });
   const [searchTerm, setSearchTerm] = useState("");
-  const [addExpanded, setAddExpanded] = useState(true);
+  const [addExpanded, setAddExpanded] = useState(false);
 
   const { data: persons = [] } = useQuery({
     queryKey: ["Person"],
