@@ -93,11 +93,9 @@ export default function DailyDataTab({
           }))
         );
       }
-      queryClient.invalidateQueries({ queryKey: ["BatchHeader-All"] });
+      // Invalidate queries so the new batch appears — do NOT auto-select dept/batch
+      await queryClient.invalidateQueries({ queryKey: ["BatchHeader-All"] });
       toast.success(`✅ Batch δημιουργήθηκε: ${selDate} · ${deptName}`);
-      setSelDept(deptName);
-      if (setStep) setStep("batch_lines_add");
-      if (setSelBatch) setSelBatch(batch);
     } catch (err) {
       toast.error(`Σφάλμα: ${err?.message}`);
     } finally {

@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ChevronRight } from "lucide-react";
+import { Loader2, ChevronRight, Plus } from "lucide-react";
+import { toast } from "sonner";
 import AttachmentItemWithForms from "./AttachmentItemWithForms";
 
 export default function DailyFormsTab({
@@ -21,6 +22,8 @@ export default function DailyFormsTab({
 }) {
   const [selectedDept, setSelectedDept] = useState("");
   const [dragging, setDragging] = useState(false);
+  const [creatingBatch, setCreatingBatch] = useState(null);
+  const queryClient = useQueryClient();
 
   // Query all departments
   const { data: allDepartments = [] } = useQuery({
@@ -80,6 +83,45 @@ export default function DailyFormsTab({
     return allBundles.some(b => b.department === dept && b.status === "ACTIVE");
   };
 
+  const resolveBundle = (dept, date) => {
+    const da = dailyAssignments.find(a => a.assignment_date === date && a.department_id === dept);
+    if (da?.standards_bundle_id) return allBundles.find(b => b.id === da.standards_bundle_id);
+    return allBundles.find(b => b.department === dept && b.status === "ACTIVE");
+  };
+
+  const handleCreateBatch = async (deptName) => {
+    const bundle = resolveBundle(deptName, selDate);
+    if (!bundle) {
+      toast.error(`Δεν βρέθηκε ενεργό bundle για το τμήμα "${deptName}"`);
+      return;
+    }
+    setCreatingBatch(deptName);
+    try {
+      const scheduledData = await base44.entities.ScheduledData.filter({ date: selDate, department_id: deptName });
+      const batch = await base44.entities.BatchHeader.create({
+        date: selDate,
+        department: deptName,
+        bundle_id: bundle.id,
+        has_scheduled_data: scheduledData.length > 0
+      });
+      if (scheduledData.length > 0) {
+        await base44.entities.Batch_Lines.bulkCreate(
+          scheduledData.map(sd => ({
+            batch_header_id: batch.id, item_code: sd.item_code,
+            scheduled_qty: sd.ops_qty || 0, qty_processed: 0, qty_out_good: 0, qty_scrap: 0
+          }))
+        );
+      }
+      await queryClient.invalidateQueries({ queryKey: ["BatchHeaders-by-date", selDate] });
+      await queryClient.invalidateQueries({ queryKey: ["BatchHeader-All"] });
+      toast.success(`✅ Batch δημιουργήθηκε: ${selDate} · ${deptName}`);
+    } catch (err) {
+      toast.error(`Σφάλμα: ${err?.message}`);
+    } finally {
+      setCreatingBatch(null);
+    }
+  };
+
   // Group data by department
   const departmentGroups = useMemo(() => {
     const groups = {};
@@ -135,29 +177,42 @@ export default function DailyFormsTab({
             <p className="text-xs text-slate-400">No departments</p>
           ) : (
             departments.map(dept => {
-              const deptData = departmentGroups[dept];
-              const attachmentCount = deptData.attachments.length;
-              const hasBatch = deptData.hasBatch;
-              const bundleAvailable = deptData.bundleAvailable;
-              return (
+            const deptData = departmentGroups[dept];
+            const attachmentCount = deptData.attachments.length;
+            const hasBatch = deptData.hasBatch;
+            const bundleAvailable = deptData.bundleAvailable;
+            return (
+              <div key={dept} className="flex flex-col items-center gap-1">
                 <button
-                  key={dept}
                   onClick={() => setSelectedDept(dept)}
                   className={`px-4 py-2.5 rounded text-sm transition-colors flex flex-col items-center gap-1 font-medium min-w-max ${
                     selectedDept === dept
                       ? "bg-blue-600 text-white"
-                      : hasBatch ? "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300" : "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300"
+                      : "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300"
                   }`}
                 >
                   <span>{dept}</span>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className={`${bundleAvailable ? "text-green-600 font-semibold" : "text-red-600 text-lg leading-none"}`}>
+                    <span className={`${bundleAvailable ? (selectedDept === dept ? "text-green-300" : "text-green-600") : "text-red-500 text-lg leading-none"}`}>
                       {bundleAvailable ? "✓" : "×"}
                     </span>
-                    <span className="text-slate-500">({attachmentCount})</span>
+                    <span className={selectedDept === dept ? "text-blue-200" : "text-slate-500"}>({attachmentCount})</span>
                   </div>
                 </button>
-              );
+                {!hasBatch && (
+                  <button
+                    onClick={() => handleCreateBatch(dept)}
+                    disabled={creatingBatch === dept}
+                    className="text-[10px] text-blue-600 hover:text-blue-800 flex items-center gap-0.5 disabled:opacity-50"
+                  >
+                    {creatingBatch === dept
+                      ? <Loader2 className="w-3 h-3 animate-spin" />
+                      : <Plus className="w-3 h-3" />}
+                    Νέο Batch
+                  </button>
+                )}
+              </div>
+            );
             })
           )}
         </div>
