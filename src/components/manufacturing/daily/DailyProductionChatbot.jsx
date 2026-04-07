@@ -1113,11 +1113,11 @@ CRITICAL SAFETY RULES:
   const renderAttachmentsStep = () => selBatch && (
     <div className="border-t p-3 space-y-3 overflow-y-auto max-h-64 flex-shrink-0">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-slate-700">
+        <p className="text-sm font-semibold text-slate-700">
           Attachments · {selBatch.date} · {selDept}
-          {attachments.length > 0 && <Badge className="ml-2 text-[10px]">{attachments.length}</Badge>}
+          {attachments.length > 0 && <Badge className="ml-2 text-xs">{attachments.length}</Badge>}
         </p>
-        <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleReset}>↩ Νέα αναζήτηση</Button>
+        <Button variant="ghost" size="sm" className="text-sm h-7" onClick={handleReset}>↩ Νέα αναζήτηση</Button>
       </div>
       <DropZone onFiles={handleFiles} isUploading={uploadingCount > 0} />
       {loadingAtts ? (
@@ -1141,7 +1141,7 @@ CRITICAL SAFETY RULES:
           ))}
         </div>
       )}
-      <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700" onClick={startBatchLinesReview}>
+      <Button size="sm" className="w-full text-sm bg-blue-600 hover:bg-blue-700" onClick={startBatchLinesReview}>
         <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → Batch Lines
       </Button>
     </div>
@@ -1150,17 +1150,17 @@ CRITICAL SAFETY RULES:
   const renderBatchLinesReview = () => blReviewItems.length > 0 ? (
     <div className="border-t p-3 space-y-2 flex-shrink-0">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs text-slate-500 font-medium">
+        <p className="text-sm text-slate-500 font-medium">
           Item {blCurrentIdx + 1}/{blReviewItems.length}: <span className="font-bold text-slate-800">{blReviewItems[blCurrentIdx]?.item_code}</span>
         </p>
-        <Button variant="outline" size="sm" className="text-xs h-6" onClick={() => setShowAttachmentsModal(true)}>
+        <Button variant="outline" size="sm" className="text-sm h-7" onClick={() => setShowAttachmentsModal(true)}>
           <Paperclip className="w-3 h-3 mr-1" /> Attachments
         </Button>
       </div>
       <div className="grid grid-cols-3 gap-1">
         {["qty_processed","qty_out_good","qty_scrap"].map(field => (
           <div key={field}>
-            <p className="text-[10px] text-slate-500 mb-0.5">{field === "qty_processed" ? "Processed" : field === "qty_out_good" ? "Out Good" : "Scrap"}</p>
+            <p className="text-xs text-slate-500 mb-0.5">{field === "qty_processed" ? "Processed" : field === "qty_out_good" ? "Out Good" : "Scrap"}</p>
             <input type="number" min="0"
               value={blReviewItems[blCurrentIdx]?.[field] ?? ""}
               onChange={e => { const val = parseFloat(e.target.value) || 0; setBlReviewItems(prev => { const next = prev.map((it, i) => i === blCurrentIdx ? { ...it, [field]: val } : it); blReviewItemsRef.current = next; return next; }); }}
@@ -1168,7 +1168,7 @@ CRITICAL SAFETY RULES:
           </div>
         ))}
       </div>
-      <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700" disabled={isSavingLine}
+      <Button size="sm" className="w-full text-sm bg-blue-600 hover:bg-blue-700" disabled={isSavingLine}
         onClick={async () => {
           setIsSavingLine(true);
           const itemsToSave = [...blReviewItems];
@@ -1184,15 +1184,15 @@ CRITICAL SAFETY RULES:
         <FastForward className="w-3 h-3 mr-1" /> Επιβεβαίωση Όλων & Συνέχεια
       </Button>
       <div className="flex gap-2 flex-wrap">
-        <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700" disabled={isSavingLine}
+        <Button size="sm" className="flex-1 text-sm bg-green-600 hover:bg-green-700" disabled={isSavingLine}
           onClick={() => { const item = blReviewItems[blCurrentIdx]; addMsg("user", `ok · Processed=${item.qty_processed} Good=${item.qty_out_good} Scrap=${item.qty_scrap}`); handleBatchLineConfirm(item); }}>
           {isSavingLine ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <CheckCircle2 className="w-3 h-3 mr-1" />} Επιβεβαίωση
         </Button>
-        <Button size="sm" variant="outline" className="text-xs" disabled={isSavingLine}
+        <Button size="sm" variant="outline" className="text-sm" disabled={isSavingLine}
           onClick={() => { addMsg("user", "Skip - next item"); handleBatchLineConfirm({ ...blReviewItems[blCurrentIdx], _skip: true }); }}>
           Skip
         </Button>
-        <Button size="sm" variant="outline" className="flex-1 text-xs bg-orange-100 text-orange-700 hover:bg-orange-200"
+        <Button size="sm" variant="outline" className="flex-1 text-sm bg-orange-100 text-orange-700 hover:bg-orange-200"
           onClick={() => { addMsg("user", "⏭️ Skip All"); setStep("batch_lines_add"); }}>
           <FastForward className="w-3 h-3 mr-1" /> Skip All
         </Button>
@@ -1203,18 +1203,18 @@ CRITICAL SAFETY RULES:
   const renderBatchLinesAdd = () => (
     <div className="border-t p-3 space-y-3 overflow-y-auto flex-1">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-slate-700">Batch Lines</p>
+          <p className="text-sm font-semibold text-slate-700">Batch Lines</p>
           <div className="flex gap-1">
-            <Button variant="ghost" size="sm" className="text-xs h-6" onClick={handleReset}>↩ Αρχή</Button>
-            <Button variant="ghost" size="sm" className="text-xs h-6 text-slate-400" onClick={() => skipStep("batch_lines_add")}>
+            <Button variant="ghost" size="sm" className="text-sm h-7" onClick={handleReset}>↩ Αρχή</Button>
+            <Button variant="ghost" size="sm" className="text-sm h-7 text-slate-400" onClick={() => skipStep("batch_lines_add")}>
               <SkipForward className="w-3 h-3 mr-1" /> Παράλειψη
             </Button>
           </div>
         </div>
         <div className="space-y-1 pt-1 border-b pb-3">
           <div className="flex items-center justify-between cursor-pointer" onClick={() => setBlAddFormExpanded(!blAddFormExpanded)}>
-            <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Προσθήκη Νέας Γραμμής</p>
-            <span className="text-xs text-slate-400">{blAddFormExpanded ? '▼' : '▶'}</span>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Προσθήκη Νέας Γραμμής</p>
+            <span className="text-sm text-slate-400">{blAddFormExpanded ? '▼' : '▶'}</span>
           </div>
           {blAddFormExpanded && (
             <>
@@ -1226,14 +1226,14 @@ CRITICAL SAFETY RULES:
               <div className="grid grid-cols-3 gap-1">
                 {[["qty_processed","Processed"],["qty_out_good","Out Good"],["qty_scrap","Scrap"]].map(([field, label]) => (
                   <div key={field}>
-                    <p className="text-[10px] text-slate-500 mb-0.5">{label}</p>
+                    <p className="text-xs text-slate-500 mb-0.5">{label}</p>
                     <input type="number" min="0" placeholder="0" value={blAddForm[field]}
                       onChange={e => setBlAddForm(f => ({ ...f, [field]: e.target.value }))}
                       className="w-full text-sm border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400" />
                   </div>
                 ))}
               </div>
-              <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700" onClick={handleAddExtraLine} disabled={!blAddForm.item_codes?.length}>
+              <Button size="sm" className="w-full text-sm bg-blue-600 hover:bg-blue-700" onClick={handleAddExtraLine} disabled={!blAddForm.item_codes?.length}>
                 <Plus className="w-3 h-3 mr-1" /> Προσθήκη Line(s)
               </Button>
             </>
@@ -1246,7 +1246,7 @@ CRITICAL SAFETY RULES:
           queryClient={queryClient}
         />
         <div className="flex gap-2">
-          <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700" onClick={() => goNextStep("batch_lines_add", "✅ Batch Lines ολοκληρώθηκαν!")}>
+          <Button size="sm" className="flex-1 text-sm bg-green-600 hover:bg-green-700" onClick={() => goNextStep("batch_lines_add", "✅ Batch Lines ολοκληρώθηκαν!")}>
             <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → QC
           </Button>
         </div>
@@ -1256,7 +1256,7 @@ CRITICAL SAFETY RULES:
   const renderStepWithAttachmentsBtn = (children) => (
     <div className="space-y-3">
       <div className="flex justify-end px-3 pt-3">
-        <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => setShowAttachmentsModal(true)}>
+        <Button variant="outline" size="sm" className="text-sm h-8" onClick={() => setShowAttachmentsModal(true)}>
           <Paperclip className="w-3 h-3 mr-1" /> Attachments
         </Button>
       </div>
@@ -1353,12 +1353,12 @@ CRITICAL SAFETY RULES:
       {step === "dept" && (
         <div className="border-t p-3 space-y-2 flex-shrink-0">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500 font-medium">Επέλεξε τμήμα:</p>
-            <Button variant="ghost" size="sm" className="text-xs h-6" onClick={() => setStep("file_upload")}>↩ Ανέβασμα αρχείων</Button>
+            <p className="text-sm text-slate-500 font-medium">Επέλεξε τμήμα:</p>
+            <Button variant="ghost" size="sm" className="text-sm h-7" onClick={() => setStep("file_upload")}>↩ Ανέβασμα αρχείων</Button>
           </div>
           <div className="grid grid-cols-2 gap-2">
             {departments.map(d => (
-              <Button key={d.id} variant="outline" size="sm" className="text-xs justify-start" onClick={() => handleDeptSelect(d.name)}>{d.name}</Button>
+              <Button key={d.id} variant="outline" size="sm" className="text-sm justify-start" onClick={() => handleDeptSelect(d.name)}>{d.name}</Button>
             ))}
           </div>
         </div>
@@ -1367,10 +1367,10 @@ CRITICAL SAFETY RULES:
       {step === "batch" && (
         <div className="border-t p-3 space-y-2 flex-shrink-0">
           <div className="flex gap-2">
-            <Button size="sm" className="flex-1 text-xs bg-green-600 hover:bg-green-700" onClick={handleConfirmCreate} disabled={createBatchMutation.isPending}>
+            <Button size="sm" className="flex-1 text-sm bg-green-600 hover:bg-green-700" onClick={handleConfirmCreate} disabled={createBatchMutation.isPending}>
               <Plus className="w-3 h-3 mr-1" /> Ναι, δημιούργησε batch
             </Button>
-            <Button size="sm" variant="outline" className="text-xs" onClick={handleReset}>Ακύρωση</Button>
+            <Button size="sm" variant="outline" className="text-sm" onClick={handleReset}>Ακύρωση</Button>
           </div>
         </div>
       )}
@@ -1397,7 +1397,7 @@ CRITICAL SAFETY RULES:
       )}
       {step === "done" && (
         <div className="border-t p-3 flex-shrink-0">
-          <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700" onClick={handleReset}>↩ Νέα Καταχώριση</Button>
+          <Button size="sm" className="w-full text-sm bg-blue-600 hover:bg-blue-700" onClick={handleReset}>↩ Νέα Καταχώριση</Button>
         </div>
       )}
     </>
@@ -1729,7 +1729,7 @@ CRITICAL SAFETY RULES:
             <div className="flex items-center gap-1 bg-slate-50 border-b border-slate-200 px-3 py-2 flex-shrink-0">
               <button
                 onClick={() => setActiveSection("daily-forms")}
-                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
                   activeSection === "daily-forms"
                     ? "bg-blue-600 text-white"
                     : "text-slate-600 hover:bg-slate-100"
@@ -1739,7 +1739,7 @@ CRITICAL SAFETY RULES:
               </button>
               <button
                 onClick={() => setActiveSection("daily-data")}
-                className={`px-3 py-1.5 text-xs font-medium rounded transition-colors ${
+                className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
                   activeSection === "daily-data"
                     ? "bg-blue-600 text-white"
                     : "text-slate-600 hover:bg-slate-100"
@@ -1844,38 +1844,38 @@ CRITICAL SAFETY RULES:
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                      <p className="text-[10px] font-semibold text-slate-500 uppercase">Batches</p>
+                      <p className="text-xs font-semibold text-slate-500 uppercase">Batches</p>
                       <p className="text-2xl font-bold text-slate-900 mt-2">{batchHeaders.length}</p>
-                      <p className="text-xs text-slate-500 mt-1">for {selDate}</p>
-                    </div>
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                      <p className="text-[10px] font-semibold text-slate-500 uppercase">Attachments</p>
+                      <p className="text-sm text-slate-500 mt-1">for {selDate}</p>
+                      </div>
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-slate-500 uppercase">Attachments</p>
                       <p className="text-2xl font-bold text-slate-900 mt-2">{attachments.length}</p>
-                      <p className="text-xs text-slate-500 mt-1">uploaded</p>
-                    </div>
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                      <p className="text-[10px] font-semibold text-green-700 uppercase">OCR Ready</p>
+                      <p className="text-sm text-slate-500 mt-1">uploaded</p>
+                      </div>
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-green-700 uppercase">OCR Ready</p>
                       <p className="text-2xl font-bold text-green-900 mt-2">
                         {attachments.filter(a => {
                           const status = attachmentOcrStatus[a.id];
                           return status && (status.production?.status === "completed" || status.teams_time?.status === "completed");
                         }).length}
                       </p>
-                      <p className="text-xs text-green-600 mt-1">processed</p>
-                    </div>
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                      <p className="text-[10px] font-semibold text-orange-700 uppercase">Processing</p>
+                      <p className="text-sm text-green-600 mt-1">processed</p>
+                      </div>
+                      <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-orange-700 uppercase">Processing</p>
                       <p className="text-2xl font-bold text-orange-900 mt-2">{runningOcrAttachmentIds.size}</p>
-                      <p className="text-xs text-orange-600 mt-1">in progress</p>
+                      <p className="text-sm text-orange-600 mt-1">in progress</p>
                     </div>
                   </div>
                   {selBatch && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-                      <p className="text-xs font-semibold text-blue-700 mb-2">Active Batch</p>
+                      <p className="text-sm font-semibold text-blue-700 mb-2">Active Batch</p>
                       <div className="space-y-1">
-                        <p className="text-xs text-blue-900"><span className="font-semibold">Date:</span> {selBatch.date}</p>
-                        <p className="text-xs text-blue-900"><span className="font-semibold">Dept:</span> {selBatch.department}</p>
-                        <p className="text-xs text-blue-900"><span className="font-semibold">Lines:</span> {existingBatchLines.length}</p>
+                        <p className="text-sm text-blue-900"><span className="font-semibold">Date:</span> {selBatch.date}</p>
+                        <p className="text-sm text-blue-900"><span className="font-semibold">Dept:</span> {selBatch.department}</p>
+                        <p className="text-sm text-blue-900"><span className="font-semibold">Lines:</span> {existingBatchLines.length}</p>
                       </div>
                     </div>
                   )}
