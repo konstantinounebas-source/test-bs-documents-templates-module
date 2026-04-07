@@ -1,0 +1,296 @@
+{
+  "name": "FactoryFinancialData",
+  "type": "object",
+  "properties": {
+    "factory_name": {
+      "type": "string",
+      "description": "Name of the factory"
+    },
+    "version": {
+      "type": "string",
+      "description": "Version identifier (e.g., v1.0, v2.0)",
+      "default": "v1.0"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Start date of the financial period"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "End date of the financial period"
+    },
+    "total_working_days_in_period": {
+      "type": "number",
+      "description": "Total working days in the financial period",
+      "default": 0
+    },
+    "average_working_days_per_month": {
+      "type": "number",
+      "description": "Average working days per month for calculations",
+      "default": 22
+    },
+    "average_working_days_per_year": {
+      "type": "number",
+      "description": "Average working days per year for calculations",
+      "default": 260
+    },
+    "contract_amount": {
+      "type": "number",
+      "description": "Base contract amount",
+      "default": 0
+    },
+    "sales_revenue_items": {
+      "type": "array",
+      "description": "Array of sales revenue items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_identifier": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "quantity_sold": {
+            "type": "number"
+          },
+          "unit_selling_price": {
+            "type": "number"
+          }
+        }
+      },
+      "default": []
+    },
+    "approved_variations": {
+      "type": "array",
+      "description": "Array of approved variation amounts",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      },
+      "default": []
+    },
+    "potential_variations": {
+      "type": "array",
+      "description": "Array of potential variation amounts",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      },
+      "default": []
+    },
+    "personnel_costs": {
+      "type": "array",
+      "description": "Array of personnel cost items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "department_id": {
+            "type": "string"
+          },
+          "metric_id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "calculated_amount": {
+            "type": "number"
+          },
+          "frequency_type": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "per_production_day",
+              "monthly",
+              "yearly",
+              "one_time"
+            ]
+          },
+          "allocation_production_percent": {
+            "type": "number"
+          },
+          "allocation_administration_percent": {
+            "type": "number"
+          }
+        }
+      },
+      "default": []
+    },
+    "bill_of_materials_costs": {
+      "type": "array",
+      "description": "Array of BOM cost items from warehouse",
+      "items": {
+        "type": "object",
+        "properties": {
+          "bus_stop_type_id": {
+            "type": "string"
+          },
+          "product_identifier": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "calculated_bom_cost": {
+            "type": "number"
+          },
+          "quantity": {
+            "type": "number"
+          }
+        }
+      },
+      "default": []
+    },
+    "fixed_costs": {
+      "type": "array",
+      "description": "Array of fixed cost items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "frequency_type": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "per_production_day",
+              "monthly",
+              "yearly",
+              "one_time"
+            ]
+          },
+          "allocation_production_percent": {
+            "type": "number"
+          },
+          "allocation_administration_percent": {
+            "type": "number"
+          }
+        }
+      },
+      "default": []
+    },
+    "overhead_costs": {
+      "type": "array",
+      "description": "Array of overhead cost items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "frequency_type": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "per_production_day",
+              "monthly",
+              "yearly",
+              "one_time"
+            ]
+          },
+          "allocation_production_percent": {
+            "type": "number"
+          },
+          "allocation_administration_percent": {
+            "type": "number"
+          }
+        }
+      },
+      "default": []
+    },
+    "investment_amortization": {
+      "type": "array",
+      "description": "Array of investment amortization items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "total_investment_amount": {
+            "type": "number"
+          },
+          "project_duration_months": {
+            "type": "number"
+          },
+          "calculated_daily_cost": {
+            "type": "number"
+          },
+          "allocation_production_percent": {
+            "type": "number"
+          },
+          "allocation_administration_percent": {
+            "type": "number"
+          }
+        }
+      },
+      "default": []
+    },
+    "maintenance_costs": {
+      "type": "array",
+      "description": "Array of maintenance cost items",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "frequency_type": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "per_production_day",
+              "monthly",
+              "yearly",
+              "one_time"
+            ]
+          },
+          "allocation_production_percent": {
+            "type": "number"
+          },
+          "allocation_administration_percent": {
+            "type": "number"
+          }
+        }
+      },
+      "default": []
+    },
+    "is_active": {
+      "type": "boolean",
+      "description": "Whether this record is active",
+      "default": true
+    }
+  },
+  "required": [
+    "factory_name",
+    "start_date",
+    "end_date"
+  ]
+}
