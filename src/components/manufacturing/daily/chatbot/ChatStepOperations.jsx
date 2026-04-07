@@ -20,7 +20,7 @@ function OpRow({ op, onDelete, onUpdate }) {
   };
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1 text-[10px] text-slate-700 hover:bg-slate-50 group">
+    <div className="flex items-center gap-1 px-2 py-1 text-xs text-slate-700 hover:bg-slate-50 group">
       {/* Operation name */}
       <span className="flex-1 truncate text-slate-600">{op.operation || "—"}</span>
       {/* Qty */}
@@ -29,7 +29,7 @@ function OpRow({ op, onDelete, onUpdate }) {
       {editing ? (
         <>
           <input type="number" value={val} onChange={e => setVal(e.target.value)}
-            className="w-14 border rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-400" />
+            className="w-14 border rounded px-1 py-0.5 text-xs outline-none focus:border-blue-400" />
           <button onClick={save} disabled={saving} className="text-green-600 hover:text-green-800">
             {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
           </button>
@@ -286,9 +286,9 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
       <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-1">
           <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>
-          <p className="text-xs font-semibold text-slate-700">Operations</p>
+          <p className="text-sm font-semibold text-slate-700">Operations</p>
         </div>
-        <Button variant="ghost" size="sm" className="text-xs h-6 text-slate-400" onClick={onSkip}>
+        <Button variant="ghost" size="sm" className="text-sm h-7 text-slate-400" onClick={onSkip}>
           <SkipForward className="w-3 h-3 mr-1" /> Παράλειψη
         </Button>
       </div>
@@ -304,25 +304,25 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
             setShowAddForm(v => !v);
           }}
         >
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Προσθήκη</p>
-          <span className="text-xs text-slate-400">{showAddForm ? '▼' : '▶'}</span>
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Προσθήκη</p>
+          <span className="text-sm text-slate-400">{showAddForm ? '▼' : '▶'}</span>
         </div>
 
         {showAddForm && (
           <div className="space-y-2">
             {/* Operation Profile */}
             <div>
-              <p className="text-[10px] font-semibold text-slate-500 mb-1">Operation Profile *</p>
+              <p className="text-xs font-semibold text-slate-500 mb-1">Operation Profile *</p>
               <Select
                 value={formData.operation_profile_id}
                 onValueChange={v => setFormData(f => ({ ...f, operation_profile_id: v }))}
               >
-                <SelectTrigger className="h-8 text-xs">
+                <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder="Επίλεξε profile" />
                 </SelectTrigger>
                 <SelectContent>
                   {departmentProfiles.map(p => (
-                    <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>
+                    <SelectItem key={p.id} value={p.id} className="text-sm">{p.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -330,7 +330,7 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
 
             {/* Item Code */}
             <div>
-              <p className="text-[10px] font-semibold text-slate-500 mb-1">
+              <p className="text-xs font-semibold text-slate-500 mb-1">
                 Item Code *
                 {selectedItemQtyProcessed !== null && (
                   <span className="text-slate-400 font-normal ml-1">(Processed: {selectedItemQtyProcessed})</span>
@@ -340,12 +340,12 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
                 value={formData.item_code}
                 onValueChange={v => setFormData(f => ({ ...f, item_code: v }))}
               >
-                <SelectTrigger className="h-8 text-xs">
+                <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder="Επίλεξε item code" />
                 </SelectTrigger>
                 <SelectContent>
                   {itemCodes.map(code => (
-                    <SelectItem key={code} value={code} className="text-xs">{code}</SelectItem>
+                    <SelectItem key={code} value={code} className="text-sm">{code}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -353,7 +353,7 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
 
             {/* Existing ops for this item */}
             {formData.item_code && existingOps.filter(o => o.item_code === formData.item_code).length > 0 && (
-              <div className="bg-blue-50 border border-blue-100 rounded p-2 text-[10px] text-blue-700 space-y-0.5">
+              <div className="bg-blue-50 border border-blue-100 rounded p-2 text-xs text-blue-700 space-y-0.5">
                 <p className="font-semibold">Υπάρχουσες Operations για {formData.item_code}:</p>
                 {existingOps.filter(o => o.item_code === formData.item_code).map(op => (
                   <div key={op.id} className="flex gap-2">
@@ -369,9 +369,9 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
             {formData.operation_profile_id && (
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-[10px] font-semibold text-slate-500">Operations από Profile *</p>
+                  <p className="text-xs font-semibold text-slate-500">Operations από Profile *</p>
                   <button
-                    className="text-[10px] text-blue-600 hover:underline"
+                    className="text-xs text-blue-600 hover:underline"
                     onClick={() => {
                       const all = {};
                       operationsForProfile.forEach(op => { all[op.id] = selectedItemQtyProcessed ?? 1; });
@@ -383,15 +383,15 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
                 </div>
                 <div className="space-y-1 overflow-y-auto">
                   {operationsForProfile.length === 0 ? (
-                    <p className="text-xs text-slate-400">Δεν υπάρχουν operations σε αυτό το profile</p>
+                    <p className="text-sm text-slate-400">Δεν υπάρχουν operations σε αυτό το profile</p>
                   ) : operationsForProfile.map(op => {
-                    const stdLine = stdSetLines.find(sl => sl.item_code === formData.item_code && sl.operation === op.name);
+                     const stdLine = stdSetLines.find(sl => sl.item_code === formData.item_code && sl.operation === op.name);
                     const stdMinPc = stdLine?.std_min_per_pc || 0;
                     const qty = selectedOperations[op.id] || 0;
                     const opTime = qty * stdMinPc;
                     const isOver = selectedItemQtyProcessed !== null && qty > selectedItemQtyProcessed;
                     return (
-                      <div key={op.id} className={`flex items-center gap-2 p-2 bg-white rounded border text-xs ${isOver ? "border-red-300" : ""}`}>
+                      <div key={op.id} className={`flex items-center gap-2 p-2 bg-white rounded border text-sm ${isOver ? "border-red-300" : ""}`}>
                         <Checkbox
                           checked={qty > 0}
                           onCheckedChange={checked => {
@@ -427,7 +427,7 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
                           }}
                           disabled={!selectedOperations[op.id] && qty === 0}
                           placeholder="Qty"
-                          className={`w-16 border rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-400 ${isOver ? "border-red-400 bg-red-50" : ""}`}
+                          className={`w-16 border rounded px-1 py-0.5 text-xs outline-none focus:border-blue-400 ${isOver ? "border-red-400 bg-red-50" : ""}`}
                         />
                         <span className="text-slate-400 w-20 text-right">{opTime.toFixed(1)}m</span>
                       </div>
@@ -438,11 +438,11 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
             )}
 
             {errorMsg && (
-              <div className="bg-red-50 border border-red-200 rounded p-2 text-[10px] text-red-700">
+              <div className="bg-red-50 border border-red-200 rounded p-2 text-xs text-red-700">
                 {errorMsg}
               </div>
             )}
-            <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+            <Button size="sm" className="w-full text-sm bg-blue-600 hover:bg-blue-700"
               onClick={handleAdd} disabled={isSaving}>
               {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
               Προσθήκη
@@ -453,7 +453,7 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
 
       {/* Sync Button */}
       <div className="flex-shrink-0">
-        <Button size="sm" variant="outline" className="w-full text-xs" onClick={handleSync} disabled={isSyncing}>
+        <Button size="sm" variant="outline" className="w-full text-sm" onClick={handleSync} disabled={isSyncing}>
           {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
           Sync ({processedCount})
         </Button>
@@ -461,7 +461,7 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
 
       {/* Summary */}
       {existingOps.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-700 flex-shrink-0">
+        <div className="bg-blue-50 border border-blue-200 rounded p-2 text-sm text-blue-700 flex-shrink-0">
           ✅ {existingOps.length} operations · Σύνολο: {totalOpTime.toFixed(1)} min
         </div>
       )}
@@ -475,9 +475,9 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
           return acc;
         }, {});
         return (
-          <div className="border rounded flex-1 min-h-0 overflow-y-auto text-[10px]">
+          <div className="border rounded flex-1 min-h-0 overflow-y-auto text-xs">
             {/* Header */}
-            <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 text-[9px] font-semibold text-slate-400 uppercase sticky top-0">
+            <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 text-xs font-semibold text-slate-400 uppercase sticky top-0">
               <span className="flex-1">Operation</span>
               <span className="w-10 text-right">Qty</span>
               <span className="w-12 text-right">Time(m)</span>
@@ -503,7 +503,7 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
       })()}
 
       {/* Continue */}
-      <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
+      <Button size="sm" className="w-full text-sm bg-green-600 hover:bg-green-700"
         onClick={() => onNext("⏭ Operations – Συνέχεια...")}>
         <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → Team Time - Persons
       </Button>

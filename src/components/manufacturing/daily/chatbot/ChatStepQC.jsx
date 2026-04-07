@@ -249,9 +249,9 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           <button onClick={onBack} className="text-slate-400 hover:text-slate-600 p-0.5"><ChevronLeft className="w-4 h-4" /></button>
-          <p className="text-xs font-semibold text-slate-700">QC Initial Stock</p>
+          <p className="text-sm font-semibold text-slate-700">QC Initial Stock</p>
         </div>
-        <Button variant="ghost" size="sm" className="text-xs h-6 text-slate-400" onClick={onSkip}>
+        <Button variant="ghost" size="sm" className="text-sm h-7 text-slate-400" onClick={onSkip}>
           <SkipForward className="w-3 h-3 mr-1" /> Παράλειψη
         </Button>
       </div>
@@ -262,8 +262,8 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
           className="flex items-center justify-between cursor-pointer"
           onClick={() => setAddSectionExpanded(e => !e)}
         >
-          <p className="text-[10px] text-slate-500 uppercase font-semibold tracking-wide">Προσθήκη QC - Επίλεξε Items</p>
-          <span className="text-xs text-slate-400">{addSectionExpanded ? '▼' : '▶'}</span>
+          <p className="text-xs text-slate-500 uppercase font-semibold tracking-wide">Προσθήκη QC - Επίλεξε Items</p>
+          <span className="text-sm text-slate-400">{addSectionExpanded ? '▼' : '▶'}</span>
         </div>
 
         {addSectionExpanded && (
@@ -272,7 +272,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
             <div className="bg-white border border-slate-200 rounded p-2 overflow-y-auto">
               <div className="space-y-1">
                 {processedLines.map(bl => (
-                  <label key={bl.item_code} className="flex items-center gap-2 p-1 hover:bg-slate-100 rounded cursor-pointer text-xs">
+                  <label key={bl.item_code} className="flex items-center gap-2 p-1 hover:bg-slate-100 rounded cursor-pointer text-sm">
                     <input
                       type="checkbox"
                       checked={selectedItems.has(bl.item_code)}
@@ -294,18 +294,18 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
             {/* QC Type & Level */}
             <div className="grid grid-cols-2 gap-1">
               <div>
-                <p className="text-[10px] text-slate-500 mb-0.5">QC Type</p>
+                <p className="text-xs text-slate-500 mb-0.5">QC Type</p>
                 <Select value={form.qc_type} onValueChange={v => setForm(f => ({ ...f, qc_type: v }))}>
-                  <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε..." /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Επίλεξε..." /></SelectTrigger>
                   <SelectContent>
                     {filteredQcTypes.map(qt => <SelectItem key={qt.id} value={qt.name}>{qt.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <p className="text-[10px] text-slate-500 mb-0.5">QC Level</p>
+                <p className="text-xs text-slate-500 mb-0.5">QC Level</p>
                 <Select value={form.qc_level} onValueChange={v => setForm(f => ({ ...f, qc_level: v }))}>
-                  <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Επίλεξε..." /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Επίλεξε..." /></SelectTrigger>
                   <SelectContent>
                     {filteredQcLevels.map(ql => <SelectItem key={ql.id} value={ql.name}>{ql.name}</SelectItem>)}
                   </SelectContent>
@@ -315,7 +315,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
 
             <Button
               size="sm"
-              className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+              className="w-full text-sm bg-blue-600 hover:bg-blue-700"
               onClick={handleAddSelected}
               disabled={isSaving || !form.qc_type || !form.qc_level || selectedItems.size === 0}
             >
@@ -328,7 +328,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
 
       {/* Sync from schedule */}
       {scheduledData.some(sd => sd.qc_type) && (
-        <Button size="sm" variant="outline" className="w-full text-xs" onClick={handleSync} disabled={isSyncing}>
+        <Button size="sm" variant="outline" className="w-full text-sm" onClick={handleSync} disabled={isSyncing}>
           {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
           Sync από Schedule
         </Button>
@@ -337,10 +337,10 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
       {existingQC.length > 0 && (
         <div className="space-y-2">
           <div className="bg-blue-50 border border-blue-200 rounded p-2">
-            <p className="text-xs font-semibold text-blue-900">Total QC Time: {totalQCTime.toFixed(2)} min ({(totalQCTime / 60).toFixed(2)} hrs)</p>
+            <p className="text-sm font-semibold text-blue-900">Total QC Time: {totalQCTime.toFixed(2)} min ({(totalQCTime / 60).toFixed(2)} hrs)</p>
           </div>
           <div className="bg-slate-50 rounded border border-slate-200 p-2 overflow-y-auto">
-            <div className="grid grid-cols-6 gap-1 text-[10px] font-semibold text-slate-600 mb-1 pb-1 border-b sticky top-0 bg-slate-50">
+            <div className="grid grid-cols-6 gap-1 text-xs font-semibold text-slate-600 mb-1 pb-1 border-b sticky top-0 bg-slate-50">
               <div>Item</div>
               <div>Type</div>
               <div>Level</div>
@@ -349,7 +349,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
               <div>Actions</div>
             </div>
             {existingQC.map((qc) => (
-              <div key={qc.id} className="grid grid-cols-6 gap-1 text-[10px] text-slate-700 py-0.5 border-b border-slate-100 last:border-0 items-center">
+              <div key={qc.id} className="grid grid-cols-6 gap-1 text-xs text-slate-700 py-0.5 border-b border-slate-100 last:border-0 items-center">
                 <div>{qc.item_code}</div>
                 <div>{qc.qc_type}</div>
                 <div>{qc.qc_level}</div>
@@ -358,7 +358,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
                     <div>{getQCPerPiece(qc.item_code, qc.qc_type, qc.qc_level).toFixed(2)}</div>
                     <input type="number" value={editForm.qty_affected || 0}
                       onChange={(e) => setEditForm(f => ({ ...f, qty_affected: e.target.value }))}
-                      className="h-6 px-1 border border-slate-300 rounded text-[10px]" />
+                      className="h-7 px-1 border border-slate-300 rounded text-xs" />
                     <div className="flex gap-0.5">
                       <button onClick={handleEditSave} className="text-green-600 hover:text-green-700">✓</button>
                       <button onClick={() => setEditingId(null)} className="text-slate-400 hover:text-slate-600">✕</button>
@@ -380,7 +380,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
         </div>
       )}
 
-      <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
+      <Button size="sm" className="w-full text-sm bg-green-600 hover:bg-green-700"
         onClick={() => onNext("⏭ QC Initial Stock – Συνέχεια...")}>
         <CheckCircle2 className="w-3 h-3 mr-1" /> Συνέχεια → Operations
       </Button>
