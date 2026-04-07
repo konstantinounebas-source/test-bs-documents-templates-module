@@ -11,9 +11,11 @@
  * @typedef {Object} ExpenseRow
  * @property {string} description - Cost description
  * @property {number} amount - Raw monetary amount
- * @property {string} frequency_type - "daily" | "monthly" | "quarterly" | "annually"
+ * @property {string} frequency_type - "daily" | "monthly" | "yearly"
  * @property {number} calculated_daily_amount - Computed daily cost (read-only)
  * @property {string} category - "fixed" | "operational" | "other"
+ * @property {boolean} is_default_row - System/default row flag
+ * @property {boolean} is_locked_description - Prevents editing description
  * @property {Array} department_allocations - Department allocation list
  */
 
@@ -23,8 +25,13 @@
 export const FREQUENCY_TYPES = {
   DAILY: 'daily',
   MONTHLY: 'monthly',
-  QUARTERLY: 'quarterly',
-  ANNUALLY: 'annually'
+  YEARLY: 'yearly'
+};
+
+export const FREQUENCY_LABELS = {
+  daily: 'Ημερήσιο',
+  monthly: 'Μηνιαίο',
+  yearly: 'Ετήσιο'
 };
 
 export const DEFAULT_FREQUENCY = FREQUENCY_TYPES.MONTHLY;
@@ -48,6 +55,8 @@ export const DEFAULT_FIXED_COSTS = [
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
     category: EXPENSE_CATEGORIES.FIXED,
+    is_default_row: true,
+    is_locked_description: true,
     department_allocations: []
   },
   {
@@ -56,6 +65,8 @@ export const DEFAULT_FIXED_COSTS = [
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
     category: EXPENSE_CATEGORIES.FIXED,
+    is_default_row: true,
+    is_locked_description: true,
     department_allocations: []
   }
 ];
@@ -70,6 +81,8 @@ export const DEFAULT_OPERATIONAL_COSTS = [
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
     category: EXPENSE_CATEGORIES.OPERATIONAL,
+    is_default_row: true,
+    is_locked_description: true,
     department_allocations: []
   },
   {
@@ -78,6 +91,8 @@ export const DEFAULT_OPERATIONAL_COSTS = [
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
     category: EXPENSE_CATEGORIES.OPERATIONAL,
+    is_default_row: true,
+    is_locked_description: true,
     department_allocations: []
   },
   {
@@ -86,6 +101,8 @@ export const DEFAULT_OPERATIONAL_COSTS = [
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
     category: EXPENSE_CATEGORIES.OPERATIONAL,
+    is_default_row: true,
+    is_locked_description: true,
     department_allocations: []
   },
   {
@@ -94,6 +111,8 @@ export const DEFAULT_OPERATIONAL_COSTS = [
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
     category: EXPENSE_CATEGORIES.OPERATIONAL,
+    is_default_row: true,
+    is_locked_description: true,
     department_allocations: []
   }
 ];
@@ -106,15 +125,18 @@ export const DEFAULT_OPERATIONAL_COSTS = [
  * Create a blank expense row with default structure
  * @param {string} description - Optional description
  * @param {string} category - Optional category (defaults to "other")
+ * @param {boolean} isDefault - Whether this is a system default row
  * @returns {ExpenseRow} Blank expense row
  */
-export function createBlankExpenseRow(description = '', category = EXPENSE_CATEGORIES.OTHER) {
+export function createBlankExpenseRow(description = '', category = EXPENSE_CATEGORIES.OTHER, isDefault = false) {
   return {
     description,
     amount: 0,
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
     category,
+    is_default_row: isDefault,
+    is_locked_description: isDefault,
     department_allocations: []
   };
 }
@@ -181,6 +203,8 @@ export function normalizeLoadedExpenseRows(loadedRows) {
     frequency_type: row.frequency_type || DEFAULT_FREQUENCY,
     calculated_daily_amount: typeof row.calculated_daily_amount === 'number' ? row.calculated_daily_amount : 0,
     category: row.category || EXPENSE_CATEGORIES.OTHER,
+    is_default_row: row.is_default_row === true,
+    is_locked_description: row.is_locked_description === true,
     department_allocations: Array.isArray(row.department_allocations) ? row.department_allocations : []
   }));
 }
