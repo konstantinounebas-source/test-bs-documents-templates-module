@@ -171,8 +171,8 @@ export default function DailyFormsTab({
   return (
     <div className="flex flex-col h-full gap-3">
       {/* Horizontal Department List */}
-      <div className="bg-slate-100 border border-slate-200 rounded-lg p-3 flex-shrink-0 overflow-y-auto" style={{ maxHeight: "140px" }}>
-        <div className="flex flex-wrap gap-2">
+      <div className="bg-slate-100 border-b border-slate-200 p-3 flex-shrink-0" style={{ height: "120px", marginTop: "-4px" }}>
+        <div className="grid grid-cols-3 gap-2">
           {departments.length === 0 ? (
             <p className="text-xs text-slate-400">No departments</p>
           ) : (
