@@ -500,6 +500,13 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       return;
     }
 
+    // Guard: no batch selected yet — redirect to Processing Queue
+    if (!selBatch) {
+      addMsg("bot", `⚠️ Δεν υπάρχει ενεργό batch. Χρησιμοποίησε το Processing Queue (⚙️) για να ανεβάσεις αρχεία.`);
+      setActiveUtility("processing");
+      return;
+    }
+
     // Check for duplicate
     if (!forceUpload) {
       const existing = attachments.find(a => a.file_name === file.name);
