@@ -1653,8 +1653,8 @@ CRITICAL SAFETY RULES:
       {/* Split Layout - Two Columns */}
       {isSplitLayout && (
         <div className={`flex ${splitFullscreen ? "fixed inset-x-0 bottom-0 z-50" : "h-full"}`} style={splitFullscreen ? { top: "64px" } : {}}>
-          {/* LEFT COLUMN - Chat Only (~30%) */}
-          <div className="flex flex-col bg-white border-r border-slate-200" style={{ width: splitFullscreen ? "30%" : "30%" }}>
+          {/* LEFT COLUMN - Chat Only (~35%) */}
+          <div className="flex flex-col bg-white border-r border-slate-200" style={{ width: splitFullscreen ? "35%" : "35%" }}>
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-blue-600 text-white border-b border-blue-700 select-none flex-shrink-0">
               <div className="flex items-center gap-2 flex-1 min-w-0">
