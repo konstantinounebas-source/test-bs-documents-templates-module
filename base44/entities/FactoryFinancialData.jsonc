@@ -342,11 +342,11 @@
     },
     "depreciation_module": {
       "type": "object",
-      "description": "Depreciation module for calculating depreciation rate on revenue",
+      "default": {},
       "properties": {
         "investments": {
           "type": "array",
-          "description": "Array of investment items for depreciation calculation",
+          "default": [],
           "items": {
             "type": "object",
             "properties": {
@@ -362,61 +362,45 @@
                 ]
               },
               "total_amount": {
-                "type": "number"
+                "type": "number",
+                "default": 0
               },
-              "allocation_production_percent": {
-                "type": "number"
-              },
-              "allocation_administration_percent": {
-                "type": "number"
+              "allocation_percent": {
+                "type": "number",
+                "default": 100
               },
               "department_id": {
                 "type": "string"
               }
-            },
-            "required": [
-              "description",
-              "category",
-              "total_amount"
-            ]
-          },
-          "default": []
+            }
+          }
         },
         "estimated_revenues": {
           "type": "array",
-          "description": "Array of estimated revenue items for depreciation calculation",
+          "default": [],
           "items": {
             "type": "object",
             "properties": {
-              "bus_stop_type_id": {
+              "bus_shelter_type_id": {
                 "type": "string"
               },
               "description": {
                 "type": "string"
               },
               "pending_quantity": {
-                "type": "number"
+                "type": "number",
+                "default": 0
               },
               "unit_revenue": {
-                "type": "number"
-              },
-              "total_revenue": {
                 "type": "number",
-                "description": "Auto-calculated: pending_quantity * unit_revenue"
+                "default": 0
               }
-            },
-            "required": [
-              "bus_stop_type_id",
-              "description",
-              "pending_quantity",
-              "unit_revenue"
-            ]
-          },
-          "default": []
+            }
+          }
         },
         "additional_revenues": {
           "type": "array",
-          "description": "Array of additional revenue items for depreciation calculation",
+          "default": [],
           "items": {
             "type": "object",
             "properties": {
@@ -424,21 +408,12 @@
                 "type": "string"
               },
               "total_amount": {
-                "type": "number"
+                "type": "number",
+                "default": 0
               }
-            },
-            "required": [
-              "description",
-              "total_amount"
-            ]
-          },
-          "default": []
+            }
+          }
         }
-      },
-      "default": {
-        "investments": [],
-        "estimated_revenues": [],
-        "additional_revenues": []
       }
     },
     "is_active": {
