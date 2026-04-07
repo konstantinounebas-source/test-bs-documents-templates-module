@@ -54,20 +54,22 @@ export default function DeptAllocationRows({ allocations, departments, onAdd, on
                 Προσθήκη Τμήματος
             </Button>
 
-            {/* Validation Status */}
-            <div className={`p-2 rounded flex items-center gap-2 text-xs font-medium ${isValid ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                {isValid ? (
-                    <>
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>Κατανομή: {totalAlloc.toFixed(1)}% ✓</span>
-                    </>
-                ) : (
-                    <>
-                        <AlertCircle className="w-4 h-4" />
-                        <span>Κατανομή: {totalAlloc.toFixed(1)}% (χρειάζεται 100%)</span>
-                    </>
-                )}
-            </div>
+            {/* Validation Status - Only shown when allocations exist */}
+            {(allocations || []).length > 0 && (
+                <div className={`p-2 rounded flex items-center gap-2 text-xs font-medium ${isValid ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+                    {isValid ? (
+                        <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>Κατανομή: {totalAlloc.toFixed(1)}% ✓</span>
+                        </>
+                    ) : (
+                        <>
+                            <AlertCircle className="w-4 h-4" />
+                            <span>Κατανομή: {totalAlloc.toFixed(1)}% (χρειάζεται 100%)</span>
+                        </>
+                    )}
+                </div>
+            )}
 
             {/* Amount Split Preview */}
             {totalAlloc > 0 && totalAmount != null && (
