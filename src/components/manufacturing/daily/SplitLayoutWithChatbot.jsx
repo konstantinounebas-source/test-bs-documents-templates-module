@@ -2,10 +2,13 @@ import React, { useState, useRef, useEffect } from "react";
 import DailyProductionChatbot from "./DailyProductionChatbot";
 
 export default function SplitLayoutWithChatbot({ children, departments }) {
-  const [chatWidth, setChatWidth] = useState(420);
+  const containerRef = useRef();
+  const [chatWidth, setChatWidth] = useState(() => {
+    // Initialize to 1/3 of window width on first load
+    return Math.max(300, Math.min(420, window.innerWidth / 3));
+  });
   const [chatClosed, setChatClosed] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const containerRef = useRef();
 
   useEffect(() => {
     if (!isResizing) return;
