@@ -159,9 +159,6 @@
       "items": {
         "type": "object",
         "properties": {
-          "department_id": {
-            "type": "string"
-          },
           "metric_id": {
             "type": "string"
           },
@@ -181,11 +178,21 @@
               "one_time"
             ]
           },
-          "allocation_production_percent": {
-            "type": "number"
-          },
-          "allocation_administration_percent": {
-            "type": "number"
+          "department_allocations": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "object",
+              "properties": {
+                "department_id": {
+                  "type": "string"
+                },
+                "allocation_percent": {
+                  "type": "number",
+                  "default": 0
+                }
+              }
+            }
           }
         }
       },
@@ -238,11 +245,21 @@
               "one_time"
             ]
           },
-          "allocation_production_percent": {
-            "type": "number"
-          },
-          "allocation_administration_percent": {
-            "type": "number"
+          "department_allocations": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "object",
+              "properties": {
+                "department_id": {
+                  "type": "string"
+                },
+                "allocation_percent": {
+                  "type": "number",
+                  "default": 0
+                }
+              }
+            }
           }
         }
       },
@@ -270,11 +287,21 @@
               "one_time"
             ]
           },
-          "allocation_production_percent": {
-            "type": "number"
-          },
-          "allocation_administration_percent": {
-            "type": "number"
+          "department_allocations": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "object",
+              "properties": {
+                "department_id": {
+                  "type": "string"
+                },
+                "allocation_percent": {
+                  "type": "number",
+                  "default": 0
+                }
+              }
+            }
           }
         }
       },
@@ -298,11 +325,21 @@
           "calculated_daily_cost": {
             "type": "number"
           },
-          "allocation_production_percent": {
-            "type": "number"
-          },
-          "allocation_administration_percent": {
-            "type": "number"
+          "department_allocations": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "object",
+              "properties": {
+                "department_id": {
+                  "type": "string"
+                },
+                "allocation_percent": {
+                  "type": "number",
+                  "default": 0
+                }
+              }
+            }
           }
         }
       },
@@ -330,11 +367,21 @@
               "one_time"
             ]
           },
-          "allocation_production_percent": {
-            "type": "number"
-          },
-          "allocation_administration_percent": {
-            "type": "number"
+          "department_allocations": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "object",
+              "properties": {
+                "department_id": {
+                  "type": "string"
+                },
+                "allocation_percent": {
+                  "type": "number",
+                  "default": 0
+                }
+              }
+            }
           }
         }
       },

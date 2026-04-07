@@ -23,6 +23,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import DeptAllocationRows from "@/components/factory-financial/DeptAllocationRows";
 
 export default function FactoryFinancialCalculations() {
     const { hasAccess, isLoading: accessLoading } = usePageAccess('FactoryFinancialCalculations');
@@ -294,20 +295,17 @@ export default function FactoryFinancialCalculations() {
             description: '',
             amount: 0,
             frequency_type: 'monthly',
-            allocation_production_percent: 100,
-            allocation_administration_percent: 0
+            department_allocations: []
         }]);
     };
     
     const addPersonnelCostItem = () => {
         setPersonnelCosts([...personnelCosts, {
-            department_id: '',
             metric_id: '',
             description: '',
             calculated_amount: 0,
             frequency_type: 'monthly',
-            allocation_production_percent: 100,
-            allocation_administration_percent: 0
+            department_allocations: []
         }]);
     };
     
@@ -334,9 +332,26 @@ export default function FactoryFinancialCalculations() {
             total_investment_amount: 0,
             project_duration_months: 12,
             calculated_daily_cost: 0,
-            allocation_production_percent: 100,
-            allocation_administration_percent: 0
+            department_allocations: []
         }]);
+    };
+
+    const addInvDeptAlloc = (itemIdx) => {
+        const updated = [...investmentAmortization];
+        updated[itemIdx].department_allocations = [...(updated[itemIdx].department_allocations || []), { department_id: '', allocation_percent: 0 }];
+        setInvestmentAmortization(updated);
+    };
+
+    const updateInvDeptAlloc = (itemIdx, allocIdx, field, value) => {
+        const updated = [...investmentAmortization];
+        updated[itemIdx].department_allocations[allocIdx][field] = value;
+        setInvestmentAmortization(updated);
+    };
+
+    const removeInvDeptAlloc = (itemIdx, allocIdx) => {
+        const updated = [...investmentAmortization];
+        updated[itemIdx].department_allocations = updated[itemIdx].department_allocations.filter((_, i) => i !== allocIdx);
+        setInvestmentAmortization(updated);
     };
     
     const handleBusStopTypeChange = async (idx, busStopTypeId) => {
@@ -368,23 +383,12 @@ export default function FactoryFinancialCalculations() {
     const handleInvestmentChange = (idx, field, value) => {
         const updated = [...investmentAmortization];
         updated[idx][field] = value;
-        
-        // Auto-calculate daily cost
         if (field === 'total_investment_amount' || field === 'project_duration_months') {
             const totalAmount = parseFloat(updated[idx].total_investment_amount) || 0;
             const durationMonths = parseFloat(updated[idx].project_duration_months) || 1;
-            const avgDaysPerMonth = avgWorkingDaysPerMonth || 22;
-            const totalDays = durationMonths * avgDaysPerMonth;
+            const totalDays = durationMonths * (avgWorkingDaysPerMonth || 22);
             updated[idx].calculated_daily_cost = totalDays > 0 ? totalAmount / totalDays : 0;
         }
-        
-        // Auto-calculate complementary allocation
-        if (field === 'allocation_production_percent') {
-            updated[idx].allocation_administration_percent = 100 - parseFloat(value || 0);
-        } else if (field === 'allocation_administration_percent') {
-            updated[idx].allocation_production_percent = 100 - parseFloat(value || 0);
-        }
-        
         setInvestmentAmortization(updated);
     };
     
@@ -436,14 +440,24 @@ export default function FactoryFinancialCalculations() {
     const updateCostItem = (setter, currentArray, index, field, value) => {
         const updated = [...currentArray];
         updated[index] = { ...updated[index], [field]: value };
-        
-        // Auto-calculate complementary allocation
-        if (field === 'allocation_production_percent') {
-            updated[index].allocation_administration_percent = 100 - parseFloat(value || 0);
-        } else if (field === 'allocation_administration_percent') {
-            updated[index].allocation_production_percent = 100 - parseFloat(value || 0);
-        }
-        
+        setter(updated);
+    };
+
+    const addCostDeptAlloc = (setter, costArray, itemIdx) => {
+        const updated = [...costArray];
+        updated[itemIdx].department_allocations = [...(updated[itemIdx].department_allocations || []), { department_id: '', allocation_percent: 0 }];
+        setter(updated);
+    };
+
+    const updateCostDeptAlloc = (setter, costArray, itemIdx, allocIdx, field, value) => {
+        const updated = [...costArray];
+        updated[itemIdx].department_allocations[allocIdx][field] = value;
+        setter(updated);
+    };
+
+    const removeCostDeptAlloc = (setter, costArray, itemIdx, allocIdx) => {
+        const updated = [...costArray];
+        updated[itemIdx].department_allocations = updated[itemIdx].department_allocations.filter((_, i) => i !== allocIdx);
         setter(updated);
     };
 
@@ -492,12 +506,20 @@ export default function FactoryFinancialCalculations() {
         return shelterRevenueItems.reduce((sum, item) => sum + getShelterRevenueTotal(item), 0);
     };
 
+    const getDeptName = (departmentId) => {
+        const dept = departments.find(d => d.id === departmentId);
+        return dept ? dept.department_name : departmentId;
+    };
+
+    const getTotalAllocPct = (allocations) =>
+        (allocations || []).reduce((sum, a) => sum + (parseFloat(a.allocation_percent) || 0), 0);
+
     const calculatePersonnelCostTotal = () => {
         return personnelCosts.reduce((sum, item) => {
             const dailyCost = convertCostToDaily(item.calculated_amount, item.frequency_type);
             const totalForPeriod = dailyCost * (totalWorkingDays || 0);
-            const productionPercent = parseFloat(item.allocation_production_percent) || 0;
-            return sum + (totalForPeriod * productionPercent / 100);
+            const totalAlloc = getTotalAllocPct(item.department_allocations);
+            return sum + (totalForPeriod * totalAlloc / 100);
         }, 0);
     };
     
@@ -513,8 +535,8 @@ export default function FactoryFinancialCalculations() {
         return investmentAmortization.reduce((sum, item) => {
             const dailyCost = parseFloat(item.calculated_daily_cost) || 0;
             const totalForPeriod = dailyCost * (totalWorkingDays || 0);
-            const productionPercent = parseFloat(item.allocation_production_percent) || 0;
-            return sum + (totalForPeriod * productionPercent / 100);
+            const totalAlloc = getTotalAllocPct(item.department_allocations);
+            return sum + (totalForPeriod * totalAlloc / 100);
         }, 0);
     };
     
@@ -522,8 +544,8 @@ export default function FactoryFinancialCalculations() {
         return costArray.reduce((sum, item) => {
             const dailyCost = convertCostToDaily(item.amount, item.frequency_type);
             const totalForPeriod = dailyCost * (totalWorkingDays || 0);
-            const productionPercent = parseFloat(item.allocation_production_percent) || 0;
-            return sum + (totalForPeriod * productionPercent / 100);
+            const totalAlloc = getTotalAllocPct(item.department_allocations);
+            return sum + (totalForPeriod * totalAlloc / 100);
         }, 0);
     };
 
@@ -1511,32 +1533,6 @@ export default function FactoryFinancialCalculations() {
                                 <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <Label className="text-xs">Τμήμα (Department)</Label>
-                                            <Select
-                                                value={item.department_id}
-                                                onValueChange={(value) => {
-                                                    const updated = [...personnelCosts];
-                                                    updated[idx].department_id = value;
-                                                    const dept = departments.find(d => d.id === value);
-                                                    if (dept) {
-                                                        updated[idx].description = `Προσωπικό - ${dept.department_name}`;
-                                                    }
-                                                    setPersonnelCosts(updated);
-                                                }}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Επιλέξτε τμήμα" />
-                                                </SelectTrigger>
-                                                <SelectContent position="popper" sideOffset={5}>
-                                                    {departments.map(dept => (
-                                                        <SelectItem key={dept.id} value={dept.id}>
-                                                            {dept.department_name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
                                             <Label className="text-xs">Μέτρηση (Metric)</Label>
                                             <Select
                                                 value={item.metric_id}
@@ -1544,115 +1540,64 @@ export default function FactoryFinancialCalculations() {
                                                     const updated = [...personnelCosts];
                                                     updated[idx].metric_id = value;
                                                     const metric = dailyMetrics.find(m => m.id === value);
-                                                    if (metric) {
-                                                        updated[idx].description = `${metric.metric_name}`;
-                                                    }
+                                                    if (metric) updated[idx].description = metric.metric_name;
                                                     setPersonnelCosts(updated);
                                                 }}
                                             >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Επιλέξτε μέτρηση" />
-                                                </SelectTrigger>
+                                                <SelectTrigger><SelectValue placeholder="Επιλέξτε μέτρηση" /></SelectTrigger>
                                                 <SelectContent position="popper" sideOffset={5}>
                                                     {dailyMetrics.map(metric => (
-                                                        <SelectItem key={metric.id} value={metric.id}>
-                                                            {metric.metric_code} - {metric.metric_name}
-                                                        </SelectItem>
+                                                        <SelectItem key={metric.id} value={metric.id}>{metric.metric_code} - {metric.metric_name}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
                                         </div>
+                                        <div>
+                                            <Label className="text-xs">Συχνότητα</Label>
+                                            <Select
+                                                value={item.frequency_type}
+                                                onValueChange={(value) => { const u = [...personnelCosts]; u[idx].frequency_type = value; setPersonnelCosts(u); }}
+                                            >
+                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="daily">Ημερήσιο</SelectItem>
+                                                    <SelectItem value="per_production_day">Ανά Εργάσιμη</SelectItem>
+                                                    <SelectItem value="monthly">Μηνιαίο</SelectItem>
+                                                    <SelectItem value="yearly">Ετήσιο</SelectItem>
+                                                    <SelectItem value="one_time">Εφάπαξ</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
-                            <div className="flex items-start gap-2">
-                                <Input
-                                    placeholder="Περιγραφή"
-                                    value={item.description}
-                                    onChange={(e) => {
-                                        const updated = [...personnelCosts];
-                                        updated[idx].description = e.target.value;
-                                        setPersonnelCosts(updated);
-                                    }}
-                                    className="flex-1"
-                                />
-                                <Input
-                                    type="number"
-                                    placeholder="Υπολογισμένο Ποσό"
-                                    value={item.calculated_amount}
-                                    onChange={(e) => {
-                                        const updated = [...personnelCosts];
-                                        updated[idx].calculated_amount = e.target.value;
-                                        setPersonnelCosts(updated);
-                                    }}
-                                    className="w-32"
-                                />
-                                <Select
-                                    value={item.frequency_type}
-                                    onValueChange={(value) => {
-                                        const updated = [...personnelCosts];
-                                        updated[idx].frequency_type = value;
-                                        setPersonnelCosts(updated);
-                                    }}
-                                >
-                                    <SelectTrigger className="w-40">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="daily">Ημερήσιο</SelectItem>
-                                        <SelectItem value="per_production_day">Ανά Εργάσιμη</SelectItem>
-                                        <SelectItem value="monthly">Μηνιαίο</SelectItem>
-                                        <SelectItem value="yearly">Ετήσιο</SelectItem>
-                                        <SelectItem value="one_time">Εφάπαξ</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => setPersonnelCosts(personnelCosts.filter((_, i) => i !== idx))}
-                                >
-                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                </Button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <Label className="text-xs">Κατανομή Παραγωγής (%)</Label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={item.allocation_production_percent}
-                                        onChange={(e) => {
-                                            const updated = [...personnelCosts];
-                                            updated[idx].allocation_production_percent = e.target.value;
-                                            updated[idx].allocation_administration_percent = 100 - parseFloat(e.target.value || 0);
-                                            setPersonnelCosts(updated);
-                                        }}
+                                    <div className="flex items-start gap-2">
+                                        <Input placeholder="Περιγραφή" value={item.description}
+                                            onChange={(e) => { const u = [...personnelCosts]; u[idx].description = e.target.value; setPersonnelCosts(u); }}
+                                            className="flex-1" />
+                                        <Input type="number" placeholder="Ποσό" value={item.calculated_amount}
+                                            onChange={(e) => { const u = [...personnelCosts]; u[idx].calculated_amount = e.target.value; setPersonnelCosts(u); }}
+                                            className="w-32" />
+                                        <Button size="icon" variant="ghost" onClick={() => setPersonnelCosts(personnelCosts.filter((_, i) => i !== idx))}>
+                                            <Trash2 className="w-4 h-4 text-red-500" />
+                                        </Button>
+                                    </div>
+                                    <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
+                                        <strong>Ημερήσιο κόστος:</strong> {formatCurrency(convertCostToDaily(item.calculated_amount, item.frequency_type))}/ημέρα × {totalWorkingDays} ημέρες = {formatCurrency(convertCostToDaily(item.calculated_amount, item.frequency_type) * totalWorkingDays)}
+                                    </div>
+                                    <DeptAllocationRows
+                                        allocations={item.department_allocations}
+                                        departments={departments}
+                                        totalAmount={convertCostToDaily(item.calculated_amount, item.frequency_type) * totalWorkingDays}
+                                        formatCurrency={formatCurrency}
+                                        onAdd={() => { const u = [...personnelCosts]; u[idx].department_allocations = [...(u[idx].department_allocations || []), { department_id: '', allocation_percent: 0 }]; setPersonnelCosts(u); }}
+                                        onUpdate={(allocIdx, field, value) => { const u = [...personnelCosts]; u[idx].department_allocations[allocIdx][field] = value; setPersonnelCosts(u); }}
+                                        onRemove={(allocIdx) => { const u = [...personnelCosts]; u[idx].department_allocations = u[idx].department_allocations.filter((_, i) => i !== allocIdx); setPersonnelCosts(u); }}
                                     />
                                 </div>
-                                <div>
-                                    <Label className="text-xs">Κατανομή Διοίκησης (%)</Label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={item.allocation_administration_percent}
-                                        onChange={(e) => {
-                                            const updated = [...personnelCosts];
-                                            updated[idx].allocation_administration_percent = e.target.value;
-                                            updated[idx].allocation_production_percent = 100 - parseFloat(e.target.value || 0);
-                                            setPersonnelCosts(updated);
-                                        }}
-                                    />
-                                </div>
-                            </div>
-                            <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
-                                <strong>Υπολογισμός:</strong> {formatCurrency(item.calculated_amount)} {item.frequency_type === 'monthly' ? `÷ ${avgWorkingDaysPerMonth} ημέρες/μήνα` : item.frequency_type === 'yearly' ? `÷ ${avgWorkingDaysPerYear} ημέρες/έτος` : item.frequency_type === 'one_time' ? `÷ ${totalWorkingDays} ημέρες περιόδου` : ''} = {formatCurrency(convertCostToDaily(item.calculated_amount, item.frequency_type))}/ημέρα × {totalWorkingDays} ημέρες × {item.allocation_production_percent}% = {formatCurrency(convertCostToDaily(item.calculated_amount, item.frequency_type) * totalWorkingDays * item.allocation_production_percent / 100)}
-                            </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
                     </CollapsibleContent>
                     <div className="mt-2 text-sm font-medium text-slate-700">
-                        Υποσύνολο (Παραγωγή): {formatCurrency(calculatePersonnelCostTotal())}
+                        Υποσύνολο: {formatCurrency(calculatePersonnelCostTotal())}
                     </div>
                 </div>
             </Collapsible>
@@ -1774,90 +1719,50 @@ export default function FactoryFinancialCalculations() {
                         </Button>
                     </div>
                     <CollapsibleContent>
-                <div className="space-y-3">
-                    {investmentAmortization.map((item, idx) => (
-                        <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
-                            <div className="flex items-start gap-2">
-                                <Input
-                                    placeholder="Περιγραφή"
-                                    value={item.description}
-                                    onChange={(e) => handleInvestmentChange(idx, 'description', e.target.value)}
-                                    className="flex-1"
-                                />
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Συνολική Επένδυση</Label>
-                                    <Input
-                                        type="number"
-                                        placeholder="Συνολικό Ποσό"
-                                        value={item.total_investment_amount}
-                                        onChange={(e) => handleInvestmentChange(idx, 'total_investment_amount', e.target.value)}
-                                        className="w-40"
+                        <div className="space-y-3">
+                            {investmentAmortization.map((item, idx) => (
+                                <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
+                                    <div className="flex items-start gap-2">
+                                        <Input placeholder="Περιγραφή" value={item.description} onChange={(e) => handleInvestmentChange(idx, 'description', e.target.value)} className="flex-1" />
+                                        <div className="space-y-1">
+                                            <Label className="text-xs">Συνολική Επένδυση</Label>
+                                            <Input type="number" placeholder="Συνολικό Ποσό" value={item.total_investment_amount} onChange={(e) => handleInvestmentChange(idx, 'total_investment_amount', e.target.value)} className="w-40" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs">Διάρκεια (μήνες)</Label>
+                                            <Input type="number" placeholder="Μήνες" value={item.project_duration_months} onChange={(e) => handleInvestmentChange(idx, 'project_duration_months', e.target.value)} className="w-32" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label className="text-xs">Ημερήσιο Κόστος</Label>
+                                            <Input type="number" value={item.calculated_daily_cost} className="w-32 bg-blue-50" disabled />
+                                        </div>
+                                        <Button size="icon" variant="ghost" onClick={() => setInvestmentAmortization(investmentAmortization.filter((_, i) => i !== idx))}>
+                                            <Trash2 className="w-4 h-4 text-red-500" />
+                                        </Button>
+                                    </div>
+                                    <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
+                                        <strong>Ημερήσιο κόστος:</strong> {formatCurrency(item.calculated_daily_cost)}/ημέρα × {totalWorkingDays} ημέρες = {formatCurrency((parseFloat(item.calculated_daily_cost) || 0) * totalWorkingDays)}
+                                    </div>
+                                    <DeptAllocationRows
+                                        allocations={item.department_allocations}
+                                        departments={departments}
+                                        totalAmount={(parseFloat(item.calculated_daily_cost) || 0) * totalWorkingDays}
+                                        formatCurrency={formatCurrency}
+                                        onAdd={() => addInvDeptAlloc(idx)}
+                                        onUpdate={(allocIdx, field, value) => updateInvDeptAlloc(idx, allocIdx, field, value)}
+                                        onRemove={(allocIdx) => removeInvDeptAlloc(idx, allocIdx)}
                                     />
                                 </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Διάρκεια (μήνες)</Label>
-                                    <Input
-                                        type="number"
-                                        placeholder="Μήνες"
-                                        value={item.project_duration_months}
-                                        onChange={(e) => handleInvestmentChange(idx, 'project_duration_months', e.target.value)}
-                                        className="w-32"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-xs">Ημερήσιο Κόστος</Label>
-                                    <Input
-                                        type="number"
-                                        placeholder="Auto"
-                                        value={item.calculated_daily_cost}
-                                        className="w-32 bg-blue-50"
-                                        disabled
-                                    />
-                                </div>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => setInvestmentAmortization(investmentAmortization.filter((_, i) => i !== idx))}
-                                >
-                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                </Button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <Label className="text-xs">Κατανομή Παραγωγής (%)</Label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={item.allocation_production_percent}
-                                        onChange={(e) => handleInvestmentChange(idx, 'allocation_production_percent', e.target.value)}
-                                    />
-                                </div>
-                                <div>
-                                    <Label className="text-xs">Κατανομή Διοίκησης (%)</Label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={item.allocation_administration_percent}
-                                        onChange={(e) => handleInvestmentChange(idx, 'allocation_administration_percent', e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
-                                <strong>Υπολογισμός:</strong> {formatCurrency(item.total_investment_amount)} ÷ ({item.project_duration_months} μήνες × {avgWorkingDaysPerMonth} ημέρες/μήνα) = {formatCurrency(item.calculated_daily_cost)}/ημέρα × {totalWorkingDays} ημέρες × {item.allocation_production_percent}% = {formatCurrency((parseFloat(item.calculated_daily_cost) || 0) * totalWorkingDays * (parseFloat(item.allocation_production_percent) || 0) / 100)}
-                            </div>
+                            ))}
                         </div>
-                    ))}
-                    </div>
                     </CollapsibleContent>
                     <div className="mt-2 text-sm font-medium text-slate-700">
-                    Υποσύνολο (Παραγωγή): {formatCurrency(calculateInvestmentTotal())}
+                        Υποσύνολο: {formatCurrency(calculateInvestmentTotal())}
                     </div>
-                    </div>
-                    </Collapsible>
-                    );
-                    }
+                </div>
+            </Collapsible>
+        );
+    }
 
     function renderCostSection(title, costArray, setter, sectionKey) {
         return (
@@ -1870,90 +1775,53 @@ export default function FactoryFinancialCalculations() {
                                 <Label className="text-base font-semibold cursor-pointer">{title}</Label>
                             </div>
                         </CollapsibleTrigger>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => addCostItem(setter, costArray)}
-                        >
+                        <Button size="sm" variant="outline" onClick={() => addCostItem(setter, costArray)}>
                             <Plus className="w-4 h-4 mr-1" />
                             Προσθήκη
                         </Button>
                     </div>
                     <CollapsibleContent>
-                <div className="space-y-3">
-                    {costArray.map((item, idx) => (
-                        <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
-                            <div className="flex items-start gap-2">
-                                <Input
-                                    placeholder="Περιγραφή"
-                                    value={item.description}
-                                    onChange={(e) => updateCostItem(setter, costArray, idx, 'description', e.target.value)}
-                                    className="flex-1"
-                                />
-                                <Input
-                                    type="number"
-                                    placeholder="Ποσό"
-                                    value={item.amount}
-                                    onChange={(e) => updateCostItem(setter, costArray, idx, 'amount', e.target.value)}
-                                    className="w-32"
-                                />
-                                <Select
-                                    value={item.frequency_type}
-                                    onValueChange={(value) => updateCostItem(setter, costArray, idx, 'frequency_type', value)}
-                                >
-                                    <SelectTrigger className="w-40">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="daily">Ημερήσιο</SelectItem>
-                                        <SelectItem value="per_production_day">Ανά Εργάσιμη</SelectItem>
-                                        <SelectItem value="monthly">Μηνιαίο</SelectItem>
-                                        <SelectItem value="yearly">Ετήσιο</SelectItem>
-                                        <SelectItem value="one_time">Εφάπαξ</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => removeCostItem(setter, costArray, idx)}
-                                >
-                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                </Button>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <Label className="text-xs">Κατανομή Παραγωγής (%)</Label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={item.allocation_production_percent}
-                                        onChange={(e) => updateCostItem(setter, costArray, idx, 'allocation_production_percent', e.target.value)}
+                        <div className="space-y-3">
+                            {costArray.map((item, idx) => (
+                                <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
+                                    <div className="flex items-start gap-2">
+                                        <Input placeholder="Περιγραφή" value={item.description} onChange={(e) => updateCostItem(setter, costArray, idx, 'description', e.target.value)} className="flex-1" />
+                                        <Input type="number" placeholder="Ποσό" value={item.amount} onChange={(e) => updateCostItem(setter, costArray, idx, 'amount', e.target.value)} className="w-32" />
+                                        <Select value={item.frequency_type} onValueChange={(value) => updateCostItem(setter, costArray, idx, 'frequency_type', value)}>
+                                            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="daily">Ημερήσιο</SelectItem>
+                                                <SelectItem value="per_production_day">Ανά Εργάσιμη</SelectItem>
+                                                <SelectItem value="monthly">Μηνιαίο</SelectItem>
+                                                <SelectItem value="yearly">Ετήσιο</SelectItem>
+                                                <SelectItem value="one_time">Εφάπαξ</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Button size="icon" variant="ghost" onClick={() => removeCostItem(setter, costArray, idx)}>
+                                            <Trash2 className="w-4 h-4 text-red-500" />
+                                        </Button>
+                                    </div>
+                                    <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
+                                        <strong>Ημερήσιο κόστος:</strong> {formatCurrency(convertCostToDaily(item.amount, item.frequency_type))}/ημέρα × {totalWorkingDays} ημέρες = {formatCurrency(convertCostToDaily(item.amount, item.frequency_type) * totalWorkingDays)}
+                                    </div>
+                                    <DeptAllocationRows
+                                        allocations={item.department_allocations}
+                                        departments={departments}
+                                        totalAmount={convertCostToDaily(item.amount, item.frequency_type) * totalWorkingDays}
+                                        formatCurrency={formatCurrency}
+                                        onAdd={() => addCostDeptAlloc(setter, costArray, idx)}
+                                        onUpdate={(allocIdx, field, value) => updateCostDeptAlloc(setter, costArray, idx, allocIdx, field, value)}
+                                        onRemove={(allocIdx) => removeCostDeptAlloc(setter, costArray, idx, allocIdx)}
                                     />
                                 </div>
-                                <div>
-                                    <Label className="text-xs">Κατανομή Διοίκησης (%)</Label>
-                                    <Input
-                                        type="number"
-                                        min="0"
-                                        max="100"
-                                        value={item.allocation_administration_percent}
-                                        onChange={(e) => updateCostItem(setter, costArray, idx, 'allocation_administration_percent', e.target.value)}
-                                    />
-                                </div>
-                            </div>
-                            <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
-                                <strong>Υπολογισμός:</strong> {formatCurrency(item.amount)} {item.frequency_type === 'monthly' ? `÷ ${avgWorkingDaysPerMonth} ημέρες/μήνα` : item.frequency_type === 'yearly' ? `÷ ${avgWorkingDaysPerYear} ημέρες/έτος` : item.frequency_type === 'one_time' ? `÷ ${totalWorkingDays} ημέρες περιόδου` : ''} = {formatCurrency(convertCostToDaily(item.amount, item.frequency_type))}/ημέρα × {totalWorkingDays} ημέρες × {item.allocation_production_percent}% = {formatCurrency(convertCostToDaily(item.amount, item.frequency_type) * totalWorkingDays * item.allocation_production_percent / 100)}
-                            </div>
+                            ))}
                         </div>
-                    ))}
-                    </div>
                     </CollapsibleContent>
                     <div className="mt-2 text-sm font-medium text-slate-700">
-                    Υποσύνολο (Παραγωγή): {formatCurrency(calculateCostTotal(costArray))}
+                        Υποσύνολο: {formatCurrency(calculateCostTotal(costArray))}
                     </div>
-                    </div>
-                    </Collapsible>
-                    );
-                    }
+                </div>
+            </Collapsible>
+        );
+    }
 }
