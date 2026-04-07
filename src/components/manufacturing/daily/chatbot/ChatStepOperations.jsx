@@ -381,7 +381,7 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
                     Επιλογή Όλων
                   </button>
                 </div>
-                <div className="space-y-1 max-h-48 overflow-y-auto">
+                <div className="space-y-1 overflow-y-auto">
                   {operationsForProfile.length === 0 ? (
                     <p className="text-xs text-slate-400">Δεν υπάρχουν operations σε αυτό το profile</p>
                   ) : operationsForProfile.map(op => {

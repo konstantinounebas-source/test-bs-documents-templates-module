@@ -269,7 +269,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
         {addSectionExpanded && (
           <>
             {/* Item selection */}
-            <div className="bg-white border border-slate-200 rounded p-2 max-h-32 overflow-y-auto">
+            <div className="bg-white border border-slate-200 rounded p-2 overflow-y-auto">
               <div className="space-y-1">
                 {processedLines.map(bl => (
                   <label key={bl.item_code} className="flex items-center gap-2 p-1 hover:bg-slate-100 rounded cursor-pointer text-xs">
@@ -339,7 +339,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
           <div className="bg-blue-50 border border-blue-200 rounded p-2">
             <p className="text-xs font-semibold text-blue-900">Total QC Time: {totalQCTime.toFixed(2)} min ({(totalQCTime / 60).toFixed(2)} hrs)</p>
           </div>
-          <div className="bg-slate-50 rounded border border-slate-200 p-2 max-h-56 overflow-y-auto">
+          <div className="bg-slate-50 rounded border border-slate-200 p-2 overflow-y-auto">
             <div className="grid grid-cols-6 gap-1 text-[10px] font-semibold text-slate-600 mb-1 pb-1 border-b sticky top-0 bg-slate-50">
               <div>Item</div>
               <div>Type</div>

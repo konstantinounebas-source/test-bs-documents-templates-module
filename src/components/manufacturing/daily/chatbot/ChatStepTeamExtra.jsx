@@ -138,7 +138,7 @@ export default function ChatStepTeamExtra({ batchId, onNext, onSkip, onBack }) {
                 ))}
               </div>
             )}
-            <div className="border rounded max-h-28 overflow-y-auto bg-white">
+            <div className="border rounded overflow-y-auto bg-white">
               {filteredPersons.length === 0
                 ? <p className="text-[10px] text-slate-400 p-2 text-center">Δεν βρέθηκαν άτομα (καταχώρησε πρώτα στο Team Persons)</p>
                 : filteredPersons.map(n => (
