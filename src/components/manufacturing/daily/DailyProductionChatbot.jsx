@@ -1794,6 +1794,7 @@ CRITICAL SAFETY RULES:
                   </button>
                 </div>
                 <ChatStepFileUpload
+                  key="processing-queue-stable"
                   departments={departments}
                   batchHeaders={allBatchHeaders}
                   allBundles={allBundles}
