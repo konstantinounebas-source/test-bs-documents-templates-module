@@ -171,8 +171,7 @@ export default function DailyFormsTab({
   return (
     <div className="flex flex-col h-full gap-3">
       {/* Horizontal Department List */}
-      <div className="border-b border-slate-200 px-3 py-2 flex-shrink-0">
-        <p className="text-sm font-semibold text-slate-500 uppercase mb-2">Departments</p>
+      <div className="bg-slate-100 border border-slate-200 rounded-lg p-3 flex-shrink-0 overflow-y-auto" style={{ maxHeight: "140px" }}>
         <div className="flex flex-wrap gap-2">
           {departments.length === 0 ? (
             <p className="text-xs text-slate-400">No departments</p>
@@ -217,10 +216,10 @@ export default function DailyFormsTab({
             );
             })
           )}
-        </div>
-      </div>
+          </div>
+          </div>
 
-      {/* Attachments Area with Drag-Drop */}
+          {/* Attachments Area with Drag-Drop */}
       <div className="flex-1 flex flex-col min-h-0 px-4">
         {selectedDept ? (
           <>
