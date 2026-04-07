@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -112,6 +112,14 @@ export default function DailyDataTab({
       return normalizedBatchDate === normalizedSelDate;
     });
   }, [allBatches, selDate]);
+
+  // Clear selBatch if date changes and no batch exists for new date
+  React.useEffect(() => {
+    if (selDate && dateBatches.length === 0 && selBatch) {
+      setSelBatch(null);
+      setStep("batch_lines_add");
+    }
+  }, [selDate, dateBatches, selBatch, setSelBatch, setStep]);
 
   // Get unique departments that have batches for this date
   const departmentsWithBatches = React.useMemo(() => {
