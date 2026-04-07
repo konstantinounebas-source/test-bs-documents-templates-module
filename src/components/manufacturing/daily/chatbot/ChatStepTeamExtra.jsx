@@ -11,6 +11,7 @@ export default function ChatStepTeamExtra({ batchId, onNext, onSkip, onBack }) {
   const [isSaving, setIsSaving] = useState(false);
   const [form, setForm] = useState({ person_names: [], charge_dept: "", work_type: "", duration_min: "" });
   const [searchTerm, setSearchTerm] = useState("");
+  const [addExpanded, setAddExpanded] = useState(true);
 
   const { data: departments = [] } = useQuery({
     queryKey: ["Department"],
@@ -109,73 +110,75 @@ export default function ChatStepTeamExtra({ batchId, onNext, onSkip, onBack }) {
         </>
       )}
 
-      {/* Add form */}
-      <div className="border-t pt-2 space-y-1">
-        <p className="text-[10px] font-semibold text-slate-400 uppercase">Προσθήκη</p>
-        <div className="grid grid-cols-2 gap-1">
-          <div>
-            <p className="text-[10px] text-slate-500 mb-0.5">Charge Dept</p>
-            <Select value={form.charge_dept} onValueChange={v => setForm(f => ({ ...f, charge_dept: v }))}>
-              <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Τμήμα..." /></SelectTrigger>
-              <SelectContent>
-                {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 mb-0.5">Work Type</p>
-            <Select value={form.work_type} onValueChange={v => setForm(f => ({ ...f, work_type: v }))}>
-              <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Τύπος..." /></SelectTrigger>
-              <SelectContent>
-                {workTypes.map(w => <SelectItem key={w.id} value={w.name}>{w.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Add form - Collapsible */}
+      <div className="border border-slate-200 rounded p-2 bg-slate-50 space-y-1">
+        <div className="flex items-center justify-between cursor-pointer" onClick={() => setAddExpanded(e => !e)}>
+          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Προσθήκη</p>
+          <span className="text-xs text-slate-400">{addExpanded ? '▼' : '▶'}</span>
         </div>
-
-        <div>
-          <p className="text-[10px] text-slate-500 mb-0.5">Διάρκεια (min)</p>
-          <input type="number" min="0" placeholder="0" value={form.duration_min}
-            onChange={e => setForm(f => ({ ...f, duration_min: e.target.value }))}
-            className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
-          />
-        </div>
-
-        <input type="text" placeholder="Αναζήτηση ατόμου (από Team Persons)..." value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400"
-        />
-
-        {form.person_names.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {form.person_names.map(n => (
-              <span key={n} className="flex items-center gap-1 bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full">
-                {n}
-                <button onClick={() => togglePerson(n)}><X className="w-2.5 h-2.5" /></button>
-              </span>
-            ))}
-          </div>
+        {addExpanded && (
+          <>
+            <div className="grid grid-cols-2 gap-1">
+              <div>
+                <p className="text-[10px] text-slate-500 mb-0.5">Charge Dept</p>
+                <Select value={form.charge_dept} onValueChange={v => setForm(f => ({ ...f, charge_dept: v }))}>
+                  <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Τμήμα..." /></SelectTrigger>
+                  <SelectContent>
+                    {departments.map(d => <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500 mb-0.5">Work Type</p>
+                <Select value={form.work_type} onValueChange={v => setForm(f => ({ ...f, work_type: v }))}>
+                  <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Τύπος..." /></SelectTrigger>
+                  <SelectContent>
+                    {workTypes.map(w => <SelectItem key={w.id} value={w.name}>{w.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 mb-0.5">Διάρκεια (min)</p>
+              <input type="number" min="0" placeholder="0" value={form.duration_min}
+                onChange={e => setForm(f => ({ ...f, duration_min: e.target.value }))}
+                className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 bg-white"
+              />
+            </div>
+            <input type="text" placeholder="Αναζήτηση ατόμου (από Team Persons)..." value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 bg-white"
+            />
+            {form.person_names.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {form.person_names.map(n => (
+                  <span key={n} className="flex items-center gap-1 bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full">
+                    {n}
+                    <button onClick={() => togglePerson(n)}><X className="w-2.5 h-2.5" /></button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="border rounded max-h-28 overflow-y-auto bg-white">
+              {filteredPersons.length === 0
+                ? <p className="text-[10px] text-slate-400 p-2 text-center">Δεν βρέθηκαν άτομα (καταχώρησε πρώτα στο Team Persons)</p>
+                : filteredPersons.map(n => (
+                  <button key={n} onClick={() => togglePerson(n)}
+                    className={`w-full text-left text-xs px-2 py-1.5 hover:bg-slate-50 flex items-center gap-2
+                      ${form.person_names.includes(n) ? "bg-blue-50 text-blue-700" : "text-slate-700"}`}>
+                    <span className={`w-3 h-3 rounded border flex-shrink-0 ${form.person_names.includes(n) ? "bg-blue-500 border-blue-500" : "border-slate-300"}`} />
+                    {n}
+                  </button>
+                ))
+              }
+            </div>
+            <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+              onClick={handleAdd} disabled={isSaving || !form.person_names.length}>
+              {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
+              Προσθήκη ({form.person_names.length})
+            </Button>
+          </>
         )}
-
-        <div className="border rounded max-h-28 overflow-y-auto">
-          {filteredPersons.length === 0
-            ? <p className="text-[10px] text-slate-400 p-2 text-center">Δεν βρέθηκαν άτομα (καταχώρησε πρώτα στο Team Persons)</p>
-            : filteredPersons.map(n => (
-              <button key={n} onClick={() => togglePerson(n)}
-                className={`w-full text-left text-xs px-2 py-1.5 hover:bg-slate-50 flex items-center gap-2
-                  ${form.person_names.includes(n) ? "bg-blue-50 text-blue-700" : "text-slate-700"}`}>
-                <span className={`w-3 h-3 rounded border flex-shrink-0 ${form.person_names.includes(n) ? "bg-blue-500 border-blue-500" : "border-slate-300"}`} />
-                {n}
-              </button>
-            ))
-          }
-        </div>
-
-        <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
-          onClick={handleAdd} disabled={isSaving || !form.person_names.length}>
-          {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
-          Προσθήκη ({form.person_names.length})
-        </Button>
       </div>
 
       <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"

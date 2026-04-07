@@ -242,7 +242,7 @@ export default function ChatStepQC({ batchId, department, onNext, onSkip, onBack
     setIsSaving(false);
   };
 
-  const [addSectionExpanded, setAddSectionExpanded] = useState(true);
+  const [addSectionExpanded, setAddSectionExpanded] = useState(false);
 
   return (
     <div className="border-t p-3 space-y-3 overflow-y-auto">
