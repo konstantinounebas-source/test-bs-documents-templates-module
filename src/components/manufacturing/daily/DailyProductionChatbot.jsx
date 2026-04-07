@@ -1777,8 +1777,53 @@ CRITICAL SAFETY RULES:
               </button>
             </div>
 
+            {/* Processing Queue - always mounted to preserve state */}
+            <div style={{ display: activeUtility === "processing" ? "block" : "none" }} className="flex-1 overflow-y-auto">
+              <div className="p-4 space-y-2">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-slate-800">Processing Queue</h3>
+                  <button onClick={() => setActiveUtility(null)} className="text-slate-400 hover:text-slate-600 p-1">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <ChatStepFileUpload
+                  departments={departments}
+                  batchHeaders={allBatchHeaders}
+                  allBundles={allBundles}
+                  dailyAssignments={dailyAssignments}
+                  scheduledDayHeaders={scheduledDayHeaders}
+                  onFilesSaved={(fileName, batch, errorInfo) => {
+                    if (errorInfo?.error === "no_bundle") {
+                      addMsg("bot", `❌ Δεν βρέθηκε bundle για το τμήμα "${errorInfo.dept}". Αδύνατη η δημιουργία batch.`);
+                    } else if (batch) {
+                      addMsg("bot", `📎 Αρχείο "${fileName}" αποθηκεύτηκε στο batch ${batch.date} · ${batch.department}.`);
+                      queryClient.invalidateQueries(["BatchAttachments-by-date", batch.date]);
+                      queryClient.invalidateQueries(["BatchHeader-All"]);
+                    }
+                  }}
+                  onBatchReady={({ dept, date }) => {
+                    setSelDept(dept); setSelDate(date);
+                    const existing = allBatchHeaders.find(b => b.date === date && b.department === dept);
+                    if (existing) {
+                      setSelBatch(existing); setStep("attachments");
+                      addMsg("bot", `✅ Βρέθηκε batch για ${date} – ${dept}.`);
+                    } else {
+                      setStep("batch");
+                      const bundle = resolveBundle(date, dept);
+                      addMsg("bot", bundle
+                        ? `Δεν υπάρχει batch για ${date} – ${dept}. Δημιουργώ;`
+                        : `⚠️ Δεν βρέθηκε ενεργό bundle για ${dept}.`
+                      );
+                    }
+                    setActiveUtility(null);
+                  }}
+                  onSkip={() => setActiveUtility(null)}
+                />
+              </div>
+            </div>
+
             {/* Tab Content Area */}
-            <ScrollArea className="flex-1 p-4 overflow-y-auto">
+            <ScrollArea className="flex-1 p-4 overflow-y-auto" style={{ display: activeUtility === "processing" ? "none" : "block" }}>
               {activeUtility === "metrics" ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between mb-4">
@@ -1852,48 +1897,6 @@ CRITICAL SAFETY RULES:
                   onStopBulkOCR={stopBulkOCR}
                   onAddMsg={addMsg}
                 />
-              ) : activeUtility === "processing" ? (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-semibold text-slate-800">Processing Queue</h3>
-                    <button onClick={() => setActiveUtility(null)} className="text-slate-400 hover:text-slate-600 p-1">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <ChatStepFileUpload
-                    departments={departments}
-                    batchHeaders={allBatchHeaders}
-                    allBundles={allBundles}
-                    dailyAssignments={dailyAssignments}
-                    scheduledDayHeaders={scheduledDayHeaders}
-                    onFilesSaved={(fileName, batch, errorInfo) => {
-                      if (errorInfo?.error === "no_bundle") {
-                        addMsg("bot", `❌ Δεν βρέθηκε bundle για το τμήμα "${errorInfo.dept}". Αδύνατη η δημιουργία batch.`);
-                      } else if (batch) {
-                        addMsg("bot", `📎 Αρχείο "${fileName}" αποθηκεύτηκε στο batch ${batch.date} · ${batch.department}.`);
-                        queryClient.invalidateQueries(["BatchAttachments-by-date", batch.date]);
-                        queryClient.invalidateQueries(["BatchHeader-All"]);
-                      }
-                    }}
-                    onBatchReady={({ dept, date }) => {
-                      setSelDept(dept); setSelDate(date);
-                      const existing = allBatchHeaders.find(b => b.date === date && b.department === dept);
-                      if (existing) {
-                        setSelBatch(existing); setStep("attachments");
-                        addMsg("bot", `✅ Βρέθηκε batch για ${date} – ${dept}.`);
-                      } else {
-                        setStep("batch");
-                        const bundle = resolveBundle(date, dept);
-                        addMsg("bot", bundle
-                          ? `Δεν υπάρχει batch για ${date} – ${dept}. Δημιουργώ;`
-                          : `⚠️ Δεν βρέθηκε ενεργό bundle για ${dept}.`
-                        );
-                      }
-                      setActiveUtility(null);
-                    }}
-                    onSkip={() => setActiveUtility(null)}
-                  />
-                </div>
               ) : (
                 <>
                   {activeSection === "daily-forms" && (

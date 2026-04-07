@@ -453,7 +453,7 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
   const allProcessed = queue.length > 0 && queue.every(q => q.status === "done" || q.status === "skipped");
 
   return (
-    <div className="border-t p-3 space-y-3 overflow-y-auto max-h-[520px]">
+    <div className="border-t p-3 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-xs font-semibold text-slate-700">📎 Ανέβασμα Αρχείων</p>
