@@ -293,14 +293,9 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
         </Button>
       </div>
 
-      {/* Sync & Add Buttons - Top Priority */}
-      <div className="flex gap-2 flex-shrink-0">
-        <Button size="sm" variant="outline" className="flex-1 text-xs" onClick={handleSync} disabled={isSyncing}>
-          {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
-          Sync ({processedCount})
-        </Button>
-        <Button
-          size="sm" variant="outline" className="flex-1 text-xs"
+      {/* Add Form - Collapsible at top */}
+      <div className="border border-slate-200 rounded p-2 bg-slate-50 space-y-2 flex-shrink-0">
+        <div className="flex items-center justify-between cursor-pointer"
           onClick={() => {
             if (!showAddForm && itemCodes.length === 1) {
               setFormData(f => ({ ...f, item_code: itemCodes[0] }));
@@ -309,8 +304,158 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
             setShowAddForm(v => !v);
           }}
         >
-          <Plus className="w-3 h-3 mr-1" />
-          {showAddForm ? "Close" : "Add"}
+          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">Προσθήκη</p>
+          <span className="text-xs text-slate-400">{showAddForm ? '▼' : '▶'}</span>
+        </div>
+
+        {showAddForm && (
+          <div className="space-y-2">
+            {/* Operation Profile */}
+            <div>
+              <p className="text-[10px] font-semibold text-slate-500 mb-1">Operation Profile *</p>
+              <Select
+                value={formData.operation_profile_id}
+                onValueChange={v => setFormData(f => ({ ...f, operation_profile_id: v }))}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Επίλεξε profile" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departmentProfiles.map(p => (
+                    <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Item Code */}
+            <div>
+              <p className="text-[10px] font-semibold text-slate-500 mb-1">
+                Item Code *
+                {selectedItemQtyProcessed !== null && (
+                  <span className="text-slate-400 font-normal ml-1">(Processed: {selectedItemQtyProcessed})</span>
+                )}
+              </p>
+              <Select
+                value={formData.item_code}
+                onValueChange={v => setFormData(f => ({ ...f, item_code: v }))}
+              >
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Επίλεξε item code" />
+                </SelectTrigger>
+                <SelectContent>
+                  {itemCodes.map(code => (
+                    <SelectItem key={code} value={code} className="text-xs">{code}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Existing ops for this item */}
+            {formData.item_code && existingOps.filter(o => o.item_code === formData.item_code).length > 0 && (
+              <div className="bg-blue-50 border border-blue-100 rounded p-2 text-[10px] text-blue-700 space-y-0.5">
+                <p className="font-semibold">Υπάρχουσες Operations για {formData.item_code}:</p>
+                {existingOps.filter(o => o.item_code === formData.item_code).map(op => (
+                  <div key={op.id} className="flex gap-2">
+                    <span className="font-medium">{op.operation || "(καμία)"}</span>
+                    <span>Qty: {op.qty_operation}</span>
+                    <span>Time: {op.operation_time_min?.toFixed(1)}m</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Operations for profile */}
+            {formData.operation_profile_id && (
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[10px] font-semibold text-slate-500">Operations από Profile *</p>
+                  <button
+                    className="text-[10px] text-blue-600 hover:underline"
+                    onClick={() => {
+                      const all = {};
+                      operationsForProfile.forEach(op => { all[op.id] = selectedItemQtyProcessed ?? 1; });
+                      setSelectedOperations(all);
+                    }}
+                  >
+                    Επιλογή Όλων
+                  </button>
+                </div>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {operationsForProfile.length === 0 ? (
+                    <p className="text-xs text-slate-400">Δεν υπάρχουν operations σε αυτό το profile</p>
+                  ) : operationsForProfile.map(op => {
+                    const stdLine = stdSetLines.find(sl => sl.item_code === formData.item_code && sl.operation === op.name);
+                    const stdMinPc = stdLine?.std_min_per_pc || 0;
+                    const qty = selectedOperations[op.id] || 0;
+                    const opTime = qty * stdMinPc;
+                    const isOver = selectedItemQtyProcessed !== null && qty > selectedItemQtyProcessed;
+                    return (
+                      <div key={op.id} className={`flex items-center gap-2 p-2 bg-white rounded border text-xs ${isOver ? "border-red-300" : ""}`}>
+                        <Checkbox
+                          checked={qty > 0}
+                          onCheckedChange={checked => {
+                            if (checked) {
+                              setSelectedOperations(prev => ({ ...prev, [op.id]: selectedItemQtyProcessed ?? 1 }));
+                            } else {
+                              setSelectedOperations(prev => {
+                                const next = { ...prev };
+                                delete next[op.id];
+                                return next;
+                              });
+                            }
+                          }}
+                        />
+                        <span className="flex-1 font-medium truncate">
+                          {op.name}
+                          {!stdLine && <span className="text-red-400 ml-1">(⚠ no std)</span>}
+                        </span>
+                        <input
+                          type="number" min="0" step="0.01"
+                          value={selectedOperations[op.id] || ""}
+                          onChange={e => {
+                            const val = e.target.value;
+                            if (val) {
+                              setSelectedOperations(prev => ({ ...prev, [op.id]: parseFloat(val) || 0 }));
+                            } else {
+                              setSelectedOperations(prev => {
+                                const next = { ...prev };
+                                delete next[op.id];
+                                return next;
+                              });
+                            }
+                          }}
+                          disabled={!selectedOperations[op.id] && qty === 0}
+                          placeholder="Qty"
+                          className={`w-16 border rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-400 ${isOver ? "border-red-400 bg-red-50" : ""}`}
+                        />
+                        <span className="text-slate-400 w-20 text-right">{opTime.toFixed(1)}m</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {errorMsg && (
+              <div className="bg-red-50 border border-red-200 rounded p-2 text-[10px] text-red-700">
+                {errorMsg}
+              </div>
+            )}
+            <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
+              onClick={handleAdd} disabled={isSaving}>
+              {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
+              Προσθήκη
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {/* Sync Button */}
+      <div className="flex-shrink-0">
+        <Button size="sm" variant="outline" className="w-full text-xs" onClick={handleSync} disabled={isSyncing}>
+          {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <RefreshCw className="w-3 h-3 mr-1" />}
+          Sync ({processedCount})
         </Button>
       </div>
 
@@ -356,149 +501,6 @@ export default function ChatStepOperations({ batchId, onNext, onSkip, onBack }) 
           </div>
         );
       })()}
-
-      {/* Add Form */}
-      {showAddForm && (
-        <div className="border rounded p-3 space-y-2 bg-slate-50">
-          {/* Operation Profile */}
-          <div>
-            <p className="text-[10px] font-semibold text-slate-500 mb-1">Operation Profile *</p>
-            <Select
-              value={formData.operation_profile_id}
-              onValueChange={v => setFormData(f => ({ ...f, operation_profile_id: v }))}
-            >
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Επίλεξε profile" />
-              </SelectTrigger>
-              <SelectContent>
-                {departmentProfiles.map(p => (
-                  <SelectItem key={p.id} value={p.id} className="text-xs">{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Item Code */}
-          <div>
-            <p className="text-[10px] font-semibold text-slate-500 mb-1">
-              Item Code *
-              {selectedItemQtyProcessed !== null && (
-                <span className="text-slate-400 font-normal ml-1">(Processed: {selectedItemQtyProcessed})</span>
-              )}
-            </p>
-            <Select
-              value={formData.item_code}
-              onValueChange={v => setFormData(f => ({ ...f, item_code: v }))}
-            >
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="Επίλεξε item code" />
-              </SelectTrigger>
-              <SelectContent>
-                {itemCodes.map(code => (
-                  <SelectItem key={code} value={code} className="text-xs">{code}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Existing ops for this item */}
-          {formData.item_code && existingOps.filter(o => o.item_code === formData.item_code).length > 0 && (
-            <div className="bg-blue-50 border border-blue-100 rounded p-2 text-[10px] text-blue-700 space-y-0.5">
-              <p className="font-semibold">Υπάρχουσες Operations για {formData.item_code}:</p>
-              {existingOps.filter(o => o.item_code === formData.item_code).map(op => (
-                <div key={op.id} className="flex gap-2">
-                  <span className="font-medium">{op.operation || "(καμία)"}</span>
-                  <span>Qty: {op.qty_operation}</span>
-                  <span>Time: {op.operation_time_min?.toFixed(1)}m</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Operations for profile */}
-          {formData.operation_profile_id && (
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <p className="text-[10px] font-semibold text-slate-500">Operations από Profile *</p>
-                <button
-                  className="text-[10px] text-blue-600 hover:underline"
-                  onClick={() => {
-                    const all = {};
-                    operationsForProfile.forEach(op => { all[op.id] = selectedItemQtyProcessed ?? 1; });
-                    setSelectedOperations(all);
-                  }}
-                >
-                  Επιλογή Όλων
-                </button>
-              </div>
-              <div className="space-y-1 max-h-48 overflow-y-auto">
-                {operationsForProfile.length === 0 ? (
-                  <p className="text-xs text-slate-400">Δεν υπάρχουν operations σε αυτό το profile</p>
-                ) : operationsForProfile.map(op => {
-                  const stdLine = stdSetLines.find(sl => sl.item_code === formData.item_code && sl.operation === op.name);
-                  const stdMinPc = stdLine?.std_min_per_pc || 0;
-                  const qty = selectedOperations[op.id] || 0;
-                  const opTime = qty * stdMinPc;
-                  const isOver = selectedItemQtyProcessed !== null && qty > selectedItemQtyProcessed;
-                  return (
-                    <div key={op.id} className={`flex items-center gap-2 p-2 bg-white rounded border text-xs ${isOver ? "border-red-300" : ""}`}>
-                      <Checkbox
-                        checked={qty > 0}
-                        onCheckedChange={checked => {
-                          if (checked) {
-                            setSelectedOperations(prev => ({ ...prev, [op.id]: selectedItemQtyProcessed ?? 1 }));
-                          } else {
-                            setSelectedOperations(prev => {
-                              const next = { ...prev };
-                              delete next[op.id];
-                              return next;
-                            });
-                          }
-                        }}
-                      />
-                      <span className="flex-1 font-medium truncate">
-                        {op.name}
-                        {!stdLine && <span className="text-red-400 ml-1">(⚠ no std)</span>}
-                      </span>
-                      <input
-                        type="number" min="0" step="0.01"
-                        value={selectedOperations[op.id] || ""}
-                        onChange={e => {
-                          const val = e.target.value;
-                          if (val) {
-                            setSelectedOperations(prev => ({ ...prev, [op.id]: parseFloat(val) || 0 }));
-                          } else {
-                            setSelectedOperations(prev => {
-                              const next = { ...prev };
-                              delete next[op.id];
-                              return next;
-                            });
-                          }
-                        }}
-                        disabled={!selectedOperations[op.id] && qty === 0}
-                        placeholder="Qty"
-                        className={`w-16 border rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-400 ${isOver ? "border-red-400 bg-red-50" : ""}`}
-                      />
-                      <span className="text-slate-400 w-20 text-right">{opTime.toFixed(1)}m</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {errorMsg && (
-            <div className="bg-red-50 border border-red-200 rounded p-2 text-[10px] text-red-700">
-              {errorMsg}
-            </div>
-          )}
-          <Button size="sm" className="w-full text-xs bg-blue-600 hover:bg-blue-700"
-            onClick={handleAdd} disabled={isSaving}>
-            {isSaving ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Plus className="w-3 h-3 mr-1" />}
-            Προσθήκη
-          </Button>
-        </div>
-      )}
 
       {/* Continue */}
       <Button size="sm" className="w-full text-xs bg-green-600 hover:bg-green-700"
