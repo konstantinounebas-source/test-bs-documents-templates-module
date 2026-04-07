@@ -330,9 +330,10 @@ function FileResultCard({ item, departments, batchHeaders, allBundles, dailyAssi
 
 // ── Main Component ────────────────────────────────────────────────────────────
 function resolveBundle(date, dept, allBundles, dailyAssignments, scheduledDayHeaders) {
-  const da = dailyAssignments.find(a => a.assignment_date === date && a.department_id === dept);
+  // Match by department name OR department_id
+  const da = dailyAssignments.find(a => a.assignment_date === date && (a.department_id === dept || a.department === dept));
   if (da?.standards_bundle_id) return allBundles.find(b => b.id === da.standards_bundle_id);
-  const sh = scheduledDayHeaders.find(h => h.date === date && h.department_id === dept);
+  const sh = scheduledDayHeaders.find(h => h.date === date && (h.department_id === dept || h.department === dept));
   if (sh?.source_bundle_id) return allBundles.find(b => b.id === sh.source_bundle_id);
   return allBundles.find(b => b.department === dept && b.status === "ACTIVE");
 }
@@ -413,6 +414,10 @@ export default function ChatStepFileUpload({ departments = [], batchHeaders = []
 
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       const me = await base44.auth.me();
+
+      if (!batch?.id) {
+        throw new Error("Δεν βρέθηκε ή δεν δημιουργήθηκε batch. Δοκίμασε ξανά.");
+      }
 
       await base44.entities.BatchAttachment.create({
         file_url,
