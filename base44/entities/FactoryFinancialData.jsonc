@@ -63,6 +63,64 @@
       },
       "default": []
     },
+    "shelter_revenue_items": {
+      "type": "array",
+      "description": "Array of shelter revenue items by bus shelter type",
+      "items": {
+        "type": "object",
+        "properties": {
+          "bus_shelter_type_id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "contract_amount": {
+            "type": "number",
+            "default": 0
+          },
+          "amount_from_jv": {
+            "type": "number",
+            "default": 0
+          },
+          "approved_variations": {
+            "type": "array",
+            "description": "Approved variations for this shelter revenue item",
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number",
+                  "default": 0
+                }
+              }
+            },
+            "default": []
+          },
+          "potential_variations": {
+            "type": "array",
+            "description": "Potential variations for this shelter revenue item",
+            "items": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number",
+                  "default": 0
+                }
+              }
+            },
+            "default": []
+          }
+        }
+      },
+      "default": []
+    },
     "approved_variations": {
       "type": "array",
       "description": "Array of approved variation amounts",
