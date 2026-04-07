@@ -547,8 +547,10 @@ export default function FactoryFinancialCalculations() {
 
     const calculateEstimatedRevenuesTotal = () => {
         return estimatedRevenues.reduce((sum, item) => {
-            const total = item.total_revenue || (parseFloat(item.pending_quantity) || 0) * (parseFloat(item.unit_revenue) || 0);
-            return sum + total;
+            const totalRevenue = item.total_revenue != null
+                ? parseFloat(item.total_revenue) || 0
+                : (parseFloat(item.pending_quantity) || 0) * (parseFloat(item.unit_revenue) || 0);
+            return sum + totalRevenue;
         }, 0);
     };
 
