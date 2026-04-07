@@ -132,7 +132,7 @@ export default function DailyDataTab({
     <div className="flex flex-col h-full gap-3">
       {/* Department selector — identical style to DailyFormsTab */}
       <div className="border-b border-slate-200 px-3 py-2 flex-shrink-0">
-        <p className="text-xs font-semibold text-slate-500 uppercase mb-2">Departments</p>
+        <p className="text-sm font-semibold text-slate-500 uppercase mb-2">Departments</p>
         <div className="flex flex-wrap gap-2">
           {sortedDepts.map(dept => {
             const hasBatch = departmentsWithBatches.has(dept.name);
@@ -155,7 +155,7 @@ export default function DailyDataTab({
                     }
                   }}
                   disabled={!hasBatch}
-                  className={`px-4 py-2.5 rounded text-sm transition-colors flex flex-col items-center gap-1 font-medium min-w-max ${
+                  className={`px-4 py-2.5 rounded text-base transition-colors flex flex-col items-center gap-1 font-medium min-w-max ${
                     selDept === dept.name
                       ? "bg-blue-600 text-white"
                       : hasBatch
@@ -164,8 +164,8 @@ export default function DailyDataTab({
                   }`}
                 >
                   <span>{dept.name}</span>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className={`${bundleAvailable ? (selDept === dept.name ? "text-green-300" : "text-green-600") : "text-red-500 text-lg leading-none"}`}>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className={`${bundleAvailable ? (selDept === dept.name ? "text-green-300" : "text-green-600") : "text-red-500 text-xl leading-none"}`}>
                       {hasBatch ? (bundleAvailable ? "✓" : "×") : "×"}
                     </span>
                     <span className={selDept === dept.name ? "text-blue-200" : "text-slate-500"}>({attachmentCount})</span>
@@ -175,7 +175,7 @@ export default function DailyDataTab({
                   <button
                     onClick={() => handleCreateBatch(dept.name)}
                     disabled={creatingBatch === dept.name}
-                    className="text-[10px] text-blue-600 hover:text-blue-800 flex items-center gap-0.5 disabled:opacity-50"
+                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-0.5 disabled:opacity-50"
                   >
                     {creatingBatch === dept.name
                       ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -192,11 +192,11 @@ export default function DailyDataTab({
       {/* Steps Content */}
       <div className="flex-1 overflow-y-auto px-3">
         {!selDate ? (
-          <p className="text-sm text-slate-500 text-center py-8">Select a date from the Intake block</p>
+          <p className="text-base text-slate-500 text-center py-8">Select a date from the Intake block</p>
         ) : selDept ? (
           renderSharedSteps()
         ) : (
-          <p className="text-sm text-slate-500 text-center py-8">Select a department to view data.</p>
+          <p className="text-base text-slate-500 text-center py-8">Select a department to view data.</p>
         )}
       </div>
     </div>
