@@ -3,12 +3,17 @@ import DailyProductionChatbot from "./DailyProductionChatbot";
 
 export default function SplitLayoutWithChatbot({ children, departments }) {
   const containerRef = useRef();
-  const [chatWidth, setChatWidth] = useState(() => {
-    // Initialize to 1/3 of window width on first load
-    return Math.max(300, Math.min(420, window.innerWidth / 3));
-  });
+  const [chatWidth, setChatWidth] = useState(null);
   const [chatClosed, setChatClosed] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+
+  // Initialize chatbot width to 1/3 of container on mount
+  useEffect(() => {
+    if (containerRef.current) {
+      const containerWidth = containerRef.current.getBoundingClientRect().width;
+      setChatWidth(containerWidth / 3);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isResizing) return;
@@ -52,7 +57,7 @@ export default function SplitLayoutWithChatbot({ children, departments }) {
       )}
 
       {/* Right: Chatbot Panel - collapses when closed */}
-      {!chatClosed && (
+      {!chatClosed && chatWidth && (
         <div
           className="flex-shrink-0 border-l border-slate-200 overflow-hidden"
           style={{ width: `${chatWidth}px` }}
