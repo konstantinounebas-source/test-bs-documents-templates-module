@@ -1,20 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Plus, Copy, Trash2, DollarSign, TrendingUp, Package, Calendar, Save, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Loader2, Plus, Copy, Save } from 'lucide-react';
 import { usePageAccess } from "@/components/lib/usePageAccess";
 import { toast } from 'sonner';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import {
     Dialog,
     DialogContent,
@@ -23,7 +14,18 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import DeptAllocationRows from "@/components/factory-financial/DeptAllocationRows";
+import VersionSelector from "@/components/factory-financial/VersionSelector";
+import PeriodSettingsCard from "@/components/factory-financial/PeriodSettingsCard";
+import ShelterRevenueSection from "@/components/factory-financial/ShelterRevenueSection";
+import PersonnelCostSection from "@/components/factory-financial/PersonnelCostSection";
+import BomCostSection from "@/components/factory-financial/BomCostSection";
+import GenericCostSection from "@/components/factory-financial/GenericCostSection";
+import InvestmentAmortizationSection from "@/components/factory-financial/InvestmentAmortizationSection";
+import SummarySection from "@/components/factory-financial/SummarySection";
+import DepartmentSummarySection from "@/components/factory-financial/DepartmentSummarySection";
+import DepreciationModuleSection from "@/components/factory-financial/DepreciationModuleSection";
+import DepreciationRateCard from "@/components/factory-financial/DepreciationRateCard";
+import ValidationWarningCard from "@/components/factory-financial/ValidationWarningCard";
 
 export default function FactoryFinancialCalculations() {
     const { hasAccess, isLoading: accessLoading } = usePageAccess('FactoryFinancialCalculations');
@@ -652,775 +654,114 @@ export default function FactoryFinancialCalculations() {
                 </div>
 
                 {/* Version Selection */}
-                {financialRecords.length > 0 ? (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Calendar className="w-5 h-5" />
-                                Επιλογή Έκδοσης
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center gap-4">
-                                <div className="flex-1">
-                                    <Label>Έκδοση Δεδομένων</Label>
-                                    <Select
-                                        value={selectedRecord?.id || ''}
-                                        onValueChange={(value) => {
-                                            const record = financialRecords.find(r => r.id === value);
-                                            if (record) loadRecordData(record);
-                                        }}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Επιλέξτε έκδοση" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {financialRecords.map(record => (
-                                                <SelectItem key={record.id} value={record.id}>
-                                                    {record.factory_name} - {record.version || 'v1.0'} ({new Date(record.created_date).toLocaleDateString('el-GR')})
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                {selectedRecord && (
-                                    <>
-                                        <div className="space-y-1">
-                                            <Label className="text-xs text-slate-500">Περίοδος</Label>
-                                            <div className="text-sm font-medium">
-                                                {new Date(selectedRecord.start_date).toLocaleDateString('el-GR')} - {new Date(selectedRecord.end_date).toLocaleDateString('el-GR')}
-                                            </div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label className="text-xs text-slate-500">Εργάσιμες Ημέρες</Label>
-                                            <div className="text-sm font-medium">{totalWorkingDays}</div>
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                ) : (
-                    <Card className="border-dashed">
-                        <CardContent className="flex flex-col items-center justify-center py-12">
-                            <Calendar className="w-12 h-12 text-slate-400 mb-4" />
-                            <h3 className="text-lg font-semibold text-slate-700 mb-2">Δεν υπάρχουν εγγραφές</h3>
-                            <p className="text-slate-500 mb-4 text-center">Δημιουργήστε την πρώτη σας εγγραφή οικονομικών δεδομένων</p>
-                            <Button onClick={() => setShowCreateDialog(true)} className="flex items-center gap-2">
-                                <Plus className="w-4 h-4" />
-                                Δημιουργία Εγγραφής
-                            </Button>
-                        </CardContent>
-                    </Card>
-                )}
+                <VersionSelector
+                    financialRecords={financialRecords}
+                    selectedRecord={selectedRecord}
+                    totalWorkingDays={totalWorkingDays}
+                    onLoadRecord={loadRecordData}
+                    onCreateNew={() => setShowCreateDialog(true)}
+                />
 
                 {selectedRecord && (
                     <>
                         {/* Period Settings */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Calendar className="w-5 h-5 text-blue-600" />
-                                    Ρυθμίσεις Περιόδου
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="grid grid-cols-3 gap-4">
-                                <div>
-                                    <Label>Συνολικές Εργάσιμες Ημέρες Περιόδου</Label>
-                                    <Input
-                                        type="number"
-                                        value={totalWorkingDays}
-                                        onChange={(e) => setTotalWorkingDays(parseFloat(e.target.value) || 0)}
-                                        placeholder="0"
-                                    />
-                                </div>
-                                <div>
-                                    <Label>Μέσες Εργάσιμες Ημέρες/Μήνα</Label>
-                                    <Input
-                                        type="number"
-                                        value={avgWorkingDaysPerMonth}
-                                        onChange={(e) => setAvgWorkingDaysPerMonth(parseFloat(e.target.value) || 22)}
-                                        placeholder="22"
-                                    />
-                                </div>
-                                <div>
-                                    <Label>Μέσες Εργάσιμες Ημέρες/Έτος</Label>
-                                    <Input
-                                        type="number"
-                                        value={avgWorkingDaysPerYear}
-                                        onChange={(e) => setAvgWorkingDaysPerYear(parseFloat(e.target.value) || 260)}
-                                        placeholder="260"
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <PeriodSettingsCard
+                            totalWorkingDays={totalWorkingDays}
+                            avgWorkingDaysPerMonth={avgWorkingDaysPerMonth}
+                            avgWorkingDaysPerYear={avgWorkingDaysPerYear}
+                            onUpdate={(field, value) => {
+                                if (field === 'totalWorkingDays') setTotalWorkingDays(value);
+                                else if (field === 'avgWorkingDaysPerMonth') setAvgWorkingDaysPerMonth(value);
+                                else if (field === 'avgWorkingDaysPerYear') setAvgWorkingDaysPerYear(value);
+                            }}
+                        />
 
                         {/* SECTION A - Income */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <DollarSign className="w-5 h-5 text-green-600" />
-                                    SECTION A — Έσοδα
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="flex items-center justify-between mb-2">
-                                    <h3 className="text-lg font-semibold">Έσοδα ανά Τύπο Στάσης</h3>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => addArrayItem(setShelterRevenueItems, shelterRevenueItems, {
-                                            bus_shelter_type_id: '',
-                                            description: '',
-                                            contract_amount: 0,
-                                            amount_from_jv: 0,
-                                            approved_variations: [],
-                                            potential_variations: []
-                                        })}
-                                    >
-                                        <Plus className="w-4 h-4 mr-1" />
-                                        Προσθήκη
-                                    </Button>
-                                </div>
+                        <ShelterRevenueSection
+                            shelterRevenueItems={shelterRevenueItems}
+                            busStopTypes={busStopTypes}
+                            formatCurrency={formatCurrency}
+                            getVariationsTotal={getVariationsTotal}
+                            getShelterRevenueTotal={getShelterRevenueTotal}
+                            calculateTotalIncome={calculateTotalIncome}
+                            onAddItem={() => addArrayItem(setShelterRevenueItems, shelterRevenueItems, {
+                                bus_shelter_type_id: '',
+                                description: '',
+                                contract_amount: 0,
+                                amount_from_jv: 0,
+                                approved_variations: [],
+                                potential_variations: []
+                            })}
+                            onRemoveItem={(idx) => removeArrayItem(setShelterRevenueItems, shelterRevenueItems, idx)}
+                            onUpdateItem={(idx, field, value) => updateShelterRevenueItem(idx, field, value)}
+                            onUpdateVariation={(itemIdx, varType, varIdx, field, value) => updateShelterVariation(itemIdx, varType, varIdx, field, value)}
+                            onRemoveVariation={(itemIdx, varType, varIdx) => removeShelterVariation(itemIdx, varType, varIdx)}
+                            onAddVariation={(itemIdx, varType) => {
+                                const updated = [...shelterRevenueItems];
+                                updated[itemIdx][varType] = [...updated[itemIdx][varType], { description: '', amount: 0 }];
+                                setShelterRevenueItems(updated);
+                            }}
+                        />
 
-                                <div className="space-y-4">
-                                    {shelterRevenueItems.map((item, itemIdx) => (
-                                        <div key={itemIdx} className="p-4 border border-slate-200 rounded-lg space-y-3">
-                                            <div className="flex items-end gap-2">
-                                                <div className="flex-1">
-                                                    <Label className="text-xs">Τύπος Στάσης</Label>
-                                                    <Select
-                                                        value={item.bus_shelter_type_id}
-                                                        onValueChange={(value) => {
-                                                            updateShelterRevenueItem(itemIdx, 'bus_shelter_type_id', value);
-                                                            const selectedType = busStopTypes.find(t => t.id === value);
-                                                            if (selectedType) {
-                                                                updateShelterRevenueItem(itemIdx, 'description', selectedType.type_name);
-                                                            }
-                                                        }}
-                                                    >
-                                                        <SelectTrigger>
-                                                            <SelectValue placeholder="Επιλέξτε τύπο" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {busStopTypes.map(type => (
-                                                                <SelectItem key={type.id} value={type.id}>
-                                                                    {type.type_code} - {type.type_name}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <Label className="text-xs">Περιγραφή</Label>
-                                                    <Input
-                                                        placeholder="Περιγραφή"
-                                                        value={item.description}
-                                                        onChange={(e) => updateShelterRevenueItem(itemIdx, 'description', e.target.value)}
-                                                    />
-                                                </div>
-                                                <Button
-                                                    size="icon"
-                                                    variant="ghost"
-                                                    onClick={() => removeArrayItem(setShelterRevenueItems, shelterRevenueItems, itemIdx)}
-                                                >
-                                                    <Trash2 className="w-4 h-4 text-red-500" />
-                                                </Button>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <div>
-                                                    <Label className="text-xs">Ποσό Σύμβασης</Label>
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="0.00"
-                                                        value={item.contract_amount}
-                                                        onChange={(e) => updateShelterRevenueItem(itemIdx, 'contract_amount', e.target.value)}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Label className="text-xs">Ποσό από JV</Label>
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="0.00"
-                                                        value={item.amount_from_jv}
-                                                        onChange={(e) => updateShelterRevenueItem(itemIdx, 'amount_from_jv', e.target.value)}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* Approved Variations */}
-                                            <div className="bg-slate-50 p-3 rounded-lg space-y-2">
-                                                <div className="flex items-center justify-between">
-                                                    <Label className="text-sm font-semibold">Εγκεκριμένες Παραλλαγές</Label>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => {
-                                                            const updated = [...shelterRevenueItems];
-                                                            updated[itemIdx].approved_variations = [...updated[itemIdx].approved_variations, { description: '', amount: 0 }];
-                                                            setShelterRevenueItems(updated);
-                                                        }}
-                                                    >
-                                                        <Plus className="w-3 h-3 mr-1" />
-                                                        Προσθήκη
-                                                    </Button>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    {item.approved_variations.map((variation, varIdx) => (
-                                                        <div key={varIdx} className="flex items-end gap-2">
-                                                            <Input
-                                                                placeholder="Περιγραφή"
-                                                                value={variation.description}
-                                                                onChange={(e) => updateShelterVariation(itemIdx, 'approved_variations', varIdx, 'description', e.target.value)}
-                                                                className="flex-1"
-                                                            />
-                                                            <Input
-                                                                type="number"
-                                                                placeholder="Ποσό"
-                                                                value={variation.amount}
-                                                                onChange={(e) => updateShelterVariation(itemIdx, 'approved_variations', varIdx, 'amount', e.target.value)}
-                                                                className="w-28"
-                                                            />
-                                                            <Button
-                                                                size="icon"
-                                                                variant="ghost"
-                                                                onClick={() => removeShelterVariation(itemIdx, 'approved_variations', varIdx)}
-                                                            >
-                                                                <Trash2 className="w-4 h-4 text-red-500" />
-                                                            </Button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Potential Variations */}
-                                            <div className="bg-slate-50 p-3 rounded-lg space-y-2">
-                                                <div className="flex items-center justify-between">
-                                                    <Label className="text-sm font-semibold">Δυνητικές Παραλλαγές</Label>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => {
-                                                            const updated = [...shelterRevenueItems];
-                                                            updated[itemIdx].potential_variations = [...updated[itemIdx].potential_variations, { description: '', amount: 0 }];
-                                                            setShelterRevenueItems(updated);
-                                                        }}
-                                                    >
-                                                        <Plus className="w-3 h-3 mr-1" />
-                                                        Προσθήκη
-                                                    </Button>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    {item.potential_variations.map((variation, varIdx) => (
-                                                        <div key={varIdx} className="flex items-end gap-2">
-                                                            <Input
-                                                                placeholder="Περιγραφή"
-                                                                value={variation.description}
-                                                                onChange={(e) => updateShelterVariation(itemIdx, 'potential_variations', varIdx, 'description', e.target.value)}
-                                                                className="flex-1"
-                                                            />
-                                                            <Input
-                                                                type="number"
-                                                                placeholder="Ποσό"
-                                                                value={variation.amount}
-                                                                onChange={(e) => updateShelterVariation(itemIdx, 'potential_variations', varIdx, 'amount', e.target.value)}
-                                                                className="w-28"
-                                                            />
-                                                            <Button
-                                                                size="icon"
-                                                                variant="ghost"
-                                                                onClick={() => removeShelterVariation(itemIdx, 'potential_variations', varIdx)}
-                                                            >
-                                                                <Trash2 className="w-4 h-4 text-red-500" />
-                                                            </Button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Item Totals */}
-                                            <div className="pt-2 border-t border-slate-200 grid grid-cols-3 gap-4 text-sm">
-                                                <div className="bg-blue-50 p-2 rounded">
-                                                    <Label className="text-xs font-semibold">Σύνολο Εγκ. Παραλλαγών</Label>
-                                                    <p className="text-lg font-bold text-blue-700">{formatCurrency(getVariationsTotal(item.approved_variations))}</p>
-                                                </div>
-                                                <div className="bg-orange-50 p-2 rounded">
-                                                    <Label className="text-xs font-semibold">Σύνολο Δυν. Παραλλαγών</Label>
-                                                    <p className="text-lg font-bold text-orange-700">{formatCurrency(getVariationsTotal(item.potential_variations))}</p>
-                                                </div>
-                                                <div className="bg-green-50 p-2 rounded">
-                                                    <Label className="text-xs font-semibold">Σύνολο Στάσης</Label>
-                                                    <p className="text-lg font-bold text-green-700">{formatCurrency(getShelterRevenueTotal(item))}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Total Income */}
-                                <div className="pt-4 border-t">
-                                    <div className="flex items-center justify-between text-lg font-semibold">
-                                        <span>Σύνολο Εσόδων:</span>
-                                        <span className="text-green-600">{formatCurrency(calculateTotalIncome())}</span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* SECTION B - Costs */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Package className="w-5 h-5 text-orange-600" />
-                                    SECTION B — Κόστη
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <Collapsible open={expandedSections.operational} onOpenChange={() => toggleSection('operational')}>
-                                    <CollapsibleTrigger asChild>
-                                        <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors">
-                                            <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
-                                                {expandedSections.operational ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-                                                Λειτουργικά Κόστη (Operational Costs)
-                                            </h3>
-                                            <span className="text-sm font-semibold text-blue-700">
-                                                {formatCurrency(calculatePersonnelCostTotal() + calculateBomTotal() + calculateCostTotal(overheadCosts) + calculateCostTotal(maintenanceCosts))}
-                                            </span>
-                                        </div>
-                                    </CollapsibleTrigger>
-                                    <CollapsibleContent className="space-y-6 mt-4">
-                                        {renderPersonnelCostSection()}
-                                        {renderBomCostSection()}
-                                        {renderCostSection('Γενικά Έξοδα (Overhead Costs)', overheadCosts, setOverheadCosts, 'overhead')}
-                                        {renderCostSection('Κόστη Συντήρησης (Maintenance Costs)', maintenanceCosts, setMaintenanceCosts, 'maintenance')}
-                                    </CollapsibleContent>
-                                </Collapsible>
-
-                                <Collapsible open={expandedSections.fixed} onOpenChange={() => toggleSection('fixed')}>
-                                    <CollapsibleTrigger asChild>
-                                        <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors">
-                                            <h3 className="text-lg font-bold text-purple-900 flex items-center gap-2">
-                                                {expandedSections.fixed ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
-                                                Πάγια Κόστη (Fixed Costs)
-                                            </h3>
-                                            <span className="text-sm font-semibold text-purple-700">
-                                                {formatCurrency(calculateCostTotal(fixedCosts) + calculateInvestmentTotal())}
-                                            </span>
-                                        </div>
-                                    </CollapsibleTrigger>
-                                    <CollapsibleContent className="space-y-6 mt-4">
-                                        {renderCostSection('Πάγια Κόστη (Fixed Costs)', fixedCosts, setFixedCosts, 'fixedCosts')}
-                                        {renderInvestmentAmortizationSection()}
-                                    </CollapsibleContent>
-                                </Collapsible>
-                            </CardContent>
-                        </Card>
+                        {/* SECTION B - Costs (with render functions inline for now) */}
+                        {renderCostSectionsCard()}
 
                         {/* Allocation Validation Warning */}
-                        {!validateAllAllocations() && (
-                            <Card className="bg-red-50 border-red-300">
-                                <CardContent className="pt-6">
-                                    <div className="flex items-start gap-3">
-                                        <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                                        <div>
-                                            <h3 className="font-semibold text-red-900">Προσοχή</h3>
-                                            <p className="text-sm text-red-700 mt-1">Υπάρχουν allocations που δεν κάνουν 100%</p>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )}
+                        {!validateAllAllocations() && <ValidationWarningCard />}
 
                         {/* SECTION C - Summary */}
-                        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5 text-blue-600" />
-                                    SECTION C — Περίληψη
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between text-lg">
-                                        <span className="font-medium">Συνολικά Έσοδα:</span>
-                                        <span className="font-semibold text-green-600">{formatCurrency(calculateTotalIncome())}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-lg">
-                                        <span className="font-medium">Συνολικά Κόστη (Παραγωγής):</span>
-                                        <span className="font-semibold text-orange-600">{formatCurrency(calculateTotalCosts())}</span>
-                                    </div>
-                                    <div className="pt-4 border-t border-blue-200">
-                                        <div className="flex items-center justify-between text-xl">
-                                            <span className="font-bold">Καθαρό Κέρδος:</span>
-                                            <span className="font-bold text-blue-600">
-                                                {formatCurrency(calculateTotalIncome() - calculateTotalCosts())}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <SummarySection
+                            totalIncome={calculateTotalIncome()}
+                            totalCosts={calculateTotalCosts()}
+                            formatCurrency={formatCurrency}
+                        />
 
                         {/* SECTION D - Department Summary */}
-                        {(() => {
-                            const summary = calculateDepartmentSummary();
-                            if (summary.length === 0) return null;
-                            const colTotals = summary.reduce((acc, row) => ({
-                                personnel: acc.personnel + row.personnel_total,
-                                fixed: acc.fixed + row.fixed_total,
-                                overhead: acc.overhead + row.overhead_total,
-                                maintenance: acc.maintenance + row.maintenance_total,
-                                investment: acc.investment + row.investment_amortization_total,
-                                depreciation: acc.depreciation + row.depreciation_investments_total,
-                                grand: acc.grand + row.grand_total,
-                            }), { personnel: 0, fixed: 0, overhead: 0, maintenance: 0, investment: 0, depreciation: 0, grand: 0 });
-
-                            return (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="flex items-center gap-2">
-                                            <TrendingUp className="w-5 h-5 text-indigo-600" />
-                                            SECTION D — Department Summary
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-sm">
-                                                <thead>
-                                                    <tr className="bg-slate-100">
-                                                        <th className="text-left px-3 py-2 font-semibold text-slate-700 rounded-tl-lg">Department</th>
-                                                        <th className="text-right px-3 py-2 font-semibold text-slate-700">Personnel</th>
-                                                        <th className="text-right px-3 py-2 font-semibold text-slate-700">Fixed</th>
-                                                        <th className="text-right px-3 py-2 font-semibold text-slate-700">Overhead</th>
-                                                        <th className="text-right px-3 py-2 font-semibold text-slate-700">Maintenance</th>
-                                                        <th className="text-right px-3 py-2 font-semibold text-slate-700">Inv. Amortization</th>
-                                                        <th className="text-right px-3 py-2 font-semibold text-slate-700">Depr. Investments</th>
-                                                        <th className="text-right px-3 py-2 font-semibold text-slate-700 rounded-tr-lg">Grand Total</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {summary.map((row, idx) => (
-                                                        <tr key={row.department_id} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                                                            <td className="px-3 py-2 font-medium text-slate-800">{row.department_name}</td>
-                                                            <td className="px-3 py-2 text-right text-slate-700">{formatCurrency(row.personnel_total)}</td>
-                                                            <td className="px-3 py-2 text-right text-slate-700">{formatCurrency(row.fixed_total)}</td>
-                                                            <td className="px-3 py-2 text-right text-slate-700">{formatCurrency(row.overhead_total)}</td>
-                                                            <td className="px-3 py-2 text-right text-slate-700">{formatCurrency(row.maintenance_total)}</td>
-                                                            <td className="px-3 py-2 text-right text-slate-700">{formatCurrency(row.investment_amortization_total)}</td>
-                                                            <td className="px-3 py-2 text-right text-slate-700">{formatCurrency(row.depreciation_investments_total)}</td>
-                                                            <td className="px-3 py-2 text-right font-semibold text-indigo-700">{formatCurrency(row.grand_total)}</td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                                <tfoot>
-                                                    <tr className="bg-indigo-50 border-t-2 border-indigo-200">
-                                                        <td className="px-3 py-2 font-bold text-indigo-900">TOTAL</td>
-                                                        <td className="px-3 py-2 text-right font-bold text-indigo-900">{formatCurrency(colTotals.personnel)}</td>
-                                                        <td className="px-3 py-2 text-right font-bold text-indigo-900">{formatCurrency(colTotals.fixed)}</td>
-                                                        <td className="px-3 py-2 text-right font-bold text-indigo-900">{formatCurrency(colTotals.overhead)}</td>
-                                                        <td className="px-3 py-2 text-right font-bold text-indigo-900">{formatCurrency(colTotals.maintenance)}</td>
-                                                        <td className="px-3 py-2 text-right font-bold text-indigo-900">{formatCurrency(colTotals.investment)}</td>
-                                                        <td className="px-3 py-2 text-right font-bold text-indigo-900">{formatCurrency(colTotals.depreciation)}</td>
-                                                        <td className="px-3 py-2 text-right font-bold text-indigo-900">{formatCurrency(colTotals.grand)}</td>
-                                                    </tr>
-                                                </tfoot>
-                                            </table>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            );
-                        })()}
+                        <DepartmentSummarySection
+                            summary={calculateDepartmentSummary()}
+                            formatCurrency={formatCurrency}
+                        />
 
                         {/* Depreciation Module */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5 text-amber-600" />
-                                    Depreciation Module
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                {/* A. Investments */}
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-lg font-semibold text-slate-900">A. Investments</h3>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => addArrayItem(setDepreciationInvestments, depreciationInvestments, {
-                                                description: '',
-                                                category: 'materials',
-                                                total_amount: 0,
-                                                department_allocations: []
-                                            })}
-                                        >
-                                            <Plus className="w-4 h-4 mr-1" />
-                                            Προσθήκη Επένδυσης
-                                        </Button>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {depreciationInvestments.map((item, idx) => {
-                                            const totalAlloc = getAllocationTotal(item.department_allocations);
-                                            const totalAmount = parseFloat(item.total_amount) || 0;
-                                            return (
-                                            <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <Label className="text-xs">Περιγραφή</Label>
-                                                        <Input placeholder="Περιγραφή επένδυσης" value={item.description} onChange={(e) => updateDepreciationInvestment(idx, 'description', e.target.value)} />
-                                                    </div>
-                                                    <div>
-                                                        <Label className="text-xs">Κατηγορία</Label>
-                                                        <Select value={item.category} onValueChange={(value) => updateDepreciationInvestment(idx, 'category', value)}>
-                                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                                            <SelectContent>
-                                                                <SelectItem value="materials">Materials</SelectItem>
-                                                                <SelectItem value="labor">Labor</SelectItem>
-                                                                <SelectItem value="other">Other</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <Label className="text-xs">Συνολικό Ποσό</Label>
-                                                    <Input type="number" placeholder="0.00" value={item.total_amount} onChange={(e) => updateDepreciationInvestment(idx, 'total_amount', e.target.value)} />
-                                                </div>
-                                                <div className="border-t pt-3 space-y-2">
-                                                    <div className="flex items-center justify-between">
-                                                        <Label className="text-sm font-semibold">Department Allocations</Label>
-                                                        <Button size="sm" variant="outline" onClick={() => addDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx)}>
-                                                            <Plus className="w-3 h-3 mr-1" />
-                                                            Add Department
-                                                        </Button>
-                                                    </div>
-                                                    {(item.department_allocations || []).map((alloc, allocIdx) => (
-                                                        <div key={allocIdx} className="flex items-end gap-2 bg-white p-2 rounded border border-slate-200">
-                                                            <div className="flex-1">
-                                                                <Label className="text-xs">Τμήμα</Label>
-                                                                <Select value={alloc.department_id} onValueChange={(value) => updateDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx, allocIdx, 'department_id', value)}>
-                                                                    <SelectTrigger className="h-8"><SelectValue placeholder="Επιλέξτε τμήμα" /></SelectTrigger>
-                                                                    <SelectContent position="popper" sideOffset={5}>{departments.map(dept => (<SelectItem key={dept.id} value={dept.id}>{dept.department_name}</SelectItem>))}</SelectContent>
-                                                                </Select>
-                                                            </div>
-                                                            <div className="w-24">
-                                                                <Label className="text-xs">Allocation %</Label>
-                                                                <Input type="number" placeholder="0" min="0" max="100" value={alloc.allocation_percent} onChange={(e) => updateDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx, allocIdx, 'allocation_percent', e.target.value)} className="h-8" />
-                                                            </div>
-                                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => removeDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx, allocIdx)}>
-                                                                <Trash2 className="w-3 h-3 text-red-500" />
-                                                            </Button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                                <div className={`p-2 rounded text-xs font-semibold ${totalAlloc === 100 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                                                    Total Allocation: {totalAlloc.toFixed(1)}% {totalAlloc === 100 ? '✓' : '(must equal 100%)'}
-                                                </div>
-                                                {totalAlloc > 0 && (
-                                                    <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded space-y-1">
-                                                        <strong>Allocated amount split:</strong>
-                                                        {(item.department_allocations || []).map((alloc, allocIdx) => {
-                                                            const deptName = getDeptName(alloc.department_id);
-                                                            const allocAmount = totalAmount * (parseFloat(alloc.allocation_percent) || 0) / 100;
-                                                            return <div key={allocIdx}>{deptName}: {formatCurrency(allocAmount)}</div>;
-                                                        })}
-                                                    </div>
-                                                )}
-                                                <div className="flex justify-end">
-                                                    <Button size="icon" variant="ghost" onClick={() => removeArrayItem(setDepreciationInvestments, depreciationInvestments, idx)}>
-                                                        <Trash2 className="w-4 h-4 text-red-500" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            );
-                                        })}
-                                    </div>
-                                    <div className="pt-2 text-sm font-medium text-slate-700">
-                                        Σύνολο Επενδύσεων: {formatCurrency(calculateDepreciationInvestmentsTotal())}
-                                    </div>
-                                </div>
-
-                                {/* B. Estimated Revenues */}
-                                <div className="border-t pt-4 space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-lg font-semibold text-slate-900">B. Estimated Revenues</h3>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => addArrayItem(setEstimatedRevenues, estimatedRevenues, {
-                                                bus_stop_type_id: '',
-                                                description: '',
-                                                pending_quantity: 0,
-                                                unit_revenue: 0,
-                                                total_revenue: 0
-                                            })}
-                                        >
-                                            <Plus className="w-4 h-4 mr-1" />
-                                            Προσθήκη Εκτιμώμενου Εσόδου
-                                        </Button>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {estimatedRevenues.map((item, idx) => (
-                                            <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <Label className="text-xs">Τύπος Στάσης</Label>
-                                                        <Select
-                                                            value={item.bus_stop_type_id}
-                                                            onValueChange={(value) => updateEstimatedRevenue(idx, 'bus_stop_type_id', value)}
-                                                        >
-                                                            <SelectTrigger>
-                                                                <SelectValue placeholder="Επιλέξτε τύπο" />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {busStopTypes.map(type => (
-                                                                    <SelectItem key={type.id} value={type.id}>
-                                                                        {type.type_code} - {type.type_name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    <div>
-                                                        <Label className="text-xs">Περιγραφή</Label>
-                                                        <Input
-                                                            placeholder="Περιγραφή"
-                                                            value={item.description}
-                                                            onChange={(e) => updateEstimatedRevenue(idx, 'description', e.target.value)}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="grid grid-cols-3 gap-3">
-                                                    <div>
-                                                        <Label className="text-xs">Εκκρεμής Ποσότητα</Label>
-                                                        <Input
-                                                            type="number"
-                                                            placeholder="0"
-                                                            value={item.pending_quantity}
-                                                            onChange={(e) => updateEstimatedRevenue(idx, 'pending_quantity', e.target.value)}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <Label className="text-xs">Ποσό Ανά Μονάδα</Label>
-                                                        <Input
-                                                            type="number"
-                                                            placeholder="0.00"
-                                                            value={item.unit_revenue}
-                                                            onChange={(e) => updateEstimatedRevenue(idx, 'unit_revenue', e.target.value)}
-                                                        />
-                                                    </div>
-                                                    <div>
-                                                        <Label className="text-xs">Συνολικό Έσοδο</Label>
-                                                        <Input
-                                                            type="number"
-                                                            placeholder="0.00"
-                                                            value={item.total_revenue}
-                                                            disabled
-                                                            className="bg-blue-50"
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="flex justify-end">
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        onClick={() => removeArrayItem(setEstimatedRevenues, estimatedRevenues, idx)}
-                                                    >
-                                                        <Trash2 className="w-4 h-4 text-red-500" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="pt-2 text-sm font-medium text-slate-700">
-                                        Σύνολο Εκτιμώμενων Εσόδων: {formatCurrency(calculateEstimatedRevenuesTotal())}
-                                    </div>
-                                </div>
-
-                                {/* C. Additional Revenues */}
-                                <div className="border-t pt-4 space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-lg font-semibold text-slate-900">C. Additional Revenues</h3>
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => addArrayItem(setAdditionalRevenues, additionalRevenues, {
-                                                description: '',
-                                                total_amount: 0
-                                            })}
-                                        >
-                                            <Plus className="w-4 h-4 mr-1" />
-                                            Προσθήκη Πρόσθετου Εσόδου
-                                        </Button>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {additionalRevenues.map((item, idx) => (
-                                            <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
-                                                <div className="flex items-end gap-2">
-                                                    <div className="flex-1">
-                                                        <Label className="text-xs">Περιγραφή</Label>
-                                                        <Input
-                                                            placeholder="Περιγραφή πρόσθετου εσόδου"
-                                                            value={item.description}
-                                                            onChange={(e) => updateAdditionalRevenue(idx, 'description', e.target.value)}
-                                                        />
-                                                    </div>
-                                                    <div className="w-32">
-                                                        <Label className="text-xs">Ποσό</Label>
-                                                        <Input
-                                                            type="number"
-                                                            placeholder="0.00"
-                                                            value={item.total_amount}
-                                                            onChange={(e) => updateAdditionalRevenue(idx, 'total_amount', e.target.value)}
-                                                        />
-                                                    </div>
-                                                    <Button
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        onClick={() => removeArrayItem(setAdditionalRevenues, additionalRevenues, idx)}
-                                                    >
-                                                        <Trash2 className="w-4 h-4 text-red-500" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="pt-2 text-sm font-medium text-slate-700">
-                                        Σύνολο Πρόσθετων Εσόδων: {formatCurrency(calculateAdditionalRevenuesTotal())}
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <DepreciationModuleSection
+                            depreciationInvestments={depreciationInvestments}
+                            estimatedRevenues={estimatedRevenues}
+                            additionalRevenues={additionalRevenues}
+                            departments={departments}
+                            busStopTypes={busStopTypes}
+                            formatCurrency={formatCurrency}
+                            getAllocationTotal={getAllocationTotal}
+                            getDeptName={getDeptName}
+                            calculateDepreciationInvestmentsTotal={calculateDepreciationInvestmentsTotal}
+                            calculateEstimatedRevenuesTotal={calculateEstimatedRevenuesTotal}
+                            calculateAdditionalRevenuesTotal={calculateAdditionalRevenuesTotal}
+                            onAddDeprecInv={() => addArrayItem(setDepreciationInvestments, depreciationInvestments, {
+                                description: '', category: 'materials', total_amount: 0, department_allocations: []
+                            })}
+                            onRemoveDeprecInv={(idx) => removeArrayItem(setDepreciationInvestments, depreciationInvestments, idx)}
+                            onUpdateDeprecInv={(idx, field, value) => updateArrayItem(setDepreciationInvestments, depreciationInvestments, idx, field, value)}
+                            onAddDeptAllocDepr={(idx) => addDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx)}
+                            onRemoveDeptAllocDepr={(idx, allocIdx) => removeDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx, allocIdx)}
+                            onUpdateDeptAllocDepr={(idx, allocIdx, field, value) => updateDeptAllocation(setDepreciationInvestments, depreciationInvestments, idx, allocIdx, field, value)}
+                            onAddEstRevenue={() => addArrayItem(setEstimatedRevenues, estimatedRevenues, {
+                                bus_stop_type_id: '', description: '', pending_quantity: 0, unit_revenue: 0, total_revenue: 0
+                            })}
+                            onRemoveEstRevenue={(idx) => removeArrayItem(setEstimatedRevenues, estimatedRevenues, idx)}
+                            onUpdateEstRevenue={(idx, field, value) => updateEstimatedRevenue(idx, field, value)}
+                            onAddAddRevenue={() => addArrayItem(setAdditionalRevenues, additionalRevenues, {
+                                description: '', total_amount: 0
+                            })}
+                            onRemoveAddRevenue={(idx) => removeArrayItem(setAdditionalRevenues, additionalRevenues, idx)}
+                            onUpdateAddRevenue={(idx, field, value) => updateArrayItem(setAdditionalRevenues, additionalRevenues, idx, field, value)}
+                        />
 
                         {/* Depreciation Rate on Revenue */}
-                        <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5 text-amber-600" />
-                                    Depreciation Rate on Revenue
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="p-3 bg-white rounded-lg border border-amber-100">
-                                        <Label className="text-xs text-slate-600">Total Revenue</Label>
-                                        <p className="text-lg font-semibold text-amber-700">{formatCurrency(calculateTotalDepreciationRevenueBase())}</p>
-                                    </div>
-                                    <div className="p-3 bg-white rounded-lg border border-amber-100">
-                                        <Label className="text-xs text-slate-600">Total Depreciation Cost</Label>
-                                        <p className="text-lg font-semibold text-amber-700">{formatCurrency(calculateDepreciationInvestmentsTotal())}</p>
-                                    </div>
-                                    <div className="p-3 bg-white rounded-lg border border-amber-100">
-                                        <Label className="text-xs text-slate-600">Depreciation Factor</Label>
-                                        <p className="text-lg font-semibold text-amber-700">{calculateDepreciationFactor().toFixed(4)}</p>
-                                    </div>
-                                    <div className="p-3 bg-white rounded-lg border border-amber-100">
-                                        <Label className="text-xs text-slate-600">Depreciation %</Label>
-                                        <p className="text-lg font-semibold text-amber-700">{(calculateDepreciationFactor() * 100).toFixed(2)}%</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <DepreciationRateCard
+                            totalRevenueBase={calculateTotalDepreciationRevenueBase()}
+                            totalDepreciationCost={calculateDepreciationInvestmentsTotal()}
+                            depreciationFactor={calculateDepreciationFactor()}
+                            formatCurrency={formatCurrency}
+                        />
                     </>
                 )}
             </div>
@@ -1513,332 +854,24 @@ export default function FactoryFinancialCalculations() {
         </div>
     );
 
-    function renderPersonnelCostSection() {
+    function renderCostSectionsCard() {
         return (
-            <Collapsible open={expandedSections.personnel} onOpenChange={() => toggleSection('personnel')}>
-                <div>
-                    <div className="flex items-center justify-between mb-3">
-                        <CollapsibleTrigger asChild>
-                            <div className="flex items-center gap-2 cursor-pointer hover:text-blue-700 transition-colors">
-                                {expandedSections.personnel ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                                <Label className="text-base font-semibold cursor-pointer">Κόστος Προσωπικού (Personnel Costs) - από Manufacturing</Label>
-                            </div>
-                        </CollapsibleTrigger>
-                        <Button size="sm" variant="outline" onClick={() => addArrayItem(setPersonnelCosts, personnelCosts, {
-                            metric_id: '',
-                            description: '',
-                            calculated_amount: 0,
-                            frequency_type: 'monthly',
-                            department_allocations: []
-                        })}>
-                            <Plus className="w-4 h-4 mr-1" />
-                            Προσθήκη
-                        </Button>
-                    </div>
-                    <CollapsibleContent>
-                        <div className="space-y-3">
-                            {personnelCosts.map((item, idx) => (
-                                <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <Label className="text-xs">Μέτρηση (Metric)</Label>
-                                            <Select
-                                                value={item.metric_id}
-                                                onValueChange={(value) => {
-                                                    const updated = [...personnelCosts];
-                                                    updated[idx].metric_id = value;
-                                                    const metric = dailyMetrics.find(m => m.id === value);
-                                                    if (metric) updated[idx].description = metric.metric_name;
-                                                    setPersonnelCosts(updated);
-                                                }}
-                                            >
-                                                <SelectTrigger><SelectValue placeholder="Επιλέξτε μέτρηση" /></SelectTrigger>
-                                                <SelectContent position="popper" sideOffset={5}>
-                                                    {dailyMetrics.map(metric => (
-                                                        <SelectItem key={metric.id} value={metric.id}>{metric.metric_code} - {metric.metric_name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
-                                            <Label className="text-xs">Συχνότητα</Label>
-                                            <Select
-                                                value={item.frequency_type}
-                                                onValueChange={(value) => updateArrayItem(setPersonnelCosts, personnelCosts, idx, 'frequency_type', value)}
-                                            >
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="daily">Ημερήσιο</SelectItem>
-                                                    <SelectItem value="per_production_day">Ανά Εργάσιμη</SelectItem>
-                                                    <SelectItem value="monthly">Μηνιαίο</SelectItem>
-                                                    <SelectItem value="yearly">Ετήσιο</SelectItem>
-                                                    <SelectItem value="one_time">Εφάπαξ</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-start gap-2">
-                                        <Input placeholder="Περιγραφή" value={item.description}
-                                            onChange={(e) => updateArrayItem(setPersonnelCosts, personnelCosts, idx, 'description', e.target.value)}
-                                            className="flex-1" />
-                                        <Input type="number" placeholder="Ποσό" value={item.calculated_amount}
-                                            onChange={(e) => updateArrayItem(setPersonnelCosts, personnelCosts, idx, 'calculated_amount', e.target.value)}
-                                            className="w-32" />
-                                        <Button size="icon" variant="ghost" onClick={() => removeArrayItem(setPersonnelCosts, personnelCosts, idx)}>
-                                            <Trash2 className="w-4 h-4 text-red-500" />
-                                        </Button>
-                                    </div>
-                                    <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
-                                        <strong>Ημερήσιο κόστος:</strong> {formatCurrency(convertCostToDaily(item.calculated_amount, item.frequency_type))}/ημέρα × {totalWorkingDays} ημέρες = {formatCurrency(convertCostToDaily(item.calculated_amount, item.frequency_type) * totalWorkingDays)}
-                                    </div>
-                                    <DeptAllocationRows
-                                        allocations={item.department_allocations}
-                                        departments={departments}
-                                        totalAmount={convertCostToDaily(item.calculated_amount, item.frequency_type) * totalWorkingDays}
-                                        formatCurrency={formatCurrency}
-                                        onAdd={() => addDeptAllocation(setPersonnelCosts, personnelCosts, idx)}
-                                        onUpdate={(allocIdx, field, value) => updateDeptAllocation(setPersonnelCosts, personnelCosts, idx, allocIdx, field, value)}
-                                        onRemove={(allocIdx) => removeDeptAllocation(setPersonnelCosts, personnelCosts, idx, allocIdx)}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </CollapsibleContent>
-                    <div className="mt-2 text-sm font-medium text-slate-700">
-                        Υποσύνολο: {formatCurrency(calculatePersonnelCostTotal())}
-                    </div>
-                </div>
-            </Collapsible>
+            <div className="space-y-6">
+                <PersonnelCostSection
+                    personnelCosts={personnelCosts} dailyMetrics={dailyMetrics} departments={departments} expandedSections={expandedSections} totalWorkingDays={totalWorkingDays} formatCurrency={formatCurrency} convertCostToDaily={convertCostToDaily} calculatePersonnelCostTotal={calculatePersonnelCostTotal} onToggleSection={toggleSection}
+                    onAddItem={() => addArrayItem(setPersonnelCosts, personnelCosts, { metric_id: '', description: '', calculated_amount: 0, frequency_type: 'monthly', department_allocations: [] })}
+                    onRemoveItem={(idx) => removeArrayItem(setPersonnelCosts, personnelCosts, idx)}
+                    onUpdateItem={(idx, field, value) => { const u = [...personnelCosts]; u[idx][field] = value; setPersonnelCosts(u); }}
+                    onAddDeptAlloc={(idx) => addDeptAllocation(setPersonnelCosts, personnelCosts, idx)}
+                    onUpdateDeptAlloc={(idx, allocIdx, field, value) => updateDeptAllocation(setPersonnelCosts, personnelCosts, idx, allocIdx, field, value)}
+                    onRemoveDeptAlloc={(idx, allocIdx) => removeDeptAllocation(setPersonnelCosts, personnelCosts, idx, allocIdx)}
+                />
+                <BomCostSection bomCosts={bomCosts} busStopTypes={busStopTypes} expandedSections={expandedSections} formatCurrency={formatCurrency} calculateBomTotal={calculateBomTotal} onToggleSection={toggleSection} onAddItem={() => addArrayItem(setBomCosts, bomCosts, { bus_stop_type_id: '', product_identifier: '', description: '', calculated_bom_cost: 0, quantity: 1 })} onRemoveItem={(idx) => removeArrayItem(setBomCosts, bomCosts, idx)} onUpdateItem={(idx, field, value) => updateArrayItem(setBomCosts, bomCosts, idx, field, value)} onBusStopTypeChange={handleBusStopTypeChange} />
+                <GenericCostSection title="Γενικά Έξοδα (Overhead Costs)" sectionKey="overhead" costArray={overheadCosts} departments={departments} expandedSections={expandedSections} totalWorkingDays={totalWorkingDays} formatCurrency={formatCurrency} convertCostToDaily={convertCostToDaily} calculateCostTotal={calculateCostTotal} onToggleSection={toggleSection} onAddItem={() => addArrayItem(setOverheadCosts, overheadCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] })} onRemoveItem={(idx) => removeArrayItem(setOverheadCosts, overheadCosts, idx)} onUpdateItem={(idx, field, value) => updateArrayItem(setOverheadCosts, overheadCosts, idx, field, value)} onAddDeptAlloc={(idx) => addDeptAllocation(setOverheadCosts, overheadCosts, idx)} onUpdateDeptAlloc={(idx, allocIdx, field, value) => updateDeptAllocation(setOverheadCosts, overheadCosts, idx, allocIdx, field, value)} onRemoveDeptAlloc={(idx, allocIdx) => removeDeptAllocation(setOverheadCosts, overheadCosts, idx, allocIdx)} />
+                <GenericCostSection title="Κόστη Συντήρησης (Maintenance Costs)" sectionKey="maintenance" costArray={maintenanceCosts} departments={departments} expandedSections={expandedSections} totalWorkingDays={totalWorkingDays} formatCurrency={formatCurrency} convertCostToDaily={convertCostToDaily} calculateCostTotal={calculateCostTotal} onToggleSection={toggleSection} onAddItem={() => addArrayItem(setMaintenanceCosts, maintenanceCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] })} onRemoveItem={(idx) => removeArrayItem(setMaintenanceCosts, maintenanceCosts, idx)} onUpdateItem={(idx, field, value) => updateArrayItem(setMaintenanceCosts, maintenanceCosts, idx, field, value)} onAddDeptAlloc={(idx) => addDeptAllocation(setMaintenanceCosts, maintenanceCosts, idx)} onUpdateDeptAlloc={(idx, allocIdx, field, value) => updateDeptAllocation(setMaintenanceCosts, maintenanceCosts, idx, allocIdx, field, value)} onRemoveDeptAlloc={(idx, allocIdx) => removeDeptAllocation(setMaintenanceCosts, maintenanceCosts, idx, allocIdx)} />
+                <InvestmentAmortizationSection investmentAmortization={investmentAmortization} departments={departments} expandedSections={expandedSections} totalWorkingDays={totalWorkingDays} formatCurrency={formatCurrency} calculateInvestmentTotal={calculateInvestmentTotal} onToggleSection={toggleSection} onAddItem={() => addArrayItem(setInvestmentAmortization, investmentAmortization, { description: '', total_investment_amount: 0, project_duration_months: 12, calculated_daily_cost: 0, department_allocations: [] })} onRemoveItem={(idx) => removeArrayItem(setInvestmentAmortization, investmentAmortization, idx)} onUpdateItem={(idx, field, value) => handleInvestmentChange(idx, field, value)} onAddDeptAlloc={(idx) => addDeptAllocation(setInvestmentAmortization, investmentAmortization, idx)} onUpdateDeptAlloc={(idx, allocIdx, field, value) => updateDeptAllocation(setInvestmentAmortization, investmentAmortization, idx, allocIdx, field, value)} onRemoveDeptAlloc={(idx, allocIdx) => removeDeptAllocation(setInvestmentAmortization, investmentAmortization, idx, allocIdx)} />
+            </div>
         );
     }
 
-    function renderBomCostSection() {
-        return (
-            <Collapsible open={expandedSections.bom} onOpenChange={() => toggleSection('bom')}>
-                <div>
-                    <div className="flex items-center justify-between mb-3">
-                        <CollapsibleTrigger asChild>
-                            <div className="flex items-center gap-2 cursor-pointer hover:text-blue-700 transition-colors">
-                                {expandedSections.bom ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                                <Label className="text-base font-semibold cursor-pointer">Κόστος Υλικών (Bill of Materials) - από Warehouse</Label>
-                            </div>
-                        </CollapsibleTrigger>
-                        <Button size="sm" variant="outline" onClick={() => addArrayItem(setBomCosts, bomCosts, {
-                            bus_stop_type_id: '',
-                            product_identifier: '',
-                            description: '',
-                            calculated_bom_cost: 0,
-                            quantity: 1
-                        })}>
-                            <Plus className="w-4 h-4 mr-1" />
-                            Προσθήκη
-                        </Button>
-                    </div>
-                    <CollapsibleContent>
-                        <div className="space-y-2">
-                            {bomCosts.map((item, idx) => (
-                                <div key={idx} className="p-3 bg-slate-50 rounded-lg space-y-2">
-                                    <div className="flex items-center gap-2">
-                                        <Select
-                                            value={item.bus_stop_type_id}
-                                            onValueChange={(value) => handleBusStopTypeChange(idx, value)}
-                                        >
-                                            <SelectTrigger className="w-64">
-                                                <SelectValue placeholder="Επιλέξτε Τύπο Στάσης" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {busStopTypes.map(type => (
-                                                    <SelectItem key={type.id} value={type.id}>
-                                                        {type.type_code} - {type.type_name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <Input
-                                            placeholder="Product ID"
-                                            value={item.product_identifier}
-                                            onChange={(e) => {
-                                                const updated = [...bomCosts];
-                                                updated[idx].product_identifier = e.target.value;
-                                                setBomCosts(updated);
-                                            }}
-                                            className="w-32"
-                                            disabled
-                                        />
-                                        <Input
-                                            placeholder="Περιγραφή"
-                                            value={item.description}
-                                            onChange={(e) => updateArrayItem(setBomCosts, bomCosts, idx, 'description', e.target.value)}
-                                            className="flex-1"
-                                        />
-                                        <Input
-                                            type="number"
-                                            placeholder="Ποσότητα"
-                                            value={item.quantity}
-                                            onChange={(e) => updateArrayItem(setBomCosts, bomCosts, idx, 'quantity', e.target.value)}
-                                            className="w-24"
-                                        />
-                                        <Input
-                                            type="number"
-                                            placeholder="Κόστος BOM"
-                                            value={item.calculated_bom_cost}
-                                            className="w-32 bg-blue-50"
-                                            disabled
-                                        />
-                                        <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            onClick={() => removeArrayItem(setBomCosts, bomCosts, idx)}
-                                        >
-                                            <Trash2 className="w-4 h-4 text-red-500" />
-                                        </Button>
-                                    </div>
-                                    <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
-                                        <strong>Υπολογισμός:</strong> {formatCurrency(item.calculated_bom_cost)} × {item.quantity} τεμάχια = {formatCurrency((parseFloat(item.calculated_bom_cost) || 0) * (parseFloat(item.quantity) || 1))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </CollapsibleContent>
-                    <div className="mt-2 text-sm font-medium text-slate-700">
-                        Σύνολο Υλικών: {formatCurrency(calculateBomTotal())}
-                    </div>
-                </div>
-            </Collapsible>
-        );
-    }
-
-    function renderInvestmentAmortizationSection() {
-        return (
-            <Collapsible open={expandedSections.investment} onOpenChange={() => toggleSection('investment')}>
-                <div>
-                    <div className="flex items-center justify-between mb-3">
-                        <CollapsibleTrigger asChild>
-                            <div className="flex items-center gap-2 cursor-pointer hover:text-purple-700 transition-colors">
-                                {expandedSections.investment ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                                <Label className="text-base font-semibold cursor-pointer">Απόσβεση Επενδύσεων (Investment Amortization)</Label>
-                            </div>
-                        </CollapsibleTrigger>
-                        <Button size="sm" variant="outline" onClick={() => addArrayItem(setInvestmentAmortization, investmentAmortization, {
-                            description: '',
-                            total_investment_amount: 0,
-                            project_duration_months: 12,
-                            calculated_daily_cost: 0,
-                            department_allocations: []
-                        })}>
-                            <Plus className="w-4 h-4 mr-1" />
-                            Προσθήκη
-                        </Button>
-                    </div>
-                    <CollapsibleContent>
-                        <div className="space-y-3">
-                            {investmentAmortization.map((item, idx) => (
-                                <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
-                                    <div className="flex items-start gap-2">
-                                        <Input placeholder="Περιγραφή" value={item.description} onChange={(e) => handleInvestmentChange(idx, 'description', e.target.value)} className="flex-1" />
-                                        <div className="space-y-1">
-                                            <Label className="text-xs">Συνολική Επένδυση</Label>
-                                            <Input type="number" placeholder="Συνολικό Ποσό" value={item.total_investment_amount} onChange={(e) => handleInvestmentChange(idx, 'total_investment_amount', e.target.value)} className="w-40" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label className="text-xs">Διάρκεια (μήνες)</Label>
-                                            <Input type="number" placeholder="Μήνες" value={item.project_duration_months} onChange={(e) => handleInvestmentChange(idx, 'project_duration_months', e.target.value)} className="w-32" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label className="text-xs">Ημερήσιο Κόστος</Label>
-                                            <Input type="number" value={item.calculated_daily_cost} className="w-32 bg-blue-50" disabled />
-                                        </div>
-                                        <Button size="icon" variant="ghost" onClick={() => removeArrayItem(setInvestmentAmortization, investmentAmortization, idx)}>
-                                            <Trash2 className="w-4 h-4 text-red-500" />
-                                        </Button>
-                                    </div>
-                                    <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
-                                        <strong>Ημερήσιο κόστος:</strong> {formatCurrency(item.calculated_daily_cost)}/ημέρα × {totalWorkingDays} ημέρες = {formatCurrency((parseFloat(item.calculated_daily_cost) || 0) * totalWorkingDays)}
-                                    </div>
-                                    <DeptAllocationRows
-                                        allocations={item.department_allocations}
-                                        departments={departments}
-                                        totalAmount={(parseFloat(item.calculated_daily_cost) || 0) * totalWorkingDays}
-                                        formatCurrency={formatCurrency}
-                                        onAdd={() => addDeptAllocation(setInvestmentAmortization, investmentAmortization, idx)}
-                                        onUpdate={(allocIdx, field, value) => updateDeptAllocation(setInvestmentAmortization, investmentAmortization, idx, allocIdx, field, value)}
-                                        onRemove={(allocIdx) => removeDeptAllocation(setInvestmentAmortization, investmentAmortization, idx, allocIdx)}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </CollapsibleContent>
-                    <div className="mt-2 text-sm font-medium text-slate-700">
-                        Υποσύνολο: {formatCurrency(calculateInvestmentTotal())}
-                    </div>
-                </div>
-            </Collapsible>
-        );
-    }
-
-    function renderCostSection(title, costArray, setter, sectionKey) {
-        return (
-            <Collapsible open={expandedSections[sectionKey]} onOpenChange={() => toggleSection(sectionKey)}>
-                <div>
-                    <div className="flex items-center justify-between mb-3">
-                        <CollapsibleTrigger asChild>
-                            <div className="flex items-center gap-2 cursor-pointer hover:text-blue-700 transition-colors">
-                                {expandedSections[sectionKey] ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                                <Label className="text-base font-semibold cursor-pointer">{title}</Label>
-                            </div>
-                        </CollapsibleTrigger>
-                        <Button size="sm" variant="outline" onClick={() => addArrayItem(setter, costArray, {
-                            description: '',
-                            amount: 0,
-                            frequency_type: 'monthly',
-                            department_allocations: []
-                        })}>
-                            <Plus className="w-4 h-4 mr-1" />
-                            Προσθήκη
-                        </Button>
-                    </div>
-                    <CollapsibleContent>
-                        <div className="space-y-3">
-                            {costArray.map((item, idx) => (
-                                <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
-                                    <div className="flex items-start gap-2">
-                                        <Input placeholder="Περιγραφή" value={item.description} onChange={(e) => updateArrayItem(setter, costArray, idx, 'description', e.target.value)} className="flex-1" />
-                                        <Input type="number" placeholder="Ποσό" value={item.amount} onChange={(e) => updateArrayItem(setter, costArray, idx, 'amount', e.target.value)} className="w-32" />
-                                        <Select value={item.frequency_type} onValueChange={(value) => updateArrayItem(setter, costArray, idx, 'frequency_type', value)}>
-                                            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="daily">Ημερήσιο</SelectItem>
-                                                <SelectItem value="per_production_day">Ανά Εργάσιμη</SelectItem>
-                                                <SelectItem value="monthly">Μηνιαίο</SelectItem>
-                                                <SelectItem value="yearly">Ετήσιο</SelectItem>
-                                                <SelectItem value="one_time">Εφάπαξ</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <Button size="icon" variant="ghost" onClick={() => removeArrayItem(setter, costArray, idx)}>
-                                            <Trash2 className="w-4 h-4 text-red-500" />
-                                        </Button>
-                                    </div>
-                                    <div className="text-xs text-slate-600 bg-blue-50 p-2 rounded">
-                                        <strong>Ημερήσιο κόστος:</strong> {formatCurrency(convertCostToDaily(item.amount, item.frequency_type))}/ημέρα × {totalWorkingDays} ημέρες = {formatCurrency(convertCostToDaily(item.amount, item.frequency_type) * totalWorkingDays)}
-                                    </div>
-                                    <DeptAllocationRows
-                                        allocations={item.department_allocations}
-                                        departments={departments}
-                                        totalAmount={convertCostToDaily(item.amount, item.frequency_type) * totalWorkingDays}
-                                        formatCurrency={formatCurrency}
-                                        onAdd={() => addDeptAllocation(setter, costArray, idx)}
-                                        onUpdate={(allocIdx, field, value) => updateDeptAllocation(setter, costArray, idx, allocIdx, field, value)}
-                                        onRemove={(allocIdx) => removeDeptAllocation(setter, costArray, idx, allocIdx)}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    </CollapsibleContent>
-                    <div className="mt-2 text-sm font-medium text-slate-700">
-                        Υποσύνολο: {formatCurrency(calculateCostTotal(costArray))}
-                    </div>
-                </div>
-            </Collapsible>
-        );
-    }
 }
