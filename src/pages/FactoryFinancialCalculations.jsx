@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Plus, Copy, Trash2, DollarSign, TrendingUp, Package, Calendar, Save, ChevronDown, ChevronRight } from 'lucide-react';
+import { Loader2, Plus, Copy, Trash2, DollarSign, TrendingUp, Package, Calendar, Save, ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { usePageAccess } from "@/components/lib/usePageAccess";
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -166,7 +166,8 @@ export default function FactoryFinancialCalculations() {
             return;
         }
 
-        if (!validateAllocations()) {
+        if (!validateAllAllocations()) {
+            toast.error('Όλα τα department allocations πρέπει να κάνουν 100%');
             return;
         }
 
@@ -203,8 +204,22 @@ export default function FactoryFinancialCalculations() {
         }
     };
 
-    const validateAllocations = () => {
-        const arrays = [
+    const getAllocationTotal = (allocations) => {
+        return (allocations || []).reduce((sum, a) => sum + (parseFloat(a.allocation_percent) || 0), 0);
+    };
+
+    const hasInvalidAllocation = (items) => {
+        if (!items || items.length === 0) return false;
+        return items.some(item => {
+            const allocations = item.department_allocations || [];
+            if (allocations.length === 0) return false;
+            const total = getAllocationTotal(allocations);
+            return total < 99.99 || total > 100.01;
+        });
+    };
+
+    const validateAllAllocations = () => {
+        const sections = [
             { data: personnelCosts, name: 'Personnel Costs' },
             { data: fixedCosts, name: 'Fixed Costs' },
             { data: overheadCosts, name: 'Overhead Costs' },
@@ -213,18 +228,11 @@ export default function FactoryFinancialCalculations() {
             { data: depreciationInvestments, name: 'Depreciation Investments' }
         ];
 
-        for (const { data, name } of arrays) {
-            for (const item of data) {
-                const allocations = item.department_allocations || [];
-                if (allocations.length === 0) continue;
-                const total = allocations.reduce((sum, a) => sum + (parseFloat(a.allocation_percent) || 0), 0);
-                if (Math.abs(total - 100) > 0.01) {
-                    toast.error('Το allocation πρέπει να είναι 100% σε όλα τα items');
-                    return false;
-                }
-            }
-        }
-        return true;
+        return sections.every(({ data }) => !hasInvalidAllocation(data));
+    };
+
+    const hasAnyInvalidAllocation = () => {
+        return !validateAllAllocations();
     };
 
     const handleClone = async () => {
@@ -1141,6 +1149,21 @@ export default function FactoryFinancialCalculations() {
                                 </Collapsible>
                             </CardContent>
                         </Card>
+
+                        {/* Allocation Validation Warning */}
+                        {hasAnyInvalidAllocation() && (
+                            <Card className="bg-red-50 border-red-300">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-start gap-3">
+                                        <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <h3 className="font-semibold text-red-900">Προσοχή</h3>
+                                            <p className="text-sm text-red-700 mt-1">Υπάρχουν allocations που δεν κάνουν 100%</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
 
                         {/* SECTION C - Summary */}
                         <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
