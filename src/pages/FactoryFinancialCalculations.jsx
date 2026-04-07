@@ -166,6 +166,10 @@ export default function FactoryFinancialCalculations() {
             return;
         }
 
+        if (!validateAllocations()) {
+            return;
+        }
+
         try {
             setIsSaving(true);
             
@@ -197,6 +201,30 @@ export default function FactoryFinancialCalculations() {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const validateAllocations = () => {
+        const arrays = [
+            { data: personnelCosts, name: 'Personnel Costs' },
+            { data: fixedCosts, name: 'Fixed Costs' },
+            { data: overheadCosts, name: 'Overhead Costs' },
+            { data: maintenanceCosts, name: 'Maintenance Costs' },
+            { data: investmentAmortization, name: 'Investment Amortization' },
+            { data: depreciationInvestments, name: 'Depreciation Investments' }
+        ];
+
+        for (const { data, name } of arrays) {
+            for (const item of data) {
+                const allocations = item.department_allocations || [];
+                if (allocations.length === 0) continue;
+                const total = allocations.reduce((sum, a) => sum + (parseFloat(a.allocation_percent) || 0), 0);
+                if (Math.abs(total - 100) > 0.01) {
+                    toast.error('Το allocation πρέπει να είναι 100% σε όλα τα items');
+                    return false;
+                }
+            }
+        }
+        return true;
     };
 
     const handleClone = async () => {
