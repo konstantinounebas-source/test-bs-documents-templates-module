@@ -1276,11 +1276,7 @@ CRITICAL SAFETY RULES:
       <input ref={fileInputRef} type="file" multiple accept="image/*,.pdf" className="hidden"
         onChange={e => { if (selBatch && e.target.files) { const files = Array.from(e.target.files); handleFiles(files); } e.target.value = ""; }}
       />
-      <button onClick={() => fileInputRef.current?.click()} disabled={step !== "file_upload" && !selBatch}
-        className="bg-slate-200 hover:bg-slate-300 disabled:opacity-40 text-slate-700 rounded-xl p-2 transition-colors flex-shrink-0"
-        title="Ανέβασμα αρχείου">
-        <Plus className="w-4 h-4" />
-      </button>
+
       <input ref={inputRef} type="text" value={userInput}
         onChange={e => setUserInput(e.target.value)}
         onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } }}
@@ -1752,13 +1748,14 @@ CRITICAL SAFETY RULES:
               <div className="flex-1" />
               <button 
                 onClick={() => setActiveUtility(activeUtility === "processing" ? null : "processing")}
-                className={`p-1 rounded transition-colors ${
+                className={`p-1 rounded transition-colors flex items-center gap-1 ${
                   activeUtility === "processing" 
                     ? "bg-blue-100 text-blue-600" 
                     : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
                 }`}
-                title="Processing"
+                title="Processing Queue"
               >
+                <Plus className="w-4 h-4" />
                 <Settings className="w-4 h-4" />
               </button>
               <button 
