@@ -7,11 +7,11 @@ export default function SplitLayoutWithChatbot({ children, departments }) {
   const [chatClosed, setChatClosed] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
 
-  // Initialize chatbot width to 1/3 of container on mount
+  // Initialize chatbot width to 2/5 of container on mount
   useEffect(() => {
     if (containerRef.current) {
       const containerWidth = containerRef.current.getBoundingClientRect().width;
-      setChatWidth(containerWidth / 3);
+      setChatWidth(containerWidth * 2 / 5);
     }
   }, []);
 
