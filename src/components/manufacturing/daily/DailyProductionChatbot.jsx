@@ -1252,7 +1252,7 @@ CRITICAL SAFETY RULES:
   );
 
   const renderChatInput = () => (
-    <div className="border-t bg-white p-2 flex gap-2 items-center flex-shrink-0"
+    <div className="border-t bg-white p-2 flex gap-2 items-start flex-shrink-0"
       onDragOver={e => { e.preventDefault(); e.stopPropagation(); if (selBatch) e.currentTarget.classList.add("bg-blue-50"); }}
       onDragLeave={e => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove("bg-blue-50"); }}
       onDrop={e => {
@@ -1266,14 +1266,23 @@ CRITICAL SAFETY RULES:
         onChange={e => { if (selBatch && e.target.files) { const files = Array.from(e.target.files); handleFiles(files); } e.target.value = ""; }}
       />
 
-      <input ref={inputRef} type="text" value={userInput}
+      <textarea ref={inputRef} value={userInput}
         onChange={e => setUserInput(e.target.value)}
         onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleUserMessage(); } }}
         placeholder="Γράψε μήνυμα..."
-        className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400 bg-slate-50"
+        className="flex-1 text-sm border border-slate-200 rounded-xl px-3 py-2 outline-none focus:border-blue-400 bg-slate-50 resize-none max-h-24 min-h-10"
+        rows={1}
+        style={{ 
+          overflowY: userInput.split('\n').length > 1 ? 'auto' : 'hidden',
+          height: 'auto'
+        }}
+        onInput={e => {
+          e.target.style.height = 'auto';
+          e.target.style.height = Math.min(e.target.scrollHeight, 96) + 'px';
+        }}
       />
       <button onClick={handleUserMessage} disabled={!userInput.trim()}
-        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl p-2 transition-colors flex-shrink-0">
+        className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white rounded-xl p-2 transition-colors flex-shrink-0 mt-1">
         <Send className="w-4 h-4" />
       </button>
     </div>
