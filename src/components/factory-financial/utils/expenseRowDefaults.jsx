@@ -12,11 +12,13 @@
  * @property {string} description - Cost description
  * @property {number} amount - Raw monetary amount
  * @property {string} frequency_type - "daily" | "monthly" | "yearly"
- * @property {number} calculated_daily_amount - Computed daily cost (read-only)
- * @property {string} category - "fixed" | "operational" | "other"
+ * @property {string} category - "fixed"|"operational"|"overhead"|"maintenance"|"personnel"|"bom"|"investment"|"other"
  * @property {boolean} is_default_row - System/default row flag
- * @property {boolean} is_locked_description - Prevents editing description
+ * @property {boolean} is_locked_description - Prevents editing description (system rows)
  * @property {Array} department_allocations - Department allocation list
+ * 
+ * NOTE: calculated_daily_amount is DISPLAY-ONLY (derived from amount + frequency_type)
+ * It is NOT persisted in the database and should never be stored.
  */
 
 // ============================================================
@@ -39,9 +41,18 @@ export const DEFAULT_FREQUENCY = FREQUENCY_TYPES.MONTHLY;
 // ============================================================
 // EXPENSE CATEGORY CONSTANTS
 // ============================================================
+/**
+ * All supported expense categories
+ * Used for context-aware normalization and section identification
+ */
 export const EXPENSE_CATEGORIES = {
   FIXED: 'fixed',
   OPERATIONAL: 'operational',
+  OVERHEAD: 'overhead',
+  MAINTENANCE: 'maintenance',
+  PERSONNEL: 'personnel',
+  BOM: 'bom',
+  INVESTMENT: 'investment',
   OTHER: 'other'
 };
 
@@ -192,21 +203,44 @@ export function initializeExpenseRows(mode = 'with_defaults') {
  * @param {Array} loadedRows - Rows loaded from database
  * @returns {Array} Rows with all fields properly initialized
  */
-export function normalizeLoadedExpenseRows(loadedRows) {
+/**
+ * Normalize loaded expense rows with context-aware category mapping
+ * Handles backward compatibility with old frequency types
+ * 
+ * @param {Array} loadedRows - Rows to normalize
+ * @param {string} contextCategory - Context category (fixed/operational/overhead/etc) for smart mapping
+ */
+export function normalizeLoadedExpenseRows(loadedRows, contextCategory = null) {
   if (!Array.isArray(loadedRows)) {
     return [];
   }
 
-  return loadedRows.map(row => ({
-    description: row.description || '',
-    amount: typeof row.amount === 'number' ? row.amount : 0,
-    frequency_type: row.frequency_type || DEFAULT_FREQUENCY,
-    calculated_daily_amount: typeof row.calculated_daily_amount === 'number' ? row.calculated_daily_amount : 0,
-    category: row.category || EXPENSE_CATEGORIES.OTHER,
-    is_default_row: row.is_default_row === true,
-    is_locked_description: row.is_locked_description === true,
-    department_allocations: Array.isArray(row.department_allocations) ? row.department_allocations : []
-  }));
+  return loadedRows.map(row => {
+    // Map old frequency types to new standardized ones
+    let frequencyType = row.frequency_type || DEFAULT_FREQUENCY;
+    if (frequencyType === 'per_production_day') {
+      frequencyType = 'daily'; // Legacy: treat per_production_day as daily
+    } else if (frequencyType === 'one_time') {
+      frequencyType = 'yearly'; // Legacy: treat one_time as yearly
+    }
+
+    // Smart category mapping based on context
+    let category = row.category || contextCategory || EXPENSE_CATEGORIES.OTHER;
+    if (!Object.values(EXPENSE_CATEGORIES).includes(category)) {
+      category = contextCategory || EXPENSE_CATEGORIES.OTHER;
+    }
+
+    return {
+      description: row.description || '',
+      amount: typeof row.amount === 'number' ? row.amount : 0,
+      frequency_type: frequencyType,
+      // Note: calculated_daily_amount is DISPLAY-ONLY, never persisted
+      category,
+      is_default_row: row.is_default_row === true,
+      is_locked_description: row.is_locked_description === true,
+      department_allocations: Array.isArray(row.department_allocations) ? row.department_allocations : []
+    };
+  });
 }
 
 /**

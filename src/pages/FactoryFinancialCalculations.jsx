@@ -23,8 +23,7 @@ import DepreciationModuleSection from "@/components/factory-financial/Depreciati
 import DepreciationRateCard from "@/components/factory-financial/DepreciationRateCard";
 import ValidationWarningCard from "@/components/factory-financial/ValidationWarningCard";
 import FactoryCostSectionsCard from "@/components/factory-financial/FactoryCostSectionsCard";
-import FixedCostsTableSection from "@/components/factory-financial/FixedCostsTableSection";
-import OperationalCostsTableSection from "@/components/factory-financial/OperationalCostsTableSection";
+import ExpenseTableSection from "@/components/factory-financial/ExpenseTableSection";
 import {
     getAllocationTotal,
     hasInvalidAllocation,
@@ -112,15 +111,15 @@ export default function FactoryFinancialCalculations() {
     const [estimatedRevenues, setEstimatedRevenues] = useState([]);
     const [additionalRevenues, setAdditionalRevenues] = useState([]);
     
-    // Collapsible sections state
+    // Collapsible sections state (keys must match section identifiers)
     const [expandedSections, setExpandedSections] = useState({
         fixedCosts: true,
-        operational: true,
-        personnel: true,
-        bom: true,
-        overhead: true,
-        investment: true,
-        maintenance: true
+        operationalCosts: true,
+        personnelCosts: true,
+        bomCosts: true,
+        overheadCosts: true,
+        investmentAmortization: true,
+        maintenanceCosts: true
     });
 
     useEffect(() => {
@@ -176,13 +175,13 @@ export default function FactoryFinancialCalculations() {
             
             setShelterRevenueItems(record.shelter_revenue_items || []);
             
-            setPersonnelCosts(normalizeLoadedExpenseRows(record.personnel_costs || []));
+            setPersonnelCosts(normalizeLoadedExpenseRows(record.personnel_costs || [], 'personnel'));
             setBomCosts(record.bill_of_materials_costs || []);
-            setFixedCosts(normalizeLoadedExpenseRows(record.fixed_costs && record.fixed_costs.length > 0 ? record.fixed_costs : DEFAULT_FIXED_COSTS));
-            setOperationalCosts(normalizeLoadedExpenseRows(record.operational_costs && record.operational_costs.length > 0 ? record.operational_costs : DEFAULT_OPERATIONAL_COSTS));
-            setOverheadCosts(normalizeLoadedExpenseRows(record.overhead_costs || []));
-            setInvestmentAmortization(normalizeLoadedExpenseRows(record.investment_amortization || []));
-            setMaintenanceCosts(normalizeLoadedExpenseRows(record.maintenance_costs || []));
+            setFixedCosts(normalizeLoadedExpenseRows(record.fixed_costs && record.fixed_costs.length > 0 ? record.fixed_costs : DEFAULT_FIXED_COSTS, 'fixed'));
+            setOperationalCosts(normalizeLoadedExpenseRows(record.operational_costs && record.operational_costs.length > 0 ? record.operational_costs : DEFAULT_OPERATIONAL_COSTS, 'operational'));
+            setOverheadCosts(normalizeLoadedExpenseRows(record.overhead_costs || [], 'overhead'));
+            setInvestmentAmortization(normalizeLoadedExpenseRows(record.investment_amortization || [], 'investment'));
+            setMaintenanceCosts(normalizeLoadedExpenseRows(record.maintenance_costs || [], 'maintenance'));
             
             setDepreciationInvestments(record.depreciation_module?.investments || []);
             setEstimatedRevenues(record.depreciation_module?.estimated_revenues || []);
@@ -583,9 +582,11 @@ export default function FactoryFinancialCalculations() {
 
                         {/* SECTION B - Costs */}
                          <div className="space-y-6">
-                             {/* Fixed Costs - Table Style */}
-                             <FixedCostsTableSection
-                                 fixedCosts={fixedCosts}
+                             {/* Fixed Costs */}
+                             <ExpenseTableSection
+                                 title="Σταθερά Κόστη (Fixed Costs)"
+                                 sectionKey="fixedCosts"
+                                 expenseItems={fixedCosts}
                                  departments={departments}
                                  expandedSections={expandedSections}
                                  totalWorkingDays={totalWorkingDays}
@@ -601,9 +602,11 @@ export default function FactoryFinancialCalculations() {
                                  onRemoveDeptAlloc={(idx, allocIdx) => setFixedCosts(prev => removeDeptAllocation(prev, idx, allocIdx))}
                              />
 
-                             {/* Operational Costs - Table Style */}
-                             <OperationalCostsTableSection
-                                 operationalCosts={operationalCosts}
+                             {/* Operational Costs */}
+                             <ExpenseTableSection
+                                 title="Λειτουργικά Κόστη (Operational Costs)"
+                                 sectionKey="operationalCosts"
+                                 expenseItems={operationalCosts}
                                  departments={departments}
                                  expandedSections={expandedSections}
                                  totalWorkingDays={totalWorkingDays}

@@ -67,12 +67,10 @@ export default function GenericCostSection({
                                     <Select value={item.frequency_type} onValueChange={(value) => onUpdateItem(idx, 'frequency_type', value)}>
                                         <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="daily">Ημερήσιο</SelectItem>
-                                            <SelectItem value="per_production_day">Ανά Εργάσιμη</SelectItem>
-                                            <SelectItem value="monthly">Μηνιαίο</SelectItem>
-                                            <SelectItem value="yearly">Ετήσιο</SelectItem>
-                                            <SelectItem value="one_time">Εφάπαξ</SelectItem>
-                                        </SelectContent>
+                                                <SelectItem value="daily">Ημερήσιο</SelectItem>
+                                                <SelectItem value="monthly">Μηνιαίο</SelectItem>
+                                                <SelectItem value="yearly">Ετήσιο</SelectItem>
+                                            </SelectContent>
                                     </Select>
                                     <Button size="icon" variant="ghost" onClick={() => onRemoveItem(idx)}>
                                         <Trash2 className="w-4 h-4 text-red-500" />
