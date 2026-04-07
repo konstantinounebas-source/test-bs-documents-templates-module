@@ -507,15 +507,7 @@ export default function FactoryFinancialCalculations() {
 
     // Calculations
     const calculateTotalIncome = () => {
-        const salesRevenue = salesRevenueItems.reduce((sum, item) => {
-            const qty = parseFloat(item.quantity_sold) || 0;
-            const price = parseFloat(item.unit_selling_price) || 0;
-            return sum + (qty * price);
-        }, 0);
-        const approved = approvedVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
-        const potential = potentialVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
-        const shelterRevenue = shelterRevenueItems.reduce((sum, item) => sum + getShelterRevenueTotal(item), 0);
-        return salesRevenue + parseFloat(contractAmount || 0) + approved + potential + shelterRevenue;
+        return shelterRevenueItems.reduce((sum, item) => sum + getShelterRevenueTotal(item), 0);
     };
 
     const calculatePersonnelCostTotal = () => {
