@@ -392,6 +392,51 @@ export default function FactoryFinancialCalculations() {
         }]);
     };
 
+    const addShelterRevenueItem = () => {
+        setShelterRevenueItems([...shelterRevenueItems, {
+            bus_shelter_type_id: '',
+            description: '',
+            contract_amount: 0,
+            amount_from_jv: 0,
+            approved_variations: [],
+            potential_variations: []
+        }]);
+    };
+
+    const updateShelterRevenueItem = (index, field, value) => {
+        const updated = [...shelterRevenueItems];
+        updated[index] = { ...updated[index], [field]: value };
+        setShelterRevenueItems(updated);
+    };
+
+    const addShelterApprovedVariation = (itemIndex) => {
+        const updated = [...shelterRevenueItems];
+        updated[itemIndex].approved_variations = [...updated[itemIndex].approved_variations, { description: '', amount: 0 }];
+        setShelterRevenueItems(updated);
+    };
+
+    const addShelterPotentialVariation = (itemIndex) => {
+        const updated = [...shelterRevenueItems];
+        updated[itemIndex].potential_variations = [...updated[itemIndex].potential_variations, { description: '', amount: 0 }];
+        setShelterRevenueItems(updated);
+    };
+
+    const updateShelterVariation = (itemIndex, variationType, variationIndex, field, value) => {
+        const updated = [...shelterRevenueItems];
+        updated[itemIndex][variationType][variationIndex] = { ...updated[itemIndex][variationType][variationIndex], [field]: value };
+        setShelterRevenueItems(updated);
+    };
+
+    const removeShelterRevenueItem = (index) => {
+        setShelterRevenueItems(shelterRevenueItems.filter((_, i) => i !== index));
+    };
+
+    const removeShelterVariation = (itemIndex, variationType, variationIndex) => {
+        const updated = [...shelterRevenueItems];
+        updated[itemIndex][variationType] = updated[itemIndex][variationType].filter((_, i) => i !== variationIndex);
+        setShelterRevenueItems(updated);
+    };
+
     const updateCostItem = (setter, currentArray, index, field, value) => {
         const updated = [...currentArray];
         updated[index] = { ...updated[index], [field]: value };
@@ -443,6 +488,23 @@ export default function FactoryFinancialCalculations() {
         }
     };
 
+    // Calculation helpers for shelter revenue items
+    const getApprovedVariationsTotal = (item) => {
+        return item.approved_variations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+    };
+
+    const getPotentialVariationsTotal = (item) => {
+        return item.potential_variations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+    };
+
+    const getShelterRevenueTotal = (item) => {
+        const contract = parseFloat(item.contract_amount) || 0;
+        const jv = parseFloat(item.amount_from_jv) || 0;
+        const approved = getApprovedVariationsTotal(item);
+        const potential = getPotentialVariationsTotal(item);
+        return contract + jv + approved + potential;
+    };
+
     // Calculations
     const calculateTotalIncome = () => {
         const salesRevenue = salesRevenueItems.reduce((sum, item) => {
@@ -452,7 +514,8 @@ export default function FactoryFinancialCalculations() {
         }, 0);
         const approved = approvedVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
         const potential = potentialVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
-        return salesRevenue + parseFloat(contractAmount || 0) + approved + potential;
+        const shelterRevenue = shelterRevenueItems.reduce((sum, item) => sum + getShelterRevenueTotal(item), 0);
+        return salesRevenue + parseFloat(contractAmount || 0) + approved + potential + shelterRevenue;
     };
 
     const calculatePersonnelCostTotal = () => {
