@@ -186,10 +186,11 @@ export default function DailyFormsTab({
               <div key={dept} className="flex flex-col items-center gap-1">
                 <button
                   onClick={() => setSelectedDept(dept)}
-                  className={`px-4 py-2.5 rounded text-base transition-colors flex flex-col items-center gap-1 font-medium min-w-max ${
+                  disabled={!hasBatch}
+                  className={`px-4 py-2.5 rounded text-base transition-colors flex flex-col items-center gap-1 font-medium min-w-max disabled:opacity-50 disabled:cursor-not-allowed ${
                     selectedDept === dept
                       ? "bg-blue-600 text-white"
-                      : "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300"
+                      : "bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-300 disabled:hover:bg-slate-100"
                   }`}
                 >
                   <span>{dept}</span>
