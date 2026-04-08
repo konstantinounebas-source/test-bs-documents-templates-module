@@ -186,7 +186,7 @@ export default function DailyRevenueSection({
                                       >
                                           <option value="">— Επιλέξτε στάση —</option>
                                           {normalizedShelterInstances && normalizedShelterInstances.map(instance => (
-                                              <option key={instance.id} value={instance.id}>
+                                              <option key={instance.id} value={String(instance.id)}>
                                                   {instance.name}
                                               </option>
                                           ))}
