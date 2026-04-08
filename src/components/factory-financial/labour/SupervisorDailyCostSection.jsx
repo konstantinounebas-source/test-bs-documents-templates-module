@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import {
   getActiveSupervisors,
   getPersonById,
@@ -20,10 +20,11 @@ export default function SupervisorDailyCostSection({
   formatCurrency, 
   onUpdate 
 }) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const activeSupervisors = getActiveSupervisors(labourPersonnel);
   
   const handleAdd = () => {
-    onUpdate([...supervisorAllocations, createNewSupervisorAllocation()]);
+    onUpdate([createNewSupervisorAllocation(), ...supervisorAllocations]);
   };
 
   const handleChange = (idx, field, value) => {
@@ -40,21 +41,32 @@ export default function SupervisorDailyCostSection({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 cursor-pointer hover:bg-slate-50" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold text-slate-800">
-            Β. Ημερήσιο Κόστος Επιστάρχη
-          </CardTitle>
-          <Button size="sm" variant="outline" onClick={handleAdd} className="gap-1 text-xs">
+          <div className="flex items-center gap-2">
+            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            <CardTitle className="text-base font-semibold text-slate-800">
+              Β. Ημερήσιο Κόστος Επιστάρχη ({supervisorAllocations.length})
+            </CardTitle>
+          </div>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAdd();
+            }} 
+            className="gap-1 text-xs"
+          >
             <Plus className="w-3 h-3" />
             Προσθήκη Κατανομής
           </Button>
         </div>
-        <p className="text-xs text-slate-500 mt-1">
+        {isExpanded && <p className="text-xs text-slate-500 mt-1">
           Επιλέξτε επιστάρχες και ορίστε τον παράγοντα κατανομής τους.
-        </p>
+        </p>}
       </CardHeader>
-      <CardContent className="space-y-3">
+      {isExpanded && <CardContent className="space-y-3">
         {supervisorAllocations.length === 0 ? (
           <div className="text-center py-8 text-sm text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
             Δεν υπάρχουν κατανομές. Πατήστε "Προσθήκη Κατανομής" για να ξεκινήσετε.
@@ -144,7 +156,7 @@ export default function SupervisorDailyCostSection({
             </div>
           </>
         )}
-      </CardContent>
+      </CardContent>}
     </Card>
   );
 }

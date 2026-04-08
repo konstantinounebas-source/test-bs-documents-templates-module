@@ -1,20 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { calculatePersonnelDailyCost, calculatePersonnelHourlyCost, createNewPerson } from '../utils/labourModuleCalculations';
+import { toast } from 'sonner';
 
 export default function PersonnelMasterSection({ personnel, formatCurrency, onUpdate }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const handleAdd = () => {
-    onUpdate([...personnel, createNewPerson()]);
+    const newPerson = createNewPerson();
+    const hasDuplicate = personnel.some(p => p.person_name && p.person_name === newPerson.person_name);
+    if (hasDuplicate) {
+      toast.error('Το όνομα υπάρχει ήδη');
+      return;
+    }
+    onUpdate([newPerson, ...personnel]);
   };
 
   const handlePersonChange = (idx, field, value) => {
     const updated = [...personnel];
     updated[idx] = { ...updated[idx], [field]: value };
+    
+    // Check for duplicate person_name when changing name
+    if (field === 'person_name') {
+      const isDuplicate = updated.some((p, i) => i !== idx && p.person_name && p.person_name === value);
+      if (isDuplicate) {
+        toast.error('Το όνομα υπάρχει ήδη');
+        return;
+      }
+    }
     
     // Auto-calculate daily and hourly cost when relevant fields change
     if (['employment_type', 'monthly_salary', 'daily_rate', 'day_factor', 'hour_factor'].includes(field)) {
@@ -31,18 +49,29 @@ export default function PersonnelMasterSection({ personnel, formatCurrency, onUp
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 cursor-pointer hover:bg-slate-50" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold text-slate-800">
-            Α. Μαζί Προσωπικού
-          </CardTitle>
-          <Button size="sm" variant="outline" onClick={handleAdd} className="gap-1 text-xs">
+          <div className="flex items-center gap-2">
+            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            <CardTitle className="text-base font-semibold text-slate-800">
+              Α. Μαζί Προσωπικού ({personnel.length})
+            </CardTitle>
+          </div>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAdd();
+            }} 
+            className="gap-1 text-xs"
+          >
             <Plus className="w-3 h-3" />
             Προσθήκη Ατόμου
           </Button>
         </div>
       </CardHeader>
-      <CardContent>
+      {isExpanded && <CardContent>
         {personnel.length === 0 ? (
           <div className="text-center py-8 text-sm text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
             Δεν υπάρχει προσωπικό. Πατήστε "Προσθήκη Ατόμου" για να ξεκινήσετε.
@@ -180,7 +209,7 @@ export default function PersonnelMasterSection({ personnel, formatCurrency, onUp
             })}
           </div>
         )}
-      </CardContent>
+      </CardContent>}
     </Card>
   );
 }

@@ -36,7 +36,7 @@ function DepartmentBlock({
   const handleAddTechnician = () => {
     const updated = {
       ...block,
-      technician_rows: [...(block.technician_rows || []), createNewTechnicianRow()],
+      technician_rows: [createNewTechnicianRow(), ...(block.technician_rows || [])],
     };
     onUpdate(blockIdx, updated);
   };
@@ -180,8 +180,10 @@ export default function DepartmentTechnicianHourlyCostSection({
   formatCurrency, 
   onUpdate 
 }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const handleAdd = () => {
-    onUpdate([...departmentAssignments, createNewDepartmentBlock()]);
+    onUpdate([createNewDepartmentBlock(), ...departmentAssignments]);
   };
 
   const handleUpdateBlock = (blockIdx, updatedBlock) => {
@@ -196,21 +198,32 @@ export default function DepartmentTechnicianHourlyCostSection({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 cursor-pointer hover:bg-slate-50" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold text-slate-800">
-            Γ. Ημερομήνιο Τεχνικό Κόστος ανά Τμήμα
-          </CardTitle>
-          <Button size="sm" variant="outline" onClick={handleAdd} className="gap-1 text-xs">
+          <div className="flex items-center gap-2">
+            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            <CardTitle className="text-base font-semibold text-slate-800">
+              Γ. Ημερομήνιο Τεχνικό Κόστος ανά Τμήμα ({departmentAssignments.length})
+            </CardTitle>
+          </div>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAdd();
+            }} 
+            className="gap-1 text-xs"
+          >
             <Plus className="w-3 h-3" />
             Προσθήκη Τμήματος
           </Button>
         </div>
-        <p className="text-xs text-slate-500 mt-1">
+        {isExpanded && <p className="text-xs text-slate-500 mt-1">
           Ορίστε τεχνικούς ανά τμήμα και υπολογίστε το μέσο ωριαίο κόστος.
-        </p>
+        </p>}
       </CardHeader>
-      <CardContent className="space-y-3">
+      {isExpanded && <CardContent className="space-y-3">
         {departmentAssignments.length === 0 ? (
           <div className="text-center py-8 text-sm text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
             Δεν υπάρχουν τμήματα. Πατήστε "Προσθήκη Τμήματος" για να ξεκινήσετε.
@@ -231,7 +244,7 @@ export default function DepartmentTechnicianHourlyCostSection({
             ))}
           </div>
         )}
-      </CardContent>
+      </CardContent>}
     </Card>
   );
 }
