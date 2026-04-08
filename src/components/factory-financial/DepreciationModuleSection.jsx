@@ -128,21 +128,20 @@ function EstRevenuesSubsection({
                             <div>
                                 <Label className="text-xs">Shelter Instance</Label>
                                 <select
-                                    value={item.shelter_instance_id || ''}
+                                    value={String(item.shelter_instance_id || '')}
                                     onChange={(e) => {
                                         const value = e.target.value;
-                                        onUpdate(idx, 'shelter_instance_id', value);
-                                        // Auto-fill unit_revenue
-                                        if (value) {
-                                            const revenueValue = getShelterRevenueValue(value);
-                                            onUpdate(idx, 'unit_revenue', revenueValue);
-                                        }
+                                        const revenueValue = value ? getShelterRevenueValue(value) : 0;
+                                        onUpdate(idx, 'shelter_instance_bundle', {
+                                            shelter_instance_id: value,
+                                            unit_revenue: revenueValue
+                                        });
                                     }}
                                     className="w-full h-9 px-3 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
                                 >
                                     <option value="">— Επιλέξτε Shelter —</option>
                                     {(shelterInstances || []).map(shelter => (
-                                        <option key={shelter.id} value={shelter.id}>
+                                        <option key={shelter.id} value={String(shelter.id)}>
                                             {shelter.name || shelter.id}
                                         </option>
                                     ))}

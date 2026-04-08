@@ -507,8 +507,11 @@ export default function FactoryFinancialCalculations() {
     const updateEstimatedRevenue = (idx, field, value) => {
         const updated = [...estimatedRevenues];
         
-        if (field === 'shelter_instance_id') {
-            updated[idx].shelter_instance_id = value;
+        if (field === 'shelter_instance_bundle') {
+            // Single atomic update for shelter instance + unit_revenue
+            updated[idx].shelter_instance_id = value.shelter_instance_id || '';
+            updated[idx].unit_revenue = parseFloat(value.unit_revenue) || 0;
+            updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (parseFloat(value.unit_revenue) || 0);
         } else if (field === 'pending_quantity' || field === 'unit_revenue') {
             updated[idx][field] = parseFloat(value) || 0;
             updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (parseFloat(updated[idx].unit_revenue) || 0);
@@ -867,7 +870,11 @@ export default function FactoryFinancialCalculations() {
                                     onRemoveDeptAllocDepr={(idx, allocIdx) => setDepreciationInvestments(prev => removeDeptAllocation(prev, idx, allocIdx))}
                                     onUpdateDeptAllocDepr={(idx, allocIdx, field, value) => setDepreciationInvestments(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
                                     onAddEstRevenue={() => setEstimatedRevenues(prev => addArrayItem(prev, {
-                                        shelter_instance_id: '', description: '', pending_quantity: 0, unit_revenue: 0, total_revenue: 0
+                                        shelter_instance_id: '',
+                                        description: '',
+                                        pending_quantity: 0,
+                                        unit_revenue: 0,
+                                        total_revenue: 0
                                     }))}
                                     onRemoveEstRevenue={(idx) => setEstimatedRevenues(prev => removeArrayItem(prev, idx))}
                                     onUpdateEstRevenue={(idx, field, value) => updateEstimatedRevenue(idx, field, value)}
