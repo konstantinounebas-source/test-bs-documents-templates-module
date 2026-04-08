@@ -2,9 +2,21 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
 
+/**
+ * OperationalPeriodAnalysisSection
+ * 
+ * Calculates financial analysis ONLY from daily operational data within the selected period.
+ * 
+ * FORMULAS:
+ * 1. Period Revenue = sum(daily_revenue_entries[].total_revenue) where date in [startDate, endDate]
+ * 2. Operational Costs = sum((fixedCost + operationalCost) for daily_costs_records in period)
+ * 3. Labour Costs = sum(supervisorCost from daily_costs_records) + sum(calculated_total_cost from daily_department_hours_entries)
+ * 4. Result Before Depreciation = Revenue - Operational Costs - Labour Costs
+ * 5. Final Result = Result Before Depreciation - Depreciation Charge
+ */
 export default function OperationalPeriodAnalysisSection({
-    startDate,
-    endDate,
+    startDate = '',
+    endDate = '',
     dailyRevenueEntries = [],
     dailyCostsRecords = [],
     dailyDepartmentHoursEntries = [],
@@ -12,64 +24,75 @@ export default function OperationalPeriodAnalysisSection({
     formatCurrency = (val) => `€${parseFloat(val || 0).toFixed(2)}`
 }) {
     const analysis = useMemo(() => {
-        // Filter entries by period
+        if (!startDate || !endDate) {
+            return { hasData: false };
+        }
+
+        // Filter 1: Revenue entries in period
         const revenueInPeriod = (dailyRevenueEntries || []).filter(entry => {
-            const entryDate = entry.date;
+            const entryDate = entry?.date || '';
             return entryDate >= startDate && entryDate <= endDate;
         });
 
+        // Filter 2: Cost records in period
         const costsInPeriod = (dailyCostsRecords || []).filter(record => {
-            const recordDate = record.date;
+            const recordDate = record?.date || '';
             return recordDate >= startDate && recordDate <= endDate;
         });
 
+        // Filter 3: Department hours entries in period
         const hoursInPeriod = (dailyDepartmentHoursEntries || []).filter(entry => {
-            const entryDate = entry.date;
+            const entryDate = entry?.date || '';
             return entryDate >= startDate && entryDate <= endDate;
         });
 
-        // Calculate Period Revenue
+        // FORMULA 1: Period Revenue = sum(total_revenue)
         const periodRevenue = revenueInPeriod.reduce((sum, entry) => {
             return sum + (parseFloat(entry.total_revenue) || 0);
         }, 0);
 
-        // Calculate Operational Costs (Fixed + Operational from daily records)
+        // FORMULA 2: Operational Costs = sum(fixedCost + operationalCost)
         const operationalCosts = costsInPeriod.reduce((sum, record) => {
             const fixed = parseFloat(record.fixedCost) || 0;
             const operational = parseFloat(record.operationalCost) || 0;
             return sum + fixed + operational;
         }, 0);
 
-        // Calculate Labour Costs (Supervisor + Department Hours)
+        // FORMULA 3a: Supervisor Costs = sum(supervisorCost)
         const supervisorCosts = costsInPeriod.reduce((sum, record) => {
             return sum + (parseFloat(record.supervisorCost) || 0);
         }, 0);
 
+        // FORMULA 3b: Department Hours Costs = sum(calculated_total_cost)
         const departmentHoursCosts = hoursInPeriod.reduce((sum, entry) => {
             return sum + (parseFloat(entry.calculated_total_cost) || 0);
         }, 0);
 
+        // FORMULA 3: Total Labour Costs
         const totalLabourCosts = supervisorCosts + departmentHoursCosts;
 
-        // Calculate Result Before Depreciation
+        // FORMULA 4: Result Before Depreciation
         const resultBeforeDepreciation = periodRevenue - operationalCosts - totalLabourCosts;
 
-        // Depreciation Charge (from parameter)
+        // FORMULA 5: Depreciation Charge
         const depreciationCharge = parseFloat(depreciationInvestmentTotal) || 0;
 
-        // Final Result After Depreciation
+        // FORMULA 6: Final Result After Depreciation
         const finalResult = resultBeforeDepreciation - depreciationCharge;
+
+        // Check if there is any data
+        const hasData = revenueInPeriod.length > 0 || costsInPeriod.length > 0 || hoursInPeriod.length > 0;
 
         return {
             periodRevenue,
             operationalCosts,
-            totalLabourCosts,
             supervisorCosts,
             departmentHoursCosts,
+            totalLabourCosts,
             resultBeforeDepreciation,
             depreciationCharge,
             finalResult,
-            hasData: revenueInPeriod.length > 0 || costsInPeriod.length > 0 || hoursInPeriod.length > 0
+            hasData
         };
     }, [startDate, endDate, dailyRevenueEntries, dailyCostsRecords, dailyDepartmentHoursEntries, depreciationInvestmentTotal]);
 
@@ -82,7 +105,7 @@ export default function OperationalPeriodAnalysisSection({
                 <CardContent>
                     <div className="flex items-center gap-3 text-slate-600">
                         <AlertCircle className="w-4 h-4" />
-                        <p className="text-sm">Δεν υπάρχουν δεδομένα για τα Daily Operations στην περίοδο {startDate} έως {endDate}</p>
+                        <p className="text-sm">Δεν υπάρχουν δεδομένα Daily Operations στην περίοδο {startDate} έως {endDate}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -133,7 +156,7 @@ export default function OperationalPeriodAnalysisSection({
                     <div className="flex justify-between items-center py-2 border-b border-slate-100 bg-slate-50 px-2 rounded">
                         <span className="text-sm font-semibold text-slate-700">Αποτέλεσμα προ Απόσβεσης</span>
                         <span className={`text-sm font-bold ${analysis.resultBeforeDepreciation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {analysis.resultBeforeDepreciation >= 0 ? '+' : '–'} {formatCurrency(Math.abs(analysis.resultBeforeDepreciation))}
+                            {analysis.resultBeforeDepreciation >= 0 ? '' : '– '}{formatCurrency(Math.abs(analysis.resultBeforeDepreciation))}
                         </span>
                     </div>
 
@@ -147,7 +170,7 @@ export default function OperationalPeriodAnalysisSection({
                     <div className="flex justify-between items-center py-3 bg-blue-50 px-3 rounded-lg mt-2">
                         <span className="text-sm font-bold text-slate-900">Τελικό Αποτέλεσμα μετά Απόσβεση</span>
                         <span className={`text-lg font-bold ${analysis.finalResult >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {analysis.finalResult >= 0 ? '+' : '–'} {formatCurrency(Math.abs(analysis.finalResult))}
+                            {analysis.finalResult >= 0 ? '' : '– '}{formatCurrency(Math.abs(analysis.finalResult))}
                         </span>
                     </div>
                 </div>

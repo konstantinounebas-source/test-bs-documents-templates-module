@@ -6,6 +6,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OverviewFilterBar from './OverviewFilterBar';
 import SimulationCard from './SimulationCard';
+import OperationalPeriodAnalysisSection from './OperationalPeriodAnalysisSection';
 import {
     buildOverviewPeriodSummary,
     getAvailableYearsFromEntries,
@@ -171,40 +172,6 @@ export default function FinancialOverviewTab({
          [effective.revenue, depreciationFactor]
      );
 
-     // Calculate actual operational costs from daily_costs_records
-     const actualOperationalCosts = useMemo(() => {
-         if (!Array.isArray(dailyCostsRecords)) return 0;
-         return dailyCostsRecords
-             .filter(record => record.date >= startDate && record.date <= endDate)
-             .reduce((sum, record) => {
-                 const fixed = parseFloat(record.fixedCost) || 0;
-                 const operational = parseFloat(record.operationalCost) || 0;
-                 return sum + fixed + operational;
-             }, 0);
-     }, [dailyCostsRecords, startDate, endDate]);
-
-     // Calculate actual labour costs (supervisor + department hours)
-     const actualLabourCosts = useMemo(() => {
-         let supervisor = 0;
-         let departmentHours = 0;
-
-         // Supervisor costs from daily_costs_records
-         if (Array.isArray(dailyCostsRecords)) {
-             supervisor = dailyCostsRecords
-                 .filter(record => record.date >= startDate && record.date <= endDate)
-                 .reduce((sum, record) => sum + (parseFloat(record.supervisorCost) || 0), 0);
-         }
-
-         // Department hours costs
-         if (Array.isArray(dailyDepartmentHoursEntries)) {
-             departmentHours = dailyDepartmentHoursEntries
-                 .filter(entry => entry.date >= startDate && entry.date <= endDate)
-                 .reduce((sum, entry) => sum + (parseFloat(entry.calculated_total_cost) || 0), 0);
-         }
-
-         return supervisor + departmentHours;
-     }, [dailyCostsRecords, dailyDepartmentHoursEntries, startDate, endDate]);
-
     // Static planning calculations (never touched by period filter or simulation)
     const netBeforeDepr   = (totalIncome || 0) - (totalCosts || 0);
     const totalCostWithDepr = (totalCosts || 0) + (depreciationCost || 0);
@@ -298,22 +265,17 @@ export default function FinancialOverviewTab({
                 )}
             </div>
 
-            {/* 5. Operational Financial Analysis + Cost Breakdown */}
+            {/* 5. Operational Period Financial Analysis + Cost Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                 <CardHeader className="pb-2">
-                     <CardTitle className="text-base font-semibold text-slate-800">Χρηματοοικονομική Ανάλυση (Λειτουργική Περίοδος)</CardTitle>
-                 </CardHeader>
-                 <CardContent className="space-y-1">
-                     <AnalysisRow label="Έσοδα Περιόδου"                     value={fmt(effective.revenue)} />
-                     <AnalysisRow label="Κόστος Λειτουργίας (Σχεδιασμένο)"    value={`− ${fmt(actualOperationalCosts)}`} />
-                     <AnalysisRow label="Κόστος Εργατικών Περιόδου"          value={`− ${fmt(actualLabourCosts)}`} />
-                     <AnalysisRow label="Αποτέλεσμα προ Απόσβεσης"           value={fmt((effective.revenue) - (actualOperationalCosts) - (actualLabourCosts))} highlight />
-                      <div className="border-t border-slate-200 my-2" />
-                      <AnalysisRow label="Επιβάρυνση Απόσβεσης"                value={`− ${fmt(periodDepreciationCharge)}`} />
-                      <AnalysisRow label="Τελικό Αποτέλεσμα μετά Απόσβεση"   value={fmt((effective.revenue) - (actualOperationalCosts) - (actualLabourCosts) - (periodDepreciationCharge))} highlight />
-                 </CardContent>
-                </Card>
+                <OperationalPeriodAnalysisSection
+                    startDate={startDate}
+                    endDate={endDate}
+                    dailyRevenueEntries={safeRev}
+                    dailyCostsRecords={dailyCostsRecords}
+                    dailyDepartmentHoursEntries={safeHours}
+                    depreciationInvestmentTotal={depreciationCost}
+                    formatCurrency={fmt}
+                />
 
                 {/* 6. Cost Breakdown + Legacy Personnel info */}
                 <div className="space-y-3">
