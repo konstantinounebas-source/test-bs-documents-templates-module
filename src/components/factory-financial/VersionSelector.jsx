@@ -37,8 +37,8 @@ export default function VersionSelector({ financialRecords, selectedRecord, tota
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="flex items-center gap-4">
-                    <div className="flex-1">
+                <div className="grid grid-cols-4 gap-4">
+                    <div className="col-span-2">
                         <Label>Έκδοση Δεδομένων</Label>
                         <Select
                             value={selectedRecord?.id || ''}
@@ -61,13 +61,13 @@ export default function VersionSelector({ financialRecords, selectedRecord, tota
                     </div>
                     {selectedRecord && (
                         <>
-                            <div className="space-y-1">
+                            <div>
                                 <Label className="text-xs text-slate-500">Περίοδος</Label>
                                 <div className="text-sm font-medium">
                                     {new Date(selectedRecord.start_date).toLocaleDateString('el-GR')} - {new Date(selectedRecord.end_date).toLocaleDateString('el-GR')}
                                 </div>
                             </div>
-                            <div className="space-y-1">
+                            <div>
                                 <Label className="text-xs text-slate-500">Εργάσιμες Ημέρες</Label>
                                 <div className="text-sm font-medium">{totalWorkingDays}</div>
                             </div>

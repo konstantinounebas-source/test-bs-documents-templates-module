@@ -620,18 +620,6 @@ export default function FactoryFinancialCalculations() {
 
                 {selectedRecord && (
                     <>
-                        {/* Period Settings - always visible */}
-                        <PeriodSettingsCard
-                            totalWorkingDays={totalWorkingDays}
-                            avgWorkingDaysPerMonth={avgWorkingDaysPerMonth}
-                            avgWorkingDaysPerYear={avgWorkingDaysPerYear}
-                            onUpdate={(field, value) => {
-                                if (field === 'totalWorkingDays') setTotalWorkingDays(value);
-                                else if (field === 'avgWorkingDaysPerMonth') setAvgWorkingDaysPerMonth(value);
-                                else if (field === 'avgWorkingDaysPerYear') setAvgWorkingDaysPerYear(value);
-                            }}
-                        />
-
                         {/* Tab Layout */}
                         <Tabs defaultValue="overview" className="w-full">
                             <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-slate-100 p-1 rounded-xl mb-2">
