@@ -38,6 +38,12 @@ export default function ExpenseTableSection({
     hideAddButton = false,     // Option to hide "Add" button (for predefined rows)
 }) {
     const [expandedItems, setExpandedItems] = useState({});
+
+    // Calculate total daily cost for all items
+    const totalDailyCost = expenseItems.reduce((sum, item) => {
+        const dailyAmount = convertCostToDaily(item.amount, item.frequency_type, 22, 260, totalWorkingDays, item.conversion_factor);
+        return sum + dailyAmount;
+    }, 0);
     return (
         <Collapsible open={expandedSections[sectionKey]} onOpenChange={() => onToggleSection(sectionKey)}>
             <Card className="border border-slate-200 bg-white">
@@ -52,8 +58,10 @@ export default function ExpenseTableSection({
                                 )}
                                 <CardTitle>{title}</CardTitle>
                             </div>
-                            <div className="text-sm text-slate-600 font-medium">
-                                Σύνολο: {formatCurrency(calculateCostTotal())}
+                            <div className="flex items-center gap-4">
+                                <div className="text-sm text-slate-600 font-medium">
+                                    Σύνολο ανά ημέρα: {formatCurrency(totalDailyCost)}
+                                </div>
                             </div>
                         </div>
                     </CardHeader>
