@@ -742,6 +742,9 @@ export default function FactoryFinancialCalculations() {
                                     dailyProductionEntries={dailyProductionEntries}
                                     dailyRevenueEntries={dailyRevenueEntries}
                                     dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+                                    dailyCostsRecords={dailyCostsRecords}
+                                    startDate={currentData?.start_date || ''}
+                                    endDate={currentData?.end_date || ''}
                                     labourResources={labourResources}
                                     departmentLabourHours={departmentLabourHours}
                                     costBreakdown={[
