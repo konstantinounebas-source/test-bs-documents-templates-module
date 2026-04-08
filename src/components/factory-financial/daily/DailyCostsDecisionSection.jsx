@@ -134,7 +134,7 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
                                             </span>
                                             {record.hasSupervisorCosts && formatCurrency && (
                                                 <span className="text-xs text-purple-700 font-medium">
-                                                    {formatCurrency(record.supervisorCost)}
+                                                    {formatCurrency(totalDailyCost)}
                                                 </span>
                                             )}
                                         </div>
