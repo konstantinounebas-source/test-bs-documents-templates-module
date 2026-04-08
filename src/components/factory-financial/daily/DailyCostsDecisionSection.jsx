@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Plus, Trash2, DollarSign } from 'lucide-react';
+import { calculateSupervisorAllocatedDailyCost, calculateTotalSupervisorDailyCost } from '../utils/labourModuleCalculations';
 
 export default function DailyCostsDecisionSection({ selectedDate, supervisorDailyAllocations, labourPersonnel, formatCurrency, onSave = () => {} }) {
     const [fixedCosts, setFixedCosts] = useState(false);
@@ -11,10 +12,7 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
 
     const getSupervisorTotalCost = () => {
         if (!supervisorCosts || !supervisorDailyAllocations || !labourPersonnel) return 0;
-        return supervisorDailyAllocations.reduce((sum, alloc) => {
-            const person = labourPersonnel.find(p => p.id === alloc.personnel_id);
-            return sum + (person?.daily_cost || 0);
-        }, 0);
+        return calculateTotalSupervisorDailyCost(supervisorDailyAllocations, labourPersonnel);
     };
 
     const handleAddRecord = () => {
