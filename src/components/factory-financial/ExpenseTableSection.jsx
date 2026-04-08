@@ -63,13 +63,14 @@ export default function ExpenseTableSection({
                         {/* Table Section */}
                         <div className="border-t border-slate-200">
                             {/* Table Header */}
-                            <div className="bg-slate-100 grid grid-cols-12 gap-2 p-3 text-xs font-semibold text-slate-700 border-b border-slate-300">
-                                <div className="col-span-3">Περιγραφή</div>
-                                <div className="col-span-2">Ποσό</div>
-                                <div className="col-span-2">Συχνότητα</div>
-                                <div className="col-span-3">Ημερήσιο Ποσό</div>
-                                <div className="col-span-2 text-right">Ενέργειες</div>
-                            </div>
+                             <div className="bg-slate-100 grid grid-cols-14 gap-2 p-3 text-xs font-semibold text-slate-700 border-b border-slate-300">
+                                 <div className="col-span-2">Περιγραφή</div>
+                                 <div className="col-span-1">Ποσό</div>
+                                 <div className="col-span-2">Συχνότητα</div>
+                                 <div className="col-span-3">Ημερήσιο Ποσό</div>
+                                 <div className="col-span-4">Σχόλια</div>
+                                 <div className="col-span-2 text-right">Ενέργειες</div>
+                             </div>
 
                             {/* Table Body */}
                             <div className="divide-y divide-slate-200">
@@ -79,46 +80,52 @@ export default function ExpenseTableSection({
 
                                     return (
                                         <div key={idx}>
-                                            {/* Main Row */}
-                                            <div className="grid grid-cols-12 gap-2 p-3 items-center bg-white hover:bg-slate-50 transition-colors border-b border-slate-100">
-                                                <div className="col-span-3 relative">
-                                                    <Input
-                                                        placeholder="π.χ. Ενοίκιο"
-                                                        value={item.description}
-                                                        onChange={(e) => onUpdateItem(idx, 'description', e.target.value)}
-                                                        disabled={item.is_locked_description}
-                                                        className="col-span-3 h-8"
-                                                    />
-                                                    {item.is_locked_description && (
-                                                        <Lock className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                                    )}
-                                                </div>
-                                                <Input
-                                                    type="number"
-                                                    placeholder="0.00"
-                                                    value={item.amount || ''}
-                                                    onChange={(e) => onUpdateItem(idx, 'amount', parseFloat(e.target.value) || 0)}
-                                                    className="col-span-2 h-8"
-                                                />
-                                                <Select
-                                                    value={item.frequency_type}
-                                                    onValueChange={(value) => onUpdateItem(idx, 'frequency_type', value)}
-                                                >
-                                                    <SelectTrigger className="col-span-2 h-8">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="daily">Ημερήσιο</SelectItem>
-                                                        <SelectItem value="monthly">Μηνιαίο</SelectItem>
-                                                        <SelectItem value="yearly">Ετήσιο</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <div className="col-span-3 text-xs bg-blue-50 p-2 rounded border border-blue-200">
-                                                    <span className="font-medium">{formatCurrency(dailyAmount)}</span>/ημέρα
-                                                    <br />
-                                                    <span className="text-slate-500 text-xs">× {totalWorkingDays}d = <span className="font-semibold text-slate-700">{formatCurrency(periodTotal)}</span></span>
-                                                </div>
-                                                <div className="col-span-2 flex justify-end gap-1">
+                                             {/* Main Row */}
+                                             <div className="grid grid-cols-14 gap-2 p-3 items-center bg-white hover:bg-slate-50 transition-colors border-b border-slate-100">
+                                                 <div className="col-span-2 relative">
+                                                     <Input
+                                                         placeholder="π.χ. Ενοίκιο"
+                                                         value={item.description}
+                                                         onChange={(e) => onUpdateItem(idx, 'description', e.target.value)}
+                                                         disabled={item.is_locked_description}
+                                                         className="h-8"
+                                                     />
+                                                     {item.is_locked_description && (
+                                                         <Lock className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                                     )}
+                                                 </div>
+                                                 <Input
+                                                     type="number"
+                                                     placeholder="0.00"
+                                                     value={item.amount || ''}
+                                                     onChange={(e) => onUpdateItem(idx, 'amount', parseFloat(e.target.value) || 0)}
+                                                     className="col-span-1 h-8"
+                                                 />
+                                                 <Select
+                                                     value={item.frequency_type}
+                                                     onValueChange={(value) => onUpdateItem(idx, 'frequency_type', value)}
+                                                 >
+                                                     <SelectTrigger className="col-span-2 h-8">
+                                                         <SelectValue />
+                                                     </SelectTrigger>
+                                                     <SelectContent>
+                                                         <SelectItem value="daily">Ημερήσιο</SelectItem>
+                                                         <SelectItem value="monthly">Μηνιαίο</SelectItem>
+                                                         <SelectItem value="yearly">Ετήσιο</SelectItem>
+                                                     </SelectContent>
+                                                 </Select>
+                                                 <div className="col-span-3 text-xs bg-blue-50 p-2 rounded border border-blue-200">
+                                                     <span className="font-medium">{formatCurrency(dailyAmount)}</span>/ημέρα
+                                                     <br />
+                                                     <span className="text-slate-500 text-xs">× {totalWorkingDays}d = <span className="font-semibold text-slate-700">{formatCurrency(periodTotal)}</span></span>
+                                                 </div>
+                                                 <Input
+                                                     placeholder="π.χ. Κατά έξη μηνών"
+                                                     value={item.notes || ''}
+                                                     onChange={(e) => onUpdateItem(idx, 'notes', e.target.value)}
+                                                     className="col-span-4 h-8"
+                                                 />
+                                                 <div className="col-span-2 flex justify-end gap-1">
                                                     <Button
                                                         size="icon"
                                                         variant="ghost"
