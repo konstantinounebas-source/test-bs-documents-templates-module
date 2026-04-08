@@ -118,22 +118,6 @@ export default function DailyDataHistoryTab({
                 <p className="text-sm text-slate-500">Πλήρες ιστορικό όλων των ημερήσιων εγγραφών, ταξινομημένο από νεότερο προς παλαιότερο.</p>
             </div>
 
-            {/* Production History */}
-            <SectionTable
-                title="Ιστορικό Παραγωγής"
-                icon={Package}
-                color="blue"
-                emptyMsg="Δεν υπάρχουν εγγραφές παραγωγής."
-                rows={dailyProductionEntries}
-                columns={[
-                    { key: 'date', label: 'Ημερομηνία' },
-                    { key: 'bus_stop_type_id', label: 'Τύπος Στάσης', render: r => getBusStopTypeName(r.bus_stop_type_id) },
-                    { key: 'label', label: 'Περιγραφή', render: r => r.product_label || r.label || '—' },
-                    { key: 'quantity', label: 'Ποσότητα', render: r => parseFloat(r.quantity || 0).toFixed(0) },
-                    { key: 'notes', label: 'Σημειώσεις', render: r => r.notes || '—' },
-                ]}
-            />
-
             {/* Revenue History */}
             <SectionTable
                 title="Ιστορικό Εσόδων"
