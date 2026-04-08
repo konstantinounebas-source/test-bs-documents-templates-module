@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Plus, Copy, Save } from 'lucide-react';
 import { usePageAccess } from "@/components/lib/usePageAccess";
 import { toast } from 'sonner';
@@ -17,13 +18,13 @@ import {
 import VersionSelector from "@/components/factory-financial/VersionSelector";
 import PeriodSettingsCard from "@/components/factory-financial/PeriodSettingsCard";
 import ShelterRevenueSection from "@/components/factory-financial/ShelterRevenueSection";
-import SummarySection from "@/components/factory-financial/SummarySection";
 import DepartmentSummarySection from "@/components/factory-financial/DepartmentSummarySection";
 import DepreciationModuleSection from "@/components/factory-financial/DepreciationModuleSection";
 import DepreciationRateCard from "@/components/factory-financial/DepreciationRateCard";
 import ValidationWarningCard from "@/components/factory-financial/ValidationWarningCard";
 import FactoryCostSectionsCard from "@/components/factory-financial/FactoryCostSectionsCard";
 import ExpenseTableSection from "@/components/factory-financial/ExpenseTableSection";
+import FinancialOverviewTab from "@/components/factory-financial/FinancialOverviewTab";
 import {
     getAllocationTotal,
     hasInvalidAllocation,
@@ -541,7 +542,7 @@ export default function FactoryFinancialCalculations() {
 
                 {selectedRecord && (
                     <>
-                        {/* Period Settings */}
+                        {/* Period Settings - always visible */}
                         <PeriodSettingsCard
                             totalWorkingDays={totalWorkingDays}
                             avgWorkingDaysPerMonth={avgWorkingDaysPerMonth}
@@ -553,181 +554,222 @@ export default function FactoryFinancialCalculations() {
                             }}
                         />
 
-                        {/* SECTION A - Income */}
-                        <ShelterRevenueSection
-                            shelterRevenueItems={shelterRevenueItems}
-                            busStopTypes={busStopTypes}
-                            formatCurrency={formatCurrency}
-                            getVariationsTotal={getVariationsTotal}
-                            getShelterRevenueTotal={getShelterRevenueTotal}
-                            calculateTotalIncome={calculateTotalIncome}
-                            onAddItem={() => addArrayItem(setShelterRevenueItems, shelterRevenueItems, {
-                                bus_shelter_type_id: '',
-                                description: '',
-                                contract_amount: 0,
-                                amount_from_jv: 0,
-                                approved_variations: [],
-                                potential_variations: []
-                            })}
-                            onRemoveItem={(idx) => removeArrayItem(setShelterRevenueItems, shelterRevenueItems, idx)}
-                            onUpdateItem={(idx, field, value) => updateShelterRevenueItem(idx, field, value)}
-                            onUpdateVariation={(itemIdx, varType, varIdx, field, value) => updateShelterVariation(itemIdx, varType, varIdx, field, value)}
-                            onRemoveVariation={(itemIdx, varType, varIdx) => removeShelterVariation(itemIdx, varType, varIdx)}
-                            onAddVariation={(itemIdx, varType) => {
-                                const updated = [...shelterRevenueItems];
-                                updated[itemIdx][varType] = [...updated[itemIdx][varType], { description: '', amount: 0 }];
-                                setShelterRevenueItems(updated);
-                            }}
-                        />
+                        {/* Tab Layout */}
+                        <Tabs defaultValue="overview" className="w-full">
+                            <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-slate-100 p-1 rounded-xl mb-2">
+                                {[
+                                    { value: 'overview', label: 'Επισκόπηση' },
+                                    { value: 'revenue', label: 'Έσοδα' },
+                                    { value: 'fixed', label: 'Σταθερά Κόστη' },
+                                    { value: 'operational', label: 'Λειτουργικά Κόστη' },
+                                    { value: 'other', label: 'Λοιπά Κόστη' },
+                                    { value: 'depreciation', label: 'Αποσβέσεις' },
+                                    { value: 'department', label: 'Ανά Τμήμα' },
+                                ].map(tab => (
+                                    <TabsTrigger
+                                        key={tab.value}
+                                        value={tab.value}
+                                        className="flex-1 min-w-[100px] text-xs font-semibold data-[state=active]:bg-white data-[state=active]:shadow-sm rounded-lg"
+                                    >
+                                        {tab.label}
+                                    </TabsTrigger>
+                                ))}
+                            </TabsList>
 
-                        {/* SECTION B - Costs */}
-                         <div className="space-y-6">
-                             {/* Fixed Costs */}
-                             <ExpenseTableSection
-                                 title="Σταθερά Κόστη (Fixed Costs)"
-                                 sectionKey="fixedCosts"
-                                 expenseItems={fixedCosts}
-                                 departments={departments}
-                                 expandedSections={expandedSections}
-                                 totalWorkingDays={totalWorkingDays}
-                                 formatCurrency={formatCurrency}
-                                 convertCostToDaily={(amount, freq) => convertCostToDaily(amount, freq, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays)}
-                                 calculateCostTotal={() => calculateCostTotal(fixedCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear)}
-                                 onToggleSection={toggleSection}
-                                 onAddItem={() => setFixedCosts(prev => addArrayItem(prev, { description: '', amount: 0, frequency_type: 'monthly', category: 'fixed', department_allocations: [] }))}
-                                 onRemoveItem={(idx) => setFixedCosts(prev => removeArrayItem(prev, idx))}
-                                 onUpdateItem={(idx, field, value) => setFixedCosts(prev => updateArrayItem(prev, idx, field, value))}
-                                 onAddDeptAlloc={(idx) => setFixedCosts(prev => addDeptAllocation(prev, idx))}
-                                 onUpdateDeptAlloc={(idx, allocIdx, field, value) => setFixedCosts(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
-                                 onRemoveDeptAlloc={(idx, allocIdx) => setFixedCosts(prev => removeDeptAllocation(prev, idx, allocIdx))}
-                             />
+                            {/* OVERVIEW TAB */}
+                            <TabsContent value="overview" className="mt-4">
+                                <FinancialOverviewTab
+                                    totalIncome={calculateTotalIncome()}
+                                    totalCosts={getCalculateTotalCosts()}
+                                    depreciationCost={getCalculateDepreciationInvestmentsTotal()}
+                                    formatCurrency={formatCurrency}
+                                    hasInvalidAllocations={!validateAllAllocations()}
+                                    costBreakdown={[
+                                        { label: 'Κόστη Προσωπικού', value: getCalculatePersonnelCostTotal() },
+                                        { label: 'BOM (Υλικά)', value: getCalculateBomTotal() },
+                                        { label: 'Σταθερά Κόστη', value: getCalculateCostTotal(fixedCosts) },
+                                        { label: 'Λειτουργικά Κόστη', value: getCalculateCostTotal(operationalCosts) },
+                                        { label: 'Γενικά Έξοδα', value: getCalculateCostTotal(overheadCosts) },
+                                        { label: 'Κόστη Συντήρησης', value: getCalculateCostTotal(maintenanceCosts) },
+                                        { label: 'Απόσβεση Επενδύσεων', value: getCalculateInvestmentTotal() },
+                                    ]}
+                                />
+                            </TabsContent>
 
-                             {/* Operational Costs */}
-                             <ExpenseTableSection
-                                 title="Λειτουργικά Κόστη (Operational Costs)"
-                                 sectionKey="operationalCosts"
-                                 expenseItems={operationalCosts}
-                                 departments={departments}
-                                 expandedSections={expandedSections}
-                                 totalWorkingDays={totalWorkingDays}
-                                 formatCurrency={formatCurrency}
-                                 convertCostToDaily={(amount, freq) => convertCostToDaily(amount, freq, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays)}
-                                 calculateCostTotal={() => calculateCostTotal(operationalCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear)}
-                                 onToggleSection={toggleSection}
-                                 onAddItem={() => setOperationalCosts(prev => addArrayItem(prev, { description: '', amount: 0, frequency_type: 'monthly', category: 'operational', department_allocations: [] }))}
-                                 onRemoveItem={(idx) => setOperationalCosts(prev => removeArrayItem(prev, idx))}
-                                 onUpdateItem={(idx, field, value) => setOperationalCosts(prev => updateArrayItem(prev, idx, field, value))}
-                                 onAddDeptAlloc={(idx) => setOperationalCosts(prev => addDeptAllocation(prev, idx))}
-                                 onUpdateDeptAlloc={(idx, allocIdx, field, value) => setOperationalCosts(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
-                                 onRemoveDeptAlloc={(idx, allocIdx) => setOperationalCosts(prev => removeDeptAllocation(prev, idx, allocIdx))}
-                             />
+                            {/* REVENUE TAB */}
+                            <TabsContent value="revenue" className="mt-4">
+                                <ShelterRevenueSection
+                                    shelterRevenueItems={shelterRevenueItems}
+                                    busStopTypes={busStopTypes}
+                                    formatCurrency={formatCurrency}
+                                    getVariationsTotal={getVariationsTotal}
+                                    getShelterRevenueTotal={getShelterRevenueTotal}
+                                    calculateTotalIncome={calculateTotalIncome}
+                                    onAddItem={() => addArrayItem(setShelterRevenueItems, shelterRevenueItems, {
+                                        bus_shelter_type_id: '',
+                                        description: '',
+                                        contract_amount: 0,
+                                        amount_from_jv: 0,
+                                        approved_variations: [],
+                                        potential_variations: []
+                                    })}
+                                    onRemoveItem={(idx) => removeArrayItem(setShelterRevenueItems, shelterRevenueItems, idx)}
+                                    onUpdateItem={(idx, field, value) => updateShelterRevenueItem(idx, field, value)}
+                                    onUpdateVariation={(itemIdx, varType, varIdx, field, value) => updateShelterVariation(itemIdx, varType, varIdx, field, value)}
+                                    onRemoveVariation={(itemIdx, varType, varIdx) => removeShelterVariation(itemIdx, varType, varIdx)}
+                                    onAddVariation={(itemIdx, varType) => {
+                                        const updated = [...shelterRevenueItems];
+                                        updated[itemIdx][varType] = [...updated[itemIdx][varType], { description: '', amount: 0 }];
+                                        setShelterRevenueItems(updated);
+                                    }}
+                                />
+                            </TabsContent>
 
-                             {/* Other Costs - Using FactoryCostSectionsCard */}
-                             <FactoryCostSectionsCard
-                                 personnelCosts={personnelCosts}
-                                 dailyMetrics={dailyMetrics}
-                                 bomCosts={bomCosts}
-                                 busStopTypes={busStopTypes}
-                                 overheadCosts={overheadCosts}
-                                 maintenanceCosts={maintenanceCosts}
-                                 investmentAmortization={investmentAmortization}
-                                 departments={departments}
-                                 expandedSections={expandedSections}
-                                 totalWorkingDays={totalWorkingDays}
-                                 formatCurrency={formatCurrency}
-                                 convertCostToDaily={getConvertCostToDaily}
-                                 calculatePersonnelCostTotal={getCalculatePersonnelCostTotal}
-                                 calculateBomTotal={getCalculateBomTotal}
-                                 calculateCostTotal={getCalculateCostTotal}
-                                 calculateInvestmentTotal={getCalculateInvestmentTotal}
-                                 toggleSection={toggleSection}
-                                 onAddPersonnel={() => setPersonnelCosts(addArrayItem(personnelCosts, { metric_id: '', description: '', calculated_amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
-                                 onRemovePersonnel={(idx) => setPersonnelCosts(removeArrayItem(personnelCosts, idx))}
-                                 onUpdatePersonnel={(idx, field, value) => setPersonnelCosts(updateArrayItem(personnelCosts, idx, field, value))}
-                                 onAddPersonnelDeptAlloc={(idx) => setPersonnelCosts(addDeptAllocation(personnelCosts, idx))}
-                                 onUpdatePersonnelDeptAlloc={(idx, allocIdx, field, value) => setPersonnelCosts(updateDeptAllocation(personnelCosts, idx, allocIdx, field, value))}
-                                 onRemovePersonnelDeptAlloc={(idx, allocIdx) => setPersonnelCosts(removeDeptAllocation(personnelCosts, idx, allocIdx))}
-                                 onAddBom={() => setBomCosts(addArrayItem(bomCosts, { bus_stop_type_id: '', product_identifier: '', description: '', calculated_bom_cost: 0, quantity: 1 }))}
-                                 onRemoveBom={(idx) => setBomCosts(removeArrayItem(bomCosts, idx))}
-                                 onUpdateBom={(idx, field, value) => setBomCosts(updateArrayItem(bomCosts, idx, field, value))}
-                                 onBusStopTypeChange={handleBusStopTypeChange}
-                                 onAddOverhead={() => setOverheadCosts(addArrayItem(overheadCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
-                                 onRemoveOverhead={(idx) => setOverheadCosts(removeArrayItem(overheadCosts, idx))}
-                                 onUpdateOverhead={(idx, field, value) => setOverheadCosts(updateArrayItem(overheadCosts, idx, field, value))}
-                                 onAddOverheadDeptAlloc={(idx) => setOverheadCosts(addDeptAllocation(overheadCosts, idx))}
-                                 onUpdateOverheadDeptAlloc={(idx, allocIdx, field, value) => setOverheadCosts(updateDeptAllocation(overheadCosts, idx, allocIdx, field, value))}
-                                 onRemoveOverheadDeptAlloc={(idx, allocIdx) => setOverheadCosts(removeDeptAllocation(overheadCosts, idx, allocIdx))}
-                                 onAddMaintenance={() => setMaintenanceCosts(addArrayItem(maintenanceCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
-                                 onRemoveMaintenance={(idx) => setMaintenanceCosts(removeArrayItem(maintenanceCosts, idx))}
-                                 onUpdateMaintenance={(idx, field, value) => setMaintenanceCosts(updateArrayItem(maintenanceCosts, idx, field, value))}
-                                 onAddMaintenanceDeptAlloc={(idx) => setMaintenanceCosts(addDeptAllocation(maintenanceCosts, idx))}
-                                 onUpdateMaintenanceDeptAlloc={(idx, allocIdx, field, value) => setMaintenanceCosts(updateDeptAllocation(maintenanceCosts, idx, allocIdx, field, value))}
-                                 onRemoveMaintenanceDeptAlloc={(idx, allocIdx) => setMaintenanceCosts(removeDeptAllocation(maintenanceCosts, idx, allocIdx))}
-                                 onAddInvestment={() => setInvestmentAmortization(addArrayItem(investmentAmortization, { description: '', total_investment_amount: 0, project_duration_months: 12, calculated_daily_cost: 0, department_allocations: [] }))}
-                                 onRemoveInvestment={(idx) => setInvestmentAmortization(removeArrayItem(investmentAmortization, idx))}
-                                 onUpdateInvestment={handleInvestmentChange}
-                                 onAddInvestmentDeptAlloc={(idx) => setInvestmentAmortization(addDeptAllocation(investmentAmortization, idx))}
-                                 onUpdateInvestmentDeptAlloc={(idx, allocIdx, field, value) => setInvestmentAmortization(updateDeptAllocation(investmentAmortization, idx, allocIdx, field, value))}
-                                 onRemoveInvestmentDeptAlloc={(idx, allocIdx) => setInvestmentAmortization(removeDeptAllocation(investmentAmortization, idx, allocIdx))}
-                             />
-                         </div>
+                            {/* FIXED COSTS TAB */}
+                            <TabsContent value="fixed" className="mt-4">
+                                <ExpenseTableSection
+                                    title="Σταθερά Κόστη (Fixed Costs)"
+                                    sectionKey="fixedCosts"
+                                    expenseItems={fixedCosts}
+                                    departments={departments}
+                                    expandedSections={expandedSections}
+                                    totalWorkingDays={totalWorkingDays}
+                                    formatCurrency={formatCurrency}
+                                    convertCostToDaily={(amount, freq) => convertCostToDaily(amount, freq, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays)}
+                                    calculateCostTotal={() => calculateCostTotal(fixedCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear)}
+                                    onToggleSection={toggleSection}
+                                    onAddItem={() => setFixedCosts(prev => addArrayItem(prev, { description: '', amount: 0, frequency_type: 'monthly', category: 'fixed', department_allocations: [] }))}
+                                    onRemoveItem={(idx) => setFixedCosts(prev => removeArrayItem(prev, idx))}
+                                    onUpdateItem={(idx, field, value) => setFixedCosts(prev => updateArrayItem(prev, idx, field, value))}
+                                    onAddDeptAlloc={(idx) => setFixedCosts(prev => addDeptAllocation(prev, idx))}
+                                    onUpdateDeptAlloc={(idx, allocIdx, field, value) => setFixedCosts(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
+                                    onRemoveDeptAlloc={(idx, allocIdx) => setFixedCosts(prev => removeDeptAllocation(prev, idx, allocIdx))}
+                                />
+                            </TabsContent>
 
-                        {/* Allocation Validation Warning */}
-                         {!validateAllAllocations() && <ValidationWarningCard />}
+                            {/* OPERATIONAL COSTS TAB */}
+                            <TabsContent value="operational" className="mt-4">
+                                <ExpenseTableSection
+                                    title="Λειτουργικά Κόστη (Operational Costs)"
+                                    sectionKey="operationalCosts"
+                                    expenseItems={operationalCosts}
+                                    departments={departments}
+                                    expandedSections={expandedSections}
+                                    totalWorkingDays={totalWorkingDays}
+                                    formatCurrency={formatCurrency}
+                                    convertCostToDaily={(amount, freq) => convertCostToDaily(amount, freq, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays)}
+                                    calculateCostTotal={() => calculateCostTotal(operationalCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear)}
+                                    onToggleSection={toggleSection}
+                                    onAddItem={() => setOperationalCosts(prev => addArrayItem(prev, { description: '', amount: 0, frequency_type: 'monthly', category: 'operational', department_allocations: [] }))}
+                                    onRemoveItem={(idx) => setOperationalCosts(prev => removeArrayItem(prev, idx))}
+                                    onUpdateItem={(idx, field, value) => setOperationalCosts(prev => updateArrayItem(prev, idx, field, value))}
+                                    onAddDeptAlloc={(idx) => setOperationalCosts(prev => addDeptAllocation(prev, idx))}
+                                    onUpdateDeptAlloc={(idx, allocIdx, field, value) => setOperationalCosts(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
+                                    onRemoveDeptAlloc={(idx, allocIdx) => setOperationalCosts(prev => removeDeptAllocation(prev, idx, allocIdx))}
+                                />
+                            </TabsContent>
 
-                         {/* SECTION C - Summary */}
-                         <SummarySection
-                             totalIncome={calculateTotalIncome()}
-                             totalCosts={getCalculateTotalCosts()}
-                             formatCurrency={formatCurrency}
-                         />
+                            {/* OTHER COSTS TAB */}
+                            <TabsContent value="other" className="mt-4">
+                                {!validateAllAllocations() && <div className="mb-4"><ValidationWarningCard /></div>}
+                                <FactoryCostSectionsCard
+                                    personnelCosts={personnelCosts}
+                                    dailyMetrics={dailyMetrics}
+                                    bomCosts={bomCosts}
+                                    busStopTypes={busStopTypes}
+                                    overheadCosts={overheadCosts}
+                                    maintenanceCosts={maintenanceCosts}
+                                    investmentAmortization={investmentAmortization}
+                                    departments={departments}
+                                    expandedSections={expandedSections}
+                                    totalWorkingDays={totalWorkingDays}
+                                    formatCurrency={formatCurrency}
+                                    convertCostToDaily={getConvertCostToDaily}
+                                    calculatePersonnelCostTotal={getCalculatePersonnelCostTotal}
+                                    calculateBomTotal={getCalculateBomTotal}
+                                    calculateCostTotal={getCalculateCostTotal}
+                                    calculateInvestmentTotal={getCalculateInvestmentTotal}
+                                    toggleSection={toggleSection}
+                                    onAddPersonnel={() => setPersonnelCosts(addArrayItem(personnelCosts, { metric_id: '', description: '', calculated_amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                                    onRemovePersonnel={(idx) => setPersonnelCosts(removeArrayItem(personnelCosts, idx))}
+                                    onUpdatePersonnel={(idx, field, value) => setPersonnelCosts(updateArrayItem(personnelCosts, idx, field, value))}
+                                    onAddPersonnelDeptAlloc={(idx) => setPersonnelCosts(addDeptAllocation(personnelCosts, idx))}
+                                    onUpdatePersonnelDeptAlloc={(idx, allocIdx, field, value) => setPersonnelCosts(updateDeptAllocation(personnelCosts, idx, allocIdx, field, value))}
+                                    onRemovePersonnelDeptAlloc={(idx, allocIdx) => setPersonnelCosts(removeDeptAllocation(personnelCosts, idx, allocIdx))}
+                                    onAddBom={() => setBomCosts(addArrayItem(bomCosts, { bus_stop_type_id: '', product_identifier: '', description: '', calculated_bom_cost: 0, quantity: 1 }))}
+                                    onRemoveBom={(idx) => setBomCosts(removeArrayItem(bomCosts, idx))}
+                                    onUpdateBom={(idx, field, value) => setBomCosts(updateArrayItem(bomCosts, idx, field, value))}
+                                    onBusStopTypeChange={handleBusStopTypeChange}
+                                    onAddOverhead={() => setOverheadCosts(addArrayItem(overheadCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                                    onRemoveOverhead={(idx) => setOverheadCosts(removeArrayItem(overheadCosts, idx))}
+                                    onUpdateOverhead={(idx, field, value) => setOverheadCosts(updateArrayItem(overheadCosts, idx, field, value))}
+                                    onAddOverheadDeptAlloc={(idx) => setOverheadCosts(addDeptAllocation(overheadCosts, idx))}
+                                    onUpdateOverheadDeptAlloc={(idx, allocIdx, field, value) => setOverheadCosts(updateDeptAllocation(overheadCosts, idx, allocIdx, field, value))}
+                                    onRemoveOverheadDeptAlloc={(idx, allocIdx) => setOverheadCosts(removeDeptAllocation(overheadCosts, idx, allocIdx))}
+                                    onAddMaintenance={() => setMaintenanceCosts(addArrayItem(maintenanceCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                                    onRemoveMaintenance={(idx) => setMaintenanceCosts(removeArrayItem(maintenanceCosts, idx))}
+                                    onUpdateMaintenance={(idx, field, value) => setMaintenanceCosts(updateArrayItem(maintenanceCosts, idx, field, value))}
+                                    onAddMaintenanceDeptAlloc={(idx) => setMaintenanceCosts(addDeptAllocation(maintenanceCosts, idx))}
+                                    onUpdateMaintenanceDeptAlloc={(idx, allocIdx, field, value) => setMaintenanceCosts(updateDeptAllocation(maintenanceCosts, idx, allocIdx, field, value))}
+                                    onRemoveMaintenanceDeptAlloc={(idx, allocIdx) => setMaintenanceCosts(removeDeptAllocation(maintenanceCosts, idx, allocIdx))}
+                                    onAddInvestment={() => setInvestmentAmortization(addArrayItem(investmentAmortization, { description: '', total_investment_amount: 0, project_duration_months: 12, calculated_daily_cost: 0, department_allocations: [] }))}
+                                    onRemoveInvestment={(idx) => setInvestmentAmortization(removeArrayItem(investmentAmortization, idx))}
+                                    onUpdateInvestment={handleInvestmentChange}
+                                    onAddInvestmentDeptAlloc={(idx) => setInvestmentAmortization(addDeptAllocation(investmentAmortization, idx))}
+                                    onUpdateInvestmentDeptAlloc={(idx, allocIdx, field, value) => setInvestmentAmortization(updateDeptAllocation(investmentAmortization, idx, allocIdx, field, value))}
+                                    onRemoveInvestmentDeptAlloc={(idx, allocIdx) => setInvestmentAmortization(removeDeptAllocation(investmentAmortization, idx, allocIdx))}
+                                />
+                            </TabsContent>
 
-                         {/* SECTION D - Department Summary */}
-                         <DepartmentSummarySection
-                             summary={getCalculateDepartmentSummary()}
-                             formatCurrency={formatCurrency}
-                         />
+                            {/* DEPRECIATION TAB */}
+                            <TabsContent value="depreciation" className="mt-4 space-y-6">
+                                <DepreciationModuleSection
+                                    depreciationInvestments={depreciationInvestments}
+                                    estimatedRevenues={estimatedRevenues}
+                                    additionalRevenues={additionalRevenues}
+                                    departments={departments}
+                                    busStopTypes={busStopTypes}
+                                    formatCurrency={formatCurrency}
+                                    getAllocationTotal={getAllocationTotal}
+                                    getDeptName={getDeptName}
+                                    calculateDepreciationInvestmentsTotal={getCalculateDepreciationInvestmentsTotal}
+                                    calculateEstimatedRevenuesTotal={getCalculateEstimatedRevenuesTotal}
+                                    calculateAdditionalRevenuesTotal={getCalculateAdditionalRevenuesTotal}
+                                    onAddDeprecInv={() => setDepreciationInvestments(addArrayItem(depreciationInvestments, {
+                                        description: '', category: 'materials', total_amount: 0, department_allocations: []
+                                    }))}
+                                    onRemoveDeprecInv={(idx) => setDepreciationInvestments(removeArrayItem(depreciationInvestments, idx))}
+                                    onUpdateDeprecInv={(idx, field, value) => setDepreciationInvestments(updateArrayItem(depreciationInvestments, idx, field, value))}
+                                    onAddDeptAllocDepr={(idx) => setDepreciationInvestments(addDeptAllocation(depreciationInvestments, idx))}
+                                    onRemoveDeptAllocDepr={(idx, allocIdx) => setDepreciationInvestments(removeDeptAllocation(depreciationInvestments, idx, allocIdx))}
+                                    onUpdateDeptAllocDepr={(idx, allocIdx, field, value) => setDepreciationInvestments(updateDeptAllocation(depreciationInvestments, idx, allocIdx, field, value))}
+                                    onAddEstRevenue={() => setEstimatedRevenues(addArrayItem(estimatedRevenues, {
+                                        bus_stop_type_id: '', description: '', pending_quantity: 0, unit_revenue: 0, total_revenue: 0
+                                    }))}
+                                    onRemoveEstRevenue={(idx) => setEstimatedRevenues(removeArrayItem(estimatedRevenues, idx))}
+                                    onUpdateEstRevenue={(idx, field, value) => updateEstimatedRevenue(idx, field, value)}
+                                    onAddAddRevenue={() => setAdditionalRevenues(addArrayItem(additionalRevenues, {
+                                        description: '', total_amount: 0
+                                    }))}
+                                    onRemoveAddRevenue={(idx) => setAdditionalRevenues(removeArrayItem(additionalRevenues, idx))}
+                                    onUpdateAddRevenue={(idx, field, value) => setAdditionalRevenues(updateArrayItem(additionalRevenues, idx, field, value))}
+                                />
+                                <DepreciationRateCard
+                                    totalRevenueBase={getCalculateTotalDepreciationRevenueBase()}
+                                    totalDepreciationCost={getCalculateDepreciationInvestmentsTotal()}
+                                    depreciationFactor={getCalculateDepreciationFactor()}
+                                    formatCurrency={formatCurrency}
+                                />
+                            </TabsContent>
 
-                         {/* Depreciation Module */}
-                         <DepreciationModuleSection
-                             depreciationInvestments={depreciationInvestments}
-                             estimatedRevenues={estimatedRevenues}
-                             additionalRevenues={additionalRevenues}
-                             departments={departments}
-                             busStopTypes={busStopTypes}
-                             formatCurrency={formatCurrency}
-                             getAllocationTotal={getAllocationTotal}
-                             getDeptName={getDeptName}
-                             calculateDepreciationInvestmentsTotal={getCalculateDepreciationInvestmentsTotal}
-                             calculateEstimatedRevenuesTotal={getCalculateEstimatedRevenuesTotal}
-                             calculateAdditionalRevenuesTotal={getCalculateAdditionalRevenuesTotal}
-                             onAddDeprecInv={() => setDepreciationInvestments(addArrayItem(depreciationInvestments, {
-                                 description: '', category: 'materials', total_amount: 0, department_allocations: []
-                             }))}
-                             onRemoveDeprecInv={(idx) => setDepreciationInvestments(removeArrayItem(depreciationInvestments, idx))}
-                             onUpdateDeprecInv={(idx, field, value) => setDepreciationInvestments(updateArrayItem(depreciationInvestments, idx, field, value))}
-                             onAddDeptAllocDepr={(idx) => setDepreciationInvestments(addDeptAllocation(depreciationInvestments, idx))}
-                             onRemoveDeptAllocDepr={(idx, allocIdx) => setDepreciationInvestments(removeDeptAllocation(depreciationInvestments, idx, allocIdx))}
-                             onUpdateDeptAllocDepr={(idx, allocIdx, field, value) => setDepreciationInvestments(updateDeptAllocation(depreciationInvestments, idx, allocIdx, field, value))}
-                             onAddEstRevenue={() => setEstimatedRevenues(addArrayItem(estimatedRevenues, {
-                                 bus_stop_type_id: '', description: '', pending_quantity: 0, unit_revenue: 0, total_revenue: 0
-                             }))}
-                             onRemoveEstRevenue={(idx) => setEstimatedRevenues(removeArrayItem(estimatedRevenues, idx))}
-                             onUpdateEstRevenue={(idx, field, value) => updateEstimatedRevenue(idx, field, value)}
-                             onAddAddRevenue={() => setAdditionalRevenues(addArrayItem(additionalRevenues, {
-                                 description: '', total_amount: 0
-                             }))}
-                             onRemoveAddRevenue={(idx) => setAdditionalRevenues(removeArrayItem(additionalRevenues, idx))}
-                             onUpdateAddRevenue={(idx, field, value) => setAdditionalRevenues(updateArrayItem(additionalRevenues, idx, field, value))}
-                         />
-
-                         {/* Depreciation Rate on Revenue */}
-                         <DepreciationRateCard
-                             totalRevenueBase={getCalculateTotalDepreciationRevenueBase()}
-                             totalDepreciationCost={getCalculateDepreciationInvestmentsTotal()}
-                             depreciationFactor={getCalculateDepreciationFactor()}
-                             formatCurrency={formatCurrency}
-                         />
+                            {/* DEPARTMENT SUMMARY TAB */}
+                            <TabsContent value="department" className="mt-4">
+                                <DepartmentSummarySection
+                                    summary={getCalculateDepartmentSummary()}
+                                    formatCurrency={formatCurrency}
+                                />
+                            </TabsContent>
+                        </Tabs>
                     </>
                 )}
             </div>
