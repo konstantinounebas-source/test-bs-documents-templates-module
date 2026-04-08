@@ -332,17 +332,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                   <div className="grid grid-cols-11 gap-2 items-end">
                     <TooltipProvider>
                       <div className="col-span-5 flex flex-col gap-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-medium text-slate-600">BOM Type</span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <HelpCircle className="w-3 h-3 text-slate-400" />
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-xs max-w-[200px]">
-                              Επιλέξτε τύπο bus stop για αυτόματη φόρτωση κόστους BOM
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
+                        <span className="text-xs font-medium text-slate-600">BOM Type</span>
                         <Select value={item.bus_stop_type_id || ''} onValueChange={(v) => handleUpdateItem(item.id, 'bus_stop_type_id', v)}>
                           <SelectTrigger className="h-8 text-sm">
                             <SelectValue placeholder="Επιλέξτε" />
@@ -357,17 +347,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                         </Select>
                       </div>
                       <div className="col-span-6 flex flex-col gap-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-medium text-slate-600">Περιγραφή</span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <HelpCircle className="w-3 h-3 text-slate-400" />
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-xs max-w-[200px]">
-                              Όνομα ή περιγραφή του λειτουργικού κόστους
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
+                        <span className="text-xs font-medium text-slate-600">Περιγραφή</span>
                         <Input
                           placeholder="π.χ. Ενέργεια"
                           value={item.description}
@@ -378,17 +358,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                     </TooltipProvider>
                     <TooltipProvider>
                       <div className="col-span-2 flex flex-col gap-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-medium text-slate-600">Ποσό</span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <HelpCircle className="w-3 h-3 text-slate-400" />
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-xs max-w-[200px]">
-                              Το κόστος με βάση τη συχνότητα
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
+                        <span className="text-xs font-medium text-slate-600">Ποσό</span>
                         <Input
                           type="number"
                           placeholder="0.00"
@@ -400,17 +370,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                         />
                       </div>
                       <div className="col-span-1 flex flex-col gap-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-medium text-slate-600">Συχν.</span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <HelpCircle className="w-3 h-3 text-slate-400" />
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-xs max-w-[200px]">
-                              Ημερήσιο, Μηνιαίο ή Ετήσιο
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
+                        <span className="text-xs font-medium text-slate-600">Συχν.</span>
                         <Select value={item.frequency_type} onValueChange={(v) => handleUpdateItem(item.id, 'frequency_type', v)}>
                           <SelectTrigger className="h-8 text-sm">
                             <SelectValue />
@@ -423,17 +383,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                         </Select>
                       </div>
                       <div className="col-span-1 flex flex-col gap-1">
-                        <div className="flex items-center gap-1">
-                          <span className="text-xs font-medium text-slate-600">Factor</span>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <HelpCircle className="w-3 h-3 text-slate-400" />
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="text-xs max-w-[200px]">
-                              Custom διαιρέτης για ημερήσιο υπολογισμό
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
+                        <span className="text-xs font-medium text-slate-600">Factor</span>
                         <Input
                           type="number"
                           placeholder="22"
