@@ -136,6 +136,10 @@ export default function FactoryFinancialCalculations() {
     const [dailyProductionEntries, setDailyProductionEntries] = useState([]);
     const [dailyRevenueEntries, setDailyRevenueEntries] = useState([]);
     const [dailyDepartmentHoursEntries, setDailyDepartmentHoursEntries] = useState([]);
+    
+    // Daily cost totals
+    const [fixedDailyTotal, setFixedDailyTotal] = useState(0);
+    const [operationalDailyTotal, setOperationalDailyTotal] = useState(0);
 
     // Depreciation module states
     const [depreciationInvestments, setDepreciationInvestments] = useState([]);
@@ -745,6 +749,7 @@ export default function FactoryFinancialCalculations() {
                                      factoryFinancialDataId={selectedRecord?.id}
                                      totalWorkingDays={totalWorkingDays}
                                      formatCurrency={formatCurrency}
+                                     onDailyTotalChange={setFixedDailyTotal}
                                  />
                              </TabsContent>
 
@@ -754,6 +759,7 @@ export default function FactoryFinancialCalculations() {
                                      factoryFinancialDataId={selectedRecord?.id}
                                      totalWorkingDays={totalWorkingDays}
                                      formatCurrency={formatCurrency}
+                                     onDailyTotalChange={setOperationalDailyTotal}
                                  />
                              </TabsContent>
 
@@ -791,6 +797,8 @@ export default function FactoryFinancialCalculations() {
                                       departmentAssignments={departmentTechnicianAssignments}
                                       labourPersonnel={labourPersonnel}
                                       supervisorDailyAllocations={supervisorDailyAllocations}
+                                      fixedDailyTotal={fixedDailyTotal}
+                                      operationalDailyTotal={operationalDailyTotal}
                                   />
                                   </TabsContent>
 

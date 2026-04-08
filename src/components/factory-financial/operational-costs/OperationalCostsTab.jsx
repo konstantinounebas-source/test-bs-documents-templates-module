@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { toast } from 'sonner';
 import ExcelJS from 'exceljs';
 
-export default function OperationalCostsTab({ factoryFinancialDataId, totalWorkingDays, formatCurrency }) {
+export default function OperationalCostsTab({ factoryFinancialDataId, totalWorkingDays, formatCurrency, onDailyTotalChange }) {
   const [items, setItems] = useState([]);
   const [busStopTypes, setBusStopTypes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -54,6 +54,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
       return sum + convertToDaily(item.amount, item.frequency_type, item.conversion_factor);
     }, 0);
     setDailyTotal(total);
+    if (typeof onDailyTotalChange === 'function') onDailyTotalChange(total);
   };
 
   const convertToDaily = (amount, frequencyType, customFactor) => {

@@ -26,6 +26,8 @@ export default function DailyOperationsTab({
     departmentAssignments,
     labourPersonnel,
     supervisorDailyAllocations,
+    fixedDailyTotal,
+    operationalDailyTotal,
 }) {
     // Ensure shelterInstances is always an array
     const normalizedShelterInstances = Array.isArray(shelterInstances) ? shelterInstances : [];
@@ -47,6 +49,8 @@ export default function DailyOperationsTab({
             departmentAssignments={departmentAssignments}
             labourPersonnel={labourPersonnel}
             supervisorDailyAllocations={supervisorDailyAllocations}
+            fixedDailyTotal={fixedDailyTotal}
+            operationalDailyTotal={operationalDailyTotal}
         />
     );
 }
@@ -67,6 +71,8 @@ function DailyOperationsTabContent({
     departmentAssignments,
     labourPersonnel,
     supervisorDailyAllocations,
+    fixedDailyTotal,
+    operationalDailyTotal,
 }) {
     const [selectedDate, setSelectedDate] = useState(todayISO());
 
@@ -108,6 +114,8 @@ function DailyOperationsTabContent({
                 supervisorDailyAllocations={supervisorDailyAllocations}
                 labourPersonnel={labourPersonnel}
                 formatCurrency={formatCurrency}
+                fixedDailyTotal={fixedDailyTotal}
+                operationalDailyTotal={operationalDailyTotal}
                 onSave={onDailyCostsDecision}
             />
 

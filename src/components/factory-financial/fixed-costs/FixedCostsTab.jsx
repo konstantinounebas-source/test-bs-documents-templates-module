@@ -14,7 +14,7 @@ const FREQUENCY_LABELS = {
   yearly: 'Ετήσιο'
 };
 
-export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays, formatCurrency }) {
+export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays, formatCurrency, onDailyTotalChange }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dailyTotal, setDailyTotal] = useState(0);
@@ -48,6 +48,7 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
       return sum + daily;
     }, 0);
     setDailyTotal(total);
+    if (typeof onDailyTotalChange === 'function') onDailyTotalChange(total);
   };
 
   const convertToDaily = (amount, frequencyType, customFactor) => {
