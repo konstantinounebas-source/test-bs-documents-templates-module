@@ -55,7 +55,7 @@ export default function ShelterRevenueSection({
                                             onUpdateItem(itemIdx, 'bus_shelter_type_id', value);
                                             const selectedType = busStopTypes.find(t => t.id === value);
                                             if (selectedType) {
-                                                onUpdateItem(itemIdx, 'description', selectedType.type_name);
+                                                onUpdateItem(itemIdx, 'description', selectedType.name);
                                             }
                                         }}
                                     >
@@ -64,9 +64,9 @@ export default function ShelterRevenueSection({
                                         </SelectTrigger>
                                         <SelectContent>
                                             {busStopTypes && busStopTypes.map(type => {
-                                                const label = (type.type_code && type.type_name) 
-                                                    ? `${type.type_code} - ${type.type_name}`
-                                                    : (type.type_name || type.type_code || type.id);
+                                                const label = (type.code && type.name) 
+                                                    ? `${type.code} - ${type.name}`
+                                                    : (type.name || type.code || type.id);
                                                 return (
                                                     <SelectItem key={type.id} value={type.id}>
                                                         {label}

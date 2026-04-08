@@ -60,9 +60,9 @@ export default function DailyRevenueSection({
         if (!id) return '—';
         const bst = normalizedBusStopTypes.find(b => String(b.id) === String(id));
         if (!bst) return String(id);
-        return (bst.type_code && bst.type_name) 
-            ? `${bst.type_code} - ${bst.type_name}`
-            : (bst.type_name || bst.type_code || String(id));
+        return (bst.code && bst.name) 
+            ? `${bst.code} - ${bst.name}`
+            : (bst.name || bst.code || String(id));
     };
 
     const handleUpdate = (realIdx, field, value) => {
@@ -185,15 +185,15 @@ export default function DailyRevenueSection({
                                     <SelectContent>
                                         <SelectItem value={null}>— Κανένας —</SelectItem>
                                         {normalizedBusStopTypes && normalizedBusStopTypes.map(bst => {
-                                            const label = (bst.type_code && bst.type_name)
-                                                ? `${bst.type_code} - ${bst.type_name}`
-                                                : (bst.type_name || bst.type_code || bst.id);
-                                            return (
-                                                <SelectItem key={bst.id} value={String(bst.id)}>
-                                                    {label}
-                                                </SelectItem>
-                                            );
-                                        })}
+                                             const label = (bst.code && bst.name)
+                                                 ? `${bst.code} - ${bst.name}`
+                                                 : (bst.name || bst.code || bst.id);
+                                             return (
+                                                 <SelectItem key={bst.id} value={String(bst.id)}>
+                                                     {label}
+                                                 </SelectItem>
+                                             );
+                                         })}
                                     </SelectContent>
                                 </Select>
 
