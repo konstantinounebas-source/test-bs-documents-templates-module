@@ -26,11 +26,17 @@ import FactoryCostSectionsCard from "@/components/factory-financial/FactoryCostS
 import ExpenseTableSection from "@/components/factory-financial/ExpenseTableSection";
 import FinancialOverviewTab from "@/components/factory-financial/FinancialOverviewTab";
 import LabourCostTab from "@/components/factory-financial/labour/LabourCostTab";
+import DailyOperationsTab from "@/components/factory-financial/daily/DailyOperationsTab";
 import {
     calculateTotalLabourCost,
     normalizeLoadedLabourResources,
     normalizeLoadedDepartmentLabourHours,
 } from "@/components/factory-financial/utils/labourCostCalculations";
+import {
+    normalizeLoadedDailyProductionEntries,
+    normalizeLoadedDailyRevenueEntries,
+    normalizeLoadedDailyDepartmentHoursEntries,
+} from "@/components/factory-financial/utils/dailyOperationsNormalizers";
 import {
     getAllocationTotal,
     hasInvalidAllocation,
@@ -116,6 +122,11 @@ export default function FactoryFinancialCalculations() {
     const [labourResources, setLabourResources] = useState([]);
     const [departmentLabourHours, setDepartmentLabourHours] = useState([]);
 
+    // Daily operations states
+    const [dailyProductionEntries, setDailyProductionEntries] = useState([]);
+    const [dailyRevenueEntries, setDailyRevenueEntries] = useState([]);
+    const [dailyDepartmentHoursEntries, setDailyDepartmentHoursEntries] = useState([]);
+
     // Depreciation module states
     const [depreciationInvestments, setDepreciationInvestments] = useState([]);
     const [estimatedRevenues, setEstimatedRevenues] = useState([]);
@@ -199,6 +210,10 @@ export default function FactoryFinancialCalculations() {
 
             setLabourResources(normalizeLoadedLabourResources(record.labour_resources));
             setDepartmentLabourHours(normalizeLoadedDepartmentLabourHours(record.department_labour_hours));
+
+            setDailyProductionEntries(normalizeLoadedDailyProductionEntries(record.daily_production_entries));
+            setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
+            setDailyDepartmentHoursEntries(normalizeLoadedDailyDepartmentHoursEntries(record.daily_department_hours_entries));
             
         } catch (error) {
             console.error('Failed to load record data:', error);
@@ -241,6 +256,9 @@ export default function FactoryFinancialCalculations() {
                 },
                 labour_resources: labourResources,
                 department_labour_hours: departmentLabourHours,
+                daily_production_entries: dailyProductionEntries,
+                daily_revenue_entries: dailyRevenueEntries,
+                daily_department_hours_entries: dailyDepartmentHoursEntries,
             };
 
             await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
@@ -290,6 +308,9 @@ export default function FactoryFinancialCalculations() {
                 },
                 labour_resources: labourResources,
                 department_labour_hours: departmentLabourHours,
+                daily_production_entries: dailyProductionEntries,
+                daily_revenue_entries: dailyRevenueEntries,
+                daily_department_hours_entries: dailyDepartmentHoursEntries,
                 is_active: true
             };
 
@@ -332,6 +353,9 @@ export default function FactoryFinancialCalculations() {
                 },
                 labour_resources: [],
                 department_labour_hours: [],
+                daily_production_entries: [],
+                daily_revenue_entries: [],
+                daily_department_hours_entries: [],
                 is_active: true
             });
             
@@ -599,6 +623,7 @@ export default function FactoryFinancialCalculations() {
                                     { value: 'operational', label: 'Λειτουργικά Κόστη' },
                                     { value: 'other', label: 'Λοιπά Κόστη' },
                                     { value: 'labour', label: 'Κόστος Προσωπικού' },
+                                    { value: 'daily', label: 'Daily Operations' },
                                     { value: 'depreciation', label: 'Αποσβέσεις' },
                                     { value: 'department', label: 'Ανά Τμήμα' },
                                 ].map(tab => (
@@ -767,6 +792,21 @@ export default function FactoryFinancialCalculations() {
                                     formatCurrency={formatCurrency}
                                     onLabourResources={setLabourResources}
                                     onDepartmentLabourHours={setDepartmentLabourHours}
+                                />
+                            </TabsContent>
+
+                            {/* DAILY OPERATIONS TAB */}
+                            <TabsContent value="daily" className="mt-4">
+                                <DailyOperationsTab
+                                    dailyProductionEntries={dailyProductionEntries}
+                                    dailyRevenueEntries={dailyRevenueEntries}
+                                    dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+                                    busStopTypes={busStopTypes}
+                                    departments={departments}
+                                    formatCurrency={formatCurrency}
+                                    onDailyProduction={setDailyProductionEntries}
+                                    onDailyRevenue={setDailyRevenueEntries}
+                                    onDailyDepartmentHours={setDailyDepartmentHoursEntries}
                                 />
                             </TabsContent>
 
