@@ -225,7 +225,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                     placeholder="Περιγραφή"
                     value={item.description}
                     onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
-                    className="col-span-3 h-8 text-sm"
+                    className="col-span-2 h-8 text-sm"
                   />
                   <Input
                     type="number"
@@ -244,6 +244,13 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                       <SelectItem value="yearly">Ετ.</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Input
+                    type="number"
+                    placeholder="Factor"
+                    value={item.conversion_factor || ''}
+                    onChange={(e) => handleUpdateItem(item.id, 'conversion_factor', e.target.value ? parseFloat(e.target.value) : null)}
+                    className="col-span-1 h-8 text-sm"
+                  />
                   <div className="col-span-2 text-right font-medium text-slate-900 bg-blue-50 p-2 rounded">
                     {formatCurrency(daily)}
                   </div>
