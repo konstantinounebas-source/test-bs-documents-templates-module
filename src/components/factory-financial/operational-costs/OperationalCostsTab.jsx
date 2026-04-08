@@ -32,12 +32,21 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
       });
       setItems(records);
       calculateDailyTotal(records);
+      console.log('✅ Operational costs loaded. Items count:', records.length, 'Calculated daily total:', calculateDailyTotalDebug(records));
     } catch (error) {
       console.error('Failed to load items:', error);
       toast.error('Αποτυχία φόρτωσης δεδομένων');
     } finally {
       setLoading(false);
     }
+  };
+
+  const calculateDailyTotalDebug = (itemsList) => {
+    return itemsList.reduce((sum, item) => {
+      const daily = convertToDaily(item.amount, item.frequency_type, item.conversion_factor);
+      console.log(`Item: ${item.description}, Amount: ${item.amount}, Frequency: ${item.frequency_type}, Factor: ${item.conversion_factor}, Daily: ${daily}`);
+      return sum + daily;
+    }, 0);
   };
 
   const loadBusStopTypes = async () => {
@@ -54,7 +63,13 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
       return sum + convertToDaily(item.amount, item.frequency_type, item.conversion_factor);
     }, 0);
     setDailyTotal(total);
-    if (typeof onDailyTotalChange === 'function') onDailyTotalChange(total);
+    console.log('🔔 [Operational] calculateDailyTotal called with total:', total);
+    if (typeof onDailyTotalChange === 'function') {
+      console.log('📤 [Operational] Calling onDailyTotalChange with:', total);
+      onDailyTotalChange(total);
+    } else {
+      console.warn('⚠️ [Operational] onDailyTotalChange is not a function!');
+    }
   };
 
   const convertToDaily = (amount, frequencyType, customFactor) => {

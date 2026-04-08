@@ -32,8 +32,10 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
       const data = await base44.entities.FixedCostItem.filter({
         factory_financial_data_id: factoryFinancialDataId
       });
-      setItems(data.sort((a, b) => (a.display_order || 0) - (b.display_order || 0)));
-      calculateDailyTotal(data);
+      const sorted = data.sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+      setItems(sorted);
+      calculateDailyTotal(sorted);
+      console.log('✅ Fixed costs loaded. Items count:', sorted.length, 'Calculated daily total:', calculateDailyTotalDebug(sorted));
     } catch (error) {
       console.error('Failed to load fixed costs:', error);
       toast.error('Failed to load fixed costs');
@@ -42,13 +44,27 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
     }
   };
 
+  const calculateDailyTotalDebug = (itemsList) => {
+    return itemsList.reduce((sum, item) => {
+      const daily = convertToDaily(item.amount, item.frequency_type, item.conversion_factor);
+      console.log(`Item: ${item.description}, Amount: ${item.amount}, Frequency: ${item.frequency_type}, Factor: ${item.conversion_factor}, Daily: ${daily}`);
+      return sum + daily;
+    }, 0);
+  };
+
   const calculateDailyTotal = (itemsList) => {
     const total = itemsList.reduce((sum, item) => {
       const daily = convertToDaily(item.amount, item.frequency_type, item.conversion_factor);
       return sum + daily;
     }, 0);
     setDailyTotal(total);
-    if (typeof onDailyTotalChange === 'function') onDailyTotalChange(total);
+    console.log('🔔 calculateDailyTotal called with total:', total);
+    if (typeof onDailyTotalChange === 'function') {
+      console.log('📤 Calling onDailyTotalChange with:', total);
+      onDailyTotalChange(total);
+    } else {
+      console.warn('⚠️ onDailyTotalChange is not a function!');
+    }
   };
 
   const convertToDaily = (amount, frequencyType, customFactor) => {

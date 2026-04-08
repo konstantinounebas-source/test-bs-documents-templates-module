@@ -10,6 +10,9 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
     const [supervisorCosts, setSupervisorCosts] = useState(false);
     const [records, setRecords] = useState([]);
 
+    // Debug: log incoming props
+    console.log('📥 DailyCostsDecisionSection received:', { fixedDailyTotal, operationalDailyTotal });
+
     const getFixedCostsTotal = () => {
         if (!fixedCosts) return 0;
         return parseFloat(fixedDailyTotal) || 0;
