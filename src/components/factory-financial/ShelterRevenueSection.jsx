@@ -49,31 +49,25 @@ export default function ShelterRevenueSection({
                             <div className="flex items-end gap-2">
                                 <div className="flex-1">
                                     <Label className="text-xs">Τύπος Στάσης</Label>
-                                    <Select
+                                    <select
                                         value={item.shelter_instance_id || ''}
-                                        onValueChange={(value) => {
+                                        onChange={(e) => {
+                                            const value = e.target.value;
                                             onUpdateItem(itemIdx, 'shelter_instance_id', value);
-                                            const selectedInstance = shelterInstances.find(s => s.id === value);
+                                            const selectedInstance = shelterInstances && shelterInstances.find(s => String(s.id) === value);
                                             if (selectedInstance) {
                                                 onUpdateItem(itemIdx, 'description', selectedInstance.name);
                                             }
                                         }}
+                                        className="w-full h-9 px-3 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Επιλέξτε τύπο">
-                                                {item.shelter_instance_id && shelterInstances
-                                                    ? shelterInstances.find(s => s.id === item.shelter_instance_id)?.name || 'Επιλέξτε τύπο'
-                                                    : undefined}
-                                            </SelectValue>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {shelterInstances && shelterInstances.map(instance => (
-                                                <SelectItem key={instance.id} value={instance.id}>
-                                                    {instance.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        <option value="">— Επιλέξτε τύπο —</option>
+                                        {shelterInstances && shelterInstances.map(instance => (
+                                            <option key={instance.id} value={String(instance.id)}>
+                                                {instance.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="flex-1">
                                     <Label className="text-xs">Περιγραφή</Label>
