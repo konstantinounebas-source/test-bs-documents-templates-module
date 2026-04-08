@@ -60,7 +60,11 @@ export default function ShelterRevenueSection({
                                         }}
                                     >
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Επιλέξτε τύπο" />
+                                            <SelectValue placeholder="Επιλέξτε τύπο">
+                                                {item.shelter_instance_id && shelterInstances
+                                                    ? shelterInstances.find(s => s.id === item.shelter_instance_id)?.name || 'Επιλέξτε τύπο'
+                                                    : undefined}
+                                            </SelectValue>
                                         </SelectTrigger>
                                         <SelectContent>
                                             {shelterInstances && shelterInstances.map(instance => (
