@@ -350,9 +350,10 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                     <Input
                       type="number"
                       placeholder="Ποσό"
-                      value={item.amount || ''}
+                      value={item.amount?.toFixed(2) || ''}
                       onChange={(e) => handleUpdateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
                       disabled={!!item.bus_stop_type_id}
+                      step="0.01"
                       className="col-span-2 h-8 text-sm disabled:bg-gray-200 disabled:cursor-not-allowed"
                     />
                     <Select value={item.frequency_type} onValueChange={(v) => handleUpdateItem(item.id, 'frequency_type', v)}>
