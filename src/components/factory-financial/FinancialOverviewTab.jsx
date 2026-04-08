@@ -12,7 +12,7 @@ import {
     getWeekNumberFromDate,
 } from './utils/overviewPeriodCalculations';
 
-// ─── Small helpers ────────────────────────────────────────────────────────────
+// ─── KPI Card ─────────────────────────────────────────────────────────────────
 
 function KPICard({ label, value, icon: Icon, color = 'blue', sub, simulated }) {
     const colorMap = {
@@ -23,9 +23,10 @@ function KPICard({ label, value, icon: Icon, color = 'blue', sub, simulated }) {
         slate: 'bg-slate-50 text-slate-700 border-slate-200',
         purple: 'bg-purple-50 text-purple-700 border-purple-200',
         amber: 'bg-amber-50 text-amber-700 border-amber-300',
+        teal: 'bg-teal-50 text-teal-700 border-teal-200',
     };
     return (
-        <div className={`rounded-xl border p-4 flex flex-col gap-2 ${colorMap[color]} ${simulated ? 'ring-2 ring-amber-400' : ''}`}>
+        <div className={`rounded-xl border p-4 flex flex-col gap-2 ${colorMap[color] || colorMap.blue} ${simulated ? 'ring-2 ring-amber-400' : ''}`}>
             <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wide opacity-70">{label}</span>
                 <div className="flex items-center gap-1">
@@ -38,6 +39,8 @@ function KPICard({ label, value, icon: Icon, color = 'blue', sub, simulated }) {
         </div>
     );
 }
+
+// ─── Analysis Row ─────────────────────────────────────────────────────────────
 
 function AnalysisRow({ label, value, highlight }) {
     return (
@@ -62,10 +65,16 @@ function buildDefaultFilter() {
     };
 }
 
+// ─── Safe ratio ───────────────────────────────────────────────────────────────
+
+function safeRatio(numerator, denominator) {
+    if (!denominator || denominator === 0) return 0;
+    return numerator / denominator;
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function FinancialOverviewTab({
-    // Static planning data (always shown)
     totalIncome,
     totalCosts,
     depreciationCost,
@@ -73,7 +82,6 @@ export default function FinancialOverviewTab({
     costBreakdown,
     hasInvalidAllocations,
     legacyPersonnelCost,
-    // Daily operational data
     dailyProductionEntries,
     dailyRevenueEntries,
     dailyDepartmentHoursEntries,
@@ -113,6 +121,10 @@ export default function FinancialOverviewTab({
     const effectiveQty = simActive ? (simState.productionQty || 0) : periodSummary.productionQty;
     const effectiveHours = simActive ? (simState.totalHours || 0) : periodSummary.totalHours;
 
+    // Derived ratios (null-safe)
+    const revenuePerUnit = safeRatio(effectiveRevenue, effectiveQty);
+    const revenuePerHour = safeRatio(effectiveRevenue, effectiveHours);
+
     // Planning-level calculations (static)
     const netBeforeDepr = totalIncome - totalCosts;
     const totalCostWithDepr = totalCosts + depreciationCost;
@@ -123,6 +135,8 @@ export default function FinancialOverviewTab({
 
     return (
         <div className="space-y-6">
+
+            {/* 1. Invalid allocation warning */}
             {hasInvalidAllocations && (
                 <div className="flex items-center gap-3 bg-amber-50 border border-amber-300 text-amber-800 rounded-xl px-4 py-3 text-sm font-medium">
                     <AlertTriangle className="w-5 h-5 flex-shrink-0" />
@@ -130,18 +144,51 @@ export default function FinancialOverviewTab({
                 </div>
             )}
 
-            {/* ── Period Filter Bar ─────────────────────────────────────────── */}
+            {/* 2. Overall Planning KPI cards */}
+            <div>
+                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">
+                    Σχεδιασμός (Static Financial Planning)
+                </h3>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    <KPICard label="Σχεδιαστικά Έσοδα" value={fmt(totalIncome)} icon={TrendingUp} color="green" />
+                    <KPICard label="Κόστος Παραγωγής" value={fmt(totalCosts)} icon={DollarSign} color="blue" />
+                    <KPICard label="Κόστος Απόσβεσης" value={fmt(depreciationCost)} icon={BarChart2} color="purple" />
+                    <KPICard
+                        label="Αποτέλεσμα προ Απόσβεσης"
+                        value={fmt(netBeforeDepr)}
+                        icon={netBeforeDepr >= 0 ? TrendingUp : TrendingDown}
+                        color={netBeforeDepr >= 0 ? 'green' : 'red'}
+                    />
+                    <KPICard label="Συνολικό Κόστος με Απόσβεση" value={fmt(totalCostWithDepr)} icon={Minus} color="orange" />
+                    <KPICard
+                        label="Καθαρό Αποτέλεσμα μετά Απόσβεση"
+                        value={fmt(netAfterDepr)}
+                        icon={netAfterDepr >= 0 ? TrendingUp : TrendingDown}
+                        color={netAfterDepr >= 0 ? 'green' : 'red'}
+                    />
+                </div>
+            </div>
+
+            {/* 3. Period Filter Bar */}
             <OverviewFilterBar
                 filterParams={filterParams}
                 onFilterChange={setFilterParams}
                 availableYears={availableYears}
             />
 
-            {/* ── Operational Period KPIs (dynamic) ────────────────────────── */}
+            {/* 4. Simulation Card */}
+            <SimulationCard
+                simState={simState}
+                onSimChange={handleSimChange}
+                onToggle={() => setSimActive(prev => !prev)}
+                isActive={simActive}
+            />
+
+            {/* 5. Operational KPI section */}
             <div>
                 <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
-                        Operational KPIs — Περίοδος
+                        Λειτουργική Επισκόπηση Περιόδου
                     </h3>
                     {simActive && (
                         <span className="text-xs font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
@@ -188,39 +235,39 @@ export default function FinancialOverviewTab({
                 )}
             </div>
 
-            {/* ── Simulation Card ───────────────────────────────────────────── */}
-            <SimulationCard
-                simState={simState}
-                onSimChange={handleSimChange}
-                onToggle={() => setSimActive(prev => !prev)}
-                isActive={simActive}
-            />
+            {/* 6. Operational Analysis card */}
+            {(hasAnyDailyData || simActive) && (
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
+                            Λειτουργική Ανάλυση
+                            {simActive && (
+                                <span className="text-xs font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    <FlaskConical className="w-3 h-3" /> Προσομοιωμένες τιμές
+                                </span>
+                            )}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-1">
+                        <AnalysisRow label="Έσοδα Επιλεγμένης Περιόδου" value={fmt(effectiveRevenue)} />
+                        <AnalysisRow label="Παραγωγή Επιλεγμένης Περιόδου" value={`${effectiveQty.toLocaleString('el-GR')} τεμ.`} />
+                        <AnalysisRow label="Ώρες Επιλεγμένης Περιόδου" value={`${effectiveHours.toLocaleString('el-GR')} h`} />
+                        <div className="border-t border-slate-200 my-2" />
+                        <AnalysisRow
+                            label="Έσοδο ανά Τεμάχιο"
+                            value={effectiveQty > 0 ? fmt(revenuePerUnit) : '—'}
+                            highlight
+                        />
+                        <AnalysisRow
+                            label="Έσοδο ανά Ώρα Εργασίας"
+                            value={effectiveHours > 0 ? fmt(revenuePerHour) : '—'}
+                            highlight
+                        />
+                    </CardContent>
+                </Card>
+            )}
 
-            {/* ── Planning-level KPIs (static) ─────────────────────────────── */}
-            <div>
-                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">
-                    Σχεδιασμός (Static Financial Planning)
-                </h3>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                    <KPICard label="Σχεδιαστικά Έσοδα" value={fmt(totalIncome)} icon={TrendingUp} color="green" />
-                    <KPICard label="Κόστος Παραγωγής" value={fmt(totalCosts)} icon={DollarSign} color="blue" />
-                    <KPICard label="Κόστος Απόσβεσης" value={fmt(depreciationCost)} icon={BarChart2} color="purple" />
-                    <KPICard
-                        label="Αποτέλεσμα προ Απόσβεσης"
-                        value={fmt(netBeforeDepr)}
-                        icon={netBeforeDepr >= 0 ? TrendingUp : TrendingDown}
-                        color={netBeforeDepr >= 0 ? 'green' : 'red'}
-                    />
-                    <KPICard label="Συνολικό Κόστος με Απόσβεση" value={fmt(totalCostWithDepr)} icon={Minus} color="orange" />
-                    <KPICard
-                        label="Καθαρό Αποτέλεσμα μετά Απόσβεση"
-                        value={fmt(netAfterDepr)}
-                        icon={netAfterDepr >= 0 ? TrendingUp : TrendingDown}
-                        color={netAfterDepr >= 0 ? 'green' : 'red'}
-                    />
-                </div>
-            </div>
-
+            {/* 7. Financial Analysis + Cost Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Financial Analysis */}
                 <Card>
@@ -239,7 +286,7 @@ export default function FinancialOverviewTab({
                     </CardContent>
                 </Card>
 
-                {/* Cost Breakdown */}
+                {/* 8. Cost Breakdown + Legacy info */}
                 <div className="space-y-3">
                     <Card>
                         <CardHeader className="pb-2">
@@ -259,7 +306,6 @@ export default function FinancialOverviewTab({
                         </CardContent>
                     </Card>
 
-                    {/* Legacy Personnel Cost */}
                     {legacyPersonnelCost !== undefined && legacyPersonnelCost > 0 && (
                         <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
                             <div className="flex items-center gap-2 text-slate-500 font-semibold text-xs uppercase tracking-wide">
