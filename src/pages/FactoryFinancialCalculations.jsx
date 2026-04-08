@@ -312,53 +312,55 @@ export default function FactoryFinancialCalculations() {
         }
 
         try {
-            setIsSaving(true);
-            console.log('Saving labour data:', {
-                labourPersonnel,
-                supervisorDailyAllocations,
-                departmentTechnicianAssignments
-            });
-            
-            const updatedData = {
-                total_working_days_in_period: totalWorkingDays,
-                average_working_days_per_month: avgWorkingDaysPerMonth,
-                average_working_days_per_year: avgWorkingDaysPerYear,
-                sales_revenue_items: salesRevenueItems,
-                shelter_revenue_items: shelterRevenueItems,
-                personnel_costs: personnelCosts,
-                bill_of_materials_costs: bomCosts,
-                fixed_costs: fixedCosts,
-                operational_costs: operationalCosts,
-                overhead_costs: overheadCosts,
-                investment_amortization: investmentAmortization,
-                maintenance_costs: maintenanceCosts,
-                depreciation_module: {
-                    investments: depreciationInvestments,
-                    estimated_revenues: estimatedRevenues,
-                    additional_revenues: additionalRevenues
-                },
-                labour_resources: labourResources,
-                department_labour_hours: departmentLabourHours,
-                labour_personnel: labourPersonnel,
-                supervisor_daily_allocations: supervisorDailyAllocations,
-                department_technician_assignments: departmentTechnicianAssignments,
-                daily_production_entries: dailyProductionEntries,
-                daily_revenue_entries: dailyRevenueEntries,
-                daily_department_hours_entries: dailyDepartmentHoursEntries,
-                daily_costs_records: dailyCostsRecords,
-                };
+             setIsSaving(true);
+             console.log('🔴 Saving daily_costs_records:', dailyCostsRecords);
+             console.log('Saving labour data:', {
+                 labourPersonnel,
+                 supervisorDailyAllocations,
+                 departmentTechnicianAssignments
+             });
 
-            await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
-            console.log('Save successful, reloading data...');
-            
-            toast.success('Τα δεδομένα αποθηκεύτηκαν επιτυχώς');
-            // Reload the specific record to ensure UI is in sync
-            const refreshedRecords = await base44.entities.FactoryFinancialData.list('-created_date');
-            const refreshedRecord = refreshedRecords.find(r => r.id === selectedRecord.id);
-            console.log('Refreshed record:', refreshedRecord);
-            if (refreshedRecord) {
-                loadRecordData(refreshedRecord);
-            }
+             const updatedData = {
+                 total_working_days_in_period: totalWorkingDays,
+                 average_working_days_per_month: avgWorkingDaysPerMonth,
+                 average_working_days_per_year: avgWorkingDaysPerYear,
+                 sales_revenue_items: salesRevenueItems,
+                 shelter_revenue_items: shelterRevenueItems,
+                 personnel_costs: personnelCosts,
+                 bill_of_materials_costs: bomCosts,
+                 fixed_costs: fixedCosts,
+                 operational_costs: operationalCosts,
+                 overhead_costs: overheadCosts,
+                 investment_amortization: investmentAmortization,
+                 maintenance_costs: maintenanceCosts,
+                 depreciation_module: {
+                     investments: depreciationInvestments,
+                     estimated_revenues: estimatedRevenues,
+                     additional_revenues: additionalRevenues
+                 },
+                 labour_resources: labourResources,
+                 department_labour_hours: departmentLabourHours,
+                 labour_personnel: labourPersonnel,
+                 supervisor_daily_allocations: supervisorDailyAllocations,
+                 department_technician_assignments: departmentTechnicianAssignments,
+                 daily_production_entries: dailyProductionEntries,
+                 daily_revenue_entries: dailyRevenueEntries,
+                 daily_department_hours_entries: dailyDepartmentHoursEntries,
+                 daily_costs_records: dailyCostsRecords,
+                 };
+
+             console.log('🟢 updatedData.daily_costs_records:', updatedData.daily_costs_records);
+             await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
+             console.log('Save successful, reloading data...');
+
+             toast.success('Τα δεδομένα αποθηκεύτηκαν επιτυχώς');
+             // Reload the specific record to ensure UI is in sync
+             const refreshedRecords = await base44.entities.FactoryFinancialData.list('-created_date');
+             const refreshedRecord = refreshedRecords.find(r => r.id === selectedRecord.id);
+             console.log('Refreshed record daily_costs_records:', refreshedRecord?.daily_costs_records);
+             if (refreshedRecord) {
+                 loadRecordData(refreshedRecord);
+             }
         } catch (error) {
             console.error('Failed to save data:', error);
             toast.error('Σφάλμα αποθήκευσης δεδομένων');
