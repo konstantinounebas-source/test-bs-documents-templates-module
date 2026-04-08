@@ -9,21 +9,25 @@ import SimulationCard from './SimulationCard';
 import {
     buildOverviewPeriodSummary,
     getAvailableYearsFromEntries,
+    getLatestDateFromEntries,
     getWeekNumberFromDate,
+    getWeekAndYearFromDateStr,
+    resolveEffectiveOperationalValues,
+    safeRatio,
 } from './utils/overviewPeriodCalculations';
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 
 function KPICard({ label, value, icon: Icon, color = 'blue', sub, simulated }) {
     const colorMap = {
-        blue: 'bg-blue-50 text-blue-700 border-blue-200',
-        green: 'bg-green-50 text-green-700 border-green-200',
-        red: 'bg-red-50 text-red-700 border-red-200',
+        blue:   'bg-blue-50 text-blue-700 border-blue-200',
+        green:  'bg-green-50 text-green-700 border-green-200',
+        red:    'bg-red-50 text-red-700 border-red-200',
         orange: 'bg-orange-50 text-orange-700 border-orange-200',
-        slate: 'bg-slate-50 text-slate-700 border-slate-200',
+        slate:  'bg-slate-50 text-slate-700 border-slate-200',
         purple: 'bg-purple-50 text-purple-700 border-purple-200',
-        amber: 'bg-amber-50 text-amber-700 border-amber-300',
-        teal: 'bg-teal-50 text-teal-700 border-teal-200',
+        amber:  'bg-amber-50 text-amber-700 border-amber-300',
+        teal:   'bg-teal-50 text-teal-700 border-teal-200',
     };
     return (
         <div className={`rounded-xl border p-4 flex flex-col gap-2 ${colorMap[color] || colorMap.blue} ${simulated ? 'ring-2 ring-amber-400' : ''}`}>
@@ -51,30 +55,27 @@ function AnalysisRow({ label, value, highlight }) {
     );
 }
 
-// ─── Default filter state ─────────────────────────────────────────────────────
+// ─── Build default filter (today, or latest available date) ───────────────────
 
-function buildDefaultFilter() {
+function buildDefaultFilter(prodEntries, revEntries, hoursEntries) {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
+    // Use latest available date from daily entries; fall back to today
+    const latestDate = getLatestDateFromEntries(prodEntries, revEntries, hoursEntries) || todayStr;
+    const d = new Date(latestDate + 'T00:00:00');
     return {
         mode: 'daily',
-        selectedDate: todayStr,
-        selectedWeek: getWeekNumberFromDate(today),
-        selectedMonth: today.getMonth() + 1,
-        selectedYear: today.getFullYear(),
+        selectedDate: latestDate,
+        selectedWeek: getWeekNumberFromDate(isNaN(d) ? today : d),
+        selectedMonth: (isNaN(d) ? today : d).getMonth() + 1,
+        selectedYear:  (isNaN(d) ? today : d).getFullYear(),
     };
-}
-
-// ─── Safe ratio ───────────────────────────────────────────────────────────────
-
-function safeRatio(numerator, denominator) {
-    if (!denominator || denominator === 0) return 0;
-    return numerator / denominator;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function FinancialOverviewTab({
+    // Static planning data (never affected by period filter or simulation)
     totalIncome,
     totalCosts,
     depreciationCost,
@@ -82,33 +83,33 @@ export default function FinancialOverviewTab({
     costBreakdown,
     hasInvalidAllocations,
     legacyPersonnelCost,
+    // Daily operational data (source for period KPIs)
     dailyProductionEntries,
     dailyRevenueEntries,
     dailyDepartmentHoursEntries,
 }) {
-    const [filterParams, setFilterParams] = useState(buildDefaultFilter);
+    const safeProd  = useMemo(() => Array.isArray(dailyProductionEntries)       ? dailyProductionEntries.filter(Boolean)       : [], [dailyProductionEntries]);
+    const safeRev   = useMemo(() => Array.isArray(dailyRevenueEntries)          ? dailyRevenueEntries.filter(Boolean)          : [], [dailyRevenueEntries]);
+    const safeHours = useMemo(() => Array.isArray(dailyDepartmentHoursEntries)  ? dailyDepartmentHoursEntries.filter(Boolean)  : [], [dailyDepartmentHoursEntries]);
 
-    // Simulation state (local UI only — never persisted)
+    // Filter state — initialised once; default date = latest from entries or today
+    const [filterParams, setFilterParams] = useState(() => buildDefaultFilter(safeProd, safeRev, safeHours));
+
+    // Simulation state (local UI only — NEVER saved to DB)
     const [simActive, setSimActive] = useState(false);
     const [simState, setSimState] = useState({ revenue: 0, productionQty: 0, totalHours: 0 });
+    const handleSimChange = (field, value) => setSimState(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
 
-    const handleSimChange = (field, value) => setSimState(prev => ({ ...prev, [field]: value }));
-
-    // Available years from all entries
+    // Available years from all entries (for filter dropdowns)
     const availableYears = useMemo(
-        () => getAvailableYearsFromEntries(dailyProductionEntries, dailyRevenueEntries, dailyDepartmentHoursEntries),
-        [dailyProductionEntries, dailyRevenueEntries, dailyDepartmentHoursEntries]
+        () => getAvailableYearsFromEntries(safeProd, safeRev, safeHours),
+        [safeProd, safeRev, safeHours]
     );
 
-    // Period summary from daily entries
+    // Period summary filtered from daily arrays
     const periodSummary = useMemo(
-        () => buildOverviewPeriodSummary(
-            dailyProductionEntries || [],
-            dailyRevenueEntries || [],
-            dailyDepartmentHoursEntries || [],
-            filterParams
-        ),
-        [dailyProductionEntries, dailyRevenueEntries, dailyDepartmentHoursEntries, filterParams]
+        () => buildOverviewPeriodSummary(safeProd, safeRev, safeHours, filterParams),
+        [safeProd, safeRev, safeHours, filterParams]
     );
 
     const hasAnyDailyData =
@@ -116,22 +117,33 @@ export default function FinancialOverviewTab({
         periodSummary.filteredRevEntries.length > 0 ||
         periodSummary.filteredHoursEntries.length > 0;
 
-    // Effective operational values: simulation overrides daily data when active
-    const effectiveRevenue = simActive ? (simState.revenue || 0) : periodSummary.revenue;
-    const effectiveQty = simActive ? (simState.productionQty || 0) : periodSummary.productionQty;
-    const effectiveHours = simActive ? (simState.totalHours || 0) : periodSummary.totalHours;
+    // Effective operational values:
+    //   - simulation OFF → use filtered daily period data
+    //   - simulation ON  → use simState values (UI-only, never saved)
+    const effective = useMemo(
+        () => resolveEffectiveOperationalValues(periodSummary, simActive, simState),
+        [periodSummary, simActive, simState]
+    );
 
-    // Derived ratios (null-safe)
-    const revenuePerUnit = safeRatio(effectiveRevenue, effectiveQty);
-    const revenuePerHour = safeRatio(effectiveRevenue, effectiveHours);
+    // Derived ratios (safe — no NaN, no division by zero)
+    const revenuePerUnit = safeRatio(effective.revenue, effective.productionQty);
+    const revenuePerHour = safeRatio(effective.revenue, effective.totalHours);
 
-    // Planning-level calculations (static)
-    const netBeforeDepr = totalIncome - totalCosts;
-    const totalCostWithDepr = totalCosts + depreciationCost;
-    const netAfterDepr = totalIncome - totalCostWithDepr;
-    const deprPct = totalIncome > 0 ? ((depreciationCost / totalIncome) * 100).toFixed(1) : '0.0';
+    // Static planning calculations (never touched by period filter or simulation)
+    const netBeforeDepr   = (totalIncome || 0) - (totalCosts || 0);
+    const totalCostWithDepr = (totalCosts || 0) + (depreciationCost || 0);
+    const netAfterDepr    = (totalIncome || 0) - totalCostWithDepr;
+    const deprPct = (totalIncome || 0) > 0
+        ? (((depreciationCost || 0) / totalIncome) * 100).toFixed(1)
+        : '0.0';
 
-    const fmt = formatCurrency || (v => `€${parseFloat(v || 0).toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+    const fmt = formatCurrency
+        || (v => `€${parseFloat(v || 0).toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
+
+    const fmtNum = v => {
+        const n = parseFloat(v);
+        return isNaN(n) ? '0' : n.toLocaleString('el-GR', { maximumFractionDigits: 1 });
+    };
 
     return (
         <div className="space-y-6">
@@ -144,22 +156,22 @@ export default function FinancialOverviewTab({
                 </div>
             )}
 
-            {/* 2. Overall Planning KPI cards */}
+            {/* 2. Static Planning KPI cards */}
             <div>
                 <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">
                     Σχεδιασμός (Static Financial Planning)
                 </h3>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                    <KPICard label="Σχεδιαστικά Έσοδα" value={fmt(totalIncome)} icon={TrendingUp} color="green" />
-                    <KPICard label="Κόστος Παραγωγής" value={fmt(totalCosts)} icon={DollarSign} color="blue" />
-                    <KPICard label="Κόστος Απόσβεσης" value={fmt(depreciationCost)} icon={BarChart2} color="purple" />
+                    <KPICard label="Σχεδιαστικά Έσοδα"              value={fmt(totalIncome)}        icon={TrendingUp}  color="green"  />
+                    <KPICard label="Κόστος Παραγωγής"                value={fmt(totalCosts)}         icon={DollarSign}  color="blue"   />
+                    <KPICard label="Κόστος Απόσβεσης"                value={fmt(depreciationCost)}   icon={BarChart2}   color="purple" />
                     <KPICard
                         label="Αποτέλεσμα προ Απόσβεσης"
                         value={fmt(netBeforeDepr)}
                         icon={netBeforeDepr >= 0 ? TrendingUp : TrendingDown}
                         color={netBeforeDepr >= 0 ? 'green' : 'red'}
                     />
-                    <KPICard label="Συνολικό Κόστος με Απόσβεση" value={fmt(totalCostWithDepr)} icon={Minus} color="orange" />
+                    <KPICard label="Συνολικό Κόστος με Απόσβεση"    value={fmt(totalCostWithDepr)}  icon={Minus}       color="orange" />
                     <KPICard
                         label="Καθαρό Αποτέλεσμα μετά Απόσβεση"
                         value={fmt(netAfterDepr)}
@@ -176,7 +188,7 @@ export default function FinancialOverviewTab({
                 availableYears={availableYears}
             />
 
-            {/* 4. Simulation Card */}
+            {/* 4. Simulation Card (UI-only, never saves to DB) */}
             <SimulationCard
                 simState={simState}
                 onSimChange={handleSimChange}
@@ -209,7 +221,7 @@ export default function FinancialOverviewTab({
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <KPICard
                             label="Έσοδα Περιόδου"
-                            value={fmt(effectiveRevenue)}
+                            value={fmt(effective.revenue)}
                             icon={DollarSign}
                             color="green"
                             simulated={simActive}
@@ -217,7 +229,7 @@ export default function FinancialOverviewTab({
                         />
                         <KPICard
                             label="Παραγωγή (τεμάχια)"
-                            value={effectiveQty.toLocaleString('el-GR')}
+                            value={fmtNum(effective.productionQty)}
                             icon={Package}
                             color="blue"
                             simulated={simActive}
@@ -225,7 +237,7 @@ export default function FinancialOverviewTab({
                         />
                         <KPICard
                             label="Ώρες Εργασίας"
-                            value={`${effectiveHours.toLocaleString('el-GR')} h`}
+                            value={`${fmtNum(effective.totalHours)} h`}
                             icon={Clock}
                             color="purple"
                             simulated={simActive}
@@ -249,44 +261,43 @@ export default function FinancialOverviewTab({
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-1">
-                        <AnalysisRow label="Έσοδα Επιλεγμένης Περιόδου" value={fmt(effectiveRevenue)} />
-                        <AnalysisRow label="Παραγωγή Επιλεγμένης Περιόδου" value={`${effectiveQty.toLocaleString('el-GR')} τεμ.`} />
-                        <AnalysisRow label="Ώρες Επιλεγμένης Περιόδου" value={`${effectiveHours.toLocaleString('el-GR')} h`} />
+                        <AnalysisRow label="Έσοδα Επιλεγμένης Περιόδου"     value={fmt(effective.revenue)} />
+                        <AnalysisRow label="Παραγωγή Επιλεγμένης Περιόδου"  value={`${fmtNum(effective.productionQty)} τεμ.`} />
+                        <AnalysisRow label="Ώρες Επιλεγμένης Περιόδου"      value={`${fmtNum(effective.totalHours)} h`} />
                         <div className="border-t border-slate-200 my-2" />
                         <AnalysisRow
                             label="Έσοδο ανά Τεμάχιο"
-                            value={effectiveQty > 0 ? fmt(revenuePerUnit) : '—'}
+                            value={effective.productionQty > 0 ? fmt(revenuePerUnit) : '—'}
                             highlight
                         />
                         <AnalysisRow
                             label="Έσοδο ανά Ώρα Εργασίας"
-                            value={effectiveHours > 0 ? fmt(revenuePerHour) : '—'}
+                            value={effective.totalHours > 0 ? fmt(revenuePerHour) : '—'}
                             highlight
                         />
                     </CardContent>
                 </Card>
             )}
 
-            {/* 7. Financial Analysis + Cost Breakdown */}
+            {/* 7. Static Financial Analysis + Cost Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Financial Analysis */}
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-base font-semibold text-slate-800">Χρηματοοικονομική Ανάλυση (Σχεδιασμός)</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-1">
-                        <AnalysisRow label="Σχεδιαστικά Έσοδα" value={fmt(totalIncome)} />
-                        <AnalysisRow label="Κόστος Λειτουργίας" value={`− ${fmt(totalCosts)}`} />
-                        <AnalysisRow label="Αποτέλεσμα προ Απόσβεσης" value={fmt(netBeforeDepr)} highlight />
+                        <AnalysisRow label="Σχεδιαστικά Έσοδα"                  value={fmt(totalIncome)} />
+                        <AnalysisRow label="Κόστος Λειτουργίας"                  value={`− ${fmt(totalCosts)}`} />
+                        <AnalysisRow label="Αποτέλεσμα προ Απόσβεσης"           value={fmt(netBeforeDepr)} highlight />
                         <div className="border-t border-slate-200 my-2" />
-                        <AnalysisRow label="Επιβάρυνση Απόσβεσης" value={`− ${fmt(depreciationCost)}`} />
-                        <AnalysisRow label="Απόσβεση ως % Εσόδων" value={`${deprPct}%`} />
+                        <AnalysisRow label="Επιβάρυνση Απόσβεσης"                value={`− ${fmt(depreciationCost)}`} />
+                        <AnalysisRow label="Απόσβεση ως % Εσόδων"               value={`${deprPct}%`} />
                         <div className="border-t border-slate-200 my-2" />
-                        <AnalysisRow label="Τελικό Αποτέλεσμα μετά Απόσβεση" value={fmt(netAfterDepr)} highlight />
+                        <AnalysisRow label="Τελικό Αποτέλεσμα μετά Απόσβεση"   value={fmt(netAfterDepr)} highlight />
                     </CardContent>
                 </Card>
 
-                {/* 8. Cost Breakdown + Legacy info */}
+                {/* 8. Cost Breakdown + Legacy Personnel info */}
                 <div className="space-y-3">
                     <Card>
                         <CardHeader className="pb-2">
@@ -306,6 +317,7 @@ export default function FinancialOverviewTab({
                         </CardContent>
                     </Card>
 
+                    {/* Legacy personnel cost — informational only, excluded from official totals */}
                     {legacyPersonnelCost !== undefined && legacyPersonnelCost > 0 && (
                         <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
                             <div className="flex items-center gap-2 text-slate-500 font-semibold text-xs uppercase tracking-wide">
