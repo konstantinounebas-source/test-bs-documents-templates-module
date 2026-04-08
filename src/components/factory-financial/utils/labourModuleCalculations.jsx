@@ -82,6 +82,7 @@ export const getPersonById = (labourPersonnel, id) => {
 
 // Create new person object
 export const createNewPerson = () => ({
+  id: `person-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
   person_name: '',
   position: '',
   role_type: 'technician',

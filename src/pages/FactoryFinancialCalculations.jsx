@@ -231,11 +231,15 @@ export default function FactoryFinancialCalculations() {
             setLabourResources(normalizeLoadedLabourResources(record.labour_resources));
             setDepartmentLabourHours(normalizeLoadedDepartmentLabourHours(record.department_labour_hours));
             
-            // NEW Labour module
-            setLabourPersonnel((record.labour_personnel || []).map((p) => ({
-                ...p,
-                id: p.id || `person-${Date.now()}-${Math.random()}`
-            })));
+            // NEW Labour module - preserve IDs from database or generate once
+            const normalizedPersonnel = (record.labour_personnel || []).map((p, idx) => {
+                // If person already has an id, keep it; otherwise generate a stable one based on position
+                return {
+                    ...p,
+                    id: p.id || `person-${p.person_name}-${idx}`
+                };
+            });
+            setLabourPersonnel(normalizedPersonnel);
             setSupervisorDailyAllocations(record.supervisor_daily_allocations || []);
             setDepartmentTechnicianAssignments(record.department_technician_assignments || []);
 
