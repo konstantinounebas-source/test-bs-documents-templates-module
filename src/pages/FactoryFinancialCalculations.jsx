@@ -855,6 +855,7 @@ export default function FactoryFinancialCalculations() {
                                     busStopTypes={busStopTypes}
                                     shelterInstances={shelterInstances}
                                     shelterRevenueItems={shelterRevenueItems}
+                                    getShelterRevenueTotal={getShelterRevenueTotal}
                                     formatCurrency={formatCurrency}
                                     getAllocationTotal={getAllocationTotal}
                                     getDeptName={getDeptName}

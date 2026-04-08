@@ -21,6 +21,7 @@ export default function DepreciationModuleSection({
     busStopTypes,
     shelterInstances,
     shelterRevenueItems,
+    getShelterRevenueTotal,
     formatCurrency,
     getAllocationTotal,
     getDeptName,
@@ -72,6 +73,7 @@ export default function DepreciationModuleSection({
                     shelterRevenueItems={shelterRevenueItems}
                     formatCurrency={formatCurrency}
                     calculateEstimatedRevenuesTotal={calculateEstimatedRevenuesTotal}
+                    getShelterRevenueTotal={getShelterRevenueTotal}
                     onAdd={onAddEstRevenue}
                     onRemove={onRemoveEstRevenue}
                     onUpdate={onUpdateEstRevenue}
@@ -99,16 +101,13 @@ function EstRevenuesSubsection({
     calculateEstimatedRevenuesTotal,
     onAdd,
     onRemove,
-    onUpdate
+    onUpdate,
+    getShelterRevenueTotal
 }) {
     const getShelterRevenueValue = (shelterId) => {
         const shelter = shelterRevenueItems.find(item => item.shelter_instance_id === shelterId);
-        if (shelter) {
-            // Calculate total revenue per unit
-            const baseAmount = parseFloat(shelter.contract_amount) || 0;
-            const approviedVariations = shelter.approved_variations || [];
-            const approviedTotal = approviedVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
-            return baseAmount + approviedTotal;
+        if (shelter && getShelterRevenueTotal) {
+            return getShelterRevenueTotal(shelter);
         }
         return 0;
     };
