@@ -33,92 +33,70 @@ export default function DailyCostsDecisionSection({ selectedDate, onSave = () =>
 
     return (
         <Card className="border-slate-200 bg-white">
-            <CardHeader className="pb-4 border-b border-slate-100">
+            <CardHeader className="py-3 px-4 border-b border-slate-100">
                 <div className="flex items-center gap-2">
-                    <DollarSign className="w-5 h-5 text-blue-600" />
-                    <CardTitle className="text-base font-semibold text-slate-900">Καταχώρηση Κοστών</CardTitle>
+                    <DollarSign className="w-4 h-4 text-blue-600" />
+                    <CardTitle className="text-sm font-semibold text-slate-900">Καταχώρηση Κοστών</CardTitle>
                 </div>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-3 px-4 pb-3">
                 {/* Selection Section */}
-                <div className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4">
-                        <div className="flex items-center space-x-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
-                             onClick={() => setFixedCosts(!fixedCosts)}>
-                            <Checkbox
-                                checked={fixedCosts}
-                                onChange={(checked) => setFixedCosts(checked)}
-                                className="w-5 h-5"
-                            />
-                            <div className="flex-1">
-                                <label className="text-sm font-medium text-slate-900 cursor-pointer">
-                                    Σταθερά Κόστη
-                                </label>
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                    Ενεργοποίηση καταχώρησης σταθερών κοστών
-                                </p>
-                            </div>
-                        </div>
+                <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded">
+                        <Checkbox
+                            checked={fixedCosts}
+                            onChange={(checked) => setFixedCosts(checked)}
+                            className="w-4 h-4"
+                        />
+                        <span className="text-xs font-medium text-slate-900">Σταθερά</span>
+                    </label>
 
-                        <div className="flex items-center space-x-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
-                             onClick={() => setOperationalCosts(!operationalCosts)}>
-                            <Checkbox
-                                checked={operationalCosts}
-                                onChange={(checked) => setOperationalCosts(checked)}
-                                className="w-5 h-5"
-                            />
-                            <div className="flex-1">
-                                <label className="text-sm font-medium text-slate-900 cursor-pointer">
-                                    Λειτουργικά Κόστη
-                                </label>
-                                <p className="text-xs text-slate-500 mt-0.5">
-                                    Ενεργοποίηση καταχώρησης λειτουργικών κοστών
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded">
+                        <Checkbox
+                            checked={operationalCosts}
+                            onChange={(checked) => setOperationalCosts(checked)}
+                            className="w-4 h-4"
+                        />
+                        <span className="text-xs font-medium text-slate-900">Λειτουργικά</span>
+                    </label>
 
                     {/* Action Button */}
                     <Button
                         onClick={handleAddRecord}
                         disabled={!fixedCosts && !operationalCosts}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 h-auto"
+                        size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 h-auto px-2 ml-auto"
                     >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Προσθήκη Καταχώρησης
+                        <Plus className="w-3 h-3 mr-1" />
+                        Προσθήκη
                     </Button>
                 </div>
 
                 {/* Records List */}
                 {todayRecords.length > 0 && (
-                    <div className="mt-6 pt-6 border-t border-slate-100">
-                        <h3 className="text-sm font-semibold text-slate-900 mb-3">
-                            Καταχωρήσεις για {selectedDate}
-                        </h3>
-                        <div className="space-y-2">
+                    <div className="mt-2 pt-2 border-t border-slate-100">
+                        <div className="space-y-1">
                             {todayRecords.map((record, idx) => (
                                 <div
                                     key={idx}
-                                    className="flex items-center justify-between p-3 rounded-lg bg-blue-50 border border-blue-100 hover:bg-blue-100 transition-colors"
+                                    className="flex items-center justify-between p-2 rounded bg-blue-50 border border-blue-100 hover:bg-blue-100 transition-colors"
                                 >
-                                    <div className="flex items-center gap-3 flex-1">
-                                        <CheckCircle2 className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                                        <div className="text-sm text-slate-700">
-                                            <span className="font-medium">
-                                                {record.hasFixedCosts && record.hasOperationalCosts
-                                                    ? 'Σταθερά & Λειτουργικά Κόστη'
-                                                    : record.hasFixedCosts
-                                                    ? 'Σταθερά Κόστη'
-                                                    : 'Λειτουργικά Κόστη'}
-                                            </span>
-                                        </div>
+                                    <div className="flex items-center gap-2 flex-1">
+                                        <CheckCircle2 className="w-3 h-3 text-blue-600 flex-shrink-0" />
+                                        <span className="text-xs text-slate-700">
+                                            {record.hasFixedCosts && record.hasOperationalCosts
+                                                ? 'Σ. & Λ. Κόστη'
+                                                : record.hasFixedCosts
+                                                ? 'Σ. Κόστη'
+                                                : 'Λ. Κόστη'}
+                                        </span>
                                     </div>
                                     <button
                                         onClick={() => handleRemoveRecord(idx)}
-                                        className="text-red-600 hover:text-red-800 hover:bg-red-100 p-2 rounded-lg transition-colors"
+                                        className="text-red-600 hover:text-red-800 p-1 rounded transition-colors"
                                         title="Διαγραφή"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="w-3 h-3" />
                                     </button>
                                 </div>
                             ))}
