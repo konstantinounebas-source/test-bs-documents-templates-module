@@ -509,9 +509,11 @@ export default function FactoryFinancialCalculations() {
         
         if (field === 'shelter_instance_bundle') {
             // Single atomic update for shelter instance + unit_revenue
-            updated[idx].shelter_instance_id = value.shelter_instance_id || '';
-            updated[idx].unit_revenue = parseFloat(value.unit_revenue) || 0;
-            updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (parseFloat(value.unit_revenue) || 0);
+            updated[idx].shelter_instance_id = value?.shelter_instance_id || '';
+            updated[idx].unit_revenue = parseFloat(value?.unit_revenue) || 0;
+            updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (parseFloat(value?.unit_revenue) || 0);
+        } else if (field === 'shelter_instance_id') {
+            updated[idx].shelter_instance_id = value || '';
         } else if (field === 'pending_quantity' || field === 'unit_revenue') {
             updated[idx][field] = parseFloat(value) || 0;
             updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (parseFloat(updated[idx].unit_revenue) || 0);

@@ -105,7 +105,7 @@ function EstRevenuesSubsection({
     getShelterRevenueTotal
 }) {
     const getShelterRevenueValue = (shelterId) => {
-        const shelter = shelterRevenueItems.find(item => item.shelter_instance_id === shelterId);
+        const shelter = shelterRevenueItems.find(item => String(item.shelter_instance_id) === String(shelterId));
         if (shelter && getShelterRevenueTotal) {
             return getShelterRevenueTotal(shelter);
         }
