@@ -52,21 +52,17 @@ export default function ShelterRevenueSection({
                                     <select
                                         value={String(item.shelter_instance_id || '')}
                                         onChange={(e) => {
-                                             const value = e.target.value;
-                                             onUpdateItem(itemIdx, 'shelter_instance_id', value);
-                                             const selectedInstance = shelterInstances && shelterInstances.find(s => String(s.id) === value);
-                                             if (selectedInstance) {
-                                                 onUpdateItem(itemIdx, 'description', selectedInstance.name);
-                                             }
-                                         }}
+                                              const value = e.target.value;
+                                              onUpdateItem(itemIdx, 'shelter_instance_id', value || '');
+                                          }}
                                         className="w-full h-9 px-3 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
                                     >
                                         <option value="">— Επιλέξτε τύπο —</option>
-                                        {shelterInstances && shelterInstances.map(instance => (
-                                             <option key={instance.id} value={String(instance.id)}>
-                                                 {instance.name}
-                                             </option>
-                                         ))}
+                                        {(shelterInstances || []).map(instance => (
+                                              <option key={instance.id} value={String(instance.id)}>
+                                                  {instance.name || instance.id}
+                                              </option>
+                                          ))}
                                     </select>
                                 </div>
                                 <div className="flex-1">
