@@ -94,7 +94,9 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
         notes: '',
         display_order: items.length
       });
-      setItems([...items, newItem]);
+      const updatedItems = [...items, newItem];
+      setItems(updatedItems);
+      calculateDailyTotal(updatedItems);
       toast.success('Σειρά προστέθηκε');
     } catch (error) {
       console.error('Failed to add item:', error);

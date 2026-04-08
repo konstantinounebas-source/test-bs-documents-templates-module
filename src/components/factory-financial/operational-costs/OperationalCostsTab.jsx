@@ -88,7 +88,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
 
   const handleAddItem = async () => {
     try {
-      await base44.entities.OperationalCostItem.create({
+      const newItem = await base44.entities.OperationalCostItem.create({
         factory_financial_data_id: factoryFinancialDataId,
         description: '',
         amount: 0,
@@ -96,7 +96,9 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
         conversion_factor: null,
         notes: ''
       });
-      await loadItems();
+      const updatedItems = [...items, newItem];
+      setItems(updatedItems);
+      calculateDailyTotal(updatedItems);
       toast.success('Νέο κόστος προστέθηκε');
     } catch (error) {
       console.error('Failed to add item:', error);
