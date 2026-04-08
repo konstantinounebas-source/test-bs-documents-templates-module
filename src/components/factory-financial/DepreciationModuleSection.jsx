@@ -130,13 +130,20 @@ function EstRevenuesSubsection({
                                 <Label className="text-xs">Shelter Instance</Label>
                                 <select
                                     value={item.shelter_instance_id || ''}
-                                    onChange={(e) => onUpdate(idx, 'shelter_instance_id', e.target.value)}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        onUpdate(idx, 'shelter_instance_id', value);
+                                        // Auto-fill unit_revenue
+                                        if (value) {
+                                            const revenueValue = getShelterRevenueValue(value);
+                                            onUpdate(idx, 'unit_revenue', revenueValue);
+                                        }
+                                    }}
                                     className="w-full h-9 px-3 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
-                                    disabled={!!item.shelter_instance_id}
                                 >
                                     <option value="">— Επιλέξτε Shelter —</option>
                                     {(shelterInstances || []).map(shelter => (
-                                        <option key={shelter.id} value={String(shelter.id)}>
+                                        <option key={shelter.id} value={shelter.id}>
                                             {shelter.name || shelter.id}
                                         </option>
                                     ))}
@@ -162,13 +169,12 @@ function EstRevenuesSubsection({
                                 />
                             </div>
                             <div>
-                                <Label className="text-xs">Ποσό Ανά Μονάδα (Σύμβασης)</Label>
+                                <Label className="text-xs">Ποσό Ανά Μονάδα</Label>
                                 <Input
                                     type="number"
                                     placeholder="0.00"
                                     value={item.unit_revenue}
-                                    disabled
-                                    className="bg-slate-100"
+                                    onChange={(e) => onUpdate(idx, 'unit_revenue', e.target.value)}
                                 />
                             </div>
                             <div>

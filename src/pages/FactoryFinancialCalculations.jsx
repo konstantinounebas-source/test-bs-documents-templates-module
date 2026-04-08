@@ -507,19 +507,14 @@ export default function FactoryFinancialCalculations() {
     const updateEstimatedRevenue = (idx, field, value) => {
         const updated = [...estimatedRevenues];
         
-        if (field === 'shelter_instance_id') {
-            // Keep shelter_instance_id and auto-fill unit_revenue from shelter data
-            updated[idx].shelter_instance_id = value;
-            const shelter = shelterRevenueItems.find(item => item.shelter_instance_id === value);
-            if (shelter) {
-                const baseAmount = parseFloat(shelter.contract_amount) || 0;
-                const approviedVariations = shelter.approved_variations || [];
-                const approviedTotal = approviedVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
-                updated[idx].unit_revenue = baseAmount + approviedTotal;
-                updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (updated[idx].unit_revenue || 0);
+        if (field === 'bus_stop_type_id') {
+            updated[idx].bus_stop_type_id = value;
+            const selectedType = busStopTypes.find(t => t.id === value);
+            if (selectedType && !updated[idx].description) {
+                updated[idx].description = selectedType.type_name;
             }
-        } else if (field === 'pending_quantity') {
-            updated[idx].pending_quantity = parseFloat(value) || 0;
+        } else if (field === 'pending_quantity' || field === 'unit_revenue') {
+            updated[idx][field] = parseFloat(value) || 0;
             updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (parseFloat(updated[idx].unit_revenue) || 0);
         } else {
             updated[idx][field] = value;
