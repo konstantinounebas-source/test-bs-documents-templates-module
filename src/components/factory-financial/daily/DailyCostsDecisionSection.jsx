@@ -149,6 +149,14 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
                                 </div>
                             ))}
                         </div>
+                        {todayRecords.some(r => r.hasSupervisorCosts) && (
+                            <div className="mt-3 pt-2 border-t border-slate-200">
+                                <p className="text-sm text-slate-500">Σύνολο ημερήσιου κόστους επιστάρχη:</p>
+                                <span className="text-lg font-bold text-blue-700">
+                                    {formatCurrency && formatCurrency(todayRecords.reduce((sum, r) => sum + (r.supervisorCost || 0), 0))}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 )}
             </CardContent>
