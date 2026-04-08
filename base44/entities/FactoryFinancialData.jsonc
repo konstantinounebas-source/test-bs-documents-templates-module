@@ -592,6 +592,119 @@
         }
       }
     },
+    "labour_personnel": {
+      "type": "array",
+      "description": "New Labour module \u2014 personnel master records with salary and cost calculations",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "person_name": {
+            "type": "string"
+          },
+          "position": {
+            "type": "string"
+          },
+          "role_type": {
+            "type": "string"
+          },
+          "employment_type": {
+            "type": "string"
+          },
+          "monthly_salary": {
+            "type": "number",
+            "default": 0
+          },
+          "daily_rate": {
+            "type": "number",
+            "default": 0
+          },
+          "day_factor": {
+            "type": "number",
+            "default": 1
+          },
+          "hour_factor": {
+            "type": "number",
+            "default": 1
+          },
+          "calculated_daily_cost": {
+            "type": "number",
+            "default": 0
+          },
+          "calculated_hourly_cost": {
+            "type": "number",
+            "default": 0
+          },
+          "is_active": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      }
+    },
+    "supervisor_daily_allocations": {
+      "type": "array",
+      "description": "New Labour module \u2014 supervisor daily cost allocations",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "personnel_id": {
+            "type": "string"
+          },
+          "allocation_factor": {
+            "type": "number",
+            "default": 0
+          },
+          "allocated_daily_cost": {
+            "type": "number",
+            "default": 0
+          },
+          "comments": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "department_technician_assignments": {
+      "type": "array",
+      "description": "New Labour module \u2014 technician assignments per department with hourly costs",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "department_id": {
+            "type": "string"
+          },
+          "technician_rows": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "object",
+              "properties": {
+                "personnel_id": {
+                  "type": "string"
+                },
+                "hourly_cost": {
+                  "type": "number",
+                  "default": 0
+                },
+                "comments": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "average_hourly_cost": {
+            "type": "number",
+            "default": 0
+          }
+        }
+      }
+    },
     "daily_production_entries": {
       "type": "array",
       "description": "Daily production output. Future: auto-populated from Manufacturing module.",
