@@ -188,39 +188,14 @@ export default function FinancialOverviewTab({
                 </div>
             )}
 
-            {/* 2. Static Planning KPI cards */}
-            <div>
-                <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">
-                    Σχεδιασμός (Static Financial Planning)
-                </h3>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-                    <KPICard label="Σχεδιαστικά Έσοδα"              value={fmt(totalIncome)}        icon={TrendingUp}  color="green"  />
-                    <KPICard label="Κόστος Παραγωγής"                value={fmt(totalCosts)}         icon={DollarSign}  color="blue"   />
-                    <KPICard label="Κόστος Απόσβεσης"                value={fmt(depreciationCost)}   icon={BarChart2}   color="purple" />
-                    <KPICard
-                        label="Αποτέλεσμα προ Απόσβεσης"
-                        value={fmt(netBeforeDepr)}
-                        icon={netBeforeDepr >= 0 ? TrendingUp : TrendingDown}
-                        color={netBeforeDepr >= 0 ? 'green' : 'red'}
-                    />
-                    <KPICard label="Συνολικό Κόστος με Απόσβεση"    value={fmt(totalCostWithDepr)}  icon={Minus}       color="orange" />
-                    <KPICard
-                        label="Καθαρό Αποτέλεσμα μετά Απόσβεση"
-                        value={fmt(netAfterDepr)}
-                        icon={netAfterDepr >= 0 ? TrendingUp : TrendingDown}
-                        color={netAfterDepr >= 0 ? 'green' : 'red'}
-                    />
-                </div>
-            </div>
-
-            {/* 3. Period Filter Bar */}
+            {/* 2. Period Filter Bar */}
             <OverviewFilterBar
                 filterParams={filterParams}
                 onFilterChange={setFilterParams}
                 availableYears={availableYears}
             />
 
-            {/* 4. Simulation Card (UI-only, never saves to DB) */}
+            {/* 3. Simulation Card (UI-only, never saves to DB) */}
             <SimulationCard
                 simState={simState}
                 onSimChange={handleSimChange}
@@ -228,7 +203,7 @@ export default function FinancialOverviewTab({
                 isActive={simActive}
             />
 
-            {/* 5. Operational KPI section */}
+            {/* 4. Operational KPI section */}
             <div>
                 <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
@@ -319,29 +294,28 @@ export default function FinancialOverviewTab({
                 </Card>
             )}
 
-            {/* 7. Static Financial Analysis + Cost Breakdown */}
+            {/* 5. Operational Financial Analysis + Cost Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-base font-semibold text-slate-800">Χρηματοοικονομική Ανάλυση (Σχεδιασμός)</CardTitle>
+                        <CardTitle className="text-base font-semibold text-slate-800">Χρηματοοικονομική Ανάλυση (Λειτουργική Περίοδος)</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-1">
-                        <AnalysisRow label="Σχεδιαστικά Έσοδα"                  value={fmt(totalIncome)} />
-                        <AnalysisRow label="Κόστος Λειτουργίας"                  value={`− ${fmt(totalCosts)}`} />
-                        <AnalysisRow label="Αποτέλεσμα προ Απόσβεσης"           value={fmt(netBeforeDepr)} highlight />
+                        <AnalysisRow label="Έσοδα Περιόδου"                     value={fmt(effective.revenue)} />
+                        <AnalysisRow label="Κόστος Λειτουργίας (Σχεδιασμένο)"    value={`− ${fmt(totalCosts)}`} />
+                        <AnalysisRow label="Κόστος Εργατικών Περιόδου"          value={`− ${fmt(periodLabourCost)}`} />
+                        <AnalysisRow label="Αποτέλεσμα προ Απόσβεσης"           value={fmt((effective.revenue) - (totalCosts) - (periodLabourCost))} highlight />
                         <div className="border-t border-slate-200 my-2" />
                         <AnalysisRow label="Επιβάρυνση Απόσβεσης"                value={`− ${fmt(depreciationCost)}`} />
-                        <AnalysisRow label="Απόσβεση ως % Εσόδων"               value={`${deprPct}%`} />
-                        <div className="border-t border-slate-200 my-2" />
-                        <AnalysisRow label="Τελικό Αποτέλεσμα μετά Απόσβεση"   value={fmt(netAfterDepr)} highlight />
+                        <AnalysisRow label="Τελικό Αποτέλεσμα μετά Απόσβεση"   value={fmt((effective.revenue) - (totalCosts) - (periodLabourCost) - (depreciationCost))} highlight />
                     </CardContent>
                 </Card>
 
-                {/* 8. Cost Breakdown + Legacy Personnel info */}
+                {/* 6. Cost Breakdown + Legacy Personnel info */}
                 <div className="space-y-3">
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-semibold text-slate-800">Ανάλυση Κόστους (Σύνολο Σχεδιασμού)</CardTitle>
+                            <CardTitle className="text-base font-semibold text-slate-800">Ανάλυση Κόστους (Λειτουργική Περίοδος)</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-1">
                             {(costBreakdown || []).map((item, i) => (
