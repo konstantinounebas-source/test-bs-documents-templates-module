@@ -25,12 +25,13 @@ function normalizeDailyRevenueEntry(raw) {
     const qty        = parseFloat(e.quantity)     || 0;
     const unitRev    = parseFloat(e.unit_revenue) || 0;
     return {
-        date:          e.date          ?? '',
-        revenue_item:  e.revenue_item  ?? '',
-        quantity:      qty,
-        unit_revenue:  unitRev,
-        total_revenue: parseFloat(e.total_revenue) || qty * unitRev,
-        notes:         e.notes        ?? '',
+        date:               e.date               ?? '',
+        revenue_item:       e.revenue_item       ?? '',
+        bus_stop_type_id:   e.bus_stop_type_id   ?? '',
+        quantity:           qty,
+        unit_revenue:       unitRev,
+        total_revenue:      parseFloat(e.total_revenue) || qty * unitRev,
+        notes:              e.notes              ?? '',
     };
 }
 
