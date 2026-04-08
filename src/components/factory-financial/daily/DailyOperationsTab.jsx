@@ -19,6 +19,33 @@ export default function DailyOperationsTab({
     onDailyDepartmentHours,
     revenueCategories,
 }) {
+    // Ensure busStopTypes is always an array
+    const normalizedBusStopTypes = Array.isArray(busStopTypes) ? busStopTypes : [];
+    
+    return (
+        <DailyOperationsTabContent
+            dailyRevenueEntries={dailyRevenueEntries}
+            dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+            busStopTypes={normalizedBusStopTypes}
+            departments={departments}
+            formatCurrency={formatCurrency}
+            onDailyRevenue={onDailyRevenue}
+            onDailyDepartmentHours={onDailyDepartmentHours}
+            revenueCategories={revenueCategories}
+        />
+    );
+}
+
+function DailyOperationsTabContent({
+    dailyRevenueEntries,
+    dailyDepartmentHoursEntries,
+    busStopTypes,
+    departments,
+    formatCurrency,
+    onDailyRevenue,
+    onDailyDepartmentHours,
+    revenueCategories,
+}) {
     const [selectedDate, setSelectedDate] = useState(todayISO());
 
     // Add: always stamp selectedDate
@@ -59,6 +86,7 @@ export default function DailyOperationsTab({
                 selectedDate={selectedDate}
                 formatCurrency={formatCurrency}
                 revenueCategories={revenueCategories || []}
+                busStopTypes={busStopTypes}
                 onAdd={handleAddRevenue}
                 onRemove={handleRemoveRevenue}
                 onUpdate={handleUpdateRevenue}

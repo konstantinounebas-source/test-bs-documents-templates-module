@@ -38,6 +38,7 @@ export default function DailyRevenueSection({
     selectedDate,
     formatCurrency,
     revenueCategories,
+    busStopTypes,
     onAdd,
     onRemove,
     onUpdate,
@@ -53,6 +54,12 @@ export default function DailyRevenueSection({
     const total = calculateDailyRevenueTotal(visibleEntries);
     const revenueOptions = buildRevenueOptions(revenueCategories);
     const hasCategories = revenueOptions.length > 0;
+    const normalizedBusStopTypes = Array.isArray(busStopTypes) ? busStopTypes : [];
+
+    const getBusStopTypeName = (id) => {
+        const bst = normalizedBusStopTypes.find(b => b.id === id);
+        return bst ? (bst.type_name || bst.type_code || id) : id || '—';
+    };
 
     const handleUpdate = (realIdx, field, value) => {
         const updated = [...entries];
@@ -110,14 +117,15 @@ export default function DailyRevenueSection({
                 ) : (
                     <div className="space-y-2">
                         {/* Header */}
-                        <div className="hidden md:grid grid-cols-[1fr_70px_100px_110px_1fr_36px] gap-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            <span>Κατηγορία Εσόδου</span>
-                            <span>Ποσότητα</span>
-                            <span>Μον. Αξία</span>
-                            <span>Σύνολο</span>
-                            <span>Σημειώσεις</span>
-                            <span />
-                        </div>
+                         <div className="hidden md:grid grid-cols-[1fr_120px_70px_100px_110px_1fr_36px] gap-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                             <span>Κατηγορία Εσόδου</span>
+                             <span>Τύπος Στάσης</span>
+                             <span>Ποσότητα</span>
+                             <span>Μον. Αξία</span>
+                             <span>Σύνολο</span>
+                             <span>Σημειώσεις</span>
+                             <span />
+                         </div>
 
                         {visibleWithIdx.map(({ r: row, i: realIdx }) => {
                             const isLegacy = hasCategories &&
@@ -127,7 +135,7 @@ export default function DailyRevenueSection({
                             return (
                             <div
                                 key={realIdx}
-                                className={`grid grid-cols-1 md:grid-cols-[1fr_70px_100px_110px_1fr_36px] gap-2 items-center rounded-lg p-2 ${isLegacy ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
+                                className={`grid grid-cols-1 md:grid-cols-[1fr_120px_70px_100px_110px_1fr_36px] gap-2 items-center rounded-lg p-2 ${isLegacy ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
                             >
                                 {/* Revenue item */}
                                 {hasCategories && !isLegacy ? (
@@ -159,6 +167,24 @@ export default function DailyRevenueSection({
                                         )}
                                     </div>
                                 )}
+
+                                {/* Bus Stop Type */}
+                                <Select
+                                    value={row.bus_stop_type_id || ''}
+                                    onValueChange={val => handleUpdate(realIdx, 'bus_stop_type_id', val)}
+                                >
+                                    <SelectTrigger className="h-8 text-sm">
+                                        <SelectValue placeholder="Επιλέξτε τύπο..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value={null}>— Κανένας —</SelectItem>
+                                        {normalizedBusStopTypes.map(bst => (
+                                            <SelectItem key={bst.id} value={bst.id}>
+                                                {bst.type_name || bst.type_code || bst.id}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
 
                                 {/* Quantity */}
                                 <Input
