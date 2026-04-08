@@ -1,0 +1,31 @@
+{
+  "name": "Department",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Department name"
+    },
+    "department_name": {
+      "type": "string",
+      "description": "Department name (alias for 'name')"
+    },
+    "description": {
+      "type": "string",
+      "description": "Department description"
+    },
+    "avg_hourly_cost": {
+      "type": "number",
+      "default": 0,
+      "description": "Average hourly cost for this department"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this department is active"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

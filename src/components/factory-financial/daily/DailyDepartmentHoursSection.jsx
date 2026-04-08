@@ -23,7 +23,12 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
 
     const getDeptName = (id) => {
         const d = (departments || []).find(d => d.id === id);
-        return d ? (d.department_name || id) : id || '—';
+        return d ? (d.department_name || d.name || id) : id || '—';
+    };
+
+    const getDeptHourlyCost = (id) => {
+        const d = (departments || []).find(d => d.id === id);
+        return d ? (parseFloat(d.avg_hourly_cost) || 0) : 0;
     };
 
     return (
@@ -52,14 +57,19 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
                 ) : (
                     <div className="space-y-2">
                         {/* Header */}
-                        <div className="hidden md:grid grid-cols-[1fr_100px_1fr_36px] gap-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        <div className="hidden md:grid grid-cols-[1fr_100px_100px_100px_1fr_36px] gap-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                             <span>Τμήμα</span>
                             <span>Ώρες</span>
+                            <span>Κόστος/Ώρα</span>
+                            <span>Σύνολο Κόστος</span>
                             <span>Σημειώσεις</span>
                             <span />
                         </div>
-                        {visibleWithIdx.map(({ r: row, i: realIdx }) => (
-                            <div key={realIdx} className="grid grid-cols-1 md:grid-cols-[1fr_100px_1fr_36px] gap-2 items-center bg-slate-50 rounded-lg p-2">
+                        {visibleWithIdx.map(({ r: row, i: realIdx }) => {
+                            const hourlyRate = getDeptHourlyCost(row.department_id);
+                            const totalCost = (parseFloat(row.total_hours) || 0) * hourlyRate;
+                            return (
+                            <div key={realIdx} className="grid grid-cols-1 md:grid-cols-[1fr_100px_100px_100px_1fr_36px] gap-2 items-center bg-slate-50 rounded-lg p-2">
                                 <Select
                                     value={row.department_id || '__none__'}
                                     onValueChange={val => handleUpdate(realIdx, 'department_id', val === '__none__' ? '' : val)}
@@ -73,7 +83,7 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
                                         <SelectItem value="__none__">— Επιλογή τμήματος —</SelectItem>
                                         {(departments || []).map(d => (
                                             <SelectItem key={d.id} value={d.id}>
-                                                {d.department_name || d.id}
+                                                {d.department_name || d.name || d.id}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -87,6 +97,12 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
                                     className="text-sm h-8"
                                     placeholder="0"
                                 />
+                                <div className="flex items-center h-8 px-3 bg-slate-100 border border-slate-200 rounded-md text-sm text-slate-600">
+                                    {hourlyRate > 0 ? hourlyRate.toFixed(2) : '—'}
+                                </div>
+                                <div className="flex items-center h-8 px-3 bg-purple-50 border border-purple-200 rounded-md text-sm font-semibold text-purple-700">
+                                    {totalCost > 0 ? totalCost.toFixed(2) : '—'}
+                                </div>
                                 <Input
                                     value={row.notes}
                                     onChange={e => handleUpdate(realIdx, 'notes', e.target.value)}
@@ -102,7 +118,8 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </CardContent>

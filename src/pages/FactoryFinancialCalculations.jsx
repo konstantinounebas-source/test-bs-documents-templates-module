@@ -541,7 +541,7 @@ export default function FactoryFinancialCalculations() {
 
     const getDeptName = (departmentId) => {
         const dept = departments.find(d => d.id === departmentId);
-        return dept ? dept.department_name : departmentId;
+        return dept ? (dept.department_name || dept.name || departmentId) : departmentId;
     };
 
     if (accessLoading || isLoading) {
