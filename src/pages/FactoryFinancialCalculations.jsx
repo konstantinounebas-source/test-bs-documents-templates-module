@@ -104,6 +104,8 @@ export default function FactoryFinancialCalculations() {
     
     // Income section
     const [shelterRevenueItems, setShelterRevenueItems] = useState([]);
+    // Daily revenue catalog — sourced from sales_revenue_items (schema: product_identifier, description, unit_selling_price)
+    const [salesRevenueItems, setSalesRevenueItems] = useState([]);
     
     // Cost sections
     const [personnelCosts, setPersonnelCosts] = useState([]);
@@ -196,6 +198,10 @@ export default function FactoryFinancialCalculations() {
             setAvgWorkingDaysPerYear(record.average_working_days_per_year || 260);
             
             setShelterRevenueItems(record.shelter_revenue_items || []);
+            // sales_revenue_items exists in FactoryFinancialData schema:
+            // { product_identifier, description, quantity_sold, unit_selling_price }
+            // This is the correct catalog source for daily revenue category selection.
+            setSalesRevenueItems(record.sales_revenue_items || []);
             
             setPersonnelCosts(normalizeLoadedExpenseRows(record.personnel_costs || [], 'personnel'));
             setBomCosts(record.bill_of_materials_costs || []);
@@ -814,7 +820,7 @@ export default function FactoryFinancialCalculations() {
                                     onDailyProduction={setDailyProductionEntries}
                                     onDailyRevenue={setDailyRevenueEntries}
                                     onDailyDepartmentHours={setDailyDepartmentHoursEntries}
-                                    revenueCategories={estimatedRevenues}
+                                    revenueCategories={salesRevenueItems}
                                 />
                             </TabsContent>
 

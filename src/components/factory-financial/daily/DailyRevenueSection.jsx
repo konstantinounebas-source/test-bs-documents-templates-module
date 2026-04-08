@@ -15,10 +15,13 @@ import { calculateDailyRevenueTotal } from "@/components/factory-financial/utils
 const EMPTY_ROW = { date: '', revenue_item: '', quantity: 0, unit_revenue: 0, total_revenue: 0, notes: '' };
 
 /**
- * Build category options from estimatedRevenues (depreciation module).
- * These items have `description` and `unit_revenue` — the correct semantic match
- * for daily revenue entries (quantity × unit_revenue per product type).
+ * Build category options from sales_revenue_items (FactoryFinancialData.sales_revenue_items).
+ * Schema: { product_identifier, description, quantity_sold, unit_selling_price }
+ * unit_selling_price is the correct unit revenue for daily entry pre-fill.
  * Each option: { label: string, unit_revenue: number }
+ *
+ * NOTE: If sales_revenue_items is empty (no catalog defined yet), the UI falls back
+ * to free-text input — no categories will appear and the user can type freely.
  */
 function buildRevenueOptions(revenueCategories) {
     if (!Array.isArray(revenueCategories) || revenueCategories.length === 0) return [];
@@ -26,7 +29,7 @@ function buildRevenueOptions(revenueCategories) {
         .filter(item => item && item.description)
         .map(item => ({
             label: item.description,
-            unit_revenue: parseFloat(item.unit_revenue) || 0,
+            unit_revenue: parseFloat(item.unit_selling_price) || 0,
         }));
 }
 
