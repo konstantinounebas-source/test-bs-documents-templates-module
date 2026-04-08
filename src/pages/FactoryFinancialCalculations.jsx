@@ -23,6 +23,7 @@ import DepreciationModuleSection from "@/components/factory-financial/Depreciati
 import DepreciationRateCard from "@/components/factory-financial/DepreciationRateCard";
 import ValidationWarningCard from "@/components/factory-financial/ValidationWarningCard";
 import FactoryCostSectionsCard from "@/components/factory-financial/FactoryCostSectionsCard";
+import FixedCostsTab from "@/components/factory-financial/fixed-costs/FixedCostsTab";
 import ExpenseTableSection from "@/components/factory-financial/ExpenseTableSection";
 import FinancialOverviewTab from "@/components/factory-financial/FinancialOverviewTab";
 import LabourCostTab from "@/components/factory-financial/labour/LabourCostTab";
@@ -714,25 +715,12 @@ export default function FactoryFinancialCalculations() {
 
                             {/* FIXED COSTS TAB */}
                              <TabsContent value="fixed" className="mt-4">
-                                 <ExpenseTableSection
-                                     title="Σταθερά Κόστη (Fixed Costs)"
-                                     sectionKey="fixedCosts"
-                                     expenseItems={fixedCosts}
-                                     departments={departments}
-                                     expandedSections={expandedSections}
+                                 <FixedCostsTab
+                                     factoryFinancialDataId={selectedRecord?.id}
                                      totalWorkingDays={totalWorkingDays}
                                      formatCurrency={formatCurrency}
-                                     convertCostToDaily={(amount, freq, avgMonth, avgYear, workDays, factor) => convertCostToDaily(amount, freq, avgMonth || avgWorkingDaysPerMonth, avgYear || avgWorkingDaysPerYear, workDays || totalWorkingDays, factor)}
-                                    calculateCostTotal={() => calculateCostTotal(fixedCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear)}
-                                    onToggleSection={toggleSection}
-                                    onAddItem={() => setFixedCosts(prev => addArrayItem(prev, { description: '', amount: 0, frequency_type: 'monthly', category: 'fixed', department_allocations: [] }))}
-                                    onRemoveItem={(idx) => setFixedCosts(prev => removeArrayItem(prev, idx))}
-                                    onUpdateItem={(idx, field, value) => setFixedCosts(prev => updateArrayItem(prev, idx, field, value))}
-                                    onAddDeptAlloc={(idx) => setFixedCosts(prev => addDeptAllocation(prev, idx))}
-                                    onUpdateDeptAlloc={(idx, allocIdx, field, value) => setFixedCosts(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
-                                    onRemoveDeptAlloc={(idx, allocIdx) => setFixedCosts(prev => removeDeptAllocation(prev, idx, allocIdx))}
-                                />
-                            </TabsContent>
+                                 />
+                             </TabsContent>
 
                             {/* OPERATIONAL COSTS TAB */}
                              <TabsContent value="operational" className="mt-4">
