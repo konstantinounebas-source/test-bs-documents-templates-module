@@ -86,9 +86,47 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
     }
   };
 
-  const handleUpdateItem = (id, field, value) => {
+  const handleUpdateItem = async (id, field, value) => {
+    let updatedValue = value;
+
+    // If bus_stop_type_id is changed, fetch BOM cost
+    if (field === 'bus_stop_type_id') {
+      try {
+        const bomCost = await calculateBOMCost(value);
+        updatedValue = value;
+        
+        const updated = items.map(item => 
+          item.id === id ? { ...item, bus_stop_type_id: value, amount: bomCost } : item
+        );
+        setItems(updated);
+        calculateDailyTotal(updated);
+
+        if (saveTimeout) clearTimeout(saveTimeout);
+
+        const timeout = setTimeout(async () => {
+          try {
+            await base44.entities.OperationalCostItem.update(id, { 
+              bus_stop_type_id: value, 
+              amount: bomCost 
+            });
+            toast.success('BOM κόστος φορτώθηκε');
+          } catch (error) {
+            console.error('Failed to update item:', error);
+            toast.error('Αποτυχία ενημέρωσης');
+          }
+        }, 500);
+        
+        setSaveTimeout(timeout);
+        return;
+      } catch (error) {
+        console.error('Failed to get BOM cost:', error);
+        toast.error('Αποτυχία φόρτωσης BOM κόστους');
+        return;
+      }
+    }
+
     const updated = items.map(item => 
-      item.id === id ? { ...item, [field]: value } : item
+      item.id === id ? { ...item, [field]: updatedValue } : item
     );
     setItems(updated);
     calculateDailyTotal(updated);
@@ -97,7 +135,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
 
     const timeout = setTimeout(async () => {
       try {
-        await base44.entities.OperationalCostItem.update(id, { [field]: value });
+        await base44.entities.OperationalCostItem.update(id, { [field]: updatedValue });
         toast.success('Ενημέρωση αποθηκεύτηκε');
       } catch (error) {
         console.error('Failed to update item:', error);
@@ -106,6 +144,26 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
     }, 500);
     
     setSaveTimeout(timeout);
+  };
+
+  const calculateBOMCost = async (busStopTypeId) => {
+    try {
+      const components = await base44.entities.BusStopTypeComponent.filter({
+        bus_stop_type_id: busStopTypeId
+      });
+
+      let totalCost = 0;
+      for (const component of components) {
+        const product = await base44.entities.Product.filter({ id: component.product_id });
+        if (product && product.length > 0) {
+          totalCost += (product[0].unit_cost || 0) * (component.quantity || 1);
+        }
+      }
+      return totalCost;
+    } catch (error) {
+      console.error('Error calculating BOM cost:', error);
+      return 0;
+    }
   };
 
   const handleDeleteItem = async (id) => {
