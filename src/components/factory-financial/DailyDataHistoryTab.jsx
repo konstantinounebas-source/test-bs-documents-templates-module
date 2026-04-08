@@ -123,7 +123,7 @@ export default function DailyDataHistoryTab({
                 columns={[
                     { key: 'date', label: 'Ημερομηνία' },
                     { key: 'bus_stop_type_id', label: 'Τύπος Στάσης', render: r => getBusStopTypeName(r.bus_stop_type_id) },
-                    { key: 'label', label: 'Περιγραφή', render: r => r.label || '—' },
+                    { key: 'label', label: 'Περιγραφή', render: r => r.product_label || r.label || '—' },
                     { key: 'quantity', label: 'Ποσότητα', render: r => parseFloat(r.quantity || 0).toFixed(0) },
                     { key: 'notes', label: 'Σημειώσεις', render: r => r.notes || '—' },
                 ]}

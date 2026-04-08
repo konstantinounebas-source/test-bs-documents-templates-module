@@ -8,13 +8,22 @@ import { calculateDailyDepartmentHoursTotal } from "@/components/factory-financi
 
 const EMPTY_ROW = { date: '', department_id: '', total_hours: 0, notes: '' };
 
-export default function DailyDepartmentHoursSection({ entries, departments, onAdd, onRemove, onUpdate }) {
-    const total = calculateDailyDepartmentHoursTotal(entries);
+export default function DailyDepartmentHoursSection({ entries, selectedDate, departments, onAdd, onRemove, onUpdate }) {
+    const visibleWithIdx = selectedDate
+        ? entries.map((r, i) => ({ r, i })).filter(({ r }) => r.date === selectedDate)
+        : entries.map((r, i) => ({ r, i }));
 
-    const handleUpdate = (idx, field, value) => {
+    const total = calculateDailyDepartmentHoursTotal(visibleWithIdx.map(({ r }) => r));
+
+    const handleUpdate = (realIdx, field, value) => {
         const updated = [...entries];
-        updated[idx] = { ...updated[idx], [field]: value };
+        updated[realIdx] = { ...updated[realIdx], [field]: value };
         onUpdate(updated);
+    };
+
+    const getDeptName = (id) => {
+        const d = (departments || []).find(d => d.id === id);
+        return d ? (d.department_name || id) : id || '—';
     };
 
     return (
@@ -24,7 +33,7 @@ export default function DailyDepartmentHoursSection({ entries, departments, onAd
                     <div className="flex items-center gap-2">
                         <Clock className="w-5 h-5 text-purple-600" />
                         <CardTitle className="text-base font-semibold text-slate-800">
-                            C. Daily Department Hours
+                            B. Daily Department Hours
                         </CardTitle>
                     </div>
                     <div className="flex items-center gap-3">
@@ -38,32 +47,27 @@ export default function DailyDepartmentHoursSection({ entries, departments, onAd
                 </div>
             </CardHeader>
             <CardContent>
-                {entries.length === 0 ? (
-                    <p className="text-sm text-slate-400 text-center py-6">Δεν υπάρχουν εγγραφές ωραρίου. Κάντε κλικ στο «Προσθήκη».</p>
+                {visibleWithIdx.length === 0 ? (
+                    <p className="text-sm text-slate-400 text-center py-6">Δεν υπάρχουν εγγραφές ωραρίου για {selectedDate || 'αυτή την ημέρα'}. Κάντε κλικ στο «Προσθήκη».</p>
                 ) : (
                     <div className="space-y-2">
                         {/* Header */}
-                        <div className="hidden md:grid grid-cols-[120px_1fr_100px_1fr_36px] gap-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            <span>Ημερομηνία</span>
+                        <div className="hidden md:grid grid-cols-[1fr_100px_1fr_36px] gap-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                             <span>Τμήμα</span>
                             <span>Ώρες</span>
                             <span>Σημειώσεις</span>
                             <span />
                         </div>
-                        {entries.map((row, idx) => (
-                            <div key={idx} className="grid grid-cols-1 md:grid-cols-[120px_1fr_100px_1fr_36px] gap-2 items-center bg-slate-50 rounded-lg p-2">
-                                <Input
-                                    type="date"
-                                    value={row.date}
-                                    onChange={e => handleUpdate(idx, 'date', e.target.value)}
-                                    className="text-sm h-8"
-                                />
+                        {visibleWithIdx.map(({ r: row, i: realIdx }) => (
+                            <div key={realIdx} className="grid grid-cols-1 md:grid-cols-[1fr_100px_1fr_36px] gap-2 items-center bg-slate-50 rounded-lg p-2">
                                 <Select
                                     value={row.department_id || '__none__'}
-                                    onValueChange={val => handleUpdate(idx, 'department_id', val === '__none__' ? '' : val)}
+                                    onValueChange={val => handleUpdate(realIdx, 'department_id', val === '__none__' ? '' : val)}
                                 >
                                     <SelectTrigger className="h-8 text-sm">
-                                        <SelectValue placeholder="Επιλογή τμήματος..." />
+                                        <SelectValue placeholder="Επιλογή τμήματος...">
+                                            {row.department_id ? getDeptName(row.department_id) : 'Επιλογή τμήματος...'}
+                                        </SelectValue>
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="__none__">— Επιλογή τμήματος —</SelectItem>
@@ -79,20 +83,20 @@ export default function DailyDepartmentHoursSection({ entries, departments, onAd
                                     min="0"
                                     step="0.5"
                                     value={row.total_hours}
-                                    onChange={e => handleUpdate(idx, 'total_hours', parseFloat(e.target.value) || 0)}
+                                    onChange={e => handleUpdate(realIdx, 'total_hours', parseFloat(e.target.value) || 0)}
                                     className="text-sm h-8"
                                     placeholder="0"
                                 />
                                 <Input
                                     value={row.notes}
-                                    onChange={e => handleUpdate(idx, 'notes', e.target.value)}
+                                    onChange={e => handleUpdate(realIdx, 'notes', e.target.value)}
                                     className="text-sm h-8"
                                     placeholder="Σημειώσεις"
                                 />
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => onRemove(idx)}
+                                    onClick={() => onRemove(realIdx)}
                                     className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50"
                                 >
                                     <Trash2 className="w-4 h-4" />

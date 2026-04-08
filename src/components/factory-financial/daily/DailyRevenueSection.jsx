@@ -35,37 +35,46 @@ function buildRevenueOptions(revenueCategories) {
 
 export default function DailyRevenueSection({
     entries,
+    selectedDate,
     formatCurrency,
     revenueCategories,
     onAdd,
     onRemove,
     onUpdate,
 }) {
-    const total = calculateDailyRevenueTotal(entries);
+    // Filter to selected date only (if provided)
+    const visibleEntries = selectedDate
+        ? entries.filter(r => r.date === selectedDate)
+        : entries;
+    // Map visible indices back to original array indices for removal
+    const visibleWithIdx = selectedDate
+        ? entries.map((r, i) => ({ r, i })).filter(({ r }) => r.date === selectedDate)
+        : entries.map((r, i) => ({ r, i }));
+    const total = calculateDailyRevenueTotal(visibleEntries);
     const revenueOptions = buildRevenueOptions(revenueCategories);
     const hasCategories = revenueOptions.length > 0;
 
-    const handleUpdate = (idx, field, value) => {
+    const handleUpdate = (realIdx, field, value) => {
         const updated = [...entries];
-        updated[idx] = { ...updated[idx], [field]: value };
+        updated[realIdx] = { ...updated[realIdx], [field]: value };
         // Auto-calculate total_revenue
         if (field === 'quantity' || field === 'unit_revenue') {
-            const qty  = parseFloat(field === 'quantity'     ? value : updated[idx].quantity)     || 0;
-            const unit = parseFloat(field === 'unit_revenue' ? value : updated[idx].unit_revenue) || 0;
-            updated[idx].total_revenue = qty * unit;
+            const qty  = parseFloat(field === 'quantity'     ? value : updated[realIdx].quantity)     || 0;
+            const unit = parseFloat(field === 'unit_revenue' ? value : updated[realIdx].unit_revenue) || 0;
+            updated[realIdx].total_revenue = qty * unit;
         }
         onUpdate(updated);
     };
 
-    const handleCategorySelect = (idx, selectedLabel) => {
+    const handleCategorySelect = (realIdx, selectedLabel) => {
         const opt = revenueOptions.find(o => o.label === selectedLabel);
         if (!opt) return;
         const updated = [...entries];
-        updated[idx] = {
-            ...updated[idx],
+        updated[realIdx] = {
+            ...updated[realIdx],
             revenue_item: opt.label,
             unit_revenue: opt.unit_revenue,
-            total_revenue: (parseFloat(updated[idx].quantity) || 0) * opt.unit_revenue,
+            total_revenue: (parseFloat(updated[realIdx].quantity) || 0) * opt.unit_revenue,
         };
         onUpdate(updated);
     };
@@ -94,15 +103,14 @@ export default function DailyRevenueSection({
                 </div>
             </CardHeader>
             <CardContent>
-                {entries.length === 0 ? (
+                {visibleWithIdx.length === 0 ? (
                     <p className="text-sm text-slate-400 text-center py-6">
-                        Δεν υπάρχουν εγγραφές εσόδων. Κάντε κλικ στο «Προσθήκη».
+                        Δεν υπάρχουν εγγραφές εσόδων για {selectedDate || 'αυτή την ημέρα'}. Κάντε κλικ στο «Προσθήκη».
                     </p>
                 ) : (
                     <div className="space-y-2">
                         {/* Header */}
-                        <div className="hidden md:grid grid-cols-[110px_1fr_70px_100px_110px_1fr_36px] gap-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            <span>Ημερομηνία</span>
+                        <div className="hidden md:grid grid-cols-[1fr_70px_100px_110px_1fr_36px] gap-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                             <span>Κατηγορία Εσόδου</span>
                             <span>Ποσότητα</span>
                             <span>Μον. Αξία</span>
@@ -111,30 +119,21 @@ export default function DailyRevenueSection({
                             <span />
                         </div>
 
-                        {entries.map((row, idx) => {
-                            // A row is "legacy/custom" if categories exist but the saved value doesn't match any option
+                        {visibleWithIdx.map(({ r: row, i: realIdx }) => {
                             const isLegacy = hasCategories &&
                                 row.revenue_item &&
                                 !revenueOptions.some(o => o.label === row.revenue_item);
 
                             return (
                             <div
-                                key={idx}
-                                className={`grid grid-cols-1 md:grid-cols-[110px_1fr_70px_100px_110px_1fr_36px] gap-2 items-center rounded-lg p-2 ${isLegacy ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
+                                key={realIdx}
+                                className={`grid grid-cols-1 md:grid-cols-[1fr_70px_100px_110px_1fr_36px] gap-2 items-center rounded-lg p-2 ${isLegacy ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
                             >
-                                {/* Date */}
-                                <Input
-                                    type="date"
-                                    value={row.date}
-                                    onChange={e => handleUpdate(idx, 'date', e.target.value)}
-                                    className="text-sm h-8"
-                                />
-
-                                {/* Revenue item: Select for matched rows, plain Input for legacy/custom/no-categories */}
+                                {/* Revenue item */}
                                 {hasCategories && !isLegacy ? (
                                     <Select
                                         value={row.revenue_item || ''}
-                                        onValueChange={val => handleCategorySelect(idx, val)}
+                                        onValueChange={val => handleCategorySelect(realIdx, val)}
                                     >
                                         <SelectTrigger className="h-8 text-sm">
                                             <SelectValue placeholder="Επιλέξτε κατηγορία..." />
@@ -151,7 +150,7 @@ export default function DailyRevenueSection({
                                     <div className="flex flex-col gap-0.5">
                                         <Input
                                             value={row.revenue_item}
-                                            onChange={e => handleUpdate(idx, 'revenue_item', e.target.value)}
+                                            onChange={e => handleUpdate(realIdx, 'revenue_item', e.target.value)}
                                             className="text-sm h-8"
                                             placeholder="Στοιχείο Εσόδου"
                                         />
@@ -166,18 +165,18 @@ export default function DailyRevenueSection({
                                     type="number"
                                     min="0"
                                     value={row.quantity}
-                                    onChange={e => handleUpdate(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                                    onChange={e => handleUpdate(realIdx, 'quantity', parseFloat(e.target.value) || 0)}
                                     className="text-sm h-8"
                                     placeholder="0"
                                 />
 
-                                {/* Unit revenue — editable even after category selection */}
+                                {/* Unit revenue */}
                                 <Input
                                     type="number"
                                     min="0"
                                     step="0.01"
                                     value={row.unit_revenue}
-                                    onChange={e => handleUpdate(idx, 'unit_revenue', parseFloat(e.target.value) || 0)}
+                                    onChange={e => handleUpdate(realIdx, 'unit_revenue', parseFloat(e.target.value) || 0)}
                                     className="text-sm h-8"
                                     placeholder="0.00"
                                 />
@@ -190,7 +189,7 @@ export default function DailyRevenueSection({
                                 {/* Notes */}
                                 <Input
                                     value={row.notes}
-                                    onChange={e => handleUpdate(idx, 'notes', e.target.value)}
+                                    onChange={e => handleUpdate(realIdx, 'notes', e.target.value)}
                                     className="text-sm h-8"
                                     placeholder="Σημειώσεις"
                                 />
@@ -199,7 +198,7 @@ export default function DailyRevenueSection({
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => onRemove(idx)}
+                                    onClick={() => onRemove(realIdx)}
                                     className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50"
                                 >
                                     <Trash2 className="w-4 h-4" />
