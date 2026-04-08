@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Plus, Trash2 } from 'lucide-react';
 
-export default function DailyCostsDecisionSection({ selectedDate, onSave }) {
+export default function DailyCostsDecisionSection({ selectedDate, onSave = () => {} }) {
     const [fixedCosts, setFixedCosts] = useState(false);
     const [operationalCosts, setOperationalCosts] = useState(false);
     const [records, setRecords] = useState([]);
@@ -17,7 +17,7 @@ export default function DailyCostsDecisionSection({ selectedDate, onSave }) {
         };
         const updatedRecords = [...records, newRecord];
         setRecords(updatedRecords);
-        onSave(updatedRecords);
+        if (typeof onSave === 'function') onSave(updatedRecords);
         setFixedCosts(false);
         setOperationalCosts(false);
     };
@@ -25,7 +25,7 @@ export default function DailyCostsDecisionSection({ selectedDate, onSave }) {
     const handleRemoveRecord = (idx) => {
         const updatedRecords = records.filter((_, i) => i !== idx);
         setRecords(updatedRecords);
-        onSave(updatedRecords);
+        if (typeof onSave === 'function') onSave(updatedRecords);
     };
 
     const todayRecords = records.filter(r => r.date === selectedDate);
