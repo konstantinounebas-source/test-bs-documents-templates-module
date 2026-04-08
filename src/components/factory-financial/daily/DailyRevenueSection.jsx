@@ -119,10 +119,16 @@ export default function DailyRevenueSection({
                             <span />
                         </div>
 
-                        {entries.map((row, idx) => (
+                        {entries.map((row, idx) => {
+                            // A row is "legacy/custom" if categories exist but the saved value doesn't match any option
+                            const isLegacy = hasCategories &&
+                                row.revenue_item &&
+                                !revenueOptions.some(o => o.label === row.revenue_item);
+
+                            return (
                             <div
                                 key={idx}
-                                className="grid grid-cols-1 md:grid-cols-[110px_1fr_70px_100px_110px_1fr_36px] gap-2 items-center bg-slate-50 rounded-lg p-2"
+                                className={`grid grid-cols-1 md:grid-cols-[110px_1fr_70px_100px_110px_1fr_36px] gap-2 items-center rounded-lg p-2 ${isLegacy ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
                             >
                                 {/* Date */}
                                 <Input
@@ -132,8 +138,8 @@ export default function DailyRevenueSection({
                                     className="text-sm h-8"
                                 />
 
-                                {/* Revenue item: Select if categories exist, text Input as fallback */}
-                                {hasCategories ? (
+                                {/* Revenue item: Select for matched rows, plain Input for legacy/custom/no-categories */}
+                                {hasCategories && !isLegacy ? (
                                     <Select
                                         value={row.revenue_item || ''}
                                         onValueChange={val => handleCategorySelect(idx, val)}
@@ -150,12 +156,17 @@ export default function DailyRevenueSection({
                                         </SelectContent>
                                     </Select>
                                 ) : (
-                                    <Input
-                                        value={row.revenue_item}
-                                        onChange={e => handleUpdate(idx, 'revenue_item', e.target.value)}
-                                        className="text-sm h-8"
-                                        placeholder="Στοιχείο Εσόδου"
-                                    />
+                                    <div className="flex flex-col gap-0.5">
+                                        <Input
+                                            value={row.revenue_item}
+                                            onChange={e => handleUpdate(idx, 'revenue_item', e.target.value)}
+                                            className="text-sm h-8"
+                                            placeholder="Στοιχείο Εσόδου"
+                                        />
+                                        {isLegacy && (
+                                            <span className="text-[10px] text-amber-600 leading-none px-1">Legacy / custom</span>
+                                        )}
+                                    </div>
                                 )}
 
                                 {/* Quantity */}
@@ -202,7 +213,8 @@ export default function DailyRevenueSection({
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </CardContent>
