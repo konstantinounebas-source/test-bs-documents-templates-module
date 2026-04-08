@@ -32,19 +32,30 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
     const getDeptHourlyCost = (id) => {
         // Find the department assignment block for this department
         const deptBlock = (departmentAssignments || []).find(b => b.department_id === id);
-        if (deptBlock && deptBlock.technicians && deptBlock.technicians.length > 0) {
+        if (deptBlock && deptBlock.technician_rows && deptBlock.technician_rows.length > 0) {
             // Calculate average hourly cost from technicians in this department
-            const totalHourlyCost = deptBlock.technicians.reduce((sum, tech) => {
-                const person = (labourPersonnel || []).find(p => p.id === tech.person_id);
-                if (person) {
-                    const hourlyRate = person.daily_rate / (person.hours_per_day || 8);
-                    return sum + hourlyRate;
-                }
-                return sum;
-            }, 0);
-            return totalHourlyCost / deptBlock.technicians.length;
+            const validRates = deptBlock.technician_rows
+                .map(row => {
+                    const person = (labourPersonnel || []).find(p => p.id === row.personnel_id);
+                    if (person) {
+                        // Use calculated_hourly_cost if available
+                        if (person.calculated_hourly_cost) {
+                            return person.calculated_hourly_cost;
+                        }
+                        // Otherwise calculate from daily_rate / hours_per_day
+                        if (person.daily_rate) {
+                            return person.daily_rate / (person.hours_per_day || 8);
+                        }
+                    }
+                    return null;
+                })
+                .filter(rate => rate !== null);
+            
+            if (validRates.length > 0) {
+                return validRates.reduce((sum, rate) => sum + rate, 0) / validRates.length;
+            }
         }
-        // Fallback to department field if no assignment
+        // Fallback to department field if no technician_rows exist
         const d = (departments || []).find(d => d.id === id);
         return d ? (parseFloat(d.avg_hourly_cost) || 0) : 0;
     };
