@@ -64,18 +64,23 @@ export default function DailyRevenueSection({
     };
 
     const handleUpdate = (realIdx, field, value) => {
-        const updated = [...entries];
-        // Ensure value is a string (not null/undefined) for consistency
-        const cleanValue = value === null ? '' : String(value);
-        updated[realIdx] = { ...updated[realIdx], [field]: cleanValue };
-        // Auto-calculate total_revenue
-        if (field === 'quantity' || field === 'unit_revenue') {
-            const qty  = parseFloat(field === 'quantity'     ? cleanValue : updated[realIdx].quantity)     || 0;
-            const unit = parseFloat(field === 'unit_revenue' ? cleanValue : updated[realIdx].unit_revenue) || 0;
-            updated[realIdx].total_revenue = qty * unit;
-        }
-        onUpdate(updated);
-    };
+         const updated = [...entries];
+         // For numeric fields, parse; for others, keep as-is (don't convert to string)
+         let cleanValue = value;
+         if (field === 'quantity' || field === 'unit_revenue') {
+             cleanValue = parseFloat(value) || 0;
+         } else if (value === null || value === undefined) {
+             cleanValue = '';
+         }
+         updated[realIdx] = { ...updated[realIdx], [field]: cleanValue };
+         // Auto-calculate total_revenue
+         if (field === 'quantity' || field === 'unit_revenue') {
+             const qty  = parseFloat(field === 'quantity'     ? cleanValue : updated[realIdx].quantity)     || 0;
+             const unit = parseFloat(field === 'unit_revenue' ? cleanValue : updated[realIdx].unit_revenue) || 0;
+             updated[realIdx].total_revenue = qty * unit;
+         }
+         onUpdate(updated);
+     };
 
     const handleCategorySelect = (realIdx, selectedLabel) => {
         const opt = revenueOptions.find(o => o.label === selectedLabel);
