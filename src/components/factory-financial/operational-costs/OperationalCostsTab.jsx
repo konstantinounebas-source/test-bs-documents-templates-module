@@ -154,9 +154,15 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
 
       let totalCost = 0;
       for (const component of components) {
-        const product = await base44.entities.Product.filter({ id: component.product_id });
-        if (product && product.length > 0) {
-          totalCost += (product[0].unit_cost || 0) * (component.quantity || 1);
+        if (component.product_id) {
+          const products = await base44.entities.Product.filter({ 
+            id: component.product_id 
+          });
+          if (products && products.length > 0) {
+            const unitCost = products[0].unit_cost || 0;
+            const quantity = component.quantity_required || 1;
+            totalCost += unitCost * quantity;
+          }
         }
       }
       return totalCost;
