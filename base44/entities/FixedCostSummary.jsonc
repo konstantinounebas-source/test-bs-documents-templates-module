@@ -1,0 +1,22 @@
+{
+  "name": "FixedCostSummary",
+  "type": "object",
+  "properties": {
+    "factory_financial_data_id": {
+      "type": "string",
+      "description": "Reference to FactoryFinancialData record"
+    },
+    "daily_total": {
+      "type": "number",
+      "description": "Total fixed costs per day"
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last calculation timestamp"
+    }
+  },
+  "required": [
+    "factory_financial_data_id"
+  ]
+}
