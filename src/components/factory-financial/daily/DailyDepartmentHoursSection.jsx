@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Clock } from 'lucide-react';
 
-const EMPTY_ROW = { department_id: '', total_hours: 0, notes: '' };
+const getEmptyRow = (date) => ({ date, department_id: '', total_hours: 0, notes: '' });
 
 export default function DailyDepartmentHoursSection({ entries, selectedDate, departments, departmentAssignments, labourPersonnel, formatCurrency, onAdd, onRemove, onUpdate }) {
     const visibleWithIdx = selectedDate
@@ -77,7 +77,7 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
                          <span className="text-sm text-slate-500">
                              Σύνολο: <strong className="text-purple-700">{formatVal(totalCost)}</strong>
                          </span>
-                         <Button size="sm" variant="outline" onClick={() => onAdd(EMPTY_ROW)} className="gap-1">
+                         <Button size="sm" variant="outline" onClick={() => onAdd(getEmptyRow(selectedDate))} className="gap-1">
                              <Plus className="w-3.5 h-3.5" /> Προσθήκη
                          </Button>
                      </div>
