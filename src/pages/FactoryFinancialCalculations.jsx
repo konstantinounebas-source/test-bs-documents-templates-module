@@ -232,9 +232,9 @@ export default function FactoryFinancialCalculations() {
             setDepartmentLabourHours(normalizeLoadedDepartmentLabourHours(record.department_labour_hours));
             
             // NEW Labour module
-            setLabourPersonnel((record.labour_personnel || []).map((p, idx) => ({
-                id: p.id || idx.toString(),
-                ...p
+            setLabourPersonnel((record.labour_personnel || []).map((p) => ({
+                ...p,
+                id: p.id || `person-${Date.now()}-${Math.random()}`
             })));
             setSupervisorDailyAllocations(record.supervisor_daily_allocations || []);
             setDepartmentTechnicianAssignments(record.department_technician_assignments || []);
@@ -296,7 +296,12 @@ export default function FactoryFinancialCalculations() {
             await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
             
             toast.success('Τα δεδομένα αποθηκεύτηκαν επιτυχώς');
-            loadFinancialRecords();
+            // Reload the specific record to ensure UI is in sync
+            const refreshedRecords = await base44.entities.FactoryFinancialData.list('-created_date');
+            const refreshedRecord = refreshedRecords.find(r => r.id === selectedRecord.id);
+            if (refreshedRecord) {
+                loadRecordData(refreshedRecord);
+            }
         } catch (error) {
             console.error('Failed to save data:', error);
             toast.error('Σφάλμα αποθήκευσης δεδομένων');
