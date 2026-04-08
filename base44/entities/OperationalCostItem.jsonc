@@ -1,0 +1,44 @@
+{
+  "name": "OperationalCostItem",
+  "type": "object",
+  "properties": {
+    "factory_financial_data_id": {
+      "type": "string",
+      "description": "Reference to FactoryFinancialData record"
+    },
+    "description": {
+      "type": "string",
+      "description": "Cost description"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Cost amount"
+    },
+    "frequency_type": {
+      "type": "string",
+      "enum": [
+        "daily",
+        "monthly",
+        "yearly"
+      ],
+      "default": "monthly",
+      "description": "Payment frequency"
+    },
+    "conversion_factor": {
+      "type": "number",
+      "description": "Custom factor for daily calculation"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes/comments"
+    },
+    "display_order": {
+      "type": "integer",
+      "description": "Display order in the list"
+    }
+  },
+  "required": [
+    "factory_financial_data_id",
+    "description"
+  ]
+}
