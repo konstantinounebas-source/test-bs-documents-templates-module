@@ -96,9 +96,7 @@ export const formatCurrency = (value) => {
 
 export const calculateDepreciationInvestmentsTotal = (depreciationInvestments) => {
     return depreciationInvestments.reduce((sum, item) => {
-        const amount = parseFloat(item.total_amount) || 0;
-        const totalAllocation = getAllocationTotal(item.department_allocations);
-        return sum + (amount * totalAllocation / 100);
+        return sum + (parseFloat(item.total_amount) || 0);
     }, 0);
 };
 
