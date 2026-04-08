@@ -4,11 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Trash2, ChevronDown, ChevronRight, Users } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronRight, Users, AlertTriangle } from 'lucide-react';
 import {
     calculateMonthlyResourceDailyRate,
     calculateMonthlyResourceHourlyRate,
     calculateDailyPartTimeHourlyRate,
+    validateResourceAllocations,
+    getResourceAllocationPreviewAmount,
 } from '../utils/labourCostCalculations';
 import DeptAllocationRows from '../DeptAllocationRows';
 import {
@@ -28,8 +30,19 @@ function ResourceRow({ resource, idx, departments, formatCurrency, onUpdate, onR
         ? calculateMonthlyResourceHourlyRate(resource.monthly_salary, resource.monthly_to_day_factor, resource.hours_per_day)
         : calculateDailyPartTimeHourlyRate(resource.daily_rate, resource.hours_per_day);
 
+    // Allocation status
+    const allocStatus = validateResourceAllocations(resource);
+    const showAllocWarning = !allocStatus.valid;
+    const allocWarningText = allocStatus.hasAllocations
+        ? `Κατανομή: ${allocStatus.total}% (απαιτείται 100%)`
+        : 'Χωρίς κατανομή τμήματος';
+
+    // Amount shown in the DeptAllocationRows preview
+    const previewAmount = getResourceAllocationPreviewAmount(resource);
+    const previewLabel = isMonthly ? 'Μηνιαίος μισθός' : 'Ημερήσιο κόστος';
+
     return (
-        <div className="border border-slate-200 rounded-xl bg-white overflow-hidden">
+        <div className={`border rounded-xl bg-white overflow-hidden ${showAllocWarning ? 'border-amber-300' : 'border-slate-200'}`}>
             {/* Header row */}
             <div className="flex items-center gap-3 px-4 py-3">
                 <button
@@ -64,6 +77,13 @@ function ResourceRow({ resource, idx, departments, formatCurrency, onUpdate, onR
                     <div>Ημ/σιο: <span className="font-semibold text-slate-700">{formatCurrency(dailyRate)}</span></div>
                     <div>Ωριαίο: <span className="font-semibold text-slate-700">{formatCurrency(hourlyRate)}</span></div>
                 </div>
+
+                {/* Allocation warning badge */}
+                {showAllocWarning && (
+                    <div title={allocWarningText} className="flex-shrink-0">
+                        <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    </div>
+                )}
 
                 <div className="flex items-center gap-2 flex-shrink-0">
                     <label className="flex items-center gap-1 text-xs text-slate-500 cursor-pointer">
@@ -140,11 +160,24 @@ function ResourceRow({ resource, idx, departments, formatCurrency, onUpdate, onR
 
                     {/* Department allocations */}
                     <div>
-                        <Label className="text-xs font-semibold text-slate-700 mb-2 block">Κατανομή Τμημάτων</Label>
+                        <div className="flex items-center justify-between mb-2">
+                            <Label className="text-xs font-semibold text-slate-700">
+                                Κατανομή Τμημάτων
+                            </Label>
+                            <span className="text-xs text-slate-400">
+                                Ποσό preview: {previewLabel} = {formatCurrency(previewAmount)}
+                            </span>
+                        </div>
+                        {showAllocWarning && (
+                            <div className="flex items-center gap-1 text-xs text-amber-600 mb-2 bg-amber-50 rounded px-2 py-1 border border-amber-200">
+                                <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                                {allocWarningText}
+                            </div>
+                        )}
                         <DeptAllocationRows
                             allocations={resource.department_allocations || []}
                             departments={departments}
-                            totalAmount={dailyRate}
+                            totalAmount={previewAmount}
                             formatCurrency={formatCurrency}
                             onAdd={() => onResources(addLabourResourceAllocation(allResources, idx))}
                             onUpdate={(allocIdx, field, value) => onResources(updateLabourResourceAllocation(allResources, idx, allocIdx, field, value))}
@@ -158,6 +191,24 @@ function ResourceRow({ resource, idx, departments, formatCurrency, onUpdate, onR
 }
 
 export default function LabourResourceSetupSection({ labourResources, departments, formatCurrency, onResources }) {
+    const safeResources = labourResources || [];
+
+    const handleAdd = () => {
+        onResources([
+            ...safeResources,
+            {
+                resource_name: '',
+                employment_type: 'monthly_fixed',
+                monthly_salary: 0,
+                daily_rate: 0,
+                hours_per_day: 8,
+                monthly_to_day_factor: 22,
+                is_active: true,
+                department_allocations: [],
+            },
+        ]);
+    };
+
     return (
         <Card>
             <CardHeader className="pb-3">
@@ -166,30 +217,23 @@ export default function LabourResourceSetupSection({ labourResources, department
                         <Users className="w-4 h-4 text-blue-600" />
                         Ρύθμιση Πόρων Εργασίας
                     </CardTitle>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => onResources([
-                            ...(labourResources || []),
-                            { resource_name: '', employment_type: 'monthly_fixed', monthly_salary: 0, daily_rate: 0, hours_per_day: 8, monthly_to_day_factor: 22, is_active: true, department_allocations: [] }
-                        ])}
-                        className="gap-1 text-xs"
-                    >
+                    <Button size="sm" variant="outline" onClick={handleAdd} className="gap-1 text-xs">
                         <Plus className="w-3 h-3" />
                         Προσθήκη Πόρου
                     </Button>
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
                     Ορίστε εργαζόμενους και τους ρυθμούς κόστους τους. Μηνιαίοι υπολογίζουν αυτόματα ημερήσιο &amp; ωριαίο ρυθμό.
+                    Κάθε ενεργός πόρος χρειάζεται κατανομή τμημάτων που αθροίζει 100%.
                 </p>
             </CardHeader>
             <CardContent className="space-y-3">
-                {(!labourResources || labourResources.length === 0) ? (
+                {safeResources.length === 0 ? (
                     <div className="text-center py-8 text-sm text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                         Δεν υπάρχουν καταχωρημένοι πόροι. Πατήστε "Προσθήκη Πόρου" για να ξεκινήσετε.
                     </div>
                 ) : (
-                    labourResources.map((resource, idx) => (
+                    safeResources.map((resource, idx) => (
                         <ResourceRow
                             key={idx}
                             resource={resource}
@@ -197,12 +241,11 @@ export default function LabourResourceSetupSection({ labourResources, department
                             departments={departments}
                             formatCurrency={formatCurrency}
                             onUpdate={(i, field, value) => {
-                                const updated = labourResources.map((r, j) => j === i ? { ...r, [field]: value } : r);
-                                onResources(updated);
+                                onResources(safeResources.map((r, j) => j === i ? { ...r, [field]: value } : r));
                             }}
-                            onRemove={(i) => onResources(labourResources.filter((_, j) => j !== i))}
+                            onRemove={(i) => onResources(safeResources.filter((_, j) => j !== i))}
                             onResources={onResources}
-                            allResources={labourResources}
+                            allResources={safeResources}
                         />
                     ))
                 )}

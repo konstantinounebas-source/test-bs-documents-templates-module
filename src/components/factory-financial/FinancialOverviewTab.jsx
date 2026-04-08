@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, TrendingDown, DollarSign, BarChart2, Minus, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, BarChart2, Minus, AlertTriangle, Info, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 function KPICard({ label, value, icon: Icon, color = 'blue', sub }) {
@@ -39,6 +39,7 @@ export default function FinancialOverviewTab({
     formatCurrency,
     costBreakdown,
     hasInvalidAllocations,
+    labourModuleCost,
 }) {
     const netBeforeDepr = totalIncome - totalCosts;
     const totalCostWithDepr = totalCosts + depreciationCost;
@@ -93,23 +94,46 @@ export default function FinancialOverviewTab({
                 </Card>
 
                 {/* Cost Breakdown */}
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-base font-semibold text-slate-800">Ανάλυση Κόστους</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-1">
-                        {costBreakdown.map((item, i) => (
-                            <div key={i} className="flex justify-between items-center py-1.5 border-b border-slate-100 last:border-0">
-                                <span className="text-sm text-slate-600">{item.label}</span>
-                                <span className="text-sm font-medium text-slate-800">{formatCurrency(item.value)}</span>
+                <div className="space-y-3">
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-semibold text-slate-800">Ανάλυση Κόστους (Σύνολο)</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-1">
+                            {costBreakdown.map((item, i) => (
+                                <div key={i} className="flex justify-between items-center py-1.5 border-b border-slate-100 last:border-0">
+                                    <span className="text-sm text-slate-600">{item.label}</span>
+                                    <span className="text-sm font-medium text-slate-800">{formatCurrency(item.value)}</span>
+                                </div>
+                            ))}
+                            <div className="flex justify-between items-center py-2 bg-slate-100 rounded px-2 mt-2">
+                                <span className="text-sm font-semibold text-slate-800">Σύνολο Κόστους</span>
+                                <span className="text-sm font-bold text-slate-900">{formatCurrency(totalCosts)}</span>
                             </div>
-                        ))}
-                        <div className="flex justify-between items-center py-2 bg-slate-100 rounded px-2 mt-2">
-                            <span className="text-sm font-semibold text-slate-800">Σύνολο</span>
-                            <span className="text-sm font-bold text-slate-900">{formatCurrency(totalCosts)}</span>
+                        </CardContent>
+                    </Card>
+
+                    {/* Labour Module transitional notice */}
+                    {labourModuleCost !== undefined && (
+                        <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 space-y-2">
+                            <div className="flex items-center gap-2 text-violet-700 font-semibold text-sm">
+                                <Users className="w-4 h-4 flex-shrink-0" />
+                                Κόστος Προσωπικού — Νέο Module (εκτός συνολικού κόστους)
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-violet-700">Υπολογισμένο κόστος εργασίας (Labour Module)</span>
+                                <span className="text-sm font-bold text-violet-800">{formatCurrency(labourModuleCost)}</span>
+                            </div>
+                            <div className="flex items-start gap-1.5 text-xs text-violet-600 pt-1 border-t border-violet-200">
+                                <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                                <span>
+                                    Το νέο Labour Cost module βρίσκεται σε transitional phase και <strong>δεν συμμετέχει ακόμα στο συνολικό κόστος παραγωγής</strong>.
+                                    Το κόστος αυτό παρουσιάζεται εδώ για αναφορά μόνο, μέχρι να αντικαταστήσει πλήρως το Legacy Personnel Costing.
+                                </span>
+                            </div>
                         </div>
-                    </CardContent>
-                </Card>
+                    )}
+                </div>
             </div>
         </div>
     );

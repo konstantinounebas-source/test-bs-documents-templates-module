@@ -26,7 +26,11 @@ import FactoryCostSectionsCard from "@/components/factory-financial/FactoryCostS
 import ExpenseTableSection from "@/components/factory-financial/ExpenseTableSection";
 import FinancialOverviewTab from "@/components/factory-financial/FinancialOverviewTab";
 import LabourCostTab from "@/components/factory-financial/labour/LabourCostTab";
-import { calculateTotalLabourCost } from "@/components/factory-financial/utils/labourCostCalculations";
+import {
+    calculateTotalLabourCost,
+    normalizeLoadedLabourResources,
+    normalizeLoadedDepartmentLabourHours,
+} from "@/components/factory-financial/utils/labourCostCalculations";
 import {
     getAllocationTotal,
     hasInvalidAllocation,
@@ -194,8 +198,8 @@ export default function FactoryFinancialCalculations() {
             setEstimatedRevenues(record.depreciation_module?.estimated_revenues || []);
             setAdditionalRevenues(record.depreciation_module?.additional_revenues || []);
 
-            setLabourResources(record.labour_resources || []);
-            setDepartmentLabourHours(record.department_labour_hours || []);
+            setLabourResources(normalizeLoadedLabourResources(record.labour_resources));
+            setDepartmentLabourHours(normalizeLoadedDepartmentLabourHours(record.department_labour_hours));
             
         } catch (error) {
             console.error('Failed to load record data:', error);
@@ -600,9 +604,9 @@ export default function FactoryFinancialCalculations() {
                                     depreciationCost={getCalculateDepreciationInvestmentsTotal()}
                                     formatCurrency={formatCurrency}
                                     hasInvalidAllocations={!validateAllAllocations()}
+                                    labourModuleCost={calculateTotalLabourCost(labourResources, departmentLabourHours)}
                                     costBreakdown={[
-                                        { label: 'Κόστος Προσωπικού (Labour Module)', value: calculateTotalLabourCost(labourResources, departmentLabourHours) },
-                                        { label: 'Κόστη Προσωπικού (Legacy)', value: getCalculatePersonnelCostTotal() },
+                                        { label: 'Κόστος Προσωπικού — Legacy (συμπεριλαμβάνεται στο σύνολο)', value: getCalculatePersonnelCostTotal() },
                                         { label: 'BOM (Υλικά)', value: getCalculateBomTotal() },
                                         { label: 'Σταθερά Κόστη', value: getCalculateCostTotal(fixedCosts) },
                                         { label: 'Λειτουργικά Κόστη', value: getCalculateCostTotal(operationalCosts) },

@@ -1,10 +1,9 @@
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Users, TrendingUp } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import LabourResourceSetupSection from './LabourResourceSetupSection';
 import DepartmentLabourHoursSection from './DepartmentLabourHoursSection';
 import DepartmentLabourCostSummarySection from './DepartmentLabourCostSummarySection';
-import { calculateTotalLabourCost } from '../utils/labourCostCalculations';
+import { calculateTotalLabourCost, validateAllLabourAllocations } from '../utils/labourCostCalculations';
 
 export default function LabourCostTab({
     labourResources,
@@ -14,9 +13,15 @@ export default function LabourCostTab({
     onLabourResources,
     onDepartmentLabourHours,
 }) {
-    const totalLabourCost = calculateTotalLabourCost(labourResources, departmentLabourHours);
-    const activeResources = (labourResources || []).filter(r => r.is_active !== false).length;
-    const totalHours = (departmentLabourHours || []).reduce((s, e) => s + (parseFloat(e.total_hours) || 0), 0);
+    const safeResources = labourResources || [];
+    const safeHours = departmentLabourHours || [];
+
+    const totalLabourCost = calculateTotalLabourCost(safeResources, safeHours);
+    const activeResources = safeResources.filter(r => r.is_active !== false).length;
+    const totalHours = safeHours.reduce((s, e) => s + (parseFloat(e.total_hours) || 0), 0);
+
+    // Allocation validation issues
+    const allocationIssues = validateAllLabourAllocations(safeResources);
 
     return (
         <div className="space-y-6">
@@ -36,9 +41,27 @@ export default function LabourCostTab({
                 </div>
             </div>
 
+            {/* Allocation validation warnings */}
+            {allocationIssues.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-1">
+                    <div className="flex items-center gap-2 text-amber-700 font-semibold text-sm mb-2">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                        Προβλήματα κατανομής τμημάτων σε πόρους εργασίας:
+                    </div>
+                    {allocationIssues.map((issue, i) => (
+                        <div key={i} className="text-xs text-amber-700 pl-6">
+                            {issue.hasAllocations
+                                ? `• "${issue.resource_name}": κατανομή ${issue.total}% (απαιτείται 100%)`
+                                : `• "${issue.resource_name}": δεν έχει οριστεί κατανομή τμημάτων`
+                            }
+                        </div>
+                    ))}
+                </div>
+            )}
+
             {/* A. Resource Setup */}
             <LabourResourceSetupSection
-                labourResources={labourResources}
+                labourResources={safeResources}
                 departments={departments}
                 formatCurrency={formatCurrency}
                 onResources={onLabourResources}
@@ -46,15 +69,16 @@ export default function LabourCostTab({
 
             {/* B. Department Hours */}
             <DepartmentLabourHoursSection
-                departmentLabourHours={departmentLabourHours}
+                departmentLabourHours={safeHours}
                 departments={departments}
                 onHours={onDepartmentLabourHours}
+                labourResources={safeResources}
             />
 
             {/* C. Results */}
             <DepartmentLabourCostSummarySection
-                labourResources={labourResources}
-                departmentLabourHours={departmentLabourHours}
+                labourResources={safeResources}
+                departmentLabourHours={safeHours}
                 departments={departments}
                 formatCurrency={formatCurrency}
             />
