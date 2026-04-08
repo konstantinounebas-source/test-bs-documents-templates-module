@@ -143,97 +143,106 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
            const daily = convertToDaily(item.amount, item.frequency_type, item.conversion_factor);
            return (
              <div key={item.id} className="p-3 bg-slate-50 rounded border border-slate-200 space-y-2">
-               <div className="grid grid-cols-12 gap-2 items-end mb-2">
+               <div className="grid grid-cols-12 gap-2 items-end">
                  <TooltipProvider>
-                   <div className="col-span-3 flex items-center gap-1">
-                     <span className="text-xs font-medium text-slate-600 flex-1">Περιγραφή</span>
-                     <Tooltip>
-                       <TooltipTrigger asChild>
-                         <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                       </TooltipTrigger>
-                       <TooltipContent side="top" className="text-xs max-w-[200px]">
-                         Όνομα του σταθερού κόστους (π.χ. Ενοίκιο, Ηλεκτρικό)
-                       </TooltipContent>
-                     </Tooltip>
+                   <div className="col-span-3 flex flex-col gap-1">
+                     <div className="flex items-center gap-1">
+                       <span className="text-xs font-medium text-slate-600">Περιγραφή</span>
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <HelpCircle className="w-3 h-3 text-slate-400" />
+                         </TooltipTrigger>
+                         <TooltipContent side="top" className="text-xs max-w-[200px]">
+                           Όνομα του σταθερού κόστους (π.χ. Ενοίκιο, Ηλεκτρικό)
+                         </TooltipContent>
+                       </Tooltip>
+                     </div>
+                     <Input
+                       placeholder="π.χ. Ενοίκιο"
+                       value={item.description}
+                       onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
+                       className="h-8 text-sm"
+                     />
                    </div>
-                   <div className="col-span-2 flex items-center gap-1">
-                     <span className="text-xs font-medium text-slate-600 flex-1">Ποσό</span>
-                     <Tooltip>
-                       <TooltipTrigger asChild>
-                         <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                       </TooltipTrigger>
-                       <TooltipContent side="top" className="text-xs max-w-[200px]">
-                         Το κόστος με βάση τη συχνότητα
-                       </TooltipContent>
-                     </Tooltip>
+                   <div className="col-span-2 flex flex-col gap-1">
+                     <div className="flex items-center gap-1">
+                       <span className="text-xs font-medium text-slate-600">Ποσό</span>
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <HelpCircle className="w-3 h-3 text-slate-400" />
+                         </TooltipTrigger>
+                         <TooltipContent side="top" className="text-xs max-w-[200px]">
+                           Το κόστος με βάση τη συχνότητα
+                         </TooltipContent>
+                       </Tooltip>
+                     </div>
+                     <Input
+                       type="number"
+                       placeholder="0.00"
+                       value={item.amount?.toFixed(2) || ''}
+                       onChange={(e) => handleUpdateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
+                       step="0.01"
+                       className="h-8 text-sm"
+                     />
                    </div>
-                   <div className="col-span-2 flex items-center gap-1">
-                     <span className="text-xs font-medium text-slate-600 flex-1">Συχνότητα</span>
-                     <Tooltip>
-                       <TooltipTrigger asChild>
-                         <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                       </TooltipTrigger>
-                       <TooltipContent side="top" className="text-xs max-w-[200px]">
-                         Ημερήσιο, Μηνιαίο ή Ετήσιο
-                       </TooltipContent>
-                     </Tooltip>
+                   <div className="col-span-2 flex flex-col gap-1">
+                     <div className="flex items-center gap-1">
+                       <span className="text-xs font-medium text-slate-600">Συχνότητα</span>
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <HelpCircle className="w-3 h-3 text-slate-400" />
+                         </TooltipTrigger>
+                         <TooltipContent side="top" className="text-xs max-w-[200px]">
+                           Ημερήσιο, Μηνιαίο ή Ετήσιο
+                         </TooltipContent>
+                       </Tooltip>
+                     </div>
+                     <Select value={item.frequency_type} onValueChange={(v) => handleUpdateItem(item.id, 'frequency_type', v)}>
+                       <SelectTrigger className="h-8 text-sm">
+                         <SelectValue />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="daily">Ημερήσιο</SelectItem>
+                         <SelectItem value="monthly">Μηνιαίο</SelectItem>
+                         <SelectItem value="yearly">Ετήσιο</SelectItem>
+                       </SelectContent>
+                     </Select>
                    </div>
-                   <div className="col-span-1 flex items-center gap-1">
-                     <span className="text-xs font-medium text-slate-600 flex-1">Factor</span>
-                     <Tooltip>
-                       <TooltipTrigger asChild>
-                         <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                       </TooltipTrigger>
-                       <TooltipContent side="top" className="text-xs max-w-[200px]">
-                         Custom διαιρέτης για ημερήσιο υπολογισμό (π.χ. 22 εργάσιμες μέρες)
-                       </TooltipContent>
-                     </Tooltip>
+                   <div className="col-span-1 flex flex-col gap-1">
+                     <div className="flex items-center gap-1">
+                       <span className="text-xs font-medium text-slate-600">Factor</span>
+                       <Tooltip>
+                         <TooltipTrigger asChild>
+                           <HelpCircle className="w-3 h-3 text-slate-400" />
+                         </TooltipTrigger>
+                         <TooltipContent side="top" className="text-xs max-w-[200px]">
+                           Custom διαιρέτης για ημερήσιο υπολογισμό (π.χ. 22 εργάσιμες μέρες)
+                         </TooltipContent>
+                       </Tooltip>
+                     </div>
+                     <Input
+                       type="number"
+                       placeholder="22"
+                       value={item.conversion_factor || ''}
+                       onChange={(e) => handleUpdateItem(item.id, 'conversion_factor', e.target.value ? parseFloat(e.target.value) : null)}
+                       className="h-8 text-sm"
+                     />
                    </div>
-                   <div className="col-span-2 text-xs font-medium text-slate-600">
-                     Ημερήσιο
+                   <div className="col-span-2 text-xs font-medium text-slate-600 mb-1">
+                     Ημερήσιο Κόστος
                    </div>
+                   <div />
                  </TooltipProvider>
                </div>
-               <div className="grid grid-cols-12 gap-2 items-end">
-                 <Input
-                   placeholder="Περιγραφή"
-                   value={item.description}
-                   onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
-                   className="col-span-3 h-8 text-sm"
-                 />
-                 <Input
-                   type="number"
-                   placeholder="Ποσό"
-                   value={item.amount?.toFixed(2) || ''}
-                   onChange={(e) => handleUpdateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
-                   step="0.01"
-                   className="col-span-2 h-8 text-sm"
-                 />
-                 <Select value={item.frequency_type} onValueChange={(v) => handleUpdateItem(item.id, 'frequency_type', v)}>
-                   <SelectTrigger className="col-span-2 h-8 text-sm">
-                     <SelectValue />
-                   </SelectTrigger>
-                   <SelectContent>
-                     <SelectItem value="daily">Ημερήσιο</SelectItem>
-                     <SelectItem value="monthly">Μηνιαίο</SelectItem>
-                     <SelectItem value="yearly">Ετήσιο</SelectItem>
-                   </SelectContent>
-                 </Select>
-                 <Input
-                   type="number"
-                   placeholder="Factor"
-                   value={item.conversion_factor || ''}
-                   onChange={(e) => handleUpdateItem(item.id, 'conversion_factor', e.target.value ? parseFloat(e.target.value) : null)}
-                   className="col-span-1 h-8 text-sm"
-                 />
-                 <div className="col-span-2 text-right font-medium text-slate-900 bg-blue-50 p-2 rounded">
+               <div className="flex items-center justify-between">
+                 <div className="text-right font-medium text-slate-900 bg-blue-50 px-3 py-2 rounded flex-1">
                    {formatCurrency(daily)}
                  </div>
                  <Button
                    variant="ghost"
                    size="icon"
                    onClick={() => handleDeleteItem(item.id)}
-                   className="col-span-1 h-8 w-8"
+                   className="h-8 w-8 ml-2"
                  >
                    <Trash2 className="w-4 h-4 text-red-500" />
                  </Button>
