@@ -128,7 +128,7 @@ export default function OperationalPeriodAnalysisSection({
 
                     {/* Operational Costs */}
                     <div className="flex justify-between items-center py-2 border-b border-slate-100">
-                        <span className="text-sm font-medium text-slate-700">Κόστος Λειτουργίας (Σχεδιασμένο)</span>
+                        <span className="text-sm font-medium text-slate-700">Κόστος Λειτουργίας</span>
                         <span className="text-sm font-semibold text-red-600">– {formatCurrency(analysis.operationalCosts)}</span>
                     </div>
 
