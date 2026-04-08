@@ -166,12 +166,6 @@ export default function FinancialOverviewTab({
     const revenuePerUnit = safeRatio(effective.revenue, effective.productionQty);
     const revenuePerHour = safeRatio(effective.revenue, effective.totalHours);
 
-     // Period depreciation charge: Period Revenue × Depreciation Factor
-     const periodDepreciationCharge = useMemo(
-         () => (effective.revenue || 0) * (parseFloat(depreciationFactor) || 0),
-         [effective.revenue, depreciationFactor]
-     );
-
     // Static planning calculations (never touched by period filter or simulation)
     const netBeforeDepr   = (totalIncome || 0) - (totalCosts || 0);
     const totalCostWithDepr = (totalCosts || 0) + (depreciationCost || 0);
