@@ -178,24 +178,24 @@ export default function DailyRevenueSection({
                                 )}
 
                                 {/* Shelter Instance */}
-                                 <Select
-                                     value={row.shelter_instance_id || ''}
-                                     onValueChange={val => handleUpdate(realIdx, 'shelter_instance_id', val)}
-                                 >
-                                     <SelectTrigger className="h-8 text-sm">
-                                         <SelectValue placeholder="Επιλέξτε στάση...">
-                                             {row.shelter_instance_id ? getShelterInstanceName(row.shelter_instance_id) : '—'}
-                                         </SelectValue>
-                                     </SelectTrigger>
-                                     <SelectContent>
-                                         <SelectItem value={null}>— Κανένας —</SelectItem>
-                                         {normalizedShelterInstances && normalizedShelterInstances.map(instance => (
-                                              <SelectItem key={instance.id} value={instance.id}>
-                                                  {instance.name}
-                                              </SelectItem>
-                                          ))}
-                                     </SelectContent>
-                                 </Select>
+                                  <Select
+                                      value={String(row.shelter_instance_id || '')}
+                                      onValueChange={val => handleUpdate(realIdx, 'shelter_instance_id', val || '')}
+                                  >
+                                      <SelectTrigger className="h-8 text-sm">
+                                          <SelectValue placeholder="Επιλέξτε στάση...">
+                                              {row.shelter_instance_id ? getShelterInstanceName(row.shelter_instance_id) : '—'}
+                                          </SelectValue>
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          <SelectItem value={null}>— Κανένας —</SelectItem>
+                                          {normalizedShelterInstances && normalizedShelterInstances.map(instance => (
+                                               <SelectItem key={instance.id} value={String(instance.id)}>
+                                                   {instance.name}
+                                               </SelectItem>
+                                           ))}
+                                      </SelectContent>
+                                  </Select>
 
                                 {/* Quantity */}
                                 <Input
