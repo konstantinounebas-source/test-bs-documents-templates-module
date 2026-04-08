@@ -12,7 +12,7 @@ import {
 import { Plus, Trash2, TrendingUp } from 'lucide-react';
 import { calculateDailyRevenueTotal } from "@/components/factory-financial/utils/dailyOperationsCalculations";
 
-const EMPTY_ROW = { date: '', revenue_item: '', bus_stop_type_id: '', quantity: 0, unit_revenue: 0, total_revenue: 0, notes: '' };
+const EMPTY_ROW = { date: '', revenue_item: '', shelter_instance_id: '', quantity: 0, unit_revenue: 0, total_revenue: 0, notes: '' };
 
 /**
  * Build category options from sales_revenue_items (FactoryFinancialData.sales_revenue_items).
@@ -38,7 +38,7 @@ export default function DailyRevenueSection({
     selectedDate,
     formatCurrency,
     revenueCategories,
-    busStopTypes,
+    shelterInstances,
     onAdd,
     onRemove,
     onUpdate,
@@ -54,15 +54,13 @@ export default function DailyRevenueSection({
     const total = calculateDailyRevenueTotal(visibleEntries);
     const revenueOptions = buildRevenueOptions(revenueCategories);
     const hasCategories = revenueOptions.length > 0;
-    const normalizedBusStopTypes = Array.isArray(busStopTypes) ? busStopTypes : [];
+    const normalizedShelterInstances = Array.isArray(shelterInstances) ? shelterInstances : [];
 
-    const getBusStopTypeName = (id) => {
+    const getShelterInstanceName = (id) => {
         if (!id) return '—';
-        const bst = normalizedBusStopTypes.find(b => String(b.id) === String(id));
-        if (!bst) return String(id);
-        return (bst.code && bst.name) 
-            ? `${bst.code} - ${bst.name}`
-            : (bst.name || bst.code || String(id));
+        const instance = normalizedShelterInstances.find(s => String(s.id) === String(id));
+        if (!instance) return String(id);
+        return instance.name || String(id);
     };
 
     const handleUpdate = (realIdx, field, value) => {
@@ -123,15 +121,15 @@ export default function DailyRevenueSection({
                 ) : (
                     <div className="space-y-2">
                         {/* Header */}
-                         <div className="hidden md:grid grid-cols-[1fr_120px_70px_100px_110px_1fr_36px] gap-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                             <span>Κατηγορία Εσόδου</span>
-                             <span>Τύπος Στάσης</span>
-                             <span>Ποσότητα</span>
-                             <span>Μον. Αξία</span>
-                             <span>Σύνολο</span>
-                             <span>Σημειώσεις</span>
-                             <span />
-                         </div>
+                         <div className="hidden md:grid grid-cols-[1fr_150px_70px_100px_110px_1fr_36px] gap-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                              <span>Κατηγορία Εσόδου</span>
+                              <span>Στάση (Instance)</span>
+                              <span>Ποσότητα</span>
+                              <span>Μον. Αξία</span>
+                              <span>Σύνολο</span>
+                              <span>Σημειώσεις</span>
+                              <span />
+                          </div>
 
                         {visibleWithIdx.map(({ r: row, i: realIdx }) => {
                             const isLegacy = hasCategories &&
@@ -141,7 +139,7 @@ export default function DailyRevenueSection({
                             return (
                             <div
                                 key={realIdx}
-                                className={`grid grid-cols-1 md:grid-cols-[1fr_120px_70px_100px_110px_1fr_36px] gap-2 items-center rounded-lg p-2 ${isLegacy ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
+                                className={`grid grid-cols-1 md:grid-cols-[1fr_150px_70px_100px_110px_1fr_36px] gap-2 items-center rounded-lg p-2 ${isLegacy ? 'bg-amber-50 border border-amber-200' : 'bg-slate-50'}`}
                             >
                                 {/* Revenue item */}
                                 {hasCategories && !isLegacy ? (
@@ -174,26 +172,21 @@ export default function DailyRevenueSection({
                                     </div>
                                 )}
 
-                                {/* Bus Stop Type */}
+                                {/* Shelter Instance */}
                                 <Select
-                                    value={String(row.bus_stop_type_id || '')}
-                                    onValueChange={val => handleUpdate(realIdx, 'bus_stop_type_id', val)}
+                                    value={String(row.shelter_instance_id || '')}
+                                    onValueChange={val => handleUpdate(realIdx, 'shelter_instance_id', val)}
                                 >
                                     <SelectTrigger className="h-8 text-sm">
-                                        <SelectValue placeholder="Επιλέξτε τύπο..." />
+                                        <SelectValue placeholder="Επιλέξτε στάση..." />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value={null}>— Κανένας —</SelectItem>
-                                        {normalizedBusStopTypes && normalizedBusStopTypes.map(bst => {
-                                             const label = (bst.code && bst.name)
-                                                 ? `${bst.code} - ${bst.name}`
-                                                 : (bst.name || bst.code || bst.id);
-                                             return (
-                                                 <SelectItem key={bst.id} value={String(bst.id)}>
-                                                     {label}
-                                                 </SelectItem>
-                                             );
-                                         })}
+                                        {normalizedShelterInstances && normalizedShelterInstances.map(instance => (
+                                             <SelectItem key={instance.id} value={String(instance.id)}>
+                                                 {instance.name}
+                                             </SelectItem>
+                                         ))}
                                     </SelectContent>
                                 </Select>
 

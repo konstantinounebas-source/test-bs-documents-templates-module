@@ -119,6 +119,7 @@ export default function FactoryFinancialCalculations() {
     // Reference data from other modules
     const [departments, setDepartments] = useState([]);
     const [busStopTypes, setBusStopTypes] = useState([]);
+    const [shelterInstances, setShelterInstances] = useState([]);
     const [dailyMetrics, setDailyMetrics] = useState([]);
     
     // Labour module states
@@ -155,13 +156,15 @@ export default function FactoryFinancialCalculations() {
     
     const loadReferenceData = async () => {
         try {
-            const [depts, busTypes, metrics] = await Promise.all([
+            const [depts, busTypes, shelterInst, metrics] = await Promise.all([
                 base44.entities.Department.list(),
                 base44.entities.BusStopType.list(),
+                base44.entities.ShelterInstance.list(),
                 base44.entities.MetricDefinition.list()
             ]);
             setDepartments(depts);
             setBusStopTypes(busTypes);
+            setShelterInstances(shelterInst);
             setDailyMetrics(metrics);
         } catch (error) {
             console.error('Failed to load reference data:', error);
@@ -675,11 +678,11 @@ export default function FactoryFinancialCalculations() {
                             </TabsContent>
 
                             {/* REVENUE TAB */}
-                            <TabsContent value="revenue" className="mt-4">
-                                <ShelterRevenueSection
-                                    shelterRevenueItems={shelterRevenueItems}
-                                    busStopTypes={busStopTypes}
-                                    formatCurrency={formatCurrency}
+                             <TabsContent value="revenue" className="mt-4">
+                                 <ShelterRevenueSection
+                                     shelterRevenueItems={shelterRevenueItems}
+                                     shelterInstances={shelterInstances}
+                                     formatCurrency={formatCurrency}
                                     getVariationsTotal={getVariationsTotal}
                                     getShelterRevenueTotal={getShelterRevenueTotal}
                                     calculateTotalIncome={calculateTotalIncome}
@@ -812,32 +815,33 @@ export default function FactoryFinancialCalculations() {
                             </TabsContent>
 
                             {/* DAILY OPERATIONS TAB */}
-                            <TabsContent value="daily" className="mt-4">
-                                <DailyOperationsTab
-                                    dailyProductionEntries={dailyProductionEntries}
-                                    dailyRevenueEntries={dailyRevenueEntries}
-                                    dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
-                                    busStopTypes={busStopTypes}
-                                    departments={departments}
-                                    formatCurrency={formatCurrency}
-                                    onDailyProduction={setDailyProductionEntries}
-                                    onDailyRevenue={setDailyRevenueEntries}
-                                    onDailyDepartmentHours={setDailyDepartmentHoursEntries}
-                                    revenueCategories={salesRevenueItems}
-                                />
-                            </TabsContent>
+                             <TabsContent value="daily" className="mt-4">
+                                 <DailyOperationsTab
+                                     dailyProductionEntries={dailyProductionEntries}
+                                     dailyRevenueEntries={dailyRevenueEntries}
+                                     dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+                                     shelterInstances={shelterInstances}
+                                     departments={departments}
+                                     formatCurrency={formatCurrency}
+                                     onDailyProduction={setDailyProductionEntries}
+                                     onDailyRevenue={setDailyRevenueEntries}
+                                     onDailyDepartmentHours={setDailyDepartmentHoursEntries}
+                                     revenueCategories={salesRevenueItems}
+                                 />
+                             </TabsContent>
 
                             {/* DAILY DATA HISTORY TAB */}
-                            <TabsContent value="daily_history" className="mt-4">
-                                <DailyDataHistoryTab
-                                    dailyProductionEntries={dailyProductionEntries}
-                                    dailyRevenueEntries={dailyRevenueEntries}
-                                    dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
-                                    busStopTypes={busStopTypes}
-                                    departments={departments}
-                                    formatCurrency={formatCurrency}
-                                />
-                            </TabsContent>
+                             <TabsContent value="daily_history" className="mt-4">
+                                 <DailyDataHistoryTab
+                                     dailyProductionEntries={dailyProductionEntries}
+                                     dailyRevenueEntries={dailyRevenueEntries}
+                                     dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+                                     shelterInstances={shelterInstances}
+                                     busStopTypes={busStopTypes}
+                                     departments={departments}
+                                     formatCurrency={formatCurrency}
+                                 />
+                             </TabsContent>
 
                             {/* DEPRECIATION TAB */}
                             <TabsContent value="depreciation" className="mt-4 space-y-6">

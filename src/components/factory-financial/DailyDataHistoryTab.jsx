@@ -93,13 +93,18 @@ export default function DailyDataHistoryTab({
     dailyProductionEntries,
     dailyRevenueEntries,
     dailyDepartmentHoursEntries,
+    shelterInstances,
     busStopTypes,
     departments,
     formatCurrency,
 }) {
     const getBusStopTypeName = (id) => {
         const t = (busStopTypes || []).find(b => b.id === id);
-        return t ? (t.type_name || t.type_code || id) : id || '—';
+        return t ? (t.name || t.code || id) : id || '—';
+    };
+    const getShelterInstanceName = (id) => {
+        const instance = (shelterInstances || []).find(s => s.id === id);
+        return instance ? instance.name : id || '—';
     };
     const getDeptName = (id) => {
         const d = (departments || []).find(d => d.id === id);
@@ -139,6 +144,7 @@ export default function DailyDataHistoryTab({
                 columns={[
                     { key: 'date', label: 'Ημερομηνία' },
                     { key: 'description', label: 'Περιγραφή', render: r => r.revenue_item || r.description || '—' },
+                    { key: 'shelter_instance_id', label: 'Στάση (Instance)', render: r => getShelterInstanceName(r.shelter_instance_id) },
                     { key: 'quantity', label: 'Ποσότητα', render: r => parseFloat(r.quantity || 0).toFixed(0) },
                     { key: 'unit_revenue', label: 'Τιμή Μονάδας', render: r => formatCurrency ? formatCurrency(parseFloat(r.unit_revenue || 0)) : `€${parseFloat(r.unit_revenue || 0).toFixed(2)}` },
                     { key: 'total_revenue', label: 'Σύνολο', render: r => formatCurrency ? formatCurrency(parseFloat(r.total_revenue || 0)) : `€${parseFloat(r.total_revenue || 0).toFixed(2)}` },

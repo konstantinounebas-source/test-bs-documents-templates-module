@@ -11,7 +11,7 @@ export default function DailyOperationsTab({
     dailyProductionEntries,
     dailyRevenueEntries,
     dailyDepartmentHoursEntries,
-    busStopTypes,
+    shelterInstances,
     departments,
     formatCurrency,
     onDailyProduction,
@@ -19,14 +19,14 @@ export default function DailyOperationsTab({
     onDailyDepartmentHours,
     revenueCategories,
 }) {
-    // Ensure busStopTypes is always an array
-    const normalizedBusStopTypes = Array.isArray(busStopTypes) ? busStopTypes : [];
+    // Ensure shelterInstances is always an array
+    const normalizedShelterInstances = Array.isArray(shelterInstances) ? shelterInstances : [];
     
     return (
         <DailyOperationsTabContent
             dailyRevenueEntries={dailyRevenueEntries}
             dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
-            busStopTypes={normalizedBusStopTypes}
+            shelterInstances={normalizedShelterInstances}
             departments={departments}
             formatCurrency={formatCurrency}
             onDailyRevenue={onDailyRevenue}
@@ -39,7 +39,7 @@ export default function DailyOperationsTab({
 function DailyOperationsTabContent({
     dailyRevenueEntries,
     dailyDepartmentHoursEntries,
-    busStopTypes,
+    shelterInstances,
     departments,
     formatCurrency,
     onDailyRevenue,
@@ -86,7 +86,7 @@ function DailyOperationsTabContent({
                 selectedDate={selectedDate}
                 formatCurrency={formatCurrency}
                 revenueCategories={revenueCategories || []}
-                busStopTypes={busStopTypes}
+                shelterInstances={shelterInstances}
                 onAdd={handleAddRevenue}
                 onRemove={handleRemoveRevenue}
                 onUpdate={handleUpdateRevenue}

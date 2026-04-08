@@ -14,7 +14,7 @@ import {
 
 export default function ShelterRevenueSection({
     shelterRevenueItems,
-    busStopTypes,
+    shelterInstances,
     formatCurrency,
     getVariationsTotal,
     getShelterRevenueTotal,
@@ -50,12 +50,12 @@ export default function ShelterRevenueSection({
                                 <div className="flex-1">
                                     <Label className="text-xs">Τύπος Στάσης</Label>
                                     <Select
-                                        value={item.bus_shelter_type_id || ''}
+                                        value={item.shelter_instance_id || ''}
                                         onValueChange={(value) => {
-                                            onUpdateItem(itemIdx, 'bus_shelter_type_id', value);
-                                            const selectedType = busStopTypes.find(t => t.id === value);
-                                            if (selectedType) {
-                                                onUpdateItem(itemIdx, 'description', selectedType.name);
+                                            onUpdateItem(itemIdx, 'shelter_instance_id', value);
+                                            const selectedInstance = shelterInstances.find(s => s.id === value);
+                                            if (selectedInstance) {
+                                                onUpdateItem(itemIdx, 'description', selectedInstance.name);
                                             }
                                         }}
                                     >
@@ -63,16 +63,11 @@ export default function ShelterRevenueSection({
                                             <SelectValue placeholder="Επιλέξτε τύπο" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {busStopTypes && busStopTypes.map(type => {
-                                                const label = (type.code && type.name) 
-                                                    ? `${type.code} - ${type.name}`
-                                                    : (type.name || type.code || type.id);
-                                                return (
-                                                    <SelectItem key={type.id} value={type.id}>
-                                                        {label}
-                                                    </SelectItem>
-                                                );
-                                            })}
+                                            {shelterInstances && shelterInstances.map(instance => (
+                                                <SelectItem key={instance.id} value={instance.id}>
+                                                    {instance.name}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
