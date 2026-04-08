@@ -31,13 +31,15 @@ import {
     normalizeLoadedLabourResources,
     normalizeLoadedDepartmentLabourHours,
 } from "@/components/factory-financial/utils/labourCostCalculations";
+// NOTE: calculateTotalCosts from financialCalculations still includes legacy personnelCosts.
+// It is preserved for backward compat (department summary, old records) but is NOT used
+// as the official total anymore. Use getOfficialTotalCosts() below instead.
 import {
     getAllocationTotal,
     hasInvalidAllocation,
     convertCostToDaily,
     getVariationsTotal,
     getShelterRevenueTotal,
-    calculateCostWithAlloc,
     calculatePersonnelCostTotal,
     calculateBomTotal,
     calculateInvestmentTotal,
@@ -411,9 +413,6 @@ export default function FactoryFinancialCalculations() {
     const getConvertCostToDaily = (amount, frequencyType) => 
         convertCostToDaily(amount, frequencyType, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays);
 
-    const getCalculatePersonnelCostTotal = () => 
-        calculatePersonnelCostTotal(personnelCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear);
-
     const getCalculateBomTotal = () => calculateBomTotal(bomCosts);
 
     const getCalculateInvestmentTotal = () => 
@@ -422,7 +421,27 @@ export default function FactoryFinancialCalculations() {
     const getCalculateCostTotal = (costArray) => 
         calculateCostTotal(costArray, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear);
 
-    const getCalculateTotalCosts = () => 
+    // ── Official Labour Cost (new module, primary source) ─────────────────────
+    const getCalculateLabourCostTotal = () =>
+        calculateTotalLabourCost(labourResources, departmentLabourHours);
+
+    // ── Legacy Personnel Cost (kept for backward compat & department summary) ─
+    // NOT included in getOfficialTotalCosts. Informational only.
+    const getCalculateLegacyPersonnelCostTotal = () =>
+        calculatePersonnelCostTotal(personnelCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear);
+
+    // ── Official Total Costs: Labour Module replaces legacy personnelCosts ─────
+    const getOfficialTotalCosts = () =>
+        getCalculateLabourCostTotal() +
+        calculateBomTotal(bomCosts) +
+        calculateCostTotal(fixedCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear) +
+        calculateCostTotal(operationalCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear) +
+        calculateCostTotal(overheadCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear) +
+        calculateInvestmentTotal(investmentAmortization, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear) +
+        calculateCostTotal(maintenanceCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear);
+
+    // ── Legacy total (still used only for calculateDepartmentSummary) ─────────
+    const getCalculateTotalCosts = () =>
         calculateTotalCosts(
             personnelCosts, bomCosts, fixedCosts, operationalCosts, overheadCosts, investmentAmortization, maintenanceCosts,
             totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear
@@ -600,13 +619,13 @@ export default function FactoryFinancialCalculations() {
                             <TabsContent value="overview" className="mt-4">
                                 <FinancialOverviewTab
                                     totalIncome={calculateTotalIncome()}
-                                    totalCosts={getCalculateTotalCosts()}
+                                    totalCosts={getOfficialTotalCosts()}
                                     depreciationCost={getCalculateDepreciationInvestmentsTotal()}
                                     formatCurrency={formatCurrency}
                                     hasInvalidAllocations={!validateAllAllocations()}
-                                    labourModuleCost={calculateTotalLabourCost(labourResources, departmentLabourHours)}
+                                    legacyPersonnelCost={getCalculateLegacyPersonnelCostTotal()}
                                     costBreakdown={[
-                                        { label: 'Κόστος Προσωπικού — Legacy (συμπεριλαμβάνεται στο σύνολο)', value: getCalculatePersonnelCostTotal() },
+                                        { label: 'Κόστος Προσωπικού', value: getCalculateLabourCostTotal() },
                                         { label: 'BOM (Υλικά)', value: getCalculateBomTotal() },
                                         { label: 'Σταθερά Κόστη', value: getCalculateCostTotal(fixedCosts) },
                                         { label: 'Λειτουργικά Κόστη', value: getCalculateCostTotal(operationalCosts) },
@@ -706,7 +725,7 @@ export default function FactoryFinancialCalculations() {
                                     totalWorkingDays={totalWorkingDays}
                                     formatCurrency={formatCurrency}
                                     convertCostToDaily={getConvertCostToDaily}
-                                    calculatePersonnelCostTotal={getCalculatePersonnelCostTotal}
+                                    calculatePersonnelCostTotal={getCalculateLegacyPersonnelCostTotal}
                                     calculateBomTotal={getCalculateBomTotal}
                                     calculateCostTotal={getCalculateCostTotal}
                                     calculateInvestmentTotal={getCalculateInvestmentTotal}

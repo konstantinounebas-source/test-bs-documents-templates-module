@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, TrendingDown, DollarSign, BarChart2, Minus, AlertTriangle, Info, Users } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, BarChart2, Minus, AlertTriangle, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 function KPICard({ label, value, icon: Icon, color = 'blue', sub }) {
@@ -39,7 +39,7 @@ export default function FinancialOverviewTab({
     formatCurrency,
     costBreakdown,
     hasInvalidAllocations,
-    labourModuleCost,
+    legacyPersonnelCost,
 }) {
     const netBeforeDepr = totalIncome - totalCosts;
     const totalCostWithDepr = totalCosts + depreciationCost;
@@ -113,24 +113,20 @@ export default function FinancialOverviewTab({
                         </CardContent>
                     </Card>
 
-                    {/* Labour Module transitional notice */}
-                    {labourModuleCost !== undefined && (
-                        <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 space-y-2">
-                            <div className="flex items-center gap-2 text-violet-700 font-semibold text-sm">
-                                <Users className="w-4 h-4 flex-shrink-0" />
-                                Κόστος Προσωπικού — Νέο Module (εκτός συνολικού κόστους)
+                    {/* Legacy Personnel Cost — informational only, NOT in official total */}
+                    {legacyPersonnelCost !== undefined && legacyPersonnelCost > 0 && (
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
+                            <div className="flex items-center gap-2 text-slate-500 font-semibold text-xs uppercase tracking-wide">
+                                <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                                Legacy Personnel Cost (informational only — εκτός συνολικού κόστους)
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-sm text-violet-700">Υπολογισμένο κόστος εργασίας (Labour Module)</span>
-                                <span className="text-sm font-bold text-violet-800">{formatCurrency(labourModuleCost)}</span>
+                                <span className="text-sm text-slate-500">Legacy Personnel (παλιά εγγραφές)</span>
+                                <span className="text-sm font-medium text-slate-500">{formatCurrency(legacyPersonnelCost)}</span>
                             </div>
-                            <div className="flex items-start gap-1.5 text-xs text-violet-600 pt-1 border-t border-violet-200">
-                                <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                                <span>
-                                    Το νέο Labour Cost module βρίσκεται σε transitional phase και <strong>δεν συμμετέχει ακόμα στο συνολικό κόστος παραγωγής</strong>.
-                                    Το κόστος αυτό παρουσιάζεται εδώ για αναφορά μόνο, μέχρι να αντικαταστήσει πλήρως το Legacy Personnel Costing.
-                                </span>
-                            </div>
+                            <p className="text-xs text-slate-400">
+                                Αυτό το ποσό δεν προσμετράται στο Κόστος Παραγωγής. Αντικαθίσταται από το Labour Module.
+                            </p>
                         </div>
                     )}
                 </div>
