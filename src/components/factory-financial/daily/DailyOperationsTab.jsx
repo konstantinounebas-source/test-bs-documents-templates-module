@@ -13,6 +13,7 @@ export default function DailyOperationsTab({
     onDailyProduction,
     onDailyRevenue,
     onDailyDepartmentHours,
+    shelterRevenueItems,
 }) {
     const handleAddProduction = (row) => onDailyProduction([...dailyProductionEntries, row]);
     const handleRemoveProduction = (idx) => onDailyProduction(dailyProductionEntries.filter((_, i) => i !== idx));
@@ -35,6 +36,8 @@ export default function DailyOperationsTab({
             <DailyRevenueSection
                 entries={dailyRevenueEntries}
                 formatCurrency={formatCurrency}
+                shelterRevenueItems={shelterRevenueItems || []}
+                busStopTypes={busStopTypes || []}
                 onAdd={handleAddRevenue}
                 onRemove={handleRemoveRevenue}
                 onUpdate={onDailyRevenue}
