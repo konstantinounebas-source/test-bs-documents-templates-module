@@ -15,42 +15,31 @@ import { calculateDailyRevenueTotal } from "@/components/factory-financial/utils
 const EMPTY_ROW = { date: '', revenue_item: '', quantity: 0, unit_revenue: 0, total_revenue: 0, notes: '' };
 
 /**
- * Build a flat list of revenue category options from shelterRevenueItems + busStopTypes.
+ * Build category options from estimatedRevenues (depreciation module).
+ * These items have `description` and `unit_revenue` — the correct semantic match
+ * for daily revenue entries (quantity × unit_revenue per product type).
  * Each option: { label: string, unit_revenue: number }
- * Falls back gracefully if arrays are empty or items have no bus_stop_type reference.
  */
-function buildRevenueOptions(shelterRevenueItems, busStopTypes) {
-    if (!Array.isArray(shelterRevenueItems) || shelterRevenueItems.length === 0) return [];
-    return shelterRevenueItems
-        .filter(item => item && (item.description || item.bus_shelter_type_id))
-        .map(item => {
-            // Resolve label: prefer explicit description, fall back to BusStopType name
-            let label = item.description || '';
-            if (!label && item.bus_shelter_type_id && Array.isArray(busStopTypes)) {
-                const bst = busStopTypes.find(t => t.id === item.bus_shelter_type_id);
-                if (bst) label = `${bst.type_code} - ${bst.type_name}`;
-            }
-            if (!label) label = item.bus_shelter_type_id || 'Αγνώστου τύπου';
-
-            // unit_revenue: use contract_amount as the reference unit price for the planning item
-            const unit_revenue = parseFloat(item.contract_amount) || 0;
-
-            return { label, unit_revenue };
-        })
-        .filter(opt => opt.label); // remove blank entries
+function buildRevenueOptions(revenueCategories) {
+    if (!Array.isArray(revenueCategories) || revenueCategories.length === 0) return [];
+    return revenueCategories
+        .filter(item => item && item.description)
+        .map(item => ({
+            label: item.description,
+            unit_revenue: parseFloat(item.unit_revenue) || 0,
+        }));
 }
 
 export default function DailyRevenueSection({
     entries,
     formatCurrency,
-    shelterRevenueItems,
-    busStopTypes,
+    revenueCategories,
     onAdd,
     onRemove,
     onUpdate,
 }) {
     const total = calculateDailyRevenueTotal(entries);
-    const revenueOptions = buildRevenueOptions(shelterRevenueItems, busStopTypes);
+    const revenueOptions = buildRevenueOptions(revenueCategories);
     const hasCategories = revenueOptions.length > 0;
 
     const handleUpdate = (idx, field, value) => {

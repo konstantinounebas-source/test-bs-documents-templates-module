@@ -814,7 +814,7 @@ export default function FactoryFinancialCalculations() {
                                     onDailyProduction={setDailyProductionEntries}
                                     onDailyRevenue={setDailyRevenueEntries}
                                     onDailyDepartmentHours={setDailyDepartmentHoursEntries}
-                                    shelterRevenueItems={shelterRevenueItems}
+                                    revenueCategories={estimatedRevenues}
                                 />
                             </TabsContent>
 
