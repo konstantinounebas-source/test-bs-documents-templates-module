@@ -13,6 +13,8 @@
  * @property {number} amount - Raw monetary amount
  * @property {string} frequency_type - "daily" | "monthly" | "yearly"
  * @property {string} category - "fixed"|"operational"|"overhead"|"maintenance"|"personnel"|"bom"|"investment"|"other"
+ * @property {number} conversion_factor - Custom factor for daily cost conversion (e.g., 22 days/month, 25 days/month)
+ * @property {string} notes - Optional notes/comments about this expense
  * @property {boolean} is_default_row - System/default row flag
  * @property {boolean} is_locked_description - Prevents editing description (system rows)
  * @property {Array} department_allocations - Department allocation list
@@ -65,6 +67,8 @@ export const DEFAULT_FIXED_COSTS = [
     amount: 0,
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
+    conversion_factor: null,
+    notes: '',
     category: EXPENSE_CATEGORIES.FIXED,
     is_default_row: true,
     is_locked_description: true,
@@ -75,6 +79,8 @@ export const DEFAULT_FIXED_COSTS = [
     amount: 0,
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
+    conversion_factor: null,
+    notes: '',
     category: EXPENSE_CATEGORIES.FIXED,
     is_default_row: true,
     is_locked_description: true,
@@ -91,6 +97,8 @@ export const DEFAULT_OPERATIONAL_COSTS = [
     amount: 0,
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
+    conversion_factor: null,
+    notes: '',
     category: EXPENSE_CATEGORIES.OPERATIONAL,
     is_default_row: true,
     is_locked_description: true,
@@ -101,6 +109,8 @@ export const DEFAULT_OPERATIONAL_COSTS = [
     amount: 0,
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
+    conversion_factor: null,
+    notes: '',
     category: EXPENSE_CATEGORIES.OPERATIONAL,
     is_default_row: true,
     is_locked_description: true,
@@ -111,6 +121,8 @@ export const DEFAULT_OPERATIONAL_COSTS = [
     amount: 0,
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
+    conversion_factor: null,
+    notes: '',
     category: EXPENSE_CATEGORIES.OPERATIONAL,
     is_default_row: true,
     is_locked_description: true,
@@ -121,6 +133,8 @@ export const DEFAULT_OPERATIONAL_COSTS = [
     amount: 0,
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
+    conversion_factor: null,
+    notes: '',
     category: EXPENSE_CATEGORIES.OPERATIONAL,
     is_default_row: true,
     is_locked_description: true,
@@ -145,6 +159,8 @@ export function createBlankExpenseRow(description = '', category = EXPENSE_CATEG
     amount: 0,
     frequency_type: DEFAULT_FREQUENCY,
     calculated_daily_amount: 0,
+    conversion_factor: null,
+    notes: '',
     category,
     is_default_row: isDefault,
     is_locked_description: isDefault,
@@ -235,6 +251,8 @@ export function normalizeLoadedExpenseRows(loadedRows, contextCategory = null) {
       amount: typeof row.amount === 'number' ? row.amount : 0,
       frequency_type: frequencyType,
       // Note: calculated_daily_amount is DISPLAY-ONLY, never persisted
+      conversion_factor: row.conversion_factor || null,
+      notes: row.notes || '',
       category,
       is_default_row: row.is_default_row === true,
       is_locked_description: row.is_locked_description === true,
