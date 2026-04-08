@@ -25,6 +25,8 @@ import ValidationWarningCard from "@/components/factory-financial/ValidationWarn
 import FactoryCostSectionsCard from "@/components/factory-financial/FactoryCostSectionsCard";
 import ExpenseTableSection from "@/components/factory-financial/ExpenseTableSection";
 import FinancialOverviewTab from "@/components/factory-financial/FinancialOverviewTab";
+import LabourCostTab from "@/components/factory-financial/labour/LabourCostTab";
+import { calculateTotalLabourCost } from "@/components/factory-financial/utils/labourCostCalculations";
 import {
     getAllocationTotal,
     hasInvalidAllocation,
@@ -107,6 +109,10 @@ export default function FactoryFinancialCalculations() {
     const [busStopTypes, setBusStopTypes] = useState([]);
     const [dailyMetrics, setDailyMetrics] = useState([]);
     
+    // Labour module states
+    const [labourResources, setLabourResources] = useState([]);
+    const [departmentLabourHours, setDepartmentLabourHours] = useState([]);
+
     // Depreciation module states
     const [depreciationInvestments, setDepreciationInvestments] = useState([]);
     const [estimatedRevenues, setEstimatedRevenues] = useState([]);
@@ -187,6 +193,9 @@ export default function FactoryFinancialCalculations() {
             setDepreciationInvestments(record.depreciation_module?.investments || []);
             setEstimatedRevenues(record.depreciation_module?.estimated_revenues || []);
             setAdditionalRevenues(record.depreciation_module?.additional_revenues || []);
+
+            setLabourResources(record.labour_resources || []);
+            setDepartmentLabourHours(record.department_labour_hours || []);
             
         } catch (error) {
             console.error('Failed to load record data:', error);
@@ -226,7 +235,9 @@ export default function FactoryFinancialCalculations() {
                     investments: depreciationInvestments,
                     estimated_revenues: estimatedRevenues,
                     additional_revenues: additionalRevenues
-                }
+                },
+                labour_resources: labourResources,
+                department_labour_hours: departmentLabourHours,
             };
 
             await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
@@ -274,6 +285,8 @@ export default function FactoryFinancialCalculations() {
                     estimated_revenues: estimatedRevenues,
                     additional_revenues: additionalRevenues
                 },
+                labour_resources: labourResources,
+                department_labour_hours: departmentLabourHours,
                 is_active: true
             };
 
@@ -314,6 +327,8 @@ export default function FactoryFinancialCalculations() {
                     estimated_revenues: [],
                     additional_revenues: []
                 },
+                labour_resources: [],
+                department_labour_hours: [],
                 is_active: true
             });
             
@@ -563,6 +578,7 @@ export default function FactoryFinancialCalculations() {
                                     { value: 'fixed', label: 'Σταθερά Κόστη' },
                                     { value: 'operational', label: 'Λειτουργικά Κόστη' },
                                     { value: 'other', label: 'Λοιπά Κόστη' },
+                                    { value: 'labour', label: 'Κόστος Προσωπικού' },
                                     { value: 'depreciation', label: 'Αποσβέσεις' },
                                     { value: 'department', label: 'Ανά Τμήμα' },
                                 ].map(tab => (
@@ -585,7 +601,8 @@ export default function FactoryFinancialCalculations() {
                                     formatCurrency={formatCurrency}
                                     hasInvalidAllocations={!validateAllAllocations()}
                                     costBreakdown={[
-                                        { label: 'Κόστη Προσωπικού', value: getCalculatePersonnelCostTotal() },
+                                        { label: 'Κόστος Προσωπικού (Labour Module)', value: calculateTotalLabourCost(labourResources, departmentLabourHours) },
+                                        { label: 'Κόστη Προσωπικού (Legacy)', value: getCalculatePersonnelCostTotal() },
                                         { label: 'BOM (Υλικά)', value: getCalculateBomTotal() },
                                         { label: 'Σταθερά Κόστη', value: getCalculateCostTotal(fixedCosts) },
                                         { label: 'Λειτουργικά Κόστη', value: getCalculateCostTotal(operationalCosts) },
@@ -718,6 +735,18 @@ export default function FactoryFinancialCalculations() {
                                     onAddInvestmentDeptAlloc={(idx) => setInvestmentAmortization(addDeptAllocation(investmentAmortization, idx))}
                                     onUpdateInvestmentDeptAlloc={(idx, allocIdx, field, value) => setInvestmentAmortization(updateDeptAllocation(investmentAmortization, idx, allocIdx, field, value))}
                                     onRemoveInvestmentDeptAlloc={(idx, allocIdx) => setInvestmentAmortization(removeDeptAllocation(investmentAmortization, idx, allocIdx))}
+                                />
+                            </TabsContent>
+
+                            {/* LABOUR COST TAB */}
+                            <TabsContent value="labour" className="mt-4">
+                                <LabourCostTab
+                                    labourResources={labourResources}
+                                    departmentLabourHours={departmentLabourHours}
+                                    departments={departments}
+                                    formatCurrency={formatCurrency}
+                                    onLabourResources={setLabourResources}
+                                    onDepartmentLabourHours={setDepartmentLabourHours}
                                 />
                             </TabsContent>
 
