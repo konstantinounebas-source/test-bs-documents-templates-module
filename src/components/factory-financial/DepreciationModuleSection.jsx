@@ -169,12 +169,13 @@ function EstRevenuesSubsection({
                                 />
                             </div>
                             <div>
-                                <Label className="text-xs">Ποσό Ανά Μονάδα</Label>
+                                <Label className="text-xs">Ποσό Ανά Μονάδα (Σύμβασης)</Label>
                                 <Input
                                     type="number"
                                     placeholder="0.00"
                                     value={item.unit_revenue}
-                                    onChange={(e) => onUpdate(idx, 'unit_revenue', e.target.value)}
+                                    disabled
+                                    className="bg-slate-100"
                                 />
                             </div>
                             <div>
