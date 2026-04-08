@@ -262,12 +262,18 @@ export default function FactoryFinancialCalculations() {
         }
 
         if (!validateAllAllocations()) {
+            console.warn('Allocations validation failed');
             toast.error('Όλα τα department allocations πρέπει να κάνουν 100%');
             return;
         }
 
         try {
             setIsSaving(true);
+            console.log('Saving labour data:', {
+                labourPersonnel,
+                supervisorDailyAllocations,
+                departmentTechnicianAssignments
+            });
             
             const updatedData = {
                 total_working_days_in_period: totalWorkingDays,
@@ -298,11 +304,13 @@ export default function FactoryFinancialCalculations() {
             };
 
             await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
+            console.log('Save successful, reloading data...');
             
             toast.success('Τα δεδομένα αποθηκεύτηκαν επιτυχώς');
             // Reload the specific record to ensure UI is in sync
             const refreshedRecords = await base44.entities.FactoryFinancialData.list('-created_date');
             const refreshedRecord = refreshedRecords.find(r => r.id === selectedRecord.id);
+            console.log('Refreshed record:', refreshedRecord);
             if (refreshedRecord) {
                 loadRecordData(refreshedRecord);
             }
