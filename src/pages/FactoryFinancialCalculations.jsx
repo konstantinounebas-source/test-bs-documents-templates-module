@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/dialog";
 import VersionSelector from "@/components/factory-financial/VersionSelector";
 import PeriodSettingsCard from "@/components/factory-financial/PeriodSettingsCard";
-import ShelterRevenueSection from "@/components/factory-financial/ShelterRevenueSection";
 import DepartmentSummarySection from "@/components/factory-financial/DepartmentSummarySection";
 import DepreciationModuleSection from "@/components/factory-financial/DepreciationModuleSection";
 import DepreciationRateCard from "@/components/factory-financial/DepreciationRateCard";
@@ -636,7 +635,6 @@ export default function FactoryFinancialCalculations() {
                             <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-slate-100 p-1 rounded-xl mb-2">
                                 {[
                                     { value: 'overview', label: 'Επισκόπηση' },
-                                    { value: 'revenue', label: 'Έσοδα' },
                                     { value: 'fixed', label: 'Σταθερά Κόστη' },
                                     { value: 'operational', label: 'Λειτουργικά Κόστη' },
                                     { value: 'other', label: 'Λοιπά Κόστη' },
@@ -682,34 +680,7 @@ export default function FactoryFinancialCalculations() {
                                 />
                             </TabsContent>
 
-                            {/* REVENUE TAB */}
-                             <TabsContent value="revenue" className="mt-4">
-                                 <ShelterRevenueSection
-                                     shelterRevenueItems={shelterRevenueItems}
-                                     shelterInstances={shelterInstances}
-                                     formatCurrency={formatCurrency}
-                                    getVariationsTotal={getVariationsTotal}
-                                    getShelterRevenueTotal={getShelterRevenueTotal}
-                                    calculateTotalIncome={calculateTotalIncome}
-                                    onAddItem={() => setShelterRevenueItems([...shelterRevenueItems, {
-                                         shelter_instance_id: '',
-                                         description: '',
-                                         contract_amount: 0,
-                                         amount_from_jv: 0,
-                                         approved_variations: [],
-                                         potential_variations: []
-                                     }])}
-                                    onRemoveItem={(idx) => removeArrayItem(setShelterRevenueItems, shelterRevenueItems, idx)}
-                                    onUpdateItem={(idx, field, value) => updateShelterRevenueItem(idx, field, value)}
-                                    onUpdateVariation={(itemIdx, varType, varIdx, field, value) => updateShelterVariation(itemIdx, varType, varIdx, field, value)}
-                                    onRemoveVariation={(itemIdx, varType, varIdx) => removeShelterVariation(itemIdx, varType, varIdx)}
-                                    onAddVariation={(itemIdx, varType) => {
-                                        const updated = [...shelterRevenueItems];
-                                        updated[itemIdx][varType] = [...updated[itemIdx][varType], { description: '', amount: 0 }];
-                                        setShelterRevenueItems(updated);
-                                    }}
-                                />
-                            </TabsContent>
+
 
                             {/* FIXED COSTS TAB */}
                             <TabsContent value="fixed" className="mt-4">
