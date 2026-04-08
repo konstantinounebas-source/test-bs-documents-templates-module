@@ -254,46 +254,6 @@ export default function FinancialOverviewTab({
                 )}
             </div>
 
-            {/* 6. Operational Analysis card */}
-            {(hasAnyDailyData || simActive) && (
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-base font-semibold text-slate-800 flex items-center gap-2">
-                            Λειτουργική Ανάλυση
-                            {simActive && (
-                                <span className="text-xs font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                    <FlaskConical className="w-3 h-3" /> Προσομοιωμένες τιμές
-                                </span>
-                            )}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-1">
-                        <AnalysisRow label="Έσοδα Επιλεγμένης Περιόδου"     value={fmt(effective.revenue)} />
-                        <AnalysisRow label="Παραγωγή Επιλεγμένης Περιόδου"  value={`${fmtNum(effective.productionQty)} τεμ.`} />
-                        <AnalysisRow label="Ώρες Επιλεγμένης Περιόδου"      value={`${fmtNum(effective.totalHours)} h`} />
-                        {!simActive && (
-                            <AnalysisRow
-                                label={periodSummary.filteredHoursEntries.length > 0
-                                    ? 'Κόστος Εργατικών Περιόδου (daily)'
-                                    : 'Κόστος Εργατικών Περιόδου (static fallback)'}
-                                value={fmt(periodLabourCost)}
-                            />
-                        )}
-                        <div className="border-t border-slate-200 my-2" />
-                        <AnalysisRow
-                            label="Έσοδο ανά Τεμάχιο"
-                            value={effective.productionQty > 0 ? fmt(revenuePerUnit) : '—'}
-                            highlight
-                        />
-                        <AnalysisRow
-                            label="Έσοδο ανά Ώρα Εργασίας"
-                            value={effective.totalHours > 0 ? fmt(revenuePerHour) : '—'}
-                            highlight
-                        />
-                    </CardContent>
-                </Card>
-            )}
-
             {/* 5. Operational Financial Analysis + Cost Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
