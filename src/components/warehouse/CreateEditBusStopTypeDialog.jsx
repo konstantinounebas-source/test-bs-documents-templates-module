@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { BusStopType } from "@/entities/BusStopType";
+import { BusStopTypeComponent } from "@/entities/BusStopTypeComponent";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
-export default function CreateEditBusStopTypeDialog({ open, onClose, onTypeSaved, busStopType = null }) {
+export default function CreateEditBusStopTypeDialog({ open, onClose, onTypeSaved, busStopType = null, busStopTypes = [] }) {
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -18,6 +20,7 @@ export default function CreateEditBusStopTypeDialog({ open, onClose, onTypeSaved
     is_active: true
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [copyFromTypeId, setCopyFromTypeId] = useState('');
 
   useEffect(() => {
     if (busStopType) {
@@ -45,10 +48,34 @@ export default function CreateEditBusStopTypeDialog({ open, onClose, onTypeSaved
     e.preventDefault();
     setIsSaving(true);
     try {
+      let newTypeId;
       if (busStopType) {
         await BusStopType.update(busStopType.id, formData);
+        newTypeId = busStopType.id;
       } else {
-        await BusStopType.create(formData);
+        const newType = await BusStopType.create(formData);
+        newTypeId = newType.id;
+
+        // Copy BOM components if selected
+        if (copyFromTypeId) {
+          const sourceComponents = await BusStopTypeComponent.filter({
+            bus_stop_type_id: copyFromTypeId
+          });
+
+          for (const component of sourceComponents) {
+            await BusStopTypeComponent.create({
+              bus_stop_type_id: newTypeId,
+              product_id: component.product_id,
+              team_id: component.team_id,
+              material_category_id: component.material_category_id,
+              quantity_required: component.quantity_required,
+              unit_of_measure: component.unit_of_measure,
+              is_optional: component.is_optional,
+              installation_order: component.installation_order,
+              notes: component.notes
+            });
+          }
+        }
       }
       onTypeSaved();
       onClose();
@@ -135,6 +162,25 @@ export default function CreateEditBusStopTypeDialog({ open, onClose, onTypeSaved
               onCheckedChange={(checked) => setFormData({...formData, is_active: checked})}
             />
           </div>
+
+          {!busStopType && (
+            <div>
+              <Label htmlFor="copy_from">Copy BOM from (Optional)</Label>
+              <Select value={copyFromTypeId} onValueChange={setCopyFromTypeId}>
+                <SelectTrigger id="copy_from">
+                  <SelectValue placeholder="Select a bus stop type to copy BOM..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={null}>None - Create Empty BOM</SelectItem>
+                  {busStopTypes.filter(t => t.is_active).map(type => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.name} ({type.code})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose} disabled={isSaving}>

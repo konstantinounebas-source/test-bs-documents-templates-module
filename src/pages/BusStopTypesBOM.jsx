@@ -214,6 +214,7 @@ export default function BusStopTypesBOMPage() {
         open={showTypeDialog}
         onClose={() => setShowTypeDialog(false)}
         onTypeSaved={loadAllData}
+        busStopTypes={busStopTypes}
       />
     </div>
   );
