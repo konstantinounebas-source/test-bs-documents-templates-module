@@ -691,14 +691,14 @@ export default function FactoryFinancialCalculations() {
                                     getVariationsTotal={getVariationsTotal}
                                     getShelterRevenueTotal={getShelterRevenueTotal}
                                     calculateTotalIncome={calculateTotalIncome}
-                                    onAddItem={() => addArrayItem(setShelterRevenueItems, shelterRevenueItems, {
+                                    onAddItem={() => setShelterRevenueItems([...shelterRevenueItems, {
                                          shelter_instance_id: '',
                                          description: '',
                                          contract_amount: 0,
                                          amount_from_jv: 0,
                                          approved_variations: [],
                                          potential_variations: []
-                                     })}
+                                     }])}
                                     onRemoveItem={(idx) => removeArrayItem(setShelterRevenueItems, shelterRevenueItems, idx)}
                                     onUpdateItem={(idx, field, value) => updateShelterRevenueItem(idx, field, value)}
                                     onUpdateVariation={(itemIdx, varType, varIdx, field, value) => updateShelterVariation(itemIdx, varType, varIdx, field, value)}
