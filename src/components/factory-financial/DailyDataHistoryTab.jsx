@@ -1,11 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Package, DollarSign, Clock, ChevronDown, ChevronUp } from 'lucide-react';
+import { DollarSign, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-function SectionTable({ title, icon: Icon, color, columns, rows, emptyMsg }) {
-    const [dateFrom, setDateFrom] = useState('');
-    const [dateTo, setDateTo] = useState('');
-
+function SectionTable({ title, icon: Icon, color, columns, rows, emptyMsg, dateFrom, dateTo }) {
     const filtered = useMemo(() => {
         return (rows || []).filter(r => {
             if (dateFrom && r.date < dateFrom) return false;
@@ -23,37 +20,11 @@ function SectionTable({ title, icon: Icon, color, columns, rows, emptyMsg }) {
     return (
         <Card>
             <CardHeader className="pb-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                    <CardTitle className={`text-sm font-semibold flex items-center gap-2 ${colorMap[color]?.split(' ')[0]}`}>
-                        <Icon className="w-4 h-4" />
-                        {title}
-                        <span className="ml-1 text-xs font-normal text-slate-500">({filtered.length} εγγραφές)</span>
-                    </CardTitle>
-                    <div className="flex items-center gap-2">
-                        <label className="text-xs text-slate-500">Από:</label>
-                        <input
-                            type="date"
-                            value={dateFrom}
-                            onChange={e => setDateFrom(e.target.value)}
-                            className="border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-                        />
-                        <label className="text-xs text-slate-500">Έως:</label>
-                        <input
-                            type="date"
-                            value={dateTo}
-                            onChange={e => setDateTo(e.target.value)}
-                            className="border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
-                        />
-                        {(dateFrom || dateTo) && (
-                            <button
-                                onClick={() => { setDateFrom(''); setDateTo(''); }}
-                                className="text-xs text-slate-400 hover:text-slate-700 underline"
-                            >
-                                Καθαρισμός
-                            </button>
-                        )}
-                    </div>
-                </div>
+                <CardTitle className={`text-sm font-semibold flex items-center gap-2 ${colorMap[color]?.split(' ')[0]}`}>
+                    <Icon className="w-4 h-4" />
+                    {title}
+                    <span className="ml-1 text-xs font-normal text-slate-500">({filtered.length} εγγραφές)</span>
+                </CardTitle>
             </CardHeader>
             <CardContent>
                 {filtered.length === 0 ? (
@@ -98,6 +69,10 @@ export default function DailyDataHistoryTab({
     departments,
     formatCurrency,
 }) {
+    const today = new Date().toISOString().split('T')[0];
+    const [dateFrom, setDateFrom] = useState(today);
+    const [dateTo, setDateTo] = useState(today);
+
     const getBusStopTypeName = (id) => {
         const t = (busStopTypes || []).find(b => b.id === id);
         return t ? (t.name || t.code || id) : id || '—';
@@ -118,6 +93,32 @@ export default function DailyDataHistoryTab({
                 <p className="text-sm text-slate-500">Πλήρες ιστορικό όλων των ημερήσιων εγγραφών, ταξινομημένο από νεότερο προς παλαιότερο.</p>
             </div>
 
+            {/* Date Filter */}
+            <div className="flex items-center gap-3 bg-white p-4 rounded-lg border border-slate-200">
+                <label className="text-xs text-slate-500">Από:</label>
+                <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={e => setDateFrom(e.target.value)}
+                    className="border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                />
+                <label className="text-xs text-slate-500">Έως:</label>
+                <input
+                    type="date"
+                    value={dateTo}
+                    onChange={e => setDateTo(e.target.value)}
+                    className="border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-400"
+                />
+                {(dateFrom !== today || dateTo !== today) && (
+                    <button
+                        onClick={() => { setDateFrom(today); setDateTo(today); }}
+                        className="text-xs text-slate-400 hover:text-slate-700 underline"
+                    >
+                        Καθαρισμός
+                    </button>
+                )}
+            </div>
+
             {/* Revenue History */}
             <SectionTable
                 title="Ιστορικό Εσόδων"
@@ -125,6 +126,8 @@ export default function DailyDataHistoryTab({
                 color="green"
                 emptyMsg="Δεν υπάρχουν εγγραφές εσόδων."
                 rows={dailyRevenueEntries}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
                 columns={[
                     { key: 'date', label: 'Ημερομηνία' },
                     { key: 'description', label: 'Περιγραφή', render: r => r.revenue_item || r.description || '—' },
@@ -142,6 +145,8 @@ export default function DailyDataHistoryTab({
                 color="purple"
                 emptyMsg="Δεν υπάρχουν εγγραφές ωρών τμημάτων."
                 rows={dailyDepartmentHoursEntries}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
                 columns={[
                     { key: 'date', label: 'Ημερομηνία' },
                     { key: 'department_id', label: 'Τμήμα', render: r => getDeptName(r.department_id) },
