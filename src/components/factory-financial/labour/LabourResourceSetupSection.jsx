@@ -179,7 +179,7 @@ function ResourceRow({ resource, idx, departments, formatCurrency, onUpdate, onR
                             departments={departments}
                             totalAmount={previewAmount}
                             formatCurrency={formatCurrency}
-                            onAdd={() => onResources(addLabourResourceAllocation(allResources, idx))}
+                            onAdd={() => onResources(addLabourResourceAllocation(allResources, idx, departments))}
                             onUpdate={(allocIdx, field, value) => onResources(updateLabourResourceAllocation(allResources, idx, allocIdx, field, value))}
                             onRemove={(allocIdx) => onResources(removeLabourResourceAllocation(allResources, idx, allocIdx))}
                         />

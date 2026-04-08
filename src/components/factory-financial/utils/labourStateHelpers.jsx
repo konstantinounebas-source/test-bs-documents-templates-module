@@ -31,14 +31,15 @@ export function removeLabourResource(resources, idx) {
 
 // ── Labour Resource Department Allocations ────────────────────
 
-export function addLabourResourceAllocation(resources, resourceIdx) {
+export function addLabourResourceAllocation(resources, resourceIdx, departments = []) {
     return resources.map((r, i) => {
         if (i !== resourceIdx) return r;
+        const firstDept = departments.length > 0 ? departments[0].id : '';
         return {
             ...r,
             department_allocations: [
                 ...(r.department_allocations || []),
-                { department_id: '', allocation_percent: 0 },
+                { department_id: firstDept, allocation_percent: 0 },
             ],
         };
     });
