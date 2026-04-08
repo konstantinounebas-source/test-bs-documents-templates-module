@@ -476,9 +476,9 @@
           "items": {
             "type": "object",
             "properties": {
-              "bus_stop_type_id": {
+              "shelter_instance_id": {
                 "type": "string",
-                "description": "Reference to BusStopType"
+                "description": "Reference to ShelterInstance"
               },
               "description": {
                 "type": "string"
@@ -488,6 +488,10 @@
                 "default": 0
               },
               "unit_revenue": {
+                "type": "number",
+                "default": 0
+              },
+              "total_revenue": {
                 "type": "number",
                 "default": 0
               }
