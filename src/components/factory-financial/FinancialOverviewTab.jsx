@@ -11,10 +11,13 @@ import {
     getAvailableYearsFromEntries,
     getLatestDateFromEntries,
     getWeekNumberFromDate,
-    getWeekAndYearFromDateStr,
     resolveEffectiveOperationalValues,
+    calculatePeriodLabourCost,
     safeRatio,
 } from './utils/overviewPeriodCalculations';
+import {
+    calculateDepartmentAverageHourlyRate,
+} from './utils/labourCostCalculations';
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 
@@ -87,6 +90,9 @@ export default function FinancialOverviewTab({
     dailyProductionEntries,
     dailyRevenueEntries,
     dailyDepartmentHoursEntries,
+    // Labour data (for period labour cost calculation)
+    labourResources,
+    departmentLabourHours,
 }) {
     const safeProd  = useMemo(() => Array.isArray(dailyProductionEntries)       ? dailyProductionEntries.filter(Boolean)       : [], [dailyProductionEntries]);
     const safeRev   = useMemo(() => Array.isArray(dailyRevenueEntries)          ? dailyRevenueEntries.filter(Boolean)          : [], [dailyRevenueEntries]);
@@ -116,6 +122,32 @@ export default function FinancialOverviewTab({
         periodSummary.filteredProdEntries.length > 0 ||
         periodSummary.filteredRevEntries.length > 0 ||
         periodSummary.filteredHoursEntries.length > 0;
+
+    // Build dept rate map: { department_id → avg hourly rate } from labour_resources
+    const deptRateMap = useMemo(() => {
+        const safeResources = Array.isArray(labourResources) ? labourResources : [];
+        const safeDeptHours = Array.isArray(departmentLabourHours) ? departmentLabourHours : [];
+        const map = {};
+        // Use dept IDs from both static hours and filtered hours entries
+        const allDeptIds = new Set([
+            ...safeDeptHours.map(e => e.department_id),
+            ...periodSummary.filteredHoursEntries.map(e => e.department_id),
+        ]);
+        allDeptIds.forEach(id => {
+            if (id) map[id] = calculateDepartmentAverageHourlyRate(safeResources, id);
+        });
+        return map;
+    }, [labourResources, departmentLabourHours, periodSummary.filteredHoursEntries]);
+
+    // Period labour cost: filtered daily hours × avg rate; fallback to static dept hours
+    const periodLabourCost = useMemo(
+        () => calculatePeriodLabourCost(
+            periodSummary.filteredHoursEntries,
+            Array.isArray(departmentLabourHours) ? departmentLabourHours : [],
+            deptRateMap
+        ),
+        [periodSummary.filteredHoursEntries, departmentLabourHours, deptRateMap]
+    );
 
     // Effective operational values:
     //   - simulation OFF → use filtered daily period data
@@ -264,6 +296,14 @@ export default function FinancialOverviewTab({
                         <AnalysisRow label="Έσοδα Επιλεγμένης Περιόδου"     value={fmt(effective.revenue)} />
                         <AnalysisRow label="Παραγωγή Επιλεγμένης Περιόδου"  value={`${fmtNum(effective.productionQty)} τεμ.`} />
                         <AnalysisRow label="Ώρες Επιλεγμένης Περιόδου"      value={`${fmtNum(effective.totalHours)} h`} />
+                        {!simActive && (
+                            <AnalysisRow
+                                label={periodSummary.filteredHoursEntries.length > 0
+                                    ? 'Κόστος Εργατικών Περιόδου (daily)'
+                                    : 'Κόστος Εργατικών Περιόδου (static fallback)'}
+                                value={fmt(periodLabourCost)}
+                            />
+                        )}
                         <div className="border-t border-slate-200 my-2" />
                         <AnalysisRow
                             label="Έσοδο ανά Τεμάχιο"

@@ -180,6 +180,35 @@ export function resolveEffectiveOperationalValues(periodSummary, simActive, simS
     };
 }
 
+// ─── Period Labour Cost ───────────────────────────────────────────────────────
+
+/**
+ * Calculate operational labour cost for a period.
+ *
+ * Rule:
+ *   1. Use filteredHoursEntries (already filtered for the selected period).
+ *   2. If filteredHoursEntries is empty, fall back to staticDeptLabourHours.
+ *   3. Multiply each department's hours by its avg hourly rate from labourResources.
+ *
+ * Requires: calculateDepartmentAverageHourlyRate from labourCostCalculations.
+ * To keep this file pure and dependency-free, accepts a pre-built rateMap:
+ *   rateMap = { [department_id]: averageHourlyRate }
+ */
+export function calculatePeriodLabourCost(filteredHoursEntries, staticDeptLabourHours, rateMap) {
+    const rm = rateMap && typeof rateMap === 'object' ? rateMap : {};
+    const source =
+        Array.isArray(filteredHoursEntries) && filteredHoursEntries.length > 0
+            ? filteredHoursEntries
+            : (Array.isArray(staticDeptLabourHours) ? staticDeptLabourHours : []);
+
+    return source.reduce((sum, entry) => {
+        if (!entry) return sum;
+        const hours = parseFloat(entry.total_hours) || 0;
+        const rate  = parseFloat(rm[entry.department_id]) || 0;
+        return sum + hours * rate;
+    }, 0);
+}
+
 // ─── Safe Ratio ───────────────────────────────────────────────────────────────
 
 /**
