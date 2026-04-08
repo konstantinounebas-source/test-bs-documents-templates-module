@@ -117,7 +117,10 @@ export default function ExpenseTableSection({
                                                  <div className="col-span-3 text-xs bg-blue-50 p-2 rounded border border-blue-200">
                                                      <span className="font-medium">{formatCurrency(dailyAmount)}</span>/ημέρα
                                                      <br />
-                                                     <span className="text-slate-500 text-xs">× {totalWorkingDays}d = <span className="font-semibold text-slate-700">{formatCurrency(periodTotal)}</span></span>
+                                                     <span className="text-slate-500 text-xs">
+                                                         {item.frequency_type === 'monthly' && '(÷ 22)'}
+                                                         {item.frequency_type === 'yearly' && '(÷ 260)'}
+                                                     </span>
                                                  </div>
                                                  <Input
                                                      placeholder="π.χ. Κατά έξη μηνών"
