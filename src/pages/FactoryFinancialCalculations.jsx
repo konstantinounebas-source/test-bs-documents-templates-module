@@ -247,12 +247,6 @@ export default function FactoryFinancialCalculations() {
         try {
             setIsSaving(true);
             
-            // Clear shelter_instance_id from estimated revenues before saving
-            const cleanedEstimatedRevenues = estimatedRevenues.map(rev => {
-                const { shelter_instance_id, ...rest } = rev;
-                return rest;
-            });
-            
             const updatedData = {
                 total_working_days_in_period: totalWorkingDays,
                 average_working_days_per_month: avgWorkingDaysPerMonth,
@@ -268,7 +262,7 @@ export default function FactoryFinancialCalculations() {
                 maintenance_costs: maintenanceCosts,
                 depreciation_module: {
                     investments: depreciationInvestments,
-                    estimated_revenues: cleanedEstimatedRevenues,
+                    estimated_revenues: estimatedRevenues,
                     additional_revenues: additionalRevenues
                 },
                 labour_resources: labourResources,
@@ -514,7 +508,7 @@ export default function FactoryFinancialCalculations() {
         const updated = [...estimatedRevenues];
         
         if (field === 'shelter_instance_id') {
-            // Auto-fill unit_revenue from shelter data
+            // Auto-fill unit_revenue from shelter data, then clear shelter_instance_id
             const shelter = shelterRevenueItems.find(item => item.shelter_instance_id === value);
             if (shelter) {
                 const baseAmount = parseFloat(shelter.contract_amount) || 0;
@@ -523,7 +517,8 @@ export default function FactoryFinancialCalculations() {
                 updated[idx].unit_revenue = baseAmount + approviedTotal;
                 updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (updated[idx].unit_revenue || 0);
             }
-            updated[idx].shelter_instance_id = value;
+            // Clear shelter_instance_id after auto-filling
+            updated[idx].shelter_instance_id = '';
         } else if (field === 'pending_quantity') {
             updated[idx].pending_quantity = parseFloat(value) || 0;
             updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (parseFloat(updated[idx].unit_revenue) || 0);
