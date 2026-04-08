@@ -15,12 +15,6 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
     // Fallback formatter if not provided
     const formatVal = formatCurrency || ((val) => val?.toFixed(2) || '—');
 
-    // Calculate total cost across all visible rows
-    const totalCost = visibleWithIdx.reduce((sum, { r: row }) => {
-        const hourlyRate = getDeptHourlyCost(row.department_id);
-        return sum + ((parseFloat(row.total_hours) || 0) * hourlyRate);
-    }, 0);
-
     const handleUpdate = (realIdx, field, value) => {
         const updated = [...entries];
         updated[realIdx] = { ...updated[realIdx], [field]: value };
@@ -62,6 +56,12 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
         const d = (departments || []).find(d => d.id === id);
         return d ? (parseFloat(d.avg_hourly_cost) || 0) : 0;
     };
+
+    // Calculate total cost across all visible rows
+    const totalCost = visibleWithIdx.reduce((sum, { r: row }) => {
+        const hourlyRate = getDeptHourlyCost(row.department_id);
+        return sum + ((parseFloat(row.total_hours) || 0) * hourlyRate);
+    }, 0);
 
     return (
         <Card>
