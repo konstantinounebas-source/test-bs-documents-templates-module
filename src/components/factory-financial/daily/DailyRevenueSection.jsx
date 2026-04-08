@@ -12,7 +12,7 @@ import {
 import { Plus, Trash2, TrendingUp } from 'lucide-react';
 import { calculateDailyRevenueTotal } from "@/components/factory-financial/utils/dailyOperationsCalculations";
 
-const EMPTY_ROW = { date: '', revenue_item: '', quantity: 0, unit_revenue: 0, total_revenue: 0, notes: '' };
+const EMPTY_ROW = { date: '', revenue_item: '', bus_stop_type_id: '', quantity: 0, unit_revenue: 0, total_revenue: 0, notes: '' };
 
 /**
  * Build category options from sales_revenue_items (FactoryFinancialData.sales_revenue_items).
