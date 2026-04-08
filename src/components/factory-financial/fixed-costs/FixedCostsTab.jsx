@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, HelpCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 
 const FREQUENCY_LABELS = {
@@ -142,6 +143,57 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
            const daily = convertToDaily(item.amount, item.frequency_type, item.conversion_factor);
            return (
              <div key={item.id} className="p-3 bg-slate-50 rounded border border-slate-200 space-y-2">
+               <div className="grid grid-cols-12 gap-2 items-end mb-2">
+                 <TooltipProvider>
+                   <div className="col-span-3 flex items-center gap-1">
+                     <span className="text-xs font-medium text-slate-600 flex-1">Περιγραφή</span>
+                     <Tooltip>
+                       <TooltipTrigger asChild>
+                         <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                       </TooltipTrigger>
+                       <TooltipContent side="top" className="text-xs max-w-[200px]">
+                         Όνομα του σταθερού κόστους (π.χ. Ενοίκιο, Ηλεκτρικό)
+                       </TooltipContent>
+                     </Tooltip>
+                   </div>
+                   <div className="col-span-2 flex items-center gap-1">
+                     <span className="text-xs font-medium text-slate-600 flex-1">Ποσό</span>
+                     <Tooltip>
+                       <TooltipTrigger asChild>
+                         <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                       </TooltipTrigger>
+                       <TooltipContent side="top" className="text-xs max-w-[200px]">
+                         Το κόστος με βάση τη συχνότητα
+                       </TooltipContent>
+                     </Tooltip>
+                   </div>
+                   <div className="col-span-2 flex items-center gap-1">
+                     <span className="text-xs font-medium text-slate-600 flex-1">Συχνότητα</span>
+                     <Tooltip>
+                       <TooltipTrigger asChild>
+                         <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                       </TooltipTrigger>
+                       <TooltipContent side="top" className="text-xs max-w-[200px]">
+                         Ημερήσιο, Μηνιαίο ή Ετήσιο
+                       </TooltipContent>
+                     </Tooltip>
+                   </div>
+                   <div className="col-span-1 flex items-center gap-1">
+                     <span className="text-xs font-medium text-slate-600 flex-1">Factor</span>
+                     <Tooltip>
+                       <TooltipTrigger asChild>
+                         <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                       </TooltipTrigger>
+                       <TooltipContent side="top" className="text-xs max-w-[200px]">
+                         Custom διαιρέτης για ημερήσιο υπολογισμό (π.χ. 22 εργάσιμες μέρες)
+                       </TooltipContent>
+                     </Tooltip>
+                   </div>
+                   <div className="col-span-2 text-xs font-medium text-slate-600">
+                     Ημερήσιο
+                   </div>
+                 </TooltipProvider>
+               </div>
                <div className="grid grid-cols-12 gap-2 items-end">
                  <Input
                    placeholder="Περιγραφή"
@@ -152,8 +204,9 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
                  <Input
                    type="number"
                    placeholder="Ποσό"
-                   value={item.amount || ''}
+                   value={item.amount?.toFixed(2) || ''}
                    onChange={(e) => handleUpdateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
+                   step="0.01"
                    className="col-span-2 h-8 text-sm"
                  />
                  <Select value={item.frequency_type} onValueChange={(v) => handleUpdateItem(item.id, 'frequency_type', v)}>

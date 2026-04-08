@@ -4,8 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2, Download } from 'lucide-react';
+import { Plus, Trash2, Download, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import ExcelJS from 'exceljs';
 
@@ -328,53 +329,117 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
             return (
               <div key={item.id} className="p-3 bg-slate-50 rounded border border-slate-200 space-y-2">
                 <div className="flex justify-between items-start gap-2">
-                  <div className="flex-1 grid grid-cols-11 gap-2 items-end">
-                    <Select value={item.bus_stop_type_id || ''} onValueChange={(v) => handleUpdateItem(item.id, 'bus_stop_type_id', v)}>
-                      <SelectTrigger className="col-span-2 h-8 text-sm">
-                        <SelectValue placeholder="Bus Stop Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {busStopTypes.map(type => (
-                          <SelectItem key={type.id} value={type.id}>
-                            {type.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      placeholder="Περιγραφή"
-                      value={item.description}
-                      onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
-                      className="col-span-2 h-8 text-sm"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Ποσό"
-                      value={item.amount?.toFixed(2) || ''}
-                      onChange={(e) => handleUpdateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
-                      disabled={!!item.bus_stop_type_id}
-                      step="0.01"
-                      className="col-span-2 h-8 text-sm disabled:bg-gray-200 disabled:cursor-not-allowed"
-                    />
-                    <Select value={item.frequency_type} onValueChange={(v) => handleUpdateItem(item.id, 'frequency_type', v)}>
-                      <SelectTrigger className="col-span-1 h-8 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="daily">Ημερ.</SelectItem>
-                        <SelectItem value="monthly">Μήν.</SelectItem>
-                        <SelectItem value="yearly">Ετ.</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      type="number"
-                      placeholder="Factor"
-                      value={item.conversion_factor || ''}
-                      onChange={(e) => handleUpdateItem(item.id, 'conversion_factor', e.target.value ? parseFloat(e.target.value) : null)}
-                      className="col-span-1 h-8 text-sm"
-                    />
-                    <div className="col-span-2 text-right font-medium text-slate-900 bg-blue-50 p-2 rounded">
-                      {formatCurrency(daily)}
+                  <div className="flex-1">
+                    <div className="grid grid-cols-11 gap-2 items-end mb-2">
+                      <TooltipProvider>
+                        <div className="col-span-2 flex items-center gap-1">
+                          <span className="text-xs font-medium text-slate-600 flex-1">Bus Stop Type</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs max-w-[200px]">
+                              Επιλέξτε τύπο bus stop για αυτόματη φόρτωση κόστους BOM
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <div className="col-span-2 flex items-center gap-1">
+                          <span className="text-xs font-medium text-slate-600 flex-1">Περιγραφή</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs max-w-[200px]">
+                              Όνομα ή περιγραφή του λειτουργικού κόστους
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <div className="col-span-2 flex items-center gap-1">
+                          <span className="text-xs font-medium text-slate-600 flex-1">Ποσό</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs max-w-[200px]">
+                              Το κόστος με βάση τη συχνότητα
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <div className="col-span-1 flex items-center gap-1">
+                          <span className="text-xs font-medium text-slate-600 flex-1">Συχν.</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs max-w-[200px]">
+                              Ημερήσιο, Μηνιαίο ή Ετήσιο
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <div className="col-span-1 flex items-center gap-1">
+                          <span className="text-xs font-medium text-slate-600 flex-1">Factor</span>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <HelpCircle className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs max-w-[200px]">
+                              Custom διαιρέτης για ημερήσιο υπολογισμό (π.χ. 22 εργάσιμες μέρες)
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <div className="col-span-2 text-xs font-medium text-slate-600">
+                          Ημερήσιο
+                        </div>
+                      </TooltipProvider>
+                    </div>
+                    <div className="grid grid-cols-11 gap-2 items-end">
+                      <Select value={item.bus_stop_type_id || ''} onValueChange={(v) => handleUpdateItem(item.id, 'bus_stop_type_id', v)}>
+                        <SelectTrigger className="col-span-2 h-8 text-sm">
+                          <SelectValue placeholder="Bus Stop Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {busStopTypes.map(type => (
+                            <SelectItem key={type.id} value={type.id}>
+                              {type.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        placeholder="Περιγραφή"
+                        value={item.description}
+                        onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
+                        className="col-span-2 h-8 text-sm"
+                      />
+                      <Input
+                        type="number"
+                        placeholder="Ποσό"
+                        value={item.amount?.toFixed(2) || ''}
+                        onChange={(e) => handleUpdateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
+                        disabled={!!item.bus_stop_type_id}
+                        step="0.01"
+                        className="col-span-2 h-8 text-sm disabled:bg-gray-200 disabled:cursor-not-allowed"
+                      />
+                      <Select value={item.frequency_type} onValueChange={(v) => handleUpdateItem(item.id, 'frequency_type', v)}>
+                        <SelectTrigger className="col-span-1 h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="daily">Ημερ.</SelectItem>
+                          <SelectItem value="monthly">Μήν.</SelectItem>
+                          <SelectItem value="yearly">Ετ.</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="number"
+                        placeholder="Factor"
+                        value={item.conversion_factor || ''}
+                        onChange={(e) => handleUpdateItem(item.id, 'conversion_factor', e.target.value ? parseFloat(e.target.value) : null)}
+                        className="col-span-1 h-8 text-sm"
+                      />
+                      <div className="col-span-2 text-right font-medium text-slate-900 bg-blue-50 p-2 rounded">
+                        {formatCurrency(daily)}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 flex-shrink-0">
