@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { DollarSign, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -72,6 +72,11 @@ export default function DailyDataHistoryTab({
     const today = new Date().toISOString().split('T')[0];
     const [dateFrom, setDateFrom] = useState(today);
     const [dateTo, setDateTo] = useState(today);
+
+    useEffect(() => {
+        console.log('🔍 DailyDataHistoryTab - Department Hours:', dailyDepartmentHoursEntries);
+        console.log('🔍 Available Departments:', departments);
+    }, [dailyDepartmentHoursEntries, departments]);
 
     const getBusStopTypeName = (id) => {
         const t = (busStopTypes || []).find(b => b.id === id);
