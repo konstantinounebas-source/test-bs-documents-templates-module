@@ -249,54 +249,54 @@ export default function FactoryFinancialCalculations() {
             setDepartmentTechnicianAssignments(record.department_technician_assignments || []);
 
             setDailyProductionEntries(normalizeLoadedDailyProductionEntries(record.daily_production_entries));
-            setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
-            setDailyDepartmentHoursEntries(normalizeLoadedDailyDepartmentHoursEntries(record.daily_department_hours_entries));
-            setDailyCostsRecords(record.daily_costs_records || []);
+             setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
+             setDailyDepartmentHoursEntries(normalizeLoadedDailyDepartmentHoursEntries(record.daily_department_hours_entries));
+             setDailyCostsRecords(record.daily_costs_records || []);
 
-                    // Load Fixed and Operational cost totals from database
-                    await loadFixedCostTotal(selectedRecord?.id);
-                    await loadOperationalCostTotal(selectedRecord?.id);
+             // Load Fixed and Operational cost totals from database
+             await loadFixedCostTotal(record.id);
+             await loadOperationalCostTotal(record.id);
 
-                } catch (error) {
-                    console.error('Failed to load record data:', error);
-                    toast.error('Σφάλμα φόρτωσης δεδομένων εγγραφής');
-                } finally {
-                    setIsLoading(false);
-                }
+            } catch (error) {
+             console.error('Failed to load record data:', error);
+             toast.error('Σφάλμα φόρτωσης δεδομένων εγγραφής');
+            } finally {
+             setIsLoading(false);
+            }
             };
 
             const loadFixedCostTotal = async (recordId) => {
-                try {
-                    if (!recordId) return;
-                    const items = await base44.entities.FixedCostItem.filter({
-                        factory_financial_data_id: recordId
-                    });
-                    const total = items.reduce((sum, item) => {
-                        const daily = convertCostToDaily(item.amount, item.frequency_type, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays);
-                        return sum + daily;
-                    }, 0);
-                    setFixedDailyTotal(total);
-                    console.log('✅ Fixed costs total loaded:', total);
-                } catch (error) {
-                    console.error('Failed to load fixed cost total:', error);
-                }
+            try {
+             if (!recordId) return;
+             const items = await base44.entities.FixedCostItem.filter({
+                 factory_financial_data_id: recordId
+             });
+             const total = items.reduce((sum, item) => {
+                 const daily = convertCostToDaily(item.amount, item.frequency_type, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays);
+                 return sum + daily;
+             }, 0);
+             setFixedDailyTotal(total);
+             console.log('✅ Fixed costs total loaded:', total);
+            } catch (error) {
+             console.error('Failed to load fixed cost total:', error);
+            }
             };
 
             const loadOperationalCostTotal = async (recordId) => {
-                try {
-                    if (!recordId) return;
-                    const items = await base44.entities.OperationalCostItem.filter({
-                        factory_financial_data_id: recordId
-                    });
-                    const total = items.reduce((sum, item) => {
-                        const daily = convertCostToDaily(item.amount, item.frequency_type, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays);
-                        return sum + daily;
-                    }, 0);
-                    setOperationalDailyTotal(total);
-                    console.log('✅ Operational costs total loaded:', total);
-                } catch (error) {
-                    console.error('Failed to load operational cost total:', error);
-                }
+            try {
+             if (!recordId) return;
+             const items = await base44.entities.OperationalCostItem.filter({
+                 factory_financial_data_id: recordId
+             });
+             const total = items.reduce((sum, item) => {
+                 const daily = convertCostToDaily(item.amount, item.frequency_type, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays);
+                 return sum + daily;
+             }, 0);
+             setOperationalDailyTotal(total);
+             console.log('✅ Operational costs total loaded:', total);
+            } catch (error) {
+             console.error('Failed to load operational cost total:', error);
+            }
             };
 
     const handleSave = async () => {
