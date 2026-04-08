@@ -768,34 +768,34 @@ export default function FactoryFinancialCalculations() {
                                     calculateCostTotal={getCalculateCostTotal}
                                     calculateInvestmentTotal={getCalculateInvestmentTotal}
                                     toggleSection={toggleSection}
-                                    onAddPersonnel={() => setPersonnelCosts(addArrayItem(personnelCosts, { metric_id: '', description: '', calculated_amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
-                                    onRemovePersonnel={(idx) => setPersonnelCosts(removeArrayItem(personnelCosts, idx))}
-                                    onUpdatePersonnel={(idx, field, value) => setPersonnelCosts(updateArrayItem(personnelCosts, idx, field, value))}
-                                    onAddPersonnelDeptAlloc={(idx) => setPersonnelCosts(addDeptAllocation(personnelCosts, idx))}
-                                    onUpdatePersonnelDeptAlloc={(idx, allocIdx, field, value) => setPersonnelCosts(updateDeptAllocation(personnelCosts, idx, allocIdx, field, value))}
-                                    onRemovePersonnelDeptAlloc={(idx, allocIdx) => setPersonnelCosts(removeDeptAllocation(personnelCosts, idx, allocIdx))}
-                                    onAddBom={() => setBomCosts(addArrayItem(bomCosts, { bus_stop_type_id: '', product_identifier: '', description: '', calculated_bom_cost: 0, quantity: 1 }))}
-                                    onRemoveBom={(idx) => setBomCosts(removeArrayItem(bomCosts, idx))}
-                                    onUpdateBom={(idx, field, value) => setBomCosts(updateArrayItem(bomCosts, idx, field, value))}
+                                    onAddPersonnel={() => setPersonnelCosts(prev => addArrayItem(prev, { metric_id: '', description: '', calculated_amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                                    onRemovePersonnel={(idx) => setPersonnelCosts(prev => removeArrayItem(prev, idx))}
+                                    onUpdatePersonnel={(idx, field, value) => setPersonnelCosts(prev => updateArrayItem(prev, idx, field, value))}
+                                    onAddPersonnelDeptAlloc={(idx) => setPersonnelCosts(prev => addDeptAllocation(prev, idx))}
+                                    onUpdatePersonnelDeptAlloc={(idx, allocIdx, field, value) => setPersonnelCosts(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
+                                    onRemovePersonnelDeptAlloc={(idx, allocIdx) => setPersonnelCosts(prev => removeDeptAllocation(prev, idx, allocIdx))}
+                                    onAddBom={() => setBomCosts(prev => addArrayItem(prev, { bus_stop_type_id: '', product_identifier: '', description: '', calculated_bom_cost: 0, quantity: 1 }))}
+                                    onRemoveBom={(idx) => setBomCosts(prev => removeArrayItem(prev, idx))}
+                                    onUpdateBom={(idx, field, value) => setBomCosts(prev => updateArrayItem(prev, idx, field, value))}
                                     onBusStopTypeChange={handleBusStopTypeChange}
-                                    onAddOverhead={() => setOverheadCosts(addArrayItem(overheadCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
-                                    onRemoveOverhead={(idx) => setOverheadCosts(removeArrayItem(overheadCosts, idx))}
-                                    onUpdateOverhead={(idx, field, value) => setOverheadCosts(updateArrayItem(overheadCosts, idx, field, value))}
-                                    onAddOverheadDeptAlloc={(idx) => setOverheadCosts(addDeptAllocation(overheadCosts, idx))}
-                                    onUpdateOverheadDeptAlloc={(idx, allocIdx, field, value) => setOverheadCosts(updateDeptAllocation(overheadCosts, idx, allocIdx, field, value))}
-                                    onRemoveOverheadDeptAlloc={(idx, allocIdx) => setOverheadCosts(removeDeptAllocation(overheadCosts, idx, allocIdx))}
-                                    onAddMaintenance={() => setMaintenanceCosts(addArrayItem(maintenanceCosts, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
-                                    onRemoveMaintenance={(idx) => setMaintenanceCosts(removeArrayItem(maintenanceCosts, idx))}
-                                    onUpdateMaintenance={(idx, field, value) => setMaintenanceCosts(updateArrayItem(maintenanceCosts, idx, field, value))}
-                                    onAddMaintenanceDeptAlloc={(idx) => setMaintenanceCosts(addDeptAllocation(maintenanceCosts, idx))}
-                                    onUpdateMaintenanceDeptAlloc={(idx, allocIdx, field, value) => setMaintenanceCosts(updateDeptAllocation(maintenanceCosts, idx, allocIdx, field, value))}
-                                    onRemoveMaintenanceDeptAlloc={(idx, allocIdx) => setMaintenanceCosts(removeDeptAllocation(maintenanceCosts, idx, allocIdx))}
-                                    onAddInvestment={() => setInvestmentAmortization(addArrayItem(investmentAmortization, { description: '', total_investment_amount: 0, project_duration_months: 12, calculated_daily_cost: 0, department_allocations: [] }))}
-                                    onRemoveInvestment={(idx) => setInvestmentAmortization(removeArrayItem(investmentAmortization, idx))}
+                                    onAddOverhead={() => setOverheadCosts(prev => addArrayItem(prev, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                                    onRemoveOverhead={(idx) => setOverheadCosts(prev => removeArrayItem(prev, idx))}
+                                    onUpdateOverhead={(idx, field, value) => setOverheadCosts(prev => updateArrayItem(prev, idx, field, value))}
+                                    onAddOverheadDeptAlloc={(idx) => setOverheadCosts(prev => addDeptAllocation(prev, idx))}
+                                    onUpdateOverheadDeptAlloc={(idx, allocIdx, field, value) => setOverheadCosts(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
+                                    onRemoveOverheadDeptAlloc={(idx, allocIdx) => setOverheadCosts(prev => removeDeptAllocation(prev, idx, allocIdx))}
+                                    onAddMaintenance={() => setMaintenanceCosts(prev => addArrayItem(prev, { description: '', amount: 0, frequency_type: 'monthly', department_allocations: [] }))}
+                                    onRemoveMaintenance={(idx) => setMaintenanceCosts(prev => removeArrayItem(prev, idx))}
+                                    onUpdateMaintenance={(idx, field, value) => setMaintenanceCosts(prev => updateArrayItem(prev, idx, field, value))}
+                                    onAddMaintenanceDeptAlloc={(idx) => setMaintenanceCosts(prev => addDeptAllocation(prev, idx))}
+                                    onUpdateMaintenanceDeptAlloc={(idx, allocIdx, field, value) => setMaintenanceCosts(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
+                                    onRemoveMaintenanceDeptAlloc={(idx, allocIdx) => setMaintenanceCosts(prev => removeDeptAllocation(prev, idx, allocIdx))}
+                                    onAddInvestment={() => setInvestmentAmortization(prev => addArrayItem(prev, { description: '', total_investment_amount: 0, project_duration_months: 12, calculated_daily_cost: 0, department_allocations: [] }))}
+                                    onRemoveInvestment={(idx) => setInvestmentAmortization(prev => removeArrayItem(prev, idx))}
                                     onUpdateInvestment={handleInvestmentChange}
-                                    onAddInvestmentDeptAlloc={(idx) => setInvestmentAmortization(addDeptAllocation(investmentAmortization, idx))}
-                                    onUpdateInvestmentDeptAlloc={(idx, allocIdx, field, value) => setInvestmentAmortization(updateDeptAllocation(investmentAmortization, idx, allocIdx, field, value))}
-                                    onRemoveInvestmentDeptAlloc={(idx, allocIdx) => setInvestmentAmortization(removeDeptAllocation(investmentAmortization, idx, allocIdx))}
+                                    onAddInvestmentDeptAlloc={(idx) => setInvestmentAmortization(prev => addDeptAllocation(prev, idx))}
+                                    onUpdateInvestmentDeptAlloc={(idx, allocIdx, field, value) => setInvestmentAmortization(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
+                                    onRemoveInvestmentDeptAlloc={(idx, allocIdx) => setInvestmentAmortization(prev => removeDeptAllocation(prev, idx, allocIdx))}
                                 />
                             </TabsContent>
 
@@ -853,24 +853,24 @@ export default function FactoryFinancialCalculations() {
                                     calculateDepreciationInvestmentsTotal={getCalculateDepreciationInvestmentsTotal}
                                     calculateEstimatedRevenuesTotal={getCalculateEstimatedRevenuesTotal}
                                     calculateAdditionalRevenuesTotal={getCalculateAdditionalRevenuesTotal}
-                                    onAddDeprecInv={() => setDepreciationInvestments(addArrayItem(depreciationInvestments, {
+                                    onAddDeprecInv={() => setDepreciationInvestments(prev => addArrayItem(prev, {
                                         description: '', category: 'materials', total_amount: 0, department_allocations: []
                                     }))}
-                                    onRemoveDeprecInv={(idx) => setDepreciationInvestments(removeArrayItem(depreciationInvestments, idx))}
-                                    onUpdateDeprecInv={(idx, field, value) => setDepreciationInvestments(updateArrayItem(depreciationInvestments, idx, field, value))}
-                                    onAddDeptAllocDepr={(idx) => setDepreciationInvestments(addDeptAllocation(depreciationInvestments, idx))}
-                                    onRemoveDeptAllocDepr={(idx, allocIdx) => setDepreciationInvestments(removeDeptAllocation(depreciationInvestments, idx, allocIdx))}
-                                    onUpdateDeptAllocDepr={(idx, allocIdx, field, value) => setDepreciationInvestments(updateDeptAllocation(depreciationInvestments, idx, allocIdx, field, value))}
-                                    onAddEstRevenue={() => setEstimatedRevenues(addArrayItem(estimatedRevenues, {
+                                    onRemoveDeprecInv={(idx) => setDepreciationInvestments(prev => removeArrayItem(prev, idx))}
+                                    onUpdateDeprecInv={(idx, field, value) => setDepreciationInvestments(prev => updateArrayItem(prev, idx, field, value))}
+                                    onAddDeptAllocDepr={(idx) => setDepreciationInvestments(prev => addDeptAllocation(prev, idx))}
+                                    onRemoveDeptAllocDepr={(idx, allocIdx) => setDepreciationInvestments(prev => removeDeptAllocation(prev, idx, allocIdx))}
+                                    onUpdateDeptAllocDepr={(idx, allocIdx, field, value) => setDepreciationInvestments(prev => updateDeptAllocation(prev, idx, allocIdx, field, value))}
+                                    onAddEstRevenue={() => setEstimatedRevenues(prev => addArrayItem(prev, {
                                         bus_stop_type_id: '', description: '', pending_quantity: 0, unit_revenue: 0, total_revenue: 0
                                     }))}
-                                    onRemoveEstRevenue={(idx) => setEstimatedRevenues(removeArrayItem(estimatedRevenues, idx))}
+                                    onRemoveEstRevenue={(idx) => setEstimatedRevenues(prev => removeArrayItem(prev, idx))}
                                     onUpdateEstRevenue={(idx, field, value) => updateEstimatedRevenue(idx, field, value)}
-                                    onAddAddRevenue={() => setAdditionalRevenues(addArrayItem(additionalRevenues, {
+                                    onAddAddRevenue={() => setAdditionalRevenues(prev => addArrayItem(prev, {
                                         description: '', total_amount: 0
                                     }))}
-                                    onRemoveAddRevenue={(idx) => setAdditionalRevenues(removeArrayItem(additionalRevenues, idx))}
-                                    onUpdateAddRevenue={(idx, field, value) => setAdditionalRevenues(updateArrayItem(additionalRevenues, idx, field, value))}
+                                    onRemoveAddRevenue={(idx) => setAdditionalRevenues(prev => removeArrayItem(prev, idx))}
+                                    onUpdateAddRevenue={(idx, field, value) => setAdditionalRevenues(prev => updateArrayItem(prev, idx, field, value))}
                                 />
                                 <DepreciationRateCard
                                     totalRevenueBase={getCalculateTotalDepreciationRevenueBase()}
