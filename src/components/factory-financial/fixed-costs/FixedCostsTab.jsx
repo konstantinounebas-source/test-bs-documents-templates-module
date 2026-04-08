@@ -17,6 +17,7 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dailyTotal, setDailyTotal] = useState(0);
+  const [saveTimeout, setSaveTimeout] = useState(null);
 
   // Load fixed cost items
   useEffect(() => {
@@ -83,19 +84,29 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
     }
   };
 
-  const handleUpdateItem = async (id, field, value) => {
-    try {
-      await base44.entities.FixedCostItem.update(id, { [field]: value });
-      const updated = items.map(item => 
-        item.id === id ? { ...item, [field]: value } : item
-      );
-      setItems(updated);
-      calculateDailyTotal(updated);
-      toast.success('Ενημέρωση αποθηκεύτηκε');
-    } catch (error) {
-      console.error('Failed to update item:', error);
-      toast.error('Αποτυχία ενημέρωσης');
-    }
+  const handleUpdateItem = (id, field, value) => {
+    // Update local state immediately
+    const updated = items.map(item => 
+      item.id === id ? { ...item, [field]: value } : item
+    );
+    setItems(updated);
+    calculateDailyTotal(updated);
+
+    // Clear existing timeout
+    if (saveTimeout) clearTimeout(saveTimeout);
+
+    // Save to DB after 500ms of inactivity
+    const timeout = setTimeout(async () => {
+      try {
+        await base44.entities.FixedCostItem.update(id, { [field]: value });
+        toast.success('Ενημέρωση αποθηκεύτηκε');
+      } catch (error) {
+        console.error('Failed to update item:', error);
+        toast.error('Αποτυχία ενημέρωσης');
+      }
+    }, 500);
+    
+    setSaveTimeout(timeout);
   };
 
   const handleDeleteItem = async (id) => {
