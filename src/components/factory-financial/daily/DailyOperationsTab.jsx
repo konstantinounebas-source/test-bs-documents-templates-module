@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CalendarDays } from 'lucide-react';
 import DailyRevenueSection from './DailyRevenueSection';
 import DailyDepartmentHoursSection from './DailyDepartmentHoursSection';
+import DailyCostsDecisionSection from './DailyCostsDecisionSection';
 
 function todayISO() {
     return new Date().toISOString().slice(0, 10);
@@ -17,6 +18,8 @@ export default function DailyOperationsTab({
     onDailyProduction,
     onDailyRevenue,
     onDailyDepartmentHours,
+    onDailyCostsDecision,
+    dailyCostsDecisions,
     revenueCategories,
     shelterRevenueItems,
     getShelterRevenueTotal,
@@ -33,6 +36,8 @@ export default function DailyOperationsTab({
             formatCurrency={formatCurrency}
             onDailyRevenue={onDailyRevenue}
             onDailyDepartmentHours={onDailyDepartmentHours}
+            onDailyCostsDecision={onDailyCostsDecision}
+            dailyCostsDecisions={dailyCostsDecisions}
             revenueCategories={revenueCategories}
             shelterRevenueItems={shelterRevenueItems}
             getShelterRevenueTotal={getShelterRevenueTotal}
@@ -48,6 +53,8 @@ function DailyOperationsTabContent({
     formatCurrency,
     onDailyRevenue,
     onDailyDepartmentHours,
+    onDailyCostsDecision,
+    dailyCostsDecisions,
     revenueCategories,
     shelterRevenueItems,
     getShelterRevenueTotal,
@@ -86,6 +93,11 @@ function DailyOperationsTabContent({
                     className="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                 />
             </div>
+
+            <DailyCostsDecisionSection
+                selectedDate={selectedDate}
+                onSave={onDailyCostsDecision}
+            />
 
             <DailyRevenueSection
                 entries={dailyRevenueEntries}
