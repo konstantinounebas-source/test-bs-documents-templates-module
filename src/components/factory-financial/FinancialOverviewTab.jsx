@@ -82,6 +82,7 @@ export default function FinancialOverviewTab({
     totalIncome,
     totalCosts,
     depreciationCost,
+    depreciationFactor,
     formatCurrency,
     costBreakdown,
     hasInvalidAllocations,
@@ -160,6 +161,12 @@ export default function FinancialOverviewTab({
     // Derived ratios (safe — no NaN, no division by zero)
     const revenuePerUnit = safeRatio(effective.revenue, effective.productionQty);
     const revenuePerHour = safeRatio(effective.revenue, effective.totalHours);
+
+     // Period depreciation charge: Period Revenue × Depreciation Factor
+    const periodDepreciationCharge = useMemo(
+        () => (effective.revenue || 0) * (parseFloat(depreciationFactor) || 0),
+        [effective.revenue, depreciationFactor]
+    );
 
     // Static planning calculations (never touched by period filter or simulation)
     const netBeforeDepr   = (totalIncome || 0) - (totalCosts || 0);
@@ -265,9 +272,9 @@ export default function FinancialOverviewTab({
                         <AnalysisRow label="Κόστος Λειτουργίας (Σχεδιασμένο)"    value={`− ${fmt(totalCosts)}`} />
                         <AnalysisRow label="Κόστος Εργατικών Περιόδου"          value={`− ${fmt(periodLabourCost)}`} />
                         <AnalysisRow label="Αποτέλεσμα προ Απόσβεσης"           value={fmt((effective.revenue) - (totalCosts) - (periodLabourCost))} highlight />
-                        <div className="border-t border-slate-200 my-2" />
-                        <AnalysisRow label="Επιβάρυνση Απόσβεσης"                value={`− ${fmt(depreciationCost)}`} />
-                        <AnalysisRow label="Τελικό Αποτέλεσμα μετά Απόσβεση"   value={fmt((effective.revenue) - (totalCosts) - (periodLabourCost) - (depreciationCost))} highlight />
+                         <div className="border-t border-slate-200 my-2" />
+                         <AnalysisRow label="Επιβάρυνση Απόσβεσης"                value={`− ${fmt(periodDepreciationCharge)}`} />
+                         <AnalysisRow label="Τελικό Αποτέλεσμα μετά Απόσβεση"   value={fmt((effective.revenue) - (totalCosts) - (periodLabourCost) - (periodDepreciationCharge))} highlight />
                     </CardContent>
                 </Card>
 

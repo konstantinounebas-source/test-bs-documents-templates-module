@@ -662,6 +662,7 @@ export default function FactoryFinancialCalculations() {
                                     totalIncome={calculateTotalIncome()}
                                     totalCosts={getOfficialTotalCosts()}
                                     depreciationCost={getCalculateDepreciationInvestmentsTotal()}
+                                    depreciationFactor={getCalculateDepreciationFactor()}
                                     formatCurrency={formatCurrency}
                                     hasInvalidAllocations={!validateAllAllocations()}
                                     legacyPersonnelCost={getCalculateLegacyPersonnelCostTotal()}
