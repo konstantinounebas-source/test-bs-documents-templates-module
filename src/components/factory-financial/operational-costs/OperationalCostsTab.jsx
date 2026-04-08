@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 
@@ -185,6 +185,62 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
     }
   };
 
+  const exportBOM = async (busStopTypeId) => {
+    try {
+      const components = await base44.entities.BusStopTypeComponent.filter({
+        bus_stop_type_id: busStopTypeId
+      });
+
+      if (components.length === 0) {
+        toast.error('Δεν υπάρχουν components για export');
+        return;
+      }
+
+      // Fetch product info for each component
+      const enrichedComponents = await Promise.all(
+        components.map(async (comp) => {
+          let productName = 'N/A';
+          if (comp.product_id) {
+            const products = await base44.entities.Product.filter({ id: comp.product_id });
+            if (products.length > 0) {
+              productName = products[0].name;
+            }
+          }
+          return {
+            ...comp,
+            product_name: productName
+          };
+        })
+      );
+
+      // Create CSV content
+      const headers = ['Product Name', 'Quantity Required', 'Unit of Measure', 'Installation Order', 'Optional', 'Notes'];
+      const rows = enrichedComponents.map(comp => [
+        comp.product_name,
+        comp.quantity_required || '',
+        comp.unit_of_measure || '',
+        comp.installation_order || '',
+        comp.is_optional ? 'Yes' : 'No',
+        comp.notes || ''
+      ]);
+
+      const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+      // Download CSV
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `BOM_Export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.click();
+
+      toast.success('BOM εξαγόμενο με επιτυχία');
+    } catch (error) {
+      console.error('Failed to export BOM:', error);
+      toast.error('Αποτυχία εξαγωγής BOM');
+    }
+  };
+
   if (loading) {
     return <div className="p-4 text-slate-500">Φόρτωση...</div>;
   }
@@ -215,18 +271,31 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
             return (
               <div key={item.id} className="p-3 bg-slate-50 rounded border border-slate-200 space-y-2">
                 <div className="grid grid-cols-12 gap-2 items-end">
-                  <Select value={item.bus_stop_type_id || ''} onValueChange={(v) => handleUpdateItem(item.id, 'bus_stop_type_id', v)}>
-                    <SelectTrigger className="col-span-2 h-8 text-sm">
-                      <SelectValue placeholder="Bus Stop Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {busStopTypes.map(type => (
-                        <SelectItem key={type.id} value={type.id}>
-                          {type.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="col-span-2 flex items-center gap-1">
+                    <Select value={item.bus_stop_type_id || ''} onValueChange={(v) => handleUpdateItem(item.id, 'bus_stop_type_id', v)}>
+                      <SelectTrigger className="h-8 text-sm flex-1">
+                        <SelectValue placeholder="Bus Stop Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {busStopTypes.map(type => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {item.bus_stop_type_id && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => exportBOM(item.bus_stop_type_id)}
+                        className="h-8 w-8 flex-shrink-0"
+                        title="Export BOM"
+                      >
+                        <Download className="w-3 h-3 text-blue-600" />
+                      </Button>
+                    )}
+                  </div>
                   <Input
                     placeholder="Περιγραφή"
                     value={item.description}
