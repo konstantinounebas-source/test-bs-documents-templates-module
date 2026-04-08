@@ -827,6 +827,8 @@ export default function FactoryFinancialCalculations() {
                                      onDailyRevenue={setDailyRevenueEntries}
                                      onDailyDepartmentHours={setDailyDepartmentHoursEntries}
                                      revenueCategories={salesRevenueItems}
+                                     shelterRevenueItems={shelterRevenueItems}
+                                     getShelterRevenueTotal={getShelterRevenueTotal}
                                  />
                              </TabsContent>
 

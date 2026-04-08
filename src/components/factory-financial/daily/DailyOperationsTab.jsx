@@ -18,6 +18,8 @@ export default function DailyOperationsTab({
     onDailyRevenue,
     onDailyDepartmentHours,
     revenueCategories,
+    shelterRevenueItems,
+    getShelterRevenueTotal,
 }) {
     // Ensure shelterInstances is always an array
     const normalizedShelterInstances = Array.isArray(shelterInstances) ? shelterInstances : [];
@@ -32,6 +34,8 @@ export default function DailyOperationsTab({
             onDailyRevenue={onDailyRevenue}
             onDailyDepartmentHours={onDailyDepartmentHours}
             revenueCategories={revenueCategories}
+            shelterRevenueItems={shelterRevenueItems}
+            getShelterRevenueTotal={getShelterRevenueTotal}
         />
     );
 }
@@ -45,6 +49,8 @@ function DailyOperationsTabContent({
     onDailyRevenue,
     onDailyDepartmentHours,
     revenueCategories,
+    shelterRevenueItems,
+    getShelterRevenueTotal,
 }) {
     const [selectedDate, setSelectedDate] = useState(todayISO());
 
@@ -87,6 +93,8 @@ function DailyOperationsTabContent({
                 formatCurrency={formatCurrency}
                 revenueCategories={revenueCategories || []}
                 shelterInstances={shelterInstances}
+                shelterRevenueItems={shelterRevenueItems}
+                getShelterRevenueTotal={getShelterRevenueTotal}
                 onAdd={handleAddRevenue}
                 onRemove={handleRemoveRevenue}
                 onUpdate={handleUpdateRevenue}

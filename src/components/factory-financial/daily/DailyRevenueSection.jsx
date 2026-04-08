@@ -39,6 +39,8 @@ export default function DailyRevenueSection({
     formatCurrency,
     revenueCategories,
     shelterInstances,
+    shelterRevenueItems,
+    getShelterRevenueTotal,
     onAdd,
     onRemove,
     onUpdate,
@@ -81,6 +83,27 @@ export default function DailyRevenueSection({
          }
          onUpdate(updated);
      };
+
+    const handleShelterInstanceSelect = (realIdx, selectedInstanceId) => {
+       const updated = [...entries];
+       updated[realIdx] = { ...updated[realIdx], shelter_instance_id: selectedInstanceId || '' };
+
+       // Auto-fill unit_revenue from shelter_revenue_items
+       if (selectedInstanceId && shelterRevenueItems && getShelterRevenueTotal) {
+           const matchedItem = shelterRevenueItems.find(
+               item => String(item.shelter_instance_id) === String(selectedInstanceId)
+           );
+           if (matchedItem) {
+               const matchedAmount = getShelterRevenueTotal(matchedItem);
+               updated[realIdx].unit_revenue = matchedAmount;
+               // Recalculate total_revenue
+               const qty = parseFloat(updated[realIdx].quantity) || 0;
+               updated[realIdx].total_revenue = qty * matchedAmount;
+           }
+       }
+
+       onUpdate(updated);
+    };
 
     const handleCategorySelect = (realIdx, selectedLabel) => {
         const opt = revenueOptions.find(o => o.label === selectedLabel);
@@ -181,7 +204,7 @@ export default function DailyRevenueSection({
                                   <div className="flex flex-col gap-0.5">
                                       <select
                                           value={row.shelter_instance_id || ''}
-                                          onChange={(e) => handleUpdate(realIdx, 'shelter_instance_id', e.target.value)}
+                                          onChange={(e) => handleShelterInstanceSelect(realIdx, e.target.value)}
                                           className="h-8 px-3 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
                                       >
                                           <option value="">— Επιλέξτε στάση —</option>
