@@ -158,6 +158,9 @@ export default function FactoryFinancialCalculations() {
         maintenanceCosts: true
     });
 
+    // Tab state
+    const [activeTab, setActiveTab] = useState('overview');
+
     useEffect(() => {
         if (!accessLoading && hasAccess) {
             loadFinancialRecords();
@@ -351,16 +354,11 @@ export default function FactoryFinancialCalculations() {
 
              console.log('🟢 updatedData.daily_costs_records:', updatedData.daily_costs_records);
              await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
-             console.log('Save successful, reloading data...');
+             console.log('Save successful, data persisted');
 
              toast.success('Τα δεδομένα αποθηκεύτηκαν επιτυχώς');
-             // Reload the specific record to ensure UI is in sync
-             const refreshedRecords = await base44.entities.FactoryFinancialData.list('-created_date');
-             const refreshedRecord = refreshedRecords.find(r => r.id === selectedRecord.id);
-             console.log('Refreshed record daily_costs_records:', refreshedRecord?.daily_costs_records);
-             if (refreshedRecord) {
-                 loadRecordData(refreshedRecord);
-             }
+             // Keep current state — data is already in memory
+             setCurrentData(prev => ({ ...prev, ...updatedData }));
         } catch (error) {
             console.error('Failed to save data:', error);
             toast.error('Σφάλμα αποθήκευσης δεδομένων');
@@ -708,7 +706,7 @@ export default function FactoryFinancialCalculations() {
                 {selectedRecord && (
                     <>
                         {/* Tab Layout */}
-                        <Tabs defaultValue="overview" className="w-full">
+                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                             <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-slate-100 p-1 rounded-xl mb-2">
                                 {[
                                     { value: 'overview', label: 'Επισκόπηση' },

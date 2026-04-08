@@ -8,13 +8,6 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
      const [fixedCosts, setFixedCosts] = useState(false);
      const [operationalCosts, setOperationalCosts] = useState(false);
      const [supervisorCosts, setSupervisorCosts] = useState(false);
-     const [localRecords, setLocalRecords] = useState(records);
-
-     // Sync prop changes to local state
-     useEffect(() => {
-         setLocalRecords(records);
-         console.log('📥 DailyCostsDecisionSection received records:', records);
-     }, [records]);
 
     const getFixedCostsTotal = () => {
         if (!fixedCosts) return 0;
@@ -47,9 +40,8 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
              totalCost: fixedCost + operationalCost + supervisorCost,
              timestamp: new Date().toISOString()
          };
-         const updatedRecords = [...localRecords, newRecord];
+         const updatedRecords = [...records, newRecord];
          console.log('📤 DailyCostsDecisionSection saving:', updatedRecords);
-         setLocalRecords(updatedRecords);
          if (typeof onSave === 'function') onSave(updatedRecords);
          setFixedCosts(false);
          setOperationalCosts(false);
@@ -57,13 +49,12 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
      };
 
     const handleRemoveRecord = (idx) => {
-         const updatedRecords = localRecords.filter((_, i) => i !== idx);
+         const updatedRecords = records.filter((_, i) => i !== idx);
          console.log('📤 DailyCostsDecisionSection removing, updated:', updatedRecords);
-         setLocalRecords(updatedRecords);
          if (typeof onSave === 'function') onSave(updatedRecords);
      };
 
-    const todayRecords = localRecords.filter(r => r.date === selectedDate);
+    const todayRecords = records.filter(r => r.date === selectedDate);
 
     return (
         <Card className="border-slate-200 bg-white">
