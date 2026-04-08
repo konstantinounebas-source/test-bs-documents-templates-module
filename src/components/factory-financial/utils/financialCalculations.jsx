@@ -18,22 +18,28 @@ export const hasInvalidAllocation = (items) => {
     });
 };
 
-export const convertCostToDaily = (amount, frequencyType, avgMonthDays = 22, avgYearDays = 260, totalWorkDays = 0) => {
-    const amt = parseFloat(amount) || 0;
-    switch(frequencyType) {
-        case 'daily':
-        case 'per_production_day':
-            return amt;
-        case 'monthly':
-            return amt / (avgMonthDays || 22);
-        case 'yearly':
-            return amt / (avgYearDays || 260);
-        case 'one_time':
-            return totalWorkDays > 0 ? amt / totalWorkDays : 0;
-        default:
-            return amt;
-    }
-};
+export const convertCostToDaily = (amount, frequencyType, avgMonthDays = 22, avgYearDays = 260, totalWorkDays = 0, customFactor = null) => {
+     const amt = parseFloat(amount) || 0;
+
+     // If custom factor is provided, use it
+     if (customFactor !== null && customFactor !== undefined && frequencyType !== 'daily' && frequencyType !== 'per_production_day') {
+         return amt / parseFloat(customFactor);
+     }
+
+     switch(frequencyType) {
+         case 'daily':
+         case 'per_production_day':
+             return amt;
+         case 'monthly':
+             return amt / (avgMonthDays || 22);
+         case 'yearly':
+             return amt / (avgYearDays || 260);
+         case 'one_time':
+             return totalWorkDays > 0 ? amt / totalWorkDays : 0;
+         default:
+             return amt;
+     }
+ };
 
 export const getVariationsTotal = (variations) => {
     return (variations || []).reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);

@@ -63,25 +63,26 @@ export default function ExpenseTableSection({
                         {/* Table Section */}
                         <div className="border-t border-slate-200">
                             {/* Table Header */}
-                             <div className="bg-slate-100 grid grid-cols-14 gap-2 p-3 text-xs font-semibold text-slate-700 border-b border-slate-300">
+                             <div className="bg-slate-100 grid grid-cols-16 gap-2 p-3 text-xs font-semibold text-slate-700 border-b border-slate-300">
                                  <div className="col-span-2">Περιγραφή</div>
                                  <div className="col-span-1">Ποσό</div>
                                  <div className="col-span-2">Συχνότητα</div>
+                                 <div className="col-span-1">Factor</div>
                                  <div className="col-span-3">Ημερήσιο Ποσό</div>
-                                 <div className="col-span-4">Σχόλια</div>
+                                 <div className="col-span-5">Σχόλια</div>
                                  <div className="col-span-2 text-right">Ενέργειες</div>
                              </div>
 
                             {/* Table Body */}
                             <div className="divide-y divide-slate-200">
                                 {expenseItems.map((item, idx) => {
-                                    const dailyAmount = convertCostToDaily(item.amount, item.frequency_type);
-                                    const periodTotal = dailyAmount * totalWorkingDays;
+                                     const dailyAmount = convertCostToDaily(item.amount, item.frequency_type, 22, 260, totalWorkingDays, item.conversion_factor);
+                                     const periodTotal = dailyAmount * totalWorkingDays;
 
                                     return (
                                         <div key={idx}>
                                              {/* Main Row */}
-                                             <div className="grid grid-cols-14 gap-2 p-3 items-center bg-white hover:bg-slate-50 transition-colors border-b border-slate-100">
+                                             <div className="grid grid-cols-16 gap-2 p-3 items-center bg-white hover:bg-slate-50 transition-colors border-b border-slate-100">
                                                  <div className="col-span-2 relative">
                                                      <Input
                                                          placeholder="π.χ. Ενοίκιο"
@@ -114,19 +115,21 @@ export default function ExpenseTableSection({
                                                          <SelectItem value="yearly">Ετήσιο</SelectItem>
                                                      </SelectContent>
                                                  </Select>
+                                                 <Input
+                                                     type="number"
+                                                     placeholder="22"
+                                                     value={item.conversion_factor || ''}
+                                                     onChange={(e) => onUpdateItem(idx, 'conversion_factor', parseFloat(e.target.value) || 1)}
+                                                     className="col-span-1 h-8 text-xs"
+                                                 />
                                                  <div className="col-span-3 text-xs bg-blue-50 p-2 rounded border border-blue-200">
                                                      <span className="font-medium">{formatCurrency(dailyAmount)}</span>/ημέρα
-                                                     <br />
-                                                     <span className="text-slate-500 text-xs">
-                                                         {item.frequency_type === 'monthly' && '(÷ 22)'}
-                                                         {item.frequency_type === 'yearly' && '(÷ 260)'}
-                                                     </span>
                                                  </div>
                                                  <Input
                                                      placeholder="π.χ. Κατά έξη μηνών"
                                                      value={item.notes || ''}
                                                      onChange={(e) => onUpdateItem(idx, 'notes', e.target.value)}
-                                                     className="col-span-4 h-8"
+                                                     className="col-span-5 h-8"
                                                  />
                                                  <div className="col-span-2 flex justify-end gap-1">
                                                     <Button
