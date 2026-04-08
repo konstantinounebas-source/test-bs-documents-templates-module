@@ -3,16 +3,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Plus, Trash2, DollarSign } from 'lucide-react';
 
-export default function DailyCostsDecisionSection({ selectedDate, onSave = () => {} }) {
+export default function DailyCostsDecisionSection({ selectedDate, supervisorDailyAllocations, labourPersonnel, formatCurrency, onSave = () => {} }) {
     const [fixedCosts, setFixedCosts] = useState(false);
     const [operationalCosts, setOperationalCosts] = useState(false);
+    const [supervisorCosts, setSupervisorCosts] = useState(false);
     const [records, setRecords] = useState([]);
 
+    const getSupervisorTotalCost = () => {
+        if (!supervisorCosts || !supervisorDailyAllocations || !labourPersonnel) return 0;
+        return supervisorDailyAllocations.reduce((sum, alloc) => {
+            const person = labourPersonnel.find(p => p.id === alloc.personnel_id);
+            return sum + (person?.daily_cost || 0);
+        }, 0);
+    };
+
     const handleAddRecord = () => {
+        const supervisorCost = getSupervisorTotalCost();
         const newRecord = {
             date: selectedDate,
             hasFixedCosts: fixedCosts,
             hasOperationalCosts: operationalCosts,
+            hasSupervisorCosts: supervisorCosts,
+            supervisorCost: supervisorCost,
             timestamp: new Date().toISOString()
         };
         const updatedRecords = [...records, newRecord];
@@ -20,6 +32,7 @@ export default function DailyCostsDecisionSection({ selectedDate, onSave = () =>
         if (typeof onSave === 'function') onSave(updatedRecords);
         setFixedCosts(false);
         setOperationalCosts(false);
+        setSupervisorCosts(false);
     };
 
     const handleRemoveRecord = (idx) => {
@@ -67,10 +80,23 @@ export default function DailyCostsDecisionSection({ selectedDate, onSave = () =>
                         <span className="text-xs font-medium text-slate-900">Λειτουργικά</span>
                     </div>
 
+                    <div 
+                        className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded"
+                        onClick={() => setSupervisorCosts(!supervisorCosts)}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={supervisorCosts}
+                            onChange={(e) => setSupervisorCosts(e.target.checked)}
+                            className="w-4 h-4 cursor-pointer"
+                        />
+                        <span className="text-xs font-medium text-slate-900">Ημερήσιο Κόστος Επιστάρχη</span>
+                    </div>
+
                     {/* Action Button */}
                     <Button
                         onClick={handleAddRecord}
-                        disabled={!fixedCosts && !operationalCosts}
+                        disabled={!fixedCosts && !operationalCosts && !supervisorCosts}
                         size="sm"
                         className="bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 h-auto px-2 ml-auto"
                     >
@@ -90,13 +116,28 @@ export default function DailyCostsDecisionSection({ selectedDate, onSave = () =>
                                 >
                                     <div className="flex items-center gap-2 flex-1">
                                         <CheckCircle2 className="w-3 h-3 text-blue-600 flex-shrink-0" />
-                                        <span className="text-xs text-slate-700">
-                                            {record.hasFixedCosts && record.hasOperationalCosts
-                                                ? 'Σ. & Λ. Κόστη'
-                                                : record.hasFixedCosts
-                                                ? 'Σ. Κόστη'
-                                                : 'Λ. Κόστη'}
-                                        </span>
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="text-xs text-slate-700">
+                                                {record.hasFixedCosts && record.hasOperationalCosts && record.hasSupervisorCosts
+                                                    ? 'Σ. & Λ. & Επιστάρχη'
+                                                    : record.hasFixedCosts && record.hasOperationalCosts
+                                                    ? 'Σ. & Λ. Κόστη'
+                                                    : record.hasFixedCosts && record.hasSupervisorCosts
+                                                    ? 'Σ. & Επιστάρχη'
+                                                    : record.hasOperationalCosts && record.hasSupervisorCosts
+                                                    ? 'Λ. & Επιστάρχη'
+                                                    : record.hasFixedCosts
+                                                    ? 'Σ. Κόστη'
+                                                    : record.hasOperationalCosts
+                                                    ? 'Λ. Κόστη'
+                                                    : 'Επιστάρχη'}
+                                            </span>
+                                            {record.hasSupervisorCosts && formatCurrency && (
+                                                <span className="text-xs text-purple-700 font-medium">
+                                                    {formatCurrency(record.supervisorCost)}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                     <button
                                         onClick={() => handleRemoveRecord(idx)}

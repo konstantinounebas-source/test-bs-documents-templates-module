@@ -790,8 +790,9 @@ export default function FactoryFinancialCalculations() {
                                       getShelterRevenueTotal={getShelterRevenueTotal}
                                       departmentAssignments={departmentTechnicianAssignments}
                                       labourPersonnel={labourPersonnel}
+                                      supervisorDailyAllocations={supervisorDailyAllocations}
                                   />
-                              </TabsContent>
+                                  </TabsContent>
 
                             {/* DAILY DATA HISTORY TAB */}
                              <TabsContent value="daily_history" className="mt-4">
