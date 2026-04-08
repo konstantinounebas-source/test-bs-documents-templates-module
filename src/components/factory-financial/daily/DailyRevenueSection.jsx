@@ -178,24 +178,20 @@ export default function DailyRevenueSection({
                                 )}
 
                                 {/* Shelter Instance */}
-                                  <Select
-                                      value={String(row.shelter_instance_id || '')}
-                                      onValueChange={val => handleUpdate(realIdx, 'shelter_instance_id', val || '')}
-                                  >
-                                      <SelectTrigger className="h-8 text-sm">
-                                          <SelectValue placeholder="Επιλέξτε στάση...">
-                                              {row.shelter_instance_id ? getShelterInstanceName(row.shelter_instance_id) : '—'}
-                                          </SelectValue>
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                          <SelectItem value={null}>— Κανένας —</SelectItem>
+                                  <div className="flex flex-col gap-0.5">
+                                      <select
+                                          value={row.shelter_instance_id || ''}
+                                          onChange={(e) => handleUpdate(realIdx, 'shelter_instance_id', e.target.value)}
+                                          className="h-8 px-3 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                                      >
+                                          <option value="">— Επιλέξτε στάση —</option>
                                           {normalizedShelterInstances && normalizedShelterInstances.map(instance => (
-                                               <SelectItem key={instance.id} value={String(instance.id)}>
-                                                   {instance.name}
-                                               </SelectItem>
-                                           ))}
-                                      </SelectContent>
-                                  </Select>
+                                              <option key={instance.id} value={instance.id}>
+                                                  {instance.name}
+                                              </option>
+                                          ))}
+                                      </select>
+                                  </div>
 
                                 {/* Quantity */}
                                 <Input
