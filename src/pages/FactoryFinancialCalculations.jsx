@@ -775,21 +775,23 @@ export default function FactoryFinancialCalculations() {
 
                             {/* DAILY OPERATIONS TAB */}
                              <TabsContent value="daily" className="mt-4">
-                                 <DailyOperationsTab
-                                     dailyProductionEntries={dailyProductionEntries}
-                                     dailyRevenueEntries={dailyRevenueEntries}
-                                     dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
-                                     shelterInstances={shelterInstances}
-                                     departments={departments}
-                                     formatCurrency={formatCurrency}
-                                     onDailyProduction={setDailyProductionEntries}
-                                     onDailyRevenue={setDailyRevenueEntries}
-                                     onDailyDepartmentHours={setDailyDepartmentHoursEntries}
-                                     revenueCategories={salesRevenueItems}
-                                     shelterRevenueItems={shelterRevenueItems}
-                                     getShelterRevenueTotal={getShelterRevenueTotal}
-                                 />
-                             </TabsContent>
+                                  <DailyOperationsTab
+                                      dailyProductionEntries={dailyProductionEntries}
+                                      dailyRevenueEntries={dailyRevenueEntries}
+                                      dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+                                      shelterInstances={shelterInstances}
+                                      departments={departments}
+                                      formatCurrency={formatCurrency}
+                                      onDailyProduction={setDailyProductionEntries}
+                                      onDailyRevenue={setDailyRevenueEntries}
+                                      onDailyDepartmentHours={setDailyDepartmentHoursEntries}
+                                      revenueCategories={salesRevenueItems}
+                                      shelterRevenueItems={shelterRevenueItems}
+                                      getShelterRevenueTotal={getShelterRevenueTotal}
+                                      departmentAssignments={departmentTechnicianAssignments}
+                                      labourPersonnel={labourPersonnel}
+                                  />
+                              </TabsContent>
 
                             {/* DAILY DATA HISTORY TAB */}
                              <TabsContent value="daily_history" className="mt-4">
