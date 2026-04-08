@@ -10,7 +10,8 @@ export default function DeptAllocationRows({ allocations, departments, onAdd, on
     const isValid = Math.abs(totalAlloc - 100) < 0.01;
 
     const getDeptName = (deptId) => {
-        const dept = departments.find(d => d.id === deptId);
+        if (!deptId) return '(χωρίς επιλογή)';
+        const dept = (departments || []).find(d => d.id === deptId);
         return dept ? (dept.department_name || dept.name || deptId) : '(χωρίς επιλογή)';
     };
 
