@@ -328,21 +328,10 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
             const daily = convertToDaily(item.amount, item.frequency_type, item.conversion_factor);
             return (
               <div key={item.id} className="p-3 bg-slate-50 rounded border border-slate-200 space-y-2">
-                {/* Labels Row */}
-                <div className="grid grid-cols-12 gap-2 items-center mb-1">
-                  <div className="col-span-4">
-                    <span className="text-xs font-medium text-slate-600">BOM Type</span>
-                  </div>
-                  <div className="col-span-3">
-                    <span className="text-xs font-medium text-slate-600">Περιγραφή</span>
-                  </div>
-                  <div className="col-span-5">
-                    {/* Empty space for second row fields */}
-                  </div>
-                </div>
-                {/* First Inputs Row */}
-                <div className="grid grid-cols-12 gap-2 items-end">
-                  <div className="col-span-4">
+                {/* First Row - BOM Type and Description */}
+                <div className="grid grid-cols-12 gap-2 items-end mb-1">
+                  <div className="col-span-2">
+                    <label className="text-xs font-medium text-slate-600">BOM Type</label>
                     <Select value={item.bus_stop_type_id || ''} onValueChange={(v) => handleUpdateItem(item.id, 'bus_stop_type_id', v)}>
                       <SelectTrigger className="h-8 text-sm">
                         <SelectValue placeholder="Επιλέξτε" />
@@ -356,7 +345,8 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="col-span-3">
+                  <div className="col-span-10">
+                    <label className="text-xs font-medium text-slate-600">Περιγραφή</label>
                     <Input
                       placeholder="π.χ. Ενέργεια"
                       value={item.description}
@@ -364,7 +354,6 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                       className="h-8 text-sm"
                     />
                   </div>
-                  <div className="col-span-5" />
                 </div>
                 {/* Second Row - Fields and Buttons */}
                 <div className="grid grid-cols-12 gap-2 items-end">
@@ -403,13 +392,13 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                       className="h-8 text-sm"
                     />
                   </div>
-                  <div className="col-span-1">
+                  <div className="col-span-2">
                     <label className="text-xs font-medium text-slate-600">Ημερήσιο Κόστος</label>
                     <div className="text-right font-medium text-slate-900 bg-blue-50 px-3 py-2 rounded text-sm">
                       {formatCurrency(daily)}
                     </div>
                   </div>
-                  <div className="col-span-2 flex items-end gap-1 justify-end">
+                  <div className="col-span-4 flex items-end gap-1 justify-end h-full">
                     {item.bus_stop_type_id && (
                       <Button
                         variant="outline"
