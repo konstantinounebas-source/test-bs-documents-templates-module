@@ -27,6 +27,7 @@ import ExpenseTableSection from "@/components/factory-financial/ExpenseTableSect
 import FinancialOverviewTab from "@/components/factory-financial/FinancialOverviewTab";
 import LabourCostTab from "@/components/factory-financial/labour/LabourCostTab";
 import DailyOperationsTab from "@/components/factory-financial/daily/DailyOperationsTab";
+import DailyDataHistoryTab from "@/components/factory-financial/DailyDataHistoryTab";
 import {
     calculateTotalLabourCost,
     normalizeLoadedLabourResources,
@@ -624,6 +625,7 @@ export default function FactoryFinancialCalculations() {
                                     { value: 'other', label: 'Λοιπά Κόστη' },
                                     { value: 'labour', label: 'Κόστος Προσωπικού' },
                                     { value: 'daily', label: 'Daily Operations' },
+                                    { value: 'daily_history', label: 'Daily History' },
                                     { value: 'depreciation', label: 'Αποσβέσεις' },
                                     { value: 'department', label: 'Ανά Τμήμα' },
                                 ].map(tab => (
@@ -646,6 +648,9 @@ export default function FactoryFinancialCalculations() {
                                     formatCurrency={formatCurrency}
                                     hasInvalidAllocations={!validateAllAllocations()}
                                     legacyPersonnelCost={getCalculateLegacyPersonnelCostTotal()}
+                                    dailyProductionEntries={dailyProductionEntries}
+                                    dailyRevenueEntries={dailyRevenueEntries}
+                                    dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
                                     costBreakdown={[
                                         { label: 'Κόστος Προσωπικού', value: getCalculateLabourCostTotal() },
                                         { label: 'BOM (Υλικά)', value: getCalculateBomTotal() },
@@ -807,6 +812,18 @@ export default function FactoryFinancialCalculations() {
                                     onDailyProduction={setDailyProductionEntries}
                                     onDailyRevenue={setDailyRevenueEntries}
                                     onDailyDepartmentHours={setDailyDepartmentHoursEntries}
+                                />
+                            </TabsContent>
+
+                            {/* DAILY DATA HISTORY TAB */}
+                            <TabsContent value="daily_history" className="mt-4">
+                                <DailyDataHistoryTab
+                                    dailyProductionEntries={dailyProductionEntries}
+                                    dailyRevenueEntries={dailyRevenueEntries}
+                                    dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+                                    busStopTypes={busStopTypes}
+                                    departments={departments}
+                                    formatCurrency={formatCurrency}
                                 />
                             </TabsContent>
 
