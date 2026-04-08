@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { Plus, Trash2, Package } from 'lucide-react';
 import { calculateDailyProductionTotal } from "@/components/factory-financial/utils/dailyOperationsCalculations";
 
@@ -63,22 +63,18 @@ export default function DailyProductionSection({ entries, busStopTypes, onAdd, o
                                     onChange={e => handleUpdate(idx, 'date', e.target.value)}
                                     className="text-sm h-8"
                                 />
-                                <Select
-                                    value={row.bus_stop_type_id || '__manual__'}
-                                    onValueChange={val => handleUpdate(idx, 'bus_stop_type_id', val === '__manual__' ? '' : val)}
+                                <select
+                                    value={row.bus_stop_type_id || ''}
+                                    onChange={(e) => handleUpdate(idx, 'bus_stop_type_id', e.target.value)}
+                                    className="h-8 px-3 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
                                 >
-                                    <SelectTrigger className="h-8 text-sm">
-                                        <SelectValue placeholder="Επιλογή τύπου..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="__manual__">— Χειροκίνητη εισαγωγή —</SelectItem>
-                                        {(busStopTypes || []).map(t => (
-                                            <SelectItem key={t.id} value={t.id}>
-                                                {t.type_name || t.type_code || t.id}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    <option value="">— Χειροκίνητη εισαγωγή —</option>
+                                    {(busStopTypes || []).map(t => (
+                                        <option key={t.id} value={t.id}>
+                                            {t.type_name || t.type_code || t.id}
+                                        </option>
+                                    ))}
+                                </select>
                                 <Input
                                     type="number"
                                     min="0"
