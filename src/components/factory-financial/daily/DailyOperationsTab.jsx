@@ -123,6 +123,7 @@ function DailyOperationsTabContent({
                 departments={departments}
                 departmentAssignments={departmentAssignments}
                 labourPersonnel={labourPersonnel}
+                formatCurrency={formatCurrency}
                 onAdd={handleAddDeptHours}
                 onRemove={handleRemoveDeptHours}
                 onUpdate={handleUpdateDeptHours}
