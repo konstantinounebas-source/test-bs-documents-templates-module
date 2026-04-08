@@ -18,13 +18,13 @@ export default function DeptAllocationRows({ allocations, departments, onAdd, on
                         Δεν υπάρχουν κατανομές τμημάτων
                     </div>
                 ) : (
-                    (allocations || []).map((alloc, allocIdx) => {
-                        const deptName = departments.find(d => d.id === alloc.department_id)?.department_name || '(χωρίς επιλογή)';
+                    (allocations || []).map((row, allocIdx) => {
+                        const deptName = departments.find(d => d.id === row.department_id)?.department_name || '(χωρίς επιλογή)';
                         return (
                         <div key={allocIdx} className="flex items-end gap-2 bg-white p-2 rounded border border-slate-200 hover:border-slate-300 transition-colors">
                             <div className="flex-1">
                                 <Label className="text-xs text-slate-600">Τμήμα</Label>
-                                <Select value={alloc.department_id || ''} onValueChange={(value) => onUpdate(allocIdx, 'department_id', value)}>
+                                <Select value={row.department_id || ''} onValueChange={(value) => onUpdate(allocIdx, 'department_id', value)}>
                                     <SelectTrigger className="h-8"><SelectValue placeholder="Επιλέξτε..." /></SelectTrigger>
                                     <SelectContent position="popper" sideOffset={5}>
                                         {departments.map(dept => (
@@ -37,7 +37,7 @@ export default function DeptAllocationRows({ allocations, departments, onAdd, on
                                 <Label className="text-xs text-slate-600">%</Label>
                                 <Input
                                     type="number" placeholder="0" min="0" max="100"
-                                    value={alloc.allocation_percent || ''}
+                                    value={row.allocation_percent || ''}
                                     onChange={(e) => onUpdate(allocIdx, 'allocation_percent', parseFloat(e.target.value) || 0)}
                                     className="h-8"
                                 />
@@ -77,18 +77,18 @@ export default function DeptAllocationRows({ allocations, departments, onAdd, on
             {/* Amount Split Preview */}
             {totalAlloc > 0 && totalAmount != null && (
                 <div className="text-xs bg-blue-50 p-2 rounded border border-blue-200 space-y-1">
-                    <div className="font-semibold text-blue-900">Κατανομή ποσού:</div>
-                    {(allocations || []).map((alloc, allocIdx) => {
-                        const dept = departments.find(d => d.id === alloc.department_id);
-                        const deptName = dept ? dept.department_name : '(χωρίς επιλογή)';
-                        const allocAmount = (parseFloat(totalAmount) || 0) * (parseFloat(alloc.allocation_percent) || 0) / 100;
-                        return (
-                            <div key={allocIdx} className="flex justify-between text-blue-700">
-                                <span>{deptName}:</span>
-                                <span className="font-medium">{formatCurrency(allocAmount)}</span>
-                            </div>
-                        );
-                    })}
+                <div className="font-semibold text-blue-900">Κατανομή ποσού:</div>
+                {(allocations || []).map((row, allocIdx) => {
+                    const dept = departments.find(d => d.id === row.department_id);
+                    const deptName = dept ? dept.department_name : '(χωρίς επιλογή)';
+                    const allocAmount = (parseFloat(totalAmount) || 0) * (parseFloat(row.allocation_percent) || 0) / 100;
+                    return (
+                        <div key={allocIdx} className="flex justify-between text-blue-700">
+                            <span>{deptName}:</span>
+                            <span className="font-medium">{formatCurrency(allocAmount)}</span>
+                        </div>
+                    );
+                })}
                 </div>
             )}
         </div>
