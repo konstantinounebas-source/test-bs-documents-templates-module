@@ -136,6 +136,7 @@ export default function FactoryFinancialCalculations() {
     const [dailyProductionEntries, setDailyProductionEntries] = useState([]);
     const [dailyRevenueEntries, setDailyRevenueEntries] = useState([]);
     const [dailyDepartmentHoursEntries, setDailyDepartmentHoursEntries] = useState([]);
+    const [dailySupervisorCostEntries, setDailySupervisorCostEntries] = useState([]);
 
     // Depreciation module states
     const [depreciationInvestments, setDepreciationInvestments] = useState([]);
@@ -246,6 +247,7 @@ export default function FactoryFinancialCalculations() {
             setDailyProductionEntries(normalizeLoadedDailyProductionEntries(record.daily_production_entries));
             setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
             setDailyDepartmentHoursEntries(normalizeLoadedDailyDepartmentHoursEntries(record.daily_department_hours_entries));
+            setDailySupervisorCostEntries(record.daily_supervisor_cost_entries || []);
             
         } catch (error) {
             console.error('Failed to load record data:', error);
@@ -301,6 +303,7 @@ export default function FactoryFinancialCalculations() {
                 daily_production_entries: dailyProductionEntries,
                 daily_revenue_entries: dailyRevenueEntries,
                 daily_department_hours_entries: dailyDepartmentHoursEntries,
+                daily_supervisor_cost_entries: dailySupervisorCostEntries,
             };
 
             await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
@@ -364,6 +367,7 @@ export default function FactoryFinancialCalculations() {
                 daily_production_entries: dailyProductionEntries,
                 daily_revenue_entries: dailyRevenueEntries,
                 daily_department_hours_entries: dailyDepartmentHoursEntries,
+                daily_supervisor_cost_entries: dailySupervisorCostEntries,
                 is_active: true
             };
 
@@ -413,6 +417,7 @@ export default function FactoryFinancialCalculations() {
                 daily_production_entries: [],
                 daily_revenue_entries: [],
                 daily_department_hours_entries: [],
+                daily_supervisor_cost_entries: [],
                 is_active: true
             });
             
@@ -779,19 +784,22 @@ export default function FactoryFinancialCalculations() {
                                       dailyProductionEntries={dailyProductionEntries}
                                       dailyRevenueEntries={dailyRevenueEntries}
                                       dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+                                      dailySupervisorCostEntries={dailySupervisorCostEntries}
                                       shelterInstances={shelterInstances}
                                       departments={departments}
                                       formatCurrency={formatCurrency}
                                       onDailyProduction={setDailyProductionEntries}
                                       onDailyRevenue={setDailyRevenueEntries}
                                       onDailyDepartmentHours={setDailyDepartmentHoursEntries}
+                                      onDailySupervisorCost={setDailySupervisorCostEntries}
                                       revenueCategories={salesRevenueItems}
                                       shelterRevenueItems={shelterRevenueItems}
                                       getShelterRevenueTotal={getShelterRevenueTotal}
                                       departmentAssignments={departmentTechnicianAssignments}
                                       labourPersonnel={labourPersonnel}
+                                      supervisorAllocations={supervisorDailyAllocations}
                                   />
-                              </TabsContent>
+                                  </TabsContent>
 
                             {/* DAILY DATA HISTORY TAB */}
                              <TabsContent value="daily_history" className="mt-4">

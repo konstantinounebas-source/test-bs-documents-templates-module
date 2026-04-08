@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CalendarDays } from 'lucide-react';
 import DailyRevenueSection from './DailyRevenueSection';
 import DailyDepartmentHoursSection from './DailyDepartmentHoursSection';
+import DailySupervisorCostSection from './DailySupervisorCostSection';
 import DailyCostsDecisionSection from './DailyCostsDecisionSection';
 
 function todayISO() {
@@ -12,12 +13,14 @@ export default function DailyOperationsTab({
     dailyProductionEntries,
     dailyRevenueEntries,
     dailyDepartmentHoursEntries,
+    dailySupervisorCostEntries,
     shelterInstances,
     departments,
     formatCurrency,
     onDailyProduction,
     onDailyRevenue,
     onDailyDepartmentHours,
+    onDailySupervisorCost,
     onDailyCostsDecision,
     dailyCostsDecisions,
     revenueCategories,
@@ -25,6 +28,7 @@ export default function DailyOperationsTab({
     getShelterRevenueTotal,
     departmentAssignments,
     labourPersonnel,
+    supervisorAllocations,
 }) {
     // Ensure shelterInstances is always an array
     const normalizedShelterInstances = Array.isArray(shelterInstances) ? shelterInstances : [];
@@ -33,11 +37,13 @@ export default function DailyOperationsTab({
         <DailyOperationsTabContent
             dailyRevenueEntries={dailyRevenueEntries}
             dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+            dailySupervisorCostEntries={dailySupervisorCostEntries}
             shelterInstances={normalizedShelterInstances}
             departments={departments}
             formatCurrency={formatCurrency}
             onDailyRevenue={onDailyRevenue}
             onDailyDepartmentHours={onDailyDepartmentHours}
+            onDailySupervisorCost={onDailySupervisorCost}
             onDailyCostsDecision={onDailyCostsDecision}
             dailyCostsDecisions={dailyCostsDecisions}
             revenueCategories={revenueCategories}
@@ -45,6 +51,7 @@ export default function DailyOperationsTab({
             getShelterRevenueTotal={getShelterRevenueTotal}
             departmentAssignments={departmentAssignments}
             labourPersonnel={labourPersonnel}
+            supervisorAllocations={supervisorAllocations}
         />
     );
 }
@@ -52,11 +59,13 @@ export default function DailyOperationsTab({
 function DailyOperationsTabContent({
     dailyRevenueEntries,
     dailyDepartmentHoursEntries,
+    dailySupervisorCostEntries,
     shelterInstances,
     departments,
     formatCurrency,
     onDailyRevenue,
     onDailyDepartmentHours,
+    onDailySupervisorCost,
     onDailyCostsDecision,
     dailyCostsDecisions,
     revenueCategories,
@@ -64,6 +73,7 @@ function DailyOperationsTabContent({
     getShelterRevenueTotal,
     departmentAssignments,
     labourPersonnel,
+    supervisorAllocations,
 }) {
     const [selectedDate, setSelectedDate] = useState(todayISO());
 
@@ -85,6 +95,14 @@ function DailyOperationsTabContent({
         onDailyDepartmentHours(dailyDepartmentHoursEntries.filter((_, i) => i !== realIdx));
 
     const handleUpdateDeptHours = (fullArray) => onDailyDepartmentHours(fullArray);
+
+    const handleAddSupervisorCost = (row) =>
+        onDailySupervisorCost([...dailySupervisorCostEntries, { ...row, date: selectedDate }]);
+
+    const handleRemoveSupervisorCost = (realIdx) =>
+        onDailySupervisorCost(dailySupervisorCostEntries.filter((_, i) => i !== realIdx));
+
+    const handleUpdateSupervisorCost = (fullArray) => onDailySupervisorCost(fullArray);
 
     return (
         <div className="space-y-6">
@@ -127,6 +145,16 @@ function DailyOperationsTabContent({
                 onAdd={handleAddDeptHours}
                 onRemove={handleRemoveDeptHours}
                 onUpdate={handleUpdateDeptHours}
+            />
+            <DailySupervisorCostSection
+                entries={dailySupervisorCostEntries}
+                selectedDate={selectedDate}
+                supervisorAllocations={supervisorAllocations}
+                labourPersonnel={labourPersonnel}
+                formatCurrency={formatCurrency}
+                onAdd={handleAddSupervisorCost}
+                onRemove={handleRemoveSupervisorCost}
+                onUpdate={handleUpdateSupervisorCost}
             />
         </div>
     );
