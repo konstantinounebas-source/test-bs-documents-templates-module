@@ -70,10 +70,10 @@ export default function DailyProductionSection({ entries, busStopTypes, onAdd, o
                                 >
                                     <option value="">— Χειροκίνητη εισαγωγή —</option>
                                     {(busStopTypes || []).map(t => (
-                                        <option key={t.id} value={t.id}>
-                                            {t.type_name || t.type_code || t.id}
-                                        </option>
-                                    ))}
+                                         <option key={t.id} value={String(t.id)}>
+                                             {t.type_name || t.type_code || t.id}
+                                         </option>
+                                     ))}
                                 </select>
                                 <Input
                                     type="number"
