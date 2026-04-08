@@ -14,6 +14,9 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
         : entries.map((r, i) => ({ r, i }));
 
     const total = calculateDailyDepartmentHoursTotal(visibleWithIdx.map(({ r }) => r));
+    
+    // Fallback formatter if not provided
+    const formatVal = formatCurrency || ((val) => val?.toFixed(2) || '—');
 
     const handleUpdate = (realIdx, field, value) => {
         const updated = [...entries];
@@ -113,10 +116,10 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
                                     placeholder="0"
                                 />
                                 <div className="text-right flex-shrink-0 text-sm font-semibold text-slate-800">
-                                    {hourlyRate > 0 ? formatCurrency(hourlyRate) : '—'}
+                                    {hourlyRate > 0 ? formatVal(hourlyRate) : '—'}
                                 </div>
                                 <div className="text-right flex-shrink-0 text-sm font-semibold text-purple-700">
-                                    {totalCost > 0 ? formatCurrency(totalCost) : '—'}
+                                    {totalCost > 0 ? formatVal(totalCost) : '—'}
                                 </div>
                                 <Input
                                     value={row.notes}
