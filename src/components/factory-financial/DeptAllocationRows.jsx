@@ -18,18 +18,15 @@ export default function DeptAllocationRows({ allocations, departments, onAdd, on
                         Δεν υπάρχουν κατανομές τμημάτων
                     </div>
                 ) : (
-                    (allocations || []).map((alloc, allocIdx) => (
+                    (allocations || []).map((alloc, allocIdx) => {
+                        const deptName = departments.find(d => d.id === alloc.department_id)?.department_name || '(χωρίς επιλογή)';
+                        return (
                         <div key={allocIdx} className="flex items-end gap-2 bg-white p-2 rounded border border-slate-200 hover:border-slate-300 transition-colors">
                             <div className="flex-1">
                                 <Label className="text-xs text-slate-600">Τμήμα</Label>
-                                <Select value={alloc.department_id || ''} onValueChange={(value) => onUpdate(allocIdx, 'department_id', value)}>
-                                    <SelectTrigger className="h-8"><SelectValue placeholder="Επιλέξτε..." /></SelectTrigger>
-                                    <SelectContent position="popper" sideOffset={5}>
-                                        {departments.map(dept => (
-                                            <SelectItem key={dept.id} value={dept.id}>{dept.department_name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <div className="h-8 px-3 rounded border border-slate-200 bg-slate-50 flex items-center text-sm text-slate-700 font-medium">
+                                    {deptName}
+                                </div>
                             </div>
                             <div className="w-24">
                                 <Label className="text-xs text-slate-600">%</Label>
@@ -44,7 +41,8 @@ export default function DeptAllocationRows({ allocations, departments, onAdd, on
                                 <Trash2 className="w-3 h-3 text-red-500" />
                             </Button>
                         </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 
