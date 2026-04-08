@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Plus, Trash2, DollarSign } from 'lucide-react';
 import { calculateSupervisorAllocatedDailyCost, calculateTotalSupervisorDailyCost } from '../utils/labourModuleCalculations';
 
 export default function DailyCostsDecisionSection({ selectedDate, supervisorDailyAllocations, labourPersonnel, formatCurrency, fixedDailyTotal, operationalDailyTotal, records = [], onSave = () => {} }) {
-    const [fixedCosts, setFixedCosts] = useState(false);
-    const [operationalCosts, setOperationalCosts] = useState(false);
-    const [supervisorCosts, setSupervisorCosts] = useState(false);
+     const [fixedCosts, setFixedCosts] = useState(false);
+     const [operationalCosts, setOperationalCosts] = useState(false);
+     const [supervisorCosts, setSupervisorCosts] = useState(false);
+     const [localRecords, setLocalRecords] = useState(records);
+
+     // Sync prop changes to local state
+     useEffect(() => {
+         setLocalRecords(records);
+         console.log('📥 DailyCostsDecisionSection received records:', records);
+     }, [records]);
 
     const getFixedCostsTotal = () => {
         if (!fixedCosts) return 0;
@@ -28,7 +35,7 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
         const fixedCost = fixedCosts ? getFixedCostsTotal() : 0;
         const operationalCost = operationalCosts ? getOperationalCostsTotal() : 0;
         const supervisorCost = supervisorCosts ? getSupervisorTotalCost() : 0;
-        
+
         const newRecord = {
             date: selectedDate,
             hasFixedCosts: fixedCosts,
@@ -40,7 +47,8 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
             totalCost: fixedCost + operationalCost + supervisorCost,
             timestamp: new Date().toISOString()
         };
-        const updatedRecords = [...records, newRecord];
+        const updatedRecords = [...localRecords, newRecord];
+        setLocalRecords(updatedRecords);
         if (typeof onSave === 'function') onSave(updatedRecords);
         setFixedCosts(false);
         setOperationalCosts(false);
@@ -48,11 +56,12 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
     };
 
     const handleRemoveRecord = (idx) => {
-        const updatedRecords = records.filter((_, i) => i !== idx);
+        const updatedRecords = localRecords.filter((_, i) => i !== idx);
+        setLocalRecords(updatedRecords);
         if (typeof onSave === 'function') onSave(updatedRecords);
     };
 
-    const todayRecords = records.filter(r => r.date === selectedDate);
+    const todayRecords = localRecords.filter(r => r.date === selectedDate);
 
     return (
         <Card className="border-slate-200 bg-white">
