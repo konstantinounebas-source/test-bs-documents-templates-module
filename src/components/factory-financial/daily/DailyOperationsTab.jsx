@@ -12,14 +12,14 @@ export default function DailyOperationsTab({
     dailyProductionEntries,
     dailyRevenueEntries,
     dailyDepartmentHoursEntries,
+    dailyCostsRecords,
     shelterInstances,
     departments,
     formatCurrency,
     onDailyProduction,
     onDailyRevenue,
     onDailyDepartmentHours,
-    onDailyCostsDecision,
-    dailyCostsDecisions,
+    onDailyCostsRecords,
     revenueCategories,
     shelterRevenueItems,
     getShelterRevenueTotal,
@@ -36,13 +36,13 @@ export default function DailyOperationsTab({
         <DailyOperationsTabContent
             dailyRevenueEntries={dailyRevenueEntries}
             dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+            dailyCostsRecords={dailyCostsRecords}
             shelterInstances={normalizedShelterInstances}
             departments={departments}
             formatCurrency={formatCurrency}
             onDailyRevenue={onDailyRevenue}
             onDailyDepartmentHours={onDailyDepartmentHours}
-            onDailyCostsDecision={onDailyCostsDecision}
-            dailyCostsDecisions={dailyCostsDecisions}
+            onDailyCostsRecords={onDailyCostsRecords}
             revenueCategories={revenueCategories}
             shelterRevenueItems={shelterRevenueItems}
             getShelterRevenueTotal={getShelterRevenueTotal}
@@ -58,13 +58,13 @@ export default function DailyOperationsTab({
 function DailyOperationsTabContent({
     dailyRevenueEntries,
     dailyDepartmentHoursEntries,
+    dailyCostsRecords,
     shelterInstances,
     departments,
     formatCurrency,
     onDailyRevenue,
     onDailyDepartmentHours,
-    onDailyCostsDecision,
-    dailyCostsDecisions,
+    onDailyCostsRecords,
     revenueCategories,
     shelterRevenueItems,
     getShelterRevenueTotal,
@@ -116,7 +116,8 @@ function DailyOperationsTabContent({
                 formatCurrency={formatCurrency}
                 fixedDailyTotal={fixedDailyTotal}
                 operationalDailyTotal={operationalDailyTotal}
-                onSave={onDailyCostsDecision}
+                records={dailyCostsRecords}
+                onSave={onDailyCostsRecords}
             />
 
             <DailyRevenueSection

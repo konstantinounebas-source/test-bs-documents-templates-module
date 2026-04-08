@@ -133,9 +133,10 @@ export default function FactoryFinancialCalculations() {
     const [departmentTechnicianAssignments, setDepartmentTechnicianAssignments] = useState([]);
 
     // Daily operations states
-    const [dailyProductionEntries, setDailyProductionEntries] = useState([]);
-    const [dailyRevenueEntries, setDailyRevenueEntries] = useState([]);
-    const [dailyDepartmentHoursEntries, setDailyDepartmentHoursEntries] = useState([]);
+     const [dailyProductionEntries, setDailyProductionEntries] = useState([]);
+     const [dailyRevenueEntries, setDailyRevenueEntries] = useState([]);
+     const [dailyDepartmentHoursEntries, setDailyDepartmentHoursEntries] = useState([]);
+     const [dailyCostsRecords, setDailyCostsRecords] = useState([]);
     
     // Daily cost totals
     const [fixedDailyTotal, setFixedDailyTotal] = useState(0);
@@ -248,8 +249,9 @@ export default function FactoryFinancialCalculations() {
             setDepartmentTechnicianAssignments(record.department_technician_assignments || []);
 
             setDailyProductionEntries(normalizeLoadedDailyProductionEntries(record.daily_production_entries));
-                    setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
-                    setDailyDepartmentHoursEntries(normalizeLoadedDailyDepartmentHoursEntries(record.daily_department_hours_entries));
+            setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
+            setDailyDepartmentHoursEntries(normalizeLoadedDailyDepartmentHoursEntries(record.daily_department_hours_entries));
+            setDailyCostsRecords(record.daily_costs_records || []);
 
                     // Load Fixed and Operational cost totals from database
                     await loadFixedCostTotal(selectedRecord?.id);
@@ -343,7 +345,8 @@ export default function FactoryFinancialCalculations() {
                 daily_production_entries: dailyProductionEntries,
                 daily_revenue_entries: dailyRevenueEntries,
                 daily_department_hours_entries: dailyDepartmentHoursEntries,
-            };
+                daily_costs_records: dailyCostsRecords,
+                };
 
             await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
             console.log('Save successful, reloading data...');
@@ -406,8 +409,9 @@ export default function FactoryFinancialCalculations() {
                 daily_production_entries: dailyProductionEntries,
                 daily_revenue_entries: dailyRevenueEntries,
                 daily_department_hours_entries: dailyDepartmentHoursEntries,
+                daily_costs_records: dailyCostsRecords,
                 is_active: true
-            };
+                };
 
             await base44.entities.FactoryFinancialData.create(clonedData);
             
@@ -823,12 +827,14 @@ export default function FactoryFinancialCalculations() {
                                       dailyProductionEntries={dailyProductionEntries}
                                       dailyRevenueEntries={dailyRevenueEntries}
                                       dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+                                      dailyCostsRecords={dailyCostsRecords}
                                       shelterInstances={shelterInstances}
                                       departments={departments}
                                       formatCurrency={formatCurrency}
                                       onDailyProduction={setDailyProductionEntries}
                                       onDailyRevenue={setDailyRevenueEntries}
                                       onDailyDepartmentHours={setDailyDepartmentHoursEntries}
+                                      onDailyCostsRecords={setDailyCostsRecords}
                                       revenueCategories={salesRevenueItems}
                                       shelterRevenueItems={shelterRevenueItems}
                                       getShelterRevenueTotal={getShelterRevenueTotal}

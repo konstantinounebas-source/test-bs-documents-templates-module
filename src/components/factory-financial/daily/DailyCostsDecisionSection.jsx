@@ -4,14 +4,10 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, Plus, Trash2, DollarSign } from 'lucide-react';
 import { calculateSupervisorAllocatedDailyCost, calculateTotalSupervisorDailyCost } from '../utils/labourModuleCalculations';
 
-export default function DailyCostsDecisionSection({ selectedDate, supervisorDailyAllocations, labourPersonnel, formatCurrency, fixedDailyTotal, operationalDailyTotal, onSave = () => {} }) {
+export default function DailyCostsDecisionSection({ selectedDate, supervisorDailyAllocations, labourPersonnel, formatCurrency, fixedDailyTotal, operationalDailyTotal, records = [], onSave = () => {} }) {
     const [fixedCosts, setFixedCosts] = useState(false);
     const [operationalCosts, setOperationalCosts] = useState(false);
     const [supervisorCosts, setSupervisorCosts] = useState(false);
-    const [records, setRecords] = useState([]);
-
-    // Debug: log incoming props
-    console.log('📥 DailyCostsDecisionSection received:', { fixedDailyTotal, operationalDailyTotal });
 
     const getFixedCostsTotal = () => {
         if (!fixedCosts) return 0;
@@ -45,7 +41,6 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
             timestamp: new Date().toISOString()
         };
         const updatedRecords = [...records, newRecord];
-        setRecords(updatedRecords);
         if (typeof onSave === 'function') onSave(updatedRecords);
         setFixedCosts(false);
         setOperationalCosts(false);
@@ -54,7 +49,6 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
 
     const handleRemoveRecord = (idx) => {
         const updatedRecords = records.filter((_, i) => i !== idx);
-        setRecords(updatedRecords);
         if (typeof onSave === 'function') onSave(updatedRecords);
     };
 
