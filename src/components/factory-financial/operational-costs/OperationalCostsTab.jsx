@@ -448,36 +448,31 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                           {formatCurrency(daily)}
                         </div>
                       </div>
+                      <div className="col-span-5 flex items-end gap-1">
+                        {item.bus_stop_type_id && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => exportBOM(item.bus_stop_type_id)}
+                            className="h-8 text-xs"
+                            title="Export BOM to CSV"
+                          >
+                            <Download className="w-3 h-3 mr-1" />
+                            Export BOM
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteItem(item.id)}
+                          className="h-8 w-8"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
                     </TooltipProvider>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    {item.bus_stop_type_id && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => exportBOM(item.bus_stop_type_id)}
-                        className="h-8 text-xs"
-                        title="Export BOM to CSV"
-                      >
-                        <Download className="w-3 h-3 mr-1" />
-                        Export BOM
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="h-8 w-8"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="text-right font-medium text-slate-900 bg-blue-50 px-3 py-2 rounded flex-1">
-                    {formatCurrency(daily)}
-                  </div>
-                </div>
                 <Textarea
                   placeholder="Σχόλια"
                   value={item.notes || ''}
