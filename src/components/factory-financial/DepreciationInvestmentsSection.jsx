@@ -88,41 +88,47 @@ export default function DepreciationInvestmentsSection({
                                 </div>
 
                                 <div className="space-y-2">
-                                    {(item.department_allocations || []).map((alloc, allocIdx) => (
-                                        <div key={allocIdx} className="flex items-end gap-2 bg-white p-2 rounded border border-slate-200">
-                                            <div className="flex-1">
-                                                <Label className="text-xs">Τμήμα</Label>
-                                                <Select value={alloc.department_id} onValueChange={(value) => onUpdateDeptAlloc(idx, allocIdx, 'department_id', value)}>
-                                                    <SelectTrigger className="h-8"><SelectValue placeholder="Επιλέξτε τμήμα" /></SelectTrigger>
-                                                    <SelectContent position="popper" sideOffset={5}>
-                                                        {departments.map(dept => (
-                                                            <SelectItem key={dept.id} value={dept.id}>{dept.department_name}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="w-24">
-                                                <Label className="text-xs">Allocation %</Label>
-                                                <Input
-                                                    type="number"
-                                                    placeholder="0"
-                                                    min="0"
-                                                    max="100"
-                                                    value={alloc.allocation_percent}
-                                                    onChange={(e) => onUpdateDeptAlloc(idx, allocIdx, 'allocation_percent', e.target.value)}
-                                                    className="h-8"
-                                                />
-                                            </div>
-                                            <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                className="h-8 w-8"
-                                                onClick={() => onRemoveDeptAlloc(idx, allocIdx)}
-                                            >
-                                                <Trash2 className="w-3 h-3 text-red-500" />
-                                            </Button>
+                                    {(item.department_allocations || []).length === 0 ? (
+                                        <div className="text-xs text-slate-500 bg-slate-50 p-3 rounded border border-slate-200 text-center">
+                                            Δεν υπάρχουν κατανομές τμημάτων
                                         </div>
-                                    ))}
+                                    ) : (
+                                        (item.department_allocations || []).map((alloc, allocIdx) => (
+                                            <div key={allocIdx} className="flex items-end gap-2 bg-white p-2 rounded border border-slate-200">
+                                                <div className="flex-1">
+                                                    <Label className="text-xs">Τμήμα</Label>
+                                                    <Select value={alloc.department_id || ''} onValueChange={(value) => onUpdateDeptAlloc(idx, allocIdx, 'department_id', value)}>
+                                                        <SelectTrigger className="h-8"><SelectValue placeholder="Επιλέξτε τμήμα" /></SelectTrigger>
+                                                        <SelectContent position="popper" sideOffset={5}>
+                                                            {departments.map(dept => (
+                                                                <SelectItem key={dept.id} value={dept.id}>{dept.department_name}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="w-24">
+                                                    <Label className="text-xs">Allocation %</Label>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="0"
+                                                        min="0"
+                                                        max="100"
+                                                        value={alloc.allocation_percent || ''}
+                                                        onChange={(e) => onUpdateDeptAlloc(idx, allocIdx, 'allocation_percent', e.target.value)}
+                                                        className="h-8"
+                                                    />
+                                                </div>
+                                                <Button
+                                                    size="icon"
+                                                    variant="ghost"
+                                                    className="h-8 w-8"
+                                                    onClick={() => onRemoveDeptAlloc(idx, allocIdx)}
+                                                >
+                                                    <Trash2 className="w-3 h-3 text-red-500" />
+                                                </Button>
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
                             </div>
 
