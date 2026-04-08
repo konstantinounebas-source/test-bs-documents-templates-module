@@ -328,101 +328,110 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
             const daily = convertToDaily(item.amount, item.frequency_type, item.conversion_factor);
             return (
               <div key={item.id} className="p-3 bg-slate-50 rounded border border-slate-200 space-y-2">
-                <div className="flex flex-col gap-2">
-                  <div className="grid grid-cols-11 gap-2 items-end">
-                    <TooltipProvider>
-                      <div className="col-span-5 flex flex-col gap-1">
-                        <span className="text-xs font-medium text-slate-600">BOM Type</span>
-                        <Select value={item.bus_stop_type_id || ''} onValueChange={(v) => handleUpdateItem(item.id, 'bus_stop_type_id', v)}>
-                          <SelectTrigger className="h-8 text-sm">
-                            <SelectValue placeholder="Επιλέξτε" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {busStopTypes.map(type => (
-                              <SelectItem key={type.id} value={type.id}>
-                                {type.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="col-span-6 flex flex-col gap-1">
-                        <span className="text-xs font-medium text-slate-600">Περιγραφή</span>
-                        <Input
-                          placeholder="π.χ. Ενέργεια"
-                          value={item.description}
-                          onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                    </TooltipProvider>
-                    <TooltipProvider>
-                      <div className="col-span-2 flex flex-col gap-1">
-                        <span className="text-xs font-medium text-slate-600">Ποσό</span>
-                        <Input
-                          type="number"
-                          placeholder="0.00"
-                          value={item.amount?.toFixed(2) || ''}
-                          onChange={(e) => handleUpdateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
-                          disabled={!!item.bus_stop_type_id}
-                          step="0.01"
-                          className="h-8 text-sm disabled:bg-gray-200 disabled:cursor-not-allowed"
-                        />
-                      </div>
-                      <div className="col-span-1 flex flex-col gap-1">
-                        <span className="text-xs font-medium text-slate-600">Συχν.</span>
-                        <Select value={item.frequency_type} onValueChange={(v) => handleUpdateItem(item.id, 'frequency_type', v)}>
-                          <SelectTrigger className="h-8 text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="daily">Ημερ.</SelectItem>
-                            <SelectItem value="monthly">Μήν.</SelectItem>
-                            <SelectItem value="yearly">Ετ.</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="col-span-1 flex flex-col gap-1">
-                        <span className="text-xs font-medium text-slate-600">Factor</span>
-                        <Input
-                          type="number"
-                          placeholder="22"
-                          value={item.conversion_factor || ''}
-                          onChange={(e) => handleUpdateItem(item.id, 'conversion_factor', e.target.value ? parseFloat(e.target.value) : null)}
-                          className="h-8 text-sm"
-                        />
-                      </div>
-                      <div className="col-span-2 flex flex-col gap-1">
-                        <span className="text-xs font-medium text-slate-600">Ημερήσιο Κόστος</span>
-                        <div className="text-right font-medium text-slate-900 bg-blue-50 px-3 py-2 rounded">
-                          {formatCurrency(daily)}
-                        </div>
-                      </div>
-                      <div className="col-span-5 flex items-end gap-1">
-                        {item.bus_stop_type_id && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => exportBOM(item.bus_stop_type_id)}
-                            className="h-8 text-xs"
-                            title="Export BOM to CSV"
-                          >
-                            <Download className="w-3 h-3 mr-1" />
-                            Export BOM
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteItem(item.id)}
-                          className="h-8 w-8"
-                        >
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </TooltipProvider>
-                    </div>
+                {/* Labels Row */}
+                <div className="grid grid-cols-12 gap-2 items-center mb-1">
+                  <div className="col-span-5">
+                    <span className="text-xs font-medium text-slate-600">BOM Type</span>
                   </div>
+                  <div className="col-span-3">
+                    <span className="text-xs font-medium text-slate-600">Περιγραφή</span>
+                  </div>
+                  <div className="col-span-1">
+                    <span className="text-xs font-medium text-slate-600">Ποσό</span>
+                  </div>
+                  <div className="col-span-1">
+                    <span className="text-xs font-medium text-slate-600">Συχν.</span>
+                  </div>
+                  <div className="col-span-1">
+                    <span className="text-xs font-medium text-slate-600">Factor</span>
+                  </div>
+                  <div className="col-span-1">
+                    <span className="text-xs font-medium text-slate-600">Ημερήσιο Κόστος</span>
+                  </div>
+                </div>
+                {/* Inputs Row */}
+                <div className="grid grid-cols-12 gap-2 items-end">
+                  <div className="col-span-5">
+                    <Select value={item.bus_stop_type_id || ''} onValueChange={(v) => handleUpdateItem(item.id, 'bus_stop_type_id', v)}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue placeholder="Επιλέξτε" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {busStopTypes.map(type => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-3">
+                    <Input
+                      placeholder="π.χ. Ενέργεια"
+                      value={item.description}
+                      onChange={(e) => handleUpdateItem(item.id, 'description', e.target.value)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <Input
+                      type="number"
+                      placeholder="0.00"
+                      value={item.amount?.toFixed(2) || ''}
+                      onChange={(e) => handleUpdateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
+                      disabled={!!item.bus_stop_type_id}
+                      step="0.01"
+                      className="h-8 text-sm disabled:bg-gray-200 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <Select value={item.frequency_type} onValueChange={(v) => handleUpdateItem(item.id, 'frequency_type', v)}>
+                      <SelectTrigger className="h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Ημερ.</SelectItem>
+                        <SelectItem value="monthly">Μήν.</SelectItem>
+                        <SelectItem value="yearly">Ετ.</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-1">
+                    <Input
+                      type="number"
+                      placeholder="22"
+                      value={item.conversion_factor || ''}
+                      onChange={(e) => handleUpdateItem(item.id, 'conversion_factor', e.target.value ? parseFloat(e.target.value) : null)}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div className="col-span-1 text-right font-medium text-slate-900 bg-blue-50 px-3 py-2 rounded">
+                    {formatCurrency(daily)}
+                  </div>
+                </div>
+                {/* Action Buttons Row */}
+                <div className="flex items-center gap-1 justify-end">
+                  {item.bus_stop_type_id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => exportBOM(item.bus_stop_type_id)}
+                      className="h-8 text-xs"
+                      title="Export BOM to CSV"
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Export BOM
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDeleteItem(item.id)}
+                    className="h-8 w-8"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-500" />
+                  </Button>
+                </div>
                 <Textarea
                   placeholder="Σχόλια"
                   value={item.notes || ''}
