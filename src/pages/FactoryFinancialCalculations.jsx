@@ -625,12 +625,12 @@ export default function FactoryFinancialCalculations() {
                             <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-slate-100 p-1 rounded-xl mb-2">
                                 {[
                                     { value: 'overview', label: 'Επισκόπηση' },
+                                    { value: 'daily', label: 'Daily Operations' },
+                                    { value: 'daily_history', label: 'Daily History' },
                                     { value: 'revenue', label: 'Έσοδα' },
                                     { value: 'fixed', label: 'Σταθερά Κόστη' },
                                     { value: 'operational', label: 'Λειτουργικά Κόστη' },
                                     { value: 'labour', label: 'Κόστος Προσωπικού' },
-                                    { value: 'daily', label: 'Daily Operations' },
-                                    { value: 'daily_history', label: 'Daily History' },
                                     { value: 'depreciation', label: 'Αποσβέσεις' },
                                     { value: 'department', label: 'Ανά Τμήμα' },
                                 ].map(tab => (
