@@ -138,7 +138,7 @@ export default function DailyDataHistoryTab({
                 rows={dailyRevenueEntries}
                 columns={[
                     { key: 'date', label: 'Ημερομηνία' },
-                    { key: 'description', label: 'Περιγραφή', render: r => r.description || '—' },
+                    { key: 'description', label: 'Περιγραφή', render: r => r.revenue_item || r.description || '—' },
                     { key: 'quantity', label: 'Ποσότητα', render: r => parseFloat(r.quantity || 0).toFixed(0) },
                     { key: 'unit_revenue', label: 'Τιμή Μονάδας', render: r => formatCurrency ? formatCurrency(parseFloat(r.unit_revenue || 0)) : `€${parseFloat(r.unit_revenue || 0).toFixed(2)}` },
                     { key: 'total_revenue', label: 'Σύνολο', render: r => formatCurrency ? formatCurrency(parseFloat(r.total_revenue || 0)) : `€${parseFloat(r.total_revenue || 0).toFixed(2)}` },
