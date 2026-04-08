@@ -26,7 +26,7 @@ import FactoryCostSectionsCard from "@/components/factory-financial/FactoryCostS
 import FixedCostsTab from "@/components/factory-financial/fixed-costs/FixedCostsTab";
 import OperationalCostsTab from "@/components/factory-financial/operational-costs/OperationalCostsTab";
 import FinancialOverviewTab from "@/components/factory-financial/FinancialOverviewTab";
-import LabourCostTab from "@/components/factory-financial/labour/LabourCostTab";
+import NewLabourTab from "@/components/factory-financial/labour/NewLabourTab";
 import DailyOperationsTab from "@/components/factory-financial/daily/DailyOperationsTab";
 import DailyDataHistoryTab from "@/components/factory-financial/DailyDataHistoryTab";
 import {
@@ -123,9 +123,14 @@ export default function FactoryFinancialCalculations() {
     const [shelterInstances, setShelterInstances] = useState([]);
     const [dailyMetrics, setDailyMetrics] = useState([]);
     
-    // Labour module states
+    // Labour module states (OLD - kept for backward compat)
     const [labourResources, setLabourResources] = useState([]);
     const [departmentLabourHours, setDepartmentLabourHours] = useState([]);
+    
+    // NEW Labour module states
+    const [labourPersonnel, setLabourPersonnel] = useState([]);
+    const [supervisorDailyAllocations, setSupervisorDailyAllocations] = useState([]);
+    const [departmentTechnicianAssignments, setDepartmentTechnicianAssignments] = useState([]);
 
     // Daily operations states
     const [dailyProductionEntries, setDailyProductionEntries] = useState([]);
@@ -225,6 +230,14 @@ export default function FactoryFinancialCalculations() {
 
             setLabourResources(normalizeLoadedLabourResources(record.labour_resources));
             setDepartmentLabourHours(normalizeLoadedDepartmentLabourHours(record.department_labour_hours));
+            
+            // NEW Labour module
+            setLabourPersonnel((record.labour_personnel || []).map((p, idx) => ({
+                id: p.id || idx.toString(),
+                ...p
+            })));
+            setSupervisorDailyAllocations(record.supervisor_daily_allocations || []);
+            setDepartmentTechnicianAssignments(record.department_technician_assignments || []);
 
             setDailyProductionEntries(normalizeLoadedDailyProductionEntries(record.daily_production_entries));
             setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
@@ -272,6 +285,9 @@ export default function FactoryFinancialCalculations() {
                 },
                 labour_resources: labourResources,
                 department_labour_hours: departmentLabourHours,
+                labour_personnel: labourPersonnel,
+                supervisor_daily_allocations: supervisorDailyAllocations,
+                department_technician_assignments: departmentTechnicianAssignments,
                 daily_production_entries: dailyProductionEntries,
                 daily_revenue_entries: dailyRevenueEntries,
                 daily_department_hours_entries: dailyDepartmentHoursEntries,
@@ -325,6 +341,9 @@ export default function FactoryFinancialCalculations() {
                 },
                 labour_resources: labourResources,
                 department_labour_hours: departmentLabourHours,
+                labour_personnel: labourPersonnel,
+                supervisor_daily_allocations: supervisorDailyAllocations,
+                department_technician_assignments: departmentTechnicianAssignments,
                 daily_production_entries: dailyProductionEntries,
                 daily_revenue_entries: dailyRevenueEntries,
                 daily_department_hours_entries: dailyDepartmentHoursEntries,
@@ -371,6 +390,9 @@ export default function FactoryFinancialCalculations() {
                 },
                 labour_resources: [],
                 department_labour_hours: [],
+                labour_personnel: [],
+                supervisor_daily_allocations: [],
+                department_technician_assignments: [],
                 daily_production_entries: [],
                 daily_revenue_entries: [],
                 daily_department_hours_entries: [],
@@ -720,15 +742,17 @@ export default function FactoryFinancialCalculations() {
 
 
 
-                            {/* LABOUR COST TAB */}
+                            {/* LABOUR COST TAB - NEW MODULE */}
                             <TabsContent value="labour" className="mt-4">
-                                <LabourCostTab
-                                    labourResources={labourResources}
-                                    departmentLabourHours={departmentLabourHours}
+                                <NewLabourTab
+                                    labourPersonnel={labourPersonnel}
+                                    supervisorDailyAllocations={supervisorDailyAllocations}
+                                    departmentTechnicianAssignments={departmentTechnicianAssignments}
                                     departments={departments}
                                     formatCurrency={formatCurrency}
-                                    onLabourResources={setLabourResources}
-                                    onDepartmentLabourHours={setDepartmentLabourHours}
+                                    onPersonnelUpdate={setLabourPersonnel}
+                                    onSupervisorAllocationsUpdate={setSupervisorDailyAllocations}
+                                    onDepartmentAssignmentsUpdate={setDepartmentTechnicianAssignments}
                                 />
                             </TabsContent>
 
