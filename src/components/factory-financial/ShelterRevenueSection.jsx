@@ -50,7 +50,7 @@ export default function ShelterRevenueSection({
                                 <div className="flex-1">
                                     <Label className="text-xs">Τύπος Στάσης</Label>
                                     <Select
-                                        value={item.bus_shelter_type_id}
+                                        value={item.bus_shelter_type_id || ''}
                                         onValueChange={(value) => {
                                             onUpdateItem(itemIdx, 'bus_shelter_type_id', value);
                                             const selectedType = busStopTypes.find(t => t.id === value);
@@ -63,11 +63,16 @@ export default function ShelterRevenueSection({
                                             <SelectValue placeholder="Επιλέξτε τύπο" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {busStopTypes.map(type => (
-                                                <SelectItem key={type.id} value={type.id}>
-                                                    {type.type_code} - {type.type_name}
-                                                </SelectItem>
-                                            ))}
+                                            {busStopTypes && busStopTypes.map(type => {
+                                                const label = (type.type_code && type.type_name) 
+                                                    ? `${type.type_code} - ${type.type_name}`
+                                                    : (type.type_name || type.type_code || type.id);
+                                                return (
+                                                    <SelectItem key={type.id} value={type.id}>
+                                                        {label}
+                                                    </SelectItem>
+                                                );
+                                            })}
                                         </SelectContent>
                                     </Select>
                                 </div>

@@ -58,7 +58,10 @@ export default function DailyRevenueSection({
 
     const getBusStopTypeName = (id) => {
         const bst = normalizedBusStopTypes.find(b => b.id === id);
-        return bst ? (bst.type_name || bst.type_code || id) : id || '—';
+        if (!bst) return id || '—';
+        return (bst.type_code && bst.type_name) 
+            ? `${bst.type_code} - ${bst.type_name}`
+            : (bst.type_name || bst.type_code || id);
     };
 
     const handleUpdate = (realIdx, field, value) => {
@@ -178,11 +181,16 @@ export default function DailyRevenueSection({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value={null}>— Κανένας —</SelectItem>
-                                        {normalizedBusStopTypes.map(bst => (
-                                            <SelectItem key={bst.id} value={bst.id}>
-                                                {bst.type_name || bst.type_code || bst.id}
-                                            </SelectItem>
-                                        ))}
+                                        {normalizedBusStopTypes && normalizedBusStopTypes.map(bst => {
+                                            const label = (bst.type_code && bst.type_name)
+                                                ? `${bst.type_code} - ${bst.type_name}`
+                                                : (bst.type_name || bst.type_code || bst.id);
+                                            return (
+                                                <SelectItem key={bst.id} value={bst.id}>
+                                                    {label}
+                                                </SelectItem>
+                                            );
+                                        })}
                                     </SelectContent>
                                 </Select>
 
