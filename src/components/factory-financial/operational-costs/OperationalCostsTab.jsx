@@ -328,12 +328,12 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
             const daily = convertToDaily(item.amount, item.frequency_type, item.conversion_factor);
             return (
               <div key={item.id} className="p-3 bg-slate-50 rounded border border-slate-200 space-y-2">
-                <div className="flex justify-between items-start gap-2">
-                  <div className="flex-1 grid grid-cols-11 gap-2 items-end">
+                <div className="flex flex-col gap-2">
+                  <div className="grid grid-cols-11 gap-2 items-end">
                     <TooltipProvider>
-                      <div className="col-span-2 flex flex-col gap-1">
+                      <div className="col-span-5 flex flex-col gap-1">
                         <div className="flex items-center gap-1">
-                          <span className="text-xs font-medium text-slate-600">Bus Stop Type</span>
+                          <span className="text-xs font-medium text-slate-600">BOM Type</span>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <HelpCircle className="w-3 h-3 text-slate-400" />
@@ -356,7 +356,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="col-span-2 flex flex-col gap-1">
+                      <div className="col-span-6 flex flex-col gap-1">
                         <div className="flex items-center gap-1">
                           <span className="text-xs font-medium text-slate-600">Περιγραφή</span>
                           <Tooltip>
@@ -375,6 +375,8 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                           className="h-8 text-sm"
                         />
                       </div>
+                    </TooltipProvider>
+                    <TooltipProvider>
                       <div className="col-span-2 flex flex-col gap-1">
                         <div className="flex items-center gap-1">
                           <span className="text-xs font-medium text-slate-600">Ποσό</span>
@@ -428,7 +430,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                               <HelpCircle className="w-3 h-3 text-slate-400" />
                             </TooltipTrigger>
                             <TooltipContent side="top" className="text-xs max-w-[200px]">
-                              Custom διαιρέτης για ημερήσιο υπολογισμό (π.χ. 22 εργάσιμες μέρες)
+                              Custom διαιρέτης για ημερήσιο υπολογισμό
                             </TooltipContent>
                           </Tooltip>
                         </div>
@@ -440,8 +442,11 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                           className="h-8 text-sm"
                         />
                       </div>
-                      <div className="col-span-2 text-xs font-medium text-slate-600 mb-1">
-                        Ημερήσιο Κόστος
+                      <div className="col-span-2 flex flex-col gap-1">
+                        <span className="text-xs font-medium text-slate-600">Ημερήσιο Κόστος</span>
+                        <div className="text-right font-medium text-slate-900 bg-blue-50 px-3 py-2 rounded">
+                          {formatCurrency(daily)}
+                        </div>
                       </div>
                     </TooltipProvider>
                   </div>
@@ -455,7 +460,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                         title="Export BOM to CSV"
                       >
                         <Download className="w-3 h-3 mr-1" />
-                        Export
+                        Export BOM
                       </Button>
                     )}
                     <Button
