@@ -142,27 +142,36 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
            const daily = convertToDaily(item.amount, item.frequency_type, item.conversion_factor);
            return (
              <div key={item.id} className="p-3 bg-slate-50 rounded border border-slate-200 space-y-2">
-               {/* Labels Row */}
-               <div className="grid grid-cols-12 gap-2 items-center mb-1">
-                 <div className="col-span-3">
-                   <span className="text-xs font-medium text-slate-600">Περιγραφή</span>
+               {/* Header Row with Delete Button */}
+               <div className="flex items-center justify-between mb-1">
+                 <div className="grid grid-cols-10 gap-2 flex-1">
+                   <div className="col-span-3">
+                     <span className="text-xs font-medium text-slate-600">Περιγραφή</span>
+                   </div>
+                   <div className="col-span-2">
+                     <span className="text-xs font-medium text-slate-600">Ποσό</span>
+                   </div>
+                   <div className="col-span-2">
+                     <span className="text-xs font-medium text-slate-600">Συχνότητα</span>
+                   </div>
+                   <div className="col-span-1">
+                     <span className="text-xs font-medium text-slate-600">Factor</span>
+                   </div>
+                   <div className="col-span-2">
+                     <span className="text-xs font-medium text-slate-600">Ημερήσιο Κόστος</span>
+                   </div>
                  </div>
-                 <div className="col-span-2">
-                   <span className="text-xs font-medium text-slate-600">Ποσό</span>
-                 </div>
-                 <div className="col-span-2">
-                   <span className="text-xs font-medium text-slate-600">Συχνότητα</span>
-                 </div>
-                 <div className="col-span-1">
-                   <span className="text-xs font-medium text-slate-600">Factor</span>
-                 </div>
-                 <div className="col-span-2">
-                   <span className="text-xs font-medium text-slate-600">Ημερήσιο Κόστος</span>
-                 </div>
-                 <div />
+                 <Button
+                   variant="ghost"
+                   size="icon"
+                   onClick={() => handleDeleteItem(item.id)}
+                   className="h-8 w-8 ml-2"
+                 >
+                   <Trash2 className="w-4 h-4 text-red-500" />
+                 </Button>
                </div>
                {/* Inputs Row */}
-               <div className="grid grid-cols-12 gap-2 items-end">
+               <div className="grid grid-cols-10 gap-2 items-end">
                  <div className="col-span-3">
                    <Input
                      placeholder="π.χ. Ενοίκιο"
@@ -205,17 +214,6 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
                  <div className="col-span-2 text-right font-medium text-slate-900 bg-blue-50 px-3 py-2 rounded">
                    {formatCurrency(daily)}
                  </div>
-               </div>
-               {/* Action Buttons Row */}
-               <div className="flex items-center justify-end gap-1">
-                 <Button
-                   variant="ghost"
-                   size="icon"
-                   onClick={() => handleDeleteItem(item.id)}
-                   className="h-8 w-8"
-                 >
-                   <Trash2 className="w-4 h-4 text-red-500" />
-                 </Button>
                </div>
                <Textarea
                  placeholder="Σχόλια"

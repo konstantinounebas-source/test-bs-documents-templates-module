@@ -328,27 +328,6 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
             const daily = convertToDaily(item.amount, item.frequency_type, item.conversion_factor);
             return (
               <div key={item.id} className="p-3 bg-slate-50 rounded border border-slate-200 space-y-2">
-                {/* Labels Row */}
-                <div className="grid grid-cols-12 gap-2 items-center mb-1">
-                  <div className="col-span-5">
-                    <span className="text-xs font-medium text-slate-600">BOM Type</span>
-                  </div>
-                  <div className="col-span-3">
-                    <span className="text-xs font-medium text-slate-600">Περιγραφή</span>
-                  </div>
-                  <div className="col-span-1">
-                    <span className="text-xs font-medium text-slate-600">Ποσό</span>
-                  </div>
-                  <div className="col-span-1">
-                    <span className="text-xs font-medium text-slate-600">Συχν.</span>
-                  </div>
-                  <div className="col-span-1">
-                    <span className="text-xs font-medium text-slate-600">Factor</span>
-                  </div>
-                  <div className="col-span-1">
-                    <span className="text-xs font-medium text-slate-600">Ημερήσιο Κόστος</span>
-                  </div>
-                </div>
                 {/* Inputs Row */}
                 <div className="grid grid-cols-12 gap-2 items-end">
                   <div className="col-span-5">
@@ -409,28 +388,47 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                     {formatCurrency(daily)}
                   </div>
                 </div>
-                {/* Action Buttons Row */}
-                <div className="flex items-center gap-1 justify-end">
-                  {item.bus_stop_type_id && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => exportBOM(item.bus_stop_type_id)}
-                      className="h-8 text-xs"
-                      title="Export BOM to CSV"
-                    >
-                      <Download className="w-3 h-3 mr-1" />
-                      Export BOM
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteItem(item.id)}
-                    className="h-8 w-8"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </Button>
+                {/* Labels and Buttons Row */}
+                <div className="grid grid-cols-12 gap-2 items-center">
+                  <div className="col-span-5">
+                    <span className="text-xs font-medium text-slate-600">BOM Type</span>
+                  </div>
+                  <div className="col-span-3">
+                    <span className="text-xs font-medium text-slate-600">Περιγραφή</span>
+                  </div>
+                  <div className="col-span-1">
+                    <span className="text-xs font-medium text-slate-600">Ποσό</span>
+                  </div>
+                  <div className="col-span-1">
+                    <span className="text-xs font-medium text-slate-600">Συχν.</span>
+                  </div>
+                  <div className="col-span-1">
+                    <span className="text-xs font-medium text-slate-600">Factor</span>
+                  </div>
+                  <div className="col-span-1 flex items-center justify-between gap-1">
+                    <span className="text-xs font-medium text-slate-600">Ημερήσιο Κόστος</span>
+                    <div className="flex gap-1">
+                      {item.bus_stop_type_id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => exportBOM(item.bus_stop_type_id)}
+                          className="h-6 text-xs px-2"
+                          title="Export BOM"
+                        >
+                          <Download className="w-3 h-3" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteItem(item.id)}
+                        className="h-6 w-6"
+                      >
+                        <Trash2 className="w-3 h-3 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
                 <Textarea
                   placeholder="Σχόλια"
