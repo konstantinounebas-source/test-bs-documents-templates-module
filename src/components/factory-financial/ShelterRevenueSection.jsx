@@ -50,10 +50,10 @@ export default function ShelterRevenueSection({
                                 <div className="flex-1">
                                     <Label className="text-xs">Τύπος Στάσης</Label>
                                     <select
-                                        value={item.shelter_instance_id || ''}
+                                        value={String(item.shelter_instance_id || '')}
                                         onChange={(e) => {
                                              const value = e.target.value;
-                                             onUpdateItem(itemIdx, 'shelter_instance_id', value || '');
+                                             onUpdateItem(itemIdx, 'shelter_instance_id', value);
                                              const selectedInstance = shelterInstances && shelterInstances.find(s => String(s.id) === value);
                                              if (selectedInstance) {
                                                  onUpdateItem(itemIdx, 'description', selectedInstance.name);
@@ -63,10 +63,10 @@ export default function ShelterRevenueSection({
                                     >
                                         <option value="">— Επιλέξτε τύπο —</option>
                                         {shelterInstances && shelterInstances.map(instance => (
-                                            <option key={instance.id} value={String(instance.id)}>
-                                                {instance.name}
-                                            </option>
-                                        ))}
+                                             <option key={instance.id} value={String(instance.id)}>
+                                                 {instance.name}
+                                             </option>
+                                         ))}
                                     </select>
                                 </div>
                                 <div className="flex-1">
