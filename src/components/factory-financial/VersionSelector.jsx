@@ -37,42 +37,26 @@ export default function VersionSelector({ financialRecords, selectedRecord, tota
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-4 gap-4">
-                    <div className="col-span-2">
-                        <Label>Έκδοση Δεδομένων</Label>
-                        <Select
-                            value={selectedRecord?.id || ''}
-                            onValueChange={(value) => {
-                                const record = financialRecords.find(r => r.id === value);
-                                if (record) onLoadRecord(record);
-                            }}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Επιλέξτε έκδοση" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {financialRecords.map(record => (
-                                    <SelectItem key={record.id} value={record.id}>
-                                        {record.factory_name} - {record.version || 'v1.0'} ({new Date(record.created_date).toLocaleDateString('el-GR')})
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    {selectedRecord && (
-                        <>
-                            <div>
-                                <Label className="text-xs text-slate-500">Περίοδος</Label>
-                                <div className="text-sm font-medium">
-                                    {new Date(selectedRecord.start_date).toLocaleDateString('el-GR')} - {new Date(selectedRecord.end_date).toLocaleDateString('el-GR')}
-                                </div>
-                            </div>
-                            <div>
-                                <Label className="text-xs text-slate-500">Εργάσιμες Ημέρες</Label>
-                                <div className="text-sm font-medium">{totalWorkingDays}</div>
-                            </div>
-                        </>
-                    )}
+                <div className="flex-1">
+                    <Label>Έκδοση Δεδομένων</Label>
+                    <Select
+                        value={selectedRecord?.id || ''}
+                        onValueChange={(value) => {
+                            const record = financialRecords.find(r => r.id === value);
+                            if (record) onLoadRecord(record);
+                        }}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Επιλέξτε έκδοση" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {financialRecords.map(record => (
+                                <SelectItem key={record.id} value={record.id}>
+                                    {record.factory_name} - {record.version || 'v1.0'} ({new Date(record.created_date).toLocaleDateString('el-GR')})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </CardContent>
         </Card>
