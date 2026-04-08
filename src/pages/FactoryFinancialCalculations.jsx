@@ -713,16 +713,16 @@ export default function FactoryFinancialCalculations() {
                             </TabsContent>
 
                             {/* FIXED COSTS TAB */}
-                            <TabsContent value="fixed" className="mt-4">
-                                <ExpenseTableSection
-                                    title="Σταθερά Κόστη (Fixed Costs)"
-                                    sectionKey="fixedCosts"
-                                    expenseItems={fixedCosts}
-                                    departments={departments}
-                                    expandedSections={expandedSections}
-                                    totalWorkingDays={totalWorkingDays}
-                                    formatCurrency={formatCurrency}
-                                    convertCostToDaily={(amount, freq) => convertCostToDaily(amount, freq, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays)}
+                             <TabsContent value="fixed" className="mt-4">
+                                 <ExpenseTableSection
+                                     title="Σταθερά Κόστη (Fixed Costs)"
+                                     sectionKey="fixedCosts"
+                                     expenseItems={fixedCosts}
+                                     departments={departments}
+                                     expandedSections={expandedSections}
+                                     totalWorkingDays={totalWorkingDays}
+                                     formatCurrency={formatCurrency}
+                                     convertCostToDaily={(amount, freq, avgMonth, avgYear, workDays, factor) => convertCostToDaily(amount, freq, avgMonth || avgWorkingDaysPerMonth, avgYear || avgWorkingDaysPerYear, workDays || totalWorkingDays, factor)}
                                     calculateCostTotal={() => calculateCostTotal(fixedCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear)}
                                     onToggleSection={toggleSection}
                                     onAddItem={() => setFixedCosts(prev => addArrayItem(prev, { description: '', amount: 0, frequency_type: 'monthly', category: 'fixed', department_allocations: [] }))}
@@ -735,16 +735,16 @@ export default function FactoryFinancialCalculations() {
                             </TabsContent>
 
                             {/* OPERATIONAL COSTS TAB */}
-                            <TabsContent value="operational" className="mt-4">
-                                <ExpenseTableSection
-                                    title="Λειτουργικά Κόστη (Operational Costs)"
-                                    sectionKey="operationalCosts"
-                                    expenseItems={operationalCosts}
-                                    departments={departments}
-                                    expandedSections={expandedSections}
-                                    totalWorkingDays={totalWorkingDays}
-                                    formatCurrency={formatCurrency}
-                                    convertCostToDaily={(amount, freq) => convertCostToDaily(amount, freq, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays)}
+                             <TabsContent value="operational" className="mt-4">
+                                 <ExpenseTableSection
+                                     title="Λειτουργικά Κόστη (Operational Costs)"
+                                     sectionKey="operationalCosts"
+                                     expenseItems={operationalCosts}
+                                     departments={departments}
+                                     expandedSections={expandedSections}
+                                     totalWorkingDays={totalWorkingDays}
+                                     formatCurrency={formatCurrency}
+                                     convertCostToDaily={(amount, freq, avgMonth, avgYear, workDays, factor) => convertCostToDaily(amount, freq, avgMonth || avgWorkingDaysPerMonth, avgYear || avgWorkingDaysPerYear, workDays || totalWorkingDays, factor)}
                                     calculateCostTotal={() => calculateCostTotal(operationalCosts, totalWorkingDays, avgWorkingDaysPerMonth, avgWorkingDaysPerYear)}
                                     onToggleSection={toggleSection}
                                     onAddItem={() => setOperationalCosts(prev => addArrayItem(prev, { description: '', amount: 0, frequency_type: 'monthly', category: 'operational', department_allocations: [] }))}
