@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Reference to FactoryFinancialData record"
     },
+    "bus_stop_type_id": {
+      "type": "string",
+      "description": "Reference to BusStopTypesBOM for this cost"
+    },
     "description": {
       "type": "string",
       "description": "Cost description"

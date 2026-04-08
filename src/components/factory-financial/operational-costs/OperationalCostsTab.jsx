@@ -10,12 +10,15 @@ import { toast } from 'sonner';
 
 export default function OperationalCostsTab({ factoryFinancialDataId, totalWorkingDays, formatCurrency }) {
   const [items, setItems] = useState([]);
+  const [busStopTypes, setBusStopTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dailyTotal, setDailyTotal] = useState(0);
   const [saveTimeout, setSaveTimeout] = useState(null);
 
   useEffect(() => {
+    if (!factoryFinancialDataId) return;
     loadItems();
+    loadBusStopTypes();
   }, [factoryFinancialDataId]);
 
   const loadItems = async () => {
@@ -32,6 +35,15 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
       toast.error('Αποτυχία φόρτωσης δεδομένων');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadBusStopTypes = async () => {
+    try {
+      const data = await base44.entities.BusStopType.list();
+      setBusStopTypes(data);
+    } catch (error) {
+      console.error('Failed to load bus stop types:', error);
     }
   };
 
@@ -139,6 +151,18 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
             return (
               <div key={item.id} className="p-3 bg-slate-50 rounded border border-slate-200 space-y-2">
                 <div className="grid grid-cols-12 gap-2 items-end">
+                  <Select value={item.bus_stop_type_id || ''} onValueChange={(v) => handleUpdateItem(item.id, 'bus_stop_type_id', v)}>
+                    <SelectTrigger className="col-span-2 h-8 text-sm">
+                      <SelectValue placeholder="Bus Stop Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {busStopTypes.map(type => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Input
                     placeholder="Περιγραφή"
                     value={item.description}
@@ -153,22 +177,15 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                     className="col-span-2 h-8 text-sm"
                   />
                   <Select value={item.frequency_type} onValueChange={(v) => handleUpdateItem(item.id, 'frequency_type', v)}>
-                    <SelectTrigger className="col-span-2 h-8 text-sm">
+                    <SelectTrigger className="col-span-1 h-8 text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="daily">Ημερήσιο</SelectItem>
-                      <SelectItem value="monthly">Μηνιαίο</SelectItem>
-                      <SelectItem value="yearly">Ετήσιο</SelectItem>
+                      <SelectItem value="daily">Ημερ.</SelectItem>
+                      <SelectItem value="monthly">Μήν.</SelectItem>
+                      <SelectItem value="yearly">Ετ.</SelectItem>
                     </SelectContent>
                   </Select>
-                  <Input
-                    type="number"
-                    placeholder="Factor"
-                    value={item.conversion_factor || ''}
-                    onChange={(e) => handleUpdateItem(item.id, 'conversion_factor', e.target.value ? parseFloat(e.target.value) : null)}
-                    className="col-span-1 h-8 text-sm"
-                  />
                   <div className="col-span-2 text-right font-medium text-slate-900 bg-blue-50 p-2 rounded">
                     {formatCurrency(daily)}
                   </div>
