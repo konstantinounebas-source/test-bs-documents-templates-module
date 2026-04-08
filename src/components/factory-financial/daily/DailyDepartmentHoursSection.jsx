@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Clock } from 'lucide-react';
-import { calculateDailyDepartmentHoursTotal } from "@/components/factory-financial/utils/dailyOperationsCalculations";
 
 const EMPTY_ROW = { department_id: '', total_hours: 0, notes: '' };
 
@@ -13,10 +12,14 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
         ? entries.map((r, i) => ({ r, i })).filter(({ r }) => r.date === selectedDate)
         : entries.map((r, i) => ({ r, i }));
 
-    const total = calculateDailyDepartmentHoursTotal(visibleWithIdx.map(({ r }) => r));
-    
     // Fallback formatter if not provided
     const formatVal = formatCurrency || ((val) => val?.toFixed(2) || '—');
+
+    // Calculate total cost across all visible rows
+    const totalCost = visibleWithIdx.reduce((sum, { r: row }) => {
+        const hourlyRate = getDeptHourlyCost(row.department_id);
+        return sum + ((parseFloat(row.total_hours) || 0) * hourlyRate);
+    }, 0);
 
     const handleUpdate = (realIdx, field, value) => {
         const updated = [...entries];
@@ -71,13 +74,13 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
                         </CardTitle>
                     </div>
                     <div className="flex items-center gap-3">
-                        <span className="text-sm text-slate-500">
-                            Σύνολο: <strong className="text-slate-800">{total.toLocaleString('el-GR')} ώρες</strong>
-                        </span>
-                        <Button size="sm" variant="outline" onClick={() => onAdd(EMPTY_ROW)} className="gap-1">
-                            <Plus className="w-3.5 h-3.5" /> Προσθήκη
-                        </Button>
-                    </div>
+                         <span className="text-sm text-slate-500">
+                             Σύνολο: <strong className="text-purple-700">{formatVal(totalCost)}</strong>
+                         </span>
+                         <Button size="sm" variant="outline" onClick={() => onAdd(EMPTY_ROW)} className="gap-1">
+                             <Plus className="w-3.5 h-3.5" /> Προσθήκη
+                         </Button>
+                     </div>
                 </div>
             </CardHeader>
             <CardContent>
