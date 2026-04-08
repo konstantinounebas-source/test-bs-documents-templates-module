@@ -57,20 +57,23 @@ export default function DailyRevenueSection({
     const normalizedBusStopTypes = Array.isArray(busStopTypes) ? busStopTypes : [];
 
     const getBusStopTypeName = (id) => {
-        const bst = normalizedBusStopTypes.find(b => b.id === id);
-        if (!bst) return id || '—';
+        if (!id) return '—';
+        const bst = normalizedBusStopTypes.find(b => String(b.id) === String(id));
+        if (!bst) return String(id);
         return (bst.type_code && bst.type_name) 
             ? `${bst.type_code} - ${bst.type_name}`
-            : (bst.type_name || bst.type_code || id);
+            : (bst.type_name || bst.type_code || String(id));
     };
 
     const handleUpdate = (realIdx, field, value) => {
         const updated = [...entries];
-        updated[realIdx] = { ...updated[realIdx], [field]: value };
+        // Ensure value is a string (not null/undefined) for consistency
+        const cleanValue = value === null ? '' : String(value);
+        updated[realIdx] = { ...updated[realIdx], [field]: cleanValue };
         // Auto-calculate total_revenue
         if (field === 'quantity' || field === 'unit_revenue') {
-            const qty  = parseFloat(field === 'quantity'     ? value : updated[realIdx].quantity)     || 0;
-            const unit = parseFloat(field === 'unit_revenue' ? value : updated[realIdx].unit_revenue) || 0;
+            const qty  = parseFloat(field === 'quantity'     ? cleanValue : updated[realIdx].quantity)     || 0;
+            const unit = parseFloat(field === 'unit_revenue' ? cleanValue : updated[realIdx].unit_revenue) || 0;
             updated[realIdx].total_revenue = qty * unit;
         }
         onUpdate(updated);
@@ -173,7 +176,7 @@ export default function DailyRevenueSection({
 
                                 {/* Bus Stop Type */}
                                 <Select
-                                    value={row.bus_stop_type_id || ''}
+                                    value={String(row.bus_stop_type_id || '')}
                                     onValueChange={val => handleUpdate(realIdx, 'bus_stop_type_id', val)}
                                 >
                                     <SelectTrigger className="h-8 text-sm">
@@ -186,7 +189,7 @@ export default function DailyRevenueSection({
                                                 ? `${bst.type_code} - ${bst.type_name}`
                                                 : (bst.type_name || bst.type_code || bst.id);
                                             return (
-                                                <SelectItem key={bst.id} value={bst.id}>
+                                                <SelectItem key={bst.id} value={String(bst.id)}>
                                                     {label}
                                                 </SelectItem>
                                             );
