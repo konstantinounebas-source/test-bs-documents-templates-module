@@ -142,13 +142,6 @@ export default function ShelterRevenueSection({
                         </div>
                     ))}
                 </div>
-
-                <div className="pt-4 border-t">
-                    <div className="flex items-center justify-between text-lg font-semibold">
-                        <span>Σύνολο Εσόδων:</span>
-                        <span className="text-green-600">{formatCurrency(calculateTotalIncome())}</span>
-                    </div>
-                </div>
             </CardContent>
         </Card>
     );
