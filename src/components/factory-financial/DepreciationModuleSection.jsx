@@ -19,6 +19,8 @@ export default function DepreciationModuleSection({
     additionalRevenues,
     departments,
     busStopTypes,
+    shelterInstances,
+    shelterRevenueItems,
     formatCurrency,
     getAllocationTotal,
     getDeptName,
@@ -66,7 +68,8 @@ export default function DepreciationModuleSection({
                 {/* B. Estimated Revenues */}
                 <EstRevenuesSubsection
                     estimatedRevenues={estimatedRevenues}
-                    busStopTypes={busStopTypes}
+                    shelterInstances={shelterInstances}
+                    shelterRevenueItems={shelterRevenueItems}
                     formatCurrency={formatCurrency}
                     calculateEstimatedRevenuesTotal={calculateEstimatedRevenuesTotal}
                     onAdd={onAddEstRevenue}
@@ -90,13 +93,26 @@ export default function DepreciationModuleSection({
 
 function EstRevenuesSubsection({
     estimatedRevenues,
-    busStopTypes,
+    shelterInstances,
+    shelterRevenueItems,
     formatCurrency,
     calculateEstimatedRevenuesTotal,
     onAdd,
     onRemove,
     onUpdate
 }) {
+    const getShelterRevenueValue = (shelterId) => {
+        const shelter = shelterRevenueItems.find(item => item.shelter_instance_id === shelterId);
+        if (shelter) {
+            // Calculate total revenue per unit
+            const baseAmount = parseFloat(shelter.contract_amount) || 0;
+            const approviedVariations = shelter.approved_variations || [];
+            const approviedTotal = approviedVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+            return baseAmount + approviedTotal;
+        }
+        return 0;
+    };
+
     return (
         <div className="border-t pt-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -111,19 +127,27 @@ function EstRevenuesSubsection({
                     <div key={idx} className="p-4 bg-slate-50 rounded-lg space-y-3">
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <Label className="text-xs">Τύπος Στάσης</Label>
-                                <Select value={item.bus_stop_type_id} onValueChange={(value) => onUpdate(idx, 'bus_stop_type_id', value)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Επιλέξτε τύπο" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {busStopTypes.map(type => (
-                                            <SelectItem key={type.id} value={type.id}>
-                                                {type.type_code} - {type.type_name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Label className="text-xs">Shelter Instance</Label>
+                                <select
+                                    value={item.shelter_instance_id || ''}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        onUpdate(idx, 'shelter_instance_id', value);
+                                        // Auto-fill unit_revenue
+                                        if (value) {
+                                            const revenueValue = getShelterRevenueValue(value);
+                                            onUpdate(idx, 'unit_revenue', revenueValue);
+                                        }
+                                    }}
+                                    className="w-full h-9 px-3 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                                >
+                                    <option value="">— Επιλέξτε Shelter —</option>
+                                    {(shelterInstances || []).map(shelter => (
+                                        <option key={shelter.id} value={shelter.id}>
+                                            {shelter.name || shelter.id}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             <div>
                                 <Label className="text-xs">Περιγραφή</Label>
