@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Clock } from 'lucide-react';
 import { calculateDailyDepartmentHoursTotal } from "@/components/factory-financial/utils/dailyOperationsCalculations";
-import { calculateDepartmentAverageHourlyCost } from "../../labour/utils/labourModuleCalculations";
 
 const EMPTY_ROW = { department_id: '', total_hours: 0, notes: '' };
 
@@ -30,8 +29,17 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
     const getDeptHourlyCost = (id) => {
         // Find the department assignment block for this department
         const deptBlock = (departmentAssignments || []).find(b => b.department_id === id);
-        if (deptBlock) {
-            return calculateDepartmentAverageHourlyCost(deptBlock, labourPersonnel || []);
+        if (deptBlock && deptBlock.technicians && deptBlock.technicians.length > 0) {
+            // Calculate average hourly cost from technicians in this department
+            const totalHourlyCost = deptBlock.technicians.reduce((sum, tech) => {
+                const person = (labourPersonnel || []).find(p => p.id === tech.person_id);
+                if (person) {
+                    const hourlyRate = person.daily_rate / (person.hours_per_day || 8);
+                    return sum + hourlyRate;
+                }
+                return sum;
+            }, 0);
+            return totalHourlyCost / deptBlock.technicians.length;
         }
         // Fallback to department field if no assignment
         const d = (departments || []).find(d => d.id === id);
