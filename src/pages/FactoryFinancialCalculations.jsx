@@ -31,9 +31,6 @@ import {
     normalizeLoadedLabourResources,
     normalizeLoadedDepartmentLabourHours,
 } from "@/components/factory-financial/utils/labourCostCalculations";
-// NOTE: calculateTotalCosts from financialCalculations still includes legacy personnelCosts.
-// It is preserved for backward compat (department summary, old records) but is NOT used
-// as the official total anymore. Use getOfficialTotalCosts() below instead.
 import {
     getAllocationTotal,
     hasInvalidAllocation,
