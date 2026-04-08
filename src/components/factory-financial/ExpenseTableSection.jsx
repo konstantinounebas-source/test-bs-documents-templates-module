@@ -158,12 +158,15 @@ export default function ExpenseTableSection({
                                                          <div>
                                                              <label className="text-xs font-semibold text-slate-700 block mb-1">Factor Μετατροπής</label>
                                                              <Input
-                                                                 type="number"
-                                                                 placeholder="22"
-                                                                 value={item.conversion_factor || ''}
-                                                                 onChange={(e) => onUpdateItem(idx, 'conversion_factor', parseFloat(e.target.value) || 1)}
-                                                                 className="h-8 text-sm"
-                                                             />
+                                                                     type="number"
+                                                                     placeholder="22"
+                                                                     value={item.conversion_factor || ''}
+                                                                     onChange={(e) => {
+                                                                       const val = e.target.value;
+                                                                       onUpdateItem(idx, 'conversion_factor', val ? parseFloat(val) : null);
+                                                                     }}
+                                                                     className="h-8 text-sm"
+                                                                 />
                                                          </div>
                                                      </div>
                                                      <div>

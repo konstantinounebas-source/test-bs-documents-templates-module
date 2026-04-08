@@ -57,14 +57,14 @@ export const getTotalAllocPct = (allocations) =>
     (allocations || []).reduce((sum, a) => sum + (parseFloat(a.allocation_percent) || 0), 0);
 
 export const calculateCostWithAlloc = (items, getAmountField, totalWorkingDays, isDailyAlready = false, avgMonthDays = 22, avgYearDays = 260) => {
-    return items.reduce((sum, item) => {
-        const amount = getAmountField(item);
-        const dailyCost = isDailyAlready ? amount : convertCostToDaily(amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays);
-        const totalForPeriod = dailyCost * (totalWorkingDays || 0);
-        const totalAlloc = getTotalAllocPct(item.department_allocations);
-        return sum + (totalForPeriod * totalAlloc / 100);
-    }, 0);
-};
+     return items.reduce((sum, item) => {
+         const amount = getAmountField(item);
+         const dailyCost = isDailyAlready ? amount : convertCostToDaily(amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays, item.conversion_factor);
+         const totalForPeriod = dailyCost * (totalWorkingDays || 0);
+         const totalAlloc = getTotalAllocPct(item.department_allocations);
+         return sum + (totalForPeriod * totalAlloc / 100);
+     }, 0);
+ };
 
 export const calculatePersonnelCostTotal = (personnelCosts, totalWorkingDays, avgMonthDays, avgYearDays) => 
     calculateCostWithAlloc(personnelCosts, item => item.calculated_amount, totalWorkingDays, false, avgMonthDays, avgYearDays);
@@ -164,11 +164,11 @@ export const calculateDepartmentSummary = (
         });
     };
 
-    distribute(personnelCosts, item => convertCostToDaily(item.calculated_amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays) * totalWorkingDays, 'personnel_total');
-    distribute(fixedCosts, item => convertCostToDaily(item.amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays) * totalWorkingDays, 'fixed_total');
-    distribute(operationalCosts, item => convertCostToDaily(item.amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays) * totalWorkingDays, 'operational_total');
-    distribute(overheadCosts, item => convertCostToDaily(item.amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays) * totalWorkingDays, 'overhead_total');
-    distribute(maintenanceCosts, item => convertCostToDaily(item.amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays) * totalWorkingDays, 'maintenance_total');
+    distribute(personnelCosts, item => convertCostToDaily(item.calculated_amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays, item.conversion_factor) * totalWorkingDays, 'personnel_total');
+    distribute(fixedCosts, item => convertCostToDaily(item.amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays, item.conversion_factor) * totalWorkingDays, 'fixed_total');
+    distribute(operationalCosts, item => convertCostToDaily(item.amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays, item.conversion_factor) * totalWorkingDays, 'operational_total');
+    distribute(overheadCosts, item => convertCostToDaily(item.amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays, item.conversion_factor) * totalWorkingDays, 'overhead_total');
+    distribute(maintenanceCosts, item => convertCostToDaily(item.amount, item.frequency_type, avgMonthDays, avgYearDays, totalWorkingDays, item.conversion_factor) * totalWorkingDays, 'maintenance_total');
     distribute(investmentAmortization, item => (parseFloat(item.calculated_daily_cost) || 0) * totalWorkingDays, 'investment_amortization_total');
     distribute(depreciationInvestments, item => parseFloat(item.total_amount) || 0, 'depreciation_investments_total');
 
