@@ -507,12 +507,8 @@ export default function FactoryFinancialCalculations() {
     const updateEstimatedRevenue = (idx, field, value) => {
         const updated = [...estimatedRevenues];
         
-        if (field === 'bus_stop_type_id') {
-            updated[idx].bus_stop_type_id = value;
-            const selectedType = busStopTypes.find(t => t.id === value);
-            if (selectedType && !updated[idx].description) {
-                updated[idx].description = selectedType.type_name;
-            }
+        if (field === 'shelter_instance_id') {
+            updated[idx].shelter_instance_id = value;
         } else if (field === 'pending_quantity' || field === 'unit_revenue') {
             updated[idx][field] = parseFloat(value) || 0;
             updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (parseFloat(updated[idx].unit_revenue) || 0);
