@@ -156,10 +156,9 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
                  <div className="col-span-1">
                    <span className="text-xs font-medium text-slate-600">Factor</span>
                  </div>
-                 <div className="col-span-2">
+                 <div className="col-span-3">
                    <span className="text-xs font-medium text-slate-600">Ημερήσιο Κόστος</span>
                  </div>
-                 <div />
                </div>
                {/* Inputs Row */}
                <div className="grid grid-cols-12 gap-2 items-end">
@@ -205,17 +204,16 @@ export default function FixedCostsTab({ factoryFinancialDataId, totalWorkingDays
                  <div className="col-span-2 text-right font-medium text-slate-900 bg-blue-50 px-3 py-2 rounded">
                    {formatCurrency(daily)}
                  </div>
-               </div>
-               {/* Action Buttons Row */}
-               <div className="flex items-center justify-end gap-1">
-                 <Button
-                   variant="ghost"
-                   size="icon"
-                   onClick={() => handleDeleteItem(item.id)}
-                   className="h-8 w-8"
-                 >
-                   <Trash2 className="w-4 h-4 text-red-500" />
-                 </Button>
+                 <div className="col-span-1 flex items-end justify-end">
+                   <Button
+                     variant="ghost"
+                     size="icon"
+                     onClick={() => handleDeleteItem(item.id)}
+                     className="h-8 w-8"
+                   >
+                     <Trash2 className="w-4 h-4 text-red-500" />
+                   </Button>
+                 </div>
                </div>
                <Textarea
                  placeholder="Σχόλια"

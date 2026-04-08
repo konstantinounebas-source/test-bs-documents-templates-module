@@ -330,28 +330,19 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
               <div key={item.id} className="p-3 bg-slate-50 rounded border border-slate-200 space-y-2">
                 {/* Labels Row */}
                 <div className="grid grid-cols-12 gap-2 items-center mb-1">
-                  <div className="col-span-5">
+                  <div className="col-span-4">
                     <span className="text-xs font-medium text-slate-600">BOM Type</span>
                   </div>
                   <div className="col-span-3">
                     <span className="text-xs font-medium text-slate-600">Περιγραφή</span>
                   </div>
-                  <div className="col-span-1">
-                    <span className="text-xs font-medium text-slate-600">Ποσό</span>
-                  </div>
-                  <div className="col-span-1">
-                    <span className="text-xs font-medium text-slate-600">Συχν.</span>
-                  </div>
-                  <div className="col-span-1">
-                    <span className="text-xs font-medium text-slate-600">Factor</span>
-                  </div>
-                  <div className="col-span-1">
-                    <span className="text-xs font-medium text-slate-600">Ημερήσιο Κόστος</span>
+                  <div className="col-span-5">
+                    {/* Empty space for second row fields */}
                   </div>
                 </div>
-                {/* Inputs Row */}
+                {/* First Inputs Row */}
                 <div className="grid grid-cols-12 gap-2 items-end">
-                  <div className="col-span-5">
+                  <div className="col-span-4">
                     <Select value={item.bus_stop_type_id || ''} onValueChange={(v) => handleUpdateItem(item.id, 'bus_stop_type_id', v)}>
                       <SelectTrigger className="h-8 text-sm">
                         <SelectValue placeholder="Επιλέξτε" />
@@ -373,7 +364,12 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                       className="h-8 text-sm"
                     />
                   </div>
+                  <div className="col-span-5" />
+                </div>
+                {/* Second Row - Fields and Buttons */}
+                <div className="grid grid-cols-12 gap-2 items-end">
                   <div className="col-span-1">
+                    <label className="text-xs font-medium text-slate-600">Ποσό</label>
                     <Input
                       type="number"
                       placeholder="0.00"
@@ -385,6 +381,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                     />
                   </div>
                   <div className="col-span-1">
+                    <label className="text-xs font-medium text-slate-600">Συχν.</label>
                     <Select value={item.frequency_type} onValueChange={(v) => handleUpdateItem(item.id, 'frequency_type', v)}>
                       <SelectTrigger className="h-8 text-sm">
                         <SelectValue />
@@ -397,6 +394,7 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                     </Select>
                   </div>
                   <div className="col-span-1">
+                    <label className="text-xs font-medium text-slate-600">Factor</label>
                     <Input
                       type="number"
                       placeholder="22"
@@ -405,32 +403,34 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                       className="h-8 text-sm"
                     />
                   </div>
-                  <div className="col-span-1 text-right font-medium text-slate-900 bg-blue-50 px-3 py-2 rounded">
-                    {formatCurrency(daily)}
+                  <div className="col-span-1">
+                    <label className="text-xs font-medium text-slate-600">Ημερήσιο Κόστος</label>
+                    <div className="text-right font-medium text-slate-900 bg-blue-50 px-3 py-2 rounded text-sm">
+                      {formatCurrency(daily)}
+                    </div>
                   </div>
-                </div>
-                {/* Action Buttons Row */}
-                <div className="flex items-center gap-1 justify-end">
-                  {item.bus_stop_type_id && (
+                  <div className="col-span-2 flex items-end gap-1 justify-end">
+                    {item.bus_stop_type_id && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => exportBOM(item.bus_stop_type_id)}
+                        className="h-8 text-xs"
+                        title="Export BOM to CSV"
+                      >
+                        <Download className="w-3 h-3 mr-1" />
+                        Export BOM
+                      </Button>
+                    )}
                     <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => exportBOM(item.bus_stop_type_id)}
-                      className="h-8 text-xs"
-                      title="Export BOM to CSV"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteItem(item.id)}
+                      className="h-8 w-8"
                     >
-                      <Download className="w-3 h-3 mr-1" />
-                      Export BOM
+                      <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDeleteItem(item.id)}
-                    className="h-8 w-8"
-                  >
-                    <Trash2 className="w-4 h-4 text-red-500" />
-                  </Button>
+                  </div>
                 </div>
                 <Textarea
                   placeholder="Σχόλια"
