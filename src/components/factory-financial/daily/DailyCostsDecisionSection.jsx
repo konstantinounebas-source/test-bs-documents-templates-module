@@ -31,96 +31,56 @@ export default function DailyCostsDecisionSection({ selectedDate, onSave = () =>
     const todayRecords = records.filter(r => r.date === selectedDate);
 
     return (
-        <Card className="border-slate-200">
-            <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-slate-800">
-                    <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                    Καταχώρηση Κοστών για τη {selectedDate}
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {/* Decision Section */}
-                <div className="bg-slate-50 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={fixedCosts}
-                                onChange={e => setFixedCosts(e.target.checked)}
-                                className="rounded border-slate-300"
-                            />
-                            <span className="text-sm text-slate-700">Καταχώρηση Σταθερών Κοστών</span>
-                        </label>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                checked={operationalCosts}
-                                onChange={e => setOperationalCosts(e.target.checked)}
-                                className="rounded border-slate-300"
-                            />
-                            <span className="text-sm text-slate-700">Καταχώρηση Λειτουργικών Κοστών</span>
-                        </label>
-                    </div>
-                    <Button
-                        onClick={handleAddRecord}
-                        disabled={!fixedCosts && !operationalCosts}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Προσθήκη
-                    </Button>
-                </div>
+        <div className="space-y-2">
+            <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={fixedCosts}
+                        onChange={e => setFixedCosts(e.target.checked)}
+                        className="rounded border-slate-300"
+                    />
+                    <span className="text-sm text-slate-700">Σταθερά Κόστη</span>
+                </label>
+            </div>
+            <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        checked={operationalCosts}
+                        onChange={e => setOperationalCosts(e.target.checked)}
+                        className="rounded border-slate-300"
+                    />
+                    <span className="text-sm text-slate-700">Λειτουργικά Κόστη</span>
+                </label>
+            </div>
+            <Button
+                onClick={handleAddRecord}
+                disabled={!fixedCosts && !operationalCosts}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-auto"
+            >
+                <Plus className="w-3 h-3 mr-1" />
+                Προσθήκη
+            </Button>
 
-                {/* Records Table */}
-                {todayRecords.length > 0 && (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-slate-50 border-b border-slate-200">
-                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">Σταθερά Κόστη</th>
-                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">Λειτουργικά Κόστη</th>
-                                    <th className="px-3 py-2 text-left text-xs font-semibold text-slate-600">Ενέργεια</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {todayRecords.map((record, idx) => (
-                                    <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
-                                        <td className="px-3 py-2 text-slate-700">
-                                            {record.hasFixedCosts ? (
-                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                                                    ✓ Ναι
-                                                </span>
-                                            ) : (
-                                                <span className="text-slate-400">—</span>
-                                            )}
-                                        </td>
-                                        <td className="px-3 py-2 text-slate-700">
-                                            {record.hasOperationalCosts ? (
-                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                                                    ✓ Ναι
-                                                </span>
-                                            ) : (
-                                                <span className="text-slate-400">—</span>
-                                            )}
-                                        </td>
-                                        <td className="px-3 py-2">
-                                            <button
-                                                onClick={() => handleRemoveRecord(idx)}
-                                                className="text-red-600 hover:text-red-800 transition-colors"
-                                                title="Διαγραφή"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+            {todayRecords.length > 0 && (
+                <div className="mt-3 text-xs space-y-1">
+                    {todayRecords.map((record, idx) => (
+                        <div key={idx} className="flex items-center gap-2 bg-slate-50 p-2 rounded">
+                            <span className="text-slate-600 flex-1">
+                                {(record.hasFixedCosts ? '✓ Σ.Κ' : '') + (record.hasFixedCosts && record.hasOperationalCosts ? ' + ' : '') + (record.hasOperationalCosts ? '✓ Λ.Κ' : '')}
+                            </span>
+                            <button
+                                onClick={() => handleRemoveRecord(idx)}
+                                className="text-red-600 hover:text-red-800"
+                                title="Διαγραφή"
+                            >
+                                <Trash2 className="w-3 h-3" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }
