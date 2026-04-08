@@ -19,7 +19,7 @@ export default function DailyOperationsTab({
     onDailyDepartmentHours,
     revenueCategories,
 }) {
-    const [selectedDate, setSelectedDate] = useState(todayISO);
+    const [selectedDate, setSelectedDate] = useState(todayISO());
 
     // Add: always stamp selectedDate
     const handleAddRevenue = (row) =>

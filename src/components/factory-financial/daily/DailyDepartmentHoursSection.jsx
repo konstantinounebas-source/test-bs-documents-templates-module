@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Trash2, Clock } from 'lucide-react';
 import { calculateDailyDepartmentHoursTotal } from "@/components/factory-financial/utils/dailyOperationsCalculations";
 
-const EMPTY_ROW = { date: '', department_id: '', total_hours: 0, notes: '' };
+const EMPTY_ROW = { department_id: '', total_hours: 0, notes: '' };
 
 export default function DailyDepartmentHoursSection({ entries, selectedDate, departments, onAdd, onRemove, onUpdate }) {
     const visibleWithIdx = selectedDate
