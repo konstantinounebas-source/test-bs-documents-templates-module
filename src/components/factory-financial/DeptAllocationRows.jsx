@@ -9,6 +9,11 @@ export default function DeptAllocationRows({ allocations, departments, onAdd, on
     const totalAlloc = (allocations || []).reduce((sum, a) => sum + (parseFloat(a.allocation_percent) || 0), 0);
     const isValid = Math.abs(totalAlloc - 100) < 0.01;
 
+    const getDeptName = (deptId) => {
+        const dept = departments.find(d => d.id === deptId);
+        return dept ? (dept.department_name || dept.name || deptId) : '(χωρίς επιλογή)';
+    };
+
     return (
         <div className="space-y-2">
             {/* Allocations List */}
@@ -18,17 +23,22 @@ export default function DeptAllocationRows({ allocations, departments, onAdd, on
                         Δεν υπάρχουν κατανομές τμημάτων
                     </div>
                 ) : (
-                    (allocations || []).map((row, allocIdx) => {
-                        const deptName = departments.find(d => d.id === row.department_id)?.department_name || '(χωρίς επιλογή)';
-                        return (
+                    (allocations || []).map((row, allocIdx) => (
                         <div key={allocIdx} className="flex items-end gap-2 bg-white p-2 rounded border border-slate-200 hover:border-slate-300 transition-colors">
                             <div className="flex-1">
                                 <Label className="text-xs text-slate-600">Τμήμα</Label>
-                                <Select value={row.department_id || ''} onValueChange={(value) => onUpdate(allocIdx, 'department_id', value)}>
-                                    <SelectTrigger className="h-8"><SelectValue placeholder="Επιλέξτε..." /></SelectTrigger>
-                                    <SelectContent position="popper" sideOffset={5}>
-                                        {departments.map(dept => (
-                                            <SelectItem key={dept.id} value={dept.id}>{dept.department_name}</SelectItem>
+                                <Select value={row.department_id || '__none__'} onValueChange={(value) => onUpdate(allocIdx, 'department_id', value === '__none__' ? '' : value)}>
+                                    <SelectTrigger className="h-8">
+                                        <SelectValue placeholder="Επιλογή τμήματος...">
+                                            {row.department_id ? getDeptName(row.department_id) : 'Επιλογή τμήματος...'}
+                                        </SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="__none__">— Επιλογή τμήματος —</SelectItem>
+                                        {(departments || []).map(d => (
+                                            <SelectItem key={d.id} value={d.id}>
+                                                {d.department_name || d.name || d.id}
+                                            </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -46,8 +56,7 @@ export default function DeptAllocationRows({ allocations, departments, onAdd, on
                                 <Trash2 className="w-3 h-3 text-red-500" />
                             </Button>
                         </div>
-                        );
-                    })
+                    ))
                 )}
             </div>
 
