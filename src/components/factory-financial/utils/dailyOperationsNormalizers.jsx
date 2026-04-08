@@ -21,19 +21,19 @@ export function normalizeLoadedDailyProductionEntries(entries) {
 }
 
 function normalizeDailyRevenueEntry(raw) {
-    const e = raw && typeof raw === 'object' ? raw : {};
-    const qty        = parseFloat(e.quantity)     || 0;
-    const unitRev    = parseFloat(e.unit_revenue) || 0;
-    return {
-        date:               e.date               ?? '',
-        revenue_item:       e.revenue_item       ?? '',
-        bus_stop_type_id:   e.bus_stop_type_id   ?? '',
-        quantity:           qty,
-        unit_revenue:       unitRev,
-        total_revenue:      parseFloat(e.total_revenue) || qty * unitRev,
-        notes:              e.notes              ?? '',
-    };
-}
+     const e = raw && typeof raw === 'object' ? raw : {};
+     const qty        = parseFloat(e.quantity)     || 0;
+     const unitRev    = parseFloat(e.unit_revenue) || 0;
+     return {
+         date:               e.date               ?? '',
+         revenue_item:       e.revenue_item       ?? '',
+         shelter_instance_id: e.shelter_instance_id ?? '',
+         quantity:           qty,
+         unit_revenue:       unitRev,
+         total_revenue:      parseFloat(e.total_revenue) || qty * unitRev,
+         notes:              e.notes              ?? '',
+     };
+ }
 
 export function normalizeLoadedDailyRevenueEntries(entries) {
     if (!Array.isArray(entries)) return [];
