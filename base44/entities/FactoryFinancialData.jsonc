@@ -44,6 +44,7 @@
     "sales_revenue_items": {
       "type": "array",
       "description": "Array of sales revenue items",
+      "default": [],
       "items": {
         "type": "object",
         "properties": {
@@ -60,12 +61,12 @@
             "type": "number"
           }
         }
-      },
-      "default": []
+      }
     },
     "shelter_revenue_items": {
       "type": "array",
       "description": "Array of shelter revenue items by bus shelter type",
+      "default": [],
       "items": {
         "type": "object",
         "properties": {
@@ -85,7 +86,7 @@
           },
           "approved_variations": {
             "type": "array",
-            "description": "Approved variations for this shelter revenue item",
+            "default": [],
             "items": {
               "type": "object",
               "properties": {
@@ -97,12 +98,11 @@
                   "default": 0
                 }
               }
-            },
-            "default": []
+            }
           },
           "potential_variations": {
             "type": "array",
-            "description": "Potential variations for this shelter revenue item",
+            "default": [],
             "items": {
               "type": "object",
               "properties": {
@@ -114,16 +114,15 @@
                   "default": 0
                 }
               }
-            },
-            "default": []
+            }
           }
         }
-      },
-      "default": []
+      }
     },
     "approved_variations": {
       "type": "array",
       "description": "Array of approved variation amounts",
+      "default": [],
       "items": {
         "type": "object",
         "properties": {
@@ -134,12 +133,12 @@
             "type": "number"
           }
         }
-      },
-      "default": []
+      }
     },
     "potential_variations": {
       "type": "array",
       "description": "Array of potential variation amounts",
+      "default": [],
       "items": {
         "type": "object",
         "properties": {
@@ -150,12 +149,12 @@
             "type": "number"
           }
         }
-      },
-      "default": []
+      }
     },
     "personnel_costs": {
       "type": "array",
-      "description": "Array of personnel cost items",
+      "description": "Legacy personnel cost items (informational only \u2014 replaced by labour_resources)",
+      "default": [],
       "items": {
         "type": "object",
         "properties": {
@@ -195,12 +194,12 @@
             }
           }
         }
-      },
-      "default": []
+      }
     },
     "bill_of_materials_costs": {
       "type": "array",
       "description": "Array of BOM cost items from warehouse",
+      "default": [],
       "items": {
         "type": "object",
         "properties": {
@@ -220,12 +219,12 @@
             "type": "number"
           }
         }
-      },
-      "default": []
+      }
     },
     "fixed_costs": {
       "type": "array",
       "description": "Array of fixed cost items",
+      "default": [],
       "items": {
         "type": "object",
         "properties": {
@@ -262,12 +261,54 @@
             }
           }
         }
-      },
-      "default": []
+      }
+    },
+    "operational_costs": {
+      "type": "array",
+      "description": "Array of operational cost items",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          },
+          "frequency_type": {
+            "type": "string",
+            "enum": [
+              "daily",
+              "per_production_day",
+              "monthly",
+              "yearly",
+              "one_time"
+            ]
+          },
+          "department_allocations": {
+            "type": "array",
+            "default": [],
+            "items": {
+              "type": "object",
+              "properties": {
+                "department_id": {
+                  "type": "string"
+                },
+                "allocation_percent": {
+                  "type": "number",
+                  "default": 0
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "overhead_costs": {
       "type": "array",
       "description": "Array of overhead cost items",
+      "default": [],
       "items": {
         "type": "object",
         "properties": {
@@ -304,12 +345,12 @@
             }
           }
         }
-      },
-      "default": []
+      }
     },
     "investment_amortization": {
       "type": "array",
       "description": "Array of investment amortization items",
+      "default": [],
       "items": {
         "type": "object",
         "properties": {
@@ -342,12 +383,12 @@
             }
           }
         }
-      },
-      "default": []
+      }
     },
     "maintenance_costs": {
       "type": "array",
       "description": "Array of maintenance cost items",
+      "default": [],
       "items": {
         "type": "object",
         "properties": {
@@ -384,8 +425,7 @@
             }
           }
         }
-      },
-      "default": []
+      }
     },
     "depreciation_module": {
       "type": "object",
@@ -468,6 +508,188 @@
                 "default": 0
               }
             }
+          }
+        }
+      }
+    },
+    "labour_resources": {
+      "type": "array",
+      "description": "Labour module: resources with employment type, rates, hours, and department allocations. Replaces legacy personnel_costs as the primary labour cost source.",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "resource_name": {
+            "type": "string",
+            "description": "Full name or role title of the labour resource"
+          },
+          "employment_type": {
+            "type": "string",
+            "enum": [
+              "monthly_fixed",
+              "daily_part_time"
+            ],
+            "description": "Employment model: monthly_fixed = fixed monthly salary; daily_part_time = paid per day worked"
+          },
+          "monthly_salary": {
+            "type": "number",
+            "default": 0,
+            "description": "Gross monthly salary \u2014 used when employment_type = monthly_fixed"
+          },
+          "daily_rate": {
+            "type": "number",
+            "default": 0,
+            "description": "Daily rate \u2014 used when employment_type = daily_part_time"
+          },
+          "hours_per_day": {
+            "type": "number",
+            "default": 8,
+            "description": "Standard working hours per day for this resource"
+          },
+          "monthly_to_day_factor": {
+            "type": "number",
+            "default": 22,
+            "description": "Working days per month used to convert monthly salary to daily rate"
+          },
+          "is_active": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether this resource is currently active"
+          },
+          "department_allocations": {
+            "type": "array",
+            "default": [],
+            "description": "How this resource's cost is split across departments. Must sum to 100% if defined.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "department_id": {
+                  "type": "string"
+                },
+                "allocation_percent": {
+                  "type": "number",
+                  "default": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "department_labour_hours": {
+      "type": "array",
+      "description": "Labour module: planned or actual total hours per department for the financial period.",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "department_id": {
+            "type": "string",
+            "description": "Reference to Department entity"
+          },
+          "total_hours": {
+            "type": "number",
+            "default": 0,
+            "description": "Total labour hours for this department in the period"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional notes or source reference"
+          }
+        }
+      }
+    },
+    "daily_production_entries": {
+      "type": "array",
+      "description": "Daily operations: production output per day. Future: auto-populated from Manufacturing module (BatchHeader/BatchLines).",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Production date in YYYY-MM-DD format"
+          },
+          "bus_stop_type_id": {
+            "type": "string",
+            "description": "Reference to BusStopType entity"
+          },
+          "label": {
+            "type": "string",
+            "description": "Human-readable product label or batch reference"
+          },
+          "quantity": {
+            "type": "number",
+            "default": 0,
+            "description": "Number of units produced"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional notes or source batch reference"
+          }
+        }
+      }
+    },
+    "daily_revenue_entries": {
+      "type": "array",
+      "description": "Daily operations: revenue recorded per day. Future: auto-populated from delivery/billing modules.",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Revenue date in YYYY-MM-DD format"
+          },
+          "description": {
+            "type": "string",
+            "description": "Revenue item description"
+          },
+          "quantity": {
+            "type": "number",
+            "default": 0,
+            "description": "Number of units sold/delivered"
+          },
+          "unit_revenue": {
+            "type": "number",
+            "default": 0,
+            "description": "Revenue per unit (\u20ac)"
+          },
+          "total_revenue": {
+            "type": "number",
+            "default": 0,
+            "description": "Derived: quantity * unit_revenue. Stored for performance."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional notes or source reference"
+          }
+        }
+      }
+    },
+    "daily_department_hours_entries": {
+      "type": "array",
+      "description": "Daily operations: actual labour hours per department per day. Future: auto-populated from time tracking / operations module.",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Date in YYYY-MM-DD format"
+          },
+          "department_id": {
+            "type": "string",
+            "description": "Reference to Department entity"
+          },
+          "total_hours": {
+            "type": "number",
+            "default": 0,
+            "description": "Total hours worked by this department on this date"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Optional notes or source reference"
           }
         }
       }
