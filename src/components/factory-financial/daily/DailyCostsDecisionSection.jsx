@@ -32,34 +32,36 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
     };
 
     const handleAddRecord = () => {
-        const fixedCost = fixedCosts ? getFixedCostsTotal() : 0;
-        const operationalCost = operationalCosts ? getOperationalCostsTotal() : 0;
-        const supervisorCost = supervisorCosts ? getSupervisorTotalCost() : 0;
+         const fixedCost = fixedCosts ? getFixedCostsTotal() : 0;
+         const operationalCost = operationalCosts ? getOperationalCostsTotal() : 0;
+         const supervisorCost = supervisorCosts ? getSupervisorTotalCost() : 0;
 
-        const newRecord = {
-            date: selectedDate,
-            hasFixedCosts: fixedCosts,
-            hasOperationalCosts: operationalCosts,
-            hasSupervisorCosts: supervisorCosts,
-            fixedCost,
-            operationalCost,
-            supervisorCost,
-            totalCost: fixedCost + operationalCost + supervisorCost,
-            timestamp: new Date().toISOString()
-        };
-        const updatedRecords = [...localRecords, newRecord];
-        setLocalRecords(updatedRecords);
-        if (typeof onSave === 'function') onSave(updatedRecords);
-        setFixedCosts(false);
-        setOperationalCosts(false);
-        setSupervisorCosts(false);
-    };
+         const newRecord = {
+             date: selectedDate,
+             hasFixedCosts: fixedCosts,
+             hasOperationalCosts: operationalCosts,
+             hasSupervisorCosts: supervisorCosts,
+             fixedCost,
+             operationalCost,
+             supervisorCost,
+             totalCost: fixedCost + operationalCost + supervisorCost,
+             timestamp: new Date().toISOString()
+         };
+         const updatedRecords = [...localRecords, newRecord];
+         console.log('📤 DailyCostsDecisionSection saving:', updatedRecords);
+         setLocalRecords(updatedRecords);
+         if (typeof onSave === 'function') onSave(updatedRecords);
+         setFixedCosts(false);
+         setOperationalCosts(false);
+         setSupervisorCosts(false);
+     };
 
     const handleRemoveRecord = (idx) => {
-        const updatedRecords = localRecords.filter((_, i) => i !== idx);
-        setLocalRecords(updatedRecords);
-        if (typeof onSave === 'function') onSave(updatedRecords);
-    };
+         const updatedRecords = localRecords.filter((_, i) => i !== idx);
+         console.log('📤 DailyCostsDecisionSection removing, updated:', updatedRecords);
+         setLocalRecords(updatedRecords);
+         if (typeof onSave === 'function') onSave(updatedRecords);
+     };
 
     const todayRecords = localRecords.filter(r => r.date === selectedDate);
 
