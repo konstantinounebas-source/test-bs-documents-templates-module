@@ -128,26 +128,24 @@ function EstRevenuesSubsection({
                         <div className="grid grid-cols-2 gap-3">
                             <div>
                                 <Label className="text-xs">Shelter Instance</Label>
-                                <select
-                                    value={item.shelter_instance_id || ''}
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        onUpdate(idx, 'shelter_instance_id', value);
-                                        // Auto-fill unit_revenue
-                                        if (value) {
-                                            const revenueValue = getShelterRevenueValue(value);
-                                            onUpdate(idx, 'unit_revenue', revenueValue);
-                                        }
-                                    }}
-                                    className="w-full h-9 px-3 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
-                                >
-                                    <option value="">— Επιλέξτε Shelter —</option>
-                                    {(shelterInstances || []).map(shelter => (
-                                        <option key={shelter.id} value={shelter.id}>
-                                            {shelter.name || shelter.id}
-                                        </option>
-                                    ))}
-                                </select>
+                                {item.shelter_instance_id ? (
+                                    <div className="h-9 px-3 py-1 border border-slate-300 rounded-md bg-slate-100 flex items-center text-sm text-slate-700 font-medium">
+                                        {(shelterInstances || []).find(s => String(s.id) === String(item.shelter_instance_id))?.name || item.shelter_instance_id}
+                                    </div>
+                                ) : (
+                                    <select
+                                        value=""
+                                        onChange={(e) => onUpdate(idx, 'shelter_instance_id', e.target.value)}
+                                        className="w-full h-9 px-3 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 bg-white"
+                                    >
+                                        <option value="">— Επιλέξτε Shelter —</option>
+                                        {(shelterInstances || []).map(shelter => (
+                                            <option key={shelter.id} value={shelter.id}>
+                                                {shelter.name || shelter.id}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
                             </div>
                             <div>
                                 <Label className="text-xs">Περιγραφή</Label>

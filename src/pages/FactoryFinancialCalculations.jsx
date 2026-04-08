@@ -508,7 +508,8 @@ export default function FactoryFinancialCalculations() {
         const updated = [...estimatedRevenues];
         
         if (field === 'shelter_instance_id') {
-            // Auto-fill unit_revenue from shelter data, then clear shelter_instance_id
+            // Keep shelter_instance_id and auto-fill unit_revenue from shelter data
+            updated[idx].shelter_instance_id = value;
             const shelter = shelterRevenueItems.find(item => item.shelter_instance_id === value);
             if (shelter) {
                 const baseAmount = parseFloat(shelter.contract_amount) || 0;
@@ -517,8 +518,6 @@ export default function FactoryFinancialCalculations() {
                 updated[idx].unit_revenue = baseAmount + approviedTotal;
                 updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (updated[idx].unit_revenue || 0);
             }
-            // Clear shelter_instance_id after auto-filling
-            updated[idx].shelter_instance_id = '';
         } else if (field === 'pending_quantity') {
             updated[idx].pending_quantity = parseFloat(value) || 0;
             updated[idx].total_revenue = (parseFloat(updated[idx].pending_quantity) || 0) * (parseFloat(updated[idx].unit_revenue) || 0);
