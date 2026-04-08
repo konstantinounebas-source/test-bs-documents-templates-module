@@ -8,7 +8,7 @@ import { calculateDailyDepartmentHoursTotal } from "@/components/factory-financi
 
 const EMPTY_ROW = { department_id: '', total_hours: 0, notes: '' };
 
-export default function DailyDepartmentHoursSection({ entries, selectedDate, departments, departmentAssignments, labourPersonnel, onAdd, onRemove, onUpdate }) {
+export default function DailyDepartmentHoursSection({ entries, selectedDate, departments, departmentAssignments, labourPersonnel, formatCurrency, onAdd, onRemove, onUpdate }) {
     const visibleWithIdx = selectedDate
         ? entries.map((r, i) => ({ r, i })).filter(({ r }) => r.date === selectedDate)
         : entries.map((r, i) => ({ r, i }));
@@ -112,11 +112,11 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
                                     className="text-sm h-8"
                                     placeholder="0"
                                 />
-                                <div className="flex items-center h-8 px-3 bg-slate-100 border border-slate-200 rounded-md text-sm text-slate-600">
-                                    {hourlyRate > 0 ? hourlyRate.toFixed(2) : '—'}
+                                <div className="text-right flex-shrink-0 text-sm font-semibold text-slate-800">
+                                    {hourlyRate > 0 ? formatCurrency(hourlyRate) : '—'}
                                 </div>
-                                <div className="flex items-center h-8 px-3 bg-purple-50 border border-purple-200 rounded-md text-sm font-semibold text-purple-700">
-                                    {totalCost > 0 ? totalCost.toFixed(2) : '—'}
+                                <div className="text-right flex-shrink-0 text-sm font-semibold text-purple-700">
+                                    {totalCost > 0 ? formatCurrency(totalCost) : '—'}
                                 </div>
                                 <Input
                                     value={row.notes}
