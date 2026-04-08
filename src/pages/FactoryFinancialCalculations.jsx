@@ -200,7 +200,11 @@ export default function FactoryFinancialCalculations() {
             setAvgWorkingDaysPerMonth(record.average_working_days_per_month || 22);
             setAvgWorkingDaysPerYear(record.average_working_days_per_year || 260);
             
-            setShelterRevenueItems(record.shelter_revenue_items || []);
+            setShelterRevenueItems((record.shelter_revenue_items || []).map(item => ({
+                ...item,
+                approved_variations: item.approved_variations || [],
+                potential_variations: item.potential_variations || []
+            })));
             // sales_revenue_items exists in FactoryFinancialData schema:
             // { product_identifier, description, quantity_sold, unit_selling_price }
             // This is the correct catalog source for daily revenue category selection.
