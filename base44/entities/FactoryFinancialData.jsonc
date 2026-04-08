@@ -64,8 +64,9 @@
       "items": {
         "type": "object",
         "properties": {
-          "bus_shelter_type_id": {
-            "type": "string"
+          "shelter_instance_id": {
+            "type": "string",
+            "description": "Reference to ShelterInstance"
           },
           "description": {
             "type": "string"
@@ -477,11 +478,7 @@
             "properties": {
               "bus_stop_type_id": {
                 "type": "string",
-                "description": "Preferred field \u2014 reference to BusStopType"
-              },
-              "bus_shelter_type_id": {
-                "type": "string",
-                "description": "Legacy compatibility \u2014 same reference, older field name"
+                "description": "Reference to BusStopType"
               },
               "description": {
                 "type": "string"
@@ -633,6 +630,10 @@
           "date": {
             "type": "string",
             "description": "YYYY-MM-DD"
+          },
+          "shelter_instance_id": {
+            "type": "string",
+            "description": "Reference to ShelterInstance"
           },
           "description": {
             "type": "string",
