@@ -21,11 +21,24 @@ export default function DailyOperationsTab({
 }) {
     const [selectedDate, setSelectedDate] = useState(todayISO);
 
-    const handleAddRevenue = (row) => onDailyRevenue([...dailyRevenueEntries, { ...row, date: selectedDate }]);
-    const handleRemoveRevenue = (idx) => onDailyRevenue(dailyRevenueEntries.filter((_, i) => i !== idx));
+    // Add: always stamp selectedDate
+    const handleAddRevenue = (row) =>
+        onDailyRevenue([...dailyRevenueEntries, { ...row, date: selectedDate }]);
 
-    const handleAddDeptHours = (row) => onDailyDepartmentHours([...dailyDepartmentHoursEntries, { ...row, date: selectedDate }]);
-    const handleRemoveDeptHours = (idx) => onDailyDepartmentHours(dailyDepartmentHoursEntries.filter((_, i) => i !== idx));
+    // Remove by real index in the full array
+    const handleRemoveRevenue = (realIdx) =>
+        onDailyRevenue(dailyRevenueEntries.filter((_, i) => i !== realIdx));
+
+    // Update: the child passes back the full array (with all dates) — pass through as-is
+    const handleUpdateRevenue = (fullArray) => onDailyRevenue(fullArray);
+
+    const handleAddDeptHours = (row) =>
+        onDailyDepartmentHours([...dailyDepartmentHoursEntries, { ...row, date: selectedDate }]);
+
+    const handleRemoveDeptHours = (realIdx) =>
+        onDailyDepartmentHours(dailyDepartmentHoursEntries.filter((_, i) => i !== realIdx));
+
+    const handleUpdateDeptHours = (fullArray) => onDailyDepartmentHours(fullArray);
 
     return (
         <div className="space-y-6">
@@ -48,7 +61,7 @@ export default function DailyOperationsTab({
                 revenueCategories={revenueCategories || []}
                 onAdd={handleAddRevenue}
                 onRemove={handleRemoveRevenue}
-                onUpdate={onDailyRevenue}
+                onUpdate={handleUpdateRevenue}
             />
             <DailyDepartmentHoursSection
                 entries={dailyDepartmentHoursEntries}
@@ -56,7 +69,7 @@ export default function DailyOperationsTab({
                 departments={departments}
                 onAdd={handleAddDeptHours}
                 onRemove={handleRemoveDeptHours}
-                onUpdate={onDailyDepartmentHours}
+                onUpdate={handleUpdateDeptHours}
             />
         </div>
     );

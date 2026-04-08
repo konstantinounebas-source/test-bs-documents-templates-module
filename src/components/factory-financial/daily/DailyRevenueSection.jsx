@@ -86,7 +86,7 @@ export default function DailyRevenueSection({
                     <div className="flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-green-600" />
                         <CardTitle className="text-base font-semibold text-slate-800">
-                            B. Daily Revenue
+                            A. Daily Revenue
                         </CardTitle>
                         {hasCategories && (
                             <span className="text-xs text-slate-400 font-normal">(από κατηγορίες σχεδιασμού)</span>
