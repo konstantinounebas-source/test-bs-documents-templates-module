@@ -232,7 +232,8 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
                     placeholder="Ποσό"
                     value={item.amount || ''}
                     onChange={(e) => handleUpdateItem(item.id, 'amount', parseFloat(e.target.value) || 0)}
-                    className="col-span-2 h-8 text-sm"
+                    disabled={!!item.bus_stop_type_id}
+                    className="col-span-2 h-8 text-sm disabled:bg-gray-200 disabled:cursor-not-allowed"
                   />
                   <Select value={item.frequency_type} onValueChange={(v) => handleUpdateItem(item.id, 'frequency_type', v)}>
                     <SelectTrigger className="col-span-1 h-8 text-sm">
