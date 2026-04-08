@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Plus, Trash2, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import ExcelJS from 'exceljs';
 
 export default function OperationalCostsTab({ factoryFinancialDataId, totalWorkingDays, formatCurrency }) {
   const [items, setItems] = useState([]);
@@ -200,39 +201,95 @@ export default function OperationalCostsTab({ factoryFinancialDataId, totalWorki
       const enrichedComponents = await Promise.all(
         components.map(async (comp) => {
           let productName = 'N/A';
+          let unitCost = 0;
           if (comp.product_id) {
             const products = await base44.entities.Product.filter({ id: comp.product_id });
             if (products.length > 0) {
               productName = products[0].name;
+              unitCost = products[0].unit_cost || 0;
             }
           }
+          const quantity = comp.quantity_required || 1;
+          const totalCost = unitCost * quantity;
           return {
             ...comp,
-            product_name: productName
+            product_name: productName,
+            unit_cost: unitCost,
+            total_cost: totalCost
           };
         })
       );
 
-      // Create CSV content
-      const headers = ['Product Name', 'Quantity Required', 'Unit of Measure', 'Installation Order', 'Optional', 'Notes'];
-      const rows = enrichedComponents.map(comp => [
-        comp.product_name,
-        comp.quantity_required || '',
-        comp.unit_of_measure || '',
-        comp.installation_order || '',
-        comp.is_optional ? 'Yes' : 'No',
-        comp.notes || ''
-      ]);
+      // Calculate grand total
+      const grandTotal = enrichedComponents.reduce((sum, comp) => sum + comp.total_cost, 0);
 
-      const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+      // Create Excel workbook
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('BOM');
 
-      // Download CSV
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      // Define columns
+      worksheet.columns = [
+        { header: 'Product Name', key: 'product_name', width: 30 },
+        { header: 'Quantity', key: 'quantity_required', width: 12 },
+        { header: 'Unit', key: 'unit_of_measure', width: 12 },
+        { header: 'Unit Cost', key: 'unit_cost', width: 15 },
+        { header: 'Total Cost', key: 'total_cost', width: 15 },
+        { header: 'Installation Order', key: 'installation_order', width: 15 },
+        { header: 'Optional', key: 'is_optional', width: 12 },
+        { header: 'Notes', key: 'notes', width: 25 }
+      ];
+
+      // Add header formatting
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' }
+      };
+      worksheet.getRow(1).font = {
+        color: { argb: 'FFFFFFFF' },
+        bold: true
+      };
+
+      // Add data rows with formatting
+      enrichedComponents.forEach(comp => {
+        const row = worksheet.addRow({
+          product_name: comp.product_name,
+          quantity_required: comp.quantity_required || '',
+          unit_of_measure: comp.unit_of_measure || '',
+          unit_cost: comp.unit_cost || 0,
+          total_cost: comp.total_cost || 0,
+          installation_order: comp.installation_order || '',
+          is_optional: comp.is_optional ? 'Yes' : 'No',
+          notes: comp.notes || ''
+        });
+
+        // Format currency columns
+        row.getCell('unit_cost').numFmt = '"€"#,##0.00';
+        row.getCell('total_cost').numFmt = '"€"#,##0.00';
+      });
+
+      // Add total row
+      const totalRow = worksheet.addRow({});
+      totalRow.getCell(1).value = 'GRAND TOTAL';
+      totalRow.getCell(1).font = { bold: true };
+      totalRow.getCell(5).value = grandTotal;
+      totalRow.getCell(5).numFmt = '"€"#,##0.00';
+      totalRow.getCell(5).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE2EFDA' }
+      };
+      totalRow.getCell(5).font = { bold: true };
+
+      // Generate and download Excel file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', `BOM_Export_${new Date().toISOString().split('T')[0]}.csv`);
+      link.setAttribute('download', `BOM_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
       link.click();
+      URL.revokeObjectURL(url);
 
       toast.success('BOM εξαγόμενο με επιτυχία');
     } catch (error) {
