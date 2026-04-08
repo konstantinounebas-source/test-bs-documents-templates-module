@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, Plus, Trash2, DollarSign } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
 
 export default function DailyCostsDecisionSection({ selectedDate, onSave = () => {} }) {
     const [fixedCosts, setFixedCosts] = useState(false);
@@ -42,23 +41,31 @@ export default function DailyCostsDecisionSection({ selectedDate, onSave = () =>
             <CardContent className="pt-3 px-4 pb-3">
                 {/* Selection Section */}
                 <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded">
-                        <Checkbox
+                    <div 
+                        className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded"
+                        onClick={() => setFixedCosts(!fixedCosts)}
+                    >
+                        <input
+                            type="checkbox"
                             checked={fixedCosts}
-                            onChange={(checked) => setFixedCosts(checked)}
-                            className="w-4 h-4"
+                            onChange={(e) => setFixedCosts(e.target.checked)}
+                            className="w-4 h-4 cursor-pointer"
                         />
                         <span className="text-xs font-medium text-slate-900">Σταθερά</span>
-                    </label>
+                    </div>
 
-                    <label className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded">
-                        <Checkbox
+                    <div 
+                        className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 px-2 py-1 rounded"
+                        onClick={() => setOperationalCosts(!operationalCosts)}
+                    >
+                        <input
+                            type="checkbox"
                             checked={operationalCosts}
-                            onChange={(checked) => setOperationalCosts(checked)}
-                            className="w-4 h-4"
+                            onChange={(e) => setOperationalCosts(e.target.checked)}
+                            className="w-4 h-4 cursor-pointer"
                         />
                         <span className="text-xs font-medium text-slate-900">Λειτουργικά</span>
-                    </label>
+                    </div>
 
                     {/* Action Button */}
                     <Button
