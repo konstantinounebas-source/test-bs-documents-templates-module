@@ -124,8 +124,8 @@ export default function OperationalPeriodAnalysisSection({
     }
 
     return (
-        <Card className="border-slate-200">
-            <CardHeader className="bg-gradient-to-r from-blue-50 to-slate-50 border-b border-slate-200">
+        <Card className="border-slate-200 h-full">
+            <CardHeader className="border-b border-slate-200">
                 <CardTitle className="text-base">Χρηματοοικονομική Ανάλυση{filterParams?.mode === 'weekly' ? ' - Εβδομαδιαία' : ''}</CardTitle>
                 <p className="text-xs text-slate-500 mt-1">{periodLabel}</p>
             </CardHeader>
@@ -143,24 +143,20 @@ export default function OperationalPeriodAnalysisSection({
                         <span className="text-sm font-semibold text-red-600">– {formatCurrency(analysis.operationalCosts)}</span>
                     </div>
 
-                    {/* Labour Costs */}
+                    {/* Labour Costs — always show sub-rows so both panels have equal height */}
                     <div className="space-y-1 py-1 border-b border-slate-100">
                         <div className="flex justify-between items-center">
                             <span className="text-sm font-medium text-slate-700">Κόστος Εργατικών Περιόδου</span>
                             <span className="text-sm font-semibold text-red-600">– {formatCurrency(analysis.totalLabourCosts)}</span>
                         </div>
-                        {analysis.supervisorCosts > 0 && (
-                            <div className="flex justify-between items-center pl-4">
-                                <span className="text-xs text-slate-500">  → Επιστάρχη</span>
-                                <span className="text-xs text-slate-500">– {formatCurrency(analysis.supervisorCosts)}</span>
-                            </div>
-                        )}
-                        {analysis.departmentHoursCosts > 0 && (
-                            <div className="flex justify-between items-center pl-4">
-                                <span className="text-xs text-slate-500">  → Ώρες Τμημάτων</span>
-                                <span className="text-xs text-slate-500">– {formatCurrency(analysis.departmentHoursCosts)}</span>
-                            </div>
-                        )}
+                        <div className="flex justify-between items-center pl-4">
+                            <span className="text-xs text-slate-400">→ Επιστάρχη</span>
+                            <span className="text-xs text-slate-400">– {formatCurrency(analysis.supervisorCosts)}</span>
+                        </div>
+                        <div className="flex justify-between items-center pl-4">
+                            <span className="text-xs text-slate-400">→ Ώρες Τμημάτων</span>
+                            <span className="text-xs text-slate-400">– {formatCurrency(analysis.departmentHoursCosts)}</span>
+                        </div>
                     </div>
 
                     {/* Result Before Depreciation */}
