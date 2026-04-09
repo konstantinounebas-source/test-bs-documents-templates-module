@@ -350,86 +350,122 @@ export default function FactoryFinancialCalculations() {
         }
 
         try {
-             setIsSaving(true);
+            setIsSaving(true);
 
-             const updatedData = {
-                  total_working_days_in_period: totalWorkingDays,
-                  average_working_days_per_month: avgWorkingDaysPerMonth,
-                  average_working_days_per_year: avgWorkingDaysPerYear,
-                  sales_revenue_items: salesRevenueItems,
-                  shelter_revenue_items: shelterRevenueItems,
-                  personnel_costs: personnelCosts,
-                  bill_of_materials_costs: bomCosts,
-                  fixed_costs: fixedCosts,
-                  operational_costs: operationalCosts,
-                  overhead_costs: overheadCosts,
-                  investment_amortization: investmentAmortization,
-                  maintenance_costs: maintenanceCosts,
-                  depreciation_module: {
-                      investments: depreciationInvestments,
-                      estimated_revenues: estimatedRevenues,
-                      additional_revenues: additionalRevenues
-                  },
-                  labour_resources: labourResources,
-                  department_labour_hours: departmentLabourHours,
-                  daily_production_entries: dailyProductionEntries,
-                  daily_revenue_entries: dailyRevenueEntries,
-                  daily_department_hours_entries: dailyDepartmentHoursEntries,
-                  daily_costs_records: dailyCostsRecords,
-                  simulation_panels: simulationPanels,
-                  };
+            const updatedData = {
+                total_working_days_in_period: totalWorkingDays,
+                average_working_days_per_month: avgWorkingDaysPerMonth,
+                average_working_days_per_year: avgWorkingDaysPerYear,
+                sales_revenue_items: salesRevenueItems,
+                shelter_revenue_items: shelterRevenueItems,
+                personnel_costs: personnelCosts,
+                bill_of_materials_costs: bomCosts,
+                fixed_costs: fixedCosts,
+                operational_costs: operationalCosts,
+                overhead_costs: overheadCosts,
+                investment_amortization: investmentAmortization,
+                maintenance_costs: maintenanceCosts,
+                depreciation_module: {
+                    investments: depreciationInvestments,
+                    estimated_revenues: estimatedRevenues,
+                    additional_revenues: additionalRevenues
+                },
+                labour_resources: labourResources,
+                department_labour_hours: departmentLabourHours,
+                daily_production_entries: dailyProductionEntries,
+                daily_revenue_entries: dailyRevenueEntries,
+                daily_department_hours_entries: dailyDepartmentHoursEntries,
+                daily_costs_records: dailyCostsRecords,
+                simulation_panels: simulationPanels,
+            };
 
-                  // Save FactoryFinancialData
-                  await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
+            // 1️⃣ Update FactoryFinancialData first
+            console.log('📝 Updating FactoryFinancialData...');
+            await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
 
-                  // Delete existing labour data
-                  const existingPersonnel = await base44.entities.LabourPersonnel.filter({ factory_financial_data_id: selectedRecord.id });
-                  const existingAllocations = await base44.entities.SupervisorDailyAllocation.filter({ factory_financial_data_id: selectedRecord.id });
-                  const existingAssignments = await base44.entities.DepartmentTechnicianAssignment.filter({ factory_financial_data_id: selectedRecord.id });
+            // 2️⃣ Delete old labour data in reverse dependency order
+            console.log('🗑️ Deleting old labour data...');
+            const existingAssignments = await base44.entities.DepartmentTechnicianAssignment.filter({ factory_financial_data_id: selectedRecord.id });
+            for (const assignment of existingAssignments) {
+                const rows = await base44.entities.DepartmentTechnicianRow.filter({ assignment_id: assignment.id });
+                for (const row of rows) {
+                    await base44.entities.DepartmentTechnicianRow.delete(row.id);
+                }
+                await base44.entities.DepartmentTechnicianAssignment.delete(assignment.id);
+            }
 
-                  for (const p of existingPersonnel) await base44.entities.LabourPersonnel.delete(p.id);
-                  for (const a of existingAllocations) await base44.entities.SupervisorDailyAllocation.delete(a.id);
-                  for (const a of existingAssignments) {
-                  const rows = await base44.entities.DepartmentTechnicianRow.filter({ assignment_id: a.id });
-                  for (const r of rows) await base44.entities.DepartmentTechnicianRow.delete(r.id);
-                  await base44.entities.DepartmentTechnicianAssignment.delete(a.id);
-                  }
+            const existingAllocations = await base44.entities.SupervisorDailyAllocation.filter({ factory_financial_data_id: selectedRecord.id });
+            for (const allocation of existingAllocations) {
+                await base44.entities.SupervisorDailyAllocation.delete(allocation.id);
+            }
 
-                  // Create new labour data
-                  for (const person of labourPersonnel) {
-                  await base44.entities.LabourPersonnel.create({
-                     ...person,
-                     factory_financial_data_id: selectedRecord.id
-                  });
-                  }
+            const existingPersonnel = await base44.entities.LabourPersonnel.filter({ factory_financial_data_id: selectedRecord.id });
+            for (const person of existingPersonnel) {
+                await base44.entities.LabourPersonnel.delete(person.id);
+            }
 
-                  for (const alloc of supervisorDailyAllocations) {
-                  const allocData = { ...alloc, factory_financial_data_id: selectedRecord.id };
-                  console.log('💾 Saving supervisor allocation:', allocData);
-                  await base44.entities.SupervisorDailyAllocation.create(allocData);
-                  }
+            // 3️⃣ Create new LabourPersonnel
+            console.log('✅ Creating LabourPersonnel...');
+            for (const person of labourPersonnel) {
+                const personPayload = {
+                    factory_financial_data_id: selectedRecord.id,
+                    person_name: person.person_name || '',
+                    position: person.position || '',
+                    role_type: person.role_type || 'technician',
+                    employment_type: person.employment_type || 'monthly',
+                    monthly_salary: parseFloat(person.monthly_salary) || 0,
+                    daily_rate: parseFloat(person.daily_rate) || 0,
+                    day_factor: parseFloat(person.day_factor) || 22,
+                    hour_factor: parseFloat(person.hour_factor) || 8,
+                    is_active: person.is_active !== false,
+                    calculated_daily_cost: parseFloat(person.calculated_daily_cost) || 0,
+                    calculated_hourly_cost: parseFloat(person.calculated_hourly_cost) || 0,
+                    department_id: person.department_id || '',
+                };
+                console.log('Creating LabourPersonnel payload:', personPayload);
+                await base44.entities.LabourPersonnel.create(personPayload);
+            }
 
-                   for (const assignment of departmentTechnicianAssignments) {
-                  const newAssignment = await base44.entities.DepartmentTechnicianAssignment.create({
-                     factory_financial_data_id: selectedRecord.id,
-                     department_id: assignment.department_id
-                  });
+            // 4️⃣ Create new SupervisorDailyAllocation
+            console.log('✅ Creating SupervisorDailyAllocation...');
+            for (const allocation of supervisorDailyAllocations) {
+                const allocPayload = {
+                    factory_financial_data_id: selectedRecord.id,
+                    personnel_id: allocation.personnel_id || '',
+                    allocation_factor: parseFloat(allocation.allocation_factor) || 1,
+                    comments: allocation.comments || '',
+                };
+                console.log('Creating SupervisorDailyAllocation payload:', allocPayload);
+                await base44.entities.SupervisorDailyAllocation.create(allocPayload);
+            }
 
-                  for (const row of (assignment.technician_rows || [])) {
-                     await base44.entities.DepartmentTechnicianRow.create({
-                         assignment_id: newAssignment.id,
-                         personnel_id: row.personnel_id,
-                         comments: row.comments
-                     });
-                  }
-                  }
-             console.log('Save successful, data persisted');
+            // 5️⃣ Create new DepartmentTechnicianAssignment + DepartmentTechnicianRow
+            console.log('✅ Creating DepartmentTechnicianAssignment + Row...');
+            for (const assignment of departmentTechnicianAssignments) {
+                const assignPayload = {
+                    factory_financial_data_id: selectedRecord.id,
+                    department_id: assignment.department_id || '',
+                };
+                console.log('Creating DepartmentTechnicianAssignment payload:', assignPayload);
+                const createdAssignment = await base44.entities.DepartmentTechnicianAssignment.create(assignPayload);
 
-             toast.success('Τα δεδομένα αποθηκεύτηκαν επιτυχώς');
-             // Keep current state — data is already in memory
-             setCurrentData(prev => ({ ...prev, ...updatedData }));
+                for (const techRow of (assignment.technician_rows || [])) {
+                    const rowPayload = {
+                        assignment_id: createdAssignment.id,
+                        personnel_id: techRow.personnel_id || '',
+                        comments: techRow.comments || '',
+                    };
+                    console.log('Creating DepartmentTechnicianRow payload:', rowPayload);
+                    await base44.entities.DepartmentTechnicianRow.create(rowPayload);
+                }
+            }
+
+            console.log('✅ Save completed successfully');
+            toast.success('Τα δεδομένα αποθηκεύτηκαν επιτυχώς');
+            setCurrentData(prev => ({ ...prev, ...updatedData }));
         } catch (error) {
-            console.error('Failed to save data:', error);
+            console.error('❌ SAVE ERROR:', error);
+            console.error('❌ SAVE ERROR JSON:', JSON.stringify(error, null, 2));
             toast.error('Σφάλμα αποθήκευσης δεδομένων');
         } finally {
             setIsSaving(false);
