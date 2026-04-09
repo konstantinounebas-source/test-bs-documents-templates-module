@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle } from 'lucide-react';
+import { filterEntriesForPeriod, getPeriodLabel } from './utils/overviewPeriodCalculations';
 
 /**
  * OperationalPeriodAnalysisSection
@@ -35,40 +36,23 @@ function getDeptHourlyCost(deptId, departmentAssignments, labourPersonnel, depar
 }
 
 export default function OperationalPeriodAnalysisSection({
-    startDate = '',
-    endDate = '',
+    filterParams,
     dailyRevenueEntries = [],
     dailyCostsRecords = [],
     dailyDepartmentHoursEntries = [],
     departmentAssignments = [],
     labourPersonnel = [],
     departments = [],
-    depreciationInvestmentTotal = 0,
     depreciationFactor = 0,
     formatCurrency = (val) => `€${parseFloat(val || 0).toFixed(2)}`
 }) {
     const analysis = useMemo(() => {
-        if (!startDate || !endDate) {
-            return { hasData: false };
-        }
+        if (!filterParams) return { hasData: false };
 
-        // Filter 1: Revenue entries in period
-        const revenueInPeriod = (dailyRevenueEntries || []).filter(entry => {
-            const entryDate = entry?.date || '';
-            return entryDate >= startDate && entryDate <= endDate;
-        });
-
-        // Filter 2: Cost records in period
-        const costsInPeriod = (dailyCostsRecords || []).filter(record => {
-            const recordDate = record?.date || '';
-            return recordDate >= startDate && recordDate <= endDate;
-        });
-
-        // Filter 3: Department hours entries in period
-        const hoursInPeriod = (dailyDepartmentHoursEntries || []).filter(entry => {
-            const entryDate = entry?.date || '';
-            return entryDate >= startDate && entryDate <= endDate;
-        });
+        // Filter all arrays using the same filterParams as OverviewFilterBar
+        const revenueInPeriod  = filterEntriesForPeriod(dailyRevenueEntries || [], filterParams);
+        const costsInPeriod    = filterEntriesForPeriod(dailyCostsRecords || [], filterParams);
+        const hoursInPeriod    = filterEntriesForPeriod(dailyDepartmentHoursEntries || [], filterParams);
 
         // FORMULA 1: Period Revenue = sum(total_revenue)
         const periodRevenue = revenueInPeriod.reduce((sum, entry) => {
@@ -106,7 +90,6 @@ export default function OperationalPeriodAnalysisSection({
         // FORMULA 6: Final Result After Depreciation
         const finalResult = resultBeforeDepreciation - depreciationCharge;
 
-        // Check if there is any data
         const hasData = revenueInPeriod.length > 0 || costsInPeriod.length > 0 || hoursInPeriod.length > 0;
 
         return {
@@ -120,7 +103,9 @@ export default function OperationalPeriodAnalysisSection({
             finalResult,
             hasData
         };
-    }, [startDate, endDate, dailyRevenueEntries, dailyCostsRecords, dailyDepartmentHoursEntries, depreciationFactor, departmentAssignments, labourPersonnel, departments]);
+    }, [filterParams, dailyRevenueEntries, dailyCostsRecords, dailyDepartmentHoursEntries, depreciationFactor, departmentAssignments, labourPersonnel, departments]);
+
+    const periodLabel = getPeriodLabel(filterParams);
 
     if (!analysis.hasData) {
         return (
@@ -131,7 +116,7 @@ export default function OperationalPeriodAnalysisSection({
                 <CardContent>
                     <div className="flex items-center gap-3 text-slate-600">
                         <AlertCircle className="w-4 h-4" />
-                        <p className="text-sm">Δεν υπάρχουν δεδομένα Daily Operations στην περίοδο {startDate} έως {endDate}</p>
+                        <p className="text-sm">Δεν υπάρχουν δεδομένα Daily Operations για: {periodLabel}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -142,7 +127,7 @@ export default function OperationalPeriodAnalysisSection({
         <Card className="border-slate-200">
             <CardHeader className="bg-gradient-to-r from-blue-50 to-slate-50 border-b border-slate-200">
                 <CardTitle className="text-base">Χρηματοοικονομική Ανάλυση</CardTitle>
-                <p className="text-xs text-slate-500 mt-1">{startDate} έως {endDate}</p>
+                <p className="text-xs text-slate-500 mt-1">{periodLabel}</p>
             </CardHeader>
             <CardContent className="pt-6">
                 <div className="space-y-1">

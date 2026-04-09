@@ -208,8 +208,7 @@ export default function FinancialOverviewTab({
             {/* 5. Operational Period Financial Analysis + Cost Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <OperationalPeriodAnalysisSection
-                    startDate={startDate}
-                    endDate={endDate}
+                    filterParams={filterParams}
                     dailyRevenueEntries={safeRev}
                     dailyCostsRecords={dailyCostsRecords}
                     dailyDepartmentHoursEntries={safeHours}
