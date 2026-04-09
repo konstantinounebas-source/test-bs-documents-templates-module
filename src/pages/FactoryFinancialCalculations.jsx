@@ -312,17 +312,13 @@ export default function FactoryFinancialCalculations() {
             setDepartmentTechnicianAssignments(assignmentsWithRows);
             console.log('✅ Loaded department technician assignments:', assignmentsWithRows.length, 'records');
 
-            // Load Fixed and Operational cost totals from database
-            await loadFixedCostTotal(record.id);
-            await loadOperationalCostTotal(record.id);
-
-             } catch (error) {
+            } catch (error) {
               console.error('Failed to load record data:', error);
               toast.error('Σφάλμα φόρτωσης δεδομένων εγγραφής');
-             } finally {
+            } finally {
               setIsLoading(false);
-             }
-             };
+            }
+            };
 
             const loadFixedCostTotal = async (recordId) => {
             try {
@@ -336,6 +332,11 @@ export default function FactoryFinancialCalculations() {
              }, 0);
              setFixedDailyTotal(total);
              console.log('✅ Fixed costs total loaded:', total);
+
+             // Heal cost records: restore unit_cost if 0
+             setDailyCostsRecords(prev => prev.map(r => 
+               r.cost_type === 'fixed' && r.unit_cost === 0 ? { ...r, unit_cost: total, total_cost: (r.multiplier_days || 1) * total } : r
+             ));
             } catch (error) {
              console.error('Failed to load fixed cost total:', error);
             }
@@ -353,16 +354,21 @@ export default function FactoryFinancialCalculations() {
              }, 0);
              setOperationalDailyTotal(total);
              console.log('✅ Operational costs total loaded:', total);
+
+             // Heal cost records: restore unit_cost if 0
+             setDailyCostsRecords(prev => prev.map(r => 
+               r.cost_type === 'operational' && r.unit_cost === 0 ? { ...r, unit_cost: total, total_cost: (r.multiplier_days || 1) * total } : r
+             ));
             } catch (error) {
              console.error('Failed to load operational cost total:', error);
             }
             };
 
-    const handleSave = async () => {
-        if (!selectedRecord) {
+            const handleSave = async () => {
+            if (!selectedRecord) {
             toast.error('Δεν έχει επιλεγεί εγγραφή');
             return;
-        }
+            }
 
         if (!validateAllAllocations()) {
             console.warn('Allocations validation failed');
