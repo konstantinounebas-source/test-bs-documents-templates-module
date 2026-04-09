@@ -1,23 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, FlaskConical } from 'lucide-react';
+import { Plus, Trash2, FlaskConical, ChevronDown, ChevronUp } from 'lucide-react';
 
-/**
- * SimulationWhatIfPanel
- *
- * Ανεξάρτητο "What If" panel. Ο χρήστης επιλέγει:
- *  - Τύπο στάσης + ποσότητα → υπολογίζεται έσοδα (qty × unit_revenue)
- *  - Multiplier κόστους λειτουργίας (× ημερήσιο σταθερό+λειτουργικό)
- *  - Multiplier κόστους επιστάρχη
- *  - Ώρες ανά τμήμα (× μέσο ωριαίο κόστος τμήματος)
- *  - Πρόσθετο κόστος εργατικών (manual)
- */
-
-// Helper: get avg hourly cost for a department from departmentAssignments + labourPersonnel
 function getDeptHourlyCost(deptId, departmentAssignments, labourPersonnel, departments) {
     const block = (departmentAssignments || []).find(b => b.department_id === deptId);
     if (block && block.technician_rows && block.technician_rows.length > 0) {
@@ -35,6 +22,14 @@ function getDeptHourlyCost(deptId, departmentAssignments, labourPersonnel, depar
     return dept ? (parseFloat(dept.avg_hourly_cost) || 0) : 0;
 }
 
+const COLORS = ['blue', 'violet', 'emerald', 'orange'];
+const STYLE = {
+    blue:    { border: 'border-blue-300',   header: 'bg-blue-50 border-blue-200',    icon: 'text-blue-600',    badge: 'bg-blue-100 text-blue-700' },
+    violet:  { border: 'border-violet-300', header: 'bg-violet-50 border-violet-200', icon: 'text-violet-600', badge: 'bg-violet-100 text-violet-700' },
+    emerald: { border: 'border-emerald-300',header: 'bg-emerald-50 border-emerald-200',icon:'text-emerald-600',badge: 'bg-emerald-100 text-emerald-700' },
+    orange:  { border: 'border-orange-300', header: 'bg-orange-50 border-orange-200', icon: 'text-orange-600', badge: 'bg-orange-100 text-orange-700' },
+};
+
 export default function SimulationWhatIfPanel({
     panelIndex = 0,
     shelterInstances = [],
@@ -49,35 +44,51 @@ export default function SimulationWhatIfPanel({
     depreciationFactor = 0,
     formatCurrency = (v) => `€${parseFloat(v || 0).toFixed(2)}`,
 }) {
-    // ── Inputs ────────────────────────────────────────────────────────────────
-    const [selectedShelterInstanceId, setSelectedShelterInstanceId] = useState('');
-    const [quantity, setQuantity] = useState('');
+    const color = COLORS[panelIndex % COLORS.length];
+    const s = STYLE[color];
+
+    // ── State ────────────────────────────────────────────────────────────────
+    const [title, setTitle] = useState('');
+    const [expanded, setExpanded] = useState(true);
+
+    // Multiple shelter rows
+    const [shelterRows, setShelterRows] = useState([{ shelter_instance_id: '', quantity: '' }]);
+
     const [fixedMultiplier, setFixedMultiplier] = useState('1');
     const [supervisorMultiplier, setSupervisorMultiplier] = useState('1');
     const [deptHoursRows, setDeptHoursRows] = useState([]);
     const [extraLabourCost, setExtraLabourCost] = useState('');
 
-    // ── Derived: unit revenue from shelter revenue items ──────────────────────
-    const unitRevenue = useMemo(() => {
-        if (!selectedShelterInstanceId) return 0;
-        // Find the shelterRevenueItem for this instance
-        const item = (shelterRevenueItems || []).find(
-            r => r.shelter_instance_id === selectedShelterInstanceId
-        );
+    // ── Shelter rows helpers ─────────────────────────────────────────────────
+    const addShelterRow = () => setShelterRows(prev => [...prev, { shelter_instance_id: '', quantity: '' }]);
+    const removeShelterRow = (i) => setShelterRows(prev => prev.filter((_, idx) => idx !== i));
+    const updateShelterRow = (i, field, value) =>
+        setShelterRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
+
+    const getUnitRevenue = (shelterInstanceId) => {
+        if (!shelterInstanceId) return 0;
+        const item = (shelterRevenueItems || []).find(r => r.shelter_instance_id === shelterInstanceId);
         if (!item) return 0;
         const total = getShelterRevenueTotal ? getShelterRevenueTotal(item) : (parseFloat(item.total_revenue) || 0);
         const qty = parseFloat(item.pending_quantity) || 0;
         return qty > 0 ? total / qty : (parseFloat(item.unit_revenue) || 0);
-    }, [selectedShelterInstanceId, shelterRevenueItems, getShelterRevenueTotal]);
+    };
 
-    // ── Calculations ──────────────────────────────────────────────────────────
+    // ── Dept hours helpers ───────────────────────────────────────────────────
+    const addDeptRow = () => setDeptHoursRows(prev => [...prev, { department_id: '', hours: '' }]);
+    const removeDeptRow = (i) => setDeptHoursRows(prev => prev.filter((_, idx) => idx !== i));
+    const updateDeptRow = (i, field, value) =>
+        setDeptHoursRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
+
+    // ── Calculations ─────────────────────────────────────────────────────────
     const results = useMemo(() => {
-        const qty = parseFloat(quantity) || 0;
-        const revenue = qty * unitRevenue;
+        const revenue = shelterRows.reduce((sum, row) => {
+            const qty = parseFloat(row.quantity) || 0;
+            return sum + qty * getUnitRevenue(row.shelter_instance_id);
+        }, 0);
 
         const fixedMult = parseFloat(fixedMultiplier) || 0;
         const supMult = parseFloat(supervisorMultiplier) || 0;
-
         const opCost = (parseFloat(fixedDailyTotal) + parseFloat(operationalDailyTotal)) * fixedMult;
         const supCost = parseFloat(supervisorDailyCost) * supMult;
 
@@ -94,118 +105,104 @@ export default function SimulationWhatIfPanel({
         const finalResult = resultBeforeDepreciation - depreciationCharge;
 
         return { revenue, opCost, supCost, deptLabourCost, extra, totalLabour, resultBeforeDepreciation, depreciationCharge, finalResult };
-    }, [quantity, unitRevenue, fixedMultiplier, supervisorMultiplier, fixedDailyTotal, operationalDailyTotal, supervisorDailyCost, deptHoursRows, extraLabourCost, depreciationFactor, departmentAssignments, labourPersonnel, departments]);
-
-    // ── Dept hours rows helpers ───────────────────────────────────────────────
-    const addDeptRow = () => setDeptHoursRows(prev => [...prev, { department_id: '', hours: '' }]);
-    const removeDeptRow = (i) => setDeptHoursRows(prev => prev.filter((_, idx) => idx !== i));
-    const updateDeptRow = (i, field, value) =>
-        setDeptHoursRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
-
-    const panelColors = ['blue', 'violet', 'emerald', 'orange'];
-    const color = panelColors[panelIndex % panelColors.length];
-    const borderClass = {
-        blue: 'border-blue-300',
-        violet: 'border-violet-300',
-        emerald: 'border-emerald-300',
-        orange: 'border-orange-300',
-    }[color];
-    const headerClass = {
-        blue: 'bg-blue-50 border-blue-200',
-        violet: 'bg-violet-50 border-violet-200',
-        emerald: 'bg-emerald-50 border-emerald-200',
-        orange: 'bg-orange-50 border-orange-200',
-    }[color];
-    const iconClass = {
-        blue: 'text-blue-600',
-        violet: 'text-violet-600',
-        emerald: 'text-emerald-600',
-        orange: 'text-orange-600',
-    }[color];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [shelterRows, fixedMultiplier, supervisorMultiplier, fixedDailyTotal, operationalDailyTotal, supervisorDailyCost, deptHoursRows, extraLabourCost, depreciationFactor, departmentAssignments, labourPersonnel, departments, shelterRevenueItems]);
 
     return (
-        <Card className={`border-2 ${borderClass} h-full flex flex-col`}>
-            {/* Header */}
-            <CardHeader className={`border-b ${headerClass} py-3 px-4`}>
+        <Card className={`border-2 ${s.border}`}>
+            {/* ── Header ── */}
+            <CardHeader className={`border-b ${s.header} py-2 px-3`}>
                 <div className="flex items-center gap-2">
-                    <FlaskConical className={`w-4 h-4 ${iconClass}`} />
-                    <CardTitle className="text-sm font-bold text-slate-800">
-                        Προσομοίωση {panelIndex + 1}
-                    </CardTitle>
+                    <FlaskConical className={`w-4 h-4 flex-shrink-0 ${s.icon}`} />
+                    <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Προσομοίωση {panelIndex + 1}</span>
+                    <Input
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                        placeholder="Τίτλος..."
+                        className="h-6 text-xs px-2 py-0 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:border-b focus-visible:border-slate-400 font-semibold text-slate-800 placeholder:text-slate-400"
+                    />
+                    <button
+                        onClick={() => setExpanded(p => !p)}
+                        className="ml-auto text-slate-400 hover:text-slate-600 flex-shrink-0"
+                    >
+                        {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
                 </div>
             </CardHeader>
 
-            <CardContent className="pt-4 px-4 pb-4 flex-1 flex flex-col gap-4">
-                {/* ── Inputs ── */}
-                <div className="space-y-3">
-                    {/* Τύπος στάσης + ποσότητα */}
+            {expanded && (
+                <CardContent className="px-3 pb-3 pt-3 space-y-3">
+                    {/* ── Είδη Στάσεων ── */}
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Είδη Στάσεων</span>
+                            <Button size="sm" variant="outline" onClick={addShelterRow} className="h-5 text-[11px] px-2 gap-1 py-0">
+                                <Plus className="w-3 h-3" />
+                                Προσθήκη
+                            </Button>
+                        </div>
+                        {shelterRows.map((row, i) => {
+                            const uRev = getUnitRevenue(row.shelter_instance_id);
+                            const qty = parseFloat(row.quantity) || 0;
+                            return (
+                                <div key={i} className="flex items-center gap-1.5">
+                                    <Select value={row.shelter_instance_id} onValueChange={v => updateShelterRow(i, 'shelter_instance_id', v)}>
+                                        <SelectTrigger className="h-7 text-xs flex-1">
+                                            <SelectValue placeholder="Τύπος στάσης..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {shelterInstances.map(si => (
+                                                <SelectItem key={si.id} value={si.id}>
+                                                    {si.name || si.instance_name || si.id}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Input
+                                        type="number"
+                                        value={row.quantity}
+                                        onChange={e => updateShelterRow(i, 'quantity', e.target.value)}
+                                        placeholder="Qty"
+                                        className="h-7 text-xs w-14"
+                                    />
+                                    {uRev > 0 && qty > 0 && (
+                                        <span className="text-[11px] text-blue-600 font-semibold whitespace-nowrap w-20 text-right">
+                                            {formatCurrency(qty * uRev)}
+                                        </span>
+                                    )}
+                                    {shelterRows.length > 1 && (
+                                        <button onClick={() => removeShelterRow(i)} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        })}
+                        {results.revenue > 0 && (
+                            <div className="flex justify-between text-[11px] font-semibold text-blue-700 bg-blue-50 rounded px-2 py-1">
+                                <span>Σύνολο Εσόδων</span>
+                                <span>{formatCurrency(results.revenue)}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* ── Multipliers ── */}
                     <div className="grid grid-cols-2 gap-2">
                         <div>
-                            <Label className="text-xs text-slate-600">Τύπος Στάσης</Label>
-                            <Select value={selectedShelterInstanceId} onValueChange={setSelectedShelterInstanceId}>
-                                <SelectTrigger className="h-8 text-xs mt-1">
-                                    <SelectValue placeholder="Επιλογή..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {shelterInstances.map(si => (
-                                        <SelectItem key={si.id} value={si.id}>
-                                            {si.name || si.instance_name || si.id}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <label className="text-[11px] text-slate-500">× Κόστος Λειτουργίας</label>
+                            <Input type="number" value={fixedMultiplier} onChange={e => setFixedMultiplier(e.target.value)} placeholder="1" className="h-7 text-xs mt-0.5" />
                         </div>
                         <div>
-                            <Label className="text-xs text-slate-600">Ποσότητα</Label>
-                            <Input
-                                type="number"
-                                value={quantity}
-                                onChange={e => setQuantity(e.target.value)}
-                                placeholder="π.χ. 10"
-                                className="h-8 text-xs mt-1"
-                            />
+                            <label className="text-[11px] text-slate-500">× Κόστος Επιστάρχη</label>
+                            <Input type="number" value={supervisorMultiplier} onChange={e => setSupervisorMultiplier(e.target.value)} placeholder="1" className="h-7 text-xs mt-0.5" />
                         </div>
                     </div>
 
-                    {/* Unit revenue preview */}
-                    {unitRevenue > 0 && (
-                        <div className="text-xs text-slate-500 bg-slate-50 rounded px-2 py-1">
-                            Τιμή μονάδας: {formatCurrency(unitRevenue)} →
-                            <span className="font-semibold text-blue-600 ml-1">
-                                Έσοδα: {formatCurrency(results.revenue)}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Multipliers */}
-                    <div className="grid grid-cols-2 gap-2">
-                        <div>
-                            <Label className="text-xs text-slate-600">× Κόστος Λειτουργίας</Label>
-                            <Input
-                                type="number"
-                                value={fixedMultiplier}
-                                onChange={e => setFixedMultiplier(e.target.value)}
-                                placeholder="1"
-                                className="h-8 text-xs mt-1"
-                            />
-                        </div>
-                        <div>
-                            <Label className="text-xs text-slate-600">× Κόστος Επιστάρχη</Label>
-                            <Input
-                                type="number"
-                                value={supervisorMultiplier}
-                                onChange={e => setSupervisorMultiplier(e.target.value)}
-                                placeholder="1"
-                                className="h-8 text-xs mt-1"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Department hours */}
+                    {/* ── Ώρες ανά Τμήμα ── */}
                     <div className="space-y-1">
                         <div className="flex items-center justify-between">
-                            <Label className="text-xs text-slate-600">Ώρες ανά Τμήμα</Label>
-                            <Button size="sm" variant="outline" onClick={addDeptRow} className="h-6 text-xs px-2 gap-1">
+                            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Ώρες ανά Τμήμα</span>
+                            <Button size="sm" variant="outline" onClick={addDeptRow} className="h-5 text-[11px] px-2 gap-1 py-0">
                                 <Plus className="w-3 h-3" />
                                 Τμήμα
                             </Button>
@@ -214,7 +211,7 @@ export default function SimulationWhatIfPanel({
                             const rate = getDeptHourlyCost(row.department_id, departmentAssignments, labourPersonnel, departments);
                             const hrs = parseFloat(row.hours) || 0;
                             return (
-                                <div key={i} className="flex items-center gap-2">
+                                <div key={i} className="flex items-center gap-1.5">
                                     <Select value={row.department_id} onValueChange={v => updateDeptRow(i, 'department_id', v)}>
                                         <SelectTrigger className="h-7 text-xs flex-1">
                                             <SelectValue placeholder="Τμήμα..." />
@@ -232,82 +229,75 @@ export default function SimulationWhatIfPanel({
                                         value={row.hours}
                                         onChange={e => updateDeptRow(i, 'hours', e.target.value)}
                                         placeholder="ώρες"
-                                        className="h-7 text-xs w-16"
+                                        className="h-7 text-xs w-14"
                                     />
-                                    {row.department_id && rate > 0 && (
-                                        <span className="text-xs text-slate-400 whitespace-nowrap">
-                                            = {formatCurrency(hrs * rate)}
+                                    {row.department_id && rate > 0 && hrs > 0 && (
+                                        <span className="text-[11px] text-slate-500 whitespace-nowrap w-20 text-right">
+                                            {formatCurrency(hrs * rate)}
                                         </span>
                                     )}
-                                    <Button size="icon" variant="ghost" className="h-7 w-7 flex-shrink-0" onClick={() => removeDeptRow(i)}>
-                                        <Trash2 className="w-3 h-3 text-red-500" />
-                                    </Button>
+                                    <button onClick={() => removeDeptRow(i)} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
                                 </div>
                             );
                         })}
                     </div>
 
-                    {/* Extra labour cost */}
-                    <div>
-                        <Label className="text-xs text-slate-600">Πρόσθετο Κόστος Εργατικών (€)</Label>
+                    {/* ── Extra Labour ── */}
+                    <div className="flex items-center gap-2">
+                        <label className="text-[11px] text-slate-500 whitespace-nowrap">Πρόσθετο Κόστος (€)</label>
                         <Input
                             type="number"
                             value={extraLabourCost}
                             onChange={e => setExtraLabourCost(e.target.value)}
                             placeholder="0"
-                            className="h-8 text-xs mt-1"
+                            className="h-7 text-xs flex-1"
                         />
                     </div>
-                </div>
 
-                {/* ── Results ── */}
-                <div className="border-t border-slate-200 pt-3 space-y-1 mt-auto">
-                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
-                        <span className="text-xs font-medium text-slate-700">Έσοδα</span>
-                        <span className="text-xs font-semibold text-blue-600">{formatCurrency(results.revenue)}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
-                        <span className="text-xs font-medium text-slate-700">Κόστος Λειτουργίας</span>
-                        <span className="text-xs font-semibold text-red-500">– {formatCurrency(results.opCost)}</span>
-                    </div>
-                    <div className="py-1 border-b border-slate-100 space-y-0.5">
-                        <div className="flex justify-between items-center">
-                            <span className="text-xs font-medium text-slate-700">Κόστος Εργατικών</span>
-                            <span className="text-xs font-semibold text-red-500">– {formatCurrency(results.totalLabour)}</span>
+                    {/* ── Results ── */}
+                    <div className="border-t border-slate-200 pt-2 space-y-0.5 text-xs">
+                        <Row label="Έσοδα" value={formatCurrency(results.revenue)} valueClass="text-blue-600 font-semibold" />
+                        <Row label="Κόστος Λειτουργίας" value={`– ${formatCurrency(results.opCost)}`} valueClass="text-red-500" />
+                        <Row label="Κόστος Εργατικών" value={`– ${formatCurrency(results.totalLabour)}`} valueClass="text-red-500" sub={[
+                            { label: 'Επιστάρχη', value: `– ${formatCurrency(results.supCost)}` },
+                            { label: 'Ώρες Τμημάτων', value: `– ${formatCurrency(results.deptLabourCost)}` },
+                            ...(results.extra > 0 ? [{ label: 'Πρόσθετο', value: `– ${formatCurrency(results.extra)}` }] : []),
+                        ]} />
+                        <div className={`flex justify-between items-center px-2 py-1 rounded mt-1 ${results.resultBeforeDepreciation >= 0 ? 'bg-green-50' : 'bg-red-50'}`}>
+                            <span className="font-semibold text-slate-700">Αποτέλεσμα προ Απόσβεσης</span>
+                            <span className={`font-bold ${results.resultBeforeDepreciation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {results.resultBeforeDepreciation >= 0 ? '' : '– '}{formatCurrency(Math.abs(results.resultBeforeDepreciation))}
+                            </span>
                         </div>
-                        <div className="flex justify-between items-center pl-3">
-                            <span className="text-xs text-slate-400">→ Επιστάρχη</span>
-                            <span className="text-xs text-slate-400">– {formatCurrency(results.supCost)}</span>
+                        <Row label="Επιβάρυνση Απόσβεσης" value={`– ${formatCurrency(results.depreciationCharge)}`} valueClass="text-red-500" />
+                        <div className={`flex justify-between items-center px-2 py-1.5 rounded-lg mt-1 ${results.finalResult >= 0 ? 'bg-blue-50' : 'bg-red-50'}`}>
+                            <span className="font-bold text-slate-900">Τελικό Αποτέλεσμα</span>
+                            <span className={`font-bold text-sm ${results.finalResult >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {results.finalResult >= 0 ? '' : '– '}{formatCurrency(Math.abs(results.finalResult))}
+                            </span>
                         </div>
-                        <div className="flex justify-between items-center pl-3">
-                            <span className="text-xs text-slate-400">→ Ώρες Τμημάτων</span>
-                            <span className="text-xs text-slate-400">– {formatCurrency(results.deptLabourCost)}</span>
-                        </div>
-                        {results.extra > 0 && (
-                            <div className="flex justify-between items-center pl-3">
-                                <span className="text-xs text-slate-400">→ Πρόσθετο</span>
-                                <span className="text-xs text-slate-400">– {formatCurrency(results.extra)}</span>
-                            </div>
-                        )}
                     </div>
-                    <div className={`flex justify-between items-center py-1.5 px-2 rounded ${results.resultBeforeDepreciation >= 0 ? 'bg-green-50' : 'bg-red-50'} border-b border-slate-100`}>
-                        <span className="text-xs font-semibold text-slate-700">Αποτέλεσμα προ Απόσβεσης</span>
-                        <span className={`text-xs font-bold ${results.resultBeforeDepreciation >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {results.resultBeforeDepreciation >= 0 ? '' : '– '}{formatCurrency(Math.abs(results.resultBeforeDepreciation))}
-                        </span>
-                    </div>
-                    <div className="flex justify-between items-center py-1 border-b border-slate-100">
-                        <span className="text-xs font-medium text-slate-700">Επιβάρυνση Απόσβεσης</span>
-                        <span className="text-xs font-semibold text-red-500">– {formatCurrency(results.depreciationCharge)}</span>
-                    </div>
-                    <div className={`flex justify-between items-center py-2 px-3 rounded-lg ${results.finalResult >= 0 ? 'bg-blue-50' : 'bg-red-50'} mt-1`}>
-                        <span className="text-xs font-bold text-slate-900">Τελικό Αποτέλεσμα</span>
-                        <span className={`text-sm font-bold ${results.finalResult >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {results.finalResult >= 0 ? '' : '– '}{formatCurrency(Math.abs(results.finalResult))}
-                        </span>
-                    </div>
-                </div>
-            </CardContent>
+                </CardContent>
+            )}
         </Card>
+    );
+}
+
+function Row({ label, value, valueClass = 'text-slate-700', sub = [] }) {
+    return (
+        <div className="border-b border-slate-100 pb-0.5">
+            <div className="flex justify-between items-center py-0.5">
+                <span className="text-slate-600">{label}</span>
+                <span className={valueClass}>{value}</span>
+            </div>
+            {sub.map((s, i) => (
+                <div key={i} className="flex justify-between items-center py-0.5 pl-3">
+                    <span className="text-slate-400 text-[11px]">→ {s.label}</span>
+                    <span className="text-slate-400 text-[11px]">{s.value}</span>
+                </div>
+            ))}
+        </div>
     );
 }
