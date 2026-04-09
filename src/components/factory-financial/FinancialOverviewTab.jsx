@@ -28,7 +28,7 @@ function KPICard({ label, value, icon: Icon, color = 'blue', sub, simulated }) {
         teal:   'bg-teal-50 text-teal-700 border-teal-200',
     };
     return (
-        <div className={`rounded-xl border p-4 flex flex-col gap-2 ${colorMap[color] || colorMap.blue} ${simulated ? 'ring-2 ring-amber-400' : ''}`}>
+        <div className={`rounded-xl border p-4 flex flex-col gap-2 ${colorMap[color] || colorMap.blue} `}>
             <div className="flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wide opacity-70">{label}</span>
                 <div className="flex items-center gap-1">
