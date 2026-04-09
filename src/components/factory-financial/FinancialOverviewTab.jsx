@@ -13,48 +13,53 @@ import {
     getWeekNumberFromDate,
 } from './utils/overviewPeriodCalculations';
 
-// ─── Weekly Selector (inline mini-bar for the weekly panel) ──────────────────
+// ─── Weekly Selector (styled identical to OverviewFilterBar) ─────────────────
 function WeeklySelector({ selectedWeek, selectedYear, availableYears, onChange }) {
     const years = availableYears && availableYears.length > 0 ? availableYears : [new Date().getFullYear()];
     const WEEKS = Array.from({ length: 53 }, (_, i) => i + 1);
 
     const prev = () => {
-        if (selectedWeek > 1) {
-            onChange({ selectedWeek: selectedWeek - 1, selectedYear });
-        } else {
-            onChange({ selectedWeek: 52, selectedYear: selectedYear - 1 });
-        }
+        if (selectedWeek > 1) onChange({ selectedWeek: selectedWeek - 1, selectedYear });
+        else onChange({ selectedWeek: 52, selectedYear: selectedYear - 1 });
     };
     const next = () => {
-        if (selectedWeek < 52) {
-            onChange({ selectedWeek: selectedWeek + 1, selectedYear });
-        } else {
-            onChange({ selectedWeek: 1, selectedYear: selectedYear + 1 });
-        }
+        if (selectedWeek < 52) onChange({ selectedWeek: selectedWeek + 1, selectedYear });
+        else onChange({ selectedWeek: 1, selectedYear: selectedYear + 1 });
     };
 
     return (
-        <div className="flex items-center gap-2 flex-wrap">
-            <button onClick={prev} className="p-1 rounded hover:bg-slate-100 text-slate-500">
-                <ChevronLeft className="w-4 h-4" />
-            </button>
-            <select
-                value={selectedYear}
-                onChange={e => onChange({ selectedWeek, selectedYear: parseInt(e.target.value) })}
-                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
-            >
-                {years.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-            <select
-                value={selectedWeek}
-                onChange={e => onChange({ selectedWeek: parseInt(e.target.value), selectedYear })}
-                className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
-            >
-                {WEEKS.map(w => <option key={w} value={w}>Εβδ. {w}</option>)}
-            </select>
-            <button onClick={next} className="p-1 rounded hover:bg-slate-100 text-slate-500">
-                <ChevronRight className="w-4 h-4" />
-            </button>
+        <div className="flex flex-wrap items-center gap-3">
+            {/* "Mode" indicator — fixed to Εβδομαδιαίο, styled like active button */}
+            <div className="flex rounded-lg border border-slate-200 overflow-hidden">
+                <div className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-blue-600 text-white">
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    Εβδομαδιαίο
+                </div>
+            </div>
+
+            {/* Year + Week selects */}
+            <div className="flex items-center gap-2">
+                <button onClick={prev} className="p-1.5 rounded hover:bg-slate-100 text-slate-500">
+                    <ChevronLeft className="w-4 h-4" />
+                </button>
+                <select
+                    value={selectedYear}
+                    onChange={e => onChange({ selectedWeek, selectedYear: parseInt(e.target.value) })}
+                    className="border border-slate-200 rounded-lg px-2 py-2 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                >
+                    {years.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+                <select
+                    value={selectedWeek}
+                    onChange={e => onChange({ selectedWeek: parseInt(e.target.value), selectedYear })}
+                    className="border border-slate-200 rounded-lg px-2 py-2 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                >
+                    {WEEKS.map(w => <option key={w} value={w}>Εβδ. {w}</option>)}
+                </select>
+                <button onClick={next} className="p-1.5 rounded hover:bg-slate-100 text-slate-500">
+                    <ChevronRight className="w-4 h-4" />
+                </button>
+            </div>
         </div>
     );
 }
@@ -187,20 +192,14 @@ export default function FinancialOverviewTab({
                 <div className="flex flex-col gap-3">
                     {/* Weekly selector header */}
                     <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 flex flex-wrap items-center gap-3">
-                        <div className="flex items-center gap-2 text-blue-700 font-semibold text-sm">
-                            <CalendarDays className="w-4 h-4" />
-                            Εβδομαδιαία Επισκόπηση
-                        </div>
-                        <div className="ml-auto">
-                            <WeeklySelector
-                                selectedWeek={weeklyParams.selectedWeek}
-                                selectedYear={weeklyParams.selectedYear}
-                                availableYears={availableYears}
-                                onChange={({ selectedWeek, selectedYear }) =>
-                                    setWeeklyParams(prev => ({ ...prev, selectedWeek, selectedYear }))
-                                }
-                            />
-                        </div>
+                        <WeeklySelector
+                            selectedWeek={weeklyParams.selectedWeek}
+                            selectedYear={weeklyParams.selectedYear}
+                            availableYears={availableYears}
+                            onChange={({ selectedWeek, selectedYear }) =>
+                                setWeeklyParams(prev => ({ ...prev, selectedWeek, selectedYear }))
+                            }
+                        />
                     </div>
                     <OperationalPeriodAnalysisSection
                         filterParams={weeklyParams}
