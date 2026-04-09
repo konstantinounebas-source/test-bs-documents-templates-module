@@ -225,28 +225,56 @@ export default function FactoryFinancialCalculations() {
             setSelectedRecord(record);
             setCurrentData(record);
 
+            // Period settings
+            setTotalWorkingDays(record.total_working_days_in_period || 0);
+            setAvgWorkingDaysPerMonth(record.average_working_days_per_month || 22);
+            setAvgWorkingDaysPerYear(record.average_working_days_per_year || 260);
+
+            // Revenue items
+            setShelterRevenueItems((record.shelter_revenue_items || []).map(item => ({
+                ...item,
+                approved_variations: item.approved_variations || [],
+                potential_variations: item.potential_variations || []
+            })));
+            setSalesRevenueItems(record.sales_revenue_items || []);
+
+            // Cost sections
+            setPersonnelCosts(normalizeLoadedExpenseRows(record.personnel_costs || [], 'personnel'));
+            setBomCosts(record.bill_of_materials_costs || []);
+            setFixedCosts(normalizeLoadedExpenseRows(
+                record.fixed_costs && record.fixed_costs.length > 0 ? record.fixed_costs : DEFAULT_FIXED_COSTS,
+                'fixed'
+            ));
+            setOperationalCosts(normalizeLoadedExpenseRows(
+                record.operational_costs && record.operational_costs.length > 0 ? record.operational_costs : DEFAULT_OPERATIONAL_COSTS,
+                'operational'
+            ));
+            setOverheadCosts(normalizeLoadedExpenseRows(record.overhead_costs || [], 'overhead'));
+            setInvestmentAmortization(normalizeLoadedExpenseRows(record.investment_amortization || [], 'investment'));
+            setMaintenanceCosts(normalizeLoadedExpenseRows(record.maintenance_costs || [], 'maintenance'));
+
+            // Depreciation module
+            setDepreciationInvestments(record.depreciation_module?.investments || []);
+            setEstimatedRevenues(record.depreciation_module?.estimated_revenues || []);
+            setAdditionalRevenues(record.depreciation_module?.additional_revenues || []);
+
+            // Legacy labour module (backward compat)
+            setLabourResources(normalizeLoadedLabourResources(record.labour_resources));
+            setDepartmentLabourHours(normalizeLoadedDepartmentLabourHours(record.department_labour_hours));
+
+            // Daily operations entries
             setDailyProductionEntries(normalizeLoadedDailyProductionEntries(record.daily_production_entries));
             setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
             setDailyDepartmentHoursEntries(normalizeLoadedDailyDepartmentHoursEntries(record.daily_department_hours_entries));
             setDailyCostsRecords(record.daily_costs_records || []);
 
-            // NEW Labour module - map DB schema to UI shape
-            const mappedLabour = mapLabourDataFromDb({
-                labour_personnel: record.labour_personnel || [],
-                supervisor_daily_allocations: record.supervisor_daily_allocations || [],
-                department_technician_assignments: record.department_technician_assignments || [],
-            });
-
-            // Debug: log before setting state
-            logLabourPersistence.afterLoad({
-                labour_personnel: record.labour_personnel || [],
-                supervisor_daily_allocations: record.supervisor_daily_allocations || [],
-                department_technician_assignments: record.department_technician_assignments || [],
-            }, mappedLabour);
-
-            setLabourPersonnel(mappedLabour.labourPersonnel);
-            setSupervisorDailyAllocations(mappedLabour.supervisorDailyAllocations);
-            setDepartmentTechnicianAssignments(mappedLabour.departmentTechnicianAssignments);
+            // Simulation panels
+            setSimulationPanels(record.simulation_panels || [
+                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' }
+            ]);
 
             // Load Fixed and Operational cost totals from database
             await loadFixedCostTotal(record.id);
