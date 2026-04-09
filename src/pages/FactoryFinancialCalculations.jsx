@@ -773,10 +773,10 @@ export default function FactoryFinancialCalculations() {
                                         { label: 'BOM (Υλικά)', value: getCalculateBomTotal() },
                                         { label: 'Σταθερά Κόστη', value: getCalculateCostTotal(fixedCosts) },
                                         { label: 'Λειτουργικά Κόστη', value: getCalculateCostTotal(operationalCosts) },
-                                        { label: 'Γενικά Έξοδα', value: getCalculateCostTotal(overheadCosts) },
+                                        { label: 'Overhead', value: getCalculateCostTotal(overheadCosts) },
                                         { label: 'Κόστη Συντήρησης', value: getCalculateCostTotal(maintenanceCosts) },
                                         { label: 'Απόσβεση Επενδύσεων', value: getCalculateInvestmentTotal() },
-                                    ]}
+                                        ]}
                                 />
                             </TabsContent>
 
