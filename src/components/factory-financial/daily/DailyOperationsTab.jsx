@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { CalendarDays } from 'lucide-react';
 import DailyRevenueSection from './DailyRevenueSection';
 import DailyDepartmentHoursSection from './DailyDepartmentHoursSection';
-import DailyCostsRecordManager from './DailyCostsRecordManager';
+import DailyFixedCostsSection from './DailyFixedCostsSection';
+import DailyOperationalCostsSection from './DailyOperationalCostsSection';
+import DailySupervisorCostsSection from './DailySupervisorCostsSection';
+import { calculateTotalSupervisorDailyCost } from '../utils/labourModuleCalculations';
 
 function todayISO() {
     return new Date().toISOString().slice(0, 10);
@@ -116,9 +119,21 @@ function DailyOperationsTabContent({
         onDailyDepartmentHours(fullArray);
     };
 
-    const handleCostsChange = (updated) => {
-        console.log('✅ Costs records updated:', updated);
+    // Helper to add cost row with unique ID
+    const addCostRow = (newRow) => {
+        const rowWithId = { ...newRow, id: `cost-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` };
+        onDailyCostsRecords([...dailyCostsRecords, rowWithId]);
+    };
+
+    // Helper to remove cost row by real index
+    const removeCostRow = (realIdx) => {
+        const updated = dailyCostsRecords.filter((_, i) => i !== realIdx);
         onDailyCostsRecords(updated);
+    };
+
+    // Helper to update cost rows array
+    const updateCostRows = (fullArray) => {
+        onDailyCostsRecords(fullArray);
     };
 
     return (
@@ -135,14 +150,35 @@ function DailyOperationsTabContent({
                 />
             </div>
 
-            <DailyCostsRecordManager
+            {/* Cost Sections */}
+            <DailyFixedCostsSection
+                entries={dailyCostsRecords}
                 selectedDate={selectedDate}
-                factoryFinancialDataId={factoryFinancialDataId}
-                supervisorDailyAllocations={supervisorDailyAllocations}
-                labourPersonnel={labourPersonnel}
+                unitCost={fixedDailyTotal}
                 formatCurrency={formatCurrency}
-                fixedDailyTotal={fixedDailyTotal}
-                operationalDailyTotal={operationalDailyTotal}
+                onAdd={addCostRow}
+                onRemove={removeCostRow}
+                onUpdate={updateCostRows}
+            />
+
+            <DailyOperationalCostsSection
+                entries={dailyCostsRecords}
+                selectedDate={selectedDate}
+                unitCost={operationalDailyTotal}
+                formatCurrency={formatCurrency}
+                onAdd={addCostRow}
+                onRemove={removeCostRow}
+                onUpdate={updateCostRows}
+            />
+
+            <DailySupervisorCostsSection
+                entries={dailyCostsRecords}
+                selectedDate={selectedDate}
+                unitCost={calculateTotalSupervisorDailyCost(supervisorDailyAllocations, labourPersonnel)}
+                formatCurrency={formatCurrency}
+                onAdd={addCostRow}
+                onRemove={removeCostRow}
+                onUpdate={updateCostRows}
             />
 
             <DailyRevenueSection

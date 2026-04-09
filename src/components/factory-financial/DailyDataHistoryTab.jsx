@@ -172,35 +172,31 @@ export default function DailyDataHistoryTab({
                 columns={[
                     { key: 'date', label: 'Ημερομηνία' },
                     { 
-                        key: 'costTypes', 
-                        label: 'Τύποι Κοστών', 
+                        key: 'cost_type', 
+                        label: 'Τύπος Κόστους', 
                         render: r => {
-                            const types = [];
-                            if (r.hasFixedCosts) types.push('Σταθερά');
-                            if (r.hasOperationalCosts) types.push('Λειτουργικά');
-                            if (r.hasSupervisorCosts) types.push('Επιστάρχη');
-                            return types.join(' & ');
+                            const typeMap = {
+                                fixed: 'Σταθερά',
+                                operational: 'Λειτουργικά',
+                                supervisor: 'Επιστάρχη'
+                            };
+                            return typeMap[r.cost_type] || r.cost_type || '—';
                         }
                     },
                     { 
-                        key: 'fixedCost', 
-                        label: 'Σταθερά', 
-                        render: r => r.hasFixedCosts ? (formatCurrency ? formatCurrency(r.fixedCost) : `€${parseFloat(r.fixedCost || 0).toFixed(2)}`) : '—'
+                        key: 'multiplier_days', 
+                        label: 'Ημέρες', 
+                        render: r => parseFloat(r.multiplier_days || 0).toFixed(0)
                     },
                     { 
-                        key: 'operationalCost', 
-                        label: 'Λειτουργικά', 
-                        render: r => r.hasOperationalCosts ? (formatCurrency ? formatCurrency(r.operationalCost) : `€${parseFloat(r.operationalCost || 0).toFixed(2)}`) : '—'
+                        key: 'unit_cost', 
+                        label: 'Τιμή Ημέρας', 
+                        render: r => formatCurrency ? formatCurrency(r.unit_cost) : `€${parseFloat(r.unit_cost || 0).toFixed(2)}`
                     },
                     { 
-                        key: 'supervisorCost', 
-                        label: 'Επιστάρχη', 
-                        render: r => r.hasSupervisorCosts ? (formatCurrency ? formatCurrency(r.supervisorCost) : `€${parseFloat(r.supervisorCost || 0).toFixed(2)}`) : '—'
-                    },
-                    { 
-                        key: 'totalCost', 
+                        key: 'total_cost', 
                         label: 'Σύνολο', 
-                        render: r => formatCurrency ? formatCurrency(r.totalCost) : `€${parseFloat(r.totalCost || 0).toFixed(2)}`
+                        render: r => formatCurrency ? formatCurrency(r.total_cost) : `€${parseFloat(r.total_cost || 0).toFixed(2)}`
                     },
                 ]}
             />
