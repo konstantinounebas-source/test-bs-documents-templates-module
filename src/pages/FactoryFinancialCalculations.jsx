@@ -29,6 +29,7 @@ import FinancialOverviewTab from "@/components/factory-financial/FinancialOvervi
 import NewLabourTab from "@/components/factory-financial/labour/NewLabourTab";
 import DailyOperationsTab from "@/components/factory-financial/daily/DailyOperationsTab";
 import DailyDataHistoryTab from "@/components/factory-financial/DailyDataHistoryTab";
+import SimulationPanel from "@/components/factory-financial/SimulationPanel";
 import {
     calculateTotalLabourCost,
     normalizeLoadedLabourResources,
@@ -717,7 +718,7 @@ export default function FactoryFinancialCalculations() {
                                     { value: 'operational', label: 'Λειτουργικά Κόστη' },
                                     { value: 'labour', label: 'Κόστος Προσωπικού' },
                                     { value: 'depreciation', label: 'Αποσβέσεις' },
-                                    { value: 'department', label: 'Ανά Τμήμα' },
+                                    { value: 'simulation', label: 'Προσομοίωση' },
                                 ].map(tab => (
                                     <TabsTrigger
                                         key={tab.value}
@@ -911,12 +912,29 @@ export default function FactoryFinancialCalculations() {
                                 />
                             </TabsContent>
 
-                            {/* DEPARTMENT SUMMARY TAB */}
-                            <TabsContent value="department" className="mt-4">
-                                <DepartmentSummarySection
-                                    summary={getCalculateDepartmentSummary()}
-                                    formatCurrency={formatCurrency}
-                                />
+                            {/* SIMULATION TAB */}
+                            <TabsContent value="simulation" className="mt-4">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    {[
+                                        { label: 'Παράθυρο 1', mode: 'daily' },
+                                        { label: 'Παράθυρο 2', mode: 'weekly' },
+                                        { label: 'Παράθυρο 3', mode: 'monthly' },
+                                        { label: 'Παράθυρο 4', mode: 'daily' },
+                                    ].map((panel, idx) => (
+                                        <SimulationPanel
+                                            key={idx}
+                                            panelIndex={idx}
+                                            dailyRevenueEntries={dailyRevenueEntries}
+                                            dailyCostsRecords={dailyCostsRecords}
+                                            dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+                                            departmentAssignments={departmentTechnicianAssignments}
+                                            labourPersonnel={labourPersonnel}
+                                            departments={departments}
+                                            depreciationFactor={getCalculateDepreciationFactor()}
+                                            formatCurrency={formatCurrency}
+                                        />
+                                    ))}
+                                </div>
                             </TabsContent>
                         </Tabs>
                     </>
