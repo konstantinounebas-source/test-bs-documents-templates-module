@@ -167,14 +167,11 @@ export default function FinancialOverviewTab({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left: period-filter-driven panel */}
                 <div className="flex flex-col gap-3">
-                    {/* Mirror header bar for left panel */}
-                    <div className="bg-white border border-slate-200 rounded-xl px-4 py-3">
                         <OverviewFilterBar
-                            filterParams={filterParams}
-                            onFilterChange={setFilterParams}
-                            availableYears={availableYears}
-                        />
-                    </div>
+                        filterParams={filterParams}
+                        onFilterChange={setFilterParams}
+                        availableYears={availableYears}
+                    />
                     <OperationalPeriodAnalysisSection
                         filterParams={filterParams}
                         dailyRevenueEntries={safeRev}
@@ -190,16 +187,18 @@ export default function FinancialOverviewTab({
 
                 {/* Right: standalone weekly panel */}
                 <div className="flex flex-col gap-3">
-                    {/* Weekly selector header */}
-                    <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 flex flex-wrap items-center gap-3">
-                        <WeeklySelector
-                            selectedWeek={weeklyParams.selectedWeek}
-                            selectedYear={weeklyParams.selectedYear}
-                            availableYears={availableYears}
-                            onChange={({ selectedWeek, selectedYear }) =>
-                                setWeeklyParams(prev => ({ ...prev, selectedWeek, selectedYear }))
-                            }
-                        />
+                    {/* Weekly selector header — same wrapper as OverviewFilterBar */}
+                    <div className="bg-white border border-slate-200 rounded-xl p-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <WeeklySelector
+                                selectedWeek={weeklyParams.selectedWeek}
+                                selectedYear={weeklyParams.selectedYear}
+                                availableYears={availableYears}
+                                onChange={({ selectedWeek, selectedYear }) =>
+                                    setWeeklyParams(prev => ({ ...prev, selectedWeek, selectedYear }))
+                                }
+                            />
+                        </div>
                     </div>
                     <OperationalPeriodAnalysisSection
                         filterParams={weeklyParams}
