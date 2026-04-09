@@ -85,11 +85,22 @@ export default function TemplatesPage() {
   const [templates, setTemplates] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
-  const [columnFilters, setColumnFilters] = useState({});
-  const [sortConfig, setSortConfig] = useState({ key: 'updated_date', direction: 'desc' });
-  const [statFilter, setStatFilter] = useState(null);
+
+  const [searchTerm, setSearchTerm] = useState(() => {
+    try { return sessionStorage.getItem('tmpl_searchTerm') || ""; } catch { return ""; }
+  });
+  const [activeTab, setActiveTab] = useState(() => {
+    try { return sessionStorage.getItem('tmpl_activeTab') || "all"; } catch { return "all"; }
+  });
+  const [columnFilters, setColumnFilters] = useState(() => {
+    try { const s = sessionStorage.getItem('tmpl_columnFilters'); return s ? JSON.parse(s) : {}; } catch { return {}; }
+  });
+  const [sortConfig, setSortConfig] = useState(() => {
+    try { const s = sessionStorage.getItem('tmpl_sortConfig'); return s ? JSON.parse(s) : { key: 'updated_date', direction: 'desc' }; } catch { return { key: 'updated_date', direction: 'desc' }; }
+  });
+  const [statFilter, setStatFilter] = useState(() => {
+    try { const s = sessionStorage.getItem('tmpl_statFilter'); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
   const [visibleColumns, setVisibleColumns] = useState(() => {
     try {
       const saved = localStorage.getItem('visibleTemplateColumns');
@@ -187,6 +198,12 @@ export default function TemplatesPage() {
   useEffect(() => {
     localStorage.setItem('visibleTemplateColumns', JSON.stringify(visibleColumns));
   }, [visibleColumns]);
+
+  useEffect(() => { try { sessionStorage.setItem('tmpl_searchTerm', searchTerm); } catch {} }, [searchTerm]);
+  useEffect(() => { try { sessionStorage.setItem('tmpl_activeTab', activeTab); } catch {} }, [activeTab]);
+  useEffect(() => { try { sessionStorage.setItem('tmpl_columnFilters', JSON.stringify(columnFilters)); } catch {} }, [columnFilters]);
+  useEffect(() => { try { sessionStorage.setItem('tmpl_sortConfig', JSON.stringify(sortConfig)); } catch {} }, [sortConfig]);
+  useEffect(() => { try { sessionStorage.setItem('tmpl_statFilter', JSON.stringify(statFilter)); } catch {} }, [statFilter]);
 
   const handleStatClick = useCallback((field, value) => {
     setStatFilter(currentFilter => {
