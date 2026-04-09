@@ -148,6 +148,9 @@ export default function FinancialOverviewTab({
          });
      };
 
+     // Filter state — initialised once; default date = latest from entries or today
+     const [filterParams, setFilterParams] = useState(() => buildDefaultFilter(safeProd, safeRev, safeHours));
+
      useEffect(() => {
          const loadJV = async () => {
              try {
@@ -206,9 +209,6 @@ export default function FinancialOverviewTab({
          };
          loadJV();
      }, [safeRev, filterParams]);
-
-    // Filter state — initialised once; default date = latest from entries or today
-    const [filterParams, setFilterParams] = useState(() => buildDefaultFilter(safeProd, safeRev, safeHours));
 
     // Weekly panel — always mode='weekly', defaults to current week
     const [weeklyParams, setWeeklyParams] = useState(() => {
