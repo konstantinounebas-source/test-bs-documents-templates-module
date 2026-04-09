@@ -51,8 +51,10 @@ export default function SimulationWhatIfPanel({
     const [title, setTitle] = useState('');
     const [inputsExpanded, setInputsExpanded] = useState(false);
 
-    // Multiple shelter rows
-    const [shelterRows, setShelterRows] = useState([{ shelter_instance_id: '', quantity: '' }]);
+    // Multiple shelter rows — each row has 2 shelter slots (a & b)
+    const [shelterRows, setShelterRows] = useState([
+        { shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }
+    ]);
 
     const [fixedMultiplier, setFixedMultiplier] = useState('0');
     const [supervisorMultiplier, setSupervisorMultiplier] = useState('0');
@@ -61,7 +63,7 @@ export default function SimulationWhatIfPanel({
     const [extraLabourNote, setExtraLabourNote] = useState('');
 
     // ── Shelter rows helpers ─────────────────────────────────────────────────
-    const addShelterRow = () => setShelterRows(prev => [...prev, { shelter_instance_id: '', quantity: '' }]);
+    const addShelterRow = () => setShelterRows(prev => [...prev, { shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }]);
     const removeShelterRow = (i) => setShelterRows(prev => prev.filter((_, idx) => idx !== i));
     const updateShelterRow = (i, field, value) =>
         setShelterRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
@@ -83,9 +85,19 @@ export default function SimulationWhatIfPanel({
 
     // ── Calculations ─────────────────────────────────────────────────────────
     const results = useMemo(() => {
+        const calcUnitRevenue = (shelterInstanceId) => {
+            if (!shelterInstanceId) return 0;
+            const item = (shelterRevenueItems || []).find(r => r.shelter_instance_id === shelterInstanceId);
+            if (!item) return 0;
+            const total = getShelterRevenueTotal ? getShelterRevenueTotal(item) : (parseFloat(item.total_revenue) || 0);
+            const qty = parseFloat(item.pending_quantity) || 0;
+            return qty > 0 ? total / qty : (parseFloat(item.unit_revenue) || 0);
+        };
+
         const revenue = shelterRows.reduce((sum, row) => {
-            const qty = parseFloat(row.quantity) || 0;
-            return sum + qty * getUnitRevenue(row.shelter_instance_id);
+            const qtyA = parseFloat(row.quantity_a) || 0;
+            const qtyB = parseFloat(row.quantity_b) || 0;
+            return sum + qtyA * calcUnitRevenue(row.shelter_instance_id_a) + qtyB * calcUnitRevenue(row.shelter_instance_id_b);
         }, 0);
 
         const fixedMult = parseFloat(fixedMultiplier) || 0;
@@ -143,25 +155,37 @@ export default function SimulationWhatIfPanel({
                             </button>
                         </div>
                         {shelterRows.map((row, i) => {
-                            const uRev = getUnitRevenue(row.shelter_instance_id);
-                            const qty = parseFloat(row.quantity) || 0;
+                            const uRevA = getUnitRevenue(row.shelter_instance_id_a);
+                            const uRevB = getUnitRevenue(row.shelter_instance_id_b);
+                            const qtyA = parseFloat(row.quantity_a) || 0;
+                            const qtyB = parseFloat(row.quantity_b) || 0;
+                            const rowRevenue = qtyA * uRevA + qtyB * uRevB;
                             return (
                                 <div key={i} className="flex items-center gap-1">
-                                    <Select value={row.shelter_instance_id} onValueChange={v => updateShelterRow(i, 'shelter_instance_id', v)}>
+                                    <Select value={row.shelter_instance_id_a} onValueChange={v => updateShelterRow(i, 'shelter_instance_id_a', v)}>
                                         <SelectTrigger className="h-6 text-[11px] flex-1 px-2">
-                                            <SelectValue placeholder="Τύπος στάσης..." />
+                                            <SelectValue placeholder="Στάση 1..." />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {shelterInstances.map(si => (
-                                                <SelectItem key={si.id} value={si.id}>
-                                                    {si.name || si.instance_name || si.id}
-                                                </SelectItem>
+                                                <SelectItem key={si.id} value={si.id}>{si.name || si.instance_name || si.id}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <Input type="number" value={row.quantity} onChange={e => updateShelterRow(i, 'quantity', e.target.value)} placeholder="Qty" className="h-6 text-[11px] w-12 px-1" />
-                                    {uRev > 0 && qty > 0 && (
-                                        <span className="text-[10px] text-blue-600 font-semibold whitespace-nowrap w-16 text-right">{formatCurrency(qty * uRev)}</span>
+                                    <Input type="number" value={row.quantity_a} onChange={e => updateShelterRow(i, 'quantity_a', e.target.value)} placeholder="Qty" className="h-6 text-[11px] w-10 px-1" />
+                                    <Select value={row.shelter_instance_id_b} onValueChange={v => updateShelterRow(i, 'shelter_instance_id_b', v)}>
+                                        <SelectTrigger className="h-6 text-[11px] flex-1 px-2">
+                                            <SelectValue placeholder="Στάση 2..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {shelterInstances.map(si => (
+                                                <SelectItem key={si.id} value={si.id}>{si.name || si.instance_name || si.id}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Input type="number" value={row.quantity_b} onChange={e => updateShelterRow(i, 'quantity_b', e.target.value)} placeholder="Qty" className="h-6 text-[11px] w-10 px-1" />
+                                    {rowRevenue > 0 && (
+                                        <span className="text-[10px] text-blue-600 font-semibold whitespace-nowrap">{formatCurrency(rowRevenue)}</span>
                                     )}
                                     {shelterRows.length > 1 && (
                                         <button onClick={() => removeShelterRow(i)} className="text-red-400 hover:text-red-600 flex-shrink-0">
