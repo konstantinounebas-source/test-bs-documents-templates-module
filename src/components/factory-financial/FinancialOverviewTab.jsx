@@ -108,7 +108,7 @@ export default function FinancialOverviewTab({
             />
 
             {/* 4. Operational Period Financial Analysis + Cost Breakdown */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
                 <OperationalPeriodAnalysisSection
                     filterParams={filterParams}
                     dailyRevenueEntries={safeRev}
@@ -121,43 +121,7 @@ export default function FinancialOverviewTab({
                     formatCurrency={fmt}
                 />
 
-                {/* 6. Cost Breakdown + Legacy Personnel info */}
-                <div className="space-y-3">
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-base font-semibold text-slate-800">Ανάλυση Κόστους (Λειτουργική Περίοδος)</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-1">
-                            {(costBreakdown || []).map((item, i) => (
-                                <div key={i} className="flex justify-between items-center py-1.5 border-b border-slate-100 last:border-0">
-                                    <span className="text-sm text-slate-600">{item.label}</span>
-                                    <span className="text-sm font-medium text-slate-800">{fmt(item.value)}</span>
-                                </div>
-                            ))}
-                            <div className="flex justify-between items-center py-2 bg-slate-100 rounded px-2 mt-2">
-                                <span className="text-sm font-semibold text-slate-800">Σύνολο Κόστους</span>
-                                <span className="text-sm font-bold text-slate-900">{fmt(totalCosts)}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
 
-                    {/* Legacy personnel cost — informational only, excluded from official totals */}
-                    {legacyPersonnelCost !== undefined && legacyPersonnelCost > 0 && (
-                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-1">
-                            <div className="flex items-center gap-2 text-slate-500 font-semibold text-xs uppercase tracking-wide">
-                                <Info className="w-3.5 h-3.5 flex-shrink-0" />
-                                Legacy Personnel Cost (informational only — εκτός συνολικού κόστους)
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-slate-500">Legacy Personnel (παλιά εγγραφές)</span>
-                                <span className="text-sm font-medium text-slate-500">{fmt(legacyPersonnelCost)}</span>
-                            </div>
-                            <p className="text-xs text-slate-400">
-                                Αυτό το ποσό δεν προσμετράται στο Κόστος Παραγωγής. Αντικαθίσταται από το Labour Module.
-                            </p>
-                        </div>
-                    )}
-                </div>
             </div>
         </div>
     );
