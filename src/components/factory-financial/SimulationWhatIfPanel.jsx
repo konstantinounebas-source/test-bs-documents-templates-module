@@ -71,7 +71,12 @@ export default function SimulationWhatIfPanel({
     const getUnitRevenue = (shelterInstanceId) => {
         if (!shelterInstanceId) return 0;
         const item = (shelterRevenueItems || []).find(r => r.shelter_instance_id === shelterInstanceId);
-        if (!item) return 0;
+        if (!item) {
+            // Fallback: if no revenue item, try to get from shelterInstances directly
+            const si = (shelterInstances || []).find(s => s.id === shelterInstanceId);
+            if (si && si.unit_revenue) return parseFloat(si.unit_revenue);
+            return 0;
+        }
         const total = getShelterRevenueTotal ? getShelterRevenueTotal(item) : (parseFloat(item.total_revenue) || 0);
         const qty = parseFloat(item.pending_quantity) || 0;
         return qty > 0 ? total / qty : (parseFloat(item.unit_revenue) || 0);
@@ -93,7 +98,9 @@ export default function SimulationWhatIfPanel({
             // We need to find the revenue item that matches the chosen shelterInstance id.
             const item = (shelterRevenueItems || []).find(r => r.shelter_instance_id === shelterInstanceId);
             if (!item) {
-                // Fallback: try matching by the shelterInstance's own id directly
+                // Fallback: if no revenue item, try to get from shelterInstances directly
+                const si = (shelterInstances || []).find(s => s.id === shelterInstanceId);
+                if (si && si.unit_revenue) return parseFloat(si.unit_revenue);
                 return 0;
             }
             const total = getShelterRevenueTotal ? getShelterRevenueTotal(item) : (parseFloat(item.total_revenue) || 0);
