@@ -267,7 +267,7 @@ export default function FinancialOverviewTab({
                     dailyRevenueEntries={safeRev}
                     dailyCostsRecords={dailyCostsRecords}
                     dailyDepartmentHoursEntries={safeHours}
-                    depreciationInvestmentTotal={depreciationCost}
+                    depreciationFactor={depreciationFactor}
                     formatCurrency={fmt}
                 />
 

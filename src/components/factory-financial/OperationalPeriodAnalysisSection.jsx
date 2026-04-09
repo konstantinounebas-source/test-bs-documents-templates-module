@@ -21,6 +21,7 @@ export default function OperationalPeriodAnalysisSection({
     dailyCostsRecords = [],
     dailyDepartmentHoursEntries = [],
     depreciationInvestmentTotal = 0,
+    depreciationFactor = 0,
     formatCurrency = (val) => `€${parseFloat(val || 0).toFixed(2)}`
 }) {
     const analysis = useMemo(() => {
@@ -74,8 +75,8 @@ export default function OperationalPeriodAnalysisSection({
         // FORMULA 4: Result Before Depreciation
         const resultBeforeDepreciation = periodRevenue - operationalCosts - totalLabourCosts;
 
-        // FORMULA 5: Depreciation Charge
-        const depreciationCharge = parseFloat(depreciationInvestmentTotal) || 0;
+        // FORMULA 5: Depreciation Charge = Period Revenue × Depreciation Factor
+        const depreciationCharge = periodRevenue * (parseFloat(depreciationFactor) || 0);
 
         // FORMULA 6: Final Result After Depreciation
         const finalResult = resultBeforeDepreciation - depreciationCharge;
@@ -94,7 +95,7 @@ export default function OperationalPeriodAnalysisSection({
             finalResult,
             hasData
         };
-    }, [startDate, endDate, dailyRevenueEntries, dailyCostsRecords, dailyDepartmentHoursEntries, depreciationInvestmentTotal]);
+    }, [startDate, endDate, dailyRevenueEntries, dailyCostsRecords, dailyDepartmentHoursEntries, depreciationFactor]);
 
     if (!analysis.hasData) {
         return (
