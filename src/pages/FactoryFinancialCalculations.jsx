@@ -1084,6 +1084,7 @@ export default function FactoryFinancialCalculations() {
                                      dailyProductionEntries={dailyProductionEntries}
                                      dailyRevenueEntries={dailyRevenueEntries}
                                      dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+                                     dailyCostsRecords={dailyCostsRecords}
                                      shelterInstances={shelterInstances}
                                      busStopTypes={busStopTypes}
                                      departments={departments}
