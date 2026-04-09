@@ -1,26 +1,25 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
-import { FormTemplate } from "@/entities/FormTemplate";
-import { User } from "@/entities/User";
-import { AppUser } from "@/entities/AppUser";
-import { 
-    TemplateCategory, 
-    TemplateAvailabilityOption, 
-    SOPAvailabilityOption, 
-    TemplateStatusOption,
-    ActivityOption,
-    CompletionFrequencyOption,
-    ResponsibilityCompletionOption,
-    ResponsibilityProcessingOption,
-    ResponsibilityInternalOption,
-    ResponsibilityExternalOption,
-    ControlMechanismOption,
-    CustomField1Option,
-    CustomField2Option,
-    CustomField3Option,
-    CustomField4Option
-} from "@/entities/all";
-import { UploadFile, ExtractDataFromUploadedFile } from "@/integrations/Core";
+import { base44 } from "@/api/base44Client";
+const FormTemplate = base44.entities.FormTemplate;
+const User = { ...base44.entities.User, me: () => base44.auth.me() };
+const AppUser = base44.entities.AppUser;
+const TemplateCategory = base44.entities.TemplateCategory;
+const TemplateAvailabilityOption = base44.entities.TemplateAvailabilityOption;
+const SOPAvailabilityOption = base44.entities.SOPAvailabilityOption;
+const TemplateStatusOption = base44.entities.TemplateStatusOption;
+const ActivityOption = base44.entities.ActivityOption;
+const CompletionFrequencyOption = base44.entities.CompletionFrequencyOption;
+const ResponsibilityCompletionOption = base44.entities.ResponsibilityCompletionOption;
+const ResponsibilityProcessingOption = base44.entities.ResponsibilityProcessingOption;
+const ResponsibilityInternalOption = base44.entities.ResponsibilityInternalOption;
+const ResponsibilityExternalOption = base44.entities.ResponsibilityExternalOption;
+const ControlMechanismOption = base44.entities.ControlMechanismOption;
+const CustomField1Option = base44.entities.CustomField1Option;
+const CustomField2Option = base44.entities.CustomField2Option;
+const CustomField3Option = base44.entities.CustomField3Option;
+const CustomField4Option = base44.entities.CustomField4Option;
+const UploadFile = (params) => base44.integrations.Core.UploadFile(params);
+const ExtractDataFromUploadedFile = (params) => base44.integrations.Core.ExtractDataFromUploadedFile(params);
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -429,7 +428,7 @@ export default function EditTemplateDialog({ open, onClose, template, onTemplate
     // Versioning and History
     if (newVersionTriggered) {
         try {
-            const user = await User.me();
+            const user = await base44.auth.me();
             const oldVersion = template.current_version || "1.0.0";
             const newRevision = {
                 version: oldVersion,
