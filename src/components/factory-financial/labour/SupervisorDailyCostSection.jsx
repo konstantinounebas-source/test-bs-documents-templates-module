@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,8 +20,12 @@ export default function SupervisorDailyCostSection({
   formatCurrency, 
   onUpdate 
 }) {
-  const [isExpanded, setIsExpanded] = useState(supervisorAllocations && supervisorAllocations.length > 0);
+  const [isExpanded, setIsExpanded] = useState(false);
   const activeSupervisors = getActiveSupervisors(labourPersonnel);
+
+  useEffect(() => {
+    setIsExpanded(supervisorAllocations && supervisorAllocations.length > 0);
+  }, [supervisorAllocations]);
   
   const handleAdd = () => {
     onUpdate([createNewSupervisorAllocation(), ...supervisorAllocations]);
