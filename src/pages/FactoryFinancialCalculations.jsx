@@ -745,8 +745,9 @@ export default function FactoryFinancialCalculations() {
                                     dailyCostsRecords={dailyCostsRecords}
                                     startDate={currentData?.start_date || ''}
                                     endDate={currentData?.end_date || ''}
-                                    labourResources={labourResources}
-                                    departmentLabourHours={departmentLabourHours}
+                                    departmentAssignments={departmentTechnicianAssignments}
+                                    labourPersonnel={labourPersonnel}
+                                    departments={departments}
                                     costBreakdown={[
                                         { label: 'Κόστος Προσωπικού', value: getCalculateLabourCostTotal() },
                                         { label: 'BOM (Υλικά)', value: getCalculateBomTotal() },

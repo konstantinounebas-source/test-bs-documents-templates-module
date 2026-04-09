@@ -78,6 +78,10 @@ export default function FinancialOverviewTab({
     dailyCostsRecords = [],
     startDate = '',
     endDate = '',
+    // For live labour cost calculation
+    departmentAssignments = [],
+    labourPersonnel = [],
+    departments = [],
 }) {
     const safeProd  = useMemo(() => Array.isArray(dailyProductionEntries)       ? dailyProductionEntries.filter(Boolean)       : [], [dailyProductionEntries]);
     const safeRev   = useMemo(() => Array.isArray(dailyRevenueEntries)          ? dailyRevenueEntries.filter(Boolean)          : [], [dailyRevenueEntries]);
@@ -209,6 +213,9 @@ export default function FinancialOverviewTab({
                     dailyRevenueEntries={safeRev}
                     dailyCostsRecords={dailyCostsRecords}
                     dailyDepartmentHoursEntries={safeHours}
+                    departmentAssignments={departmentAssignments}
+                    labourPersonnel={labourPersonnel}
+                    departments={departments}
                     depreciationFactor={depreciationFactor}
                     formatCurrency={fmt}
                 />

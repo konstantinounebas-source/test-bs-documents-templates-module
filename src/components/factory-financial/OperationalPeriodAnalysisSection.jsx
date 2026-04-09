@@ -14,12 +14,35 @@ import { AlertCircle } from 'lucide-react';
  * 4. Result Before Depreciation = Revenue - Operational Costs - Labour Costs
  * 5. Final Result = Result Before Depreciation - Depreciation Charge
  */
+// Shared helper — identical logic to DailyDepartmentHoursSection.getDeptHourlyCost
+function getDeptHourlyCost(deptId, departmentAssignments, labourPersonnel, departments) {
+    const deptBlock = (departmentAssignments || []).find(b => b.department_id === deptId);
+    if (deptBlock && deptBlock.technician_rows && deptBlock.technician_rows.length > 0) {
+        const validRates = deptBlock.technician_rows
+            .map(row => {
+                const person = (labourPersonnel || []).find(p => p.id === row.personnel_id);
+                if (person) {
+                    if (person.calculated_hourly_cost) return person.calculated_hourly_cost;
+                    if (person.daily_rate) return person.daily_rate / (person.hours_per_day || 8);
+                }
+                return null;
+            })
+            .filter(r => r !== null);
+        if (validRates.length > 0) return validRates.reduce((s, r) => s + r, 0) / validRates.length;
+    }
+    const d = (departments || []).find(d => d.id === deptId);
+    return d ? (parseFloat(d.avg_hourly_cost) || 0) : 0;
+}
+
 export default function OperationalPeriodAnalysisSection({
     startDate = '',
     endDate = '',
     dailyRevenueEntries = [],
     dailyCostsRecords = [],
     dailyDepartmentHoursEntries = [],
+    departmentAssignments = [],
+    labourPersonnel = [],
+    departments = [],
     depreciationInvestmentTotal = 0,
     depreciationFactor = 0,
     formatCurrency = (val) => `€${parseFloat(val || 0).toFixed(2)}`
@@ -64,9 +87,11 @@ export default function OperationalPeriodAnalysisSection({
             return sum + (parseFloat(record.supervisorCost) || 0);
         }, 0);
 
-        // FORMULA 3b: Department Hours Costs = sum(calculated_total_cost)
+        // FORMULA 3b: Department Hours Costs — calculated live from hours × hourly rate
+        // (same logic as DailyDepartmentHoursSection, does NOT rely on stored calculated_total_cost)
         const departmentHoursCosts = hoursInPeriod.reduce((sum, entry) => {
-            return sum + (parseFloat(entry.calculated_total_cost) || 0);
+            const rate = getDeptHourlyCost(entry.department_id, departmentAssignments, labourPersonnel, departments);
+            return sum + ((parseFloat(entry.total_hours) || 0) * rate);
         }, 0);
 
         // FORMULA 3: Total Labour Costs
@@ -95,7 +120,7 @@ export default function OperationalPeriodAnalysisSection({
             finalResult,
             hasData
         };
-    }, [startDate, endDate, dailyRevenueEntries, dailyCostsRecords, dailyDepartmentHoursEntries, depreciationFactor]);
+    }, [startDate, endDate, dailyRevenueEntries, dailyCostsRecords, dailyDepartmentHoursEntries, depreciationFactor, departmentAssignments, labourPersonnel, departments]);
 
     if (!analysis.hasData) {
         return (
