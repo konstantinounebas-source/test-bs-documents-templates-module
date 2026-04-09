@@ -1,123 +1,95 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Plus, Trash2, DollarSign } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
-const getEmptyRow = (date) => ({
-    date,
-    cost_type: 'fixed',
-    multiplier_days: 1,
-    unit_cost: 0,
-    total_cost: 0
-});
+export default function DailyFixedCostsSection({
+  dailyCostsRecords,
+  selectedDate,
+  fixedDailyTotal,
+  onAddCost,
+  onRemoveCost,
+  onUpdateCost
+}) {
+  const fixedRows = dailyCostsRecords.filter(r => r.date === selectedDate && r.cost_type === 'fixed');
 
-export default function DailyFixedCostsSection({ entries, selectedDate, unitCost, formatCurrency, onAdd, onRemove, onUpdate }) {
-    const visibleWithIdx = selectedDate
-        ? entries.map((r, i) => ({ r, i })).filter(({ r }) => r.date === selectedDate && r.cost_type === 'fixed')
-        : entries.map((r, i) => ({ r, i })).filter(({ r }) => r.cost_type === 'fixed');
+  const handleMultiplierChange = (idx, newMultiplier) => {
+    const updated = [...dailyCostsRecords];
+    updated[idx].multiplier_days = parseFloat(newMultiplier) || 1;
+    updated[idx].total_cost = updated[idx].unit_cost * updated[idx].multiplier_days;
+    onUpdateCost(updated);
+  };
 
-    const formatVal = formatCurrency || ((val) => val?.toFixed(2) || '—');
-
-    const handleUpdate = (realIdx, field, value) => {
-        const updated = [...entries];
-        const row = { ...updated[realIdx] };
-        
-        if (field === 'multiplier_days') {
-            const multiplierVal = parseFloat(value) || 0;
-            row.multiplier_days = multiplierVal;
-            row.total_cost = multiplierVal * (row.unit_cost || 0);
-            console.log('✅ Updated multiplier_days:', multiplierVal, 'total_cost:', row.total_cost);
-        }
-        
-        updated[realIdx] = row;
-        onUpdate(updated);
+  const handleAdd = () => {
+    const newRow = {
+      id: `cost_${Date.now()}`,
+      date: selectedDate,
+      cost_type: 'fixed',
+      multiplier_days: 1,
+      unit_cost: fixedDailyTotal,
+      total_cost: fixedDailyTotal
     };
+    onAddCost(newRow);
+  };
 
-    const handleAdd = () => {
-        const parsedUnitCost = parseFloat(unitCost) || 0;
-        const newRow = {
-            ...getEmptyRow(selectedDate),
-            cost_type: 'fixed',
-            unit_cost: parsedUnitCost,
-            multiplier_days: 1,
-            total_cost: parsedUnitCost
-        };
-        console.log('✅ Adding fixed cost row with unit_cost:', parsedUnitCost, newRow);
-        onAdd(newRow);
-    };
+  const handleRemove = (realIdx) => {
+    onRemoveCost(realIdx);
+  };
 
-    const totalCost = visibleWithIdx.reduce((sum, { r }) => sum + (r.total_cost || 0), 0);
-
-    return (
-        <Card>
-            <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <DollarSign className="w-5 h-5 text-blue-600" />
-                        <CardTitle className="text-base font-semibold text-slate-800">
-                            Γ. Σταθερά Κόστη (Ημερήσια)
-                        </CardTitle>
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+        <CardTitle className="text-base">Σταθερά Κόστη ({fixedRows.length})</CardTitle>
+        <Button onClick={handleAdd} size="sm" className="gap-2">
+          <Plus className="w-4 h-4" /> Προσθήκη
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {fixedRows.length === 0 ? (
+          <p className="text-sm text-slate-500">Δεν υπάρχουν εγγραφές</p>
+        ) : (
+          <div className="space-y-2">
+            {fixedRows.map((row) => {
+              const realIdx = dailyCostsRecords.findIndex(r => r.id === row.id);
+              return (
+                <div key={row.id} className="flex items-center gap-3 p-2 bg-slate-50 rounded-lg">
+                  <div className="flex-1 text-sm">
+                    <label className="block text-slate-600 mb-1">Πολ/της</label>
+                    <Input
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      value={row.multiplier_days}
+                      onChange={(e) => handleMultiplierChange(realIdx, e.target.value)}
+                      className="h-8"
+                    />
+                  </div>
+                  <div className="flex-1 text-sm">
+                    <label className="block text-slate-600 mb-1">Unit Cost</label>
+                    <div className="h-8 flex items-center bg-white border rounded px-2 text-slate-700">
+                      {row.unit_cost.toFixed(2)}
                     </div>
-                    <div className="flex items-center gap-3">
-                        <span className="text-sm text-slate-500">
-                            Ημερήσιο Κόστος: <strong className="text-blue-700">{formatVal(unitCost)}</strong>
-                        </span>
-                        <span className="text-sm text-slate-500">
-                            Σύνολο: <strong className="text-blue-700">{formatVal(totalCost)}</strong>
-                        </span>
-                        <Button size="sm" variant="outline" onClick={handleAdd} className="gap-1">
-                            <Plus className="w-3.5 h-3.5" /> Προσθήκη
-                        </Button>
+                  </div>
+                  <div className="flex-1 text-sm">
+                    <label className="block text-slate-600 mb-1">Σύνολο</label>
+                    <div className="h-8 flex items-center bg-blue-50 border border-blue-200 rounded px-2 font-semibold text-blue-700">
+                      {row.total_cost.toFixed(2)}
                     </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemove(realIdx)}
+                    className="text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
-            </CardHeader>
-            <CardContent>
-                {visibleWithIdx.length === 0 ? (
-                    <p className="text-sm text-slate-400 text-center py-6">Δεν υπάρχουν εγγραφές σταθερών κοστών για {selectedDate || 'αυτή την ημέρα'}. Κάντε κλικ στο «Προσθήκη».</p>
-                ) : (
-                    <div className="space-y-2">
-                        {/* Header */}
-                        <div className="hidden md:grid grid-cols-[1fr_120px_120px_120px_36px] gap-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            <span>Ημερομηνία</span>
-                            <span>Ημέρες</span>
-                            <span>Τιμή/Ημέρα</span>
-                            <span>Σύνολο</span>
-                            <span />
-                        </div>
-                        {visibleWithIdx.map(({ r: row, i: realIdx }) => (
-                            <div key={realIdx} className="grid grid-cols-1 md:grid-cols-[1fr_120px_120px_120px_36px] gap-2 items-center bg-slate-50 rounded-lg p-2">
-                                <div className="text-sm text-slate-700">
-                                    {row.date}
-                                </div>
-                                <Input
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    value={row.multiplier_days}
-                                    onChange={e => handleUpdate(realIdx, 'multiplier_days', parseFloat(e.target.value) || 1)}
-                                    className="text-sm h-8"
-                                    placeholder="1"
-                                />
-                                <div className="text-right flex-shrink-0 text-sm font-semibold text-slate-800">
-                                    {formatVal(row.unit_cost)}
-                                </div>
-                                <div className="text-right flex-shrink-0 text-sm font-semibold text-blue-700">
-                                    {formatVal(row.total_cost)}
-                                </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => onRemove(realIdx)}
-                                    className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }

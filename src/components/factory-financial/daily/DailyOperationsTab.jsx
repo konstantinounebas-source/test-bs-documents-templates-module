@@ -151,37 +151,34 @@ function DailyOperationsTabContent({
             </div>
 
             {/* Cost Sections */}
-            <DailyFixedCostsSection
-                entries={dailyCostsRecords}
-                selectedDate={selectedDate}
-                unitCost={fixedDailyTotal}
-                formatCurrency={formatCurrency}
-                onAdd={addCostRow}
-                onRemove={removeCostRow}
-                onUpdate={updateCostRows}
-            />
+             <DailyFixedCostsSection
+                 dailyCostsRecords={dailyCostsRecords}
+                 selectedDate={selectedDate}
+                 fixedDailyTotal={fixedDailyTotal}
+                 onAddCost={addCostRow}
+                 onRemoveCost={removeCostRow}
+                 onUpdateCost={updateCostRows}
+             />
 
-            <DailyOperationalCostsSection
-                entries={dailyCostsRecords}
-                selectedDate={selectedDate}
-                unitCost={operationalDailyTotal}
-                formatCurrency={formatCurrency}
-                onAdd={addCostRow}
-                onRemove={removeCostRow}
-                onUpdate={updateCostRows}
-            />
+             <DailyOperationalCostsSection
+                 dailyCostsRecords={dailyCostsRecords}
+                 selectedDate={selectedDate}
+                 operationalDailyTotal={operationalDailyTotal}
+                 onAddCost={addCostRow}
+                 onRemoveCost={removeCostRow}
+                 onUpdateCost={updateCostRows}
+             />
 
-            <DailySupervisorCostsSection
-                entries={dailyCostsRecords}
-                selectedDate={selectedDate}
-                unitCost={calculateTotalSupervisorDailyCost(supervisorDailyAllocations, labourPersonnel)}
-                formatCurrency={formatCurrency}
-                onAdd={addCostRow}
-                onRemove={removeCostRow}
-                onUpdate={updateCostRows}
-            />
+             <DailySupervisorCostsSection
+                 dailyCostsRecords={dailyCostsRecords}
+                 selectedDate={selectedDate}
+                 supervisorDailyCost={calculateTotalSupervisorDailyCost(supervisorDailyAllocations, labourPersonnel)}
+                 onAddCost={addCostRow}
+                 onRemoveCost={removeCostRow}
+                 onUpdateCost={updateCostRows}
+             />
 
-            <DailyRevenueSection
+             <DailyRevenueSection
                 entries={dailyRevenueEntries}
                 selectedDate={selectedDate}
                 formatCurrency={formatCurrency}
