@@ -211,13 +211,7 @@ export default function FinancialOverviewTab({
                 </div>
             )}
 
-            {/* 2. PM cost pending note */}
-            <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl px-4 py-3 text-sm">
-                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <span>
-                    <span className="font-semibold">Εκκρεμεί:</span> Το κόστος Preventive Maintenance (PM) δεν έχει ακόμα ενσωματωθεί στους υπολογισμούς. Τα αποτελέσματα δεν αντικατοπτρίζουν το πλήρες κόστος λειτουργίας.
-                </span>
-            </div>
+
 
             {/* 3. JV Profit Summary — based on Net Expected Profit */}
             {jvData.netProfitTotal !== null && (
