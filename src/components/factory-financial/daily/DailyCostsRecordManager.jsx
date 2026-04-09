@@ -104,18 +104,23 @@ export default function DailyCostsRecordManager({
                     daily_costs_records: updatedRecords
                });
 
-               // Update local state
-               setRecords([...records, newRecord]);
+               console.log('✅ Cost record saved successfully:', newRecord);
+               console.log('✅ All records in DB:', updatedRecords);
+
+               // Reload records from DB to ensure consistency
+               await loadRecords();
+
                setFixedCosts(false);
                setOperationalCosts(false);
                setSupervisorCosts(false);
-          } catch (err) {
-               console.error('Failed to save record:', err);
+               } catch (err) {
+               console.error('❌ Failed to save record:', err);
+               console.error('❌ Error details:', JSON.stringify(err, null, 2));
                setError('Σφάλμα αποθήκευσης καταχώρησης');
-          } finally {
+               } finally {
                setIsSaving(false);
-          }
-     };
+               }
+               };
 
      const handleRemoveRecord = async (recordId) => {
           try {
@@ -137,15 +142,18 @@ export default function DailyCostsRecordManager({
                     daily_costs_records: updatedRecords
                });
 
-               // Update local state
-               setRecords(records.filter(r => r.id !== recordId));
-          } catch (err) {
-               console.error('Failed to remove record:', err);
+               console.log('✅ Cost record removed successfully:', recordId);
+
+               // Reload records from DB to ensure consistency
+               await loadRecords();
+               } catch (err) {
+               console.error('❌ Failed to remove record:', err);
+               console.error('❌ Error details:', JSON.stringify(err, null, 2));
                setError('Σφάλμα διαγραφής καταχώρησης');
-          } finally {
+               } finally {
                setIsSaving(false);
-          }
-     };
+               }
+               };
 
      return (
           <Card className="border-slate-200 bg-white">
