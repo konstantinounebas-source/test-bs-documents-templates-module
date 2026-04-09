@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -52,16 +52,38 @@ export default function SimulationWhatIfPanel({
 
     // Use parent state if provided, otherwise fall back to local state
     const hasParentState = panelData && onPanelDataChange;
-    const [title, setTitle] = useState(panelData?.title || '');
     const [inputsExpanded, setInputsExpanded] = useState(false);
-    const [shelterRows, setShelterRows] = useState(panelData?.shelterRows || [
+    
+    // Use refs to track if we've initialized from parent to avoid overwriting on re-renders
+    const initializedRef = React.useRef(false);
+    
+    // Local state - initialize from parent only once, then sync via effects
+    const [title, setTitle] = useState('');
+    const [shelterRows, setShelterRows] = useState([
         { shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }
     ]);
-    const [fixedMultiplier, setFixedMultiplier] = useState(panelData?.fixedMultiplier || '0');
-    const [supervisorMultiplier, setSupervisorMultiplier] = useState(panelData?.supervisorMultiplier || '0');
-    const [deptHoursRows, setDeptHoursRows] = useState(panelData?.deptHoursRows || []);
-    const [extraLabourCost, setExtraLabourCost] = useState(panelData?.extraLabourCost || '');
-    const [extraLabourNote, setExtraLabourNote] = useState(panelData?.extraLabourNote || '');
+    const [fixedMultiplier, setFixedMultiplier] = useState('0');
+    const [supervisorMultiplier, setSupervisorMultiplier] = useState('0');
+    const [deptHoursRows, setDeptHoursRows] = useState([]);
+    const [extraLabourCost, setExtraLabourCost] = useState('');
+    const [extraLabourNote, setExtraLabourNote] = useState('');
+    
+    // Sync with parent state when panelData changes (but not on every keystroke)
+    React.useEffect(() => {
+        if (panelData) {
+            console.log(`[Sim ${panelIndex}] Syncing from parent panelData:`, panelData);
+            setTitle(panelData.title || '');
+            setShelterRows(panelData.shelterRows?.length > 0 ? panelData.shelterRows : [
+                { shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }
+            ]);
+            setFixedMultiplier(panelData.fixedMultiplier ?? '0');
+            setSupervisorMultiplier(panelData.supervisorMultiplier ?? '0');
+            setDeptHoursRows(panelData.deptHoursRows || []);
+            setExtraLabourCost(panelData.extraLabourCost ?? '');
+            setExtraLabourNote(panelData.extraLabourNote || '');
+            initializedRef.current = true;
+        }
+    }, [panelData?.title, panelData?.fixedMultiplier, panelData?.supervisorMultiplier, panelData?.extraLabourCost, panelData?.extraLabourNote]);
 
     // ── Shelter rows helpers ─────────────────────────────────────────────────
     const addShelterRow = () => {
@@ -121,6 +143,7 @@ export default function SimulationWhatIfPanel({
     };
 
     // ── Calculations ─────────────────────────────────────────────────────────
+    console.log(`[Sim ${panelIndex}] Calculating with shelterRows:`, shelterRows, 'shelterRevenueItems:', shelterRevenueItems);
     const results = useMemo(() => {
         const calcUnitRevenue = (shelterInstanceId) => {
             if (!shelterInstanceId) return 0;
@@ -146,8 +169,13 @@ export default function SimulationWhatIfPanel({
         const revenue = shelterRows.reduce((sum, row) => {
             const qtyA = parseFloat(row.quantity_a) || 0;
             const qtyB = parseFloat(row.quantity_b) || 0;
-            return sum + qtyA * calcUnitRevenue(row.shelter_instance_id_a) + qtyB * calcUnitRevenue(row.shelter_instance_id_b);
+            const unitRevA = calcUnitRevenue(row.shelter_instance_id_a);
+            const unitRevB = calcUnitRevenue(row.shelter_instance_id_b);
+            console.log(`[Sim ${panelIndex}] Row ${row.shelter_instance_id_a}: qty=${qtyA}, unitRev=${unitRevA}, total=${qtyA * unitRevA}`);
+            console.log(`[Sim ${panelIndex}] Row ${row.shelter_instance_id_b}: qty=${qtyB}, unitRev=${unitRevB}, total=${qtyB * unitRevB}`);
+            return sum + qtyA * unitRevA + qtyB * unitRevB;
         }, 0);
+        console.log(`[Sim ${panelIndex}] Total revenue: ${revenue}, shelterRows:`, shelterRows);
 
         const fixedMult = parseFloat(fixedMultiplier) || 0;
         const supMult = parseFloat(supervisorMultiplier) || 0;
