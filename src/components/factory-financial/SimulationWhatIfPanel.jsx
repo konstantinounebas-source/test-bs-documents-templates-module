@@ -43,30 +43,42 @@ export default function SimulationWhatIfPanel({
     supervisorDailyCost = 0,
     depreciationFactor = 0,
     formatCurrency = (v) => `€${parseFloat(v || 0).toFixed(2)}`,
+    // New props for parent state management
+    panelData = null,
+    onPanelDataChange = null,
 }) {
     const color = COLORS[panelIndex % COLORS.length];
     const s = STYLE[color];
 
-    // ── State ────────────────────────────────────────────────────────────────
-    const [title, setTitle] = useState('');
+    // Use parent state if provided, otherwise fall back to local state
+    const hasParentState = panelData && onPanelDataChange;
+    const [title, setTitle] = useState(panelData?.title || '');
     const [inputsExpanded, setInputsExpanded] = useState(false);
-
-    // Multiple shelter rows — each row has 2 shelter slots (a & b)
-    const [shelterRows, setShelterRows] = useState([
+    const [shelterRows, setShelterRows] = useState(panelData?.shelterRows || [
         { shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }
     ]);
-
-    const [fixedMultiplier, setFixedMultiplier] = useState('0');
-    const [supervisorMultiplier, setSupervisorMultiplier] = useState('0');
-    const [deptHoursRows, setDeptHoursRows] = useState([]);
-    const [extraLabourCost, setExtraLabourCost] = useState('');
-    const [extraLabourNote, setExtraLabourNote] = useState('');
+    const [fixedMultiplier, setFixedMultiplier] = useState(panelData?.fixedMultiplier || '0');
+    const [supervisorMultiplier, setSupervisorMultiplier] = useState(panelData?.supervisorMultiplier || '0');
+    const [deptHoursRows, setDeptHoursRows] = useState(panelData?.deptHoursRows || []);
+    const [extraLabourCost, setExtraLabourCost] = useState(panelData?.extraLabourCost || '');
+    const [extraLabourNote, setExtraLabourNote] = useState(panelData?.extraLabourNote || '');
 
     // ── Shelter rows helpers ─────────────────────────────────────────────────
-    const addShelterRow = () => setShelterRows(prev => [...prev, { shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }]);
-    const removeShelterRow = (i) => setShelterRows(prev => prev.filter((_, idx) => idx !== i));
-    const updateShelterRow = (i, field, value) =>
-        setShelterRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
+    const addShelterRow = () => {
+        const updated = [...shelterRows, { shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }];
+        setShelterRows(updated);
+        if (hasParentState) onPanelDataChange({ ...panelData, shelterRows: updated });
+    };
+    const removeShelterRow = (i) => {
+        const updated = shelterRows.filter((_, idx) => idx !== i);
+        setShelterRows(updated);
+        if (hasParentState) onPanelDataChange({ ...panelData, shelterRows: updated });
+    };
+    const updateShelterRow = (i, field, value) => {
+        const updated = shelterRows.map((r, idx) => idx === i ? { ...r, [field]: value } : r);
+        setShelterRows(updated);
+        if (hasParentState) onPanelDataChange({ ...panelData, shelterRows: updated });
+    };
 
     const getUnitRevenue = (shelterInstanceId) => {
         if (!shelterInstanceId) return 0;
@@ -92,10 +104,21 @@ export default function SimulationWhatIfPanel({
     };
 
     // ── Dept hours helpers ───────────────────────────────────────────────────
-    const addDeptRow = () => setDeptHoursRows(prev => [...prev, { department_id: '', hours: '' }]);
-    const removeDeptRow = (i) => setDeptHoursRows(prev => prev.filter((_, idx) => idx !== i));
-    const updateDeptRow = (i, field, value) =>
-        setDeptHoursRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: value } : r));
+    const addDeptRow = () => {
+        const updated = [...deptHoursRows, { department_id: '', hours: '' }];
+        setDeptHoursRows(updated);
+        if (hasParentState) onPanelDataChange({ ...panelData, deptHoursRows: updated });
+    };
+    const removeDeptRow = (i) => {
+        const updated = deptHoursRows.filter((_, idx) => idx !== i);
+        setDeptHoursRows(updated);
+        if (hasParentState) onPanelDataChange({ ...panelData, deptHoursRows: updated });
+    };
+    const updateDeptRow = (i, field, value) => {
+        const updated = deptHoursRows.map((r, idx) => idx === i ? { ...r, [field]: value } : r);
+        setDeptHoursRows(updated);
+        if (hasParentState) onPanelDataChange({ ...panelData, deptHoursRows: updated });
+    };
 
     // ── Calculations ─────────────────────────────────────────────────────────
     const results = useMemo(() => {
@@ -157,7 +180,10 @@ export default function SimulationWhatIfPanel({
                     <span className="text-xs font-bold text-slate-500 whitespace-nowrap">Προσομοίωση {panelIndex + 1}</span>
                     <Input
                         value={title}
-                        onChange={e => setTitle(e.target.value)}
+                        onChange={e => {
+                            setTitle(e.target.value);
+                            if (hasParentState) onPanelDataChange({ ...panelData, title: e.target.value });
+                        }}
                         placeholder="Τίτλος..."
                         className="h-6 text-xs px-2 py-0 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:border-b focus-visible:border-slate-400 font-semibold text-slate-800 placeholder:text-slate-400"
                     />
@@ -244,11 +270,17 @@ export default function SimulationWhatIfPanel({
                     <div className="flex gap-2">
                         <div className="flex items-center gap-1 flex-1">
                             <label className="text-[10px] text-slate-400 whitespace-nowrap">× Λειτουργίας</label>
-                            <Input type="number" value={fixedMultiplier} onChange={e => setFixedMultiplier(e.target.value)} placeholder="0" className="h-6 text-[11px] flex-1 px-1" />
+                            <Input type="number" value={fixedMultiplier} onChange={e => {
+                                setFixedMultiplier(e.target.value);
+                                if (hasParentState) onPanelDataChange({ ...panelData, fixedMultiplier: e.target.value });
+                            }} placeholder="0" className="h-6 text-[11px] flex-1 px-1" />
                         </div>
                         <div className="flex items-center gap-1 flex-1">
                             <label className="text-[10px] text-slate-400 whitespace-nowrap">× Επιστάρχη</label>
-                            <Input type="number" value={supervisorMultiplier} onChange={e => setSupervisorMultiplier(e.target.value)} placeholder="0" className="h-6 text-[11px] flex-1 px-1" />
+                            <Input type="number" value={supervisorMultiplier} onChange={e => {
+                                setSupervisorMultiplier(e.target.value);
+                                if (hasParentState) onPanelDataChange({ ...panelData, supervisorMultiplier: e.target.value });
+                            }} placeholder="0" className="h-6 text-[11px] flex-1 px-1" />
                         </div>
                     </div>
 
@@ -293,8 +325,14 @@ export default function SimulationWhatIfPanel({
                     {/* ── Extra Labour ── */}
                     <div className="flex items-center gap-1">
                         <label className="text-[10px] text-slate-400 whitespace-nowrap">Πρόσθετο Κόστος (€)</label>
-                        <Input type="number" value={extraLabourCost} onChange={e => setExtraLabourCost(e.target.value)} placeholder="0" className="h-6 text-[11px] w-16 px-1" />
-                        <Input value={extraLabourNote} onChange={e => setExtraLabourNote(e.target.value)} placeholder="Σχόλιο..." className="h-6 text-[11px] flex-1 px-2 text-slate-500 placeholder:text-slate-300" />
+                        <Input type="number" value={extraLabourCost} onChange={e => {
+                            setExtraLabourCost(e.target.value);
+                            if (hasParentState) onPanelDataChange({ ...panelData, extraLabourCost: e.target.value });
+                        }} placeholder="0" className="h-6 text-[11px] w-16 px-1" />
+                        <Input value={extraLabourNote} onChange={e => {
+                            setExtraLabourNote(e.target.value);
+                            if (hasParentState) onPanelDataChange({ ...panelData, extraLabourNote: e.target.value });
+                        }} placeholder="Σχόλιο..." className="h-6 text-[11px] flex-1 px-2 text-slate-500 placeholder:text-slate-300" />
                     </div>
                     </div>}
 

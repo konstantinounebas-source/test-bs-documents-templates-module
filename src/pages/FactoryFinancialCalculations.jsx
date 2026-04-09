@@ -139,10 +139,18 @@ export default function FactoryFinancialCalculations() {
      const [dailyRevenueEntries, setDailyRevenueEntries] = useState([]);
      const [dailyDepartmentHoursEntries, setDailyDepartmentHoursEntries] = useState([]);
      const [dailyCostsRecords, setDailyCostsRecords] = useState([]);
-    
+
     // Daily cost totals
     const [fixedDailyTotal, setFixedDailyTotal] = useState(0);
     const [operationalDailyTotal, setOperationalDailyTotal] = useState(0);
+
+    // Simulation panels state (4 what-if scenarios)
+    const [simulationPanels, setSimulationPanels] = useState([
+        { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+        { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+        { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+        { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' }
+    ]);
 
     // Depreciation module states
     const [depreciationInvestments, setDepreciationInvestments] = useState([]);
@@ -254,13 +262,21 @@ export default function FactoryFinancialCalculations() {
             setDepartmentTechnicianAssignments(record.department_technician_assignments || []);
 
             setDailyProductionEntries(normalizeLoadedDailyProductionEntries(record.daily_production_entries));
-             setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
-             setDailyDepartmentHoursEntries(normalizeLoadedDailyDepartmentHoursEntries(record.daily_department_hours_entries));
-             setDailyCostsRecords(record.daily_costs_records || []);
+            setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
+            setDailyDepartmentHoursEntries(normalizeLoadedDailyDepartmentHoursEntries(record.daily_department_hours_entries));
+            setDailyCostsRecords(record.daily_costs_records || []);
 
-             // Load Fixed and Operational cost totals from database
-             await loadFixedCostTotal(record.id);
-             await loadOperationalCostTotal(record.id);
+            // Load simulation panels
+            setSimulationPanels(record.simulation_panels || [
+                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' }
+            ]);
+
+            // Load Fixed and Operational cost totals from database
+            await loadFixedCostTotal(record.id);
+            await loadOperationalCostTotal(record.id);
 
             } catch (error) {
              console.error('Failed to load record data:', error);
@@ -352,6 +368,7 @@ export default function FactoryFinancialCalculations() {
                  daily_revenue_entries: dailyRevenueEntries,
                  daily_department_hours_entries: dailyDepartmentHoursEntries,
                  daily_costs_records: dailyCostsRecords,
+                 simulation_panels: simulationPanels,
                  };
 
              console.log('🟢 updatedData.daily_costs_records:', updatedData.daily_costs_records);
@@ -412,6 +429,7 @@ export default function FactoryFinancialCalculations() {
                 daily_revenue_entries: dailyRevenueEntries,
                 daily_department_hours_entries: dailyDepartmentHoursEntries,
                 daily_costs_records: dailyCostsRecords,
+                simulation_panels: simulationPanels,
                 is_active: true
                 };
 
@@ -931,6 +949,15 @@ export default function FactoryFinancialCalculations() {
                                             supervisorDailyCost={calculateTotalSupervisorDailyCost(supervisorDailyAllocations, labourPersonnel)}
                                             depreciationFactor={getCalculateDepreciationFactor()}
                                             formatCurrency={formatCurrency}
+                                            // Pass simulation data and handlers
+                                            panelData={simulationPanels[idx]}
+                                            onPanelDataChange={(newData) => {
+                                                setSimulationPanels(prev => {
+                                                    const updated = [...prev];
+                                                    updated[idx] = newData;
+                                                    return updated;
+                                                });
+                                            }}
                                         />
                                     ))}
                                 </div>
