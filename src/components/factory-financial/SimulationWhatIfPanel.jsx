@@ -58,6 +58,7 @@ export default function SimulationWhatIfPanel({
     const [supervisorMultiplier, setSupervisorMultiplier] = useState('1');
     const [deptHoursRows, setDeptHoursRows] = useState([]);
     const [extraLabourCost, setExtraLabourCost] = useState('');
+    const [extraLabourNote, setExtraLabourNote] = useState('');
 
     // ── Shelter rows helpers ─────────────────────────────────────────────────
     const addShelterRow = () => setShelterRows(prev => [...prev, { shelter_instance_id: '', quantity: '' }]);
@@ -212,48 +213,64 @@ export default function SimulationWhatIfPanel({
                             const rate = getDeptHourlyCost(row.department_id, departmentAssignments, labourPersonnel, departments);
                             const hrs = parseFloat(row.hours) || 0;
                             return (
-                                <div key={i} className="flex items-center gap-1.5">
-                                    <Select value={row.department_id} onValueChange={v => updateDeptRow(i, 'department_id', v)}>
-                                        <SelectTrigger className="h-7 text-xs flex-1">
-                                            <SelectValue placeholder="Τμήμα..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {departments.map(d => (
-                                                <SelectItem key={d.id} value={d.id}>
-                                                    {d.department_name || d.name || d.id}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                <div key={i} className="space-y-0.5">
+                                    <div className="flex items-center gap-1.5">
+                                        <Select value={row.department_id} onValueChange={v => updateDeptRow(i, 'department_id', v)}>
+                                            <SelectTrigger className="h-7 text-xs flex-1">
+                                                <SelectValue placeholder="Τμήμα..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {departments.map(d => (
+                                                    <SelectItem key={d.id} value={d.id}>
+                                                        {d.department_name || d.name || d.id}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <Input
+                                            type="number"
+                                            value={row.hours}
+                                            onChange={e => updateDeptRow(i, 'hours', e.target.value)}
+                                            placeholder="ώρες"
+                                            className="h-7 text-xs w-14"
+                                        />
+                                        {row.department_id && rate > 0 && hrs > 0 && (
+                                            <span className="text-[11px] text-slate-500 whitespace-nowrap w-20 text-right">
+                                                {formatCurrency(hrs * rate)}
+                                            </span>
+                                        )}
+                                        <button onClick={() => removeDeptRow(i)} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                     <Input
-                                        type="number"
-                                        value={row.hours}
-                                        onChange={e => updateDeptRow(i, 'hours', e.target.value)}
-                                        placeholder="ώρες"
-                                        className="h-7 text-xs w-14"
+                                        value={row.note || ''}
+                                        onChange={e => updateDeptRow(i, 'note', e.target.value)}
+                                        placeholder="Σχόλιο..."
+                                        className="h-6 text-[11px] px-2 text-slate-500 placeholder:text-slate-300"
                                     />
-                                    {row.department_id && rate > 0 && hrs > 0 && (
-                                        <span className="text-[11px] text-slate-500 whitespace-nowrap w-20 text-right">
-                                            {formatCurrency(hrs * rate)}
-                                        </span>
-                                    )}
-                                    <button onClick={() => removeDeptRow(i)} className="text-red-400 hover:text-red-600 flex-shrink-0">
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
                                 </div>
                             );
                         })}
                     </div>
 
                     {/* ── Extra Labour ── */}
-                    <div className="flex items-center gap-2">
-                        <label className="text-[11px] text-slate-500 whitespace-nowrap">Πρόσθετο Κόστος (€)</label>
+                    <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                            <label className="text-[11px] text-slate-500 whitespace-nowrap">Πρόσθετο Κόστος (€)</label>
+                            <Input
+                                type="number"
+                                value={extraLabourCost}
+                                onChange={e => setExtraLabourCost(e.target.value)}
+                                placeholder="0"
+                                className="h-7 text-xs flex-1"
+                            />
+                        </div>
                         <Input
-                            type="number"
-                            value={extraLabourCost}
-                            onChange={e => setExtraLabourCost(e.target.value)}
-                            placeholder="0"
-                            className="h-7 text-xs flex-1"
+                            value={extraLabourNote}
+                            onChange={e => setExtraLabourNote(e.target.value)}
+                            placeholder="Σχόλιο..."
+                            className="h-6 text-[11px] px-2 text-slate-500 placeholder:text-slate-300"
                         />
                     </div>
                     </div>}
