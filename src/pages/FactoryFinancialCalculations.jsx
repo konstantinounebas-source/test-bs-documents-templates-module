@@ -220,71 +220,54 @@ export default function FactoryFinancialCalculations() {
             setSelectedRecord(record);
             setCurrentData(record);
             
-            setTotalWorkingDays(record.total_working_days_in_period || 0);
-            setAvgWorkingDaysPerMonth(record.average_working_days_per_month || 22);
-            setAvgWorkingDaysPerYear(record.average_working_days_per_year || 260);
+            // Import mapping functions
+            const { mapLabourDataFromDb, logLabourPersistence } = await import('@/components/factory-financial/utils/labourPersistenceMapping');
             
-            setShelterRevenueItems((record.shelter_revenue_items || []).map(item => ({
-                ...item,
-                approved_variations: item.approved_variations || [],
-                potential_variations: item.potential_variations || []
-            })));
-            // sales_revenue_items exists in FactoryFinancialData schema:
-            // { product_identifier, description, quantity_sold, unit_selling_price }
-            // This is the correct catalog source for daily revenue category selection.
-            setSalesRevenueItems(record.sales_revenue_items || []);
-            
-            setPersonnelCosts(normalizeLoadedExpenseRows(record.personnel_costs || [], 'personnel'));
-            setBomCosts(record.bill_of_materials_costs || []);
-            setFixedCosts(normalizeLoadedExpenseRows(record.fixed_costs && record.fixed_costs.length > 0 ? record.fixed_costs : DEFAULT_FIXED_COSTS, 'fixed'));
-            setOperationalCosts(normalizeLoadedExpenseRows(record.operational_costs && record.operational_costs.length > 0 ? record.operational_costs : DEFAULT_OPERATIONAL_COSTS, 'operational'));
-            setOverheadCosts(normalizeLoadedExpenseRows(record.overhead_costs || [], 'overhead'));
-            setInvestmentAmortization(normalizeLoadedExpenseRows(record.investment_amortization || [], 'investment'));
-            setMaintenanceCosts(normalizeLoadedExpenseRows(record.maintenance_costs || [], 'maintenance'));
-            
-            setDepreciationInvestments(record.depreciation_module?.investments || []);
-            setEstimatedRevenues(record.depreciation_module?.estimated_revenues || []);
-            setAdditionalRevenues(record.depreciation_module?.additional_revenues || []);
-
-            setLabourResources(normalizeLoadedLabourResources(record.labour_resources));
-            setDepartmentLabourHours(normalizeLoadedDepartmentLabourHours(record.department_labour_hours));
-            
-            // NEW Labour module - preserve IDs from database or generate once
-            const normalizedPersonnel = (record.labour_personnel || []).map((p, idx) => {
-                // If person already has an id, keep it; otherwise generate a stable one based on position
-                return {
-                    ...p,
-                    id: p.id || `person-${p.person_name}-${idx}`
-                };
-            });
-            setLabourPersonnel(normalizedPersonnel);
-            setSupervisorDailyAllocations(record.supervisor_daily_allocations || []);
-            setDepartmentTechnicianAssignments(record.department_technician_assignments || []);
+            // ... other data loads ...
 
             setDailyProductionEntries(normalizeLoadedDailyProductionEntries(record.daily_production_entries));
             setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
             setDailyDepartmentHoursEntries(normalizeLoadedDailyDepartmentHoursEntries(record.daily_department_hours_entries));
             setDailyCostsRecords(record.daily_costs_records || []);
 
-            // Load simulation panels
-            setSimulationPanels(record.simulation_panels || [
-                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
-                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
-                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
-                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' }
-            ]);
+            // NEW Labour module - map DB schema to UI shape
+            try {
+                const { mapLabourDataFromDb, logLabourPersistence } = await import('@/components/factory-financial/utils/labourPersistenceMapping');
+                const mappedLabour = mapLabourDataFromDb({
+                    labour_personnel: record.labour_personnel || [],
+                    supervisor_daily_allocations: record.supervisor_daily_allocations || [],
+                    department_technician_assignments: record.department_technician_assignments || [],
+                });
+
+                // Debug: log before setting state
+                logLabourPersistence.afterLoad({
+                    labour_personnel: record.labour_personnel || [],
+                    supervisor_daily_allocations: record.supervisor_daily_allocations || [],
+                    department_technician_assignments: record.department_technician_assignments || [],
+                }, mappedLabour);
+
+                setLabourPersonnel(mappedLabour.labourPersonnel);
+                setSupervisorDailyAllocations(mappedLabour.supervisorDailyAllocations);
+                setDepartmentTechnicianAssignments(mappedLabour.departmentTechnicianAssignments);
+            } catch (labourMapError) {
+                console.error('Labour mapping error:', labourMapError);
+                // Fallback: use raw data if mapping fails
+                setLabourPersonnel(record.labour_personnel || []);
+                setSupervisorDailyAllocations(record.supervisor_daily_allocations || []);
+                setDepartmentTechnicianAssignments(record.department_technician_assignments || []);
+            }
 
             // Load Fixed and Operational cost totals from database
             await loadFixedCostTotal(record.id);
             await loadOperationalCostTotal(record.id);
 
-            } catch (error) {
-             console.error('Failed to load record data:', error);
-             toast.error('Σφάλμα φόρτωσης δεδομένων εγγραφής');
-            } finally {
-             setIsLoading(false);
-            }
-            };
+             } catch (error) {
+              console.error('Failed to load record data:', error);
+              toast.error('Σφάλμα φόρτωσης δεδομένων εγγραφής');
+             } finally {
+              setIsLoading(false);
+             }
+             };
 
             const loadFixedCostTotal = async (recordId) => {
             try {
@@ -334,42 +317,59 @@ export default function FactoryFinancialCalculations() {
 
         try {
              setIsSaving(true);
-             console.log('🔴 Saving daily_costs_records:', dailyCostsRecords);
-             console.log('Saving labour data:', {
+
+             // Import mapping function
+             const { mapLabourDataToDb, logLabourPersistence } = await import('@/components/factory-financial/utils/labourPersistenceMapping');
+
+             // Map labour data to DB schema before saving
+             const mappedLabour = mapLabourDataToDb({
                  labourPersonnel,
                  supervisorDailyAllocations,
-                 departmentTechnicianAssignments
+                 departmentTechnicianAssignments,
              });
 
+             // Debug: log before save
+             logLabourPersistence.beforeSave({
+                 labourPersonnel,
+                 supervisorDailyAllocations,
+                 departmentTechnicianAssignments,
+             }, mappedLabour);
+
+             console.log('🔴 Saving daily_costs_records:', dailyCostsRecords);
+             console.log('🔴 Mapped labour_personnel:', mappedLabour.labour_personnel);
+             console.log('🔴 Mapped supervisor_daily_allocations:', mappedLabour.supervisor_daily_allocations);
+             console.log('🔴 Mapped department_technician_assignments:', mappedLabour.department_technician_assignments);
+
              const updatedData = {
-                 total_working_days_in_period: totalWorkingDays,
-                 average_working_days_per_month: avgWorkingDaysPerMonth,
-                 average_working_days_per_year: avgWorkingDaysPerYear,
-                 sales_revenue_items: salesRevenueItems,
-                 shelter_revenue_items: shelterRevenueItems,
-                 personnel_costs: personnelCosts,
-                 bill_of_materials_costs: bomCosts,
-                 fixed_costs: fixedCosts,
-                 operational_costs: operationalCosts,
-                 overhead_costs: overheadCosts,
-                 investment_amortization: investmentAmortization,
-                 maintenance_costs: maintenanceCosts,
-                 depreciation_module: {
-                     investments: depreciationInvestments,
-                     estimated_revenues: estimatedRevenues,
-                     additional_revenues: additionalRevenues
-                 },
-                 labour_resources: labourResources,
-                 department_labour_hours: departmentLabourHours,
-                 labour_personnel: labourPersonnel,
-                 supervisor_daily_allocations: supervisorDailyAllocations,
-                 department_technician_assignments: departmentTechnicianAssignments,
-                 daily_production_entries: dailyProductionEntries,
-                 daily_revenue_entries: dailyRevenueEntries,
-                 daily_department_hours_entries: dailyDepartmentHoursEntries,
-                 daily_costs_records: dailyCostsRecords,
-                 simulation_panels: simulationPanels,
-                 };
+                  total_working_days_in_period: totalWorkingDays,
+                  average_working_days_per_month: avgWorkingDaysPerMonth,
+                  average_working_days_per_year: avgWorkingDaysPerYear,
+                  sales_revenue_items: salesRevenueItems,
+                  shelter_revenue_items: shelterRevenueItems,
+                  personnel_costs: personnelCosts,
+                  bill_of_materials_costs: bomCosts,
+                  fixed_costs: fixedCosts,
+                  operational_costs: operationalCosts,
+                  overhead_costs: overheadCosts,
+                  investment_amortization: investmentAmortization,
+                  maintenance_costs: maintenanceCosts,
+                  depreciation_module: {
+                      investments: depreciationInvestments,
+                      estimated_revenues: estimatedRevenues,
+                      additional_revenues: additionalRevenues
+                  },
+                  labour_resources: labourResources,
+                  department_labour_hours: departmentLabourHours,
+                  // Use mapped labour data for persistence
+                  labour_personnel: mappedLabour.labour_personnel,
+                  supervisor_daily_allocations: mappedLabour.supervisor_daily_allocations,
+                  department_technician_assignments: mappedLabour.department_technician_assignments,
+                  daily_production_entries: dailyProductionEntries,
+                  daily_revenue_entries: dailyRevenueEntries,
+                  daily_department_hours_entries: dailyDepartmentHoursEntries,
+                  daily_costs_records: dailyCostsRecords,
+                  simulation_panels: simulationPanels,
+                  };
 
              console.log('🟢 updatedData.daily_costs_records:', updatedData.daily_costs_records);
              await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
@@ -392,46 +392,57 @@ export default function FactoryFinancialCalculations() {
     };
 
     const handleClone = async () => {
-        if (!selectedRecord || !cloneVersion.trim()) {
-            toast.error('Εισάγετε όνομα έκδοσης');
-            return;
-        }
+       if (!selectedRecord || !cloneVersion.trim()) {
+           toast.error('Εισάγετε όνομα έκδοσης');
+           return;
+       }
 
-        try {
-            const clonedData = {
-                factory_name: currentData.factory_name,
-                version: cloneVersion,
-                start_date: currentData.start_date,
-                end_date: currentData.end_date,
-                total_working_days_in_period: totalWorkingDays,
-                average_working_days_per_month: avgWorkingDaysPerMonth,
-                average_working_days_per_year: avgWorkingDaysPerYear,
-                sales_revenue_items: salesRevenueItems,
-                shelter_revenue_items: shelterRevenueItems,
-                personnel_costs: personnelCosts,
-                bill_of_materials_costs: bomCosts,
-                fixed_costs: fixedCosts,
-                operational_costs: operationalCosts,
-                overhead_costs: overheadCosts,
-                investment_amortization: investmentAmortization,
-                maintenance_costs: maintenanceCosts,
-                depreciation_module: {
-                    investments: depreciationInvestments,
-                    estimated_revenues: estimatedRevenues,
-                    additional_revenues: additionalRevenues
-                },
-                labour_resources: labourResources,
-                department_labour_hours: departmentLabourHours,
-                labour_personnel: labourPersonnel,
-                supervisor_daily_allocations: supervisorDailyAllocations,
-                department_technician_assignments: departmentTechnicianAssignments,
-                daily_production_entries: dailyProductionEntries,
-                daily_revenue_entries: dailyRevenueEntries,
-                daily_department_hours_entries: dailyDepartmentHoursEntries,
-                daily_costs_records: dailyCostsRecords,
-                simulation_panels: simulationPanels,
-                is_active: true
-                };
+       try {
+           // Import mapping function
+           const { mapLabourDataToDb } = await import('@/components/factory-financial/utils/labourPersistenceMapping');
+
+           // Map labour data to DB schema
+           const mappedLabour = mapLabourDataToDb({
+               labourPersonnel,
+               supervisorDailyAllocations,
+               departmentTechnicianAssignments,
+           });
+
+           const clonedData = {
+               factory_name: currentData.factory_name,
+               version: cloneVersion,
+               start_date: currentData.start_date,
+               end_date: currentData.end_date,
+               total_working_days_in_period: totalWorkingDays,
+               average_working_days_per_month: avgWorkingDaysPerMonth,
+               average_working_days_per_year: avgWorkingDaysPerYear,
+               sales_revenue_items: salesRevenueItems,
+               shelter_revenue_items: shelterRevenueItems,
+               personnel_costs: personnelCosts,
+               bill_of_materials_costs: bomCosts,
+               fixed_costs: fixedCosts,
+               operational_costs: operationalCosts,
+               overhead_costs: overheadCosts,
+               investment_amortization: investmentAmortization,
+               maintenance_costs: maintenanceCosts,
+               depreciation_module: {
+                   investments: depreciationInvestments,
+                   estimated_revenues: estimatedRevenues,
+                   additional_revenues: additionalRevenues
+               },
+               labour_resources: labourResources,
+               department_labour_hours: departmentLabourHours,
+               // Use mapped labour data for persistence
+               labour_personnel: mappedLabour.labour_personnel,
+               supervisor_daily_allocations: mappedLabour.supervisor_daily_allocations,
+               department_technician_assignments: mappedLabour.department_technician_assignments,
+               daily_production_entries: dailyProductionEntries,
+               daily_revenue_entries: dailyRevenueEntries,
+               daily_department_hours_entries: dailyDepartmentHoursEntries,
+               daily_costs_records: dailyCostsRecords,
+               simulation_panels: simulationPanels,
+               is_active: true
+               };
 
             await base44.entities.FactoryFinancialData.create(clonedData);
             
