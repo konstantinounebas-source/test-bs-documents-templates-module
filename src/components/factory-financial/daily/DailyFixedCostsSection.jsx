@@ -24,24 +24,26 @@ export default function DailyFixedCostsSection({ entries, selectedDate, unitCost
         const row = { ...updated[realIdx] };
         
         if (field === 'multiplier_days') {
-            row.multiplier_days = parseFloat(value) || 0;
-            row.total_cost = row.multiplier_days * row.unit_cost;
+            const multiplierVal = parseFloat(value) || 0;
+            row.multiplier_days = multiplierVal;
+            row.total_cost = multiplierVal * (row.unit_cost || 0);
+            console.log('✅ Updated multiplier_days:', multiplierVal, 'total_cost:', row.total_cost);
         }
         
         updated[realIdx] = row;
-        console.log('✅ Updating fixed cost row:', updated[realIdx]);
         onUpdate(updated);
     };
 
     const handleAdd = () => {
+        const parsedUnitCost = parseFloat(unitCost) || 0;
         const newRow = {
             ...getEmptyRow(selectedDate),
             cost_type: 'fixed',
-            unit_cost: parseFloat(unitCost) || 0,
+            unit_cost: parsedUnitCost,
             multiplier_days: 1,
-            total_cost: parseFloat(unitCost) || 0
+            total_cost: parsedUnitCost
         };
-        console.log('✅ Adding fixed cost row:', newRow);
+        console.log('✅ Adding fixed cost row with unit_cost:', parsedUnitCost, newRow);
         onAdd(newRow);
     };
 
