@@ -150,13 +150,6 @@ export default function FinancialOverviewTab({
                 </div>
             )}
 
-            {/* 2. Period Filter Bar */}
-            <OverviewFilterBar
-                filterParams={filterParams}
-                onFilterChange={setFilterParams}
-                availableYears={availableYears}
-            />
-
             {/* 3. Simulation Card (UI-only, never saves to DB) */}
             <SimulationCard
                 simState={simState}
@@ -168,17 +161,27 @@ export default function FinancialOverviewTab({
             {/* 4. Operational Period Financial Analysis — two panels side by side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left: period-filter-driven panel */}
-                <OperationalPeriodAnalysisSection
-                    filterParams={filterParams}
-                    dailyRevenueEntries={safeRev}
-                    dailyCostsRecords={dailyCostsRecords}
-                    dailyDepartmentHoursEntries={safeHours}
-                    departmentAssignments={departmentAssignments}
-                    labourPersonnel={labourPersonnel}
-                    departments={departments}
-                    depreciationFactor={depreciationFactor}
-                    formatCurrency={fmt}
-                />
+                <div className="flex flex-col gap-3">
+                    {/* Mirror header bar for left panel */}
+                    <div className="bg-white border border-slate-200 rounded-xl px-4 py-3">
+                        <OverviewFilterBar
+                            filterParams={filterParams}
+                            onFilterChange={setFilterParams}
+                            availableYears={availableYears}
+                        />
+                    </div>
+                    <OperationalPeriodAnalysisSection
+                        filterParams={filterParams}
+                        dailyRevenueEntries={safeRev}
+                        dailyCostsRecords={dailyCostsRecords}
+                        dailyDepartmentHoursEntries={safeHours}
+                        departmentAssignments={departmentAssignments}
+                        labourPersonnel={labourPersonnel}
+                        departments={departments}
+                        depreciationFactor={depreciationFactor}
+                        formatCurrency={fmt}
+                    />
+                </div>
 
                 {/* Right: standalone weekly panel */}
                 <div className="flex flex-col gap-3">
