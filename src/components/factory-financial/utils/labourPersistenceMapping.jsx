@@ -1,12 +1,7 @@
 /**
  * Labour Persistence Mapping Layer
  * Converts between UI data shapes and database schemas
- * Schema now matches UI fields exactly (FactoryFinancialData.json updated)
  */
-
-// ─────────────────────────────────────────────────────────────────────────────
-// LABOUR PERSONNEL MAPPING
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const mapLabourPersonToDb = (person = {}) => ({
   id: person.id || '',
@@ -40,10 +35,6 @@ export const mapLabourPersonFromDb = (person = {}) => ({
   department_id: person.department_id || '',
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SUPERVISOR DAILY ALLOCATIONS MAPPING
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const mapSupervisorAllocationToDb = (allocation = {}) => ({
   personnel_id: allocation.personnel_id || '',
   allocation_factor: parseFloat(allocation.allocation_factor) || 1,
@@ -55,10 +46,6 @@ export const mapSupervisorAllocationFromDb = (allocation = {}) => ({
   allocation_factor: parseFloat(allocation.allocation_factor) || 1,
   comments: allocation.comments || '',
 });
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DEPARTMENT TECHNICIAN ASSIGNMENTS MAPPING
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const mapTechnicianRowToDb = (row = {}) => ({
   personnel_id: row.personnel_id || '',
@@ -79,10 +66,6 @@ export const mapDepartmentAssignmentFromDb = (assignment = {}) => ({
   department_id: assignment.department_id || '',
   technician_rows: (assignment.technician_rows || []).map(mapTechnicianRowFromDb),
 });
-
-// ─────────────────────────────────────────────────────────────────────────────
-// BULK MAPPING FOR SAVE/LOAD/CLONE
-// ─────────────────────────────────────────────────────────────────────────────
 
 export const mapLabourDataToDb = ({
   labourPersonnel = [],
