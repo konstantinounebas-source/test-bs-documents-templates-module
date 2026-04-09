@@ -267,9 +267,7 @@ export default function FactoryFinancialCalculations() {
             setDailyCostsRecords(record.daily_costs_records || []);
 
             // Load simulation panels
-            const loadedPanels = record.simulation_panels || [];
-            console.log('📊 Loaded simulation panels from DB:', loadedPanels);
-            setSimulationPanels(loadedPanels.length > 0 ? loadedPanels : [
+            setSimulationPanels(record.simulation_panels || [
                 { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
                 { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
                 { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
@@ -342,7 +340,6 @@ export default function FactoryFinancialCalculations() {
                  supervisorDailyAllocations,
                  departmentTechnicianAssignments
              });
-             console.log('💾 Saving simulation panels:', simulationPanels);
 
              const updatedData = {
                  total_working_days_in_period: totalWorkingDays,
