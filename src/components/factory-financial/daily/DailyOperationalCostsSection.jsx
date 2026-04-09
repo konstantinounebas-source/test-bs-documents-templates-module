@@ -67,13 +67,13 @@ export default function DailyOperationalCostsSection({
                   <div className="flex-1 text-sm">
                     <label className="block text-slate-600 mb-1">Unit Cost</label>
                     <div className="h-8 flex items-center bg-white border rounded px-2 text-slate-700">
-                      {row.unit_cost.toFixed(2)}
+                      {(row.unit_cost || 0).toFixed(2)}
                     </div>
                   </div>
                   <div className="flex-1 text-sm">
                     <label className="block text-slate-600 mb-1">Σύνολο</label>
                     <div className="h-8 flex items-center bg-blue-50 border border-blue-200 rounded px-2 font-semibold text-blue-700">
-                      {row.total_cost.toFixed(2)}
+                      {(row.total_cost || 0).toFixed(2)}
                     </div>
                   </div>
                   <Button
