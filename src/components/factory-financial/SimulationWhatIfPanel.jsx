@@ -49,7 +49,7 @@ export default function SimulationWhatIfPanel({
 
     // ── State ────────────────────────────────────────────────────────────────
     const [title, setTitle] = useState('');
-    const [expanded, setExpanded] = useState(true);
+    const [inputsExpanded, setInputsExpanded] = useState(true);
 
     // Multiple shelter rows
     const [shelterRows, setShelterRows] = useState([{ shelter_instance_id: '', quantity: '' }]);
@@ -122,16 +122,17 @@ export default function SimulationWhatIfPanel({
                         className="h-6 text-xs px-2 py-0 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:border-b focus-visible:border-slate-400 font-semibold text-slate-800 placeholder:text-slate-400"
                     />
                     <button
-                        onClick={() => setExpanded(p => !p)}
+                        onClick={() => setInputsExpanded(p => !p)}
                         className="ml-auto text-slate-400 hover:text-slate-600 flex-shrink-0"
                     >
-                        {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        {inputsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </button>
                 </div>
             </CardHeader>
 
-            {expanded && (
-                <CardContent className="px-3 pb-3 pt-3 space-y-3">
+            <CardContent className="px-3 pb-3 pt-0 space-y-3">
+                    {/* ── Expandable Inputs ── */}
+                    {inputsExpanded && <div className="pt-3 space-y-3 border-b border-slate-200 pb-3">
                     {/* ── Είδη Στάσεων ── */}
                     <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
@@ -255,9 +256,10 @@ export default function SimulationWhatIfPanel({
                             className="h-7 text-xs flex-1"
                         />
                     </div>
+                    </div>}
 
                     {/* ── Results ── */}
-                    <div className="border-t border-slate-200 pt-2 space-y-0.5 text-xs">
+                    <div className="pt-2 space-y-0.5 text-xs">
                         <Row label="Έσοδα" value={formatCurrency(results.revenue)} valueClass="text-blue-600 font-semibold" />
                         <Row label="Κόστος Λειτουργίας" value={`– ${formatCurrency(results.opCost)}`} valueClass="text-red-500" />
                         <Row label="Κόστος Εργατικών" value={`– ${formatCurrency(results.totalLabour)}`} valueClass="text-red-500" sub={[
@@ -280,7 +282,6 @@ export default function SimulationWhatIfPanel({
                         </div>
                     </div>
                 </CardContent>
-            )}
         </Card>
     );
 }
