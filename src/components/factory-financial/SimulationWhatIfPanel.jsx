@@ -49,13 +49,13 @@ export default function SimulationWhatIfPanel({
 
     // ── State ────────────────────────────────────────────────────────────────
     const [title, setTitle] = useState('');
-    const [inputsExpanded, setInputsExpanded] = useState(true);
+    const [inputsExpanded, setInputsExpanded] = useState(false);
 
     // Multiple shelter rows
     const [shelterRows, setShelterRows] = useState([{ shelter_instance_id: '', quantity: '' }]);
 
-    const [fixedMultiplier, setFixedMultiplier] = useState('1');
-    const [supervisorMultiplier, setSupervisorMultiplier] = useState('1');
+    const [fixedMultiplier, setFixedMultiplier] = useState('0');
+    const [supervisorMultiplier, setSupervisorMultiplier] = useState('0');
     const [deptHoursRows, setDeptHoursRows] = useState([]);
     const [extraLabourCost, setExtraLabourCost] = useState('');
     const [extraLabourNote, setExtraLabourNote] = useState('');
