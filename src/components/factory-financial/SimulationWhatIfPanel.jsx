@@ -133,23 +133,22 @@ export default function SimulationWhatIfPanel({
 
             <CardContent className="px-3 pb-3 pt-0 space-y-3">
                     {/* ── Expandable Inputs ── */}
-                    {inputsExpanded && <div className="pt-3 space-y-3 border-b border-slate-200 pb-3">
+                    {inputsExpanded && <div className="pt-2 space-y-2 border-b border-slate-200 pb-2">
                     {/* ── Είδη Στάσεων ── */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                         <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Είδη Στάσεων</span>
-                            <Button size="sm" variant="outline" onClick={addShelterRow} className="h-5 text-[11px] px-2 gap-1 py-0">
-                                <Plus className="w-3 h-3" />
-                                Προσθήκη
-                            </Button>
+                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Είδη Στάσεων</span>
+                            <button onClick={addShelterRow} className="text-[10px] text-blue-500 hover:text-blue-700 flex items-center gap-0.5">
+                                <Plus className="w-3 h-3" />Προσθήκη
+                            </button>
                         </div>
                         {shelterRows.map((row, i) => {
                             const uRev = getUnitRevenue(row.shelter_instance_id);
                             const qty = parseFloat(row.quantity) || 0;
                             return (
-                                <div key={i} className="flex items-center gap-1.5">
+                                <div key={i} className="flex items-center gap-1">
                                     <Select value={row.shelter_instance_id} onValueChange={v => updateShelterRow(i, 'shelter_instance_id', v)}>
-                                        <SelectTrigger className="h-7 text-xs flex-1">
+                                        <SelectTrigger className="h-6 text-[11px] flex-1 px-2">
                                             <SelectValue placeholder="Τύπος στάσης..." />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -160,28 +159,20 @@ export default function SimulationWhatIfPanel({
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <Input
-                                        type="number"
-                                        value={row.quantity}
-                                        onChange={e => updateShelterRow(i, 'quantity', e.target.value)}
-                                        placeholder="Qty"
-                                        className="h-7 text-xs w-14"
-                                    />
+                                    <Input type="number" value={row.quantity} onChange={e => updateShelterRow(i, 'quantity', e.target.value)} placeholder="Qty" className="h-6 text-[11px] w-12 px-1" />
                                     {uRev > 0 && qty > 0 && (
-                                        <span className="text-[11px] text-blue-600 font-semibold whitespace-nowrap w-20 text-right">
-                                            {formatCurrency(qty * uRev)}
-                                        </span>
+                                        <span className="text-[10px] text-blue-600 font-semibold whitespace-nowrap w-16 text-right">{formatCurrency(qty * uRev)}</span>
                                     )}
                                     {shelterRows.length > 1 && (
                                         <button onClick={() => removeShelterRow(i)} className="text-red-400 hover:text-red-600 flex-shrink-0">
-                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <Trash2 className="w-3 h-3" />
                                         </button>
                                     )}
                                 </div>
                             );
                         })}
                         {results.revenue > 0 && (
-                            <div className="flex justify-between text-[11px] font-semibold text-blue-700 bg-blue-50 rounded px-2 py-1">
+                            <div className="flex justify-between text-[10px] font-semibold text-blue-700 bg-blue-50 rounded px-2 py-0.5">
                                 <span>Σύνολο Εσόδων</span>
                                 <span>{formatCurrency(results.revenue)}</span>
                             </div>
@@ -189,34 +180,33 @@ export default function SimulationWhatIfPanel({
                     </div>
 
                     {/* ── Multipliers ── */}
-                    <div className="grid grid-cols-2 gap-2">
-                        <div>
-                            <label className="text-[11px] text-slate-500">× Κόστος Λειτουργίας</label>
-                            <Input type="number" value={fixedMultiplier} onChange={e => setFixedMultiplier(e.target.value)} placeholder="1" className="h-7 text-xs mt-0.5" />
+                    <div className="flex gap-2">
+                        <div className="flex items-center gap-1 flex-1">
+                            <label className="text-[10px] text-slate-400 whitespace-nowrap">× Λειτουργίας</label>
+                            <Input type="number" value={fixedMultiplier} onChange={e => setFixedMultiplier(e.target.value)} placeholder="0" className="h-6 text-[11px] flex-1 px-1" />
                         </div>
-                        <div>
-                            <label className="text-[11px] text-slate-500">× Κόστος Επιστάρχη</label>
-                            <Input type="number" value={supervisorMultiplier} onChange={e => setSupervisorMultiplier(e.target.value)} placeholder="1" className="h-7 text-xs mt-0.5" />
+                        <div className="flex items-center gap-1 flex-1">
+                            <label className="text-[10px] text-slate-400 whitespace-nowrap">× Επιστάρχη</label>
+                            <Input type="number" value={supervisorMultiplier} onChange={e => setSupervisorMultiplier(e.target.value)} placeholder="0" className="h-6 text-[11px] flex-1 px-1" />
                         </div>
                     </div>
 
                     {/* ── Ώρες ανά Τμήμα ── */}
                     <div className="space-y-1">
                         <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Ώρες ανά Τμήμα</span>
-                            <Button size="sm" variant="outline" onClick={addDeptRow} className="h-5 text-[11px] px-2 gap-1 py-0">
-                                <Plus className="w-3 h-3" />
-                                Τμήμα
-                            </Button>
+                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">Ώρες ανά Τμήμα</span>
+                            <button onClick={addDeptRow} className="text-[10px] text-blue-500 hover:text-blue-700 flex items-center gap-0.5">
+                                <Plus className="w-3 h-3" />Τμήμα
+                            </button>
                         </div>
                         {deptHoursRows.map((row, i) => {
                             const rate = getDeptHourlyCost(row.department_id, departmentAssignments, labourPersonnel, departments);
                             const hrs = parseFloat(row.hours) || 0;
                             return (
                                 <div key={i} className="space-y-0.5">
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-1">
                                         <Select value={row.department_id} onValueChange={v => updateDeptRow(i, 'department_id', v)}>
-                                            <SelectTrigger className="h-7 text-xs flex-1">
+                                            <SelectTrigger className="h-6 text-[11px] flex-1 px-2">
                                                 <SelectValue placeholder="Τμήμα..." />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -227,51 +217,27 @@ export default function SimulationWhatIfPanel({
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <Input
-                                            type="number"
-                                            value={row.hours}
-                                            onChange={e => updateDeptRow(i, 'hours', e.target.value)}
-                                            placeholder="ώρες"
-                                            className="h-7 text-xs w-14"
-                                        />
+                                        <Input type="number" value={row.hours} onChange={e => updateDeptRow(i, 'hours', e.target.value)} placeholder="ώρες" className="h-6 text-[11px] w-12 px-1" />
                                         {row.department_id && rate > 0 && hrs > 0 && (
-                                            <span className="text-[11px] text-slate-500 whitespace-nowrap w-20 text-right">
-                                                {formatCurrency(hrs * rate)}
-                                            </span>
+                                            <span className="text-[10px] text-slate-500 whitespace-nowrap w-16 text-right">{formatCurrency(hrs * rate)}</span>
                                         )}
                                         <button onClick={() => removeDeptRow(i)} className="text-red-400 hover:text-red-600 flex-shrink-0">
-                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <Trash2 className="w-3 h-3" />
                                         </button>
                                     </div>
-                                    <Input
-                                        value={row.note || ''}
-                                        onChange={e => updateDeptRow(i, 'note', e.target.value)}
-                                        placeholder="Σχόλιο..."
-                                        className="h-6 text-[11px] px-2 text-slate-500 placeholder:text-slate-300"
-                                    />
+                                    <Input value={row.note || ''} onChange={e => updateDeptRow(i, 'note', e.target.value)} placeholder="Σχόλιο..." className="h-5 text-[10px] px-2 text-slate-500 placeholder:text-slate-300" />
                                 </div>
                             );
                         })}
                     </div>
 
                     {/* ── Extra Labour ── */}
-                    <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                            <label className="text-[11px] text-slate-500 whitespace-nowrap">Πρόσθετο Κόστος (€)</label>
-                            <Input
-                                type="number"
-                                value={extraLabourCost}
-                                onChange={e => setExtraLabourCost(e.target.value)}
-                                placeholder="0"
-                                className="h-7 text-xs flex-1"
-                            />
+                    <div className="space-y-0.5">
+                        <div className="flex items-center gap-1">
+                            <label className="text-[10px] text-slate-400 whitespace-nowrap">Πρόσθετο Κόστος (€)</label>
+                            <Input type="number" value={extraLabourCost} onChange={e => setExtraLabourCost(e.target.value)} placeholder="0" className="h-6 text-[11px] flex-1 px-1" />
                         </div>
-                        <Input
-                            value={extraLabourNote}
-                            onChange={e => setExtraLabourNote(e.target.value)}
-                            placeholder="Σχόλιο..."
-                            className="h-6 text-[11px] px-2 text-slate-500 placeholder:text-slate-300"
-                        />
+                        <Input value={extraLabourNote} onChange={e => setExtraLabourNote(e.target.value)} placeholder="Σχόλιο..." className="h-5 text-[10px] px-2 text-slate-500 placeholder:text-slate-300" />
                     </div>
                     </div>}
 
