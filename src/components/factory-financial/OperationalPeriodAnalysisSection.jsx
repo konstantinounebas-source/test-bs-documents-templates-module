@@ -126,7 +126,7 @@ export default function OperationalPeriodAnalysisSection({
     return (
         <Card className="border-slate-200">
             <CardHeader className="bg-gradient-to-r from-blue-50 to-slate-50 border-b border-slate-200">
-                <CardTitle className="text-base">Χρηματοοικονομική Ανάλυση</CardTitle>
+                <CardTitle className="text-base">Χρηματοοικονομική Ανάλυση{filterParams?.mode === 'weekly' ? ' - Εβδομαδιαία' : ''}</CardTitle>
                 <p className="text-xs text-slate-500 mt-1">{periodLabel}</p>
             </CardHeader>
             <CardContent className="pt-6">
