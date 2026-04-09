@@ -118,8 +118,10 @@ export default function FinancialOverviewTab({
          if (!entries || !period) return [];
 
          return entries.filter(entry => {
-             if (!entry.entry_date) return false;
-             const entryDate = new Date(entry.entry_date + 'T00:00:00');
+             // Support both 'date' and 'entry_date' field names
+             const dateStr = entry.date || entry.entry_date;
+             if (!dateStr) return false;
+             const entryDate = new Date(dateStr + 'T00:00:00');
 
              if (period.mode === 'daily') {
                  // Single day
@@ -165,9 +167,11 @@ export default function FinancialOverviewTab({
                  const quantityByInstance = {};
                  if (filteredRevenues && filteredRevenues.length > 0) {
                      filteredRevenues.forEach(entry => {
-                         if (entry.shelter_instance_id) {
-                             quantityByInstance[entry.shelter_instance_id] = 
-                                 (quantityByInstance[entry.shelter_instance_id] || 0) + (entry.quantity || 0);
+                         // Support both snake_case and camelCase field names
+                         const instanceId = entry.shelter_instance_id || entry.shelterInstanceId;
+                         if (instanceId) {
+                             quantityByInstance[instanceId] = 
+                                 (quantityByInstance[instanceId] || 0) + (entry.quantity || 0);
                          }
                      });
                  }
@@ -186,8 +190,8 @@ export default function FinancialOverviewTab({
                      const totalIncome = contractAmount + approvedTotal + potentialTotal;
                      const totalCost = fd?.total_cost_breakdown || 0;
 
-                     // Get quantity from daily revenue entries for THIS PERIOD only
-                     const qty = quantityByInstance[instance.id] || 0;
+                     // Get quantity from daily revenue entries for THIS PERIOD only, fallback to results data
+                     const qty = quantityByInstance[instance.id] || rd.quantity || 1;
 
                      // Calculate Net Expected Profit = (Total Income - Total Cost) × Quantity - Warranty Provision
                      const grossBalance = (totalIncome - totalCost) * qty;
