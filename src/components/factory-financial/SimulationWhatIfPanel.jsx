@@ -203,41 +203,37 @@ export default function SimulationWhatIfPanel({
                             const rate = getDeptHourlyCost(row.department_id, departmentAssignments, labourPersonnel, departments);
                             const hrs = parseFloat(row.hours) || 0;
                             return (
-                                <div key={i} className="space-y-0.5">
-                                    <div className="flex items-center gap-1">
-                                        <Select value={row.department_id} onValueChange={v => updateDeptRow(i, 'department_id', v)}>
-                                            <SelectTrigger className="h-6 text-[11px] flex-1 px-2">
-                                                <SelectValue placeholder="Τμήμα..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {departments.map(d => (
-                                                    <SelectItem key={d.id} value={d.id}>
-                                                        {d.department_name || d.name || d.id}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <Input type="number" value={row.hours} onChange={e => updateDeptRow(i, 'hours', e.target.value)} placeholder="ώρες" className="h-6 text-[11px] w-12 px-1" />
-                                        {row.department_id && rate > 0 && hrs > 0 && (
-                                            <span className="text-[10px] text-slate-500 whitespace-nowrap w-16 text-right">{formatCurrency(hrs * rate)}</span>
-                                        )}
-                                        <button onClick={() => removeDeptRow(i)} className="text-red-400 hover:text-red-600 flex-shrink-0">
-                                            <Trash2 className="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                    <Input value={row.note || ''} onChange={e => updateDeptRow(i, 'note', e.target.value)} placeholder="Σχόλιο..." className="h-5 text-[10px] px-2 text-slate-500 placeholder:text-slate-300" />
+                                <div key={i} className="flex items-center gap-1">
+                                    <Select value={row.department_id} onValueChange={v => updateDeptRow(i, 'department_id', v)}>
+                                        <SelectTrigger className="h-6 text-[11px] w-28 px-2">
+                                            <SelectValue placeholder="Τμήμα..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {departments.map(d => (
+                                                <SelectItem key={d.id} value={d.id}>
+                                                    {d.department_name || d.name || d.id}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <Input type="number" value={row.hours} onChange={e => updateDeptRow(i, 'hours', e.target.value)} placeholder="ώρες" className="h-6 text-[11px] w-12 px-1" />
+                                    <Input value={row.note || ''} onChange={e => updateDeptRow(i, 'note', e.target.value)} placeholder="Σχόλιο..." className="h-6 text-[11px] flex-1 px-2 text-slate-500 placeholder:text-slate-300" />
+                                    {row.department_id && rate > 0 && hrs > 0 && (
+                                        <span className="text-[10px] text-slate-500 whitespace-nowrap">{formatCurrency(hrs * rate)}</span>
+                                    )}
+                                    <button onClick={() => removeDeptRow(i)} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                                        <Trash2 className="w-3 h-3" />
+                                    </button>
                                 </div>
                             );
                         })}
                     </div>
 
                     {/* ── Extra Labour ── */}
-                    <div className="space-y-0.5">
-                        <div className="flex items-center gap-1">
-                            <label className="text-[10px] text-slate-400 whitespace-nowrap">Πρόσθετο Κόστος (€)</label>
-                            <Input type="number" value={extraLabourCost} onChange={e => setExtraLabourCost(e.target.value)} placeholder="0" className="h-6 text-[11px] flex-1 px-1" />
-                        </div>
-                        <Input value={extraLabourNote} onChange={e => setExtraLabourNote(e.target.value)} placeholder="Σχόλιο..." className="h-5 text-[10px] px-2 text-slate-500 placeholder:text-slate-300" />
+                    <div className="flex items-center gap-1">
+                        <label className="text-[10px] text-slate-400 whitespace-nowrap">Πρόσθετο Κόστος (€)</label>
+                        <Input type="number" value={extraLabourCost} onChange={e => setExtraLabourCost(e.target.value)} placeholder="0" className="h-6 text-[11px] w-16 px-1" />
+                        <Input value={extraLabourNote} onChange={e => setExtraLabourNote(e.target.value)} placeholder="Σχόλιο..." className="h-6 text-[11px] flex-1 px-2 text-slate-500 placeholder:text-slate-300" />
                     </div>
                     </div>}
 
