@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
-    TrendingUp, TrendingDown, DollarSign, BarChart2,
-    Minus, AlertTriangle, Info, Package, Clock, FlaskConical
+    DollarSign, AlertTriangle, Info, Package, Clock, FlaskConical
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OverviewFilterBar from './OverviewFilterBar';
@@ -13,12 +12,7 @@ import {
     getLatestDateFromEntries,
     getWeekNumberFromDate,
     resolveEffectiveOperationalValues,
-    calculatePeriodLabourCost,
-    safeRatio,
 } from './utils/overviewPeriodCalculations';
-import {
-    calculateDepartmentAverageHourlyRate,
-} from './utils/labourCostCalculations';
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 
@@ -44,17 +38,6 @@ function KPICard({ label, value, icon: Icon, color = 'blue', sub, simulated }) {
             </div>
             <div className="text-2xl font-bold">{value}</div>
             {sub && <div className="text-xs opacity-70">{sub}</div>}
-        </div>
-    );
-}
-
-// ─── Analysis Row ─────────────────────────────────────────────────────────────
-
-function AnalysisRow({ label, value, highlight }) {
-    return (
-        <div className={`flex justify-between items-center py-2 px-3 rounded-lg ${highlight ? 'bg-slate-100 font-semibold' : ''}`}>
-            <span className="text-sm text-slate-700">{label}</span>
-            <span className={`text-sm font-medium ${highlight ? 'text-slate-900' : 'text-slate-600'}`}>{value}</span>
         </div>
     );
 }
@@ -95,9 +78,6 @@ export default function FinancialOverviewTab({
     dailyCostsRecords = [],
     startDate = '',
     endDate = '',
-    // Labour data (for period labour cost calculation)
-    labourResources,
-    departmentLabourHours,
 }) {
     const safeProd  = useMemo(() => Array.isArray(dailyProductionEntries)       ? dailyProductionEntries.filter(Boolean)       : [], [dailyProductionEntries]);
     const safeRev   = useMemo(() => Array.isArray(dailyRevenueEntries)          ? dailyRevenueEntries.filter(Boolean)          : [], [dailyRevenueEntries]);
@@ -128,32 +108,6 @@ export default function FinancialOverviewTab({
         periodSummary.filteredRevEntries.length > 0 ||
         periodSummary.filteredHoursEntries.length > 0;
 
-    // Build dept rate map: { department_id → avg hourly rate } from labour_resources
-    const deptRateMap = useMemo(() => {
-        const safeResources = Array.isArray(labourResources) ? labourResources : [];
-        const safeDeptHours = Array.isArray(departmentLabourHours) ? departmentLabourHours : [];
-        const map = {};
-        // Use dept IDs from both static hours and filtered hours entries
-        const allDeptIds = new Set([
-            ...safeDeptHours.map(e => e.department_id),
-            ...periodSummary.filteredHoursEntries.map(e => e.department_id),
-        ]);
-        allDeptIds.forEach(id => {
-            if (id) map[id] = calculateDepartmentAverageHourlyRate(safeResources, id);
-        });
-        return map;
-    }, [labourResources, departmentLabourHours, periodSummary.filteredHoursEntries]);
-
-    // Period labour cost: filtered daily hours × avg rate; fallback to static dept hours
-    const periodLabourCost = useMemo(
-        () => calculatePeriodLabourCost(
-            periodSummary.filteredHoursEntries,
-            Array.isArray(departmentLabourHours) ? departmentLabourHours : [],
-            deptRateMap
-        ),
-        [periodSummary.filteredHoursEntries, departmentLabourHours, deptRateMap]
-    );
-
     // Effective operational values:
     //   - simulation OFF → use filtered daily period data
     //   - simulation ON  → use simState values (UI-only, never saved)
@@ -161,18 +115,6 @@ export default function FinancialOverviewTab({
         () => resolveEffectiveOperationalValues(periodSummary, simActive, simState),
         [periodSummary, simActive, simState]
     );
-
-    // Derived ratios (safe — no NaN, no division by zero)
-    const revenuePerUnit = safeRatio(effective.revenue, effective.productionQty);
-    const revenuePerHour = safeRatio(effective.revenue, effective.totalHours);
-
-    // Static planning calculations (never touched by period filter or simulation)
-    const netBeforeDepr   = (totalIncome || 0) - (totalCosts || 0);
-    const totalCostWithDepr = (totalCosts || 0) + (depreciationCost || 0);
-    const netAfterDepr    = (totalIncome || 0) - totalCostWithDepr;
-    const deprPct = (totalIncome || 0) > 0
-        ? (((depreciationCost || 0) / totalIncome) * 100).toFixed(1)
-        : '0.0';
 
     const fmt = formatCurrency
         || (v => `€${parseFloat(v || 0).toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);

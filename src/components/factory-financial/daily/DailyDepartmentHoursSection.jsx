@@ -18,6 +18,12 @@ export default function DailyDepartmentHoursSection({ entries, selectedDate, dep
     const handleUpdate = (realIdx, field, value) => {
         const updated = [...entries];
         updated[realIdx] = { ...updated[realIdx], [field]: value };
+        // Always persist calculated_total_cost so OperationalPeriodAnalysisSection can read it
+        const row = updated[realIdx];
+        const deptId = field === 'department_id' ? value : row.department_id;
+        const hours = parseFloat(field === 'total_hours' ? value : row.total_hours) || 0;
+        const hourlyRate = getDeptHourlyCost(deptId);
+        updated[realIdx].calculated_total_cost = hours * hourlyRate;
         onUpdate(updated);
     };
 
