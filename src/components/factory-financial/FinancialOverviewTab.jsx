@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
-    DollarSign, AlertTriangle, Info, Package, Clock, FlaskConical
+    AlertTriangle, Info, FlaskConical
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OverviewFilterBar from './OverviewFilterBar';
@@ -11,36 +11,7 @@ import {
     getAvailableYearsFromEntries,
     getLatestDateFromEntries,
     getWeekNumberFromDate,
-    resolveEffectiveOperationalValues,
 } from './utils/overviewPeriodCalculations';
-
-// ─── KPI Card ─────────────────────────────────────────────────────────────────
-
-function KPICard({ label, value, icon: Icon, color = 'blue', sub, simulated }) {
-    const colorMap = {
-        blue:   'bg-blue-50 text-blue-700 border-blue-200',
-        green:  'bg-green-50 text-green-700 border-green-200',
-        red:    'bg-red-50 text-red-700 border-red-200',
-        orange: 'bg-orange-50 text-orange-700 border-orange-200',
-        slate:  'bg-slate-50 text-slate-700 border-slate-200',
-        purple: 'bg-purple-50 text-purple-700 border-purple-200',
-        amber:  'bg-amber-50 text-amber-700 border-amber-300',
-        teal:   'bg-teal-50 text-teal-700 border-teal-200',
-    };
-    return (
-        <div className={`rounded-xl border p-4 flex flex-col gap-2 ${colorMap[color] || colorMap.blue} `}>
-            <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wide opacity-70">{label}</span>
-                <div className="flex items-center gap-1">
-                    {simulated && <FlaskConical className="w-3.5 h-3.5 text-amber-500" />}
-                    {Icon && <Icon className="w-5 h-5 opacity-60" />}
-                </div>
-            </div>
-            <div className="text-2xl font-bold">{value}</div>
-            {sub && <div className="text-xs opacity-70">{sub}</div>}
-        </div>
-    );
-}
 
 // ─── Build default filter (today, or latest available date) ───────────────────
 
@@ -107,26 +78,8 @@ export default function FinancialOverviewTab({
         [safeProd, safeRev, safeHours, filterParams]
     );
 
-    const hasAnyDailyData =
-        periodSummary.filteredProdEntries.length > 0 ||
-        periodSummary.filteredRevEntries.length > 0 ||
-        periodSummary.filteredHoursEntries.length > 0;
-
-    // Effective operational values:
-    //   - simulation OFF → use filtered daily period data
-    //   - simulation ON  → use simState values (UI-only, never saved)
-    const effective = useMemo(
-        () => resolveEffectiveOperationalValues(periodSummary, simActive, simState),
-        [periodSummary, simActive, simState]
-    );
-
     const fmt = formatCurrency
         || (v => `€${parseFloat(v || 0).toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
-
-    const fmtNum = v => {
-        const n = parseFloat(v);
-        return isNaN(n) ? '0' : n.toLocaleString('el-GR', { maximumFractionDigits: 1 });
-    };
 
     return (
         <div className="space-y-6">
@@ -154,58 +107,7 @@ export default function FinancialOverviewTab({
                 isActive={simActive}
             />
 
-            {/* 4. Operational KPI section */}
-            <div>
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
-                        Λειτουργική Επισκόπηση Περιόδου
-                    </h3>
-                    {simActive && (
-                        <span className="text-xs font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <FlaskConical className="w-3 h-3" /> Simulation Mode
-                        </span>
-                    )}
-                </div>
-
-                {!hasAnyDailyData && !simActive ? (
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 text-center">
-                        <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                        <p className="text-sm text-slate-500 font-medium">Δεν υπάρχουν ημερήσια δεδομένα για την επιλεγμένη περίοδο.</p>
-                        <p className="text-xs text-slate-400 mt-1">
-                            Προσθέστε εγγραφές στην καρτέλα "Daily Operations" ή ενεργοποιήστε τη Simulation Mode.
-                        </p>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <KPICard
-                            label="Έσοδα Περιόδου"
-                            value={fmt(effective.revenue)}
-                            icon={DollarSign}
-                            color="green"
-                            simulated={simActive}
-                            sub={simActive ? 'Simulation' : `${periodSummary.filteredRevEntries.length} εγγραφές`}
-                        />
-                        <KPICard
-                            label="Παραγωγή (τεμάχια)"
-                            value={fmtNum(effective.productionQty)}
-                            icon={Package}
-                            color="blue"
-                            simulated={simActive}
-                            sub={simActive ? 'Simulation' : `${periodSummary.filteredProdEntries.length} εγγραφές`}
-                        />
-                        <KPICard
-                            label="Ώρες Εργασίας"
-                            value={`${fmtNum(effective.totalHours)} h`}
-                            icon={Clock}
-                            color="purple"
-                            simulated={simActive}
-                            sub={simActive ? 'Simulation' : `${periodSummary.filteredHoursEntries.length} εγγραφές`}
-                        />
-                    </div>
-                )}
-            </div>
-
-            {/* 5. Operational Period Financial Analysis + Cost Breakdown */}
+            {/* 4. Operational Period Financial Analysis + Cost Breakdown */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <OperationalPeriodAnalysisSection
                     filterParams={filterParams}
