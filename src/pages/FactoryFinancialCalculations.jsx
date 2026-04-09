@@ -35,6 +35,7 @@ import {
     normalizeLoadedLabourResources,
     normalizeLoadedDepartmentLabourHours,
 } from "@/components/factory-financial/utils/labourCostCalculations";
+import { calculateTotalSupervisorDailyCost } from "@/components/factory-financial/utils/labourModuleCalculations";
 import {
     normalizeLoadedDailyProductionEntries,
     normalizeLoadedDailyRevenueEntries,
@@ -369,10 +370,6 @@ export default function FactoryFinancialCalculations() {
                   },
                   labour_resources: labourResources,
                   department_labour_hours: departmentLabourHours,
-                  // Use mapped labour data for persistence
-                  labour_personnel: mappedLabour.labour_personnel,
-                  supervisor_daily_allocations: mappedLabour.supervisor_daily_allocations,
-                  department_technician_assignments: mappedLabour.department_technician_assignments,
                   daily_production_entries: dailyProductionEntries,
                   daily_revenue_entries: dailyRevenueEntries,
                   daily_department_hours_entries: dailyDepartmentHoursEntries,
