@@ -6,6 +6,10 @@
       "type": "string",
       "description": "Reference to FactoryFinancialData"
     },
+    "person_uid": {
+      "type": "string",
+      "description": "Stable UI reference id for labour person"
+    },
     "person_name": {
       "type": "string"
     },

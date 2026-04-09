@@ -277,8 +277,14 @@ export default function FactoryFinancialCalculations() {
                 base44.entities.DepartmentTechnicianAssignment.filter({ factory_financial_data_id: record.id })
             ]);
 
-            setLabourPersonnel(personnel);
-            console.log('✅ Loaded labour personnel:', personnel.length, 'records');
+            // Map person_uid back to id for UI references
+            const personnelWithUIIds = personnel.map(p => ({
+                ...p,
+                id: p.person_uid || p.id
+            }));
+            setLabourPersonnel(personnelWithUIIds);
+            console.log('✅ Loaded labour personnel:', personnelWithUIIds.length, 'records');
+            
             setSupervisorDailyAllocations(allocations);
             console.log('✅ Loaded supervisor allocations:', allocations.length, 'records', allocations);
 
@@ -407,8 +413,12 @@ export default function FactoryFinancialCalculations() {
             // 3️⃣ Create new LabourPersonnel
             console.log('✅ Creating LabourPersonnel...');
             for (const person of labourPersonnel) {
+                // Skip empty records
+                if (!person.person_name?.trim()) continue;
+
                 const personPayload = {
                     factory_financial_data_id: selectedRecord.id,
+                    person_uid: person.id,
                     person_name: person.person_name || '',
                     position: person.position || '',
                     role_type: person.role_type || 'technician',
@@ -429,9 +439,12 @@ export default function FactoryFinancialCalculations() {
             // 4️⃣ Create new SupervisorDailyAllocation
             console.log('✅ Creating SupervisorDailyAllocation...');
             for (const allocation of supervisorDailyAllocations) {
+                // Skip empty records (must have personnel_id)
+                if (!allocation.personnel_id) continue;
+
                 const allocPayload = {
                     factory_financial_data_id: selectedRecord.id,
-                    personnel_id: allocation.personnel_id || '',
+                    personnel_id: allocation.personnel_id,
                     allocation_factor: parseFloat(allocation.allocation_factor) || 1,
                     comments: allocation.comments || '',
                 };
@@ -442,14 +455,20 @@ export default function FactoryFinancialCalculations() {
             // 5️⃣ Create new DepartmentTechnicianAssignment + DepartmentTechnicianRow
             console.log('✅ Creating DepartmentTechnicianAssignment + Row...');
             for (const assignment of departmentTechnicianAssignments) {
+                // Skip empty records (must have department_id)
+                if (!assignment.department_id) continue;
+
                 const assignPayload = {
                     factory_financial_data_id: selectedRecord.id,
-                    department_id: assignment.department_id || '',
+                    department_id: assignment.department_id,
                 };
                 console.log('Creating DepartmentTechnicianAssignment payload:', assignPayload);
                 const createdAssignment = await base44.entities.DepartmentTechnicianAssignment.create(assignPayload);
 
                 for (const techRow of (assignment.technician_rows || [])) {
+                    // Skip empty technician rows
+                    if (!techRow.personnel_id && !techRow.comments?.trim()) continue;
+
                     const rowPayload = {
                         assignment_id: createdAssignment.id,
                         personnel_id: techRow.personnel_id || '',
@@ -518,33 +537,59 @@ export default function FactoryFinancialCalculations() {
 
             const clonedRecord = await base44.entities.FactoryFinancialData.create(clonedData);
 
-            // Clone labour data
+            // Clone labour data with schema-safe payloads
             for (const person of labourPersonnel) {
-                await base44.entities.LabourPersonnel.create({
-                    ...person,
-                    factory_financial_data_id: clonedRecord.id
-                });
+                if (!person.person_name?.trim()) continue;
+
+                const personPayload = {
+                    factory_financial_data_id: clonedRecord.id,
+                    person_uid: person.id,
+                    person_name: person.person_name || '',
+                    position: person.position || '',
+                    role_type: person.role_type || 'technician',
+                    employment_type: person.employment_type || 'monthly',
+                    monthly_salary: parseFloat(person.monthly_salary) || 0,
+                    daily_rate: parseFloat(person.daily_rate) || 0,
+                    day_factor: parseFloat(person.day_factor) || 22,
+                    hour_factor: parseFloat(person.hour_factor) || 8,
+                    is_active: person.is_active !== false,
+                    calculated_daily_cost: parseFloat(person.calculated_daily_cost) || 0,
+                    calculated_hourly_cost: parseFloat(person.calculated_hourly_cost) || 0,
+                    department_id: person.department_id || '',
+                };
+                await base44.entities.LabourPersonnel.create(personPayload);
             }
 
             for (const alloc of supervisorDailyAllocations) {
-                await base44.entities.SupervisorDailyAllocation.create({
-                    ...alloc,
-                    factory_financial_data_id: clonedRecord.id
-                });
+                if (!alloc.personnel_id) continue;
+
+                const allocPayload = {
+                    factory_financial_data_id: clonedRecord.id,
+                    personnel_id: alloc.personnel_id,
+                    allocation_factor: parseFloat(alloc.allocation_factor) || 1,
+                    comments: alloc.comments || '',
+                };
+                await base44.entities.SupervisorDailyAllocation.create(allocPayload);
             }
 
             for (const assignment of departmentTechnicianAssignments) {
-                const newAssignment = await base44.entities.DepartmentTechnicianAssignment.create({
+                if (!assignment.department_id) continue;
+
+                const assignPayload = {
                     factory_financial_data_id: clonedRecord.id,
-                    department_id: assignment.department_id
-                });
+                    department_id: assignment.department_id,
+                };
+                const newAssignment = await base44.entities.DepartmentTechnicianAssignment.create(assignPayload);
 
                 for (const row of (assignment.technician_rows || [])) {
-                    await base44.entities.DepartmentTechnicianRow.create({
+                    if (!row.personnel_id && !row.comments?.trim()) continue;
+
+                    const rowPayload = {
                         assignment_id: newAssignment.id,
-                        personnel_id: row.personnel_id,
-                        comments: row.comments
-                    });
+                        personnel_id: row.personnel_id || '',
+                        comments: row.comments || '',
+                    };
+                    await base44.entities.DepartmentTechnicianRow.create(rowPayload);
                 }
             }
 
