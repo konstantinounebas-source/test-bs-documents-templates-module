@@ -594,13 +594,14 @@
     },
     "labour_personnel": {
       "type": "array",
-      "description": "New Labour module \u2014 personnel master records with salary and cost calculations",
+      "description": "NEW Labour module: Personnel master list with roles, costs, and employment terms",
       "default": [],
       "items": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "Unique person ID"
           },
           "person_name": {
             "type": "string"
@@ -609,10 +610,18 @@
             "type": "string"
           },
           "role_type": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "supervisor",
+              "technician"
+            ]
           },
           "employment_type": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "monthly",
+              "daily"
+            ]
           },
           "monthly_salary": {
             "type": "number",
@@ -624,11 +633,17 @@
           },
           "day_factor": {
             "type": "number",
-            "default": 1
+            "default": 22,
+            "description": "Working days per month"
           },
           "hour_factor": {
             "type": "number",
-            "default": 1
+            "default": 8,
+            "description": "Hours per working day"
+          },
+          "is_active": {
+            "type": "boolean",
+            "default": true
           },
           "calculated_daily_cost": {
             "type": "number",
@@ -638,30 +653,27 @@
             "type": "number",
             "default": 0
           },
-          "is_active": {
-            "type": "boolean",
-            "default": true
+          "department_id": {
+            "type": "string"
           }
         }
       }
     },
     "supervisor_daily_allocations": {
       "type": "array",
-      "description": "New Labour module \u2014 supervisor daily cost allocations",
+      "description": "NEW Labour module: Supervisor allocation factors for cost distribution",
       "default": [],
       "items": {
         "type": "object",
         "properties": {
           "personnel_id": {
-            "type": "string"
+            "type": "string",
+            "description": "Reference to labour_personnel.id"
           },
           "allocation_factor": {
             "type": "number",
-            "default": 0
-          },
-          "allocated_daily_cost": {
-            "type": "number",
-            "default": 0
+            "default": 1,
+            "description": "Multiplier for supervisor daily cost (e.g., 1 = 100%, 0.5 = 50%)"
           },
           "comments": {
             "type": "string"
@@ -671,7 +683,7 @@
     },
     "department_technician_assignments": {
       "type": "array",
-      "description": "New Labour module \u2014 technician assignments per department with hourly costs",
+      "description": "NEW Labour module: Technician assignments per department with hourly costs",
       "default": [],
       "items": {
         "type": "object",
@@ -681,26 +693,19 @@
           },
           "technician_rows": {
             "type": "array",
-            "default": [],
+            "description": "List of technicians assigned to this department",
             "items": {
               "type": "object",
               "properties": {
                 "personnel_id": {
-                  "type": "string"
-                },
-                "hourly_cost": {
-                  "type": "number",
-                  "default": 0
+                  "type": "string",
+                  "description": "Reference to labour_personnel.id"
                 },
                 "comments": {
                   "type": "string"
                 }
               }
             }
-          },
-          "average_hourly_cost": {
-            "type": "number",
-            "default": 0
           }
         }
       }
@@ -800,6 +805,33 @@
             "type": "string"
           }
         }
+      }
+    },
+    "daily_costs_records": {
+      "type": "array",
+      "description": "Daily cost tracking records",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "cost_type": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      }
+    },
+    "simulation_panels": {
+      "type": "array",
+      "description": "Simulation/What-If scenarios",
+      "default": [],
+      "items": {
+        "type": "object"
       }
     },
     "is_active": {
