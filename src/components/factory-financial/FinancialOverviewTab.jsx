@@ -108,7 +108,8 @@ export default function FinancialOverviewTab({
     const safeRev   = useMemo(() => Array.isArray(dailyRevenueEntries)          ? dailyRevenueEntries.filter(Boolean)          : [], [dailyRevenueEntries]);
     const safeHours = useMemo(() => Array.isArray(dailyDepartmentHoursEntries)  ? dailyDepartmentHoursEntries.filter(Boolean)  : [], [dailyDepartmentHoursEntries]);
 
-    // JV profit data
+    // JV profit data — calculated from Net Expected Profit per shelter instance
+    // Air Control = 75% of Net Profit, Amco = 25% of Net Profit
     const [jvData, setJvData] = useState({ airControlTotal: null, amcoTotal: null, netProfitTotal: null });
     useEffect(() => {
         const loadJV = async () => {
@@ -119,21 +120,32 @@ export default function FinancialOverviewTab({
                     base44.entities.ShelterInstance.list(),
                 ]);
                 let airControlTotal = 0, amcoTotal = 0, netProfitTotal = 0;
+                // For each active shelter instance, calculate Net Expected Profit
                 instances.filter(i => i.active !== false).forEach(instance => {
                     const fd = allFinancialData.find(d => d.shelter_instance_id === instance.id);
                     const rd = allResults.find(r => r.shelter_instance_id === instance.id);
                     if (!rd) return;
+                    
+                    // Calculate total contract income (base + approved + potential variations)
                     const contractAmount = fd?.contract_amount || 0;
                     const approvedTotal = (fd?.approved_variations || []).reduce((s, v) => s + (v.amount || 0), 0);
                     const potentialTotal = (fd?.potential_variations || []).reduce((s, v) => s + (v.amount || 0), 0);
                     const totalIncome = contractAmount + approvedTotal + potentialTotal;
                     const totalCost = fd?.total_cost_breakdown || 0;
+                    
+                    // Calculate Net Expected Profit = (Total Income - Total Cost) × Quantity - Warranty Provision
                     const qty = rd.quantity || 1;
                     const grossBalance = (totalIncome - totalCost) * qty;
                     const warranty = (rd.warranty_provision || 0) * qty;
                     const netProfit = grossBalance - warranty;
-                    airControlTotal += (netProfit * (rd.air_control_share_percent || 0)) / 100;
-                    amcoTotal += (netProfit * (rd.amco_share_percent || 0)) / 100;
+                    
+                    // Distribute profit: Air Control (75%) & Amco (25%)
+                    // Note: The air_control_share_percent and amco_share_percent are used as configured
+                    const airControlShare = rd.air_control_share_percent || 75; // Default 75%
+                    const amcoShare = rd.amco_share_percent || 25; // Default 25%
+                    
+                    airControlTotal += (netProfit * airControlShare) / 100;
+                    amcoTotal += (netProfit * amcoShare) / 100;
                     netProfitTotal += netProfit;
                 });
                 setJvData({ airControlTotal, amcoTotal, netProfitTotal });
@@ -193,7 +205,7 @@ export default function FinancialOverviewTab({
                 </span>
             </div>
 
-            {/* 3. JV Profit Summary */}
+            {/* 3. JV Profit Summary — based on Net Expected Profit */}
             {jvData.netProfitTotal !== null && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="bg-green-50 border border-green-200 rounded-xl px-5 py-4 flex items-center gap-4">
@@ -201,20 +213,23 @@ export default function FinancialOverviewTab({
                         <div>
                             <p className="text-xs text-green-700 font-medium uppercase tracking-wide">Καθαρό Κέρδος JV</p>
                             <p className="text-xl font-bold text-green-700">{fmt(jvData.netProfitTotal)}</p>
+                            <p className="text-xs text-green-600 mt-1">από Net Expected Profit</p>
                         </div>
                     </div>
                     <div className="bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 flex items-center gap-4">
                         <TrendingUp className="w-6 h-6 text-blue-600 flex-shrink-0" />
                         <div>
-                            <p className="text-xs text-blue-700 font-medium uppercase tracking-wide">Air Control Μερίδιο</p>
+                            <p className="text-xs text-blue-700 font-medium uppercase tracking-wide">Air Control (75%)</p>
                             <p className="text-xl font-bold text-blue-700">{fmt(jvData.airControlTotal)}</p>
+                            <p className="text-xs text-blue-600 mt-1">75% × Net Profit</p>
                         </div>
                     </div>
                     <div className="bg-purple-50 border border-purple-200 rounded-xl px-5 py-4 flex items-center gap-4">
                         <TrendingUp className="w-6 h-6 text-purple-600 flex-shrink-0" />
                         <div>
-                            <p className="text-xs text-purple-700 font-medium uppercase tracking-wide">Amco Μερίδιο</p>
+                            <p className="text-xs text-purple-700 font-medium uppercase tracking-wide">Amco (25%)</p>
                             <p className="text-xl font-bold text-purple-700">{fmt(jvData.amcoTotal)}</p>
+                            <p className="text-xs text-purple-600 mt-1">25% × Net Profit</p>
                         </div>
                     </div>
                 </div>
