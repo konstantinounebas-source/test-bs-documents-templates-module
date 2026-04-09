@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Plus, Trash2, DollarSign } from 'lucide-react';
+import { CheckCircle2, Plus, Trash2, DollarSign, Loader2 } from 'lucide-react';
 import { calculateSupervisorAllocatedDailyCost, calculateTotalSupervisorDailyCost } from '../utils/labourModuleCalculations';
 
 export default function DailyCostsDecisionSection({ selectedDate, supervisorDailyAllocations, labourPersonnel, formatCurrency, fixedDailyTotal, operationalDailyTotal, records = [], onSave = () => {} }) {
      const [fixedCosts, setFixedCosts] = useState(false);
      const [operationalCosts, setOperationalCosts] = useState(false);
      const [supervisorCosts, setSupervisorCosts] = useState(false);
+     const [saveStatus, setSaveStatus] = useState('idle'); // idle, saving, saved, error
 
     const getFixedCostsTotal = () => {
         if (!fixedCosts) return 0;
@@ -25,6 +26,11 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
     };
 
     const handleAddRecord = () => {
+         // Validation: At least one cost type must be selected
+         if (!fixedCosts && !operationalCosts && !supervisorCosts) {
+              return;
+         }
+
          const fixedCost = fixedCosts ? getFixedCostsTotal() : 0;
          const operationalCost = operationalCosts ? getOperationalCostsTotal() : 0;
          const supervisorCost = supervisorCosts ? getSupervisorTotalCost() : 0;
@@ -34,18 +40,26 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
              hasFixedCosts: fixedCosts,
              hasOperationalCosts: operationalCosts,
              hasSupervisorCosts: supervisorCosts,
-             fixedCost,
-             operationalCost,
-             supervisorCost,
-             totalCost: fixedCost + operationalCost + supervisorCost,
-             timestamp: new Date().toISOString()
+             fixedCost: parseFloat(fixedCost || 0),
+             operationalCost: parseFloat(operationalCost || 0),
+             supervisorCost: parseFloat(supervisorCost || 0),
+             totalCost: parseFloat(fixedCost || 0) + parseFloat(operationalCost || 0) + parseFloat(supervisorCost || 0),
+             timestamp: new Date().toISOString(),
+             id: `cost-${selectedDate}-${Date.now()}` // Unique identifier for tracking
          };
+
          const updatedRecords = [...records, newRecord];
          console.log('📤 DailyCostsDecisionSection saving:', updatedRecords);
-         if (typeof onSave === 'function') onSave(updatedRecords);
-         setFixedCosts(false);
-         setOperationalCosts(false);
-         setSupervisorCosts(false);
+
+         setSaveStatus('saving');
+         setTimeout(() => {
+              if (typeof onSave === 'function') onSave(updatedRecords);
+              setSaveStatus('saved');
+              setTimeout(() => setSaveStatus('idle'), 2000);
+              setFixedCosts(false);
+              setOperationalCosts(false);
+              setSupervisorCosts(false);
+         }, 300);
      };
 
     const handleRemoveRecord = (idx) => {
@@ -107,14 +121,20 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
                     </div>
 
                     {/* Action Button */}
-                    <Button
+                     <Button
                         onClick={handleAddRecord}
-                        disabled={!fixedCosts && !operationalCosts && !supervisorCosts}
+                        disabled={!fixedCosts && !operationalCosts && !supervisorCosts || saveStatus === 'saving'}
                         size="sm"
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs py-1 h-auto px-2 ml-auto"
+                        className={`text-white text-xs py-1 h-auto px-2 ml-auto ${
+                            saveStatus === 'saved' ? 'bg-green-600 hover:bg-green-700' :
+                            saveStatus === 'saving' ? 'bg-blue-500' :
+                            'bg-blue-600 hover:bg-blue-700'
+                        }`}
                     >
-                        <Plus className="w-3 h-3 mr-1" />
-                        Προσθήκη
+                        {saveStatus === 'saving' && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
+                        {saveStatus === 'saved' && <CheckCircle2 className="w-3 h-3 mr-1" />}
+                        {saveStatus !== 'saving' && saveStatus !== 'saved' && <Plus className="w-3 h-3 mr-1" />}
+                        {saveStatus === 'saving' ? 'Αποθήκευση...' : saveStatus === 'saved' ? 'Αποθηκεύτηκε!' : 'Προσθήκη'}
                     </Button>
                 </div>
 
@@ -124,7 +144,7 @@ export default function DailyCostsDecisionSection({ selectedDate, supervisorDail
                         <div className="space-y-1">
                             {todayRecords.map((record, idx) => (
                                 <div
-                                    key={idx}
+                                    key={record.id || idx}
                                     className="flex items-center justify-between p-2 rounded bg-blue-50 border border-blue-100 hover:bg-blue-100 transition-colors"
                                 >
                                     <div className="flex items-center gap-2 flex-1">

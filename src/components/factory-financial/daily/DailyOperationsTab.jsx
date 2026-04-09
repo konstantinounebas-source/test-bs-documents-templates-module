@@ -77,23 +77,46 @@ function DailyOperationsTabContent({
     const [selectedDate, setSelectedDate] = useState(todayISO());
 
     // Add: always stamp selectedDate
-    const handleAddRevenue = (row) =>
-        onDailyRevenue([...dailyRevenueEntries, { ...row, date: selectedDate }]);
+    const handleAddRevenue = (row) => {
+        const newEntry = { ...row, date: selectedDate };
+        console.log('✅ Adding revenue entry with date:', newEntry);
+        onDailyRevenue([...dailyRevenueEntries, newEntry]);
+    };
 
     // Remove by real index in the full array
-    const handleRemoveRevenue = (realIdx) =>
-        onDailyRevenue(dailyRevenueEntries.filter((_, i) => i !== realIdx));
+    const handleRemoveRevenue = (realIdx) => {
+        const updated = dailyRevenueEntries.filter((_, i) => i !== realIdx);
+        console.log('✅ Removing revenue entry, remaining:', updated);
+        onDailyRevenue(updated);
+    };
 
     // Update: the child passes back the full array (with all dates) — pass through as-is
-    const handleUpdateRevenue = (fullArray) => onDailyRevenue(fullArray);
+    const handleUpdateRevenue = (fullArray) => {
+        console.log('✅ Updating revenue entries:', fullArray);
+        onDailyRevenue(fullArray);
+    };
 
-    const handleAddDeptHours = (row) =>
-        onDailyDepartmentHours([...dailyDepartmentHoursEntries, { ...row, date: selectedDate }]);
+    const handleAddDeptHours = (row) => {
+        const newEntry = { ...row, date: selectedDate };
+        console.log('✅ Adding dept hours entry with date:', newEntry);
+        onDailyDepartmentHours([...dailyDepartmentHoursEntries, newEntry]);
+    };
 
-    const handleRemoveDeptHours = (realIdx) =>
-        onDailyDepartmentHours(dailyDepartmentHoursEntries.filter((_, i) => i !== realIdx));
+    const handleRemoveDeptHours = (realIdx) => {
+        const updated = dailyDepartmentHoursEntries.filter((_, i) => i !== realIdx);
+        console.log('✅ Removing dept hours entry, remaining:', updated);
+        onDailyDepartmentHours(updated);
+    };
 
-    const handleUpdateDeptHours = (fullArray) => onDailyDepartmentHours(fullArray);
+    const handleUpdateDeptHours = (fullArray) => {
+        console.log('✅ Updating dept hours entries:', fullArray);
+        onDailyDepartmentHours(fullArray);
+    };
+
+    const handleCostsChange = (updated) => {
+        console.log('✅ Costs records updated:', updated);
+        onDailyCostsRecords(updated);
+    };
 
     return (
         <div className="space-y-6">
@@ -117,7 +140,7 @@ function DailyOperationsTabContent({
                 fixedDailyTotal={fixedDailyTotal}
                 operationalDailyTotal={operationalDailyTotal}
                 records={dailyCostsRecords}
-                onSave={onDailyCostsRecords}
+                onSave={handleCostsChange}
             />
 
             <DailyRevenueSection
