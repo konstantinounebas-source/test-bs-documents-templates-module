@@ -87,8 +87,15 @@ export default function SimulationWhatIfPanel({
     const results = useMemo(() => {
         const calcUnitRevenue = (shelterInstanceId) => {
             if (!shelterInstanceId) return 0;
+            // shelterRevenueItems are the revenue line items from the Revenue tab.
+            // Each item has shelter_instance_id linking to a ShelterInstance.
+            // The user picks a shelterInstance from shelterInstances list.
+            // We need to find the revenue item that matches the chosen shelterInstance id.
             const item = (shelterRevenueItems || []).find(r => r.shelter_instance_id === shelterInstanceId);
-            if (!item) return 0;
+            if (!item) {
+                // Fallback: try matching by the shelterInstance's own id directly
+                return 0;
+            }
             const total = getShelterRevenueTotal ? getShelterRevenueTotal(item) : (parseFloat(item.total_revenue) || 0);
             const qty = parseFloat(item.pending_quantity) || 0;
             return qty > 0 ? total / qty : (parseFloat(item.unit_revenue) || 0);
@@ -119,7 +126,8 @@ export default function SimulationWhatIfPanel({
 
         return { revenue, opCost, supCost, deptLabourCost, extra, totalLabour, resultBeforeDepreciation, depreciationCharge, finalResult };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [shelterRows, fixedMultiplier, supervisorMultiplier, fixedDailyTotal, operationalDailyTotal, supervisorDailyCost, deptHoursRows, extraLabourCost, depreciationFactor, departmentAssignments, labourPersonnel, departments, shelterRevenueItems]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [shelterRows, fixedMultiplier, supervisorMultiplier, fixedDailyTotal, operationalDailyTotal, supervisorDailyCost, deptHoursRows, extraLabourCost, depreciationFactor, departmentAssignments, labourPersonnel, departments, shelterRevenueItems, getShelterRevenueTotal]);
 
     return (
         <Card className={`border-2 ${s.border}`}>
@@ -160,26 +168,36 @@ export default function SimulationWhatIfPanel({
                             const qtyA = parseFloat(row.quantity_a) || 0;
                             const qtyB = parseFloat(row.quantity_b) || 0;
                             const rowRevenue = qtyA * uRevA + qtyB * uRevB;
+                            // Options come from shelterRevenueItems (Revenue tab entries) — value = shelter_instance_id
+                            const revenueOptions = (shelterRevenueItems || []).filter(r => r.shelter_instance_id);
+                            const getLabel = (siId) => {
+                                const si = shelterInstances.find(s => s.id === siId);
+                                return si ? (si.name || si.instance_name || siId) : siId;
+                            };
                             return (
                                 <div key={i} className="flex items-center gap-1">
-                                    <Select value={row.shelter_instance_id_a} onValueChange={v => updateShelterRow(i, 'shelter_instance_id_a', v)}>
+                                    <Select value={row.shelter_instance_id_a || ''} onValueChange={v => updateShelterRow(i, 'shelter_instance_id_a', v)}>
                                         <SelectTrigger className="h-6 text-[11px] flex-1 px-2">
                                             <SelectValue placeholder="Στάση 1..." />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {shelterInstances.map(si => (
-                                                <SelectItem key={si.id} value={si.id}>{si.name || si.instance_name || si.id}</SelectItem>
+                                            {revenueOptions.map((r, idx) => (
+                                                <SelectItem key={r.shelter_instance_id + idx} value={r.shelter_instance_id}>
+                                                    {getLabel(r.shelter_instance_id)}
+                                                </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                     <Input type="number" value={row.quantity_a} onChange={e => updateShelterRow(i, 'quantity_a', e.target.value)} placeholder="Qty" className="h-6 text-[11px] w-10 px-1" />
-                                    <Select value={row.shelter_instance_id_b} onValueChange={v => updateShelterRow(i, 'shelter_instance_id_b', v)}>
+                                    <Select value={row.shelter_instance_id_b || ''} onValueChange={v => updateShelterRow(i, 'shelter_instance_id_b', v)}>
                                         <SelectTrigger className="h-6 text-[11px] flex-1 px-2">
                                             <SelectValue placeholder="Στάση 2..." />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {shelterInstances.map(si => (
-                                                <SelectItem key={si.id} value={si.id}>{si.name || si.instance_name || si.id}</SelectItem>
+                                            {revenueOptions.map((r, idx) => (
+                                                <SelectItem key={r.shelter_instance_id + idx} value={r.shelter_instance_id}>
+                                                    {getLabel(r.shelter_instance_id)}
+                                                </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
