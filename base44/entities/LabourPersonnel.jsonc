@@ -1,0 +1,78 @@
+{
+  "name": "LabourPersonnel",
+  "type": "object",
+  "properties": {
+    "factory_financial_data_id": {
+      "type": "string",
+      "description": "Reference to FactoryFinancialData"
+    },
+    "person_name": {
+      "type": "string",
+      "description": "Name of the person"
+    },
+    "position": {
+      "type": "string",
+      "description": "Job position"
+    },
+    "role_type": {
+      "type": "string",
+      "enum": [
+        "supervisor",
+        "technician"
+      ],
+      "description": "Role type in the organization"
+    },
+    "employment_type": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "daily"
+      ],
+      "description": "Type of employment"
+    },
+    "monthly_salary": {
+      "type": "number",
+      "default": 0,
+      "description": "Monthly salary for monthly employees"
+    },
+    "daily_rate": {
+      "type": "number",
+      "default": 0,
+      "description": "Daily rate for daily employees"
+    },
+    "day_factor": {
+      "type": "number",
+      "default": 22,
+      "description": "Working days per month"
+    },
+    "hour_factor": {
+      "type": "number",
+      "default": 8,
+      "description": "Hours per working day"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether person is active"
+    },
+    "calculated_daily_cost": {
+      "type": "number",
+      "default": 0,
+      "description": "Calculated daily cost"
+    },
+    "calculated_hourly_cost": {
+      "type": "number",
+      "default": 0,
+      "description": "Calculated hourly cost"
+    },
+    "department_id": {
+      "type": "string",
+      "description": "Department assignment"
+    }
+  },
+  "required": [
+    "factory_financial_data_id",
+    "person_name",
+    "position"
+  ]
+}

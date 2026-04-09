@@ -1,0 +1,27 @@
+{
+  "name": "SupervisorDailyAllocation",
+  "type": "object",
+  "properties": {
+    "factory_financial_data_id": {
+      "type": "string",
+      "description": "Reference to FactoryFinancialData"
+    },
+    "personnel_id": {
+      "type": "string",
+      "description": "Reference to LabourPersonnel"
+    },
+    "allocation_factor": {
+      "type": "number",
+      "default": 1,
+      "description": "Multiplier for supervisor daily cost (e.g., 1 = 100%, 0.5 = 50%)"
+    },
+    "comments": {
+      "type": "string",
+      "description": "Additional comments"
+    }
+  },
+  "required": [
+    "factory_financial_data_id",
+    "personnel_id"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "DepartmentTechnicianAssignment",
+  "type": "object",
+  "properties": {
+    "factory_financial_data_id": {
+      "type": "string",
+      "description": "Reference to FactoryFinancialData"
+    },
+    "department_id": {
+      "type": "string",
+      "description": "Reference to Department"
+    },
+    "technician_rows": {
+      "type": "array",
+      "description": "List of technicians assigned to this department",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "personnel_id": {
+            "type": "string",
+            "description": "Reference to LabourPersonnel"
+          },
+          "comments": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "factory_financial_data_id",
+    "department_id"
+  ]
+}

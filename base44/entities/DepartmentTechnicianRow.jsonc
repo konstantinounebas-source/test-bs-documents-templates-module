@@ -1,0 +1,22 @@
+{
+  "name": "DepartmentTechnicianRow",
+  "type": "object",
+  "properties": {
+    "assignment_id": {
+      "type": "string",
+      "description": "Reference to DepartmentTechnicianAssignment"
+    },
+    "personnel_id": {
+      "type": "string",
+      "description": "Reference to LabourPersonnel"
+    },
+    "comments": {
+      "type": "string",
+      "description": "Additional comments"
+    }
+  },
+  "required": [
+    "assignment_id",
+    "personnel_id"
+  ]
+}
