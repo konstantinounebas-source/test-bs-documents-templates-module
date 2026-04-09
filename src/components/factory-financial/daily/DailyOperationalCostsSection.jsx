@@ -1,123 +1,103 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Plus, Trash2, DollarSign } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Trash2, Plus } from 'lucide-react';
 
-const getEmptyRow = (date) => ({
-    date,
-    cost_type: 'operational',
-    multiplier_days: 1,
-    unit_cost: 0,
-    total_cost: 0
-});
+export default function DailyOperationalCostsSection({
+  dailyCostsRecords,
+  selectedDate,
+  operationalDailyTotal,
+  onUpdate
+}) {
+  const records = dailyCostsRecords.filter(r => r.date === selectedDate && r.cost_type === 'operational');
+  const totalCost = records.reduce((sum, r) => sum + (r.total_cost || 0), 0);
 
-export default function DailyOperationalCostsSection({ entries, selectedDate, unitCost, formatCurrency, onAdd, onRemove, onUpdate }) {
-    const visibleWithIdx = selectedDate
-        ? entries.map((r, i) => ({ r, i })).filter(({ r }) => r.date === selectedDate && r.cost_type === 'operational')
-        : entries.map((r, i) => ({ r, i })).filter(({ r }) => r.cost_type === 'operational');
-
-    const formatVal = formatCurrency || ((val) => val?.toFixed(2) || '—');
-
-    const handleUpdate = (realIdx, field, value) => {
-        const updated = [...entries];
-        const row = { ...updated[realIdx] };
-        
-        if (field === 'multiplier_days') {
-            const multiplierVal = parseFloat(value) || 0;
-            row.multiplier_days = multiplierVal;
-            row.total_cost = multiplierVal * (row.unit_cost || 0);
-            console.log('✅ Updated multiplier_days:', multiplierVal, 'total_cost:', row.total_cost);
-        }
-        
-        updated[realIdx] = row;
-        onUpdate(updated);
+  const handleAdd = () => {
+    const newRecord = {
+      id: `operational-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      date: selectedDate,
+      cost_type: 'operational',
+      multiplier_days: 1,
+      unit_cost: operationalDailyTotal,
+      total_cost: operationalDailyTotal
     };
+    onUpdate([...dailyCostsRecords, newRecord]);
+  };
 
-    const handleAdd = () => {
-        const parsedUnitCost = parseFloat(unitCost) || 0;
-        const newRow = {
-            ...getEmptyRow(selectedDate),
-            cost_type: 'operational',
-            unit_cost: parsedUnitCost,
-            multiplier_days: 1,
-            total_cost: parsedUnitCost
-        };
-        console.log('✅ Adding operational cost row with unit_cost:', parsedUnitCost, newRow);
-        onAdd(newRow);
-    };
+  const handleUpdateMultiplier = (recordId, newMultiplier) => {
+    const updated = dailyCostsRecords.map(r => {
+      if (r.id === recordId) {
+        return { ...r, multiplier_days: newMultiplier, total_cost: newMultiplier * r.unit_cost };
+      }
+      return r;
+    });
+    onUpdate(updated);
+  };
 
-    const totalCost = visibleWithIdx.reduce((sum, { r }) => sum + (r.total_cost || 0), 0);
+  const handleRemove = (recordId) => {
+    onUpdate(dailyCostsRecords.filter(r => r.id !== recordId));
+  };
 
-    return (
-        <Card>
-            <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <DollarSign className="w-5 h-5 text-green-600" />
-                        <CardTitle className="text-base font-semibold text-slate-800">
-                            Δ. Λειτουργικά Κόστη (Ημερήσια)
-                        </CardTitle>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <span className="text-sm text-slate-500">
-                            Ημερήσιο Κόστος: <strong className="text-green-700">{formatVal(unitCost)}</strong>
-                        </span>
-                        <span className="text-sm text-slate-500">
-                            Σύνολο: <strong className="text-green-700">{formatVal(totalCost)}</strong>
-                        </span>
-                        <Button size="sm" variant="outline" onClick={handleAdd} className="gap-1">
-                            <Plus className="w-3.5 h-3.5" /> Προσθήκη
-                        </Button>
-                    </div>
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center justify-between">
+          <span>Λειτουργικά Κόστη</span>
+          <span className="text-sm font-normal text-slate-600">Σύνολο: €{totalCost.toFixed(2)}</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {records.length > 0 ? (
+            records.map((record) => (
+              <div key={record.id} className="flex items-end gap-2">
+                <div className="flex-1">
+                  <label className="text-xs text-slate-600 block mb-1">Ημέρες</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={record.multiplier_days || 1}
+                    onChange={(e) => handleUpdateMultiplier(record.id, parseFloat(e.target.value) || 1)}
+                    className="h-8 text-sm"
+                  />
                 </div>
-            </CardHeader>
-            <CardContent>
-                {visibleWithIdx.length === 0 ? (
-                    <p className="text-sm text-slate-400 text-center py-6">Δεν υπάρχουν εγγραφές λειτουργικών κοστών για {selectedDate || 'αυτή την ημέρα'}. Κάντε κλικ στο «Προσθήκη».</p>
-                ) : (
-                    <div className="space-y-2">
-                        {/* Header */}
-                        <div className="hidden md:grid grid-cols-[1fr_120px_120px_120px_36px] gap-2 px-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            <span>Ημερομηνία</span>
-                            <span>Ημέρες</span>
-                            <span>Τιμή/Ημέρα</span>
-                            <span>Σύνολο</span>
-                            <span />
-                        </div>
-                        {visibleWithIdx.map(({ r: row, i: realIdx }) => (
-                            <div key={realIdx} className="grid grid-cols-1 md:grid-cols-[1fr_120px_120px_120px_36px] gap-2 items-center bg-slate-50 rounded-lg p-2">
-                                <div className="text-sm text-slate-700">
-                                    {row.date}
-                                </div>
-                                <Input
-                                    type="number"
-                                    min="1"
-                                    step="1"
-                                    value={row.multiplier_days}
-                                    onChange={e => handleUpdate(realIdx, 'multiplier_days', parseFloat(e.target.value) || 1)}
-                                    className="text-sm h-8"
-                                    placeholder="1"
-                                />
-                                <div className="text-right flex-shrink-0 text-sm font-semibold text-slate-800">
-                                    {formatVal(row.unit_cost)}
-                                </div>
-                                <div className="text-right flex-shrink-0 text-sm font-semibold text-green-700">
-                                    {formatVal(row.total_cost)}
-                                </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => onRemove(realIdx)}
-                                    className="h-8 w-8 text-red-400 hover:text-red-600 hover:bg-red-50"
-                                >
-                                    <Trash2 className="w-4 h-4" />
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
+                <div className="flex-1">
+                  <label className="text-xs text-slate-600 block mb-1">Ημερήσιο Κόστος</label>
+                  <div className="h-8 px-3 bg-slate-50 border border-input rounded-md flex items-center text-sm">
+                    €{record.unit_cost?.toFixed(2) || '0.00'}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-slate-600 block mb-1">Σύνολο</label>
+                  <div className="h-8 px-3 bg-slate-50 border border-input rounded-md flex items-center text-sm font-semibold">
+                    €{record.total_cost?.toFixed(2) || '0.00'}
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRemove(record.id)}
+                  className="h-8 w-8 text-red-600 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-slate-500">Δεν υπάρχουν εγγραφές για αυτήν την ημερομηνία</p>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleAdd}
+            className="w-full mt-3"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Προσθήκη
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
