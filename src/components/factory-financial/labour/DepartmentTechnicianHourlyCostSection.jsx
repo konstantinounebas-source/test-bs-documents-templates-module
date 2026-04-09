@@ -180,7 +180,7 @@ export default function DepartmentTechnicianHourlyCostSection({
   formatCurrency, 
   onUpdate 
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(departmentAssignments && departmentAssignments.length > 0);
 
   const handleAdd = () => {
     onUpdate([createNewDepartmentBlock(), ...departmentAssignments]);

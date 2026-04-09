@@ -20,7 +20,7 @@ export default function SupervisorDailyCostSection({
   formatCurrency, 
   onUpdate 
 }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(supervisorAllocations && supervisorAllocations.length > 0);
   const activeSupervisors = getActiveSupervisors(labourPersonnel);
   
   const handleAdd = () => {

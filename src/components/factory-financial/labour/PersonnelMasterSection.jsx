@@ -9,7 +9,7 @@ import { calculatePersonnelDailyCost, calculatePersonnelHourlyCost, createNewPer
 import { toast } from 'sonner';
 
 export default function PersonnelMasterSection({ personnel, formatCurrency, onUpdate }) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(personnel && personnel.length > 0);
 
   const handleAdd = () => {
     const newPerson = createNewPerson();
