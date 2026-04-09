@@ -76,6 +76,11 @@ import {
     initializeFixedExpenseRows,
     initializeOperationalExpenseRows,
 } from "@/components/factory-financial/utils/expenseRowDefaults";
+import {
+    mapLabourDataFromDb,
+    mapLabourDataToDb,
+    logLabourPersistence,
+} from "@/components/factory-financial/utils/labourPersistenceMapping";
 
 export default function FactoryFinancialCalculations() {
     const { hasAccess, isLoading: accessLoading } = usePageAccess('FactoryFinancialCalculations');
@@ -219,11 +224,6 @@ export default function FactoryFinancialCalculations() {
             setIsLoading(true);
             setSelectedRecord(record);
             setCurrentData(record);
-            
-            // Import mapping functions
-            const { mapLabourDataFromDb, logLabourPersistence } = await import('@/components/factory-financial/utils/labourPersistenceMapping');
-            
-            // ... other data loads ...
 
             setDailyProductionEntries(normalizeLoadedDailyProductionEntries(record.daily_production_entries));
             setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
@@ -231,31 +231,22 @@ export default function FactoryFinancialCalculations() {
             setDailyCostsRecords(record.daily_costs_records || []);
 
             // NEW Labour module - map DB schema to UI shape
-            try {
-                const { mapLabourDataFromDb, logLabourPersistence } = await import('@/components/factory-financial/utils/labourPersistenceMapping');
-                const mappedLabour = mapLabourDataFromDb({
-                    labour_personnel: record.labour_personnel || [],
-                    supervisor_daily_allocations: record.supervisor_daily_allocations || [],
-                    department_technician_assignments: record.department_technician_assignments || [],
-                });
+            const mappedLabour = mapLabourDataFromDb({
+                labour_personnel: record.labour_personnel || [],
+                supervisor_daily_allocations: record.supervisor_daily_allocations || [],
+                department_technician_assignments: record.department_technician_assignments || [],
+            });
 
-                // Debug: log before setting state
-                logLabourPersistence.afterLoad({
-                    labour_personnel: record.labour_personnel || [],
-                    supervisor_daily_allocations: record.supervisor_daily_allocations || [],
-                    department_technician_assignments: record.department_technician_assignments || [],
-                }, mappedLabour);
+            // Debug: log before setting state
+            logLabourPersistence.afterLoad({
+                labour_personnel: record.labour_personnel || [],
+                supervisor_daily_allocations: record.supervisor_daily_allocations || [],
+                department_technician_assignments: record.department_technician_assignments || [],
+            }, mappedLabour);
 
-                setLabourPersonnel(mappedLabour.labourPersonnel);
-                setSupervisorDailyAllocations(mappedLabour.supervisorDailyAllocations);
-                setDepartmentTechnicianAssignments(mappedLabour.departmentTechnicianAssignments);
-            } catch (labourMapError) {
-                console.error('Labour mapping error:', labourMapError);
-                // Fallback: use raw data if mapping fails
-                setLabourPersonnel(record.labour_personnel || []);
-                setSupervisorDailyAllocations(record.supervisor_daily_allocations || []);
-                setDepartmentTechnicianAssignments(record.department_technician_assignments || []);
-            }
+            setLabourPersonnel(mappedLabour.labourPersonnel);
+            setSupervisorDailyAllocations(mappedLabour.supervisorDailyAllocations);
+            setDepartmentTechnicianAssignments(mappedLabour.departmentTechnicianAssignments);
 
             // Load Fixed and Operational cost totals from database
             await loadFixedCostTotal(record.id);
@@ -317,9 +308,6 @@ export default function FactoryFinancialCalculations() {
 
         try {
              setIsSaving(true);
-
-             // Import mapping function
-             const { mapLabourDataToDb, logLabourPersistence } = await import('@/components/factory-financial/utils/labourPersistenceMapping');
 
              // Map labour data to DB schema before saving
              const mappedLabour = mapLabourDataToDb({
@@ -398,10 +386,7 @@ export default function FactoryFinancialCalculations() {
        }
 
        try {
-           // Import mapping function
-           const { mapLabourDataToDb } = await import('@/components/factory-financial/utils/labourPersistenceMapping');
-
-           // Map labour data to DB schema
+            // Map labour data to DB schema
            const mappedLabour = mapLabourDataToDb({
                labourPersonnel,
                supervisorDailyAllocations,
