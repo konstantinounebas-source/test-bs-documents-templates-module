@@ -402,13 +402,12 @@ export default function FactoryFinancialCalculations() {
                   }
 
                   for (const alloc of supervisorDailyAllocations) {
-                  await base44.entities.SupervisorDailyAllocation.create({
-                     ...alloc,
-                     factory_financial_data_id: selectedRecord.id
-                  });
+                  const allocData = { ...alloc, factory_financial_data_id: selectedRecord.id };
+                  console.log('💾 Saving supervisor allocation:', allocData);
+                  await base44.entities.SupervisorDailyAllocation.create(allocData);
                   }
 
-                  for (const assignment of departmentTechnicianAssignments) {
+                   for (const assignment of departmentTechnicianAssignments) {
                   const newAssignment = await base44.entities.DepartmentTechnicianAssignment.create({
                      factory_financial_data_id: selectedRecord.id,
                      department_id: assignment.department_id
