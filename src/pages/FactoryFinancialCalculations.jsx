@@ -29,12 +29,13 @@ import FinancialOverviewTab from "@/components/factory-financial/FinancialOvervi
 import NewLabourTab from "@/components/factory-financial/labour/NewLabourTab";
 import DailyOperationsTab from "@/components/factory-financial/daily/DailyOperationsTab";
 import DailyDataHistoryTab from "@/components/factory-financial/DailyDataHistoryTab";
-import SimulationPanel from "@/components/factory-financial/SimulationPanel";
+import SimulationWhatIfPanel from "@/components/factory-financial/SimulationWhatIfPanel";
 import {
     calculateTotalLabourCost,
     normalizeLoadedLabourResources,
     normalizeLoadedDepartmentLabourHours,
 } from "@/components/factory-financial/utils/labourCostCalculations";
+import { calculateTotalSupervisorDailyCost } from "@/components/factory-financial/utils/labourModuleCalculations";
 import {
     normalizeLoadedDailyProductionEntries,
     normalizeLoadedDailyRevenueEntries,
@@ -915,21 +916,19 @@ export default function FactoryFinancialCalculations() {
                             {/* SIMULATION TAB */}
                             <TabsContent value="simulation" className="mt-4">
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {[
-                                        { label: 'Παράθυρο 1', mode: 'daily' },
-                                        { label: 'Παράθυρο 2', mode: 'weekly' },
-                                        { label: 'Παράθυρο 3', mode: 'monthly' },
-                                        { label: 'Παράθυρο 4', mode: 'daily' },
-                                    ].map((panel, idx) => (
-                                        <SimulationPanel
+                                    {[0, 1, 2, 3].map((idx) => (
+                                        <SimulationWhatIfPanel
                                             key={idx}
                                             panelIndex={idx}
-                                            dailyRevenueEntries={dailyRevenueEntries}
-                                            dailyCostsRecords={dailyCostsRecords}
-                                            dailyDepartmentHoursEntries={dailyDepartmentHoursEntries}
+                                            shelterInstances={shelterInstances}
+                                            shelterRevenueItems={shelterRevenueItems}
+                                            getShelterRevenueTotal={getShelterRevenueTotal}
                                             departmentAssignments={departmentTechnicianAssignments}
                                             labourPersonnel={labourPersonnel}
                                             departments={departments}
+                                            fixedDailyTotal={fixedDailyTotal}
+                                            operationalDailyTotal={operationalDailyTotal}
+                                            supervisorDailyCost={calculateTotalSupervisorDailyCost(supervisorDailyAllocations, labourPersonnel)}
                                             depreciationFactor={getCalculateDepreciationFactor()}
                                             formatCurrency={formatCurrency}
                                         />
