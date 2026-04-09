@@ -1,0 +1,14 @@
+{
+  "name": "DepartmentTechnicianAssignment",
+  "type": "object",
+  "properties": {
+    "factory_financial_data_id": {
+      "type": "string",
+      "description": "Reference to FactoryFinancialData"
+    },
+    "department_id": {
+      "type": "string"
+    }
+  },
+  "required": ["factory_financial_data_id", "department_id"]
+}

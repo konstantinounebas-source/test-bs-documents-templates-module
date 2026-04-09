@@ -1,0 +1,58 @@
+{
+  "name": "LabourPersonnel",
+  "type": "object",
+  "properties": {
+    "factory_financial_data_id": {
+      "type": "string",
+      "description": "Reference to FactoryFinancialData"
+    },
+    "person_name": {
+      "type": "string"
+    },
+    "position": {
+      "type": "string"
+    },
+    "role_type": {
+      "type": "string",
+      "enum": ["supervisor", "technician"]
+    },
+    "employment_type": {
+      "type": "string",
+      "enum": ["monthly", "daily"]
+    },
+    "monthly_salary": {
+      "type": "number",
+      "default": 0
+    },
+    "daily_rate": {
+      "type": "number",
+      "default": 0
+    },
+    "day_factor": {
+      "type": "number",
+      "default": 22,
+      "description": "Working days per month"
+    },
+    "hour_factor": {
+      "type": "number",
+      "default": 8,
+      "description": "Hours per working day"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "calculated_daily_cost": {
+      "type": "number",
+      "default": 0
+    },
+    "calculated_hourly_cost": {
+      "type": "number",
+      "default": 0
+    },
+    "department_id": {
+      "type": "string"
+    }
+  },
+  "required": ["factory_financial_data_id"]
+}

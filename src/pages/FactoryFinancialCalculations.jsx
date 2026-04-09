@@ -35,12 +35,18 @@ import {
     normalizeLoadedLabourResources,
     normalizeLoadedDepartmentLabourHours,
 } from "@/components/factory-financial/utils/labourCostCalculations";
-import { calculateTotalSupervisorDailyCost } from "@/components/factory-financial/utils/labourModuleCalculations";
 import {
     normalizeLoadedDailyProductionEntries,
     normalizeLoadedDailyRevenueEntries,
     normalizeLoadedDailyDepartmentHoursEntries,
 } from "@/components/factory-financial/utils/dailyOperationsNormalizers";
+import {
+    normalizeLoadedExpenseRows,
+    DEFAULT_FIXED_COSTS,
+    DEFAULT_OPERATIONAL_COSTS,
+    initializeFixedExpenseRows,
+    initializeOperationalExpenseRows,
+} from "@/components/factory-financial/utils/expenseRowDefaults";
 import {
     getAllocationTotal,
     hasInvalidAllocation,
@@ -68,19 +74,6 @@ import {
     updateDeptAllocation,
     removeDeptAllocation,
 } from "@/components/factory-financial/utils/stateHelpers";
-import {
-    DEFAULT_FIXED_COSTS,
-    DEFAULT_OPERATIONAL_COSTS,
-    ensureRowsWithDefaults,
-    normalizeLoadedExpenseRows,
-    initializeFixedExpenseRows,
-    initializeOperationalExpenseRows,
-} from "@/components/factory-financial/utils/expenseRowDefaults";
-import {
-    mapLabourDataFromDb,
-    mapLabourDataToDb,
-    logLabourPersistence,
-} from "@/components/factory-financial/utils/labourPersistenceMapping";
 
 export default function FactoryFinancialCalculations() {
     const { hasAccess, isLoading: accessLoading } = usePageAccess('FactoryFinancialCalculations');
@@ -276,6 +269,25 @@ export default function FactoryFinancialCalculations() {
                 { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' }
             ]);
 
+            // Load Labour data from separate entities
+            const [personnel, allocations, assignments] = await Promise.all([
+                base44.entities.LabourPersonnel.filter({ factory_financial_data_id: record.id }),
+                base44.entities.SupervisorDailyAllocation.filter({ factory_financial_data_id: record.id }),
+                base44.entities.DepartmentTechnicianAssignment.filter({ factory_financial_data_id: record.id })
+            ]);
+
+            setLabourPersonnel(personnel);
+            setSupervisorDailyAllocations(allocations);
+
+            // Load technician rows for each assignment
+            const assignmentsWithRows = await Promise.all(
+                assignments.map(async (assignment) => ({
+                    ...assignment,
+                    technician_rows: await base44.entities.DepartmentTechnicianRow.filter({ assignment_id: assignment.id })
+                }))
+            );
+            setDepartmentTechnicianAssignments(assignmentsWithRows);
+
             // Load Fixed and Operational cost totals from database
             await loadFixedCostTotal(record.id);
             await loadOperationalCostTotal(record.id);
@@ -337,25 +349,6 @@ export default function FactoryFinancialCalculations() {
         try {
              setIsSaving(true);
 
-             // Map labour data to DB schema before saving
-             const mappedLabour = mapLabourDataToDb({
-                 labourPersonnel,
-                 supervisorDailyAllocations,
-                 departmentTechnicianAssignments,
-             });
-
-             // Debug: log before save
-             logLabourPersistence.beforeSave({
-                 labourPersonnel,
-                 supervisorDailyAllocations,
-                 departmentTechnicianAssignments,
-             }, mappedLabour);
-
-             console.log('🔴 Saving daily_costs_records:', dailyCostsRecords);
-             console.log('🔴 Mapped labour_personnel:', mappedLabour.labour_personnel);
-             console.log('🔴 Mapped supervisor_daily_allocations:', mappedLabour.supervisor_daily_allocations);
-             console.log('🔴 Mapped department_technician_assignments:', mappedLabour.department_technician_assignments);
-
              const updatedData = {
                   total_working_days_in_period: totalWorkingDays,
                   average_working_days_per_month: avgWorkingDaysPerMonth,
@@ -387,8 +380,51 @@ export default function FactoryFinancialCalculations() {
                   simulation_panels: simulationPanels,
                   };
 
-             console.log('🟢 updatedData.daily_costs_records:', updatedData.daily_costs_records);
-             await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
+                  // Save FactoryFinancialData
+                  await base44.entities.FactoryFinancialData.update(selectedRecord.id, updatedData);
+
+                  // Delete existing labour data
+                  const existingPersonnel = await base44.entities.LabourPersonnel.filter({ factory_financial_data_id: selectedRecord.id });
+                  const existingAllocations = await base44.entities.SupervisorDailyAllocation.filter({ factory_financial_data_id: selectedRecord.id });
+                  const existingAssignments = await base44.entities.DepartmentTechnicianAssignment.filter({ factory_financial_data_id: selectedRecord.id });
+
+                  for (const p of existingPersonnel) await base44.entities.LabourPersonnel.delete(p.id);
+                  for (const a of existingAllocations) await base44.entities.SupervisorDailyAllocation.delete(a.id);
+                  for (const a of existingAssignments) {
+                  const rows = await base44.entities.DepartmentTechnicianRow.filter({ assignment_id: a.id });
+                  for (const r of rows) await base44.entities.DepartmentTechnicianRow.delete(r.id);
+                  await base44.entities.DepartmentTechnicianAssignment.delete(a.id);
+                  }
+
+                  // Create new labour data
+                  for (const person of labourPersonnel) {
+                  await base44.entities.LabourPersonnel.create({
+                     ...person,
+                     factory_financial_data_id: selectedRecord.id
+                  });
+                  }
+
+                  for (const alloc of supervisorDailyAllocations) {
+                  await base44.entities.SupervisorDailyAllocation.create({
+                     ...alloc,
+                     factory_financial_data_id: selectedRecord.id
+                  });
+                  }
+
+                  for (const assignment of departmentTechnicianAssignments) {
+                  const newAssignment = await base44.entities.DepartmentTechnicianAssignment.create({
+                     factory_financial_data_id: selectedRecord.id,
+                     department_id: assignment.department_id
+                  });
+
+                  for (const row of (assignment.technician_rows || [])) {
+                     await base44.entities.DepartmentTechnicianRow.create({
+                         assignment_id: newAssignment.id,
+                         personnel_id: row.personnel_id,
+                         comments: row.comments
+                     });
+                  }
+                  }
              console.log('Save successful, data persisted');
 
              toast.success('Τα δεδομένα αποθηκεύτηκαν επιτυχώς');
@@ -414,13 +450,6 @@ export default function FactoryFinancialCalculations() {
        }
 
        try {
-            // Map labour data to DB schema
-           const mappedLabour = mapLabourDataToDb({
-               labourPersonnel,
-               supervisorDailyAllocations,
-               departmentTechnicianAssignments,
-           });
-
            const clonedData = {
                factory_name: currentData.factory_name,
                version: cloneVersion,
@@ -445,10 +474,6 @@ export default function FactoryFinancialCalculations() {
                },
                labour_resources: labourResources,
                department_labour_hours: departmentLabourHours,
-               // Use mapped labour data for persistence
-               labour_personnel: mappedLabour.labour_personnel,
-               supervisor_daily_allocations: mappedLabour.supervisor_daily_allocations,
-               department_technician_assignments: mappedLabour.department_technician_assignments,
                daily_production_entries: dailyProductionEntries,
                daily_revenue_entries: dailyRevenueEntries,
                daily_department_hours_entries: dailyDepartmentHoursEntries,
@@ -457,8 +482,38 @@ export default function FactoryFinancialCalculations() {
                is_active: true
                };
 
-            await base44.entities.FactoryFinancialData.create(clonedData);
-            
+            const clonedRecord = await base44.entities.FactoryFinancialData.create(clonedData);
+
+            // Clone labour data
+            for (const person of labourPersonnel) {
+                await base44.entities.LabourPersonnel.create({
+                    ...person,
+                    factory_financial_data_id: clonedRecord.id
+                });
+            }
+
+            for (const alloc of supervisorDailyAllocations) {
+                await base44.entities.SupervisorDailyAllocation.create({
+                    ...alloc,
+                    factory_financial_data_id: clonedRecord.id
+                });
+            }
+
+            for (const assignment of departmentTechnicianAssignments) {
+                const newAssignment = await base44.entities.DepartmentTechnicianAssignment.create({
+                    factory_financial_data_id: clonedRecord.id,
+                    department_id: assignment.department_id
+                });
+
+                for (const row of (assignment.technician_rows || [])) {
+                    await base44.entities.DepartmentTechnicianRow.create({
+                        assignment_id: newAssignment.id,
+                        personnel_id: row.personnel_id,
+                        comments: row.comments
+                    });
+                }
+            }
+
             toast.success('Η εγγραφή κλωνοποιήθηκε επιτυχώς');
             setShowCloneDialog(false);
             setCloneVersion('');
@@ -497,9 +552,6 @@ export default function FactoryFinancialCalculations() {
                 },
                 labour_resources: [],
                 department_labour_hours: [],
-                labour_personnel: [],
-                supervisor_daily_allocations: [],
-                department_technician_assignments: [],
                 daily_production_entries: [],
                 daily_revenue_entries: [],
                 daily_department_hours_entries: [],
