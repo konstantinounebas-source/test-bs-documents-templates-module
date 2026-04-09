@@ -35,16 +35,43 @@ export default function DailyCostsRecordManager({
           try {
                setIsLoading(true);
                setError(null);
-               const data = await base44.entities.FactoryFinancialData.filter({
-                    id: factoryFinancialDataId
-               });
-               if (data.length > 0) {
-                    const allRecords = data[0].daily_costs_records || [];
-                    const todayRecords = allRecords.filter(r => r.date === selectedDate);
+
+               // Use list with a fresh query to avoid caching issues
+               const allData = await base44.entities.FactoryFinancialData.list('-updated_date');
+               const record = allData.find(r => r.id === factoryFinancialDataId);
+
+               if (record) {
+                    const allRecords = record.daily_costs_records || [];
+                    console.log('📊 All cost records in DB:', allRecords.length);
+                    console.log('📊 Looking for date:', selectedDate);
+
+                    // Normalize date comparison to handle format differences
+                    const normalizeDate = (dateStr) => {
+                         if (!dateStr) return '';
+                         // Handle both YYYY-MM-DD and DD/MM/YYYY formats
+                         if (dateStr.includes('/')) {
+                              const parts = dateStr.split('/');
+                              return `${parts[2]}-${parts[1]}-${parts[0]}`;
+                         }
+                         return dateStr;
+                    };
+
+                    const targetDate = normalizeDate(selectedDate);
+                    const todayRecords = allRecords.filter(r => {
+                         const recordDate = normalizeDate(r.date);
+                         const match = recordDate === targetDate;
+                         console.log(`  - Comparing: ${recordDate} vs ${targetDate} = ${match}`);
+                         return match;
+                    });
+
+                    console.log('✅ Found records for date:', todayRecords.length);
                     setRecords(todayRecords);
+               } else {
+                    console.warn('⚠️ FactoryFinancialData record not found:', factoryFinancialDataId);
+                    setRecords([]);
                }
           } catch (err) {
-               console.error('Failed to load cost records:', err);
+               console.error('❌ Failed to load cost records:', err);
                setError('Σφάλμα φόρτωσης δεδομένων');
           } finally {
                setIsLoading(false);
