@@ -187,14 +187,17 @@ export default function DepartmentTechnicianHourlyCostSection({
   }, [departmentAssignments]);
 
   const handleAdd = () => {
-    onUpdate([createNewDepartmentBlock(), ...departmentAssignments]);
+    const newBlock = createNewDepartmentBlock();
+    console.log('🐒 Adding new department block:', newBlock);
+    onUpdate([newBlock, ...departmentAssignments]);
   };
 
   const handleUpdateBlock = (blockIdx, updatedBlock) => {
-    const updated = [...departmentAssignments];
-    updated[blockIdx] = updatedBlock;
-    onUpdate(updated);
-  };
+     const updated = [...departmentAssignments];
+     updated[blockIdx] = updatedBlock;
+     console.log('🚵 Updating department block', blockIdx, ':', updatedBlock);
+     onUpdate(updated);
+   };
 
   const handleRemoveBlock = (blockIdx) => {
     onUpdate(departmentAssignments.filter((_, i) => i !== blockIdx));

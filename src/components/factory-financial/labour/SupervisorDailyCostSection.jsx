@@ -28,12 +28,15 @@ export default function SupervisorDailyCostSection({
   }, [supervisorAllocations]);
   
   const handleAdd = () => {
-    onUpdate([createNewSupervisorAllocation(), ...supervisorAllocations]);
+    const newAlloc = createNewSupervisorAllocation();
+    console.log('🐒 Adding new supervisor allocation:', newAlloc);
+    onUpdate([newAlloc, ...supervisorAllocations]);
   };
 
   const handleChange = (idx, field, value) => {
     const updated = [...supervisorAllocations];
     updated[idx] = { ...updated[idx], [field]: value };
+    console.log('🚵 Updated supervisor allocation row', idx, ':', updated[idx]);
     onUpdate(updated);
   };
 
