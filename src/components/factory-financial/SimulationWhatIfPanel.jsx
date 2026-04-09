@@ -77,9 +77,18 @@ export default function SimulationWhatIfPanel({
             if (si && si.unit_revenue) return parseFloat(si.unit_revenue);
             return 0;
         }
+        // Try to get unit revenue: use total_revenue / pending_quantity, else use unit_revenue field directly
         const total = getShelterRevenueTotal ? getShelterRevenueTotal(item) : (parseFloat(item.total_revenue) || 0);
         const qty = parseFloat(item.pending_quantity) || 0;
-        return qty > 0 ? total / qty : (parseFloat(item.unit_revenue) || 0);
+        
+        // If qty exists and total exists, divide to get unit revenue
+        if (qty > 0 && total > 0) return total / qty;
+        
+        // Fallback to unit_revenue field if available
+        if (parseFloat(item.unit_revenue) > 0) return parseFloat(item.unit_revenue);
+        
+        // Last resort: use total_revenue directly as unit revenue (for 1 unit)
+        return total > 0 ? total : 0;
     };
 
     // ── Dept hours helpers ───────────────────────────────────────────────────
@@ -92,20 +101,23 @@ export default function SimulationWhatIfPanel({
     const results = useMemo(() => {
         const calcUnitRevenue = (shelterInstanceId) => {
             if (!shelterInstanceId) return 0;
-            // shelterRevenueItems are the revenue line items from the Revenue tab.
-            // Each item has shelter_instance_id linking to a ShelterInstance.
-            // The user picks a shelterInstance from shelterInstances list.
-            // We need to find the revenue item that matches the chosen shelterInstance id.
             const item = (shelterRevenueItems || []).find(r => r.shelter_instance_id === shelterInstanceId);
             if (!item) {
-                // Fallback: if no revenue item, try to get from shelterInstances directly
                 const si = (shelterInstances || []).find(s => s.id === shelterInstanceId);
                 if (si && si.unit_revenue) return parseFloat(si.unit_revenue);
                 return 0;
             }
             const total = getShelterRevenueTotal ? getShelterRevenueTotal(item) : (parseFloat(item.total_revenue) || 0);
             const qty = parseFloat(item.pending_quantity) || 0;
-            return qty > 0 ? total / qty : (parseFloat(item.unit_revenue) || 0);
+            
+            // If qty exists and total exists, divide to get unit revenue
+            if (qty > 0 && total > 0) return total / qty;
+            
+            // Fallback to unit_revenue field if available
+            if (parseFloat(item.unit_revenue) > 0) return parseFloat(item.unit_revenue);
+            
+            // Last resort: use total_revenue directly as unit revenue (for 1 unit)
+            return total > 0 ? total : 0;
         };
 
         const revenue = shelterRows.reduce((sum, row) => {
