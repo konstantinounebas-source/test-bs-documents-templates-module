@@ -278,7 +278,9 @@ export default function FactoryFinancialCalculations() {
             ]);
 
             setLabourPersonnel(personnel);
+            console.log('✅ Loaded labour personnel:', personnel.length, 'records');
             setSupervisorDailyAllocations(allocations);
+            console.log('✅ Loaded supervisor allocations:', allocations.length, 'records', allocations);
 
             // Load technician rows for each assignment
             const assignmentsWithRows = await Promise.all(
