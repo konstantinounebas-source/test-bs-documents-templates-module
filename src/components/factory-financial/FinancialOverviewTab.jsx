@@ -1,10 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import {
-    AlertTriangle, Info, FlaskConical, CalendarDays, ChevronLeft, ChevronRight
+    AlertTriangle, CalendarDays, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import OverviewFilterBar from './OverviewFilterBar';
-import SimulationCard from './SimulationCard';
 import OperationalPeriodAnalysisSection from './OperationalPeriodAnalysisSection';
 import {
     buildOverviewPeriodSummary,
@@ -124,11 +122,6 @@ export default function FinancialOverviewTab({
         };
     });
 
-    // Simulation state (local UI only — NEVER saved to DB)
-    const [simActive, setSimActive] = useState(false);
-    const [simState, setSimState] = useState({ revenue: 0, productionQty: 0, totalHours: 0 });
-    const handleSimChange = (field, value) => setSimState(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
-
     // Available years from all entries (for filter dropdowns)
     const availableYears = useMemo(
         () => getAvailableYearsFromEntries(safeProd, safeRev, safeHours),
@@ -155,15 +148,7 @@ export default function FinancialOverviewTab({
                 </div>
             )}
 
-            {/* 3. Simulation Card (UI-only, never saves to DB) */}
-            <SimulationCard
-                simState={simState}
-                onSimChange={handleSimChange}
-                onToggle={() => setSimActive(prev => !prev)}
-                isActive={simActive}
-            />
-
-            {/* 4. Operational Period Financial Analysis — two panels side by side */}
+            {/* Operational Period Financial Analysis — two panels side by side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left: period-filter-driven panel */}
                 <div className="flex flex-col gap-3">
