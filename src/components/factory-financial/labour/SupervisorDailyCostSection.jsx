@@ -21,8 +21,6 @@ export default function SupervisorDailyCostSection({
   onUpdate 
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  console.log('[SupervisorSection] labourPersonnel:', labourPersonnel);
-  console.log('[SupervisorSection] activeSupervisors:', getActiveSupervisors(labourPersonnel));
   const activeSupervisors = getActiveSupervisors(labourPersonnel);
   
   const handleAdd = () => {

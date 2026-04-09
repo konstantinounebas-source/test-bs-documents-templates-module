@@ -181,8 +181,6 @@ export default function DepartmentTechnicianHourlyCostSection({
   onUpdate 
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  console.log('[DeptTechSection] labourPersonnel:', labourPersonnel);
-  console.log('[DeptTechSection] activeTechnicians:', getActiveTechnicians(labourPersonnel));
 
   const handleAdd = () => {
     onUpdate([createNewDepartmentBlock(), ...departmentAssignments]);

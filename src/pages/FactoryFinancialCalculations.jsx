@@ -77,88 +77,6 @@ import {
     initializeOperationalExpenseRows,
 } from "@/components/factory-financial/utils/expenseRowDefaults";
 
-// ===== SIMULATION PANEL HELPERS =====
-const createDefaultSimulationPanels = () => ([
-  {
-    title: '',
-    shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }],
-    fixedMultiplier: '0',
-    supervisorMultiplier: '0',
-    deptHoursRows: [],
-    extraLabourCost: '',
-    extraLabourNote: ''
-  },
-  {
-    title: '',
-    shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }],
-    fixedMultiplier: '0',
-    supervisorMultiplier: '0',
-    deptHoursRows: [],
-    extraLabourCost: '',
-    extraLabourNote: ''
-  },
-  {
-    title: '',
-    shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }],
-    fixedMultiplier: '0',
-    supervisorMultiplier: '0',
-    deptHoursRows: [],
-    extraLabourCost: '',
-    extraLabourNote: ''
-  },
-  {
-    title: '',
-    shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }],
-    fixedMultiplier: '0',
-    supervisorMultiplier: '0',
-    deptHoursRows: [],
-    extraLabourCost: '',
-    extraLabourNote: ''
-  }
-]);
-
-const mapSimulationPanelToDb = (panel = {}) => ({
-  title: panel.title || '',
-  shelter_rows: Array.isArray(panel.shelterRows) ? panel.shelterRows.map(row => ({
-    shelter_instance_id_a: row.shelter_instance_id_a || '',
-    quantity_a: parseFloat(row.quantity_a) || 0,
-    shelter_instance_id_b: row.shelter_instance_id_b || '',
-    quantity_b: parseFloat(row.quantity_b) || 0,
-  })) : [],
-  fixed_multiplier: parseFloat(panel.fixedMultiplier) || 0,
-  supervisor_multiplier: parseFloat(panel.supervisorMultiplier) || 0,
-  dept_hours_rows: Array.isArray(panel.deptHoursRows) ? panel.deptHoursRows.map(row => ({
-    department_id: row.department_id || '',
-    hours: parseFloat(row.hours) || 0,
-    note: row.note || '',
-  })) : [],
-  extra_labour_cost: parseFloat(panel.extraLabourCost) || 0,
-  extra_labour_note: panel.extraLabourNote || ''
-});
-
-const mapSimulationPanelFromDb = (panel = {}) => ({
-  title: panel.title || '',
-  shelterRows: Array.isArray(panel.shelter_rows) && panel.shelter_rows.length > 0
-    ? panel.shelter_rows.map(row => ({
-        shelter_instance_id_a: row.shelter_instance_id_a || '',
-        quantity_a: row.quantity_a ?? '',
-        shelter_instance_id_b: row.shelter_instance_id_b || '',
-        quantity_b: row.quantity_b ?? '',
-      }))
-    : [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }],
-  fixedMultiplier: panel.fixed_multiplier != null ? String(panel.fixed_multiplier) : '0',
-  supervisorMultiplier: panel.supervisor_multiplier != null ? String(panel.supervisor_multiplier) : '0',
-  deptHoursRows: Array.isArray(panel.dept_hours_rows)
-    ? panel.dept_hours_rows.map(row => ({
-        department_id: row.department_id || '',
-        hours: row.hours ?? '',
-        note: row.note || '',
-      }))
-    : [],
-  extraLabourCost: panel.extra_labour_cost != null ? String(panel.extra_labour_cost) : '',
-  extraLabourNote: panel.extra_labour_note || ''
-});
-
 export default function FactoryFinancialCalculations() {
     const { hasAccess, isLoading: accessLoading } = usePageAccess('FactoryFinancialCalculations');
     const [isLoading, setIsLoading] = useState(true);
@@ -227,7 +145,12 @@ export default function FactoryFinancialCalculations() {
     const [operationalDailyTotal, setOperationalDailyTotal] = useState(0);
 
     // Simulation panels state (4 what-if scenarios)
-    const [simulationPanels, setSimulationPanels] = useState(createDefaultSimulationPanels());
+    const [simulationPanels, setSimulationPanels] = useState([
+        { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+        { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+        { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+        { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' }
+    ]);
 
     // Depreciation module states
     const [depreciationInvestments, setDepreciationInvestments] = useState([]);
@@ -344,14 +267,14 @@ export default function FactoryFinancialCalculations() {
             setDailyCostsRecords(record.daily_costs_records || []);
 
             // Load simulation panels
-            const loadedPanels = Array.isArray(record.simulation_panels)
-              ? record.simulation_panels.map(mapSimulationPanelFromDb)
-              : [];
-            console.log('📊 Loaded simulation panels from DB:', record.simulation_panels);
-            console.log('📊 Mapped simulation panels for UI:', loadedPanels);
-            setSimulationPanels(
-              loadedPanels.length > 0 ? loadedPanels : createDefaultSimulationPanels()
-            );
+            const loadedPanels = record.simulation_panels || [];
+            console.log('📊 Loaded simulation panels from DB:', loadedPanels);
+            setSimulationPanels(loadedPanels.length > 0 ? loadedPanels : [
+                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
+                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' }
+            ]);
 
             // Load Fixed and Operational cost totals from database
             await loadFixedCostTotal(record.id);
@@ -419,9 +342,7 @@ export default function FactoryFinancialCalculations() {
                  supervisorDailyAllocations,
                  departmentTechnicianAssignments
              });
-             const mappedSimulationPanels = simulationPanels.map(mapSimulationPanelToDb);
-             console.log('💾 Saving simulation panels (UI state):', simulationPanels);
-             console.log('💾 Saving simulation panels (DB payload):', mappedSimulationPanels);
+             console.log('💾 Saving simulation panels:', simulationPanels);
 
              const updatedData = {
                  total_working_days_in_period: totalWorkingDays,
@@ -450,7 +371,7 @@ export default function FactoryFinancialCalculations() {
                  daily_revenue_entries: dailyRevenueEntries,
                  daily_department_hours_entries: dailyDepartmentHoursEntries,
                  daily_costs_records: dailyCostsRecords,
-                 simulation_panels: mappedSimulationPanels,
+                 simulation_panels: simulationPanels,
                  };
 
              console.log('🟢 updatedData.daily_costs_records:', updatedData.daily_costs_records);
@@ -511,7 +432,7 @@ export default function FactoryFinancialCalculations() {
                 daily_revenue_entries: dailyRevenueEntries,
                 daily_department_hours_entries: dailyDepartmentHoursEntries,
                 daily_costs_records: dailyCostsRecords,
-                simulation_panels: simulationPanels.map(mapSimulationPanelToDb),
+                simulation_panels: simulationPanels,
                 is_active: true
                 };
 
