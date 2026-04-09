@@ -594,7 +594,7 @@
     },
     "labour_personnel": {
       "type": "array",
-      "description": "NEW Labour module - personnel master data",
+      "description": "New Labour module \u2014 personnel master records with salary and cost calculations",
       "default": [],
       "items": {
         "type": "object",
@@ -605,50 +605,65 @@
           "person_name": {
             "type": "string"
           },
-          "role_type": {
-            "type": "string",
-            "enum": [
-              "technician",
-              "supervisor"
-            ]
-          },
-          "department_id": {
+          "position": {
             "type": "string"
+          },
+          "role_type": {
+            "type": "string"
+          },
+          "employment_type": {
+            "type": "string"
+          },
+          "monthly_salary": {
+            "type": "number",
+            "default": 0
           },
           "daily_rate": {
             "type": "number",
             "default": 0
           },
-          "hours_per_day": {
+          "day_factor": {
             "type": "number",
-            "default": 8
+            "default": 1
+          },
+          "hour_factor": {
+            "type": "number",
+            "default": 1
+          },
+          "calculated_daily_cost": {
+            "type": "number",
+            "default": 0
           },
           "calculated_hourly_cost": {
             "type": "number",
             "default": 0
+          },
+          "is_active": {
+            "type": "boolean",
+            "default": true
           }
         }
       }
     },
     "supervisor_daily_allocations": {
       "type": "array",
-      "description": "NEW Labour module - supervisor daily cost allocations",
+      "description": "New Labour module \u2014 supervisor daily cost allocations",
       "default": [],
       "items": {
         "type": "object",
         "properties": {
-          "supervisor_id": {
+          "personnel_id": {
             "type": "string"
           },
-          "date": {
-            "type": "string",
-            "format": "date"
-          },
-          "allocated_minutes": {
+          "allocation_factor": {
             "type": "number",
             "default": 0
           },
-          "note": {
+          "allocated_daily_cost": {
+            "type": "number",
+            "default": 0
+          },
+          "comments": {
             "type": "string"
           }
         }
@@ -656,7 +671,7 @@
     },
     "department_technician_assignments": {
       "type": "array",
-      "description": "NEW Labour module - department technician hourly cost assignments",
+      "description": "New Labour module \u2014 technician assignments per department with hourly costs",
       "default": [],
       "items": {
         "type": "object",
@@ -666,18 +681,26 @@
           },
           "technician_rows": {
             "type": "array",
+            "default": [],
             "items": {
               "type": "object",
               "properties": {
                 "personnel_id": {
                   "type": "string"
                 },
-                "allocated_hours": {
+                "hourly_cost": {
                   "type": "number",
                   "default": 0
+                },
+                "comments": {
+                  "type": "string"
                 }
               }
             }
+          },
+          "average_hourly_cost": {
+            "type": "number",
+            "default": 0
           }
         }
       }
@@ -774,96 +797,6 @@
             "default": 0
           },
           "notes": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "daily_costs_records": {
-      "type": "array",
-      "description": "Daily costs decision records (internal vs external)",
-      "default": [],
-      "items": {
-        "type": "object",
-        "properties": {
-          "date": {
-            "type": "string",
-            "description": "YYYY-MM-DD"
-          },
-          "cost_type": {
-            "type": "string",
-            "enum": [
-              "internal",
-              "external"
-            ]
-          },
-          "amount": {
-            "type": "number",
-            "default": 0
-          },
-          "notes": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "simulation_panels": {
-      "type": "array",
-      "description": "What-if simulation panels data",
-      "default": [],
-      "items": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "shelter_rows": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "shelter_instance_id_a": {
-                  "type": "string"
-                },
-                "quantity_a": {
-                  "type": "number"
-                },
-                "shelter_instance_id_b": {
-                  "type": "string"
-                },
-                "quantity_b": {
-                  "type": "number"
-                }
-              }
-            }
-          },
-          "fixed_multiplier": {
-            "type": "number"
-          },
-          "supervisor_multiplier": {
-            "type": "number"
-          },
-          "dept_hours_rows": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "department_id": {
-                  "type": "string"
-                },
-                "hours": {
-                  "type": "number"
-                },
-                "note": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "extra_labour_cost": {
-            "type": "number"
-          },
-          "extra_labour_note": {
             "type": "string"
           }
         }
