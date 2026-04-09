@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CalendarDays } from 'lucide-react';
 import DailyRevenueSection from './DailyRevenueSection';
 import DailyDepartmentHoursSection from './DailyDepartmentHoursSection';
-import DailyCostsDecisionSection from './DailyCostsDecisionSection';
+import DailyCostsRecordManager from './DailyCostsRecordManager';
 
 function todayISO() {
     return new Date().toISOString().slice(0, 10);
@@ -28,6 +28,7 @@ export default function DailyOperationsTab({
     supervisorDailyAllocations,
     fixedDailyTotal,
     operationalDailyTotal,
+    factoryFinancialDataId,
 }) {
     // Ensure shelterInstances is always an array
     const normalizedShelterInstances = Array.isArray(shelterInstances) ? shelterInstances : [];
@@ -51,6 +52,7 @@ export default function DailyOperationsTab({
             supervisorDailyAllocations={supervisorDailyAllocations}
             fixedDailyTotal={fixedDailyTotal}
             operationalDailyTotal={operationalDailyTotal}
+            factoryFinancialDataId={factoryFinancialDataId}
         />
     );
 }
@@ -73,6 +75,7 @@ function DailyOperationsTabContent({
     supervisorDailyAllocations,
     fixedDailyTotal,
     operationalDailyTotal,
+    factoryFinancialDataId,
 }) {
     const [selectedDate, setSelectedDate] = useState(todayISO());
 
@@ -132,15 +135,14 @@ function DailyOperationsTabContent({
                 />
             </div>
 
-            <DailyCostsDecisionSection
+            <DailyCostsRecordManager
                 selectedDate={selectedDate}
+                factoryFinancialDataId={factoryFinancialDataId}
                 supervisorDailyAllocations={supervisorDailyAllocations}
                 labourPersonnel={labourPersonnel}
                 formatCurrency={formatCurrency}
                 fixedDailyTotal={fixedDailyTotal}
                 operationalDailyTotal={operationalDailyTotal}
-                records={dailyCostsRecords}
-                onSave={handleCostsChange}
             />
 
             <DailyRevenueSection

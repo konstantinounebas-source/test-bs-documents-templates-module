@@ -867,6 +867,7 @@ export default function FactoryFinancialCalculations() {
                                       supervisorDailyAllocations={supervisorDailyAllocations}
                                       fixedDailyTotal={fixedDailyTotal}
                                       operationalDailyTotal={operationalDailyTotal}
+                                      factoryFinancialDataId={selectedRecord?.id}
                                   />
                                   </TabsContent>
 
