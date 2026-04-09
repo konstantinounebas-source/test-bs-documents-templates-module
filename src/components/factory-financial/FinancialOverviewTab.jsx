@@ -109,66 +109,103 @@ export default function FinancialOverviewTab({
     const safeHours = useMemo(() => Array.isArray(dailyDepartmentHoursEntries)  ? dailyDepartmentHoursEntries.filter(Boolean)  : [], [dailyDepartmentHoursEntries]);
 
     // JV profit data — calculated from Net Expected Profit per shelter instance
-    // Quantity comes from Daily Revenue entries for the period
-    // Air Control = 75% of Net Profit, Amco = 25% of Net Profit
-    const [jvData, setJvData] = useState({ airControlTotal: null, amcoTotal: null, netProfitTotal: null });
-    useEffect(() => {
-        const loadJV = async () => {
-            try {
-                const [allFinancialData, allResults, instances] = await Promise.all([
-                    base44.entities.ShelterFinancialData.list(),
-                    base44.entities.ShelterFinancialResults.list(),
-                    base44.entities.ShelterInstance.list(),
-                ]);
-                
-                // Calculate quantity per shelter instance from daily revenue entries
-                const quantityByInstance = {};
-                if (safeRev && safeRev.length > 0) {
-                    safeRev.forEach(entry => {
-                        if (entry.shelter_instance_id) {
-                            quantityByInstance[entry.shelter_instance_id] = 
-                                (quantityByInstance[entry.shelter_instance_id] || 0) + (entry.quantity || 0);
-                        }
-                    });
-                }
-                
-                let airControlTotal = 0, amcoTotal = 0, netProfitTotal = 0;
-                // For each active shelter instance, calculate Net Expected Profit
-                instances.filter(i => i.active !== false).forEach(instance => {
-                    const fd = allFinancialData.find(d => d.shelter_instance_id === instance.id);
-                    const rd = allResults.find(r => r.shelter_instance_id === instance.id);
-                    if (!rd) return;
-                    
-                    // Calculate total contract income (base + approved + potential variations)
-                    const contractAmount = fd?.contract_amount || 0;
-                    const approvedTotal = (fd?.approved_variations || []).reduce((s, v) => s + (v.amount || 0), 0);
-                    const potentialTotal = (fd?.potential_variations || []).reduce((s, v) => s + (v.amount || 0), 0);
-                    const totalIncome = contractAmount + approvedTotal + potentialTotal;
-                    const totalCost = fd?.total_cost_breakdown || 0;
-                    
-                    // Get quantity from daily revenue entries (period-based), fallback to results data
-                    const qty = quantityByInstance[instance.id] || rd.quantity || 1;
-                    
-                    // Calculate Net Expected Profit = (Total Income - Total Cost) × Quantity - Warranty Provision
-                    const grossBalance = (totalIncome - totalCost) * qty;
-                    const warranty = (rd.warranty_provision || 0) * qty;
-                    const netProfit = grossBalance - warranty;
-                    
-                    // Distribute profit: Air Control (75%) & Amco (25%)
-                    const airControlShare = rd.air_control_share_percent || 75; // Default 75%
-                    const amcoShare = rd.amco_share_percent || 25; // Default 25%
-                    
-                    airControlTotal += (netProfit * airControlShare) / 100;
-                    amcoTotal += (netProfit * amcoShare) / 100;
-                    netProfitTotal += netProfit;
-                });
-                setJvData({ airControlTotal, amcoTotal, netProfitTotal });
-            } catch (e) {
-                // silently fail
-            }
-        };
-        loadJV();
-    }, [safeRev]);
+     // Quantity comes from Daily Revenue entries for the SELECTED PERIOD
+     // Air Control = 75% of Net Profit, Amco = 25% of Net Profit
+     const [jvData, setJvData] = useState({ airControlTotal: null, amcoTotal: null, netProfitTotal: null });
+
+     // Helper function to filter entries by period
+     const filterEntriesByPeriod = (entries, period) => {
+         if (!entries || !period) return [];
+
+         return entries.filter(entry => {
+             if (!entry.entry_date) return false;
+             const entryDate = new Date(entry.entry_date + 'T00:00:00');
+
+             if (period.mode === 'daily') {
+                 // Single day
+                 const selectedDate = new Date(period.selectedDate + 'T00:00:00');
+                 return entryDate.getTime() === selectedDate.getTime();
+             } else if (period.mode === 'weekly') {
+                 // Week of year
+                 const year = period.selectedYear;
+                 const week = period.selectedWeek;
+                 const jan4 = new Date(year, 0, 4);
+                 const weekStart = new Date(jan4);
+                 weekStart.setDate(jan4.getDate() - jan4.getDay() + 1);
+                 const weekStartOfYear = Math.ceil(((new Date(year, 0, 1).getTime() - weekStart.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+                 const currentWeekStart = new Date(weekStart);
+                 currentWeekStart.setDate(currentWeekStart.getDate() + (week - 1) * 7);
+                 const currentWeekEnd = new Date(currentWeekStart);
+                 currentWeekEnd.setDate(currentWeekEnd.getDate() + 6);
+
+                 return entryDate >= currentWeekStart && entryDate <= currentWeekEnd;
+             } else if (period.mode === 'monthly') {
+                 // Month
+                 return entryDate.getFullYear() === period.selectedYear && 
+                        entryDate.getMonth() + 1 === period.selectedMonth;
+             }
+             return false;
+         });
+     };
+
+     useEffect(() => {
+         const loadJV = async () => {
+             try {
+                 const [allFinancialData, allResults, instances] = await Promise.all([
+                     base44.entities.ShelterFinancialData.list(),
+                     base44.entities.ShelterFinancialResults.list(),
+                     base44.entities.ShelterInstance.list(),
+                 ]);
+
+                 // Calculate quantity per shelter instance from daily revenue entries FILTERED BY SELECTED PERIOD
+                 const filteredRevenues = filterEntriesByPeriod(safeRev, filterParams);
+                 const quantityByInstance = {};
+                 if (filteredRevenues && filteredRevenues.length > 0) {
+                     filteredRevenues.forEach(entry => {
+                         if (entry.shelter_instance_id) {
+                             quantityByInstance[entry.shelter_instance_id] = 
+                                 (quantityByInstance[entry.shelter_instance_id] || 0) + (entry.quantity || 0);
+                         }
+                     });
+                 }
+
+                 let airControlTotal = 0, amcoTotal = 0, netProfitTotal = 0;
+                 // For each active shelter instance, calculate Net Expected Profit
+                 instances.filter(i => i.active !== false).forEach(instance => {
+                     const fd = allFinancialData.find(d => d.shelter_instance_id === instance.id);
+                     const rd = allResults.find(r => r.shelter_instance_id === instance.id);
+                     if (!rd) return;
+
+                     // Calculate total contract income (base + approved + potential variations)
+                     const contractAmount = fd?.contract_amount || 0;
+                     const approvedTotal = (fd?.approved_variations || []).reduce((s, v) => s + (v.amount || 0), 0);
+                     const potentialTotal = (fd?.potential_variations || []).reduce((s, v) => s + (v.amount || 0), 0);
+                     const totalIncome = contractAmount + approvedTotal + potentialTotal;
+                     const totalCost = fd?.total_cost_breakdown || 0;
+
+                     // Get quantity from daily revenue entries for THIS PERIOD only
+                     const qty = quantityByInstance[instance.id] || 0;
+
+                     // Calculate Net Expected Profit = (Total Income - Total Cost) × Quantity - Warranty Provision
+                     const grossBalance = (totalIncome - totalCost) * qty;
+                     const warranty = (rd.warranty_provision || 0) * qty;
+                     const netProfit = grossBalance - warranty;
+
+                     // Distribute profit: Air Control (75%) & Amco (25%)
+                     const airControlShare = rd.air_control_share_percent || 75; // Default 75%
+                     const amcoShare = rd.amco_share_percent || 25; // Default 25%
+
+                     airControlTotal += (netProfit * airControlShare) / 100;
+                     amcoTotal += (netProfit * amcoShare) / 100;
+                     netProfitTotal += netProfit;
+                 });
+                 setJvData({ airControlTotal, amcoTotal, netProfitTotal });
+             } catch (e) {
+                 // silently fail
+             }
+         };
+         loadJV();
+     }, [safeRev, filterParams]);
 
     // Filter state — initialised once; default date = latest from entries or today
     const [filterParams, setFilterParams] = useState(() => buildDefaultFilter(safeProd, safeRev, safeHours));
