@@ -170,6 +170,18 @@ export default function FactoryFinancialCalculations() {
     // Tab state
     const [activeTab, setActiveTab] = useState('overview');
 
+    // Heal supervisor cost rows whenever supervisor data loads
+    useEffect(() => {
+        const supervisorTotal = calculateTotalSupervisorDailyCost(supervisorDailyAllocations, labourPersonnel);
+        if (supervisorTotal > 0) {
+            setDailyCostsRecords(prev => prev.map(r =>
+                r.cost_type === 'supervisor' && (!r.unit_cost || r.unit_cost === 0)
+                    ? { ...r, unit_cost: supervisorTotal, total_cost: (r.multiplier_days || 1) * supervisorTotal }
+                    : r
+            ));
+        }
+    }, [supervisorDailyAllocations, labourPersonnel]);
+
     useEffect(() => {
         if (!accessLoading && hasAccess) {
             loadFinancialRecords();
@@ -260,7 +272,9 @@ export default function FactoryFinancialCalculations() {
             setDailyProductionEntries(normalizeLoadedDailyProductionEntries(record.daily_production_entries));
             setDailyRevenueEntries(normalizeLoadedDailyRevenueEntries(record.daily_revenue_entries));
             setDailyDepartmentHoursEntries(normalizeLoadedDailyDepartmentHoursEntries(record.daily_department_hours_entries));
-            setDailyCostsRecords(record.daily_costs_records || []);
+            // Store raw costs records — healing happens after totals are loaded below
+            const rawCostsRecords = record.daily_costs_records || [];
+            setDailyCostsRecords(rawCostsRecords);
 
             // Simulation panels
             setSimulationPanels(record.simulation_panels || [
@@ -312,6 +326,12 @@ export default function FactoryFinancialCalculations() {
             setDepartmentTechnicianAssignments(assignmentsWithRows);
             console.log('✅ Loaded department technician assignments:', assignmentsWithRows.length, 'records');
 
+            // Load cost totals and heal stale daily_costs_records
+            await Promise.all([
+                loadFixedCostTotalForRecord(record.id, rawCostsRecords, record.total_working_days_in_period || 0, record.average_working_days_per_month || 22, record.average_working_days_per_year || 260),
+                loadOperationalCostTotalForRecord(record.id, rawCostsRecords, record.total_working_days_in_period || 0, record.average_working_days_per_month || 22, record.average_working_days_per_year || 260),
+            ]);
+
             } catch (error) {
               console.error('Failed to load record data:', error);
               toast.error('Σφάλμα φόρτωσης δεδομένων εγγραφής');
@@ -320,48 +340,70 @@ export default function FactoryFinancialCalculations() {
             }
             };
 
-            const loadFixedCostTotal = async (recordId) => {
-            try {
-             if (!recordId) return;
-             const items = await base44.entities.FixedCostItem.filter({
-                 factory_financial_data_id: recordId
-             });
-             const total = items.reduce((sum, item) => {
-                 const daily = convertCostToDaily(item.amount, item.frequency_type, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays);
-                 return sum + daily;
-             }, 0);
-             setFixedDailyTotal(total);
-             console.log('✅ Fixed costs total loaded:', total);
-
-             // Heal cost records: restore unit_cost if 0
-             setDailyCostsRecords(prev => prev.map(r => 
-               r.cost_type === 'fixed' && r.unit_cost === 0 ? { ...r, unit_cost: total, total_cost: (r.multiplier_days || 1) * total } : r
-             ));
-            } catch (error) {
-             console.error('Failed to load fixed cost total:', error);
-            }
+            // Called from tabs (FixedCostsTab / OperationalCostsTab) when their totals change
+            const loadFixedCostTotal = (total) => {
+                setFixedDailyTotal(total);
+                // Heal stale rows that still have unit_cost=0 or missing
+                setDailyCostsRecords(prev => prev.map(r =>
+                    r.cost_type === 'fixed' && (!r.unit_cost || r.unit_cost === 0)
+                        ? { ...r, unit_cost: total, total_cost: (r.multiplier_days || 1) * total }
+                        : r
+                ));
             };
 
-            const loadOperationalCostTotal = async (recordId) => {
-            try {
-             if (!recordId) return;
-             const items = await base44.entities.OperationalCostItem.filter({
-                 factory_financial_data_id: recordId
-             });
-             const total = items.reduce((sum, item) => {
-                 const daily = convertCostToDaily(item.amount, item.frequency_type, avgWorkingDaysPerMonth, avgWorkingDaysPerYear, totalWorkingDays);
-                 return sum + daily;
-             }, 0);
-             setOperationalDailyTotal(total);
-             console.log('✅ Operational costs total loaded:', total);
+            const loadOperationalCostTotal = (total) => {
+                setOperationalDailyTotal(total);
+                setDailyCostsRecords(prev => prev.map(r =>
+                    r.cost_type === 'operational' && (!r.unit_cost || r.unit_cost === 0)
+                        ? { ...r, unit_cost: total, total_cost: (r.multiplier_days || 1) * total }
+                        : r
+                ));
+            };
 
-             // Heal cost records: restore unit_cost if 0
-             setDailyCostsRecords(prev => prev.map(r => 
-               r.cost_type === 'operational' && r.unit_cost === 0 ? { ...r, unit_cost: total, total_cost: (r.multiplier_days || 1) * total } : r
-             ));
-            } catch (error) {
-             console.error('Failed to load operational cost total:', error);
-            }
+            // Standalone version used during loadRecordData — receives raw records + period params directly
+            const loadFixedCostTotalForRecord = async (recordId, rawRecords, wDays, wMonth, wYear) => {
+                if (!recordId) return;
+                try {
+                    const items = await base44.entities.FixedCostItem.filter({ factory_financial_data_id: recordId });
+                    const total = items.reduce((sum, item) => {
+                        return sum + convertCostToDaily(item.amount, item.frequency_type, wMonth, wYear, wDays);
+                    }, 0);
+                    setFixedDailyTotal(total);
+                    console.log('✅ Fixed costs total loaded:', total);
+                    // Heal rawRecords in-place then update state
+                    setDailyCostsRecords(prev => {
+                        const base = prev.length ? prev : rawRecords;
+                        return base.map(r =>
+                            r.cost_type === 'fixed' && (!r.unit_cost || r.unit_cost === 0)
+                                ? { ...r, unit_cost: total, total_cost: (r.multiplier_days || 1) * total }
+                                : r
+                        );
+                    });
+                } catch (error) {
+                    console.error('Failed to load fixed cost total for record:', error);
+                }
+            };
+
+            const loadOperationalCostTotalForRecord = async (recordId, rawRecords, wDays, wMonth, wYear) => {
+                if (!recordId) return;
+                try {
+                    const items = await base44.entities.OperationalCostItem.filter({ factory_financial_data_id: recordId });
+                    const total = items.reduce((sum, item) => {
+                        return sum + convertCostToDaily(item.amount, item.frequency_type, wMonth, wYear, wDays);
+                    }, 0);
+                    setOperationalDailyTotal(total);
+                    console.log('✅ Operational costs total loaded:', total);
+                    setDailyCostsRecords(prev => {
+                        const base = prev.length ? prev : rawRecords;
+                        return base.map(r =>
+                            r.cost_type === 'operational' && (!r.unit_cost || r.unit_cost === 0)
+                                ? { ...r, unit_cost: total, total_cost: (r.multiplier_days || 1) * total }
+                                : r
+                        );
+                    });
+                } catch (error) {
+                    console.error('Failed to load operational cost total for record:', error);
+                }
             };
 
             const handleSave = async () => {
@@ -1024,22 +1066,22 @@ export default function FactoryFinancialCalculations() {
 
                             {/* FIXED COSTS TAB */}
                              <TabsContent value="fixed" className="mt-4">
-                                 <FixedCostsTab
-                                     factoryFinancialDataId={selectedRecord?.id}
-                                     totalWorkingDays={totalWorkingDays}
-                                     formatCurrency={formatCurrency}
-                                     onDailyTotalChange={setFixedDailyTotal}
-                                 />
+                                <FixedCostsTab
+                                    factoryFinancialDataId={selectedRecord?.id}
+                                    totalWorkingDays={totalWorkingDays}
+                                    formatCurrency={formatCurrency}
+                                    onDailyTotalChange={loadFixedCostTotal}
+                                />
                              </TabsContent>
 
                             {/* OPERATIONAL COSTS TAB */}
                              <TabsContent value="operational" className="mt-4">
-                                 <OperationalCostsTab
-                                     factoryFinancialDataId={selectedRecord?.id}
-                                     totalWorkingDays={totalWorkingDays}
-                                     formatCurrency={formatCurrency}
-                                     onDailyTotalChange={setOperationalDailyTotal}
-                                 />
+                                <OperationalCostsTab
+                                    factoryFinancialDataId={selectedRecord?.id}
+                                    totalWorkingDays={totalWorkingDays}
+                                    formatCurrency={formatCurrency}
+                                    onDailyTotalChange={loadOperationalCostTotal}
+                                />
                              </TabsContent>
 
 
