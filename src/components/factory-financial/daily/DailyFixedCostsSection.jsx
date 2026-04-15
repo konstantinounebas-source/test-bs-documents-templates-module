@@ -25,9 +25,10 @@ export default function DailyFixedCostsSection({ entries, selectedDate, unitCost
         
         if (field === 'multiplier_days') {
             const multiplierVal = parseFloat(value) || 0;
+            const currentUnitCost = parseFloat(unitCost) || 0;
             row.multiplier_days = multiplierVal;
-            row.total_cost = multiplierVal * (row.unit_cost || 0);
-            console.log('✅ Updated multiplier_days:', multiplierVal, 'total_cost:', row.total_cost);
+            row.unit_cost = currentUnitCost;
+            row.total_cost = multiplierVal * currentUnitCost;
         }
         
         updated[realIdx] = row;
@@ -100,7 +101,7 @@ export default function DailyFixedCostsSection({ entries, selectedDate, unitCost
                                     placeholder="1"
                                 />
                                 <div className="text-right flex-shrink-0 text-sm font-semibold text-slate-800">
-                                    {formatVal(row.unit_cost)}
+                                    {formatVal(parseFloat(unitCost) || 0)}
                                 </div>
                                 <div className="text-right flex-shrink-0 text-sm font-semibold text-blue-700">
                                     {formatVal(row.total_cost)}
