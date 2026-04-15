@@ -59,16 +59,20 @@ export default function OperationalPeriodAnalysisSection({
             return sum + (parseFloat(entry.total_revenue) || 0);
         }, 0);
 
-        // FORMULA 2: Operational Costs = sum(fixedCost + operationalCost)
+        // FORMULA 2: Operational Costs = sum(total_cost) for fixed + operational cost_type rows
         const operationalCosts = costsInPeriod.reduce((sum, record) => {
-            const fixed = parseFloat(record.fixedCost) || 0;
-            const operational = parseFloat(record.operationalCost) || 0;
-            return sum + fixed + operational;
+            if (record.cost_type === 'fixed' || record.cost_type === 'operational') {
+                return sum + (parseFloat(record.total_cost) || 0);
+            }
+            return sum;
         }, 0);
 
-        // FORMULA 3a: Supervisor Costs = sum(supervisorCost)
+        // FORMULA 3a: Supervisor Costs = sum(total_cost) for supervisor cost_type rows
         const supervisorCosts = costsInPeriod.reduce((sum, record) => {
-            return sum + (parseFloat(record.supervisorCost) || 0);
+            if (record.cost_type === 'supervisor') {
+                return sum + (parseFloat(record.total_cost) || 0);
+            }
+            return sum;
         }, 0);
 
         // FORMULA 3b: Department Hours Costs — calculated live from hours × hourly rate
