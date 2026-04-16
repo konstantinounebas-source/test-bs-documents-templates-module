@@ -560,6 +560,8 @@ export default function FactoryFinancialCalculations() {
             console.log('✅ Save completed successfully');
             toast.success('Τα δεδομένα αποθηκεύτηκαν επιτυχώς');
             setCurrentData(prev => ({ ...prev, ...updatedData }));
+            // Reload labour data from DB so in-memory ids match DB record ids
+            await loadRecordData(selectedRecord);
         } catch (error) {
             console.error('❌ SAVE ERROR:', error);
             console.error('❌ SAVE ERROR JSON:', JSON.stringify(error, null, 2));
