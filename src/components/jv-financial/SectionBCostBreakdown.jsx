@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,113 +13,156 @@ import {
 } from "@/components/ui/select";
 
 export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId, onTotalsChange }) {
-     const [verifiedCosts, setVerifiedCosts] = useState([]);
-     const [nonBomCosts, setNonBomCosts] = useState([]);
-     const [wasteAllowances, setWasteAllowances] = useState([]);
-     const [accruedCosts, setAccruedCosts] = useState([]);
-     const [products, setProducts] = useState([]);
-     const [costCategories, setCostCategories] = useState([]);
-     const [isLoadingData, setIsLoadingData] = useState(true);
-     const [financialDataId, setFinancialDataId] = useState(null);
-     const [currentInstanceId, setCurrentInstanceId] = useState(null);
+    const [verifiedCosts, setVerifiedCosts] = useState([]);
+    const [nonBomCosts, setNonBomCosts] = useState([]);
+    const [wasteAllowances, setWasteAllowances] = useState([]);
+    const [accruedCosts, setAccruedCosts] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [costCategories, setCostCategories] = useState([]);
+    const [isLoadingData, setIsLoadingData] = useState(true);
+    const [financialDataId, setFinancialDataId] = useState(null);
+
+    const loadingParamsRef = useRef({ instanceId: null, typeId: null });
+    const autosaveReadyRef = useRef(false);
 
     useEffect(() => {
-        setIsLoadingData(true);
-        setCurrentInstanceId(shelterInstanceId);
-        loadData();
+        if (shelterInstanceId && shelterTypeId) {
+            setIsLoadingData(true);
+            autosaveReadyRef.current = false;
+            loadingParamsRef.current = { instanceId: shelterInstanceId, typeId: shelterTypeId };
+
+            setFinancialDataId(null);
+            setVerifiedCosts([]);
+            setNonBomCosts([]);
+            setWasteAllowances([]);
+            setAccruedCosts([]);
+            loadData();
+        } else {
+            setIsLoadingData(false);
+            autosaveReadyRef.current = false;
+            loadingParamsRef.current = { instanceId: null, typeId: null };
+
+            setFinancialDataId(null);
+            setVerifiedCosts([]);
+            setNonBomCosts([]);
+            setWasteAllowances([]);
+            setAccruedCosts([]);
+        }
     }, [shelterInstanceId, shelterTypeId]);
 
     const loadData = async () => {
+        // Capture ref values at call time
+        const capturedParams = { ...loadingParamsRef.current };
         try {
             const [productsList, categoriesList] = await Promise.all([
                 base44.entities.Product.list(),
                 base44.entities.ProductCategory.list(),
             ]);
+
+            // After await: check if ref still matches captured values
+            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) {
+                return;
+            }
+
             setProducts(productsList);
             setCostCategories(categoriesList);
-            
-            // Load verified costs from shelter type BOM
-            if (shelterTypeId) {
-                await loadBomCosts();
+
+            await loadBomCosts(capturedParams);
+
+            // Re-check after each async step
+            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) {
+                return;
             }
-            
-            // Load saved financial data for this instance
-            if (shelterInstanceId) {
-                await loadSavedFinancialData();
-            }
+
+            await loadSavedFinancialData(capturedParams);
+
         } catch (error) {
             console.error('Failed to load data:', error);
         } finally {
-            setIsLoadingData(false);
+            // Only mark ready if ref still matches
+            if (loadingParamsRef.current.instanceId === capturedParams.instanceId && loadingParamsRef.current.typeId === capturedParams.typeId) {
+                setIsLoadingData(false);
+                autosaveReadyRef.current = true;
+            }
         }
     };
 
-    const loadSavedFinancialData = async () => {
+    const loadSavedFinancialData = async (capturedParams) => {
         try {
             const existing = await base44.entities.ShelterFinancialData.filter({
-                shelter_instance_id: shelterInstanceId
+                shelter_instance_id: capturedParams.instanceId
             });
+
+            // After await: verify ref still matches captured params
+            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) {
+                return;
+            }
 
             if (existing.length > 0) {
                 const data = existing[0];
                 setFinancialDataId(data.id);
-                
-                // Load saved costs
-                if (data.non_bom_costs && data.non_bom_costs.length > 0) {
-                    setNonBomCosts(data.non_bom_costs.map((item, idx) => ({
+                setNonBomCosts(
+                    (data.non_bom_costs || []).map((item, idx) => ({
                         id: Date.now() + idx,
                         description: item.description,
-                        amount: item.amount
-                    })));
-                }
-                
-                if (data.waste_allowances && data.waste_allowances.length > 0) {
-                    setWasteAllowances(data.waste_allowances.map((item, idx) => ({
+                        amount: String(item.amount)
+                    }))
+                );
+                setWasteAllowances(
+                    (data.waste_allowances || []).map((item, idx) => ({
                         id: Date.now() + idx + 1000,
                         product: item.product_id,
                         customProduct: item.description || '',
-                        baseCost: item.base_cost,
-                        allowancePercent: item.allowance_percent,
+                        baseCost: String(item.base_cost),
+                        allowancePercent: String(item.allowance_percent),
                         cost: (item.base_cost * item.allowance_percent) / 100
-                    })));
-                }
-                
-                if (data.accrued_costs && data.accrued_costs.length > 0) {
-                    setAccruedCosts(data.accrued_costs.map((item, idx) => ({
+                    }))
+                );
+                setAccruedCosts(
+                    (data.accrued_costs || []).map((item, idx) => ({
                         id: Date.now() + idx + 2000,
                         category: item.category_id,
                         customCategory: item.description || '',
-                        amount: item.amount
-                    })));
-                }
+                        amount: String(item.amount)
+                    }))
+                );
+            } else {
+                setFinancialDataId(null);
+                setNonBomCosts([]);
+                setWasteAllowances([]);
+                setAccruedCosts([]);
             }
         } catch (error) {
             console.error('Failed to load saved financial data:', error);
         }
     };
 
-    const loadBomCosts = async () => {
+    const loadBomCosts = async (capturedParams) => {
         try {
-            // Get BOM components for the selected shelter type
             const bomComponents = await base44.entities.BusStopTypeComponent.filter({
-                bus_stop_type_id: shelterTypeId
+                bus_stop_type_id: capturedParams.typeId
             });
 
-            // Get all products to map product_id to product details
-            const allProducts = await base44.entities.Product.list();
+            // After await: verify ref still matches captured params
+            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) {
+                return;
+            }
+
+            const [allProducts, materialCategories] = await Promise.all([
+                base44.entities.Product.list(),
+                base44.entities.MaterialCategory.list(),
+            ]);
+
+            // After await: verify again
+            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) {
+                return;
+            }
+
             const productMap = {};
-            allProducts.forEach(p => {
-                productMap[p.id] = p;
-            });
-
-            // Get material categories
-            const materialCategories = await base44.entities.MaterialCategory.list();
+            allProducts.forEach(p => { productMap[p.id] = p; });
             const categoryMap = {};
-            materialCategories.forEach(cat => {
-                categoryMap[cat.id] = cat.name;
-            });
+            materialCategories.forEach(cat => { categoryMap[cat.id] = cat.name; });
 
-            // Calculate total cost per material category
             const categoryTotals = {};
             bomComponents.forEach(comp => {
                 const product = productMap[comp.product_id];
@@ -127,19 +170,13 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                     const categoryId = comp.material_category_id;
                     const quantity = parseFloat(comp.quantity_required) || 0;
                     const unitCost = parseFloat(product.unit_cost) || 0;
-                    const totalCost = quantity * unitCost;
-                    
                     if (!categoryTotals[categoryId]) {
-                        categoryTotals[categoryId] = {
-                            categoryId,
-                            amount: 0
-                        };
+                        categoryTotals[categoryId] = { categoryId, amount: 0 };
                     }
-                    categoryTotals[categoryId].amount += totalCost;
+                    categoryTotals[categoryId].amount += quantity * unitCost;
                 }
             });
 
-            // Format verified costs
             const costs = Object.values(categoryTotals).map((item, index) => ({
                 id: index,
                 category: categoryMap[item.categoryId] || 'Unknown',
@@ -163,25 +200,20 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
 
     const updateWasteAllowance = (id, field, value) => {
         setWasteAllowances(wasteAllowances.map(w => {
-            if (w.id === id) {
-                const updated = { ...w, [field]: value };
-                
-                // Auto-fill base cost when product is selected
-                if (field === 'product' && value) {
-                    const selectedProduct = products.find(p => p.id === value);
-                    if (selectedProduct && selectedProduct.unit_cost) {
-                        updated.baseCost = selectedProduct.unit_cost;
-                    }
+            if (w.id !== id) return w;
+            const updated = { ...w, [field]: value };
+            if (field === 'product' && value) {
+                const selectedProduct = products.find(p => p.id === value);
+                if (selectedProduct && selectedProduct.unit_cost) {
+                    updated.baseCost = selectedProduct.unit_cost;
                 }
-                
-                if (field === 'baseCost' || field === 'allowancePercent' || field === 'product') {
-                    const base = parseFloat(updated.baseCost) || 0;
-                    const percent = parseFloat(updated.allowancePercent) || 0;
-                    updated.cost = (base * percent) / 100;
-                }
-                return updated;
             }
-            return w;
+            if (field === 'baseCost' || field === 'allowancePercent' || field === 'product') {
+                const base = parseFloat(updated.baseCost) || 0;
+                const percent = parseFloat(updated.allowancePercent) || 0;
+                updated.cost = (base * percent) / 100;
+            }
+            return updated;
         }));
     };
 
@@ -194,9 +226,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
     };
 
     const updateNonBomCost = (id, field, value) => {
-        setNonBomCosts(nonBomCosts.map(n =>
-            n.id === id ? { ...n, [field]: value } : n
-        ));
+        setNonBomCosts(nonBomCosts.map(n => n.id === id ? { ...n, [field]: value } : n));
     };
 
     const addAccruedCost = () => {
@@ -208,9 +238,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
     };
 
     const updateAccruedCost = (id, field, value) => {
-        setAccruedCosts(accruedCosts.map(a =>
-            a.id === id ? { ...a, [field]: value } : a
-        ));
+        setAccruedCosts(accruedCosts.map(a => a.id === id ? { ...a, [field]: value } : a));
     };
 
     const totalNonBomCosts = nonBomCosts.reduce((sum, n) => sum + (parseFloat(n.amount) || 0), 0);
@@ -230,17 +258,34 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
         }
     }, [totalVerifiedCosts, totalNonBomCosts, totalWasteAllowance, totalAccruedCosts, onTotalsChange]);
 
-    // Auto-save data when it changes
     useEffect(() => {
-        if (shelterInstanceId && !isLoadingData && currentInstanceId === shelterInstanceId) {
+        if (
+            shelterInstanceId &&
+            shelterTypeId &&
+            autosaveReadyRef.current &&
+            shelterInstanceId === loadingParamsRef.current.instanceId &&
+            shelterTypeId === loadingParamsRef.current.typeId
+        ) {
             saveFinancialData();
         }
-    }, [nonBomCosts, wasteAllowances, accruedCosts, shelterInstanceId]);
+    }, [nonBomCosts, wasteAllowances, accruedCosts, shelterInstanceId, shelterTypeId]);
 
     const saveFinancialData = async () => {
+        if (!shelterInstanceId) return;
+
         try {
-            const dataToSave = {
+            const existingRecords = await base44.entities.ShelterFinancialData.filter({
+                shelter_instance_id: shelterInstanceId
+            });
+
+            // Explicit full business payload — no spreading of raw DB record
+            const fullPayload = {
                 shelter_instance_id: shelterInstanceId,
+                // Preserve Section A fields from existing record, or initialize to empty
+                contract_amount: existingRecords.length > 0 ? (existingRecords[0].contract_amount || 0) : 0,
+                approved_variations: existingRecords.length > 0 ? (existingRecords[0].approved_variations || []) : [],
+                potential_variations: existingRecords.length > 0 ? (existingRecords[0].potential_variations || []) : [],
+                // Section B fields from current state
                 non_bom_costs: nonBomCosts.map(c => ({
                     description: c.description,
                     amount: parseFloat(c.amount) || 0
@@ -256,13 +301,13 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                     description: a.customCategory || null,
                     amount: parseFloat(a.amount) || 0
                 })),
-                total_cost_breakdown: totalCostBreakdown
             };
 
-            if (financialDataId) {
-                await base44.entities.ShelterFinancialData.update(financialDataId, dataToSave);
+            if (existingRecords.length > 0) {
+                await base44.entities.ShelterFinancialData.update(existingRecords[0].id, fullPayload);
+                setFinancialDataId(existingRecords[0].id);
             } else {
-                const created = await base44.entities.ShelterFinancialData.create(dataToSave);
+                const created = await base44.entities.ShelterFinancialData.create(fullPayload);
                 setFinancialDataId(created.id);
             }
         } catch (error) {
@@ -319,12 +364,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                             <label className="block text-sm font-medium text-slate-700 mb-1">2. Verified Non BOM Costs</label>
                             <p className="text-xs text-slate-500">Additional verified costs not included in BOM</p>
                         </div>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={addNonBomCost}
-                            className="flex items-center gap-1"
-                        >
+                        <Button size="sm" variant="outline" onClick={addNonBomCost} className="flex items-center gap-1">
                             <Plus className="w-4 h-4" />
                             Add
                         </Button>
@@ -349,12 +389,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                                         onChange={(e) => updateNonBomCost(cost.id, 'amount', e.target.value)}
                                     />
                                 </div>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => removeNonBomCost(cost.id)}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
+                                <Button size="icon" variant="ghost" onClick={() => removeNonBomCost(cost.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
                             </div>
@@ -374,12 +409,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                             <label className="block text-sm font-medium text-slate-700 mb-1">3. Waste Allowance</label>
                             <p className="text-xs text-slate-500">Material / Product Base Cost Allowance</p>
                         </div>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={addWasteAllowance}
-                            className="flex items-center gap-1"
-                        >
+                        <Button size="sm" variant="outline" onClick={addWasteAllowance} className="flex items-center gap-1">
                             <Plus className="w-4 h-4" />
                             Add
                         </Button>
@@ -434,12 +464,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                                         €{allowance.cost.toFixed(2)}
                                     </div>
                                 </div>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => removeWasteAllowance(allowance.id)}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
+                                <Button size="icon" variant="ghost" onClick={() => removeWasteAllowance(allowance.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
                             </div>
@@ -459,12 +484,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                             <label className="block text-sm font-medium text-slate-700 mb-1">4. Unfinalised / Accrued Costs</label>
                             <p className="text-xs text-slate-500">Estimated costs not yet finalized</p>
                         </div>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={addAccruedCost}
-                            className="flex items-center gap-1"
-                        >
+                        <Button size="sm" variant="outline" onClick={addAccruedCost} className="flex items-center gap-1">
                             <Plus className="w-4 h-4" />
                             Add
                         </Button>
@@ -504,12 +524,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                                         onChange={(e) => updateAccruedCost(cost.id, 'amount', e.target.value)}
                                     />
                                 </div>
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    onClick={() => removeAccruedCost(cost.id)}
-                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                                >
+                                <Button size="icon" variant="ghost" onClick={() => removeAccruedCost(cost.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                                     <Trash2 className="w-4 h-4" />
                                 </Button>
                             </div>
