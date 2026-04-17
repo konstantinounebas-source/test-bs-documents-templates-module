@@ -34,7 +34,6 @@ export default function JVFinancialCalculations() {
     const [isSectionALoading, setIsSectionALoading] = useState(true);
     const [isSectionBLoading, setIsSectionBLoading] = useState(true);
 
-    // Parent-level stale-request protection
     const instanceLoadRef = useRef(null);
 
     const isBaseReady = !isLoading && !isInstanceDataLoading && !isSectionALoading && !!selectedInstanceId;
@@ -158,13 +157,22 @@ export default function JVFinancialCalculations() {
             const totalCostBreakdown = bomCost + nonBomCost + wasteAllowanceCost + accruedCost;
             const totalContractIncome = sectionATotals.contractIncome || 0;
             const grossBalance = totalContractIncome - totalCostBreakdown;
-            const warrantyProvision = 0;
-            const netExpectedProfit = grossBalance - warrantyProvision;
-            const profitMarginPercent = totalCostBreakdown > 0 ? (netExpectedProfit / totalCostBreakdown) * 100 : 0;
 
+            // Fetch existing record to preserve manual fields
             const existingRecords = await base44.entities.ShelterFinancialResults.filter({
                 shelter_instance_id: currentInstanceId
             });
+            const existingResult = existingRecords.length > 0 ? existingRecords[0] : null;
+
+            // Preserve manual fields from existing record
+            const warrantyProvision = existingResult?.warranty_provision || 0;
+            const airControlSharePercent = existingResult?.air_control_share_percent || 0;
+            const amcoSharePercent = existingResult?.amco_share_percent || 0;
+
+            const netExpectedProfit = grossBalance - warrantyProvision;
+            const profitMarginPercent = totalCostBreakdown > 0 ? (netExpectedProfit / totalCostBreakdown) * 100 : 0;
+            const airControlProfitAmount = (netExpectedProfit * airControlSharePercent) / 100;
+            const amcoProfitAmount = (netExpectedProfit * amcoSharePercent) / 100;
 
             const resultData = {
                 shelter_instance_id: currentInstanceId,
@@ -181,14 +189,14 @@ export default function JVFinancialCalculations() {
                 warranty_provision_total: warrantyProvision,
                 net_expected_profit: netExpectedProfit,
                 profit_margin_percent: profitMarginPercent,
-                air_control_share_percent: 0,
-                air_control_profit_amount: 0,
-                amco_share_percent: 0,
-                amco_profit_amount: 0
+                air_control_share_percent: airControlSharePercent,
+                air_control_profit_amount: airControlProfitAmount,
+                amco_share_percent: amcoSharePercent,
+                amco_profit_amount: amcoProfitAmount
             };
 
-            if (existingRecords.length > 0) {
-                await base44.entities.ShelterFinancialResults.update(existingRecords[0].id, resultData);
+            if (existingResult) {
+                await base44.entities.ShelterFinancialResults.update(existingResult.id, resultData);
             } else {
                 await base44.entities.ShelterFinancialResults.create(resultData);
             }
