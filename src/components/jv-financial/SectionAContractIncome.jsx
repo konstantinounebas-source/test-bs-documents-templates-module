@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { base44 } from '@/api/base44Client';
 
-export default function SectionAContractIncome({ shelterInstanceId, onTotalsChange }) {
+export default function SectionAContractIncome({ shelterInstanceId, onTotalsChange, onLoadingChange, canSave }) {
     const [contractAmount, setContractAmount] = useState('');
     const [approvedVariations, setApprovedVariations] = useState([]);
     const [potentialVariations, setPotentialVariations] = useState([]);
@@ -27,29 +27,21 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
     const addApprovedVariation = () => {
         setApprovedVariations([...approvedVariations, { id: Date.now(), description: '', amount: '' }]);
     };
-
     const removeApprovedVariation = (id) => {
         setApprovedVariations(approvedVariations.filter(v => v.id !== id));
     };
-
     const updateApprovedVariation = (id, field, value) => {
-        setApprovedVariations(approvedVariations.map(v =>
-            v.id === id ? { ...v, [field]: value } : v
-        ));
+        setApprovedVariations(approvedVariations.map(v => v.id === id ? { ...v, [field]: value } : v));
     };
 
     const addPotentialVariation = () => {
         setPotentialVariations([...potentialVariations, { id: Date.now(), description: '', amount: '' }]);
     };
-
     const removePotentialVariation = (id) => {
         setPotentialVariations(potentialVariations.filter(v => v.id !== id));
     };
-
     const updatePotentialVariation = (id, field, value) => {
-        setPotentialVariations(potentialVariations.map(v =>
-            v.id === id ? { ...v, [field]: value } : v
-        ));
+        setPotentialVariations(potentialVariations.map(v => v.id === id ? { ...v, [field]: value } : v));
     };
 
     const totalApprovedVariations = approvedVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
@@ -59,6 +51,7 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
     useEffect(() => {
         if (shelterInstanceId) {
             setIsLoadingData(true);
+            onLoadingChange(true);
             autosaveReadyRef.current = false;
             loadingInstanceIdRef.current = shelterInstanceId;
 
@@ -69,6 +62,7 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
             loadSavedData();
         } else {
             setIsLoadingData(false);
+            onLoadingChange(false);
             autosaveReadyRef.current = false;
             loadingInstanceIdRef.current = null;
 
@@ -80,15 +74,13 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
     }, [shelterInstanceId]);
 
     const loadSavedData = async () => {
-        // Capture the ref value at call time — this is the instance we are loading for
         const capturedInstanceId = loadingInstanceIdRef.current;
         try {
             const existing = await base44.entities.ShelterFinancialData.filter({
                 shelter_instance_id: capturedInstanceId
             });
 
-            // After await: check if the ref still matches what we captured.
-            // If it changed, a new load has started — discard this result.
+            // After await: compare current ref against what we captured — not against the prop
             if (loadingInstanceIdRef.current !== capturedInstanceId) {
                 return;
             }
@@ -120,10 +112,10 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
         } catch (error) {
             console.error('Failed to load saved data:', error);
         } finally {
-            // Only mark ready if the ref still matches — otherwise a new load is in progress
             if (loadingInstanceIdRef.current === capturedInstanceId) {
                 setIsLoadingData(false);
                 autosaveReadyRef.current = true;
+                onLoadingChange(false);
             }
         }
     };
@@ -134,21 +126,30 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
         }
     }, [totalContractIncome, onTotalsChange]);
 
+    // Autosave: only when hydrated, ref matches, and parent canSave is true
     useEffect(() => {
-        if (shelterInstanceId && autosaveReadyRef.current && shelterInstanceId === loadingInstanceIdRef.current) {
+        if (shelterInstanceId && autosaveReadyRef.current && shelterInstanceId === loadingInstanceIdRef.current && canSave) {
             saveData();
         }
-    }, [contractAmount, approvedVariations, potentialVariations, shelterInstanceId]);
+    }, [contractAmount, approvedVariations, potentialVariations, shelterInstanceId, canSave]);
 
     const saveData = async () => {
         if (!shelterInstanceId) return;
+
+        // Capture ref value at the start of async work
+        const capturedInstanceId = loadingInstanceIdRef.current;
 
         try {
             const existingRecords = await base44.entities.ShelterFinancialData.filter({
                 shelter_instance_id: shelterInstanceId
             });
 
-            // Explicit full business payload — no spreading of raw DB record
+            // CORRECTED: compare current ref value against what we captured — never against the prop
+            if (loadingInstanceIdRef.current !== capturedInstanceId) {
+                console.warn("Autosave Section A aborted: Instance changed during async operation.");
+                return;
+            }
+
             const fullPayload = {
                 shelter_instance_id: shelterInstanceId,
                 contract_amount: parseFloat(contractAmount) || 0,
@@ -160,7 +161,7 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
                     description: v.description,
                     amount: parseFloat(v.amount) || 0
                 })),
-                // Preserve Section B fields from existing record, or initialize to empty
+                // Preserve Section B fields from existing record, or initialize empty
                 non_bom_costs: existingRecords.length > 0 ? (existingRecords[0].non_bom_costs || []) : [],
                 waste_allowances: existingRecords.length > 0 ? (existingRecords[0].waste_allowances || []) : [],
                 accrued_costs: existingRecords.length > 0 ? (existingRecords[0].accrued_costs || []) : [],
@@ -192,17 +193,8 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
                         <div className="flex-1 bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-sm font-medium text-slate-900">
                             €{parseFloat(contractAmount || 0).toFixed(2)}
                         </div>
-                        <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                                setEditAmount(contractAmount);
-                                setShowEditDialog(true);
-                            }}
-                            className="flex items-center gap-1"
-                        >
-                            <Edit2 className="w-4 h-4" />
-                            Edit
+                        <Button size="sm" variant="outline" onClick={() => { setEditAmount(contractAmount); setShowEditDialog(true); }} className="flex items-center gap-1">
+                            <Edit2 className="w-4 h-4" /> Edit
                         </Button>
                     </div>
                 </div>
@@ -212,27 +204,17 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
                     <div className="flex items-center justify-between mb-4">
                         <label className="block text-sm font-medium text-slate-700">Approved Variations</label>
                         <Button size="sm" variant="outline" onClick={addApprovedVariation} className="flex items-center gap-1">
-                            <Plus className="w-4 h-4" />
-                            Add
+                            <Plus className="w-4 h-4" /> Add
                         </Button>
                     </div>
                     <div className="space-y-3">
                         {approvedVariations.map((variation) => (
                             <div key={variation.id} className="flex gap-3 items-end">
                                 <div className="flex-1">
-                                    <Input
-                                        placeholder="Description"
-                                        value={variation.description}
-                                        onChange={(e) => updateApprovedVariation(variation.id, 'description', e.target.value)}
-                                    />
+                                    <Input placeholder="Description" value={variation.description} onChange={(e) => updateApprovedVariation(variation.id, 'description', e.target.value)} />
                                 </div>
                                 <div className="w-32">
-                                    <Input
-                                        type="number"
-                                        placeholder="Amount"
-                                        value={variation.amount}
-                                        onChange={(e) => updateApprovedVariation(variation.id, 'amount', e.target.value)}
-                                    />
+                                    <Input type="number" placeholder="Amount" value={variation.amount} onChange={(e) => updateApprovedVariation(variation.id, 'amount', e.target.value)} />
                                 </div>
                                 <Button size="icon" variant="ghost" onClick={() => removeApprovedVariation(variation.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                                     <Trash2 className="w-4 h-4" />
@@ -252,27 +234,17 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
                     <div className="flex items-center justify-between mb-4">
                         <label className="block text-sm font-medium text-slate-700">Potential Variations</label>
                         <Button size="sm" variant="outline" onClick={addPotentialVariation} className="flex items-center gap-1">
-                            <Plus className="w-4 h-4" />
-                            Add
+                            <Plus className="w-4 h-4" /> Add
                         </Button>
                     </div>
                     <div className="space-y-3">
                         {potentialVariations.map((variation) => (
                             <div key={variation.id} className="flex gap-3 items-end">
                                 <div className="flex-1">
-                                    <Input
-                                        placeholder="Description"
-                                        value={variation.description}
-                                        onChange={(e) => updatePotentialVariation(variation.id, 'description', e.target.value)}
-                                    />
+                                    <Input placeholder="Description" value={variation.description} onChange={(e) => updatePotentialVariation(variation.id, 'description', e.target.value)} />
                                 </div>
                                 <div className="w-32">
-                                    <Input
-                                        type="number"
-                                        placeholder="Amount"
-                                        value={variation.amount}
-                                        onChange={(e) => updatePotentialVariation(variation.id, 'amount', e.target.value)}
-                                    />
+                                    <Input type="number" placeholder="Amount" value={variation.amount} onChange={(e) => updatePotentialVariation(variation.id, 'amount', e.target.value)} />
                                 </div>
                                 <Button size="icon" variant="ghost" onClick={() => removePotentialVariation(variation.id)} className="text-red-600 hover:text-red-700 hover:bg-red-50">
                                     <Trash2 className="w-4 h-4" />
@@ -306,13 +278,7 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">Amount</label>
-                        <Input
-                            type="number"
-                            placeholder="0.00"
-                            value={editAmount}
-                            onChange={(e) => setEditAmount(e.target.value)}
-                            className="w-full"
-                        />
+                        <Input type="number" placeholder="0.00" value={editAmount} onChange={(e) => setEditAmount(e.target.value)} className="w-full" />
                     </div>
                 </div>
                 <DialogFooter>
