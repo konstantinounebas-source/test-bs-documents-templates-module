@@ -147,8 +147,8 @@ export default function JVFinancialResults() {
                     shelter_instance_id: instance.id,
                     shelter_type_id: instance.shelter_type_id,
                     quantity: resultsData?.quantity || 1,
-                    manual_contract_income: totalContractIncome,
-                    manual_total_cost: financialData?.total_cost_breakdown || 0,
+                    manual_contract_income: resultsData?.total_contract_income ?? totalContractIncome,
+                    manual_total_cost: resultsData?.total_cost_breakdown ?? 0,
                     warranty_provision: resultsData?.warranty_provision || 0,
                     air_control_share_percent: resultsData?.air_control_share_percent || 0,
                     amco_share_percent: resultsData?.amco_share_percent || 0
@@ -190,22 +190,51 @@ export default function JVFinancialResults() {
                 [fieldName]: newValue
             };
 
-            // Get existing result
+            // Get existing ShelterFinancialResults row
             const existingResults = await base44.entities.ShelterFinancialResults.filter({
                 shelter_instance_id: instanceId
             });
+            const existingResult = existingResults.length > 0 ? existingResults[0] : null;
 
-            // Prepare data to save with all current values plus the new one
+            // Recalculate all derived values
+            const quantity = updatedData.quantity || 1;
+            const totalContractIncome = parseFloat(updatedData.manual_contract_income) || 0;
+            const totalCost = parseFloat(updatedData.manual_total_cost) || 0;
+
+            const grossBalance = (totalContractIncome - totalCost) * quantity;
+            const warrantyProvision = parseFloat(updatedData.warranty_provision) || 0;
+            const warrantyProvisionTotal = warrantyProvision * quantity;
+            const netExpectedProfit = grossBalance - warrantyProvisionTotal;
+            const profitMarginPercent = (totalCost * quantity) > 0 ? (netExpectedProfit / (totalCost * quantity)) * 100 : 0;
+
+            const airControlSharePercent = parseFloat(updatedData.air_control_share_percent) || 0;
+            const amcoSharePercent = parseFloat(updatedData.amco_share_percent) || 0;
+            const airControlProfitAmount = (netExpectedProfit * airControlSharePercent) / 100;
+            const amcoProfitAmount = (netExpectedProfit * amcoSharePercent) / 100;
+
+            // Build full payload — no partial saves
             const resultData = {
                 shelter_instance_id: instanceId,
-                quantity: updatedData.quantity || 1,
-                warranty_provision: updatedData.warranty_provision || 0,
-                air_control_share_percent: updatedData.air_control_share_percent || 0,
-                amco_share_percent: updatedData.amco_share_percent || 0
+                quantity,
+                total_contract_income: totalContractIncome,
+                bom_cost: existingResult?.bom_cost || 0,
+                non_bom_cost: existingResult?.non_bom_cost || 0,
+                waste_allowance_cost: existingResult?.waste_allowance_cost || 0,
+                accrued_cost: existingResult?.accrued_cost || 0,
+                total_cost_breakdown: totalCost,
+                gross_balance: grossBalance,
+                warranty_provision: warrantyProvision,
+                warranty_provision_total: warrantyProvisionTotal,
+                net_expected_profit: netExpectedProfit,
+                profit_margin_percent: profitMarginPercent,
+                air_control_share_percent: airControlSharePercent,
+                air_control_profit_amount: airControlProfitAmount,
+                amco_share_percent: amcoSharePercent,
+                amco_profit_amount: amcoProfitAmount
             };
 
-            if (existingResults.length > 0) {
-                await base44.entities.ShelterFinancialResults.update(existingResults[0].id, resultData);
+            if (existingResult) {
+                await base44.entities.ShelterFinancialResults.update(existingResult.id, resultData);
             } else {
                 await base44.entities.ShelterFinancialResults.create(resultData);
             }
