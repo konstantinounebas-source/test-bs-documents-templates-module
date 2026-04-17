@@ -36,21 +36,10 @@ export default function JVFinancialCalculations() {
 
     // Parent-level stale-request protection
     const instanceLoadRef = useRef(null);
-    // Debounce ref for manual shelter type change
-    const shelterTypeDebounceRef = useRef(null);
 
     const isBaseReady = !isLoading && !isInstanceDataLoading && !isSectionALoading && !!selectedInstanceId;
     const isSectionBReady = !!selectedShelterType && !isSectionBLoading;
     const canSave = isBaseReady && isSectionBReady && !isSaving;
-
-    // Cleanup debounce on unmount
-    useEffect(() => {
-        return () => {
-            if (shelterTypeDebounceRef.current) {
-                clearTimeout(shelterTypeDebounceRef.current);
-            }
-        };
-    }, []);
 
     useEffect(() => {
         if (!accessLoading && hasAccess) {
@@ -138,28 +127,13 @@ export default function JVFinancialCalculations() {
         }
     };
 
-    // Debounced manual shelter type change — 300ms, ref-based cleanup
     const handleShelterTypeChange = (newTypeId) => {
         setSelectedShelterType(newTypeId);
-
-        if (!newTypeId) {
+        if (newTypeId) {
+            setIsSectionBLoading(true);
+        } else {
             setIsSectionBLoading(false);
-            return;
         }
-
-        // Immediately mark Section B as loading
-        setIsSectionBLoading(true);
-
-        // Cancel previous debounce if any
-        if (shelterTypeDebounceRef.current) {
-            clearTimeout(shelterTypeDebounceRef.current);
-        }
-
-        // After 300ms, remount SectionB via refreshKey
-        shelterTypeDebounceRef.current = setTimeout(() => {
-            setRefreshKey(prev => prev + 1);
-            shelterTypeDebounceRef.current = null;
-        }, 300);
     };
 
     const handleSaveAndRefresh = async () => {
