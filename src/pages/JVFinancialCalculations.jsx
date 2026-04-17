@@ -168,6 +168,7 @@ export default function JVFinancialCalculations() {
             const warrantyProvision = existingResult?.warranty_provision || 0;
             const airControlSharePercent = existingResult?.air_control_share_percent || 0;
             const amcoSharePercent = existingResult?.amco_share_percent || 0;
+            const quantity = existingResult?.quantity ?? 1;
 
             const netExpectedProfit = grossBalance - warrantyProvision;
             const profitMarginPercent = totalCostBreakdown > 0 ? (netExpectedProfit / totalCostBreakdown) * 100 : 0;
@@ -177,7 +178,7 @@ export default function JVFinancialCalculations() {
             const resultData = {
                 shelter_instance_id: currentInstanceId,
                 calculation_date: new Date().toISOString(),
-                quantity: 1,
+                quantity: quantity,
                 total_contract_income: totalContractIncome,
                 bom_cost: bomCost,
                 non_bom_cost: nonBomCost,
