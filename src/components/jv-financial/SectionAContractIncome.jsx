@@ -80,10 +80,7 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
                 shelter_instance_id: capturedInstanceId
             });
 
-            // After await: compare current ref against what we captured — not against the prop
-            if (loadingInstanceIdRef.current !== capturedInstanceId) {
-                return;
-            }
+            if (loadingInstanceIdRef.current !== capturedInstanceId) return;
 
             if (existing.length > 0) {
                 const data = existing[0];
@@ -126,17 +123,20 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
         }
     }, [totalContractIncome, onTotalsChange]);
 
-    // Autosave: only when hydrated, ref matches, and parent canSave is true
+    // Autosave: only when hydrated, ref matches, and canSave is true
     useEffect(() => {
-        if (shelterInstanceId && autosaveReadyRef.current && shelterInstanceId === loadingInstanceIdRef.current && canSave) {
+        if (
+            shelterInstanceId &&
+            autosaveReadyRef.current &&
+            loadingInstanceIdRef.current === shelterInstanceId &&
+            canSave
+        ) {
             saveData();
         }
     }, [contractAmount, approvedVariations, potentialVariations, shelterInstanceId, canSave]);
 
     const saveData = async () => {
         if (!shelterInstanceId) return;
-
-        // Capture ref value at the start of async work
         const capturedInstanceId = loadingInstanceIdRef.current;
 
         try {
@@ -144,9 +144,9 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
                 shelter_instance_id: shelterInstanceId
             });
 
-            // CORRECTED: compare current ref value against what we captured — never against the prop
+            // Compare against ref.current, not closure prop
             if (loadingInstanceIdRef.current !== capturedInstanceId) {
-                console.warn("Autosave Section A aborted: Instance changed during async operation.");
+                console.warn('Autosave Section A aborted: Instance changed during async operation.');
                 return;
             }
 

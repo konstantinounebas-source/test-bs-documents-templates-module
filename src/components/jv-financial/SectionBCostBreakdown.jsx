@@ -53,25 +53,26 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
     }, [shelterInstanceId, shelterTypeId]);
 
     const loadData = async () => {
+        // Capture a shallow snapshot — not a live reference
         const capturedParams = { ...loadingParamsRef.current };
+
         try {
-            const [productsList, categoriesList] = await Promise.all([
+            // Fetch all shared lookup data once per load cycle
+            const [productsList, materialCategoriesList, productCategoriesList] = await Promise.all([
                 base44.entities.Product.list(),
+                base44.entities.MaterialCategory.list(),
                 base44.entities.ProductCategory.list(),
             ]);
 
-            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) {
-                return;
-            }
+            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) return;
 
             setProducts(productsList);
-            setCostCategories(categoriesList);
+            setCostCategories(productCategoriesList);
 
-            await loadBomCosts(capturedParams);
+            // Pass already-fetched lookup data — no duplicate list() inside loadBomCosts
+            await loadBomCosts(capturedParams, productsList, materialCategoriesList);
 
-            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) {
-                return;
-            }
+            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) return;
 
             await loadSavedFinancialData(capturedParams);
 
@@ -86,15 +87,54 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
         }
     };
 
+    const loadBomCosts = async (capturedParams, productsList, materialCategoriesList) => {
+        try {
+            const bomComponents = await base44.entities.BusStopTypeComponent.filter({
+                bus_stop_type_id: capturedParams.typeId
+            });
+
+            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) return;
+
+            // Use already-fetched lookup data — no extra list() calls here
+            const productMap = {};
+            productsList.forEach(p => { productMap[p.id] = p; });
+            const categoryMap = {};
+            materialCategoriesList.forEach(cat => { categoryMap[cat.id] = cat.name; });
+
+            const categoryTotals = {};
+            bomComponents.forEach(comp => {
+                const product = productMap[comp.product_id];
+                if (product && comp.material_category_id) {
+                    const categoryId = comp.material_category_id;
+                    const quantity = parseFloat(comp.quantity_required) || 0;
+                    const unitCost = parseFloat(product.unit_cost) || 0;
+                    if (!categoryTotals[categoryId]) {
+                        categoryTotals[categoryId] = { categoryId, amount: 0 };
+                    }
+                    categoryTotals[categoryId].amount += quantity * unitCost;
+                }
+            });
+
+            const costs = Object.values(categoryTotals).map((item, index) => ({
+                id: index,
+                category: categoryMap[item.categoryId] || 'Unknown',
+                amount: item.amount
+            }));
+
+            setVerifiedCosts(costs);
+        } catch (error) {
+            console.error('Failed to load BOM costs:', error);
+            setVerifiedCosts([]);
+        }
+    };
+
     const loadSavedFinancialData = async (capturedParams) => {
         try {
             const existing = await base44.entities.ShelterFinancialData.filter({
                 shelter_instance_id: capturedParams.instanceId
             });
 
-            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) {
-                return;
-            }
+            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) return;
 
             if (existing.length > 0) {
                 const data = existing[0];
@@ -132,57 +172,6 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
             }
         } catch (error) {
             console.error('Failed to load saved financial data:', error);
-        }
-    };
-
-    const loadBomCosts = async (capturedParams) => {
-        try {
-            const bomComponents = await base44.entities.BusStopTypeComponent.filter({
-                bus_stop_type_id: capturedParams.typeId
-            });
-
-            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) {
-                return;
-            }
-
-            const [allProducts, materialCategories] = await Promise.all([
-                base44.entities.Product.list(),
-                base44.entities.MaterialCategory.list(),
-            ]);
-
-            if (loadingParamsRef.current.instanceId !== capturedParams.instanceId || loadingParamsRef.current.typeId !== capturedParams.typeId) {
-                return;
-            }
-
-            const productMap = {};
-            allProducts.forEach(p => { productMap[p.id] = p; });
-            const categoryMap = {};
-            materialCategories.forEach(cat => { categoryMap[cat.id] = cat.name; });
-
-            const categoryTotals = {};
-            bomComponents.forEach(comp => {
-                const product = productMap[comp.product_id];
-                if (product && comp.material_category_id) {
-                    const categoryId = comp.material_category_id;
-                    const quantity = parseFloat(comp.quantity_required) || 0;
-                    const unitCost = parseFloat(product.unit_cost) || 0;
-                    if (!categoryTotals[categoryId]) {
-                        categoryTotals[categoryId] = { categoryId, amount: 0 };
-                    }
-                    categoryTotals[categoryId].amount += quantity * unitCost;
-                }
-            });
-
-            const costs = Object.values(categoryTotals).map((item, index) => ({
-                id: index,
-                category: categoryMap[item.categoryId] || 'Unknown',
-                amount: item.amount
-            }));
-
-            setVerifiedCosts(costs);
-        } catch (error) {
-            console.error('Failed to load BOM costs:', error);
-            setVerifiedCosts([]);
         }
     };
 
@@ -246,14 +235,14 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
         }
     }, [totalVerifiedCosts, totalNonBomCosts, totalWasteAllowance, totalAccruedCosts, onTotalsChange]);
 
-    // Autosave: only when hydrated, refs match, and parent canSave is true
+    // Autosave: only when hydrated, snapshot refs match, and canSave is true
     useEffect(() => {
         if (
             shelterInstanceId &&
             shelterTypeId &&
             autosaveReadyRef.current &&
-            shelterInstanceId === loadingParamsRef.current.instanceId &&
-            shelterTypeId === loadingParamsRef.current.typeId &&
+            loadingParamsRef.current.instanceId === shelterInstanceId &&
+            loadingParamsRef.current.typeId === shelterTypeId &&
             canSave
         ) {
             saveFinancialData();
@@ -262,8 +251,7 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
 
     const saveFinancialData = async () => {
         if (!shelterInstanceId) return;
-
-        // Capture ref values at the start of async work
+        // Capture a shallow snapshot before async work
         const capturedParams = { ...loadingParamsRef.current };
 
         try {
@@ -271,12 +259,12 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                 shelter_instance_id: shelterInstanceId
             });
 
-            // CORRECTED: compare current ref values against what we captured — never against the props
+            // Compare against ref.current, not closure props
             if (
                 loadingParamsRef.current.instanceId !== capturedParams.instanceId ||
                 loadingParamsRef.current.typeId !== capturedParams.typeId
             ) {
-                console.warn("Autosave Section B aborted: Selection changed during async operation.");
+                console.warn('Autosave Section B aborted: Selection changed during async operation.');
                 return;
             }
 

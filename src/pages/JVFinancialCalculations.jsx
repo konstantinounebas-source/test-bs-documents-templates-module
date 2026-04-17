@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -30,15 +30,27 @@ export default function JVFinancialCalculations() {
     const [editingInstance, setEditingInstance] = useState(null);
     const [isExportingAll, setIsExportingAll] = useState(false);
 
-    // Readiness guard states
     const [isInstanceDataLoading, setIsInstanceDataLoading] = useState(false);
     const [isSectionALoading, setIsSectionALoading] = useState(true);
     const [isSectionBLoading, setIsSectionBLoading] = useState(true);
 
-    // Derived readiness — split clearly by concern
+    // Parent-level stale-request protection
+    const instanceLoadRef = useRef(null);
+    // Debounce ref for manual shelter type change
+    const shelterTypeDebounceRef = useRef(null);
+
     const isBaseReady = !isLoading && !isInstanceDataLoading && !isSectionALoading && !!selectedInstanceId;
     const isSectionBReady = !!selectedShelterType && !isSectionBLoading;
     const canSave = isBaseReady && isSectionBReady && !isSaving;
+
+    // Cleanup debounce on unmount
+    useEffect(() => {
+        return () => {
+            if (shelterTypeDebounceRef.current) {
+                clearTimeout(shelterTypeDebounceRef.current);
+            }
+        };
+    }, []);
 
     useEffect(() => {
         if (!accessLoading && hasAccess) {
@@ -59,7 +71,6 @@ export default function JVFinancialCalculations() {
 
             if (instances.length > 0) {
                 setSelectedInstanceId(instances[0].id);
-                // Always reset explicitly — use '' if no type assigned
                 setSelectedShelterType(instances[0].shelter_type_id || '');
             } else {
                 setSelectedInstanceId(null);
@@ -72,61 +83,86 @@ export default function JVFinancialCalculations() {
         }
     };
 
-    // When selectedInstanceId changes: reset Section A loading immediately,
-    // defer Section B loading decision until we know if the instance has a shelter type.
     useEffect(() => {
         if (selectedInstanceId) {
             setIsSectionALoading(true);
+            instanceLoadRef.current = selectedInstanceId;
             loadInstanceData();
         } else {
             setSelectedShelterType('');
             setIsSectionALoading(false);
             setIsSectionBLoading(false);
+            instanceLoadRef.current = null;
         }
     }, [selectedInstanceId]);
 
     const loadInstanceData = async () => {
         setIsInstanceDataLoading(true);
+        const capturedInstanceId = instanceLoadRef.current;
+
         try {
-            const instances = await base44.entities.ShelterInstance.filter({ id: selectedInstanceId });
+            const instances = await base44.entities.ShelterInstance.filter({ id: capturedInstanceId });
+
+            if (instanceLoadRef.current !== capturedInstanceId) return;
+
             if (instances.length > 0) {
                 const instance = instances[0];
                 const typeId = instance.shelter_type_id || '';
+
+                if (instanceLoadRef.current !== capturedInstanceId) return;
                 setSelectedShelterType(typeId);
 
-                // Only mark Section B as loading if a shelter type actually exists
+                if (instanceLoadRef.current !== capturedInstanceId) return;
                 if (typeId) {
                     setIsSectionBLoading(true);
                 } else {
                     setIsSectionBLoading(false);
                 }
 
+                if (instanceLoadRef.current !== capturedInstanceId) return;
                 setRefreshKey(prev => prev + 1);
             } else {
+                if (instanceLoadRef.current !== capturedInstanceId) return;
                 setSelectedShelterType('');
                 setIsSectionBLoading(false);
             }
         } catch (error) {
             console.error('Failed to load instance data:', error);
-            setIsSectionBLoading(false);
+            if (instanceLoadRef.current === capturedInstanceId) {
+                setIsSectionBLoading(false);
+            }
         } finally {
-            setIsInstanceDataLoading(false);
+            if (instanceLoadRef.current === capturedInstanceId) {
+                setIsInstanceDataLoading(false);
+            }
         }
     };
 
-    // When the user manually changes the shelter type from the dropdown,
-    // mark Section B as loading so readiness resets cleanly during type transitions.
+    // Debounced manual shelter type change — 300ms, ref-based cleanup
     const handleShelterTypeChange = (newTypeId) => {
         setSelectedShelterType(newTypeId);
-        if (newTypeId) {
-            setIsSectionBLoading(true);
-        } else {
+
+        if (!newTypeId) {
             setIsSectionBLoading(false);
+            return;
         }
+
+        // Immediately mark Section B as loading
+        setIsSectionBLoading(true);
+
+        // Cancel previous debounce if any
+        if (shelterTypeDebounceRef.current) {
+            clearTimeout(shelterTypeDebounceRef.current);
+        }
+
+        // After 300ms, remount SectionB via refreshKey
+        shelterTypeDebounceRef.current = setTimeout(() => {
+            setRefreshKey(prev => prev + 1);
+            shelterTypeDebounceRef.current = null;
+        }, 300);
     };
 
     const handleSaveAndRefresh = async () => {
-        // Capture values at call time — use these consistently throughout the save
         const currentInstanceId = selectedInstanceId;
         const currentShelterType = selectedShelterType;
 
@@ -258,7 +294,10 @@ export default function JVFinancialCalculations() {
                 pdf.text(`Approved Variations: €${approvedTotal.toFixed(2)}`, margin + 5, yPos); yPos += 5;
                 if (approvedVars.length > 0) {
                     pdf.setFontSize(9); pdf.setFont('helvetica', 'normal');
-                    for (const v of approvedVars) { checkPageBreak(5); pdf.text(`  • ${v.description || 'N/A'}: €${(v.amount || 0).toFixed(2)}`, margin + 8, yPos); yPos += 4; }
+                    for (const v of approvedVars) {
+                        checkPageBreak(5);
+                        pdf.text(`  • ${v.description || 'N/A'}: €${(v.amount || 0).toFixed(2)}`, margin + 8, yPos); yPos += 4;
+                    }
                     yPos += 2;
                 }
 
@@ -268,7 +307,10 @@ export default function JVFinancialCalculations() {
                 pdf.text(`Potential Variations: €${potentialTotal.toFixed(2)}`, margin + 5, yPos); yPos += 5;
                 if (potentialVars.length > 0) {
                     pdf.setFontSize(9); pdf.setFont('helvetica', 'normal');
-                    for (const v of potentialVars) { checkPageBreak(5); pdf.text(`  • ${v.description || 'N/A'}: €${(v.amount || 0).toFixed(2)}`, margin + 8, yPos); yPos += 4; }
+                    for (const v of potentialVars) {
+                        checkPageBreak(5);
+                        pdf.text(`  • ${v.description || 'N/A'}: €${(v.amount || 0).toFixed(2)}`, margin + 8, yPos); yPos += 4;
+                    }
                     yPos += 2;
                 }
 
@@ -302,7 +344,10 @@ export default function JVFinancialCalculations() {
                 pdf.text(`1. Verified Costs (from BOM): €${bomCost.toFixed(2)}`, margin + 5, yPos); yPos += 5;
                 if (Object.keys(bomCostsByCategory).length > 0) {
                     pdf.setFontSize(9); pdf.setFont('helvetica', 'normal');
-                    for (const [cat, cost] of Object.entries(bomCostsByCategory)) { checkPageBreak(5); pdf.text(`  • ${cat}: €${cost.toFixed(2)}`, margin + 8, yPos); yPos += 4; }
+                    for (const [cat, cost] of Object.entries(bomCostsByCategory)) {
+                        checkPageBreak(5);
+                        pdf.text(`  • ${cat}: €${cost.toFixed(2)}`, margin + 8, yPos); yPos += 4;
+                    }
                     yPos += 2;
                 }
 
@@ -313,7 +358,10 @@ export default function JVFinancialCalculations() {
                 pdf.text(`2. Verified Non BOM Costs: €${nonBomTotal.toFixed(2)}`, margin + 5, yPos); yPos += 5;
                 if (nonBomCosts.length > 0) {
                     pdf.setFontSize(9); pdf.setFont('helvetica', 'normal');
-                    for (const c of nonBomCosts) { checkPageBreak(5); pdf.text(`  • ${c.description || 'N/A'}: €${(c.amount || 0).toFixed(2)}`, margin + 8, yPos); yPos += 4; }
+                    for (const c of nonBomCosts) {
+                        checkPageBreak(5);
+                        pdf.text(`  • ${c.description || 'N/A'}: €${(c.amount || 0).toFixed(2)}`, margin + 8, yPos); yPos += 4;
+                    }
                     yPos += 2;
                 }
 
@@ -499,7 +547,11 @@ export default function JVFinancialCalculations() {
                                 <Plus className="w-4 h-4" /> Add Instance
                             </Button>
                             {selectedInstanceId && (
-                                <Button variant="outline" onClick={() => { const inst = shelterInstances.find(i => i.id === selectedInstanceId); setEditingInstance(inst); setShowEditDialog(true); }} className="flex items-center gap-2">
+                                <Button variant="outline" onClick={() => {
+                                    const instance = shelterInstances.find(i => i.id === selectedInstanceId);
+                                    setEditingInstance(instance);
+                                    setShowEditDialog(true);
+                                }} className="flex items-center gap-2">
                                     <Edit className="w-4 h-4" /> Edit Instance
                                 </Button>
                             )}
@@ -571,7 +623,10 @@ export default function JVFinancialCalculations() {
                 <AddShelterInstanceDialog
                     open={showAddDialog}
                     onOpenChange={setShowAddDialog}
-                    onAdded={async (newInstance) => { await loadInitialData(); setSelectedInstanceId(newInstance.id); }}
+                    onAdded={async (newInstance) => {
+                        await loadInitialData();
+                        setSelectedInstanceId(newInstance.id);
+                    }}
                 />
                 <EditShelterInstanceDialog
                     open={showEditDialog}
