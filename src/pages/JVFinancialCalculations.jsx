@@ -156,44 +156,39 @@ export default function JVFinancialCalculations() {
             const accruedCost = sectionBTotals.accrued || 0;
             const totalCostBreakdown = bomCost + nonBomCost + wasteAllowanceCost + accruedCost;
             const totalContractIncome = sectionATotals.contractIncome || 0;
-            const grossBalance = totalContractIncome - totalCostBreakdown;
 
-            // Fetch existing record to preserve manual fields
+            console.log('JVFinancialCalculations Save:');
+            console.log('  shelter_instance_id:', currentInstanceId);
+            console.log('  total_contract_income:', totalContractIncome);
+            console.log('  total_cost_breakdown:', totalCostBreakdown);
+
+            // Step 1: Update ShelterFinancialData with calculated totals (source of truth)
+            const existingFinancialDataRecords = await base44.entities.ShelterFinancialData.filter({
+                shelter_instance_id: currentInstanceId
+            });
+            const existingFinancialData = existingFinancialDataRecords.length > 0 ? existingFinancialDataRecords[0] : null;
+
+            if (existingFinancialData) {
+                await base44.entities.ShelterFinancialData.update(existingFinancialData.id, {
+                    ...existingFinancialData,
+                    total_contract_income: totalContractIncome,
+                    total_cost_breakdown: totalCostBreakdown,
+                });
+            }
+
+            // Step 2: Fetch existing ShelterFinancialResults to preserve user-editable fields
             const existingRecords = await base44.entities.ShelterFinancialResults.filter({
                 shelter_instance_id: currentInstanceId
             });
             const existingResult = existingRecords.length > 0 ? existingRecords[0] : null;
 
-            // Preserve manual fields from existing record
-            const warrantyProvision = existingResult?.warranty_provision || 0;
-            const airControlSharePercent = existingResult?.air_control_share_percent || 0;
-            const amcoSharePercent = existingResult?.amco_share_percent || 0;
-            const quantity = existingResult?.quantity ?? 1;
-
-            const netExpectedProfit = grossBalance - warrantyProvision;
-            const profitMarginPercent = totalCostBreakdown > 0 ? (netExpectedProfit / totalCostBreakdown) * 100 : 0;
-            const airControlProfitAmount = (netExpectedProfit * airControlSharePercent) / 100;
-            const amcoProfitAmount = (netExpectedProfit * amcoSharePercent) / 100;
-
+            // Only save user-editable fields to ShelterFinancialResults
             const resultData = {
                 shelter_instance_id: currentInstanceId,
-                calculation_date: new Date().toISOString(),
-                quantity: quantity,
-                total_contract_income: totalContractIncome,
-                bom_cost: bomCost,
-                non_bom_cost: nonBomCost,
-                waste_allowance_cost: wasteAllowanceCost,
-                accrued_cost: accruedCost,
-                total_cost_breakdown: totalCostBreakdown,
-                gross_balance: grossBalance,
-                warranty_provision: warrantyProvision,
-                warranty_provision_total: warrantyProvision,
-                net_expected_profit: netExpectedProfit,
-                profit_margin_percent: profitMarginPercent,
-                air_control_share_percent: airControlSharePercent,
-                air_control_profit_amount: airControlProfitAmount,
-                amco_share_percent: amcoSharePercent,
-                amco_profit_amount: amcoProfitAmount
+                quantity: existingResult?.quantity ?? 1,
+                warranty_provision: existingResult?.warranty_provision || 0,
+                air_control_share_percent: existingResult?.air_control_share_percent || 0,
+                amco_share_percent: existingResult?.amco_share_percent || 0,
             };
 
             if (existingResult) {

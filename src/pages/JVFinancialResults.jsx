@@ -129,26 +129,30 @@ export default function JVFinancialResults() {
             // Normalize financial data by shelter_instance_id
             const normalized = {};
             activeInstances.forEach(instance => {
-                // Get financial data (contract income and costs)
-                const financialData = allFinancialData.find(d => d.shelter_instance_id === instance.id);
-                
-                // Get results data (quantity, warranty, profit shares)
-                const resultsData = allResults.find(r => r.shelter_instance_id === instance.id);
+                // Get latest ShelterFinancialData for this instance (source of truth for income & cost)
+                const instanceFinancialDataRecords = allFinancialData
+                    .filter(d => String(d.shelter_instance_id) === String(instance.id))
+                    .sort((a, b) => new Date(b.updated_date).getTime() - new Date(a.updated_date).getTime());
+                const financialData = instanceFinancialDataRecords.length > 0 ? instanceFinancialDataRecords[0] : null;
 
-                // Calculate total contract income from ShelterFinancialData
-                const contractAmount = financialData?.contract_amount || 0;
-                const approvedVariationsTotal = (financialData?.approved_variations || [])
-                    .reduce((sum, v) => sum + (v.amount || 0), 0);
-                const potentialVariationsTotal = (financialData?.potential_variations || [])
-                    .reduce((sum, v) => sum + (v.amount || 0), 0);
-                const totalContractIncome = contractAmount + approvedVariationsTotal + potentialVariationsTotal;
+                // Get results data (user-editable: quantity, warranty, profit shares)
+                const resultsData = allResults.find(r => String(r.shelter_instance_id) === String(instance.id));
+
+                // Read income & cost exclusively from ShelterFinancialData
+                const manualContractIncome = financialData?.total_contract_income || 0;
+                const manualTotalCost = financialData?.total_cost_breakdown || 0;
+
+                console.log('JVFinancialResults loadData() for instance:', instance.id);
+                console.log('  financialData.id:', financialData?.id || 'N/A');
+                console.log('  financialData.total_contract_income:', financialData?.total_contract_income ?? 'N/A');
+                console.log('  financialData.total_cost_breakdown:', financialData?.total_cost_breakdown ?? 'N/A');
 
                 normalized[instance.id] = {
                     shelter_instance_id: instance.id,
                     shelter_type_id: instance.shelter_type_id,
                     quantity: resultsData?.quantity || 1,
-                    manual_contract_income: resultsData?.total_contract_income ?? totalContractIncome,
-                    manual_total_cost: resultsData?.total_cost_breakdown ?? 0,
+                    manual_contract_income: manualContractIncome,
+                    manual_total_cost: manualTotalCost,
                     warranty_provision: resultsData?.warranty_provision || 0,
                     air_control_share_percent: resultsData?.air_control_share_percent || 0,
                     amco_share_percent: resultsData?.amco_share_percent || 0
@@ -181,12 +185,8 @@ export default function JVFinancialResults() {
         try {
             const newValue = parseFloat(editValue) || 0;
 
-            // Get current data BEFORE updating state
-            const currentData = dataByInstance[instanceId] || {};
-
-            // Prepare the complete updated data object
             const updatedData = {
-                ...currentData,
+                ...dataByInstance[instanceId],
                 [fieldName]: newValue
             };
 
@@ -196,41 +196,13 @@ export default function JVFinancialResults() {
             });
             const existingResult = existingResults.length > 0 ? existingResults[0] : null;
 
-            // Recalculate all derived values
-            const quantity = updatedData.quantity || 1;
-            const totalContractIncome = parseFloat(updatedData.manual_contract_income) || 0;
-            const totalCost = parseFloat(updatedData.manual_total_cost) || 0;
-
-            const grossBalance = (totalContractIncome - totalCost) * quantity;
-            const warrantyProvision = parseFloat(updatedData.warranty_provision) || 0;
-            const warrantyProvisionTotal = warrantyProvision * quantity;
-            const netExpectedProfit = grossBalance - warrantyProvisionTotal;
-            const profitMarginPercent = (totalCost * quantity) > 0 ? (netExpectedProfit / (totalCost * quantity)) * 100 : 0;
-
-            const airControlSharePercent = parseFloat(updatedData.air_control_share_percent) || 0;
-            const amcoSharePercent = parseFloat(updatedData.amco_share_percent) || 0;
-            const airControlProfitAmount = (netExpectedProfit * airControlSharePercent) / 100;
-            const amcoProfitAmount = (netExpectedProfit * amcoSharePercent) / 100;
-
-            // Build full payload — no partial saves
+            // Only save user-editable fields — income & cost come from ShelterFinancialData
             const resultData = {
                 shelter_instance_id: instanceId,
-                quantity,
-                total_contract_income: totalContractIncome,
-                bom_cost: existingResult?.bom_cost || 0,
-                non_bom_cost: existingResult?.non_bom_cost || 0,
-                waste_allowance_cost: existingResult?.waste_allowance_cost || 0,
-                accrued_cost: existingResult?.accrued_cost || 0,
-                total_cost_breakdown: totalCost,
-                gross_balance: grossBalance,
-                warranty_provision: warrantyProvision,
-                warranty_provision_total: warrantyProvisionTotal,
-                net_expected_profit: netExpectedProfit,
-                profit_margin_percent: profitMarginPercent,
-                air_control_share_percent: airControlSharePercent,
-                air_control_profit_amount: airControlProfitAmount,
-                amco_share_percent: amcoSharePercent,
-                amco_profit_amount: amcoProfitAmount
+                quantity: updatedData.quantity || 1,
+                warranty_provision: updatedData.warranty_provision || 0,
+                air_control_share_percent: updatedData.air_control_share_percent || 0,
+                amco_share_percent: updatedData.amco_share_percent || 0,
             };
 
             if (existingResult) {
@@ -249,7 +221,6 @@ export default function JVFinancialResults() {
         } catch (error) {
             console.error('Failed to save data:', error);
             toast.error('Failed to save data');
-            // Reload data on error
             loadData();
         }
 
