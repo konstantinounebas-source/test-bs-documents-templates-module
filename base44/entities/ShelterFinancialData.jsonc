@@ -1,0 +1,112 @@
+{
+  "name": "ShelterFinancialData",
+  "type": "object",
+  "properties": {
+    "shelter_instance_id": {
+      "type": "string",
+      "description": "The shelter instance ID"
+    },
+    "contract_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Base contract amount"
+    },
+    "approved_variations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "List of approved variations"
+    },
+    "potential_variations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "List of potential variations"
+    },
+    "non_bom_costs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Verified non-BOM costs"
+    },
+    "waste_allowances": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "base_cost": {
+            "type": "number"
+          },
+          "allowance_percent": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Waste allowance entries (product_id or custom description)"
+    },
+    "accrued_costs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "category_id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Unfinalised/accrued costs (category_id or custom description)"
+    },
+    "total_contract_income": {
+      "type": "number",
+      "default": 0,
+      "description": "Total calculated contract income (contract amount + approved variations + potential variations)"
+    },
+    "total_cost_breakdown": {
+      "type": "number",
+      "default": 0,
+      "description": "Total calculated cost breakdown (BOM + non-BOM + waste + accrued)"
+    }
+  },
+  "required": [
+    "shelter_instance_id"
+  ]
+}
