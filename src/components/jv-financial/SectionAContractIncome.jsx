@@ -158,6 +158,8 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
             const calculatedTotalIncome = contractAmountNum + approvedTotal + potentialTotal;
 
             const fullPayload = {
+                // Spread existing to preserve ALL fields (especially Section B fields and total_cost_breakdown)
+                ...(existingData || {}),
                 shelter_instance_id: shelterInstanceId,
                 contract_amount: contractAmountNum,
                 approved_variations: approvedVariations.map(v => ({
@@ -168,13 +170,8 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
                     description: v.description,
                     amount: parseFloat(v.amount) || 0
                 })),
-                // Preserve Section B fields from existing record
-                non_bom_costs: existingData?.non_bom_costs || [],
-                waste_allowances: existingData?.waste_allowances || [],
-                accrued_costs: existingData?.accrued_costs || [],
-                // Always persist calculated totals as source of truth
+                // Always persist the calculated total income as source of truth
                 total_contract_income: calculatedTotalIncome,
-                total_cost_breakdown: existingData?.total_cost_breakdown || 0,
             };
 
             if (existingRecords.length > 0) {

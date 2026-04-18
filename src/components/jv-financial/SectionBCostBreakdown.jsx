@@ -268,12 +268,19 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                 return;
             }
 
+            const existingData = existingRecords.length > 0 ? existingRecords[0] : null;
+
+            const nonBomTotal = nonBomCosts.reduce((sum, c) => sum + (parseFloat(c.amount) || 0), 0);
+            const wasteTotal = wasteAllowances.reduce((sum, w) => sum + (w.cost || 0), 0);
+            const accruedTotal = accruedCosts.reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
+            // BOM cost is read-only (from BOM), preserve from existing or use current state total
+            const bomTotal = totalVerifiedCosts;
+            const calculatedTotalCost = bomTotal + nonBomTotal + wasteTotal + accruedTotal;
+
             const fullPayload = {
+                // Spread existing to preserve ALL fields (especially Section A fields and total_contract_income)
+                ...(existingData || {}),
                 shelter_instance_id: shelterInstanceId,
-                // Preserve Section A fields from existing record, or initialize empty
-                contract_amount: existingRecords.length > 0 ? (existingRecords[0].contract_amount || 0) : 0,
-                approved_variations: existingRecords.length > 0 ? (existingRecords[0].approved_variations || []) : [],
-                potential_variations: existingRecords.length > 0 ? (existingRecords[0].potential_variations || []) : [],
                 // Section B fields from current state
                 non_bom_costs: nonBomCosts.map(c => ({
                     description: c.description,
@@ -290,6 +297,8 @@ export default function SectionBCostBreakdown({ shelterInstanceId, shelterTypeId
                     description: a.customCategory || null,
                     amount: parseFloat(a.amount) || 0
                 })),
+                // Always persist the calculated total cost as source of truth
+                total_cost_breakdown: calculatedTotalCost,
             };
 
             if (existingRecords.length > 0) {
