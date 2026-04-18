@@ -150,9 +150,16 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
                 return;
             }
 
+            const existingData = existingRecords.length > 0 ? existingRecords[0] : null;
+
+            const contractAmountNum = parseFloat(contractAmount) || 0;
+            const approvedTotal = approvedVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+            const potentialTotal = potentialVariations.reduce((sum, v) => sum + (parseFloat(v.amount) || 0), 0);
+            const calculatedTotalIncome = contractAmountNum + approvedTotal + potentialTotal;
+
             const fullPayload = {
                 shelter_instance_id: shelterInstanceId,
-                contract_amount: parseFloat(contractAmount) || 0,
+                contract_amount: contractAmountNum,
                 approved_variations: approvedVariations.map(v => ({
                     description: v.description,
                     amount: parseFloat(v.amount) || 0
@@ -161,10 +168,13 @@ export default function SectionAContractIncome({ shelterInstanceId, onTotalsChan
                     description: v.description,
                     amount: parseFloat(v.amount) || 0
                 })),
-                // Preserve Section B fields from existing record, or initialize empty
-                non_bom_costs: existingRecords.length > 0 ? (existingRecords[0].non_bom_costs || []) : [],
-                waste_allowances: existingRecords.length > 0 ? (existingRecords[0].waste_allowances || []) : [],
-                accrued_costs: existingRecords.length > 0 ? (existingRecords[0].accrued_costs || []) : [],
+                // Preserve Section B fields from existing record
+                non_bom_costs: existingData?.non_bom_costs || [],
+                waste_allowances: existingData?.waste_allowances || [],
+                accrued_costs: existingData?.accrued_costs || [],
+                // Always persist calculated totals as source of truth
+                total_contract_income: calculatedTotalIncome,
+                total_cost_breakdown: existingData?.total_cost_breakdown || 0,
             };
 
             if (existingRecords.length > 0) {
