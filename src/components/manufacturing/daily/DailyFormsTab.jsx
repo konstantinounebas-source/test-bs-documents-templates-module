@@ -254,8 +254,8 @@ export default function DailyFormsTab({
                       onDelete={onDelete}
                       onPreview={onPreview}
                       onOCR={onOCR}
-                      onOpenProduction={onOpenProduction}
-                      onOpenTeams={onOpenTeams}
+                      onOpenProduction={() => onOpenProduction(att)}
+                      onOpenTeams={() => onOpenTeams(att)}
                       isOcrLoading={runningOcrAttachmentIds.has(att.id)}
                       isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
                       isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
