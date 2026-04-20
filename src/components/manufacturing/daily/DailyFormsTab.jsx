@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -18,6 +18,7 @@ export default function DailyFormsTab({
   onHandleFiles,
   runningOcrAttachmentIds,
   attachmentOcrStatus,
+  onRehydrateOcrStatus,
   deleteMutation,
   onAddMsg
 }) {
@@ -76,6 +77,15 @@ export default function DailyFormsTab({
     enabled: !!selDate && dailyBatches.length > 0,
     staleTime: 0
   });
+
+  // Trigger OCR status rehydration when attachments load
+  const rehydrateRef = useRef(onRehydrateOcrStatus);
+  rehydrateRef.current = onRehydrateOcrStatus;
+  useEffect(() => {
+    if (allDailyAttachments.length > 0 && rehydrateRef.current) {
+      rehydrateRef.current(allDailyAttachments);
+    }
+  }, [allDailyAttachments]);
 
   // Check if bundle is available for a department on a given date
   const hasBundleAvailable = (dept, date) => {

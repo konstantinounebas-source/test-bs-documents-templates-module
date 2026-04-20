@@ -377,7 +377,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   };
 
   // OCR flow management (no stale state) — initialized after loadOCRDataFromCache and addMsg are defined
-  const { advanceOcrFlow, getNextForm } = useOcrFlow(loadOCRDataFromCache, addMsg);
+  useOcrFlow(loadOCRDataFromCache, addMsg);
 
   const handleDetectMissing = async () => {
     setIsMissingOcrLoading(true);
@@ -542,12 +542,15 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   });
 
   const handleOCR = (att) => {
-    // FIX #3: Verify attachment ownership before OCR
-    if (att.batch_header_id !== selBatch?.id) {
-      addMsg("bot", "❌ Unauthorized access to attachment.");
-      return;
+    // Auto-resolve selBatch from the attachment's batch_header_id if needed
+    if (!selBatch || selBatch.id !== att.batch_header_id) {
+      const matchedBatch = allBatchHeaders.find(b => b.id === att.batch_header_id);
+      if (matchedBatch) {
+        setSelBatch(matchedBatch);
+        if (matchedBatch.department) setSelDept(matchedBatch.department);
+      }
     }
-    
+
     // Initialize OCR status for this attachment with full default shape
     setAttachmentOcrStatus(prev => ({
       ...prev,
@@ -567,13 +570,11 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     performOCRInBackground(att);
   };
 
-  // Explicit form opening handlers — independent of OCR flow
-  // Explicit form opening handlers — always open forms regardless of OCR status
   const openProductionForm = async (att) => {
     setOcrTargetAtt(att);
-    
+    const effectiveDept = att.department || selDept;
     // For Pre-paint, initialize sequential flow queue so teams_time follows
-    if (selDept === "Pre-paint") {
+    if (effectiveDept === "Pre-paint") {
       setOcrFormQueue(prev => ({
         ...prev,
         [att.id]: { completed: [] }
@@ -1094,8 +1095,6 @@ CRITICAL SAFETY RULES:
     () => bundleItemCodes.filter(c => !existingBatchLines.find(bl => normalizeItemCode(bl.item_code) === c)),
     [bundleItemCodes, existingBatchLines]
   );
-
-  // ── Shared step renderers ─────────────────────────────────────────────────
 
   const renderAttachmentsStep = () => selBatch && (
     <div className="border-t p-3 space-y-3 overflow-y-auto max-h-64 flex-shrink-0">
@@ -1913,6 +1912,23 @@ CRITICAL SAFETY RULES:
                       onHandleFiles={handleFiles}
                       runningOcrAttachmentIds={runningOcrAttachmentIds}
                       attachmentOcrStatus={attachmentOcrStatus}
+                      onRehydrateOcrStatus={async (atts) => {
+                        for (const att of atts) {
+                          if (!isMountedRef.current) return;
+                          const [p, t] = await Promise.all([
+                            checkOCRCacheStatus(att.id, "production"),
+                            checkOCRCacheStatus(att.id, "teams_time")
+                          ]);
+                          if (!isMountedRef.current) return;
+                          setAttachmentOcrStatus(prev => ({
+                            ...prev,
+                            [att.id]: {
+                              production: { status: p.canUseCache ? "completed" : (p.isProcessing ? "processing" : "none"), cache_id: p.record?.id || null },
+                              teams_time: { status: t.canUseCache ? "completed" : (t.isProcessing ? "processing" : "none"), cache_id: t.record?.id || null }
+                            }
+                          }));
+                        }
+                      }}
                       deleteMutation={deleteMutation}
                       onAddMsg={addMsg}
                     />
