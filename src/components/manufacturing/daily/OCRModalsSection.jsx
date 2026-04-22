@@ -68,6 +68,7 @@ export default function OCRModalsSection({
           key={`${ocrTargetAtt?.id || "none"}-${currentSubAssemblyCacheId || "manual"}`}
           open={showSubAssemblyModal}
           onClose={() => { /* handled by parent */ }}
+          fileName={ocrTargetAtt.file_name}
           ocrResult={viewSubAssemblyOcrResult || {}}
           onConfirm={handleSubAssemblyOcrConfirm}
           onSkip={handleSubAssemblyOcrSkip}
