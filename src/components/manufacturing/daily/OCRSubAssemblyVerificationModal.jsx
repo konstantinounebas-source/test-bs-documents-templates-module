@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -213,8 +214,7 @@ export default function OCRSubAssemblyVerificationModal({
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-
-                {SUB_ASSEMBLY_SECTIONS.map(section => {
+              {SUB_ASSEMBLY_SECTIONS.map(section => {
                   const sectionItems = entries.filter(e => e.section === section.name);
                   const isExpanded = expandedSections[section.name];
 
@@ -267,7 +267,7 @@ export default function OCRSubAssemblyVerificationModal({
                       )}
                     </div>
                   );
-                })}
+              })}
             </div>
           </div>
         </div>
