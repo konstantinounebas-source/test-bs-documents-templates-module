@@ -43,6 +43,7 @@ import {
 import BulkOCRPanel from "./BulkOCRPanel";
 import IntakeBlock from "./IntakeBlock";
 import DailyDataTab from "./DailyDataTab";
+import DailyMetricsTab from "./DailyMetricsTab.jsx";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
@@ -90,8 +91,6 @@ function getFileType(fileName) {
   return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext) ? 'image' : 'pdf';
 }
 
-// ─── Attachment item is now in AttachmentItemWithForms.jsx ──────────────────
-
 // ─── Drop zone ───────────────────────────────────────────────────────────────
 function DropZone({ onFiles, isUploading }) {
   const [dragging, setDragging] = useState(false);
@@ -134,47 +133,37 @@ const STEP_SEQUENCE = ["batch_lines_add", "qc", "operations", "team_persons", "t
 export default function DailyProductionChatbot({ departments = [], isSplitLayout = false, onClose }) {
   const queryClient = useQueryClient();
 
-  // panel state
   const [open, setOpen]       = useState(false);
   const [minimized, setMin]   = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [splitFullscreen, setSplitFullscreen] = useState(false);
-  
-  // dragging & resizing state
   const [panelPos, setPanelPos] = useState(() => ({ x: window.innerWidth - 450 - 24, y: 64 }));
   const [panelSize, setPanelSize] = useState({ width: 450, height: 600 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isResizing, setIsResizing] = useState(false);
-  const [activeSection, setActiveSection] = useState("daily-forms"); // "daily-forms" | "daily-data"
-  const [activeUtility, setActiveUtility] = useState(null); // null | "processing"
+  const [activeSection, setActiveSection] = useState("daily-forms");
+  const [activeUtility, setActiveUtility] = useState(null);
   const panelRef = useRef();
 
   // wizard state
-  const [step, setStep]         = useState("file_upload");   // file_upload | dept | date | batch | attachments | batch_lines_review | batch_lines_add | qc | operations | team_persons | team_extra | help_in | consumables
+  const [step, setStep]         = useState("file_upload");
   const [selDept, setSelDept]   = useState("");
   const [selDate, setSelDate]   = useState(todayStr());  // Always init with today
   const [customDate, setCustomDate] = useState(todayStr());
   const [showPicker, setShowPicker] = useState(false);
   const [selBatch, setSelBatch] = useState(null);
 
-  // batch lines state
-  const [blReviewItems, setBlReviewItems]   = useState([]); // [{item_code, scheduled_qty, qty_processed, qty_out_good, qty_scrap}]
+  const [blReviewItems, setBlReviewItems]   = useState([]);
   const [blCurrentIdx, setBlCurrentIdx]     = useState(0);
   const [blAddForm, setBlAddForm]           = useState({ item_code: "", qty_processed: "", qty_out_good: "", qty_scrap: "" });
   const [blAddFormExpanded, setBlAddFormExpanded] = useState(false);
-
-  // attachment preview
   const [previewFile, setPreviewFile] = useState(null);
   const [rotation, setRotation] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [showAttachmentsModal, setShowAttachmentsModal] = useState(false);
-
-  // OCR state
   const [runningOcrAttachmentIds, setRunningOcrAttachmentIds] = useState(new Set());
   const [attachmentOcrStatus, setAttachmentOcrStatus] = useState({});
-
-  // OCR modal state (declare early for usePerformOCRInBackground)
   const [showOcrModal, setShowOcrModal] = useState(false);
   const [currentProductionCacheId, setCurrentProductionCacheId] = useState(null);
   const [viewProductionOcrResult, setViewProductionOcrResult] = useState(null);
@@ -183,18 +172,12 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const [viewTeamsTimeOcrResult, setViewTeamsTimeOcrResult] = useState(null);
   const [ocrTargetAtt, setOcrTargetAtt] = useState(null);
   const [ocrFormQueue, setOcrFormQueue] = useState({});
-
-  // missing OCR & bulk OCR control
   const [isMissingOcrLoading, setIsMissingOcrLoading] = useState(false);
   const [ocrFilterDept, setOcrFilterDept] = useState("");
   const [ocrFilterMonth, setOcrFilterMonth] = useState("");
-
-  // free-text input & AI
   const [userInput, setUserInput] = useState("");
   const [isAiThinking, setIsAiThinking] = useState(false);
   const inputRef = useRef();
-
-  // unmount guard — prevents state updates after component is gone
   const isMountedRef = useRef(true);
   useEffect(() => {
     isMountedRef.current = true;
@@ -1742,6 +1725,14 @@ CRITICAL SAFETY RULES:
               >
                 Daily Data
               </button>
+              <button
+                onClick={() => { setActiveSection("daily-metrics"); setActiveUtility(null); }}
+                className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+                  activeSection === "daily-metrics" && !activeUtility ? "bg-white text-blue-600" : "text-white hover:bg-blue-700"
+                }`}
+              >
+                Daily Metrics
+              </button>
               <div className="flex-1" />
               <button 
                 onClick={() => setActiveUtility(activeUtility === "processing" ? null : "processing")}
@@ -1946,6 +1937,9 @@ CRITICAL SAFETY RULES:
                       setSelBatch={setSelBatch}
                       onAddMsg={addMsg}
                     />
+                  )}
+                  {activeSection === "daily-metrics" && (
+                    <DailyMetricsTab selDate={selDate} departments={departments} />
                   )}
                 </>
               )}
