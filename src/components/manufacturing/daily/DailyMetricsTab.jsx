@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,11 @@ import { calculateMetrics } from "@/functions/calculateMetrics";
 
 export default function DailyMetricsTab({ selDate, departments }) {
   const [calculating, setCalculating] = useState(false);
-  const [lastCalcDate, setLastCalcDate] = useState(null);
+  const storageKey = `lastCalc_${selDate}`;
+  const [lastCalcDate, setLastCalcDate] = useState(() => localStorage.getItem(storageKey) || null);
+  useEffect(() => {
+    setLastCalcDate(localStorage.getItem(`lastCalc_${selDate}`) || null);
+  }, [selDate]);
 
   const { data: allBatches = [] } = useQuery({
     queryKey: ["BatchHeader-All"],
@@ -72,7 +76,10 @@ export default function DailyMetricsTab({ selDate, departments }) {
     }
 
     setCalculating(false);
-    setLastCalcDate(new Date().toLocaleTimeString("el-GR"));
+    const now = new Date();
+    const label = `${now.toLocaleDateString("el-GR")} ${now.toLocaleTimeString("el-GR")}`;
+    localStorage.setItem(storageKey, label);
+    setLastCalcDate(label);
     await refetchMetrics();
 
     if (failed === 0) {
