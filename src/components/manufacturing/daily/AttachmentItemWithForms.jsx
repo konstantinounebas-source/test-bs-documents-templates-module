@@ -85,30 +85,16 @@ export default function AttachmentItemWithForms({
 
       {/* Action Buttons */}
       <div className="flex gap-1">
-        {/* Forms — Always visible */}
-        {isPrePaint ? (
-          // Pre-paint: Direct button, no dropdown
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" 
-            title="Open Production Form"
-            onClick={onOpenProduction}
-          >
-            📄 Forms
-          </Button>
-        ) : (
-          // Other depts: Only Teams Time Form
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" 
-            title="Open Teams Time Form"
-            onClick={onOpenTeams}
-          >
-            📄 Forms
-          </Button>
-        )}
+        {/* Forms — Pre-paint: Production, Others: Teams Time */}
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" 
+          title={isPrePaint ? "Open Production Form" : "Open Teams Time Form"}
+          onClick={isPrePaint ? onOpenProduction : onOpenTeams}
+        >
+          📄 Forms
+        </Button>
 
         {/* Run/Re-run/Retry OCR — conditional */}
         {prodStatus === "none" && teamsStatus === "none" && (
