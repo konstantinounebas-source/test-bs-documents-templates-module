@@ -195,47 +195,48 @@ export default function OCRSubAssemblyVerificationModal({
 
           {/* RIGHT: Data editor */}
           <div className="flex-1 flex flex-col bg-white min-w-0 overflow-hidden">
-            {/* Header row */}
-            <div className="px-4 py-2 border-b bg-slate-50 flex items-center gap-3 flex-shrink-0 flex-wrap">
-              <span className="text-xs font-semibold text-slate-600">Ημερομηνία:</span>
-              <input type="date" value={date || ""} onChange={e => setDate(e.target.value)}
-                className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 w-28" />
-              <span className="text-xs font-semibold text-slate-600">Τμήμα:</span>
-              <select value={department} onChange={e => setDepartment(e.target.value)}
-                className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 w-40">
-                <option value="">-- Επιλέξτε --</option>
-                <option value="Pre-paint">Pre-paint</option>
-                <option value="Paint">Paint</option>
-                <option value="Sub-assembly">Sub-assembly</option>
-                <option value="Assembly">Assembly</option>
-              </select>
+          {/* Header row */}
+          <div className="px-4 py-2 border-b bg-slate-50 flex items-center gap-3 flex-shrink-0 flex-wrap">
+            <span className="text-xs font-semibold text-slate-600">Ημερομηνία:</span>
+            <input type="date" value={date || ""} onChange={e => setDate(e.target.value)}
+              className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 w-28" />
+            <span className="text-xs font-semibold text-slate-600">Τμήμα:</span>
+            <select value={department} onChange={e => setDepartment(e.target.value)}
+              className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 w-40">
+              <option value="">-- Επιλέξτε --</option>
+              <option value="Pre-paint">Pre-paint</option>
+              <option value="Paint">Paint</option>
+              <option value="Sub-assembly">Sub-assembly</option>
+              <option value="Assembly">Assembly</option>
+            </select>
+          </div>
+
+          {/* Fixed header above sections */}
+          <div className="bg-slate-50 border-b-2 border-slate-300 flex-shrink-0">
+            {/* First header row - Column labels A/B/C */}
+            <div className="flex items-center border-b border-slate-300">
+              <div className="w-32 flex-shrink-0 px-2 py-2 text-[10px] font-bold border-r border-slate-300">Sub-Assemblies</div>
+              {COLUMNS.map(col => (
+                <div key={col} className="w-24 text-center py-2 px-1 text-[11px] font-bold border-r border-red-500 border-l border-red-500">
+                  {col}
+                </div>
+              ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-3">
-              {/* Sticky header */}
-              <div className="sticky top-0 bg-slate-50 border-b-2 border-slate-300 z-20">
-                {/* First header row - Column labels A/B/C */}
-                <div className="flex items-center border-b border-slate-300">
-                  <div className="w-32 flex-shrink-0 px-2 py-2 text-[10px] font-bold border-r border-slate-300">Sub-Assemblies</div>
-                  {COLUMNS.map(col => (
-                    <div key={col} className="w-24 text-center py-2 px-1 text-[11px] font-bold border-r border-red-500 border-l border-red-500">
-                      {col}
-                    </div>
-                  ))}
+            {/* Second header row - Sub-column labels centered */}
+            <div className="flex items-center">
+              <div className="w-32 flex-shrink-0 px-2 border-r border-slate-300"></div>
+              {COLUMNS.map(col => (
+                <div key={col} className="w-24 flex justify-evenly items-center border-r border-red-500">
+                  <div className="text-center py-1 text-[8px] font-semibold flex-1">Ημερ.</div>
+                  <div className="text-center py-1 text-[8px] font-semibold flex-1">Σχεδ.</div>
+                  <div className="text-center py-1 text-[8px] font-semibold flex-1">Πρ.</div>
                 </div>
-                
-                {/* Second header row - Sub-column labels centered */}
-                <div className="flex items-center">
-                  <div className="w-32 flex-shrink-0 px-2 border-r border-slate-300"></div>
-                  {COLUMNS.map(col => (
-                    <div key={col} className="w-24 flex justify-evenly items-center border-r border-red-500">
-                      <div className="text-center py-1 text-[8px] font-semibold flex-1">Ημερ.</div>
-                      <div className="text-center py-1 text-[8px] font-semibold flex-1">Σχεδ.</div>
-                      <div className="text-center py-1 text-[8px] font-semibold flex-1">Πρ.</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-3">
 
               {/* Sections content */}
               <div className="px-4">
