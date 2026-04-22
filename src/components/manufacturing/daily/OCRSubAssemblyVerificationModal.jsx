@@ -234,40 +234,40 @@ export default function OCRSubAssemblyVerificationModal({
                       </button>
 
                       {isExpanded && (
-                        <div className="p-3 max-h-48 overflow-y-auto">
-                          <table className="w-full text-xs">
-                            <thead>
-                              <tr className="border-b">
-                                <th className="text-left py-1 px-2 font-medium">Item</th>
-                                {COLUMNS.map(col => (
-                                  <th key={col} colSpan="3" className="text-center py-1 px-1 font-medium border-r">{col}</th>
-                                ))}
-                              </tr>
-                              <tr className="border-b text-xs">
-                                <th className="text-left py-1 px-2"></th>
-                                {COLUMNS.map(col => (
-                                  <React.Fragment key={col}>
-                                    <th className="text-center py-1 px-0.5 font-medium w-10">Ημερική</th>
-                                    <th className="text-center py-1 px-0.5 font-medium w-10">Σχεδ.</th>
-                                    <th className="text-center py-1 px-0.5 font-medium w-10 border-r">Πραγμ.</th>
-                                  </React.Fragment>
-                                ))}
-                              </tr>
-                            </thead>
+                        <div className="p-2 max-h-72 overflow-y-auto">
+                          <table className="w-full text-[10px]">
+                             <thead>
+                               <tr className="border-b bg-slate-100">
+                                 <th className="text-left py-1 px-2 font-semibold text-xs">Item</th>
+                                 {COLUMNS.map(col => (
+                                   <th key={col} colSpan="3" className="text-center py-1 px-0.5 font-semibold text-xs border-r border-slate-300">{col}</th>
+                                 ))}
+                               </tr>
+                               <tr className="border-b text-[9px]">
+                                 <th className="text-left py-0.5 px-2"></th>
+                                 {COLUMNS.map(col => (
+                                   <React.Fragment key={col}>
+                                     <th className="text-center py-0.5 px-0.5 font-medium w-9">Ημερ.</th>
+                                     <th className="text-center py-0.5 px-0.5 font-medium w-9">Σχεδ.</th>
+                                     <th className="text-center py-0.5 px-0.5 font-medium w-9 border-r border-slate-300">Πρ.</th>
+                                   </React.Fragment>
+                                 ))}
+                               </tr>
+                             </thead>
                             <tbody>
                               {sectionItems.map((entry) => (
                                 <tr key={entry.id} className="border-b hover:bg-white/50">
-                                  <td className="py-1 px-2 text-left">{entry.name}</td>
+                                  <td className="py-1 px-2 text-left text-[10px]">{entry.name}</td>
                                   {COLUMNS.map(col => (
                                     <React.Fragment key={col}>
                                       {SUB_COLUMNS.map(subCol => (
-                                        <td key={`${col}_${subCol}`} className={`py-1 px-0.5 text-center ${subCol === 'Actual' ? 'border-r' : ''}`}>
+                                        <td key={`${col}_${subCol}`} className={`py-0.5 px-0.5 text-center ${subCol === 'Actual' ? 'border-r border-slate-300' : ''}`}>
                                           <input
                                             type="number"
                                             step="0.01"
                                             value={entry[`${col}_${subCol}`] === null ? "" : entry[`${col}_${subCol}`]}
                                             onChange={e => handleUpdateEntry(entry.id, `${col}_${subCol}`, e.target.value)}
-                                            className="w-9 h-6 text-xs text-center border border-slate-300 rounded px-0.5 focus:border-blue-400 focus:ring-1 focus:ring-blue-200"
+                                            className="w-8 h-5 text-[9px] text-center border border-slate-300 rounded px-0.5 focus:border-blue-400 focus:ring-1 focus:ring-blue-200"
                                           />
                                         </td>
                                       ))}
