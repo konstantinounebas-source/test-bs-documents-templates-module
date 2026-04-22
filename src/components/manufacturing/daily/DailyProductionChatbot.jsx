@@ -635,8 +635,7 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     ocrFormQueue,
     ocrTargetAtt,
     setOcrTargetAtt,
-    addMsg,
-    selDept === "Pre-paint"
+    addMsg
   );
 
   const {

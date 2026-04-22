@@ -21,17 +21,19 @@ export function useOcrSequentialFlow(
   ocrFormQueue,
   ocrTargetAtt,
   setOcrTargetAtt,
-  addMsg,
-  isPrePaint = false
+  addMsg
 ) {
-  // CRITICAL: Form order depends on department
+  // CRITICAL: Determine if Pre-paint based on attachment's department (source of truth)
+  const isPrePaint = ocrTargetAtt?.department === "Pre-paint";
+  
+  // Form order depends on department
   // Pre-paint: production -> sub_assembly -> teams_time
-  // Other depts: only teams_time (no production or sub_assembly)
+  // Other depts: only teams_time
   const FORM_ORDER = isPrePaint ? ['production', 'sub_assembly', 'teams_time'] : ['teams_time'];
   
   // DEBUG: Log the form order when it changes
   if (typeof window !== 'undefined') {
-    console.log('OCR Sequential Flow: isPrePaint =', isPrePaint, '| FORM_ORDER =', FORM_ORDER);
+    console.log('OCR Sequential Flow: attachment.department =', ocrTargetAtt?.department, '| isPrePaint =', isPrePaint, '| FORM_ORDER =', FORM_ORDER);
   }
 
   const markFormComplete = useCallback((formType) => {
@@ -53,7 +55,7 @@ export function useOcrSequentialFlow(
       }
     }
     return null;
-  }, []);
+  }, [FORM_ORDER]);
 
   const advanceToNextForm = useCallback(async (currentFormType) => {
     markFormComplete(currentFormType);
