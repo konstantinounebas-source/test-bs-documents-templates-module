@@ -145,58 +145,40 @@ Deno.serve(async (req) => {
       consumablesActual
     };
 
-    const calculatedValues = [];
     const calculatedAt = new Date().toISOString();
 
-    for (const metric of metrics) {
-      try {
-        let value = 0;
-
-        // If this metric's code is directly available in context (pre-computed), use it
-        if (metric.metric_code in dataContext && typeof dataContext[metric.metric_code] === 'number') {
-          value = dataContext[metric.metric_code];
-        } else if (metric.formula_full && metric.formula_full.trim() !== '') {
-          // Otherwise evaluate the formula
-          value = evaluateFormula(metric.formula_full, dataContext);
-        } else {
-          // No formula: skip saving (value stays 0)
-          value = 0;
-        }
-
-        // Delete existing values for this metric/date/department before saving new one
-        const existing = await base44.entities.DailyMetricValue.filter({
-          metric_code: metric.metric_code,
-          date,
-          department
-        });
-        for (const e of existing) {
-          await base44.entities.DailyMetricValue.delete(e.id);
-        }
-
-        const result = await base44.entities.DailyMetricValue.create({
-          metric_code: metric.metric_code,
-          date,
-          department,
-          bundle_id: bundle_id || 'DEFAULT',
-          value: isNaN(value) ? 0 : value,
-          calculated_at: calculatedAt
-        });
-
-        calculatedValues.push({
-          metric_code: metric.metric_code,
-          value: isNaN(value) ? 0 : value,
-          id: result.id
-        });
-
-      } catch (error) {
-        console.error(`Error calculating ${metric.metric_code}:`, error.message);
-        calculatedValues.push({
-          metric_code: metric.metric_code,
-          value: 0,
-          error: error.message
-        });
+    // Step 1: Compute all metric values in memory (no API calls)
+    const newValues = metrics.map(metric => {
+      let value = 0;
+      if (metric.metric_code in dataContext && typeof dataContext[metric.metric_code] === 'number') {
+        value = dataContext[metric.metric_code];
+      } else if (metric.formula_full && metric.formula_full.trim() !== '') {
+        value = evaluateFormula(metric.formula_full, dataContext);
       }
+      return {
+        metric_code: metric.metric_code,
+        date,
+        department,
+        bundle_id: bundle_id || 'DEFAULT',
+        value: isNaN(value) ? 0 : value,
+        calculated_at: calculatedAt
+      };
+    });
+
+    // Step 2: Delete all existing records for this date+department in one query
+    const existing = await base44.entities.DailyMetricValue.filter({ date, department });
+    for (const e of existing) {
+      await base44.entities.DailyMetricValue.delete(e.id);
     }
+
+    // Step 3: Bulk create all new values in one call
+    const created = await base44.entities.DailyMetricValue.bulkCreate(newValues);
+
+    const calculatedValues = newValues.map((v, i) => ({
+      metric_code: v.metric_code,
+      value: v.value,
+      id: created[i]?.id
+    }));
 
     return Response.json({
       success: true,
