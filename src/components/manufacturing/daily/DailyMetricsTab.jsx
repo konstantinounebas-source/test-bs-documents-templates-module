@@ -57,23 +57,21 @@ export default function DailyMetricsTab({ selDate, departments }) {
     if (dateBatches.length === 0) { toast.error("Δεν υπάρχουν batches για αυτή την ημερομηνία."); return; }
 
     setCalculating(true);
-    let success = 0;
-    let failed = 0;
 
-    for (const batch of dateBatches) {
-      try {
-        await calculateMetrics({
-          date: batch.date,
-          department: batch.department,
-          batch_header_id: batch.id,
-          bundle_id: batch.bundle_id
-        });
-        success++;
-      } catch (err) {
-        console.error(`Failed for ${batch.department}:`, err);
-        failed++;
-      }
-    }
+    const results = await Promise.allSettled(
+      dateBatches.map(batch => calculateMetrics({
+        date: batch.date,
+        department: batch.department,
+        batch_header_id: batch.id,
+        bundle_id: batch.bundle_id
+      }))
+    );
+
+    const success = results.filter(r => r.status === "fulfilled").length;
+    const failed = results.filter(r => r.status === "rejected").length;
+    results.filter(r => r.status === "rejected").forEach((r, i) => {
+      console.error(`Failed for ${dateBatches[i]?.department}:`, r.reason);
+    });
 
     setCalculating(false);
     const now = new Date();
