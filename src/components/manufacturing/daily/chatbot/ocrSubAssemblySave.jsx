@@ -1,4 +1,5 @@
 import { base44 } from "@/api/base44Client";
+import { toast } from "sonner";
 
 /**
  * Save corrected Sub-Assembly OCR data to the database
@@ -23,6 +24,29 @@ export async function saveSubAssemblyOCRData(
       console.warn("Missing batchHeaderId or sub_assembly_entries");
       onComplete?.();
       return;
+    }
+
+    // Check if sub-assembly data already exists
+    const existingSubAssembly = await base44.entities.Batch_Lines.filter({
+      batch_header_id: batchHeaderId,
+      form_type: "sub_assembly"
+    });
+
+    if (existingSubAssembly.length > 0) {
+      const shouldReplace = window.confirm(
+        `⚠️ Υπάρχουν ήδη ${existingSubAssembly.length} δεδομένα Sub-Assembly για αυτό το batch.\n\nΘέλετε να:\n- ΟΚ: Αντικαταστήστε τα παλιά δεδομένα\n- Άκυρο: Ακυρώστε την αποθήκευση`
+      );
+
+      if (!shouldReplace) {
+        toast.info("Η αποθήκευση ακυρώθηκε.");
+        onComplete?.();
+        return;
+      }
+
+      // Delete existing sub-assembly records
+      for (const record of existingSubAssembly) {
+        await base44.entities.Batch_Lines.delete(record.id);
+      }
     }
 
     // Create batch lines from sub-assembly entries
