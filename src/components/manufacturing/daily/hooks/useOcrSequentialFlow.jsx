@@ -28,6 +28,11 @@ export function useOcrSequentialFlow(
   // Pre-paint: production -> sub_assembly -> teams_time
   // Other depts: only teams_time (no production or sub_assembly)
   const FORM_ORDER = isPrePaint ? ['production', 'sub_assembly', 'teams_time'] : ['teams_time'];
+  
+  // DEBUG: Log the form order when it changes
+  if (typeof window !== 'undefined') {
+    console.log('OCR Sequential Flow: isPrePaint =', isPrePaint, '| FORM_ORDER =', FORM_ORDER);
+  }
 
   const markFormComplete = useCallback((formType) => {
     if (!ocrTargetAtt?.id) return;
