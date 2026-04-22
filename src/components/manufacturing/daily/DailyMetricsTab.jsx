@@ -90,14 +90,14 @@ export default function DailyMetricsTab({ selDate, departments }) {
   };
 
   const KEY_METRICS = [
-    { code: "GT_TIME",      label: "Gross Team Time (min)" },
-    { code: "OD_TIME",      label: "Other Dept Time (min)" },
-    { code: "HELP_TIME",    label: "Help In Time (min)" },
-    { code: "NAT_TIME",     label: "Net Avail Time (min)" },
-    { code: "SUP_TIME",     label: "Support Time (min)" },
-    { code: "NON_EXEC_TIME",label: "Non-Exec Time (min)" },
-    { code: "OP_TIME",      label: "Op Time (min)" },
-    { code: "SBP_TIME",     label: "Std Proc Time (min)" },
+    { code: "GT_TIME",       label: "Gross Team Time",  unit: "min" },
+    { code: "OD_TIME",       label: "Other Dept Time",  unit: "min" },
+    { code: "HELP_TIME",     label: "Help In Time",     unit: "min" },
+    { code: "NAT_TIME",      label: "Net Avail Time",   unit: "min" },
+    { code: "SUP_TIME",      label: "Support Time",     unit: "min", pctOf: "NAT_TIME" },
+    { code: "NON_EXEC_TIME", label: "Non-Exec Time",    unit: "min", pctOf: "NAT_TIME" },
+    { code: "OP_TIME",       label: "Op Time",          unit: "min", pctOf: "NAT_TIME" },
+    { code: "SBP_TIME",      label: "Std Proc Time",    unit: "min" },
   ];
 
   const formatValue = (val) => {
@@ -106,6 +106,25 @@ export default function DailyMetricsTab({ selDate, departments }) {
     if (isNaN(num)) return "—";
     return num % 1 === 0 ? num.toFixed(0) : num.toFixed(1);
   };
+
+  const minToHr = (val) => {
+    if (val === undefined || val === null) return "—";
+    const num = parseFloat(val);
+    if (isNaN(num)) return "—";
+    return (num / 60).toFixed(2) + " hr";
+  };
+
+  // Compute totals across all departments
+  const totals = useMemo(() => {
+    const t = {};
+    for (const { code } of KEY_METRICS) {
+      t[code] = sortedDepts.reduce((acc, dept) => {
+        const v = parseFloat(metricsByDept[dept]?.[code]);
+        return acc + (isNaN(v) ? 0 : v);
+      }, 0);
+    }
+    return t;
+  }, [metricsByDept, sortedDepts]);
 
   const deptOrder = ["Pre-paint", "Paint", "Sub-assembly", "Assembly", "Refurbishment", "Delivery"];
   const sortedDepts = Object.keys(metricsByDept).sort((a, b) => {
@@ -164,25 +183,38 @@ export default function DailyMetricsTab({ selDate, departments }) {
                 {sortedDepts.map(dept => (
                   <th key={dept} className="text-center px-3 py-2 font-semibold whitespace-nowrap">{dept}</th>
                 ))}
+                <th className="text-center px-3 py-2 font-semibold whitespace-nowrap bg-slate-600">Total</th>
               </tr>
             </thead>
             <tbody>
-              {KEY_METRICS.map(({ code, label }, idx) => (
-                <tr key={code} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
-                  <td className="px-3 py-2 text-slate-600 font-medium whitespace-nowrap">{label}</td>
-                  {sortedDepts.map(dept => {
-                    const val = metricsByDept[dept]?.[code];
-                    const hasValue = val !== undefined && val !== null && !isNaN(parseFloat(val));
-                    return (
-                      <td key={dept} className="px-3 py-2 text-center tabular-nums">
-                        <span className={hasValue ? "text-slate-900 font-semibold" : "text-slate-300"}>
-                          {formatValue(val)}
-                        </span>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+              {KEY_METRICS.map(({ code, label, pctOf }, idx) => {
+                const totalVal = totals[code] ?? 0;
+                const natTotal = totals["NAT_TIME"] ?? 0;
+                const pct = pctOf && natTotal > 0 ? ((totalVal / natTotal) * 100).toFixed(1) + "%" : null;
+                return (
+                  <tr key={code} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                    <td className="px-3 py-2 text-slate-600 font-medium whitespace-nowrap">{label}</td>
+                    {sortedDepts.map(dept => {
+                      const val = metricsByDept[dept]?.[code];
+                      const hasValue = val !== undefined && val !== null && !isNaN(parseFloat(val));
+                      return (
+                        <td key={dept} className="px-3 py-2 text-center tabular-nums">
+                          <span className={hasValue ? "text-slate-900 font-semibold" : "text-slate-300"}>
+                            {formatValue(val)}
+                          </span>
+                        </td>
+                      );
+                    })}
+                    {/* Total column */}
+                    <td className="px-3 py-2 text-center tabular-nums bg-slate-50 border-l border-slate-300">
+                      <span className="text-slate-800 font-bold">{minToHr(totalVal)}</span>
+                      {pct && (
+                        <span className="block text-slate-500 text-xs font-normal">{pct} of NAT</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
