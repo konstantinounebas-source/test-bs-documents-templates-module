@@ -82,6 +82,7 @@ const SUB_ASSEMBLY_SECTIONS = [
 ];
 
 const COLUMNS = ["A", "B", "C", "D", "E"];
+const SUB_COLUMNS = ["Remainder", "Planned", "Actual"];
 
 export default function OCRSubAssemblyVerificationModal({
   open,
@@ -110,11 +111,11 @@ export default function OCRSubAssemblyVerificationModal({
         allEntries.push({
           ...item,
           section: section.name,
-          column_A: null,
-          column_B: null,
-          column_C: null,
-          column_D: null,
-          column_E: null
+          A_Remainder: null, A_Planned: null, A_Actual: null,
+          B_Remainder: null, B_Planned: null, B_Actual: null,
+          C_Remainder: null, C_Planned: null, C_Actual: null,
+          D_Remainder: null, D_Planned: null, D_Actual: null,
+          E_Remainder: null, E_Planned: null, E_Actual: null
         });
       });
     });
@@ -239,7 +240,17 @@ export default function OCRSubAssemblyVerificationModal({
                               <tr className="border-b">
                                 <th className="text-left py-1 px-2 font-medium">Item</th>
                                 {COLUMNS.map(col => (
-                                  <th key={col} className="text-center py-1 px-1 font-medium w-12">{col}</th>
+                                  <th key={col} colSpan="3" className="text-center py-1 px-1 font-medium border-r">{col}</th>
+                                ))}
+                              </tr>
+                              <tr className="border-b text-xs">
+                                <th className="text-left py-1 px-2"></th>
+                                {COLUMNS.map(col => (
+                                  <React.Fragment key={col}>
+                                    <th className="text-center py-1 px-0.5 font-medium w-10">Ημερική</th>
+                                    <th className="text-center py-1 px-0.5 font-medium w-10">Σχεδ.</th>
+                                    <th className="text-center py-1 px-0.5 font-medium w-10 border-r">Πραγμ.</th>
+                                  </React.Fragment>
                                 ))}
                               </tr>
                             </thead>
@@ -247,16 +258,20 @@ export default function OCRSubAssemblyVerificationModal({
                               {sectionItems.map((entry) => (
                                 <tr key={entry.id} className="border-b hover:bg-white/50">
                                   <td className="py-1 px-2 text-left">{entry.name}</td>
-                                  {['column_A', 'column_B', 'column_C', 'column_D', 'column_E'].map((col, idx) => (
-                                    <td key={col} className="py-1 px-1 text-center">
-                                      <input
-                                        type="number"
-                                        step="0.01"
-                                        value={entry[col] === null ? "" : entry[col]}
-                                        onChange={e => handleUpdateEntry(entry.id, col, e.target.value)}
-                                        className="w-10 h-6 text-xs text-center border border-slate-300 rounded px-1 focus:border-blue-400 focus:ring-1 focus:ring-blue-200"
-                                      />
-                                    </td>
+                                  {COLUMNS.map(col => (
+                                    <React.Fragment key={col}>
+                                      {SUB_COLUMNS.map(subCol => (
+                                        <td key={`${col}_${subCol}`} className={`py-1 px-0.5 text-center ${subCol === 'Actual' ? 'border-r' : ''}`}>
+                                          <input
+                                            type="number"
+                                            step="0.01"
+                                            value={entry[`${col}_${subCol}`] === null ? "" : entry[`${col}_${subCol}`]}
+                                            onChange={e => handleUpdateEntry(entry.id, `${col}_${subCol}`, e.target.value)}
+                                            className="w-9 h-6 text-xs text-center border border-slate-300 rounded px-0.5 focus:border-blue-400 focus:ring-1 focus:ring-blue-200"
+                                          />
+                                        </td>
+                                      ))}
+                                    </React.Fragment>
                                   ))}
                                 </tr>
                               ))}
