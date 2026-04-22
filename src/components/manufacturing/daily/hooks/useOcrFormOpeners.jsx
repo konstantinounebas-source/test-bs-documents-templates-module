@@ -20,7 +20,8 @@ export function useOcrFormOpeners(
   selDept
 ) {
   const openProductionForm = useCallback(async (att) => {
-    const effectiveDept = att.department || selDept || "Pre-paint";
+    if (!att?.id) return;
+    const effectiveDept = att?.department || selDept || "Pre-paint";
     const attWithDept = { ...att, department: effectiveDept };
     setOcrTargetAtt(attWithDept);
     
@@ -28,11 +29,11 @@ export function useOcrFormOpeners(
     if (effectiveDept === "Pre-paint") {
       setOcrFormQueue(prev => ({
         ...prev,
-        [att.id]: { completed: [] }
+        [attWithDept.id]: { completed: [] }
       }));
     }
     
-    const prodData = await loadOCRDataFromCache(att.id, "production");
+    const prodData = await loadOCRDataFromCache(attWithDept.id, "production");
     if (prodData) {
       setCurrentProductionCacheId(prodData.cache_id);
       setViewProductionOcrResult(prodData);
@@ -48,11 +49,18 @@ export function useOcrFormOpeners(
   }, [loadOCRDataFromCache, selDept, setOcrTargetAtt, setOcrFormQueue, setCurrentProductionCacheId, setViewProductionOcrResult, setShowOcrModal]);
 
   const openSubAssemblyForm = useCallback(async (att) => {
-    const effectiveDept = att.department || selDept || "Sub-assembly";
+    if (!att?.id) return;
+    const effectiveDept = att?.department || selDept || "Sub-assembly";
     const attWithDept = { ...att, department: effectiveDept };
     setOcrTargetAtt(attWithDept);
     
-    const subData = await loadOCRDataFromCache(att.id, "sub_assembly");
+    // Initialize sequential flow queue for Sub-assembly
+    setOcrFormQueue(prev => ({
+      ...prev,
+      [attWithDept.id]: { completed: [] }
+    }));
+    
+    const subData = await loadOCRDataFromCache(attWithDept.id, "sub_assembly");
     if (subData) {
       setCurrentSubAssemblyCacheId(subData.cache_id);
       setViewSubAssemblyOcrResult(subData);
@@ -64,14 +72,15 @@ export function useOcrFormOpeners(
       });
     }
     setShowSubAssemblyModal(true);
-  }, [loadOCRDataFromCache, selDept, setOcrTargetAtt, setCurrentSubAssemblyCacheId, setViewSubAssemblyOcrResult, setShowSubAssemblyModal]);
+  }, [loadOCRDataFromCache, selDept, setOcrTargetAtt, setOcrFormQueue, setCurrentSubAssemblyCacheId, setViewSubAssemblyOcrResult, setShowSubAssemblyModal]);
 
   const openTeamsTimeForm = useCallback(async (att) => {
-    const effectiveDept = att.department || selDept || "teams_time";
+    if (!att?.id) return;
+    const effectiveDept = att?.department || selDept || "teams_time";
     const attWithDept = { ...att, department: effectiveDept };
     setOcrTargetAtt(attWithDept);
     
-    const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
+    const teamsData = await loadOCRDataFromCache(attWithDept.id, "teams_time");
     if (teamsData) {
       setCurrentTeamsTimeCacheId(teamsData.cache_id);
       setViewTeamsTimeOcrResult(teamsData);

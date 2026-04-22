@@ -27,19 +27,20 @@ export function useOcrSequentialFlow(
   // Pre-paint: production -> teams_time
   // Sub-assembly: sub_assembly -> teams_time
   // Other depts: only teams_time
-  const dept = ocrTargetAtt?.department;
-  let FORM_ORDER = ['teams_time'];
-  
-  if (dept === "Pre-paint") {
-    FORM_ORDER = ['production', 'teams_time'];
-  } else if (dept === "Sub-assembly") {
-    FORM_ORDER = ['sub_assembly', 'teams_time'];
-  }
-  
-  // DEBUG: Log the form order when it changes
-  if (typeof window !== 'undefined') {
-    console.log('OCR Sequential Flow: department =', dept, '| FORM_ORDER =', FORM_ORDER);
-  }
+  const getDeptAndFormOrder = () => {
+    const dept = ocrTargetAtt?.department || "Other";
+    let order = ['teams_time'];
+    
+    if (dept === "Pre-paint") {
+      order = ['production', 'teams_time'];
+    } else if (dept === "Sub-assembly") {
+      order = ['sub_assembly', 'teams_time'];
+    }
+    
+    return { dept, order };
+  };
+
+  const { dept, order: FORM_ORDER } = getDeptAndFormOrder();
 
   const markFormComplete = useCallback((formType) => {
     if (!ocrTargetAtt?.id) return;
