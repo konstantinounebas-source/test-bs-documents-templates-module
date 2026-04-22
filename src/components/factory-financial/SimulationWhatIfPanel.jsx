@@ -22,12 +22,16 @@ function getDeptHourlyCost(deptId, departmentAssignments, labourPersonnel, depar
     return dept ? (parseFloat(dept.avg_hourly_cost) || 0) : 0;
 }
 
-const COLORS = ['blue', 'violet', 'emerald', 'orange'];
+const COLORS = ['blue', 'violet', 'emerald', 'orange', 'rose', 'cyan', 'amber', 'teal'];
 const STYLE = {
     blue:    { border: 'border-blue-300',   header: 'bg-blue-50 border-blue-200',    icon: 'text-blue-600',    badge: 'bg-blue-100 text-blue-700' },
     violet:  { border: 'border-violet-300', header: 'bg-violet-50 border-violet-200', icon: 'text-violet-600', badge: 'bg-violet-100 text-violet-700' },
     emerald: { border: 'border-emerald-300',header: 'bg-emerald-50 border-emerald-200',icon:'text-emerald-600',badge: 'bg-emerald-100 text-emerald-700' },
     orange:  { border: 'border-orange-300', header: 'bg-orange-50 border-orange-200', icon: 'text-orange-600', badge: 'bg-orange-100 text-orange-700' },
+    rose:    { border: 'border-rose-300',   header: 'bg-rose-50 border-rose-200',    icon: 'text-rose-600',    badge: 'bg-rose-100 text-rose-700' },
+    cyan:    { border: 'border-cyan-300',   header: 'bg-cyan-50 border-cyan-200',    icon: 'text-cyan-600',    badge: 'bg-cyan-100 text-cyan-700' },
+    amber:   { border: 'border-amber-300',  header: 'bg-amber-50 border-amber-200',  icon: 'text-amber-600',   badge: 'bg-amber-100 text-amber-700' },
+    teal:    { border: 'border-teal-300',   header: 'bg-teal-50 border-teal-200',    icon: 'text-teal-600',    badge: 'bg-teal-100 text-teal-700' },
 };
 
 export default function SimulationWhatIfPanel({

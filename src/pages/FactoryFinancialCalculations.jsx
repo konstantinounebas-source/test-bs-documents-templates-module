@@ -143,13 +143,9 @@ export default function FactoryFinancialCalculations() {
     const [fixedDailyTotal, setFixedDailyTotal] = useState(0);
     const [operationalDailyTotal, setOperationalDailyTotal] = useState(0);
 
-    // Simulation panels state (4 what-if scenarios)
-    const [simulationPanels, setSimulationPanels] = useState([
-        { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
-        { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
-        { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
-        { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' }
-    ]);
+    // Simulation panels state (8 what-if scenarios)
+    const EMPTY_PANEL = () => ({ shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' });
+    const [simulationPanels, setSimulationPanels] = useState(Array.from({ length: 8 }, EMPTY_PANEL));
 
     // Depreciation module states
     const [depreciationInvestments, setDepreciationInvestments] = useState([]);
@@ -276,13 +272,11 @@ export default function FactoryFinancialCalculations() {
             const rawCostsRecords = record.daily_costs_records || [];
             setDailyCostsRecords(rawCostsRecords);
 
-            // Simulation panels
-            setSimulationPanels(record.simulation_panels || [
-                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
-                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
-                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' },
-                { shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' }
-            ]);
+            // Simulation panels — ensure always 8
+            const loadedPanels = record.simulation_panels || [];
+            const emptyPanel = () => ({ shelterRows: [{ shelter_instance_id_a: '', quantity_a: '', shelter_instance_id_b: '', quantity_b: '' }], fixedMultiplier: '0', supervisorMultiplier: '0', deptHoursRows: [], extraLabourCost: '', extraLabourNote: '', title: '' });
+            const paddedPanels = [...loadedPanels, ...Array.from({ length: Math.max(0, 8 - loadedPanels.length) }, emptyPanel)];
+            setSimulationPanels(paddedPanels);
 
             // Load Labour data from separate entities
             const [personnel, allocations, assignments] = await Promise.all([
@@ -1193,7 +1187,7 @@ export default function FactoryFinancialCalculations() {
                             {/* SIMULATION TAB */}
                             <TabsContent value="simulation" className="mt-4">
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    {[0, 1, 2, 3].map((idx) => (
+                                    {[0, 1, 2, 3, 4, 5, 6, 7].map((idx) => (
                                         <SimulationWhatIfPanel
                                             key={idx}
                                             panelIndex={idx}
