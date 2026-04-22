@@ -1,0 +1,99 @@
+import { useCallback } from 'react';
+
+/**
+ * Hook that manages opening OCR verification forms for production, sub_assembly, and teams_time
+ * Ensures department is always set on the attachment for sequential flow detection
+ */
+export function useOcrFormOpeners(
+  loadOCRDataFromCache,
+  setOcrTargetAtt,
+  setOcrFormQueue,
+  setCurrentProductionCacheId,
+  setViewProductionOcrResult,
+  setShowOcrModal,
+  setCurrentSubAssemblyCacheId,
+  setViewSubAssemblyOcrResult,
+  setShowSubAssemblyModal,
+  setCurrentTeamsTimeCacheId,
+  setViewTeamsTimeOcrResult,
+  setShowTeamsTimeOcrModal,
+  selDept
+) {
+  const openProductionForm = useCallback(async (att) => {
+    const effectiveDept = att.department || selDept || "Pre-paint";
+    const attWithDept = { ...att, department: effectiveDept };
+    setOcrTargetAtt(attWithDept);
+    
+    // For Pre-paint, initialize sequential flow queue
+    if (effectiveDept === "Pre-paint") {
+      setOcrFormQueue(prev => ({
+        ...prev,
+        [att.id]: { completed: [] }
+      }));
+    }
+    
+    const prodData = await loadOCRDataFromCache(att.id, "production");
+    if (prodData) {
+      setCurrentProductionCacheId(prodData.cache_id);
+      setViewProductionOcrResult(prodData);
+    } else {
+      setCurrentProductionCacheId(null);
+      setViewProductionOcrResult({
+        extracted_data: { production_lines: [] },
+        validation: { issues: [], confidence_score: null },
+        page_count: 1
+      });
+    }
+    setShowOcrModal(true);
+  }, [loadOCRDataFromCache, selDept, setOcrTargetAtt, setOcrFormQueue, setCurrentProductionCacheId, setViewProductionOcrResult, setShowOcrModal]);
+
+  const openSubAssemblyForm = useCallback(async (att) => {
+    const effectiveDept = att.department || selDept || "Sub-assembly";
+    const attWithDept = { ...att, department: effectiveDept };
+    setOcrTargetAtt(attWithDept);
+    
+    const subData = await loadOCRDataFromCache(att.id, "sub_assembly");
+    if (subData) {
+      setCurrentSubAssemblyCacheId(subData.cache_id);
+      setViewSubAssemblyOcrResult(subData);
+    } else {
+      setCurrentSubAssemblyCacheId(null);
+      setViewSubAssemblyOcrResult({
+        extracted_data: { sub_assembly_entries: [] },
+        validation: { issues: [], confidence_score: null }
+      });
+    }
+    setShowSubAssemblyModal(true);
+  }, [loadOCRDataFromCache, selDept, setOcrTargetAtt, setCurrentSubAssemblyCacheId, setViewSubAssemblyOcrResult, setShowSubAssemblyModal]);
+
+  const openTeamsTimeForm = useCallback(async (att) => {
+    const effectiveDept = att.department || selDept || "teams_time";
+    const attWithDept = { ...att, department: effectiveDept };
+    setOcrTargetAtt(attWithDept);
+    
+    const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
+    if (teamsData) {
+      setCurrentTeamsTimeCacheId(teamsData.cache_id);
+      setViewTeamsTimeOcrResult(teamsData);
+    } else {
+      setCurrentTeamsTimeCacheId(null);
+      setViewTeamsTimeOcrResult({
+        extracted_data: {
+          team_persons: [],
+          team_extra_lines: [],
+          date: "",
+          team: effectiveDept
+        },
+        validation: { issues: [], confidence_score: null },
+        page_count: 1
+      });
+    }
+    setShowTeamsTimeOcrModal(true);
+  }, [loadOCRDataFromCache, selDept, setOcrTargetAtt, setCurrentTeamsTimeCacheId, setViewTeamsTimeOcrResult, setShowTeamsTimeOcrModal]);
+
+  return {
+    openProductionForm,
+    openSubAssemblyForm,
+    openTeamsTimeForm
+  };
+}

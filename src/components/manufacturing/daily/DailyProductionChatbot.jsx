@@ -551,8 +551,9 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   };
 
   const openProductionForm = async (att) => {
-    setOcrTargetAtt(att);
-    const effectiveDept = att.department || selDept;
+    const effectiveDept = att.department || selDept || "Pre-paint";
+    const attWithDept = { ...att, department: effectiveDept };
+    setOcrTargetAtt(attWithDept);
     
     // For Pre-paint, initialize sequential flow queue: production -> sub_assembly -> teams_time
     if (effectiveDept === "Pre-paint") {
