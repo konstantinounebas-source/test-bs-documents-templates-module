@@ -114,6 +114,15 @@ export default function DailyMetricsTab({ selDate, departments }) {
     return (num / 60).toFixed(2) + " hr";
   };
 
+  const deptOrder = ["Pre-paint", "Paint", "Sub-assembly", "Assembly", "Refurbishment", "Delivery"];
+  const sortedDepts = useMemo(() => Object.keys(metricsByDept).sort((a, b) => {
+    const ai = deptOrder.indexOf(a);
+    const bi = deptOrder.indexOf(b);
+    if (ai === -1) return 1;
+    if (bi === -1) return -1;
+    return ai - bi;
+  }), [metricsByDept]);
+
   // Compute totals across all departments
   const totals = useMemo(() => {
     const t = {};
@@ -125,15 +134,6 @@ export default function DailyMetricsTab({ selDate, departments }) {
     }
     return t;
   }, [metricsByDept, sortedDepts]);
-
-  const deptOrder = ["Pre-paint", "Paint", "Sub-assembly", "Assembly", "Refurbishment", "Delivery"];
-  const sortedDepts = Object.keys(metricsByDept).sort((a, b) => {
-    const ai = deptOrder.indexOf(a);
-    const bi = deptOrder.indexOf(b);
-    if (ai === -1) return 1;
-    if (bi === -1) return -1;
-    return ai - bi;
-  });
 
   return (
     <div className="p-4 space-y-4">
