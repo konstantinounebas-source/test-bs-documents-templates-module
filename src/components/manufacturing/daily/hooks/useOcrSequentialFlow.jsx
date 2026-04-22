@@ -20,6 +20,7 @@ export function useOcrSequentialFlow(
   setOcrFormQueue,
   ocrFormQueue,
   ocrTargetAtt,
+  setOcrTargetAtt,
   addMsg,
   isPrePaint = false
 ) {
@@ -102,8 +103,12 @@ export function useOcrSequentialFlow(
       }
       setShowOcrModal(true);
     } else {
-      // No more forms
-      addMsg("bot", "✅ OCR flow ολοκληρώθηκε!");
+      // No more forms - cleanup
+      setCurrentProductionCacheId(null);
+      setCurrentSubAssemblyCacheId(null);
+      setCurrentTeamsTimeCacheId(null);
+      setOcrTargetAtt(null);
+      addMsg("bot", "✅ OCR flow ολοκληρώθηκε! Όλες οι φόρμες έχουν ολοκληρωθεί.");
     }
   }, [
     ocrTargetAtt,
@@ -120,6 +125,7 @@ export function useOcrSequentialFlow(
     setCurrentProductionCacheId,
     setCurrentSubAssemblyCacheId,
     setCurrentTeamsTimeCacheId,
+    setOcrTargetAtt,
     addMsg
   ]);
 
