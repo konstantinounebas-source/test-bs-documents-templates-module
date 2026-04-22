@@ -257,22 +257,25 @@ export default function DailyFormsTab({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {currentDeptAttachments.map(att => (
-                    <AttachmentItemWithForms
-                      key={att.id}
-                      att={att}
-                      onDelete={onDelete}
-                      onPreview={onPreview}
-                      onOCR={onOCR}
-                      onOpenProduction={() => onOpenProduction(att)}
-                      onOpenTeams={() => onOpenTeams(att)}
-                      isOcrLoading={runningOcrAttachmentIds.has(att.id)}
-                      isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
-                      isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
-                      ocrStatus={attachmentOcrStatus[att.id] || {}}
-                      selDept={selectedDept}
-                    />
-                  ))}
+                  {currentDeptAttachments.map(att => {
+                    const attWithDept = { ...att, department: att.department || selectedDept };
+                    return (
+                      <AttachmentItemWithForms
+                        key={att.id}
+                        att={attWithDept}
+                        onDelete={onDelete}
+                        onPreview={onPreview}
+                        onOCR={onOCR}
+                        onOpenProduction={() => onOpenProduction(attWithDept)}
+                        onOpenTeams={() => onOpenTeams(attWithDept)}
+                        isOcrLoading={runningOcrAttachmentIds.has(att.id)}
+                        isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
+                        isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
+                        ocrStatus={attachmentOcrStatus[att.id] || {}}
+                        selDept={selectedDept}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -33,6 +33,7 @@ import { useBulkOCRControl } from "./hooks/useBulkOCRControl";
 import { usePerformOCRInBackground } from "./hooks/usePerformOCRInBackground";
 import { useOcrFlow } from "./hooks/useOcrFlow";
 import { useOcrSequentialFlow } from "./hooks/useOcrSequentialFlow";
+import { useOcrFormOpeners } from "./hooks/useOcrFormOpeners";
 import { useOcrHandlers } from "./useOcrHandlers";
 import BulkOCRPanel from "./BulkOCRPanel";
 import IntakeBlock from "./IntakeBlock";
@@ -550,80 +551,26 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     performOCRInBackground(att);
   };
 
-  const openProductionForm = async (att) => {
-    const effectiveDept = att.department || selDept || "Pre-paint";
-    const attWithDept = { ...att, department: effectiveDept };
-    setOcrTargetAtt(attWithDept);
-    
-    // For Pre-paint, initialize sequential flow queue: production -> sub_assembly -> teams_time
-    if (effectiveDept === "Pre-paint") {
-      setOcrFormQueue(prev => ({
-        ...prev,
-        [att.id]: { completed: [] }
-      }));
-    }
-    
-    const prodData = await loadOCRDataFromCache(att.id, "production");
-    if (prodData) {
-      setCurrentProductionCacheId(prodData.cache_id);
-      setViewProductionOcrResult(prodData);
-    } else {
-      // No cache — open empty form for manual entry
-      setCurrentProductionCacheId(null);
-      setViewProductionOcrResult({
-        extracted_data: { production_lines: [] },
-        validation: { issues: [], confidence_score: null },
-        page_count: 1
-      });
-    }
-    setShowOcrModal(true);
-  };
-
-  const openSubAssemblyForm = async (att) => {
-    // Ensure attachment has department info for sequential flow detection
-    const attWithDept = {
-      ...att,
-      department: att.department || selDept || "Sub-assembly"
-    };
-    setOcrTargetAtt(attWithDept);
-    
-    const subData = await loadOCRDataFromCache(att.id, "sub_assembly");
-    if (subData) {
-      setCurrentSubAssemblyCacheId(subData.cache_id);
-      setViewSubAssemblyOcrResult(subData);
-    } else {
-      // No cache — open empty form for manual entry
-      setCurrentSubAssemblyCacheId(null);
-      setViewSubAssemblyOcrResult({
-        extracted_data: { sub_assembly_entries: [] },
-        validation: { issues: [], confidence_score: null }
-      });
-    }
-    setShowSubAssemblyModal(true);
-  };
-
-  const openTeamsTimeForm = async (att) => {
-    setOcrTargetAtt(att);
-    const teamsData = await loadOCRDataFromCache(att.id, "teams_time");
-    if (teamsData) {
-      setCurrentTeamsTimeCacheId(teamsData.cache_id);
-      setViewTeamsTimeOcrResult(teamsData);
-    } else {
-      // No cache — open empty form for manual entry
-      setCurrentTeamsTimeCacheId(null);
-      setViewTeamsTimeOcrResult({
-        extracted_data: {
-          team_persons: [],
-          team_extra_lines: [],
-          date: "",
-          team: att.department || selDept || ""
-        },
-        validation: { issues: [], confidence_score: null },
-        page_count: 1
-      });
-    }
-    setShowTeamsTimeOcrModal(true);
-  };
+  // Use the extracted hook for form opening (ensures department is always set)
+  const {
+    openProductionForm,
+    openSubAssemblyForm,
+    openTeamsTimeForm
+  } = useOcrFormOpeners(
+    loadOCRDataFromCache,
+    setOcrTargetAtt,
+    setOcrFormQueue,
+    setCurrentProductionCacheId,
+    setViewProductionOcrResult,
+    setShowOcrModal,
+    setCurrentSubAssemblyCacheId,
+    setViewSubAssemblyOcrResult,
+    setShowSubAssemblyModal,
+    setCurrentTeamsTimeCacheId,
+    setViewTeamsTimeOcrResult,
+    setShowTeamsTimeOcrModal,
+    selDept
+  );
 
   // Initialize sequential OCR flow
   const { advanceToNextForm } = useOcrSequentialFlow(
@@ -1112,19 +1059,22 @@ CRITICAL SAFETY RULES:
         <p className="text-xs text-slate-400 text-center py-2">Δεν υπάρχουν attachments ακόμα.</p>
       ) : (
         <div className="space-y-1">
-          {attachments.map(att => (
-            <AttachmentItemWithForms key={att.id} att={att}
-              onDelete={id => deleteMutation.mutate(id)}
-              onPreview={setPreviewFile}
-              onOCR={handleOCR}
-              onOpenProduction={() => openProductionForm(att)}
-              onOpenTeams={() => openTeamsTimeForm(att)}
-              isOcrLoading={runningOcrAttachmentIds.has(att.id)}
-              isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
-              isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
-              ocrStatus={attachmentOcrStatus[att.id] || {}}
-              selDept={selDept} />
-          ))}
+          {attachments.map(att => {
+            const attWithDept = { ...att, department: att.department || selDept };
+            return (
+              <AttachmentItemWithForms key={att.id} att={attWithDept}
+                onDelete={id => deleteMutation.mutate(id)}
+                onPreview={setPreviewFile}
+                onOCR={handleOCR}
+                onOpenProduction={() => openProductionForm(attWithDept)}
+                onOpenTeams={() => openTeamsTimeForm(attWithDept)}
+                isOcrLoading={runningOcrAttachmentIds.has(att.id)}
+                isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
+                isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
+                ocrStatus={attachmentOcrStatus[att.id] || {}}
+                selDept={selDept} />
+            );
+          })}
         </div>
       )}
       <Button size="sm" className="w-full text-sm bg-blue-600 hover:bg-blue-700" onClick={startBatchLinesReview}>
@@ -1975,19 +1925,22 @@ CRITICAL SAFETY RULES:
                   Υπάρχοντα Attachments ({attachments.length})
                 </p>
                 <div className="space-y-1">
-                  {attachments.map(att => (
-                     <AttachmentItemWithForms key={att.id} att={att}
-                       onDelete={id => deleteMutation.mutate(id)}
-                       onPreview={setPreviewFile}
-                       onOCR={handleOCR}
-                       onOpenProduction={() => openProductionForm(att)}
-                       onOpenTeams={() => openTeamsTimeForm(att)}
-                       isOcrLoading={runningOcrAttachmentIds.has(att.id)}
-                       isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
-                       isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
-                       ocrStatus={attachmentOcrStatus[att.id] || {}}
-                       selDept={selDept} />
-                   ))}
+                  {attachments.map(att => {
+                       const attWithDept = { ...att, department: att.department || selDept };
+                       return (
+                         <AttachmentItemWithForms key={att.id} att={attWithDept}
+                           onDelete={id => deleteMutation.mutate(id)}
+                           onPreview={setPreviewFile}
+                           onOCR={handleOCR}
+                           onOpenProduction={() => openProductionForm(attWithDept)}
+                           onOpenTeams={() => openTeamsTimeForm(attWithDept)}
+                           isOcrLoading={runningOcrAttachmentIds.has(att.id)}
+                           isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
+                           isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
+                           ocrStatus={attachmentOcrStatus[att.id] || {}}
+                           selDept={selDept} />
+                       );
+                     })}
                    </div>
               </div>
             )}
