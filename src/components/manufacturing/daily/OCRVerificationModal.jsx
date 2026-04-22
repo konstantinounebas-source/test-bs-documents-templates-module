@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -297,6 +297,7 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
         <DialogHeader className="px-4 py-2 border-b bg-slate-50 flex-row items-center gap-3">
           <Scan className="w-5 h-5 text-blue-600 flex-shrink-0" />
           <DialogTitle className="text-sm">OCR Επιβεβαίωση · {fileName}</DialogTitle>
+          <DialogDescription className="sr-only">Production form OCR verification with image viewer and data table editor</DialogDescription>
           {totalPages > 1 && (
             <Badge className="bg-blue-100 text-blue-700 text-xs">
               Σελίδα {currentPage + 1} από {totalPages}

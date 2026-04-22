@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -161,6 +161,7 @@ export default function OCRSubAssemblyVerificationModal({
             <span>Sub-Assembly OCR Verification</span>
             <span className="text-sm text-slate-500 font-normal">{fileName}</span>
           </DialogTitle>
+          <DialogDescription>Review and verify sub-assembly OCR data with split-pane document viewer and grouped data entry</DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 flex flex-col gap-3 overflow-hidden">

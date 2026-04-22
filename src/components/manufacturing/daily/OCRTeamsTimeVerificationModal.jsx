@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Maximize2, Minimize2, AlertCircle, Users, Check } from "lucide-react";
@@ -363,6 +363,7 @@ export default function OCRTeamsTimeVerificationModal({ open, onClose, fileUrl, 
         <DialogHeader className="px-4 py-2 border-b bg-slate-50 flex-row items-center gap-3">
           <Scan className="w-5 h-5 text-blue-600 flex-shrink-0" />
           <DialogTitle className="text-sm">OCR Teams Time · {fileName}</DialogTitle>
+          <DialogDescription className="sr-only">Teams time OCR verification with document viewer and team data editor including persons, extra work, and help-in sections</DialogDescription>
           {confidence !== null && (
             <Badge className={`text-xs ${confidence >= 80 ? "bg-green-100 text-green-700" : confidence >= 60 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
               Εμπιστοσύνη: {confidence}%
