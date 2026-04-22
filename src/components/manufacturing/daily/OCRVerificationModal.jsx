@@ -433,7 +433,12 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
               </div>
             )}
 
-            {/* Horizontal table */}
+            {/* Horizontal table - Only show if department is selected */}
+            {!department && departments.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-slate-400 text-sm">
+                Δεν επιλέχθηκε τμήμα
+              </div>
+            ) : (
             <div className="flex-1 overflow-auto">
               <table className="text-xs border-collapse w-max min-w-full">
                 <thead className="sticky top-0 z-10">
@@ -576,8 +581,10 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
                   </Button>
                   </div>
 
-                  {/* Confirm footer - standardized buttons */}
-                  <div className="border-t px-4 py-3 flex items-center gap-2 bg-white flex-shrink-0">
+                  )}
+
+                        {/* Confirm footer - standardized buttons */}
+                        <div className="border-t px-4 py-3 flex items-center gap-2 bg-white flex-shrink-0">
                   {totalPages > 1 && currentPage > 0 && (
                   <Button variant="outline" size="sm" className="text-xs" onClick={() => setCurrentPage(p => p - 1)}>
                     ← Προηγ.
