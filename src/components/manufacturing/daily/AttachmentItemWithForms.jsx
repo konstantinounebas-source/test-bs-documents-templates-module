@@ -105,27 +105,16 @@ export default function AttachmentItemWithForms({
             📄 Forms
           </Button>
         ) : (
-          // Other depts: Dropdown menu
-          <DropdownMenu open={showFormsMenu} onOpenChange={setShowFormsMenu}>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" 
-                title="Open form"
-              >
-                📄 Forms
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onClick={() => { onOpenProduction(); setShowFormsMenu(false); }}>
-                📋 Production Form
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { onOpenTeams(); setShowFormsMenu(false); }}>
-                👥 Teams Time Form
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          // Other depts: Only Teams Time Form
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" 
+            title="Open Teams Time Form"
+            onClick={onOpenTeams}
+          >
+            📄 Forms
+          </Button>
         )}
 
         {/* Run/Re-run/Retry OCR — conditional */}
