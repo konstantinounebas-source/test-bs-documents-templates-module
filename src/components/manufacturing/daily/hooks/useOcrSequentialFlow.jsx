@@ -19,9 +19,10 @@ export function useOcrSequentialFlow(
   addMsg,
   isPrePaint = false
 ) {
-  // For Pre-paint, always enforce production -> teams_time order
-  // For other depts, same order (no variation needed)
-  const FORM_ORDER = ['production', 'teams_time'];
+  // CRITICAL: Form order depends on department
+  // Pre-paint: production -> teams_time
+  // Other depts: only teams_time (no production)
+  const FORM_ORDER = isPrePaint ? ['production', 'teams_time'] : ['teams_time'];
 
   const markFormComplete = useCallback((formType) => {
     if (!ocrTargetAtt?.id) return;
