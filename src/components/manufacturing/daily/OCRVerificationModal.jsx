@@ -286,8 +286,12 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
     }
   });
 
+  const handleClose = useCallback(() => {
+    if (!navigating.current) onClose();
+  }, [onClose]);
+
   return (
-    <Dialog open={open} onOpenChange={v => { if (!v && !navigating.current) onClose(); }}>
+    <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
       <DialogContent className={`p-0 overflow-hidden transition-all duration-200 ${modalFullscreen ? "max-w-[100vw] w-[100vw] max-h-[100vh] h-[100vh] rounded-none top-0 left-0 translate-x-0 translate-y-0" : "max-w-[98vw] w-[98vw] max-h-[96vh]"}`}
         style={modalFullscreen ? { position: "fixed", top: 0, left: 0, transform: "none", borderRadius: 0 } : {}}>
         <DialogHeader className="px-4 py-2 border-b bg-slate-50 flex-row items-center gap-3">
