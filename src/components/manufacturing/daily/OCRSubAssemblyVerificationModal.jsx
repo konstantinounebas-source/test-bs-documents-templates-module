@@ -5,45 +5,45 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, CheckCircle2, Trash2, Plus } from "lucide-react";
 
-// Fixed sub-assembly items list
+// Fixed sub-assembly items list - ordered by document sections
 const SUB_ASSEMBLY_ITEMS = [
-  // Lightboxes
-  { id: "light_1", name: "Σύνδεση 2E BOX", category: "Lightboxes" },
-  { id: "light_2", name: "Φωτισμός", category: "Lightboxes" },
-  { id: "light_3", name: "Ηλεκτρολογικά", category: "Lightboxes" },
-  { id: "light_4", name: "Κλείσιμο", category: "Lightboxes" },
-  { id: "light_5", name: "Φτερό", category: "Lightboxes" },
-  { id: "light_6", name: "Σύλληψη Σε Καπάκι", category: "Lightboxes" },
-  { id: "light_7", name: "Βιδώνιο", category: "Lightboxes" },
-  // Team
-  { id: "team_1", name: "Ποότα μεσαία", category: "Τζάμια" },
-  { id: "team_2", name: "Ποότα μεγάλη", category: "Τζάμια" },
-  { id: "team_3", name: "Πόρτες Αδυ. C1", category: "Τζάμια" },
-  { id: "team_4", name: "Φωτισμα θρανίς", category: "Τζάμια" },
-  // Painting
-  { id: "paint_1", name: "Τάλιμο", category: "Παγκάκια" },
-  { id: "paint_2", name: "Στο τελάρο", category: "Παγκάκια" },
-  { id: "paint_3", name: "Βραδες 10-15cm", category: "Παγκάκια" },
-  { id: "paint_4", name: "Βραδες 20-25cm", category: "Παγκάκια" },
-  { id: "paint_5", name: "Φωτοβολεασία", category: "Παγκάκια" },
+  // Lightboxes - Main components
+  { id: "light_1", name: "Σύνδεση Σε BOX", category: "Lightboxes", section: "Lightboxes" },
+  { id: "light_2", name: "Τρυπημα", category: "Lightboxes", section: "Lightboxes" },
+  { id: "light_3", name: "Ηλεκτρολογικά", category: "Lightboxes", section: "Lightboxes" },
+  { id: "light_4", name: "Κλειδαρια", category: "Lightboxes", section: "Lightboxes" },
+  { id: "light_5", name: "Φτερό", category: "Lightboxes", section: "Lightboxes" },
+  { id: "light_6", name: "Σύλληψη Σε Καπάκι", category: "Lightboxes", section: "Lightboxes" },
+  { id: "light_7", name: "Βιδώνιο", category: "Lightboxes", section: "Lightboxes" },
+  // Lightboxes - Glass
+  { id: "glass_1", name: "Πόρτα μικρή", category: "Lightboxes", section: "Glass" },
+  { id: "glass_2", name: "Πόρτα μεγάλη", category: "Lightboxes", section: "Glass" },
+  { id: "glass_3", name: "Πόρτες Αδυ. C1", category: "Lightboxes", section: "Glass" },
+  { id: "glass_4", name: "φινίρισμα θρανίς", category: "Lightboxes", section: "Glass" },
+  // Painting - Panels
+  { id: "paint_1", name: "Τρίψιμο", category: "Παγκάκια", section: "Painting" },
+  { id: "paint_2", name: "Στο τελάρο", category: "Παγκάκια", section: "Painting" },
+  { id: "paint_3", name: "Βερνίκι 10 χέρι", category: "Παγκάκια", section: "Painting" },
+  { id: "paint_4", name: "Βερνίκι 20 χέρι", category: "Παγκάκια", section: "Painting" },
+  { id: "paint_5", name: "Συναρμολόγηση", category: "Παγκάκια", section: "Painting" },
   // Lightguides
-  { id: "guide_1", name: "Type A:41x34", category: "Lightguides" },
-  { id: "guide_2", name: "Type B:41x34", category: "Lightguides" },
-  { id: "guide_3", name: "Type C:13x34", category: "Lightguides" },
-  { id: "guide_4", name: "Type C:84.5x34", category: "Lightguides" },
-  { id: "guide_5", name: "Type A.B.G:55.5x34", category: "Lightguides" },
-  // Station Cosmetics
-  { id: "cosmetic_1", name: "πολύ πρέιν", category: "Κομμάτια στάσης" },
-  { id: "cosmetic_2", name: "πάνελ ορθοθέτηθ", category: "Κομμάτια στάσης" },
-  { id: "cosmetic_3", name: "πάνελ ορθοθέτης C μικρο", category: "Κομμάτια στάσης" },
-  { id: "cosmetic_4", name: "πάνελ ορθοθέτης C μεγάλο", category: "Κομμάτια στάσης" },
-  { id: "cosmetic_5", name: "φωτοβολταϊκό Λ", category: "Κομμάτια στάσης" },
-  { id: "cosmetic_6", name: "blue light κατασκευή", category: "Κομμάτια στάσης" },
-  // Work Paint
-  { id: "work_1", name: "τοποθέτηση μπαταρίας", category: "Εργασίες στη στάση" },
-  { id: "work_2", name: "τοποθέτηση πινακα", category: "Εργασίες στη στάση" },
-  { id: "work_3", name: "χαλούδιωνη", category: "Εργασίες στη στάση" },
-  { id: "work_4", name: "τοποθέτηση φωτοβολταϊκών", category: "Εργασίες στη στάση" }
+  { id: "guide_1", name: "Type A:41x34", category: "Lightguides", section: "Lightguides" },
+  { id: "guide_2", name: "Type B:41x34", category: "Lightguides", section: "Lightguides" },
+  { id: "guide_3", name: "Type C:13x34", category: "Lightguides", section: "Lightguides" },
+  { id: "guide_4", name: "Type C:84.5x34", category: "Lightguides", section: "Lightguides" },
+  { id: "guide_5", name: "Type A.B.C:55.5x34", category: "Lightguides", section: "Lightguides" },
+  // Station Cosmetics - Panels
+  { id: "cosmetic_1", name: "πάνελ ηχείου", category: "Κομμάτια στάσης", section: "Station" },
+  { id: "cosmetic_2", name: "πάνελ οροφης B", category: "Κομμάτια στάσης", section: "Station" },
+  { id: "cosmetic_3", name: "πάνελ οροφής C μικρό", category: "Κομμάτια στάσης", section: "Station" },
+  { id: "cosmetic_4", name: "πάνελ οροφής C μεγάλο", category: "Κομμάτια στάσης", section: "Station" },
+  { id: "cosmetic_5", name: "φωτοβολταϊκό Α", category: "Κομμάτια στάσης", section: "Station" },
+  { id: "cosmetic_6", name: "blue light κατασκευή", category: "Κομμάτια στάσης", section: "Station" },
+  // Work - Paint Operations
+  { id: "work_1", name: "τοποθέτηση μπαταρίας", category: "Εργασίες στη στάση", section: "Work" },
+  { id: "work_2", name: "τοποθέτηση πινακα", category: "Εργασίες στη στάση", section: "Work" },
+  { id: "work_3", name: "καλόδιωση", category: "Εργασίες στη στάση", section: "Work" },
+  { id: "work_4", name: "τοποθέτηση φωτοβολταϊκών", category: "Εργασίες στη στάση", section: "Work" }
 ];
 
 export default function OCRSubAssemblyVerificationModal({
