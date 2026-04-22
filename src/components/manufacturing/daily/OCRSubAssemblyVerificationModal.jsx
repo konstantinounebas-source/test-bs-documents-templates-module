@@ -216,22 +216,22 @@ export default function OCRSubAssemblyVerificationModal({
               <div className="sticky top-0 bg-slate-50 border-b-2 border-slate-300 z-20">
                 {/* First header row - Column labels A/B/C */}
                 <div className="flex items-center border-b border-slate-300">
-                  <div className="w-32 flex-shrink-0 px-2 py-1 text-[10px] font-bold border-r border-slate-300">Sub-Assemblies</div>
+                  <div className="w-32 flex-shrink-0 px-2 py-2 text-[10px] font-bold border-r border-slate-300">Sub-Assemblies</div>
                   {COLUMNS.map(col => (
-                    <div key={col} className="w-24 text-center py-1 px-1 text-[11px] font-bold border-r border-slate-300">
+                    <div key={col} className="w-24 text-center py-2 px-1 text-[11px] font-bold border-r border-red-500 border-l border-red-500">
                       {col}
                     </div>
                   ))}
                 </div>
                 
-                {/* Second header row - Sub-column labels */}
+                {/* Second header row - Sub-column labels centered */}
                 <div className="flex items-center">
                   <div className="w-32 flex-shrink-0 px-2 border-r border-slate-300"></div>
                   {COLUMNS.map(col => (
-                    <div key={col} className="w-24 flex border-r border-slate-300">
-                      <div className="w-8 text-center py-0.5 text-[8px] font-semibold border-r border-slate-200">Ημερ.</div>
-                      <div className="w-8 text-center py-0.5 text-[8px] font-semibold border-r border-slate-200">Σχεδ.</div>
-                      <div className="w-8 text-center py-0.5 text-[8px] font-semibold">Πρ.</div>
+                    <div key={col} className="w-24 flex justify-evenly items-center border-r border-red-500">
+                      <div className="text-center py-1 text-[8px] font-semibold flex-1">Ημερ.</div>
+                      <div className="text-center py-1 text-[8px] font-semibold flex-1">Σχεδ.</div>
+                      <div className="text-center py-1 text-[8px] font-semibold flex-1">Πρ.</div>
                     </div>
                   ))}
                 </div>
