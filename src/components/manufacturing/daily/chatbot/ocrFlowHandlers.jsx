@@ -1,5 +1,6 @@
 import { saveOCRData } from './ocrSave';
 import { saveOCRTeamsTimeData } from './ocrTeamsTimeSave';
+import { saveSubAssemblyOCRData } from './ocrSubAssemblySave';
 import { saveCorrectedOCRCacheData } from '@/lib/ocrCacheService';
 
 /**
@@ -102,9 +103,13 @@ export function createSubAssemblyConfirmHandler({
     }
 
     if (selBatch?.id) {
-      // Sub-assembly data storage would go here
-      queryClient.invalidateQueries(["Batch_Lines", selBatch.id]);
-      addMsg("bot", `📦 Sub-assembly δεδομένα αποθηκεύτηκαν.`);
+      await new Promise(resolve => {
+        saveSubAssemblyOCRData(confirmedData, selBatch.id, () => {
+          queryClient.invalidateQueries(["Batch_Lines", selBatch.id]);
+          addMsg("bot", `📦 Sub-assembly δεδομένα αποθηκεύτηκαν.`);
+          resolve();
+        }, selBatch.department);
+      });
     }
 
     await advanceToNextForm('sub_assembly');
