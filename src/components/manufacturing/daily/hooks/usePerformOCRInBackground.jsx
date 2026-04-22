@@ -43,17 +43,24 @@ export function usePerformOCRInBackground(
 
       failedStep = "detectFormType";
       console.log("[OCR] detectFormType start", { attachmentId: att.id, fileName: att.file_name, failedStep });
-      const detectResultRaw = await base44.functions.invoke("detectFormType", {
-        file_url: att.file_url,
-      });
-      const detectResult = detectResultRaw?.data || detectResultRaw?.result || detectResultRaw?.output || detectResultRaw || {};
-      console.log("[OCR] detectFormType ok", { attachmentId: att.id, elapsedMs: Date.now() - startTime });
+      let detectResult = {};
+      try {
+        const detectResultRaw = await base44.functions.invoke("detectFormType", {
+          file_url: att.file_url,
+        });
+        detectResult = detectResultRaw?.data || detectResultRaw?.result || detectResultRaw?.output || detectResultRaw || {};
+        console.log("[OCR] detectFormType ok", { attachmentId: att.id, elapsedMs: Date.now() - startTime });
+      } catch (detectErr) {
+        console.warn("[OCR] detectFormType failed:", detectErr?.message);
+        // Default to empty result - no forms detected
+        detectResult = {};
+      }
       const detectedPages = detectResult?.pages || {};
 
       detectedForms = [...new Set(
         Object.values(detectedPages)
           .map((p) => p?.form_type)
-          .filter((type) => type === "production" || type === "teams_time")
+          .filter((type) => type && (type === "production" || type === "teams_time" || type === "sub_assembly"))
       )];
       detectedFormsForLog = detectedForms;
 
