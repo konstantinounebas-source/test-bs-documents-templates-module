@@ -82,10 +82,15 @@ export default function DailyMetricsTab({ selDate, departments }) {
     }
   };
 
-  const KEY_METRIC_CODES = [
-    "GT_TIME", "OTHER_DEPT_TIME", "HELP_IN_TIME",
-    "NET_AVAIL_TIME", "SUPPORT_TIME", "NON_EXEC_TIME",
-    "OP_TIME", "STD_PROC_TIME"
+  const KEY_METRICS = [
+    { code: "GT_TIME",         label: "Gross Team Time (min)" },
+    { code: "OTHER_DEPT_TIME", label: "Other Dept Time (min)" },
+    { code: "HELP_IN_TIME",    label: "Help In Time (min)" },
+    { code: "NET_AVAIL_TIME",  label: "Net Avail Time (min)" },
+    { code: "SUPPORT_TIME",    label: "Support Time (min)" },
+    { code: "NON_EXEC_TIME",   label: "Non-Exec Time (min)" },
+    { code: "OP_TIME",         label: "Op Time (min)" },
+    { code: "STD_PROC_TIME",   label: "Std Proc Time (min)" },
   ];
 
   const formatValue = (val) => {
@@ -143,39 +148,38 @@ export default function DailyMetricsTab({ selDate, departments }) {
         </div>
       )}
 
-      {sortedDepts.map(dept => {
-        const deptMetrics = metricsByDept[dept] || {};
-        return (
-          <div key={dept} className="border border-slate-200 rounded-lg overflow-hidden">
-            <div className="bg-slate-800 text-white px-3 py-2">
-              <p className="text-xs font-semibold uppercase tracking-wide">{dept}</p>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {KEY_METRIC_CODES.map(code => {
-                const val = deptMetrics[code];
-                const hasValue = val !== undefined && val !== null;
-                return (
-                  <div key={code} className="flex items-center justify-between px-3 py-2">
-                    <p className="text-xs text-slate-600">{getMetricName(code) || code}</p>
-                    <div className="flex items-center gap-1">
-                      <span className={`text-sm font-semibold tabular-nums ${hasValue ? "text-slate-900" : "text-slate-300"}`}>
-                        {formatValue(val)}
-                      </span>
-                      {hasValue && <span className="text-xs text-slate-400">min</span>}
-                    </div>
-                  </div>
-                );
-              })}
-              {Object.keys(deptMetrics).filter(code => !KEY_METRIC_CODES.includes(code)).map(code => (
-                <div key={code} className="flex items-center justify-between px-3 py-2 bg-slate-50">
-                  <p className="text-xs text-slate-500">{getMetricName(code)}</p>
-                  <span className="text-sm font-medium text-slate-700 tabular-nums">{formatValue(deptMetrics[code])}</span>
-                </div>
+      {sortedDepts.length > 0 && (
+        <div className="overflow-x-auto rounded-lg border border-slate-200">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-slate-800 text-white">
+                <th className="text-left px-3 py-2 font-semibold w-40">Metric</th>
+                {sortedDepts.map(dept => (
+                  <th key={dept} className="text-center px-3 py-2 font-semibold whitespace-nowrap">{dept}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {KEY_METRICS.map(({ code, label }, idx) => (
+                <tr key={code} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                  <td className="px-3 py-2 text-slate-600 font-medium whitespace-nowrap">{label}</td>
+                  {sortedDepts.map(dept => {
+                    const val = metricsByDept[dept]?.[code];
+                    const hasValue = val !== undefined && val !== null && !isNaN(parseFloat(val));
+                    return (
+                      <td key={dept} className="px-3 py-2 text-center tabular-nums">
+                        <span className={hasValue ? "text-slate-900 font-semibold" : "text-slate-300"}>
+                          {formatValue(val)}
+                        </span>
+                      </td>
+                    );
+                  })}
+                </tr>
               ))}
-            </div>
-          </div>
-        );
-      })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
