@@ -89,10 +89,19 @@ export function createTeamsTimeConfirmHandler({
 
 export function createTeamsTimeSkipHandler({
   addMsg,
-  advanceToNextForm
+  advanceToNextForm,
+  isDeptPrePaint = false
 }) {
   return async () => {
-    addMsg("bot", "✅ Teams Time φόρμα παραλείφθηκε (δεν αποθηκεύτηκαν δεδομένα).");
-    await advanceToNextForm('teams_time');
+    if (isDeptPrePaint) {
+      // Pre-paint: can skip teams time normally
+      addMsg("bot", "✅ Teams Time φόρμα παραλείφθηκε (δεν αποθηκεύτηκαν δεδομένα).");
+      await advanceToNextForm('teams_time');
+    } else {
+      // Other depts: should not show teams time form as optional skip
+      // This is defensive — shouldn't reach here either
+      addMsg("bot", "✅ Συνέχεια στο επόμενο βήμα...");
+      await advanceToNextForm('teams_time');
+    }
   };
 }

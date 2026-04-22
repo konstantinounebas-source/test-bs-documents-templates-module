@@ -643,7 +643,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
   const handleTeamsTimeOcrSkip = createTeamsTimeSkipHandler({
     addMsg,
-    advanceToNextForm
+    advanceToNextForm,
+    isDeptPrePaint: selDept === "Pre-paint"
   });
 
   // ── step handlers ─────────────────────────────────────────────────────────
