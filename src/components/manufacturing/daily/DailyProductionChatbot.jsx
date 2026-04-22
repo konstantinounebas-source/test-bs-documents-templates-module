@@ -579,7 +579,12 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   };
 
   const openSubAssemblyForm = async (att) => {
-    setOcrTargetAtt(att);
+    // Ensure attachment has department info for sequential flow detection
+    const attWithDept = {
+      ...att,
+      department: att.department || selDept || "Sub-assembly"
+    };
+    setOcrTargetAtt(attWithDept);
     
     const subData = await loadOCRDataFromCache(att.id, "sub_assembly");
     if (subData) {
