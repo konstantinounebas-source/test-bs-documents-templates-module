@@ -143,7 +143,8 @@ export function useOcrSequentialFlow(
     setCurrentSubAssemblyCacheId,
     setCurrentTeamsTimeCacheId,
     setOcrTargetAtt,
-    addMsg
+    addMsg,
+    FORM_ORDER
   ]);
 
   return {
