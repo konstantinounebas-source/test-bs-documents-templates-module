@@ -60,7 +60,7 @@ export function useOcrSequentialFlow(
       }
     }
     return null;
-  }, [FORM_ORDER]);
+  }, [FORM_ORDER, ocrTargetAtt?.id, ocrTargetAtt?.department]);
 
   const advanceToNextForm = useCallback(async (currentFormType) => {
     // Close current modal
