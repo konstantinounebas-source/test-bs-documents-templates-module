@@ -257,7 +257,7 @@ export default function OCRSubAssemblyVerificationModal({
                       </button>
 
                       {isExpanded && (
-                        <div className="p-2 overflow-hidden">
+                        <div className="px-1 py-2 overflow-hidden">
                           <div style={{ display: 'grid', gridTemplateColumns: gridColDef, gap: '0', fontSize: '10px' }}>
                             {sectionItems.map((entry) => (
                               <React.Fragment key={entry.id}>
