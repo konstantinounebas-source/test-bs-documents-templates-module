@@ -1596,7 +1596,7 @@ CRITICAL SAFETY RULES:
       </Dialog>
 
       {/* OCR Verification Modal - Production Form (On-Demand) */}
-      {(currentProductionCacheId || viewProductionOcrResult) && ocrTargetAtt && (
+      {showOcrModal && ocrTargetAtt && (
         <OCRVerificationModal
           key={`${ocrTargetAtt?.id || "none"}-${currentProductionCacheId || "manual"}`}
           open={showOcrModal}
@@ -1612,7 +1612,7 @@ CRITICAL SAFETY RULES:
       )}
 
       {/* OCR Verification Modal - Teams Time Form (On-Demand) */}
-      {(currentTeamsTimeCacheId || viewTeamsTimeOcrResult?.team_persons !== undefined) && ocrTargetAtt && (
+      {showTeamsTimeOcrModal && ocrTargetAtt && (
         <OCRTeamsTimeVerificationModal
           key={`${ocrTargetAtt?.id || "none"}-${currentTeamsTimeCacheId || "manual"}`}
           open={showTeamsTimeOcrModal}
