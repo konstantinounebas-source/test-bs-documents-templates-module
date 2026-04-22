@@ -218,7 +218,7 @@ export default function OCRSubAssemblyVerificationModal({
                 <div className="flex items-center border-b border-slate-300">
                   <div className="w-32 flex-shrink-0 px-2 py-1 text-[10px] font-bold border-r border-slate-300">Sub-Assemblies</div>
                   {COLUMNS.map(col => (
-                    <div key={col} className="flex-1 text-center py-1 px-1 text-[11px] font-bold border-r border-slate-300">
+                    <div key={col} className="w-24 text-center py-1 px-1 text-[11px] font-bold border-r border-slate-300">
                       {col}
                     </div>
                   ))}
@@ -228,10 +228,10 @@ export default function OCRSubAssemblyVerificationModal({
                 <div className="flex items-center">
                   <div className="w-32 flex-shrink-0 px-2 border-r border-slate-300"></div>
                   {COLUMNS.map(col => (
-                    <div key={col} className="flex-1 flex border-r border-slate-300">
-                      <div className="flex-1 text-center py-0.5 text-[8px] font-semibold border-r border-slate-200">Ημερ.</div>
-                      <div className="flex-1 text-center py-0.5 text-[8px] font-semibold border-r border-slate-200">Σχεδ.</div>
-                      <div className="flex-1 text-center py-0.5 text-[8px] font-semibold">Πρ.</div>
+                    <div key={col} className="w-24 flex border-r border-slate-300">
+                      <div className="w-8 text-center py-0.5 text-[8px] font-semibold border-r border-slate-200">Ημερ.</div>
+                      <div className="w-8 text-center py-0.5 text-[8px] font-semibold border-r border-slate-200">Σχεδ.</div>
+                      <div className="w-8 text-center py-0.5 text-[8px] font-semibold">Πρ.</div>
                     </div>
                   ))}
                 </div>
