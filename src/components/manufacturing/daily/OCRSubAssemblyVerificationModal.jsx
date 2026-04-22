@@ -3,53 +3,48 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, AlertCircle, CheckCircle2, Plus, Trash2 } from "lucide-react";
+import { Loader2, CheckCircle2, Trash2, Plus } from "lucide-react";
 
-const SUB_ASSEMBLY_CATEGORIES = {
-  lightboxes: [
-    "Σύνδεση 2E BOX",
-    "Φωτισμός",
-    "Ηλεκτρολογικά",
-    "Κλείσιμο",
-    "Φτερό",
-    "Σύλληψη Σε Καπάκι",
-    "Βιδώνιο"
-  ],
-  team: [
-    "Ποότα μεσαία",
-    "Ποότα μεγάλη",
-    "Πόρτες Αδυ. G1",
-    "Φωτισμα θρανίς"
-  ],
-  painting: [
-    "Τάλιμο",
-    "Στο τελάρο",
-    "Βραδες 10-15cm",
-    "Βραδες 20-25cm",
-    "Φωτοβολεασία"
-  ],
-  lightguides: [
-    "Type A:41x34",
-    "Type B:41x34",
-    "Type C:13x34",
-    "Type C:84.5x34",
-    "Type A.B.G:55.5x34"
-  ],
-  stationCosmetics: [
-    "πολύ πρέιν",
-    "πάνελ ορθοθέτηθ",
-    "πάνελ ορθοθέτης C μικρο",
-    "πάνελ ορθοθέτης C μεγάλο",
-    "φωτοβολταϊκό Λ",
-    "blue light κατασκευή"
-  ],
-  workPaint: [
-    "τοποθέτηση μπαταρίας",
-    "τοποθέτηση πινακα",
-    "χαλούδιωνη",
-    "τοποθέτηση φωτοβολταϊκών"
-  ]
-};
+// Fixed sub-assembly items list
+const SUB_ASSEMBLY_ITEMS = [
+  // Lightboxes
+  { id: "light_1", name: "Σύνδεση 2E BOX", category: "Lightboxes" },
+  { id: "light_2", name: "Φωτισμός", category: "Lightboxes" },
+  { id: "light_3", name: "Ηλεκτρολογικά", category: "Lightboxes" },
+  { id: "light_4", name: "Κλείσιμο", category: "Lightboxes" },
+  { id: "light_5", name: "Φτερό", category: "Lightboxes" },
+  { id: "light_6", name: "Σύλληψη Σε Καπάκι", category: "Lightboxes" },
+  { id: "light_7", name: "Βιδώνιο", category: "Lightboxes" },
+  // Team
+  { id: "team_1", name: "Ποότα μεσαία", category: "Τζάμια" },
+  { id: "team_2", name: "Ποότα μεγάλη", category: "Τζάμια" },
+  { id: "team_3", name: "Πόρτες Αδυ. C1", category: "Τζάμια" },
+  { id: "team_4", name: "Φωτισμα θρανίς", category: "Τζάμια" },
+  // Painting
+  { id: "paint_1", name: "Τάλιμο", category: "Παγκάκια" },
+  { id: "paint_2", name: "Στο τελάρο", category: "Παγκάκια" },
+  { id: "paint_3", name: "Βραδες 10-15cm", category: "Παγκάκια" },
+  { id: "paint_4", name: "Βραδες 20-25cm", category: "Παγκάκια" },
+  { id: "paint_5", name: "Φωτοβολεασία", category: "Παγκάκια" },
+  // Lightguides
+  { id: "guide_1", name: "Type A:41x34", category: "Lightguides" },
+  { id: "guide_2", name: "Type B:41x34", category: "Lightguides" },
+  { id: "guide_3", name: "Type C:13x34", category: "Lightguides" },
+  { id: "guide_4", name: "Type C:84.5x34", category: "Lightguides" },
+  { id: "guide_5", name: "Type A.B.G:55.5x34", category: "Lightguides" },
+  // Station Cosmetics
+  { id: "cosmetic_1", name: "πολύ πρέιν", category: "Κομμάτια στάσης" },
+  { id: "cosmetic_2", name: "πάνελ ορθοθέτηθ", category: "Κομμάτια στάσης" },
+  { id: "cosmetic_3", name: "πάνελ ορθοθέτης C μικρο", category: "Κομμάτια στάσης" },
+  { id: "cosmetic_4", name: "πάνελ ορθοθέτης C μεγάλο", category: "Κομμάτια στάσης" },
+  { id: "cosmetic_5", name: "φωτοβολταϊκό Λ", category: "Κομμάτια στάσης" },
+  { id: "cosmetic_6", name: "blue light κατασκευή", category: "Κομμάτια στάσης" },
+  // Work Paint
+  { id: "work_1", name: "τοποθέτηση μπαταρίας", category: "Εργασίες στη στάση" },
+  { id: "work_2", name: "τοποθέτηση πινακα", category: "Εργασίες στη στάση" },
+  { id: "work_3", name: "χαλούδιωνη", category: "Εργασίες στη στάση" },
+  { id: "work_4", name: "τοποθέτηση φωτοβολταϊκών", category: "Εργασίες στη στάση" }
+];
 
 export default function OCRSubAssemblyVerificationModal({
   open,
@@ -64,41 +59,40 @@ export default function OCRSubAssemblyVerificationModal({
     if (ocrResult?.extracted_data?.entries) {
       return ocrResult.extracted_data.entries;
     }
-    return [];
-  });
-
-  const [newEntry, setNewEntry] = useState({
-    category: "",
-    item: "",
-    quantity: ""
+    // Initialize with all fixed items with empty column values
+    return SUB_ASSEMBLY_ITEMS.map(item => ({
+      ...item,
+      column_A: null,
+      column_B: null,
+      column_C: null,
+      column_D: null,
+      column_E: null
+    }));
   });
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleAddEntry = () => {
-    if (!newEntry.category || !newEntry.item) return;
-    
-    setEntries([...entries, {
-      ...newEntry,
-      id: Date.now(),
-      quantity: newEntry.quantity || "1"
-    }]);
-    
-    setNewEntry({ category: "", item: "", quantity: "" });
-  };
-
-  const handleDeleteEntry = (id) => {
-    setEntries(entries.filter(e => e.id !== id));
+  const handleUpdateEntry = (itemId, column, value) => {
+    setEntries(entries.map(entry =>
+      entry.id === itemId
+        ? { ...entry, [column]: value ? parseFloat(value) : null }
+        : entry
+    ));
   };
 
   const handleConfirm = async () => {
     setIsLoading(true);
     try {
+      const filledEntries = entries.filter(e => 
+        e.column_A !== null || e.column_B !== null || e.column_C !== null || 
+        e.column_D !== null || e.column_E !== null
+      );
+      
       await onConfirm({
-        sub_assembly_entries: entries,
+        sub_assembly_entries: filledEntries,
         validation: {
-          issues: entries.length === 0 ? ["No entries added"] : [],
-          confidence_score: entries.length > 0 ? 1.0 : 0
+          issues: filledEntries.length === 0 ? ["No data entered"] : [],
+          confidence_score: filledEntries.length > 0 ? 1.0 : 0
         }
       });
     } finally {
@@ -106,10 +100,7 @@ export default function OCRSubAssemblyVerificationModal({
     }
   };
 
-  const categoryKeys = Object.keys(SUB_ASSEMBLY_CATEGORIES);
-  const currentCategoryItems = newEntry.category 
-    ? SUB_ASSEMBLY_CATEGORIES[newEntry.category] || [] 
-    : [];
+
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -119,88 +110,46 @@ export default function OCRSubAssemblyVerificationModal({
           <DialogDescription>{fileName}</DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 p-4 space-y-4">
-          {/* Current Entries */}
-          {entries.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="font-semibold text-sm text-slate-700">Καταχωρημένα στοιχεία:</h3>
-              <div className="space-y-1">
-                {entries.map(entry => (
-                  <div key={entry.id} className="flex items-center justify-between p-2 bg-slate-50 rounded text-sm">
-                    <span>
-                      <strong>{entry.item}</strong> ({entry.category}) × {entry.quantity}
-                    </span>
-                    <button
-                      onClick={() => handleDeleteEntry(entry.id)}
-                      className="text-red-500 hover:text-red-700 p-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Add New Entry */}
-          <div className="space-y-3 p-3 border border-slate-200 rounded-lg bg-slate-50">
-            <h3 className="font-semibold text-sm text-slate-700">Προσθήκη νέας γραμμής:</h3>
-            
-            {/* Category Select */}
-            <div>
-              <label className="text-xs font-medium text-slate-600 mb-1 block">Κατηγορία</label>
-              <select
-                value={newEntry.category}
-                onChange={e => setNewEntry({ ...newEntry, category: e.target.value, item: "" })}
-                className="w-full text-sm border border-slate-200 rounded px-2 py-1.5 outline-none focus:border-blue-400"
-              >
-                <option value="">-- Επιλογή Κατηγορίας --</option>
-                {categoryKeys.map(key => (
-                  <option key={key} value={key}>
-                    {key.replace(/([A-Z])/g, ' $1').toUpperCase()}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Item Select */}
-            {currentCategoryItems.length > 0 && (
-              <div>
-                <label className="text-xs font-medium text-slate-600 mb-1 block">Στοιχείο</label>
-                <select
-                  value={newEntry.item}
-                  onChange={e => setNewEntry({ ...newEntry, item: e.target.value })}
-                  className="w-full text-sm border border-slate-200 rounded px-2 py-1.5 outline-none focus:border-blue-400"
-                >
-                  <option value="">-- Επιλογή Στοιχείου --</option>
-                  {currentCategoryItems.map(item => (
-                    <option key={item} value={item}>{item}</option>
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-4">
+            {/* Data Table */}
+            <div className="border border-slate-200 rounded-lg overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-blue-100 border-b border-slate-200">
+                  <tr>
+                    <th className="p-2 text-left font-semibold">Sub-Assembly Item</th>
+                    <th className="p-2 text-center font-semibold">Column A</th>
+                    <th className="p-2 text-center font-semibold">Column B</th>
+                    <th className="p-2 text-center font-semibold">Column C</th>
+                    <th className="p-2 text-center font-semibold">Column D</th>
+                    <th className="p-2 text-center font-semibold">Column E</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.map((entry, idx) => (
+                    <tr key={entry.id} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}>
+                      <td className="p-2 border-r border-slate-200 font-medium text-slate-700">
+                        {entry.name}
+                      </td>
+                      {['column_A', 'column_B', 'column_C', 'column_D', 'column_E'].map(col => (
+                        <td key={col} className="p-1 text-center border-r border-slate-200">
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={entry[col] === null ? "" : entry[col]}
+                            onChange={e => handleUpdateEntry(entry.id, col, e.target.value)}
+                            className="w-12 text-center text-xs border border-slate-200 rounded px-1 py-0.5 outline-none focus:border-blue-400"
+                            placeholder="-"
+                          />
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </select>
-              </div>
-            )}
-
-            {/* Quantity Input */}
-            <div>
-              <label className="text-xs font-medium text-slate-600 mb-1 block">Ποσότητα</label>
-              <Input
-                type="number"
-                min="1"
-                value={newEntry.quantity}
-                onChange={e => setNewEntry({ ...newEntry, quantity: e.target.value })}
-                placeholder="1"
-                className="text-sm"
-              />
+                </tbody>
+              </table>
             </div>
 
-            {/* Add Button */}
-            <Button
-              onClick={handleAddEntry}
-              disabled={!newEntry.category || !newEntry.item}
-              className="w-full text-sm bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="w-4 h-4 mr-1" /> Προσθήκη
-            </Button>
+            <p className="text-xs text-slate-500">Σύνολο στοιχείων: {entries.length}</p>
           </div>
         </ScrollArea>
 
@@ -216,11 +165,11 @@ export default function OCRSubAssemblyVerificationModal({
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={isLoading || entries.length === 0}
+            disabled={isLoading}
             className="text-sm bg-green-600 hover:bg-green-700"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : <CheckCircle2 className="w-4 h-4 mr-1" />}
-            Επιβεβαίωση ({entries.length})
+            Επιβεβαίωση
           </Button>
         </div>
       </DialogContent>
