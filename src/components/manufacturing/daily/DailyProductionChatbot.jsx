@@ -43,7 +43,7 @@ import {
 import BulkOCRPanel from "./BulkOCRPanel";
 import IntakeBlock from "./IntakeBlock";
 import DailyDataTab from "./DailyDataTab";
-import DailyMetricsTab from "./DailyMetricsTab.jsx";
+import DailyMetricsTab from "./DailyMetricsTab";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function todayStr() { return format(new Date(), "yyyy-MM-dd"); }
