@@ -39,51 +39,78 @@ Deno.serve(async (req) => {
       base44.entities.Consumables_Actual.filter({ batch_header_id }),
     ]);
 
-    // Compute derived values used in metric formulas
-
-    // Gross Team Time: sum of (to_time - from_time) for each person in minutes
-    const calcPersonMinutes = (person) => {
+    // Helper: convert "HH:MM" string to minutes since midnight
+    const timeToMin = (t) => {
       try {
-        const [fh, fm] = person.from_time.split(':').map(Number);
-        const [th, tm] = person.to_time.split(':').map(Number);
-        const total = (th * 60 + tm) - (fh * 60 + fm);
-        return total > 0 ? total : 0;
+        const [h, m] = t.split(':').map(Number);
+        return h * 60 + m;
       } catch { return 0; }
     };
 
-    const grossTeamTimeMin = teamTimePersons.reduce((acc, p) => acc + calcPersonMinutes(p), 0);
-    const totalBreakMin = teamTimePersons.reduce((acc, p) => acc + (parseFloat(p.break_time_minutes) || 0), 0);
-    const netTeamTimeMin = grossTeamTimeMin - totalBreakMin;
-    const personCount = teamTimePersons.length;
-
-    const totalOperationTimeMin = operations.reduce((acc, o) => acc + (parseFloat(o.operation_time_min) || 0), 0);
-    const totalQtyOperation = operations.reduce((acc, o) => acc + (parseFloat(o.qty_operation) || 0), 0);
-    const totalRemakeQty = operations.reduce((acc, o) => acc + (parseFloat(o.remake_qty) || 0), 0);
-
-    const totalHelpInMin = helpIn.reduce((acc, h) => {
-      // help_in records have from_time/to_time like TeamTimePerson
-      try {
-        const [fh, fm] = h.from_time.split(':').map(Number);
-        const [th, tm] = h.to_time.split(':').map(Number);
-        const diff = (th * 60 + tm) - (fh * 60 + fm);
-        return acc + (diff > 0 ? diff : 0);
-      } catch { return acc + (parseFloat(h.minutes) || 0); }
+    // --- GROSS TEAM TIME: sum of (to_time - from_time - break) per person ---
+    const grossTeamTimeMin = teamTimePersons.reduce((acc, p) => {
+      const raw = timeToMin(p.to_time) - timeToMin(p.from_time) - (parseFloat(p.break_time_minutes) || 0);
+      return acc + (raw > 0 ? raw : 0);
     }, 0);
 
-    const totalExtraTimeMin = teamTimeExtra.reduce((acc, e) => acc + (parseFloat(e.minutes) || 0), 0);
+    const personCount = teamTimePersons.length;
+    const totalBreakMin = teamTimePersons.reduce((acc, p) => acc + (parseFloat(p.break_time_minutes) || 0), 0);
+
+    // --- OTHER DEPARTMENT TIME: Team_Time_Extra where work_type = "Other Departments Works" ---
+    const otherDeptTimeMin = teamTimeExtra
+      .filter(e => e.work_type === 'Other Departments Works')
+      .reduce((acc, e) => acc + (parseFloat(e.duration_min) || 0), 0);
+
+    // --- SUPPORT TIME: Team_Time_Extra where work_type = "Supportive Works" ---
+    const supportTimeMin = teamTimeExtra
+      .filter(e => e.work_type === 'Supportive Works')
+      .reduce((acc, e) => acc + (parseFloat(e.duration_min) || 0), 0);
+
+    // --- NON-EXECUTION TIME: Team_Time_Extra where work_type = "Non-Execution Time" ---
+    const nonExecutionTimeMin = teamTimeExtra
+      .filter(e => e.work_type === 'Non-Execution Time')
+      .reduce((acc, e) => acc + (parseFloat(e.duration_min) || 0), 0);
+
+    // --- HELP TIME RECEIVED: sum from Help_In using duration_min field ---
+    const totalHelpInMin = helpIn.reduce((acc, h) => {
+      // Support both duration_min and from_time/to_time formats
+      if (h.duration_min != null) {
+        return acc + (parseFloat(h.duration_min) || 0);
+      }
+      try {
+        const diff = timeToMin(h.to_time) - timeToMin(h.from_time);
+        return acc + (diff > 0 ? diff : 0);
+      } catch { return acc; }
+    }, 0);
+
+    // --- NET AVAILABLE TEAM TIME = Gross - Other Dept + Help In ---
+    const netAvailableTimeMin = grossTeamTimeMin - otherDeptTimeMin + totalHelpInMin;
+
+    // --- OPERATIONS TIME = Net Available - Support - Non-Execution ---
+    const operationsTimeMin = netAvailableTimeMin - supportTimeMin - nonExecutionTimeMin;
+
+    // --- STANDARD-BASED PROCESSING TIME: sum of operation_time_min from Operations ---
+    const totalOperationTimeMin = operations.reduce((acc, o) => acc + (parseFloat(o.operation_time_min) || 0), 0);
+
+    const totalQtyOperation = operations.reduce((acc, o) => acc + (parseFloat(o.qty_operation) || 0), 0);
+    const totalRemakeQty = operations.reduce((acc, o) => acc + (parseFloat(o.remake_qty) || 0), 0);
     const totalConsumablesQty = consumablesActual.reduce((acc, c) => acc + (parseFloat(c.quantity) || 0), 0);
 
     // Build the data context for formula evaluation
     const dataContext = {
-      // Aggregate numeric values accessible by metric code name in formulas
-      GT_TIME: grossTeamTimeMin,
-      NT_TIME: netTeamTimeMin,
+      // Pre-computed metric values (by metric_code)
+      GT_TIME: grossTeamTimeMin,           // Gross Team Time
+      OTHER_DEPT_TIME: otherDeptTimeMin,   // Other Department Time
+      HELP_IN_TIME: totalHelpInMin,        // Help Time Received
+      NET_AVAIL_TIME: netAvailableTimeMin, // Net Available Team Time
+      SUPPORT_TIME: supportTimeMin,        // Support Time
+      NON_EXEC_TIME: nonExecutionTimeMin,  // Non-Execution Time
+      OP_TIME: operationsTimeMin,          // Operations Time
+      STD_PROC_TIME: totalOperationTimeMin,// Standard-Based Processing Time
+      // Legacy/other metrics
       BREAK_TIME: totalBreakMin,
-      OP_TIME: totalOperationTimeMin,
       QTY_OP: totalQtyOperation,
       REMAKE_QTY: totalRemakeQty,
-      HELP_IN_TIME: totalHelpInMin,
-      EXTRA_TIME: totalExtraTimeMin,
       ACT_CONS: totalConsumablesQty,
       PERSON_COUNT: personCount,
       // Arrays for sum/count/avg formulas
@@ -158,8 +185,13 @@ Deno.serve(async (req) => {
       calculatedAt,
       dataContext: {
         GT_TIME: grossTeamTimeMin,
-        NT_TIME: netTeamTimeMin,
-        OP_TIME: totalOperationTimeMin,
+        OTHER_DEPT_TIME: otherDeptTimeMin,
+        HELP_IN_TIME: totalHelpInMin,
+        NET_AVAIL_TIME: netAvailableTimeMin,
+        SUPPORT_TIME: supportTimeMin,
+        NON_EXEC_TIME: nonExecutionTimeMin,
+        OP_TIME: operationsTimeMin,
+        STD_PROC_TIME: totalOperationTimeMin,
         personCount,
         operationsCount: operations.length,
         teamTimeCount: teamTimePersons.length
