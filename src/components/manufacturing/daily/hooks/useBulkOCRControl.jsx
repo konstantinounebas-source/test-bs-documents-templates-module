@@ -242,19 +242,31 @@ export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, 
           addMsg("bot", summary);
         }
 
-        // IMPROVEMENT #5: Invalidate multiple caches for consistent state
+        // Invalidate multiple caches for consistent state
         if (queryClient) {
           queryClient.invalidateQueries({ queryKey: ["OCRCache-All"], exact: true });
           queryClient.invalidateQueries({ queryKey: ["BatchAttachments-All"], exact: true });
-          // FIX #2: Correctly extract unique batch IDs from results
-          const activeBatchIds = [...new Set(
-            results.map(r => r.batchHeaderId).filter(Boolean)
+
+          // Extract unique batch IDs and dates from results
+          const activeBatchIds = [...new Set(results.map(r => r.batchHeaderId).filter(Boolean))];
+          const activeDates = [...new Set(
+            fullAttachments.map(att => {
+              // Try to find the date from the batch info already in results
+              const r = results.find(res => res.attachmentId === att.id);
+              return att.date || null;
+            }).filter(Boolean)
           )];
+
           if (activeBatchIds.length > 0) {
             activeBatchIds.forEach(bid => {
               queryClient.invalidateQueries({ queryKey: ["BatchAttachments", bid], exact: true });
             });
           }
+
+          // Invalidate DailyFormsTab queries so it re-fetches and re-runs rehydration
+          // We need to invalidate by date — extract dates from the missingOcrAttachmentDetails
+          // by matching batchHeaderId to batch dates stored in results
+          queryClient.invalidateQueries({ queryKey: ["BatchAttachments-by-date"] });
         }
         setIsBulkOcrRunning(false);
       }
