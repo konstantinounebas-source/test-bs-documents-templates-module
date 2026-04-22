@@ -553,7 +553,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
   const openProductionForm = async (att) => {
     setOcrTargetAtt(att);
     const effectiveDept = att.department || selDept;
-    // For Pre-paint, initialize sequential flow queue so teams_time follows
+    
+    // For Pre-paint, initialize sequential flow queue: production -> sub_assembly -> teams_time
     if (effectiveDept === "Pre-paint") {
       setOcrFormQueue(prev => ({
         ...prev,
@@ -575,6 +576,24 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       });
     }
     setShowOcrModal(true);
+  };
+
+  const openSubAssemblyForm = async (att) => {
+    setOcrTargetAtt(att);
+    
+    const subData = await loadOCRDataFromCache(att.id, "sub_assembly");
+    if (subData) {
+      setCurrentSubAssemblyCacheId(subData.cache_id);
+      setViewSubAssemblyOcrResult(subData);
+    } else {
+      // No cache — open empty form for manual entry
+      setCurrentSubAssemblyCacheId(null);
+      setViewSubAssemblyOcrResult({
+        extracted_data: { sub_assembly_entries: [] },
+        validation: { issues: [], confidence_score: null }
+      });
+    }
+    setShowSubAssemblyModal(true);
   };
 
   const openTeamsTimeForm = async (att) => {
