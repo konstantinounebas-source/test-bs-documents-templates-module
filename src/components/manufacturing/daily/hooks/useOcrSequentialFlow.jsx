@@ -63,8 +63,6 @@ export function useOcrSequentialFlow(
   }, [FORM_ORDER]);
 
   const advanceToNextForm = useCallback(async (currentFormType) => {
-    markFormComplete(currentFormType);
-    
     // Close current modal
     if (currentFormType === 'production') {
       setShowOcrModal(false);
@@ -77,10 +75,14 @@ export function useOcrSequentialFlow(
       setViewTeamsTimeOcrResult(null);
     }
 
-    // Check what's next
-    const queue = ocrTargetAtt?.id ? 
-      { completed: Array.from(new Set([...(ocrFormQueue[ocrTargetAtt.id]?.completed || []), currentFormType])) } 
-      : { completed: [currentFormType] };
+    // Mark form as complete
+    markFormComplete(currentFormType);
+
+    // Calculate next form by adding currentForm to completed list
+    const attachmentId = ocrTargetAtt?.id;
+    const currentCompleted = ocrFormQueue[attachmentId]?.completed || [];
+    const updatedCompleted = Array.from(new Set([...currentCompleted, currentFormType]));
+    const queue = { completed: updatedCompleted };
     
     const nextForm = getNextForm(queue);
 
