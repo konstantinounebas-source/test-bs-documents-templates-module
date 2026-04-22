@@ -29,6 +29,14 @@ Deno.serve(async (req) => {
     }
 
     if (
+      normalized.includes("SUB-ASSEMBLY") ||
+      normalized.includes("SUB ASSEMBLY") ||
+      normalized.includes("SMART BUS STOP")
+    ) {
+      return "sub_assembly";
+    }
+
+    if (
       normalized.includes("ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ") ||
       (normalized.includes("ΠΑΡΑΓΩΓΗ") && !normalized.includes("TEAMS"))
     ) {
@@ -67,14 +75,16 @@ Deno.serve(async (req) => {
 
     let formType = detectFormTypeFromTitle(result?.form_title);
 
-    if (formType === "production" && result?.form_title === "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ") {
+    if (formType === "sub_assembly") {
+      // Sub-assembly detected - keep it
+    } else if (formType === "production" && result?.form_title === "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ") {
       const detailCheck = await base44.asServiceRole.integrations.Core.InvokeLLM({
         model: model,
         prompt: `Δες ΜΟΝΟ τη σελίδα ${pageNum} αυτού του PDF και βρες ΤΙ είναι το κύριο περιεχόμενο.
-Πράγματι έχει τα παρακάτω;
-- Πίνακα με "Ονοματεπώνυμο", "Από", "Έως", "ΣΧΟΛΙΑ" (Teams Time)?
-- Ή πίνακα με item codes/κωδικούς, ποσότητες (Production)?
-Απάντησε ΜΟΝΟ με: "TEAMS_TIME" ή "PRODUCTION".`,
+    Πράγματι έχει τα παρακάτω;
+    - Πίνακα με "Ονοματεπώνυμο", "Από", "Έως", "ΣΧΟΛΙΑ" (Teams Time)?
+    - Ή πίνακα με item codes/κωδικούς, ποσότητες (Production)?
+    Απάντησε ΜΟΝΟ με: "TEAMS_TIME" ή "PRODUCTION".`,
         file_urls: [file_url],
         response_json_schema: {
           type: "object",
