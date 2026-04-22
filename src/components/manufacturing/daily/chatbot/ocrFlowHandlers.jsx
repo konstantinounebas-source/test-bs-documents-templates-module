@@ -87,6 +87,40 @@ export function createTeamsTimeConfirmHandler({
   };
 }
 
+export function createSubAssemblyConfirmHandler({
+  addMsg,
+  selBatch,
+  currentSubAssemblyCacheId,
+  advanceToNextForm,
+  queryClient
+}) {
+  return async (confirmedData) => {
+    addMsg("bot", `✅ Sub-Assembly OCR επιβεβαιώθηκε! Αποθηκεύω...`);
+
+    if (currentSubAssemblyCacheId) {
+      saveCorrectedOCRCacheData(currentSubAssemblyCacheId, confirmedData).catch(() => {});
+    }
+
+    if (selBatch?.id) {
+      // Sub-assembly data storage would go here
+      queryClient.invalidateQueries(["Batch_Lines", selBatch.id]);
+      addMsg("bot", `📦 Sub-assembly δεδομένα αποθηκεύτηκαν.`);
+    }
+
+    await advanceToNextForm('sub_assembly');
+  };
+}
+
+export function createSubAssemblySkipHandler({
+  addMsg,
+  advanceToNextForm
+}) {
+  return async () => {
+    addMsg("bot", "✅ Sub-Assembly φόρμα παραλείφθηκε (δεν αποθηκεύτηκαν δεδομένα).");
+    await advanceToNextForm('sub_assembly');
+  };
+}
+
 export function createTeamsTimeSkipHandler({
   addMsg,
   advanceToNextForm,

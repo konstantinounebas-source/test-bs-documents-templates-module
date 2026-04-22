@@ -2,7 +2,8 @@ import { useCallback } from 'react';
 
 /**
  * Sequential OCR flow manager for multi-form processing
- * Handles: production -> teams_time
+ * Handles: production -> sub_assembly -> teams_time (Pre-paint)
+ *          teams_time only (Other depts)
  * Returns helpers to advance flow, mark forms complete, and check next form
  */
 export function useOcrSequentialFlow(
@@ -11,8 +12,11 @@ export function useOcrSequentialFlow(
   setShowTeamsTimeOcrModal,
   setViewProductionOcrResult,
   setViewTeamsTimeOcrResult,
+  setShowSubAssemblyModal,
+  setViewSubAssemblyOcrResult,
   setCurrentProductionCacheId,
   setCurrentTeamsTimeCacheId,
+  setCurrentSubAssemblyCacheId,
   setOcrFormQueue,
   ocrFormQueue,
   ocrTargetAtt,
@@ -20,9 +24,9 @@ export function useOcrSequentialFlow(
   isPrePaint = false
 ) {
   // CRITICAL: Form order depends on department
-  // Pre-paint: production -> teams_time
-  // Other depts: only teams_time (no production)
-  const FORM_ORDER = isPrePaint ? ['production', 'teams_time'] : ['teams_time'];
+  // Pre-paint: production -> sub_assembly -> teams_time
+  // Other depts: only teams_time (no production or sub_assembly)
+  const FORM_ORDER = isPrePaint ? ['production', 'sub_assembly', 'teams_time'] : ['teams_time'];
 
   const markFormComplete = useCallback((formType) => {
     if (!ocrTargetAtt?.id) return;
@@ -52,6 +56,9 @@ export function useOcrSequentialFlow(
     if (currentFormType === 'production') {
       setShowOcrModal(false);
       setViewProductionOcrResult(null);
+    } else if (currentFormType === 'sub_assembly') {
+      setShowSubAssemblyModal(false);
+      setViewSubAssemblyOcrResult(null);
     } else if (currentFormType === 'teams_time') {
       setShowTeamsTimeOcrModal(false);
       setViewTeamsTimeOcrResult(null);
@@ -74,6 +81,16 @@ export function useOcrSequentialFlow(
         setViewTeamsTimeOcrResult({ team_persons: [], team_extra_lines: [] });
       }
       setShowTeamsTimeOcrModal(true);
+    } else if (nextForm === 'sub_assembly') {
+      const subData = await loadOCRDataFromCache(ocrTargetAtt.id, 'sub_assembly');
+      if (subData) {
+        setCurrentSubAssemblyCacheId(subData.cache_id);
+        setViewSubAssemblyOcrResult(subData);
+      } else {
+        setCurrentSubAssemblyCacheId(null);
+        setViewSubAssemblyOcrResult({ sub_assembly_entries: [] });
+      }
+      setShowSubAssemblyModal(true);
     } else if (nextForm === 'production') {
       const prodData = await loadOCRDataFromCache(ocrTargetAtt.id, 'production');
       if (prodData) {
@@ -95,10 +112,13 @@ export function useOcrSequentialFlow(
     getNextForm,
     loadOCRDataFromCache,
     setShowOcrModal,
+    setShowSubAssemblyModal,
     setShowTeamsTimeOcrModal,
     setViewProductionOcrResult,
+    setViewSubAssemblyOcrResult,
     setViewTeamsTimeOcrResult,
     setCurrentProductionCacheId,
+    setCurrentSubAssemblyCacheId,
     setCurrentTeamsTimeCacheId,
     addMsg
   ]);
