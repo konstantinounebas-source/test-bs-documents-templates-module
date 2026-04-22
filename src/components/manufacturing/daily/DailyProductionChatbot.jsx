@@ -1607,6 +1607,7 @@ CRITICAL SAFETY RULES:
           onConfirm={handleOcrConfirm}
           onSkip={handleOcrSkip}
           department={selDept || ocrTargetAtt?.department}
+          departments={[]}
           availableItemCodes={bundleItemCodes}
         />
       )}

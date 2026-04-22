@@ -392,6 +392,7 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
               ) : department ? (
                 <span className="text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded px-2 py-1">{department}</span>
               ) : null}
+              {/* Hidden: Only production forms use Pre-paint department */}
               <span className="text-xs text-slate-400 ml-auto">{lines.length} γραμμ{lines.length === 1 ? "ή" : "ές"}</span>
             </div>
 
