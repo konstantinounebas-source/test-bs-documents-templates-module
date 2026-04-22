@@ -73,6 +73,12 @@ export function useOcrSequentialFlow(
     const nextForm = getNextForm(queue);
 
     if (nextForm === 'teams_time') {
+      // Clear other forms
+      setCurrentProductionCacheId(null);
+      setCurrentSubAssemblyCacheId(null);
+      setViewProductionOcrResult(null);
+      setViewSubAssemblyOcrResult(null);
+      
       const teamsData = await loadOCRDataFromCache(ocrTargetAtt.id, 'teams_time');
       if (teamsData) {
         setCurrentTeamsTimeCacheId(teamsData.cache_id);
@@ -83,6 +89,12 @@ export function useOcrSequentialFlow(
       }
       setShowTeamsTimeOcrModal(true);
     } else if (nextForm === 'sub_assembly') {
+      // Clear other forms
+      setCurrentProductionCacheId(null);
+      setCurrentTeamsTimeCacheId(null);
+      setViewProductionOcrResult(null);
+      setViewTeamsTimeOcrResult(null);
+      
       const subData = await loadOCRDataFromCache(ocrTargetAtt.id, 'sub_assembly');
       if (subData) {
         setCurrentSubAssemblyCacheId(subData.cache_id);
