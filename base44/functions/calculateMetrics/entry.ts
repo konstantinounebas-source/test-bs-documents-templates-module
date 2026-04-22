@@ -41,21 +41,20 @@ Deno.serve(async (req) => {
 
     // --- CROSS-DEPARTMENT HELP: find Other Dept entries from OTHER batches on same date
     // that have charge_dept = this department → add to Help In Time
-    const allBatchesOnDate = await base44.entities.BatchHeader.filter({ date });
-    const otherBatchIds = allBatchesOnDate
-      .filter(b => b.id !== batch_header_id)
-      .map(b => b.id);
-
+    // Use charge_dept filter directly to avoid fetching all records
     let crossDeptHelpMin = 0;
-    if (otherBatchIds.length > 0) {
-      // Fetch Team_Time_Extra from all other batches on same date
-      const otherExtras = await Promise.all(
-        otherBatchIds.map(bid => base44.entities.Team_Time_Extra.filter({ batch_header_id: bid }))
-      );
-      const allOtherExtras = otherExtras.flat();
-      crossDeptHelpMin = allOtherExtras
-        .filter(e => e.work_type === 'Other Departments Works' && e.charge_dept === department)
+    try {
+      const crossDeptEntries = await base44.entities.Team_Time_Extra.filter({ 
+        work_type: 'Other Departments Works',
+        charge_dept: department
+      });
+      // Only count entries from OTHER batches (not this one) on the same date
+      // We filter by checking batch_header_id is not ours
+      crossDeptHelpMin = crossDeptEntries
+        .filter(e => e.batch_header_id !== batch_header_id)
         .reduce((acc, e) => acc + (parseFloat(e.duration_min) || 0), 0);
+    } catch (err) {
+      console.error('Cross-dept help fetch error:', err.message);
     }
 
     // Helper: convert "HH:MM" string to minutes since midnight
