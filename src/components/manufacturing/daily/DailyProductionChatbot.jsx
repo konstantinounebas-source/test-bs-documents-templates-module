@@ -629,7 +629,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
 
   const handleOcrSkip = createOcrSkipHandler({
     addMsg,
-    advanceToNextForm
+    advanceToNextForm,
+    isDeptPrePaint: selDept === "Pre-paint"
   });
 
   const handleTeamsTimeOcrConfirm = createTeamsTimeConfirmHandler({

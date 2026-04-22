@@ -41,11 +41,20 @@ export function createOcrConfirmHandler({
 
 export function createOcrSkipHandler({
   addMsg,
-  advanceToNextForm
+  advanceToNextForm,
+  isDeptPrePaint = false
 }) {
   return async () => {
-    addMsg("bot", "✅ Production φόρμα παραλείφθηκε (δεν αποθηκεύτηκαν δεδομένα).");
-    await advanceToNextForm('production');
+    if (isDeptPrePaint) {
+      // Pre-paint: skip production and go to teams time
+      addMsg("bot", "✅ Production φόρμα παραλείφθηκε (δεν αποθηκεύτηκαν δεδομένα).");
+      await advanceToNextForm('production');
+    } else {
+      // Other depts: should not show production form at all
+      // This is defensive — shouldn't reach here
+      addMsg("bot", "✅ Εκκίνηση Teams Time φόρμας...");
+      await advanceToNextForm('teams_time_skip');
+    }
   };
 }
 
