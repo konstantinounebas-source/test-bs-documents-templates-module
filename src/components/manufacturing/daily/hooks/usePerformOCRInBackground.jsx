@@ -29,10 +29,15 @@ export function usePerformOCRInBackground(
       // Step 1: Analyze file and detect form types FIRST
       failedStep = "analyzeFilePages";
       console.log("[OCR] analyzeFilePages start", { attachmentId: att.id, fileName: att.file_name, failedStep });
-      await base44.functions.invoke("analyzeFilePages", {
-        file_url: att.file_url,
-      });
-      console.log("[OCR] analyzeFilePages ok", { attachmentId: att.id, elapsedMs: Date.now() - startTime });
+      try {
+        await base44.functions.invoke("analyzeFilePages", {
+          file_url: att.file_url,
+        });
+        console.log("[OCR] analyzeFilePages ok", { attachmentId: att.id, elapsedMs: Date.now() - startTime });
+      } catch (analyzeErr) {
+        console.warn("[OCR] analyzeFilePages failed, continuing...", analyzeErr?.message);
+        // Continue anyway - file might still be processable
+      }
 
       await new Promise((r) => setTimeout(r, 300));
 
