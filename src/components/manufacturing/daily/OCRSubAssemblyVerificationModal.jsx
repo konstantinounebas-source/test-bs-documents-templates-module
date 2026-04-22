@@ -213,16 +213,16 @@ export default function OCRSubAssemblyVerificationModal({
 
             <div className="flex-1 overflow-y-auto space-y-3">
               {/* Sticky header */}
-              <div className="sticky top-0 bg-white border-b p-2 z-20">
-                <div className="flex items-center gap-1 text-[9px] font-semibold">
-                  <div className="w-32">Item</div>
+              <div className="sticky top-0 bg-white border-b z-20 px-4 py-1">
+                <div className="flex items-center gap-0 text-[9px] font-semibold">
+                  <div className="w-32 flex-shrink-0">Item</div>
                   {COLUMNS.map(col => (
                     <div key={col} className="flex gap-0">
                       <div className="text-center py-0.5 px-0.5 font-medium w-8 border-r border-slate-300">{col}</div>
-                      <div className="flex gap-0 pr-1 border-r border-slate-300">
-                        <div className="text-center py-0.5 px-0.5 font-medium w-7">Ημερ.</div>
-                        <div className="text-center py-0.5 px-0.5 font-medium w-7">Σχεδ.</div>
-                        <div className="text-center py-0.5 px-0.5 font-medium w-7">Πρ.</div>
+                      <div className="flex gap-0 border-r border-slate-300">
+                        <div className="text-center py-0.5 px-0.5 font-medium w-8">Ημερ.</div>
+                        <div className="text-center py-0.5 px-0.5 font-medium w-8">Σχεδ.</div>
+                        <div className="text-center py-0.5 px-0.5 font-medium w-8">Πρ.</div>
                       </div>
                     </div>
                   ))}
@@ -268,11 +268,11 @@ export default function OCRSubAssemblyVerificationModal({
                             <tbody>
                               {sectionItems.map((entry) => (
                                 <tr key={entry.id} className="border-b hover:bg-white/50">
-                                  <td className="py-1 px-2 text-left text-[10px]">{entry.name}</td>
+                                  <td className="py-1 px-2 text-left text-[10px] w-32 flex-shrink-0">{entry.name}</td>
                                   {COLUMNS.map(col => (
                                     <React.Fragment key={col}>
                                       {SUB_COLUMNS.map(subCol => (
-                                        <td key={`${col}_${subCol}`} className={`py-0.5 px-0.5 text-center ${subCol === 'Actual' ? 'border-r border-slate-300' : ''}`}>
+                                        <td key={`${col}_${subCol}`} className={`py-0.5 px-0.5 text-center w-8 ${subCol === 'Actual' ? 'border-r border-slate-300' : ''}`}>
                                           <input
                                             type="number"
                                             step="0.01"
