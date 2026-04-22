@@ -4,12 +4,6 @@ import {
   Eye, Download, Trash2, Loader2, CheckCircle2, AlertTriangle, Scan, RotateCw, FileText, ImageIcon
 } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -25,7 +19,6 @@ export default function AttachmentItemWithForms({
   att, onDelete, onPreview, onOCR, onOpenProduction, onOpenTeams, 
   isDeleting, isOcrLoading, isAnyOcrLoading, ocrStatus = {}, selDept = ""
 }) {
-  const [showFormsMenu, setShowFormsMenu] = useState(false);
   const isPrePaint = selDept === "Pre-paint";
   const fileType = getFileType(att.file_name);
   
