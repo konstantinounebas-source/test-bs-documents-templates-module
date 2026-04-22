@@ -264,9 +264,8 @@ export function useBulkOCRControl(performOCRInBackground, addMsg, isMountedRef, 
           }
 
           // Invalidate DailyFormsTab queries so it re-fetches and re-runs rehydration
-          // We need to invalidate by date — extract dates from the missingOcrAttachmentDetails
-          // by matching batchHeaderId to batch dates stored in results
           queryClient.invalidateQueries({ queryKey: ["BatchAttachments-by-date"] });
+          queryClient.invalidateQueries({ queryKey: ["BatchHeaders-by-date"] });
         }
         setIsBulkOcrRunning(false);
       }
