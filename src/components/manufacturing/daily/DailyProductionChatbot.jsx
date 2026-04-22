@@ -24,9 +24,8 @@ import ChatStepTeamExtra from "./chatbot/ChatStepTeamExtra";
 import ChatStepHelpIn from "./chatbot/ChatStepHelpIn";
 import ChatStepConsumables from "./chatbot/ChatStepConsumables";
 import ChatStepFileUpload from "./chatbot/ChatStepFileUpload";
-import OCRVerificationModal from "./OCRVerificationModal";
+import OCRModalsSection from "./OCRModalsSection";
 import BatchLinesSection from "./BatchLinesSection";
-import OCRTeamsTimeVerificationModal from "./OCRTeamsTimeVerificationModal";
 import { saveOCRData } from "./chatbot/ocrSave";
 import { saveOCRTeamsTimeData } from "./chatbot/ocrTeamsTimeSave";
 import { checkOCRCacheStatus, saveCorrectedOCRCacheData } from "@/lib/ocrCacheService";
@@ -34,12 +33,7 @@ import { useBulkOCRControl } from "./hooks/useBulkOCRControl";
 import { usePerformOCRInBackground } from "./hooks/usePerformOCRInBackground";
 import { useOcrFlow } from "./hooks/useOcrFlow";
 import { useOcrSequentialFlow } from "./hooks/useOcrSequentialFlow";
-import {
-  createOcrConfirmHandler,
-  createOcrSkipHandler,
-  createTeamsTimeConfirmHandler,
-  createTeamsTimeSkipHandler
-} from "./chatbot/ocrFlowHandlers";
+import { useOcrHandlers } from "./useOcrHandlers";
 import BulkOCRPanel from "./BulkOCRPanel";
 import IntakeBlock from "./IntakeBlock";
 import DailyDataTab from "./DailyDataTab";
@@ -613,8 +607,11 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     setShowTeamsTimeOcrModal,
     setViewProductionOcrResult,
     setViewTeamsTimeOcrResult,
+    setShowSubAssemblyModal,
+    setViewSubAssemblyOcrResult,
     setCurrentProductionCacheId,
     setCurrentTeamsTimeCacheId,
+    setCurrentSubAssemblyCacheId,
     setOcrFormQueue,
     ocrFormQueue,
     ocrTargetAtt,
@@ -622,32 +619,22 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     selDept === "Pre-paint"
   );
 
-  const handleOcrConfirm = createOcrConfirmHandler({
+  const {
+    handleOcrConfirm,
+    handleOcrSkip,
+    handleTeamsTimeOcrConfirm,
+    handleTeamsTimeOcrSkip,
+    handleSubAssemblyOcrConfirm,
+    handleSubAssemblyOcrSkip
+  } = useOcrHandlers({
     addMsg,
     selBatch,
+    selDept,
     currentProductionCacheId,
-    advanceToNextForm,
-    queryClient
-  });
-
-  const handleOcrSkip = createOcrSkipHandler({
-    addMsg,
-    advanceToNextForm,
-    isDeptPrePaint: selDept === "Pre-paint"
-  });
-
-  const handleTeamsTimeOcrConfirm = createTeamsTimeConfirmHandler({
-    addMsg,
-    selBatch,
     currentTeamsTimeCacheId,
+    currentSubAssemblyCacheId,
     advanceToNextForm,
     queryClient
-  });
-
-  const handleTeamsTimeOcrSkip = createTeamsTimeSkipHandler({
-    addMsg,
-    advanceToNextForm,
-    isDeptPrePaint: selDept === "Pre-paint"
   });
 
   // ── step handlers ─────────────────────────────────────────────────────────
@@ -1600,39 +1587,26 @@ CRITICAL SAFETY RULES:
         </DialogContent>
       </Dialog>
 
-      {/* OCR Verification Modal - Production Form (On-Demand) */}
-      {showOcrModal && ocrTargetAtt && (
-        <OCRVerificationModal
-          key={`${ocrTargetAtt?.id || "none"}-${currentProductionCacheId || "manual"}`}
-          open={showOcrModal}
-          onClose={() => { setShowOcrModal(false); setViewProductionOcrResult(null); }}
-          fileUrl={ocrTargetAtt.file_url}
-          fileName={ocrTargetAtt.file_name}
-          ocrResult={viewProductionOcrResult || {}}
-          onConfirm={handleOcrConfirm}
-          onSkip={handleOcrSkip}
-          department={selDept || ocrTargetAtt?.department}
-          departments={[]}
-          availableItemCodes={bundleItemCodes}
-        />
-      )}
-
-      {/* OCR Verification Modal - Teams Time Form (On-Demand) */}
-      {showTeamsTimeOcrModal && ocrTargetAtt && (
-        <OCRTeamsTimeVerificationModal
-          key={`${ocrTargetAtt?.id || "none"}-${currentTeamsTimeCacheId || "manual"}`}
-          open={showTeamsTimeOcrModal}
-          onClose={() => { setShowTeamsTimeOcrModal(false); setViewTeamsTimeOcrResult(null); }}
-          fileUrl={ocrTargetAtt.file_url}
-          fileName={ocrTargetAtt.file_name}
-          ocrResult={viewTeamsTimeOcrResult || {}}
-          onConfirm={handleTeamsTimeOcrConfirm}
-          onSkip={handleTeamsTimeOcrSkip}
-          totalPages={1}
-          defaultPage={1}
-          detectedForms={null}
-        />
-      )}
+      <OCRModalsSection
+        showOcrModal={showOcrModal}
+        ocrTargetAtt={ocrTargetAtt}
+        currentProductionCacheId={currentProductionCacheId}
+        viewProductionOcrResult={viewProductionOcrResult}
+        handleOcrConfirm={handleOcrConfirm}
+        handleOcrSkip={handleOcrSkip}
+        bundleItemCodes={bundleItemCodes}
+        selDept={selDept}
+        showTeamsTimeOcrModal={showTeamsTimeOcrModal}
+        currentTeamsTimeCacheId={currentTeamsTimeCacheId}
+        viewTeamsTimeOcrResult={viewTeamsTimeOcrResult}
+        handleTeamsTimeOcrConfirm={handleTeamsTimeOcrConfirm}
+        handleTeamsTimeOcrSkip={handleTeamsTimeOcrSkip}
+        showSubAssemblyModal={showSubAssemblyModal}
+        currentSubAssemblyCacheId={currentSubAssemblyCacheId}
+        viewSubAssemblyOcrResult={viewSubAssemblyOcrResult}
+        handleSubAssemblyOcrConfirm={handleSubAssemblyOcrConfirm}
+        handleSubAssemblyOcrSkip={handleSubAssemblyOcrSkip}
+      />
 
 
 
