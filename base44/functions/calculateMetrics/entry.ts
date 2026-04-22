@@ -97,16 +97,16 @@ Deno.serve(async (req) => {
     const totalConsumablesQty = consumablesActual.reduce((acc, c) => acc + (parseFloat(c.quantity) || 0), 0);
 
     // Build the data context for formula evaluation
+    // Keys MUST match the metric_code values in MetricDefinition entity
     const dataContext = {
-      // Pre-computed metric values (by metric_code)
       GT_TIME: grossTeamTimeMin,           // Gross Team Time
-      OTHER_DEPT_TIME: otherDeptTimeMin,   // Other Department Time
-      HELP_IN_TIME: totalHelpInMin,        // Help Time Received
-      NET_AVAIL_TIME: netAvailableTimeMin, // Net Available Team Time
-      SUPPORT_TIME: supportTimeMin,        // Support Time
+      OD_TIME: otherDeptTimeMin,           // Other Department Time
+      HELP_TIME: totalHelpInMin,           // Help Time Received
+      NAT_TIME: netAvailableTimeMin,       // Net Available Team Time
+      SUP_TIME: supportTimeMin,            // Support Time
       NON_EXEC_TIME: nonExecutionTimeMin,  // Non-Execution Time
       OP_TIME: operationsTimeMin,          // Operations Time
-      STD_PROC_TIME: totalOperationTimeMin,// Standard-Based Processing Time
+      SBP_TIME: totalOperationTimeMin,     // Standard-Based Processing Time
       // Legacy/other metrics
       BREAK_TIME: totalBreakMin,
       QTY_OP: totalQtyOperation,
@@ -185,13 +185,13 @@ Deno.serve(async (req) => {
       calculatedAt,
       dataContext: {
         GT_TIME: grossTeamTimeMin,
-        OTHER_DEPT_TIME: otherDeptTimeMin,
-        HELP_IN_TIME: totalHelpInMin,
-        NET_AVAIL_TIME: netAvailableTimeMin,
-        SUPPORT_TIME: supportTimeMin,
+        OD_TIME: otherDeptTimeMin,
+        HELP_TIME: totalHelpInMin,
+        NAT_TIME: netAvailableTimeMin,
+        SUP_TIME: supportTimeMin,
         NON_EXEC_TIME: nonExecutionTimeMin,
         OP_TIME: operationsTimeMin,
-        STD_PROC_TIME: totalOperationTimeMin,
+        SBP_TIME: totalOperationTimeMin,
         personCount,
         operationsCount: operations.length,
         teamTimeCount: teamTimePersons.length

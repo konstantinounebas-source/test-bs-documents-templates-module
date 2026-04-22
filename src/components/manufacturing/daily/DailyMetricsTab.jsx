@@ -83,14 +83,14 @@ export default function DailyMetricsTab({ selDate, departments }) {
   };
 
   const KEY_METRICS = [
-    { code: "GT_TIME",         label: "Gross Team Time (min)" },
-    { code: "OTHER_DEPT_TIME", label: "Other Dept Time (min)" },
-    { code: "HELP_IN_TIME",    label: "Help In Time (min)" },
-    { code: "NET_AVAIL_TIME",  label: "Net Avail Time (min)" },
-    { code: "SUPPORT_TIME",    label: "Support Time (min)" },
-    { code: "NON_EXEC_TIME",   label: "Non-Exec Time (min)" },
-    { code: "OP_TIME",         label: "Op Time (min)" },
-    { code: "STD_PROC_TIME",   label: "Std Proc Time (min)" },
+    { code: "GT_TIME",      label: "Gross Team Time (min)" },
+    { code: "OD_TIME",      label: "Other Dept Time (min)" },
+    { code: "HELP_TIME",    label: "Help In Time (min)" },
+    { code: "NAT_TIME",     label: "Net Avail Time (min)" },
+    { code: "SUP_TIME",     label: "Support Time (min)" },
+    { code: "NON_EXEC_TIME",label: "Non-Exec Time (min)" },
+    { code: "OP_TIME",      label: "Op Time (min)" },
+    { code: "SBP_TIME",     label: "Std Proc Time (min)" },
   ];
 
   const formatValue = (val) => {
