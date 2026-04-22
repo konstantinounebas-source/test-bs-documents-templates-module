@@ -213,17 +213,25 @@ export default function OCRSubAssemblyVerificationModal({
 
             <div className="flex-1 overflow-y-auto space-y-3">
               {/* Sticky header */}
-              <div className="sticky top-0 bg-white border-b z-20 px-4 py-1">
-                <div className="flex items-center gap-0 text-[9px] font-semibold">
-                  <div className="w-32 flex-shrink-0">Item</div>
+              <div className="sticky top-0 bg-slate-50 border-b-2 border-slate-300 z-20">
+                {/* First header row - Column labels A/B/C */}
+                <div className="flex items-center border-b border-slate-300">
+                  <div className="w-32 flex-shrink-0 px-2 py-1 text-[10px] font-bold border-r border-slate-300">Sub-Assemblies</div>
                   {COLUMNS.map(col => (
-                    <div key={col} className="flex gap-0">
-                      <div className="text-center py-0.5 px-0.5 font-medium w-8 border-r border-slate-300">{col}</div>
-                      <div className="flex gap-0 border-r border-slate-300">
-                        <div className="text-center py-0.5 px-0.5 font-medium w-8">Ημερ.</div>
-                        <div className="text-center py-0.5 px-0.5 font-medium w-8">Σχεδ.</div>
-                        <div className="text-center py-0.5 px-0.5 font-medium w-8">Πρ.</div>
-                      </div>
+                    <div key={col} className="flex-1 text-center py-1 px-1 text-[11px] font-bold border-r border-slate-300">
+                      {col}
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Second header row - Sub-column labels */}
+                <div className="flex items-center">
+                  <div className="w-32 flex-shrink-0 px-2 border-r border-slate-300"></div>
+                  {COLUMNS.map(col => (
+                    <div key={col} className="flex-1 flex border-r border-slate-300">
+                      <div className="flex-1 text-center py-0.5 text-[8px] font-semibold border-r border-slate-200">Ημερ.</div>
+                      <div className="flex-1 text-center py-0.5 text-[8px] font-semibold border-r border-slate-200">Σχεδ.</div>
+                      <div className="flex-1 text-center py-0.5 text-[8px] font-semibold">Πρ.</div>
                     </div>
                   ))}
                 </div>
