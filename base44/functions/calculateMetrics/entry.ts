@@ -39,6 +39,25 @@ Deno.serve(async (req) => {
       base44.entities.Consumables_Actual.filter({ batch_header_id }),
     ]);
 
+    // --- CROSS-DEPARTMENT HELP: find Other Dept entries from OTHER batches on same date
+    // that have charge_dept = this department → add to Help In Time
+    const allBatchesOnDate = await base44.entities.BatchHeader.filter({ date });
+    const otherBatchIds = allBatchesOnDate
+      .filter(b => b.id !== batch_header_id)
+      .map(b => b.id);
+
+    let crossDeptHelpMin = 0;
+    if (otherBatchIds.length > 0) {
+      // Fetch Team_Time_Extra from all other batches on same date
+      const otherExtras = await Promise.all(
+        otherBatchIds.map(bid => base44.entities.Team_Time_Extra.filter({ batch_header_id: bid }))
+      );
+      const allOtherExtras = otherExtras.flat();
+      crossDeptHelpMin = allOtherExtras
+        .filter(e => e.work_type === 'Other Departments Works' && e.charge_dept === department)
+        .reduce((acc, e) => acc + (parseFloat(e.duration_min) || 0), 0);
+    }
+
     // Helper: convert "HH:MM" string to minutes since midnight
     const timeToMin = (t) => {
       try {
@@ -71,8 +90,8 @@ Deno.serve(async (req) => {
       .filter(e => e.work_type === 'Non-Execution Time')
       .reduce((acc, e) => acc + (parseFloat(e.duration_min) || 0), 0);
 
-    // --- HELP TIME RECEIVED: sum from Help_In using duration_min field ---
-    const totalHelpInMin = helpIn.reduce((acc, h) => {
+    // --- HELP TIME RECEIVED: sum from Help_In + cross-dept Other Dept entries ---
+    const manualHelpInMin = helpIn.reduce((acc, h) => {
       // Support both duration_min and from_time/to_time formats
       if (h.duration_min != null) {
         return acc + (parseFloat(h.duration_min) || 0);
@@ -82,6 +101,7 @@ Deno.serve(async (req) => {
         return acc + (diff > 0 ? diff : 0);
       } catch { return acc; }
     }, 0);
+    const totalHelpInMin = manualHelpInMin + crossDeptHelpMin;
 
     // --- NET AVAILABLE TEAM TIME = Gross - Other Dept + Help In ---
     const netAvailableTimeMin = grossTeamTimeMin - otherDeptTimeMin + totalHelpInMin;
