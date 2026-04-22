@@ -81,7 +81,7 @@ const SUB_ASSEMBLY_SECTIONS = [
   }
 ];
 
-const COLUMNS = ["A", "B", "C", "D", "E"];
+const COLUMNS = ["A", "B", "C"];
 const SUB_COLUMNS = ["Remainder", "Planned", "Actual"];
 
 export default function OCRSubAssemblyVerificationModal({
@@ -113,9 +113,7 @@ export default function OCRSubAssemblyVerificationModal({
           section: section.name,
           A_Remainder: null, A_Planned: null, A_Actual: null,
           B_Remainder: null, B_Planned: null, B_Actual: null,
-          C_Remainder: null, C_Planned: null, C_Actual: null,
-          D_Remainder: null, D_Planned: null, D_Actual: null,
-          E_Remainder: null, E_Planned: null, E_Actual: null
+          C_Remainder: null, C_Planned: null, C_Actual: null
         });
       });
     });
@@ -213,7 +211,26 @@ export default function OCRSubAssemblyVerificationModal({
               </select>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto space-y-3">
+              {/* Sticky header */}
+              <div className="sticky top-0 bg-white border-b p-2 z-20">
+                <div className="flex items-center gap-1 text-[9px] font-semibold">
+                  <div className="w-32">Item</div>
+                  {COLUMNS.map(col => (
+                    <div key={col} className="flex gap-0">
+                      <div className="text-center py-0.5 px-0.5 font-medium w-8 border-r border-slate-300">{col}</div>
+                      <div className="flex gap-0 pr-1 border-r border-slate-300">
+                        <div className="text-center py-0.5 px-0.5 font-medium w-7">Ημερ.</div>
+                        <div className="text-center py-0.5 px-0.5 font-medium w-7">Σχεδ.</div>
+                        <div className="text-center py-0.5 px-0.5 font-medium w-7">Πρ.</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sections content */}
+              <div className="px-4">
               {SUB_ASSEMBLY_SECTIONS.map(section => {
                   const sectionItems = entries.filter(e => e.section === section.name);
                   const isExpanded = expandedSections[section.name];
@@ -234,26 +251,20 @@ export default function OCRSubAssemblyVerificationModal({
                       </button>
 
                       {isExpanded && (
-                        <div className="p-2 max-h-72 overflow-y-auto">
-                          <table className="w-full text-[10px]">
-                             <thead>
-                               <tr className="border-b bg-slate-100">
-                                 <th className="text-left py-1 px-2 font-semibold text-xs">Item</th>
-                                 {COLUMNS.map(col => (
-                                   <th key={col} colSpan="3" className="text-center py-1 px-0.5 font-semibold text-xs border-r border-slate-300">{col}</th>
-                                 ))}
-                               </tr>
-                               <tr className="border-b text-[9px]">
-                                 <th className="text-left py-0.5 px-2"></th>
-                                 {COLUMNS.map(col => (
-                                   <React.Fragment key={col}>
-                                     <th className="text-center py-0.5 px-0.5 font-medium w-9">Ημερ.</th>
-                                     <th className="text-center py-0.5 px-0.5 font-medium w-9">Σχεδ.</th>
-                                     <th className="text-center py-0.5 px-0.5 font-medium w-9 border-r border-slate-300">Πρ.</th>
-                                   </React.Fragment>
-                                 ))}
-                               </tr>
-                             </thead>
+                        <div className="p-2 overflow-hidden">
+                         <table className="w-full text-[10px]">
+                            <thead className="sr-only">
+                              <tr>
+                                <th>Item</th>
+                                {COLUMNS.map(col => (
+                                  <React.Fragment key={col}>
+                                    <th>{col} Remainder</th>
+                                    <th>{col} Planned</th>
+                                    <th>{col} Actual</th>
+                                  </React.Fragment>
+                                ))}
+                              </tr>
+                            </thead>
                             <tbody>
                               {sectionItems.map((entry) => (
                                 <tr key={entry.id} className="border-b hover:bg-white/50">
@@ -280,11 +291,12 @@ export default function OCRSubAssemblyVerificationModal({
                         </div>
                       )}
                     </div>
-                  );
-              })}
-            </div>
-          </div>
-        </div>
+                    );
+                    })}
+                    </div>
+                    </div>
+                    </div>
+                    </div>
 
         {/* Actions footer */}
         <div className="border-t px-4 py-3 flex items-center gap-2 bg-white flex-shrink-0">
