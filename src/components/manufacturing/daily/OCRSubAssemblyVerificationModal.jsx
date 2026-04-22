@@ -271,7 +271,7 @@ export default function OCRSubAssemblyVerificationModal({
                                           step="0.01"
                                           value={entry[`${col}_${subCol}`] === null ? "" : entry[`${col}_${subCol}`]}
                                           onChange={e => handleUpdateEntry(entry.id, `${col}_${subCol}`, e.target.value)}
-                                          className="w-full h-5 text-[9px] text-center border border-slate-300 rounded px-0.5 focus:border-blue-400 focus:ring-1 focus:ring-blue-200"
+                                          className="w-full h-4 text-[8px] text-center border border-slate-300 rounded px-0 py-0.5 focus:border-blue-400 focus:ring-1 focus:ring-blue-200"
                                         />
                                       </div>
                                     ))}
