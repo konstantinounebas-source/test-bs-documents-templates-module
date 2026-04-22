@@ -96,6 +96,7 @@ export default function OCRSubAssemblyVerificationModal({
   const [rotation, setRotation] = useState(0);
   const [date, setDate] = useState(ocrResult?.extracted_data?.date || "");
   const [department, setDepartment] = useState(ocrResult?.extracted_data?.team || "");
+  const containerRef = useRef(null);
   const [expandedSections, setExpandedSections] = useState(
     SUB_ASSEMBLY_SECTIONS.reduce((acc, s) => ({ ...acc, [s.name]: true }), {})
   );
@@ -155,76 +156,22 @@ export default function OCRSubAssemblyVerificationModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Sub-Assembly OCR Verification</span>
-            <span className="text-sm text-slate-500 font-normal">{fileName}</span>
-          </DialogTitle>
-          <DialogDescription>Review and verify sub-assembly OCR data with split-pane document viewer and grouped data entry</DialogDescription>
+      <DialogContent className="p-0 overflow-hidden max-w-[98vw] w-[98vw] max-h-[96vh] h-[96vh]">
+        <DialogHeader className="px-4 py-2 border-b bg-slate-50 flex-row items-center gap-3">
+          <DialogTitle className="text-sm">OCR Sub-Assembly · {fileName}</DialogTitle>
+          <DialogDescription className="sr-only">Review and verify sub-assembly OCR data with split-pane document viewer and grouped data entry</DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col gap-3 overflow-hidden">
-          {/* Top Controls: Date, Department */}
-          <div className="flex gap-4 items-end px-6 py-3 bg-slate-50 border border-slate-200 rounded-lg">
-            <div className="flex-1">
-              <label className="text-xs font-medium text-slate-600 block mb-1">Ημερομηνία</label>
-              <Input
-                type="date"
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                className="text-sm"
-              />
-            </div>
-            <div className="flex-1">
-              <label className="text-xs font-medium text-slate-600 block mb-1">Τμήμα</label>
-              <Select value={department} onValueChange={setDepartment}>
-                <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="Επιλέξτε Τμήμα" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Pre-paint">Pre-paint</SelectItem>
-                  <SelectItem value="Paint">Paint</SelectItem>
-                  <SelectItem value="Sub-assembly">Sub-assembly</SelectItem>
-                  <SelectItem value="Assembly">Assembly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Split Pane: Image Left, Form Right */}
-          <div className="flex-1 flex gap-4 overflow-hidden">
-            {/* Image Viewer Left */}
-            <div className="w-1/3 flex flex-col border border-slate-300 rounded-lg bg-white overflow-hidden">
-              <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 bg-slate-50">
-                <span className="text-xs font-medium text-slate-600">Προεπισκόπηση Εγγράφου</span>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => setZoom(Math.max(50, zoom - 10))}
-                  >
-                    <ZoomOut className="w-3 h-3" />
-                  </Button>
-                  <span className="text-xs text-slate-600 w-8 text-center">{zoom}%</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => setZoom(Math.min(200, zoom + 10))}
-                  >
-                    <ZoomIn className="w-3 h-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => setRotation((rotation + 90) % 360)}
-                  >
-                    <RotateCw className="w-3 h-3" />
-                  </Button>
-                </div>
+        <div className="flex flex-1 overflow-hidden" ref={containerRef}>
+          {/* LEFT: Image/Document viewer */}
+          <div className="border-r bg-slate-100 flex flex-col flex-shrink-0" style={{ width: "35%" }}>
+            <div className="flex items-center gap-2 px-3 py-2 border-b bg-white text-xs flex-wrap">
+              <span className="text-slate-500 font-medium">Αρχείο</span>
+                <div className="flex-1" />
+                <button onClick={() => setZoom(Math.max(50, zoom - 10))} className="p-1 hover:bg-slate-100 rounded"><ZoomOut className="w-3.5 h-3.5" /></button>
+                <span className="text-slate-400 w-8 text-center">{Math.round(zoom)}%</span>
+                <button onClick={() => setZoom(Math.min(200, zoom + 10))} className="p-1 hover:bg-slate-100 rounded"><ZoomIn className="w-3.5 h-3.5" /></button>
+                <button onClick={() => setRotation((rotation + 90) % 360)} className="p-1 hover:bg-slate-100 rounded"><RotateCw className="w-3.5 h-3.5" /></button>
               </div>
               <div className="flex-1 overflow-auto bg-slate-100 flex items-center justify-center p-4">
                 {fileUrl ? (
@@ -244,9 +191,29 @@ export default function OCRSubAssemblyVerificationModal({
               </div>
             </div>
 
-            {/* Form Right */}
-            <div className="w-2/3 flex flex-col overflow-hidden">
-              <div className="flex-1 overflow-y-auto space-y-3 pr-4">
+          {/* Drag divider */}
+          <div className="w-1.5 bg-slate-200 hover:bg-blue-400 cursor-col-resize flex-shrink-0 transition-colors" />
+
+          {/* RIGHT: Data editor */}
+          <div className="flex-1 flex flex-col bg-white min-w-0 overflow-hidden">
+            {/* Header row */}
+            <div className="px-4 py-2 border-b bg-slate-50 flex items-center gap-3 flex-shrink-0 flex-wrap">
+              <span className="text-xs font-semibold text-slate-600">Ημερομηνία:</span>
+              <input type="date" value={date || ""} onChange={e => setDate(e.target.value)}
+                className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 w-28" />
+              <span className="text-xs font-semibold text-slate-600">Τμήμα:</span>
+              <select value={department} onChange={e => setDepartment(e.target.value)}
+                className="text-xs border border-slate-200 rounded px-2 py-1 outline-none focus:border-blue-400 w-40">
+                <option value="">-- Επιλέξτε --</option>
+                <option value="Pre-paint">Pre-paint</option>
+                <option value="Paint">Paint</option>
+                <option value="Sub-assembly">Sub-assembly</option>
+                <option value="Assembly">Assembly</option>
+              </select>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+
                 {SUB_ASSEMBLY_SECTIONS.map(section => {
                   const sectionItems = entries.filter(e => e.section === section.name);
                   const isExpanded = expandedSections[section.name];
@@ -301,28 +268,25 @@ export default function OCRSubAssemblyVerificationModal({
                     </div>
                   );
                 })}
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-2 justify-end pt-4 border-t">
+        {/* Actions footer */}
+        <div className="border-t px-4 py-3 flex items-center gap-2 bg-white flex-shrink-0">
+          {onSkip && (
+            <Button variant="outline" size="sm" className="text-xs" onClick={onSkip} disabled={isLoading}>
+              Skip χωρίς αποθήκευση
+            </Button>
+          )}
           <Button
-            variant="outline"
-            onClick={onSkip}
-            disabled={isLoading}
-            className="text-sm"
-          >
-            Skip χωρίς αποθήκευση
-          </Button>
-          <Button
+            size="sm"
+            className="flex-1 text-xs bg-green-600 hover:bg-green-700"
             onClick={handleConfirm}
             disabled={isLoading}
-            className="text-sm bg-green-600 hover:bg-green-700"
           >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-            Επιβεβαίωση
+            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" /> : null}
+            Επιβεβαίωση δεδομένων OCR
           </Button>
         </div>
       </DialogContent>
