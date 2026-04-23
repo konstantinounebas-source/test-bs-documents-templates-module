@@ -16,10 +16,11 @@ function getFileType(fileName) {
 }
 
 export default function AttachmentItemWithForms({ 
-  att, onDelete, onPreview, onOCR, onOpenProduction, onOpenTeams, 
+  att, onDelete, onPreview, onOCR, onOpenProduction, onOpenTeams, onOpenSubAssembly,
   isDeleting, isOcrLoading, isAnyOcrLoading, ocrStatus = {}, selDept = ""
 }) {
   const isPrePaint = selDept === "Pre-paint";
+  const isSubAssembly = att.file_name && (att.file_name.toLowerCase().includes("subassembly") || att.file_name.toLowerCase().includes("sub-assembly") || att.file_name.toLowerCase().includes("sub_assembly"));
   const fileType = getFileType(att.file_name);
   
   // Determine overall OCR status
@@ -85,13 +86,13 @@ export default function AttachmentItemWithForms({
 
       {/* Action Buttons */}
       <div className="flex gap-1">
-        {/* Forms — Pre-paint: Production, Others: Teams Time */}
+        {/* Forms — Pre-paint: Production, Sub-Assembly: Sub-Assembly, Others: Teams Time */}
         <Button 
           variant="ghost" 
           size="sm" 
           className="h-6 px-2 text-xs text-blue-600 hover:bg-blue-50" 
-          title={isPrePaint ? "Open Production Form" : "Open Teams Time Form"}
-          onClick={isPrePaint ? onOpenProduction : onOpenTeams}
+          title={isPrePaint ? "Open Production Form" : isSubAssembly ? "Open Sub-Assembly Form" : "Open Teams Time Form"}
+          onClick={isPrePaint ? onOpenProduction : isSubAssembly ? onOpenSubAssembly : onOpenTeams}
         >
           📄 Forms
         </Button>

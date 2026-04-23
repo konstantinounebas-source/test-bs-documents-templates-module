@@ -1069,6 +1069,7 @@ CRITICAL SAFETY RULES:
                 onOCR={handleOCR}
                 onOpenProduction={() => openProductionForm(attWithDept)}
                 onOpenTeams={() => openTeamsTimeForm(attWithDept)}
+                onOpenSubAssembly={() => openSubAssemblyForm(attWithDept)}
                 isOcrLoading={runningOcrAttachmentIds.has(att.id)}
                 isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
                 isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
@@ -1936,6 +1937,7 @@ CRITICAL SAFETY RULES:
                            onOCR={handleOCR}
                            onOpenProduction={() => openProductionForm(attWithDept)}
                            onOpenTeams={() => openTeamsTimeForm(attWithDept)}
+                           onOpenSubAssembly={() => openSubAssemblyForm(attWithDept)}
                            isOcrLoading={runningOcrAttachmentIds.has(att.id)}
                            isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
                            isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
