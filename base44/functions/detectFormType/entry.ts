@@ -70,31 +70,24 @@ Deno.serve(async (req) => {
   const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
   const detectedForms = {};
 
-  // If we detected form type from filename, use it for ALL pages (fast path)
-  if (detectedFromFilename) {
-    for (const pageNum of pages) {
-      detectedForms[pageNum] = {
-        form_type: detectedFromFilename,
-        form_title: "DETECTED_FROM_FILENAME",
-        confidence: "high"
-      };
-    }
-  } else {
-    // Only do LLM detection if filename didn't tell us the type
-    // Use optimized single-call detection for first page only, then extrapolate
+  // ALWAYS analyze EACH page individually (no shortcuts)
+  // This handles mixed-type documents (e.g., sub_assembly + production in same file)
+  for (const pageNum of pages) {
     const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
       model: model,
-      prompt: `Ανάλυσε τη ΠΡΩΤΗ σελίδα του αρχείου και πες:
-1. Τον ΤΙΤΛΟ της φόρμας (ακριβώς όπως φαίνεται)
-2. Τον ΤΥΠΟ: "production", "teams_time", ή "sub_assembly"
+      prompt: `Ανάλυσε ΜΟΝΟ τη σελίδα ${pageNum} του αρχείου.
 
-Ψάξε για:
-- "TEAMS TIME" / "PRODUCTION TEAMS TIME" → teams_time
-- "SUB-ASSEMBLY" / "SMART BUS STOP" → sub_assembly
-- Item codes, ποσότητες παραγωγής → production
-- Δομή και visual elements (πίνακες, labels)
+ΚΑΝΟΝΕΣ ΑΝΙΧΝΕΥΣΗΣ:
+1. Αν ΕΙΝΑΙ: "TEAMS TIME" / "TEAM PERSONS" / "EXTRA WORK" → **teams_time**
+2. Αν ΕΙΝΑΙ: "SUB-ASSEMBLY" / "ASSEMBLY LINES" / "REMAINDER ITEMS" → **sub_assembly**
+3. Αν ΕΙΝΑΙ: "PRODUCTION" / "ITEM CODES" / "PRODUCTION LINES" → **production**
 
-Επίστρεψε JSON: { form_type: "...", form_title: "..." }`,
+Κοίτα:
+- Τίτλοι στηλών (πίνακα)
+- Ετικέτες φόρμας
+- Δομή δεδομένων (ώρες vs ποσότητες vs assembly items)
+
+Επίστρεψε ΑΠΛΑ JSON: { form_type: "...", form_title: "..." }`,
       file_urls: [file_url],
       response_json_schema: {
         type: "object",
@@ -105,21 +98,18 @@ Deno.serve(async (req) => {
       }
     });
 
-    let detectedType = result?.form_type || "unknown";
+    let formType = result?.form_type || "unknown";
     
-    // Validate and fallback to title parsing if needed
-    if (!["production", "teams_time", "sub_assembly"].includes(detectedType)) {
-      detectedType = detectFormTypeFromTitle(result?.form_title || "");
+    // Validate form_type
+    if (!["production", "teams_time", "sub_assembly"].includes(formType)) {
+      formType = detectFormTypeFromTitle(result?.form_title || "");
     }
 
-    // Apply detected type to ALL pages (assuming multi-page document is same type)
-    for (const pageNum of pages) {
-      detectedForms[pageNum] = {
-        form_type: detectedType,
-        form_title: result?.form_title || "UNKNOWN",
-        confidence: detectedType !== "unknown" ? "high" : "low"
-      };
-    }
+    detectedForms[pageNum] = {
+      form_type: formType,
+      form_title: result?.form_title || "UNKNOWN",
+      confidence: formType !== "unknown" ? "high" : "low"
+    };
   }
 
   return Response.json({
