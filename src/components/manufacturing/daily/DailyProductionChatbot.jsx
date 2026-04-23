@@ -1877,6 +1877,7 @@ CRITICAL SAFETY RULES:
                       }}
                       deleteMutation={deleteMutation}
                       onAddMsg={addMsg}
+                      onOCRAll={(allAtts) => executeSelectedBulkOCR(allAtts)}
                     />
                   )}
                   {activeSection === "daily-data" && (

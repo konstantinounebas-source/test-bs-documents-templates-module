@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ChevronRight, Plus } from "lucide-react";
+import { Loader2, ChevronRight, Plus, Scan } from "lucide-react";
 import { toast } from "sonner";
 import AttachmentItemWithForms from "./AttachmentItemWithForms";
 
@@ -20,7 +20,8 @@ export default function DailyFormsTab({
   attachmentOcrStatus,
   onRehydrateOcrStatus,
   deleteMutation,
-  onAddMsg
+  onAddMsg,
+  onOCRAll
 }) {
   const [selectedDept, setSelectedDept] = useState("");
   const [dragging, setDragging] = useState(false);
@@ -162,6 +163,11 @@ export default function DailyFormsTab({
   });
   const currentDeptAttachments = selectedDept ? departmentGroups[selectedDept]?.attachments || [] : [];
 
+  // Must be before early returns (Rules of Hooks)
+  const allDailyAttachmentsFlat = useMemo(() => {
+    return Object.values(departmentGroups).flatMap(g => g.attachments);
+  }, [departmentGroups]);
+
   if (!selDate) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -178,10 +184,37 @@ export default function DailyFormsTab({
     );
   }
 
+  const isOCRAllRunning = runningOcrAttachmentIds.size > 0;
+
+  const handleOCRAll = () => {
+    if (allDailyAttachmentsFlat.length === 0) {
+      toast.info("Δεν υπάρχουν αρχεία για OCR σήμερα.");
+      return;
+    }
+    if (onOCRAll) onOCRAll(allDailyAttachmentsFlat);
+  };
+
   return (
     <div className="flex flex-col h-full gap-3">
       {/* Horizontal Department List */}
       <div className="bg-slate-100 border-b border-slate-200 p-3 flex-shrink-0 -mt-px" style={{ minHeight: "110px" }}>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-semibold text-slate-600">Τμήματα · {selDate}</span>
+          {allDailyAttachmentsFlat.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs h-7 gap-1.5 border-purple-300 text-purple-700 hover:bg-purple-50"
+              onClick={handleOCRAll}
+              disabled={isOCRAllRunning}
+            >
+              {isOCRAllRunning
+                ? <Loader2 className="w-3 h-3 animate-spin" />
+                : <Scan className="w-3 h-3" />}
+              {isOCRAllRunning ? "OCR σε εξέλιξη..." : `OCR Όλα (${allDailyAttachmentsFlat.length})`}
+            </Button>
+          )}
+        </div>
         <div className="grid grid-cols-3 gap-2">
           {departments.length === 0 ? (
             <p className="text-xs text-slate-400">No departments</p>
