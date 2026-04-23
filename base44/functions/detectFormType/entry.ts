@@ -66,43 +66,42 @@ Deno.serve(async (req) => {
   const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
   const detectedForms = {};
 
-  // Only analyze first page (to determine document type)
-  // Assume rest of document is same type (optimization)
+  // Analyze first page only to determine document type (LLM can only see first page of PDF)
   const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
     model: model,
-    prompt: `Ανάλυσε το αρχείο και ΕΙΔΙΚΑ:
-- Δες τη ΠΡΩΤΗ σελίδα
-- Είπε ποιος είναι ο τύπος της
+    prompt: `Δες το αρχείο (εστιάζοντας στη ΠΡΩΤΗ σελίδα):
+- Ποιος είναι ο τύπος της;
+- Κοίτα τίτλο, πίνακες, ετικέτες, δομή
 
 ΚΑΝΟΝΕΣ:
-1. "TEAMS TIME" / "TEAM PERSONS" / "ΣΥΝΟΛΙΚΕΣ ΩΡΕΣ" → **teams_time**
-2. "SUB-ASSEMBLY" / "ASSEMBLY" / "ΕΙΔΗ ΣΤΑΘΜΗΣ" → **sub_assembly**
-3. "PRODUCTION" / "ΗΜΕΡΗΣΙΑ" / "ITEM CODES" → **production**
+1. "TEAMS TIME" / "TEAM PERSONS" / "PRODUCTION TEAMS TIME" → **teams_time**
+2. "SUB-ASSEMBLY" / "ASSEMBLY" / "LIGHTBOXES" / "GLASS" / "PAINTING" → **sub_assembly**
+3. "PRODUCTION" / "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ" / "ITEM CODES" → **production**
 
-Επίστρεψε JSON: { form_type: "...", form_title: "..." }`,
+Επίστρεψε: { "form_type": "teams_time" ή "sub_assembly" ή "production", "confidence": "high" ή "low" }`,
     file_urls: [file_url],
     response_json_schema: {
       type: "object",
       properties: {
         form_type: { type: "string" },
-        form_title: { type: "string" }
+        confidence: { type: "string" }
       }
     }
   });
 
-  let primaryFormType = result?.form_type || "unknown";
+  let detectedType = result?.form_type || "unknown";
   
-  // Validate and fallback
-  if (!["production", "teams_time", "sub_assembly"].includes(primaryFormType)) {
-    primaryFormType = detectFormTypeFromTitle(result?.form_title || "");
+  // Validate
+  if (!["production", "teams_time", "sub_assembly"].includes(detectedType)) {
+    detectedType = "unknown";
   }
 
-  // Apply same type to all pages (assume uniform document)
+  // Apply to all pages (assume uniform document based on first page)
   for (const pageNum of pages) {
     detectedForms[pageNum] = {
-      form_type: primaryFormType,
-      form_title: result?.form_title || "UNKNOWN",
-      confidence: primaryFormType !== "unknown" ? "high" : "low"
+      form_type: detectedType,
+      form_title: detectedType === "unknown" ? "UNKNOWN" : detectedType.replace(/_/g, " ").toUpperCase(),
+      confidence: result?.confidence || (detectedType !== "unknown" ? "high" : "low")
     };
   }
 
