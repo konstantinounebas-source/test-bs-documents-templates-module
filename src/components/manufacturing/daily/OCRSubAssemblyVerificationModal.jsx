@@ -98,6 +98,8 @@ export default function OCRSubAssemblyVerificationModal({
   const [date, setDate] = useState(ocrResult?.extracted_data?.date || "");
   const [department, setDepartment] = useState(ocrResult?.extracted_data?.team || "");
   const containerRef = useRef(null);
+  const isImage = fileName && ['jpg','jpeg','png','gif','webp','bmp'].includes(fileName.split('.').pop().toLowerCase());
+  const isPdf = !isImage;
   const [expandedSections, setExpandedSections] = useState(
     SUB_ASSEMBLY_SECTIONS.reduce((acc, s) => ({ ...acc, [s.name]: true }), {})
   );
@@ -176,18 +178,27 @@ export default function OCRSubAssemblyVerificationModal({
               </div>
               <div className="flex-1 overflow-auto bg-slate-100 flex items-center justify-center p-4">
                 {fileUrl ? (
-                  <img
-                    src={fileUrl}
-                    alt="OCR Document"
-                    style={{
-                      transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
-                      maxWidth: "100%",
-                      maxHeight: "100%",
-                    }}
-                    className="transition-transform"
-                  />
+                  isImage ? (
+                    <img
+                      src={fileUrl}
+                      alt="OCR Document"
+                      style={{
+                        transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
+                        maxWidth: "100%",
+                        maxHeight: "100%",
+                      }}
+                      className="transition-transform"
+                    />
+                  ) : (
+                    <iframe 
+                      src={`https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(fileUrl)}`}
+                      className="w-full h-full border-0 rounded"
+                      title={fileName}
+                      style={{ transform: `rotate(${rotation}deg)`, minHeight: "500px" }}
+                    />
+                  )
                 ) : (
-                  <p className="text-xs text-slate-400">Δεν υπάρχει εικόνα</p>
+                  <p className="text-xs text-slate-400">Δεν υπάρχει αρχείο</p>
                 )}
               </div>
             </div>
