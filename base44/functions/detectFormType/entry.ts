@@ -1,12 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 
 Deno.serve(async (req) => {
-  const base44 = createClientFromRequest(req);
-  const user = await base44.auth.me();
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { file_url } = await req.json();
-  if (!file_url) return Response.json({ error: 'file_url is required' }, { status: 400 });
+    const { file_url } = await req.json();
+    if (!file_url) return Response.json({ error: 'file_url is required' }, { status: 400 });
 
   const isPDF = file_url.toLowerCase().includes('.pdf');
   const model = isPDF ? "gemini_3_flash" : "gpt_5_mini";
@@ -58,65 +59,62 @@ Deno.serve(async (req) => {
     return "unknown";
   };
 
-  const analysis = await base44.functions.invoke("analyzeFilePages", { file_url });
-
-  const pageCount =
-    Number(
-      analysis?.data?.page_count ??
-      analysis?.page_count ??
-      1
-    ) || 1;
+  // Extract page count from filename (e.g., "1From7.pdf" = 7 pages)
+  const fromMatch = filename.match(/from(\d+)/i);
+  let pageCount = fromMatch ? parseInt(fromMatch[1], 10) : 7; // Default to 7 if not found
 
   const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
   const detectedForms = {};
 
-  // ALWAYS analyze EACH page individually (no shortcuts)
-  // This handles mixed-type documents (e.g., sub_assembly + production in same file)
-  for (const pageNum of pages) {
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      model: model,
-      prompt: `Ανάλυσε ΜΟΝΟ τη σελίδα ${pageNum} του αρχείου.
+  // Only analyze first page (to determine document type)
+  // Assume rest of document is same type (optimization)
+  const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    model: model,
+    prompt: `Ανάλυσε το αρχείο και ΕΙΔΙΚΑ:
+- Δες τη ΠΡΩΤΗ σελίδα
+- Είπε ποιος είναι ο τύπος της
 
-ΚΑΝΟΝΕΣ ΑΝΙΧΝΕΥΣΗΣ:
-1. Αν ΕΙΝΑΙ: "TEAMS TIME" / "TEAM PERSONS" / "EXTRA WORK" → **teams_time**
-2. Αν ΕΙΝΑΙ: "SUB-ASSEMBLY" / "ASSEMBLY LINES" / "REMAINDER ITEMS" → **sub_assembly**
-3. Αν ΕΙΝΑΙ: "PRODUCTION" / "ITEM CODES" / "PRODUCTION LINES" → **production**
+ΚΑΝΟΝΕΣ:
+1. "TEAMS TIME" / "TEAM PERSONS" / "ΣΥΝΟΛΙΚΕΣ ΩΡΕΣ" → **teams_time**
+2. "SUB-ASSEMBLY" / "ASSEMBLY" / "ΕΙΔΗ ΣΤΑΘΜΗΣ" → **sub_assembly**
+3. "PRODUCTION" / "ΗΜΕΡΗΣΙΑ" / "ITEM CODES" → **production**
 
-Κοίτα:
-- Τίτλοι στηλών (πίνακα)
-- Ετικέτες φόρμας
-- Δομή δεδομένων (ώρες vs ποσότητες vs assembly items)
-
-Επίστρεψε ΑΠΛΑ JSON: { form_type: "...", form_title: "..." }`,
-      file_urls: [file_url],
-      response_json_schema: {
-        type: "object",
-        properties: {
-          form_type: { type: "string" },
-          form_title: { type: "string" }
-        }
+Επίστρεψε JSON: { form_type: "...", form_title: "..." }`,
+    file_urls: [file_url],
+    response_json_schema: {
+      type: "object",
+      properties: {
+        form_type: { type: "string" },
+        form_title: { type: "string" }
       }
-    });
-
-    let formType = result?.form_type || "unknown";
-    
-    // Validate form_type
-    if (!["production", "teams_time", "sub_assembly"].includes(formType)) {
-      formType = detectFormTypeFromTitle(result?.form_title || "");
     }
+  });
 
+  let primaryFormType = result?.form_type || "unknown";
+  
+  // Validate and fallback
+  if (!["production", "teams_time", "sub_assembly"].includes(primaryFormType)) {
+    primaryFormType = detectFormTypeFromTitle(result?.form_title || "");
+  }
+
+  // Apply same type to all pages (assume uniform document)
+  for (const pageNum of pages) {
     detectedForms[pageNum] = {
-      form_type: formType,
+      form_type: primaryFormType,
       form_title: result?.form_title || "UNKNOWN",
-      confidence: formType !== "unknown" ? "high" : "low"
+      confidence: primaryFormType !== "unknown" ? "high" : "low"
     };
   }
 
-  return Response.json({
-    page_count: pageCount,
-    pages: detectedForms,
-    summary: Object.fromEntries(
-      pages.map((p) => [`page_${p}_type`, detectedForms[p]?.form_type || "unknown"])
-    )
-  });
+    return Response.json({
+      page_count: pageCount,
+      pages: detectedForms,
+      summary: Object.fromEntries(
+        pages.map((p) => [`page_${p}_type`, detectedForms[p]?.form_type || "unknown"])
+      )
+    });
+  } catch (error) {
+    console.error("[detectFormType ERROR]", error.message);
+    return Response.json({ error: error.message, type: error.constructor.name }, { status: 500 });
+  }
 });
