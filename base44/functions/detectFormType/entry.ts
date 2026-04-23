@@ -11,9 +11,17 @@ Deno.serve(async (req) => {
   const isPDF = file_url.toLowerCase().includes('.pdf');
   const model = isPDF ? "gemini_3_flash" : "gpt_5_mini";
   
-  // Extract filename for fallback detection
+  // Extract filename for early detection
   const filename = file_url.split('/').pop() || '';
-  const isSubAssemblyFile = filename.toLowerCase().includes('subassembly') || filename.toLowerCase().includes('sub_assembly') || filename.toLowerCase().includes('sub-assembly');
+  const filenameLower = filename.toLowerCase();
+  
+  // Detect form type from filename FIRST (reliable indicator)
+  const detectedFromFilename = 
+    (filenameLower.includes('subassembly') || filenameLower.includes('sub_assembly') || filenameLower.includes('sub-assembly')) 
+      ? 'sub_assembly'
+      : (filenameLower.includes('teams') || filenameLower.includes('team_time'))
+      ? 'teams_time'
+      : null;
 
   const normalizeTitle = (title) => {
     if (!title) return "";
@@ -62,79 +70,54 @@ Deno.serve(async (req) => {
   const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
   const detectedForms = {};
 
-  // Batch detection - one LLM call to analyze all pages at once
-  const batchResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
-    model: model,
-    prompt: `Αναλύσε το ακόλουθο PDF document με ${pageCount} σελίδες.
-Για ΚΑΘΕ σελίδα, βρες:
-1. Τον ΤΙΤΛΟ της φόρμας (ακριβώς όπως φαίνεται)
-2. Τον ΤΥΠΟ: "production", "teams_time", ή "sub_assembly"
-
-Κανόνες ανίχνευσης ΑΝΑ ΣΕΛΙΔΑ:
-- Αν ο τίτλος περιέχει "TEAMS TIME" ή "PRODUCTION TEAMS TIME" → **teams_time**
-- Αν ο τίτλος περιέχει "SUB-ASSEMBLY" ή "SMART BUS STOP" → **sub_assembly**
-- Αν περιέχει item codes, ποσότητες παραγωγής, "ΣΥΝΟΛΙΚΕΣ ΩΡΕΣ" → **production**
-- Κάνε αυτή την ανίχνευση ΑΝΕΞΑΡΤΗΤΑ από το όνομα αρχείου
-
-Επίστρεψε JSON με structure: { pages: { "1": { form_type: "...", form_title: "..." }, "2": { ... } } }`,
-    file_urls: [file_url],
-    response_json_schema: {
-      type: "object",
-      properties: {
-        pages: {
-          type: "object",
-          additionalProperties: {
-            type: "object",
-            properties: {
-              form_type: { type: "string" },
-              form_title: { type: "string" }
-            }
-          }
-        }
-      }
-    }
-  });
-
-  // Populate detectedForms from batch result
-  // CRITICAL: Per-page LLM detection is authoritative. Do NOT override based on filename.
-  if (batchResult?.pages) {
+  // If we detected form type from filename, use it for ALL pages (fast path)
+  if (detectedFromFilename) {
     for (const pageNum of pages) {
-      const pageData = batchResult.pages[String(pageNum)];
-      let formType = pageData?.form_type || "unknown";
-
-      // Validate form_type is one of the allowed values
-      if (!["production", "teams_time", "sub_assembly"].includes(formType)) {
-        formType = detectFormTypeFromTitle(pageData?.form_title || "");
-      }
-
       detectedForms[pageNum] = {
-        form_type: formType,
-        form_title: pageData?.form_title || "UNKNOWN",
-        confidence: formType !== "unknown" ? "high" : "low"
+        form_type: detectedFromFilename,
+        form_title: "DETECTED_FROM_FILENAME",
+        confidence: "high"
       };
     }
   } else {
-    // Fallback if batch detection fails - single scan per page (slower but safer)
-    for (const pageNum of pages) {
-      const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-        model: model,
-        prompt: `Δες τη σελίδα ${pageNum} και πες τον τίτλο της φόρμας.`,
-        file_urls: [file_url],
-        response_json_schema: {
-          type: "object",
-          properties: {
-            form_title: { type: "string" }
-          }
+    // Only do LLM detection if filename didn't tell us the type
+    // Use optimized single-call detection for first page only, then extrapolate
+    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      model: model,
+      prompt: `Ανάλυσε τη ΠΡΩΤΗ σελίδα του αρχείου και πες:
+1. Τον ΤΙΤΛΟ της φόρμας (ακριβώς όπως φαίνεται)
+2. Τον ΤΥΠΟ: "production", "teams_time", ή "sub_assembly"
+
+Ψάξε για:
+- "TEAMS TIME" / "PRODUCTION TEAMS TIME" → teams_time
+- "SUB-ASSEMBLY" / "SMART BUS STOP" → sub_assembly
+- Item codes, ποσότητες παραγωγής → production
+- Δομή και visual elements (πίνακες, labels)
+
+Επίστρεψε JSON: { form_type: "...", form_title: "..." }`,
+      file_urls: [file_url],
+      response_json_schema: {
+        type: "object",
+        properties: {
+          form_type: { type: "string" },
+          form_title: { type: "string" }
         }
-      });
+      }
+    });
 
-      let formType = detectFormTypeFromTitle(result?.form_title);
-      if (isSubAssemblyFile) formType = "sub_assembly";
+    let detectedType = result?.form_type || "unknown";
+    
+    // Validate and fallback to title parsing if needed
+    if (!["production", "teams_time", "sub_assembly"].includes(detectedType)) {
+      detectedType = detectFormTypeFromTitle(result?.form_title || "");
+    }
 
+    // Apply detected type to ALL pages (assuming multi-page document is same type)
+    for (const pageNum of pages) {
       detectedForms[pageNum] = {
-        form_type: formType,
+        form_type: detectedType,
         form_title: result?.form_title || "UNKNOWN",
-        confidence: formType !== "unknown" ? "high" : "low"
+        confidence: detectedType !== "unknown" ? "high" : "low"
       };
     }
   }
