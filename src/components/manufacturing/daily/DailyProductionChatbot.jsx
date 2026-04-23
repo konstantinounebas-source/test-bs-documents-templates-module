@@ -322,7 +322,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     setAttachmentOcrStatus,
     setRunningOcrAttachmentIds,
     setCurrentProductionCacheId,
-    setCurrentTeamsTimeCacheId
+    setCurrentTeamsTimeCacheId,
+    setCurrentSubAssemblyCacheId
   );
 
   // useBulkOCRControl MUST come after performOCRInBackground, addMsg, and isMountedRef are defined

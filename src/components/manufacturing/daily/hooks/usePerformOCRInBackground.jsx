@@ -11,7 +11,8 @@ export function usePerformOCRInBackground(
   setAttachmentOcrStatus,
   setRunningOcrAttachmentIds,
   setCurrentProductionCacheId,
-  setCurrentTeamsTimeCacheId
+  setCurrentTeamsTimeCacheId,
+  setCurrentSubAssemblyCacheId
 ) {
   return useCallback(async (att, options = {}) => {
     const { silentBulk = false } = options;
@@ -81,8 +82,9 @@ export function usePerformOCRInBackground(
       }
 
       // Step 2: For each detected form_type, check cache independently
-      let prodCacheId = null;
-      let teamsCacheId = null;
+       let prodCacheId = null;
+       let teamsCacheId = null;
+       let subAssemblyCacheId = null;
 
       const ocrTasks = detectedForms.map(async (formType) => {
         // Mark as processing before starting
@@ -117,8 +119,10 @@ export function usePerformOCRInBackground(
           }
           if (formType === "production") {
             prodCacheId = cached.id;
-          } else {
+          } else if (formType === "teams_time") {
             teamsCacheId = cached.id;
+          } else if (formType === "sub_assembly") {
+            subAssemblyCacheId = cached.id;
           }
           return;
         }
@@ -155,8 +159,10 @@ export function usePerformOCRInBackground(
 
         if (formType === "production") {
           prodCacheId = data.cache_id;
-        } else {
+        } else if (formType === "teams_time") {
           teamsCacheId = data.cache_id;
+        } else if (formType === "sub_assembly") {
+          subAssemblyCacheId = data.cache_id;
         }
       });
 
@@ -164,9 +170,10 @@ export function usePerformOCRInBackground(
 
       if (prodCacheId) setCurrentProductionCacheId(prodCacheId);
       if (teamsCacheId) setCurrentTeamsTimeCacheId(teamsCacheId);
+      if (subAssemblyCacheId) setCurrentSubAssemblyCacheId(subAssemblyCacheId);
 
       // FIX #1: Return completed ONLY if at least one real OCR result was produced
-      const hasRealResult = prodCacheId || teamsCacheId;
+      const hasRealResult = prodCacheId || teamsCacheId || subAssemblyCacheId;
 
       if (!hasRealResult) {
         // No cache_id produced — return as failed even if forms were detected
@@ -197,8 +204,9 @@ export function usePerformOCRInBackground(
         batchHeaderId: att.batch_header_id,
         productionCacheId: prodCacheId,
         teamsTimeCacheId: teamsCacheId,
+        subAssemblyCacheId: subAssemblyCacheId,
         detectedForms,
-        completedForms: (prodCacheId ? ["production"] : []).concat(teamsCacheId ? ["teams_time"] : []),
+        completedForms: (prodCacheId ? ["production"] : []).concat(teamsCacheId ? ["teams_time"] : []).concat(subAssemblyCacheId ? ["sub_assembly"] : []),
         duration: Date.now() - startTime,
       };
     } catch (err) {
@@ -244,5 +252,5 @@ export function usePerformOCRInBackground(
         });
       }
     }
-  }, [isMountedRef, addMsg, selBatch?.id, selDept, setAttachmentOcrStatus, setRunningOcrAttachmentIds, setCurrentProductionCacheId, setCurrentTeamsTimeCacheId]);
+  }, [isMountedRef, addMsg, selBatch?.id, selDept, setAttachmentOcrStatus, setRunningOcrAttachmentIds, setCurrentProductionCacheId, setCurrentTeamsTimeCacheId, setCurrentSubAssemblyCacheId]);
 }
