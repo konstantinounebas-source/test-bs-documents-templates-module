@@ -33,18 +33,25 @@ export function useOcrFormOpeners(
       }));
     }
     
+    // CRITICAL: Always load data first before showing modal
     const prodData = await loadOCRDataFromCache(attWithDept.id, "production");
     if (prodData) {
       setCurrentProductionCacheId(prodData.cache_id);
       setViewProductionOcrResult(prodData);
     } else {
       setCurrentProductionCacheId(null);
+      // Default empty template
       setViewProductionOcrResult({
-        extracted_data: { production_lines: [] },
+        extracted_data: { 
+          production_lines: [],
+          pages: [{ production_lines: [] }]
+        },
         validation: { issues: [], confidence_score: null },
+        file_page_count: 1,
         page_count: 1
       });
     }
+    // Show modal after data is ready
     setShowOcrModal(true);
   }, [loadOCRDataFromCache, selDept, setOcrTargetAtt, setOcrFormQueue, setCurrentProductionCacheId, setViewProductionOcrResult, setShowOcrModal]);
 
@@ -60,6 +67,7 @@ export function useOcrFormOpeners(
       [attWithDept.id]: { completed: [] }
     }));
     
+    // CRITICAL: Load data before showing modal
     const subData = await loadOCRDataFromCache(attWithDept.id, "sub_assembly");
     if (subData) {
       setCurrentSubAssemblyCacheId(subData.cache_id);
@@ -67,10 +75,16 @@ export function useOcrFormOpeners(
     } else {
       setCurrentSubAssemblyCacheId(null);
       setViewSubAssemblyOcrResult({
-        extracted_data: { sub_assembly_entries: [] },
-        validation: { issues: [], confidence_score: null }
+        extracted_data: { 
+          sub_assembly_entries: [],
+          pages: [{ sub_assembly_entries: [] }]
+        },
+        validation: { issues: [], confidence_score: null },
+        file_page_count: 1,
+        page_count: 1
       });
     }
+    // Show modal after data is ready
     setShowSubAssemblyModal(true);
   }, [loadOCRDataFromCache, selDept, setOcrTargetAtt, setOcrFormQueue, setCurrentSubAssemblyCacheId, setViewSubAssemblyOcrResult, setShowSubAssemblyModal]);
 
@@ -80,6 +94,7 @@ export function useOcrFormOpeners(
     const attWithDept = { ...att, department: effectiveDept };
     setOcrTargetAtt(attWithDept);
     
+    // CRITICAL: Load data before showing modal
     const teamsData = await loadOCRDataFromCache(attWithDept.id, "teams_time");
     if (teamsData) {
       setCurrentTeamsTimeCacheId(teamsData.cache_id);
@@ -91,12 +106,15 @@ export function useOcrFormOpeners(
           team_persons: [],
           team_extra_lines: [],
           date: "",
-          team: effectiveDept
+          team: effectiveDept,
+          pages: [{ team_persons: [], team_extra_lines: [] }]
         },
         validation: { issues: [], confidence_score: null },
+        file_page_count: 1,
         page_count: 1
       });
     }
+    // Show modal after data is ready
     setShowTeamsTimeOcrModal(true);
   }, [loadOCRDataFromCache, selDept, setOcrTargetAtt, setCurrentTeamsTimeCacheId, setViewTeamsTimeOcrResult, setShowTeamsTimeOcrModal]);
 
