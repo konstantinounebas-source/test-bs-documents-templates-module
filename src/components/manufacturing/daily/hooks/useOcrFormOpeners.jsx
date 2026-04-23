@@ -56,9 +56,19 @@ export function useOcrFormOpeners(
   }, [loadOCRDataFromCache, selDept, setOcrTargetAtt, setOcrFormQueue, setCurrentProductionCacheId, setViewProductionOcrResult, setShowOcrModal]);
 
   const openSubAssemblyForm = useCallback(async (att) => {
-    if (!att?.id) return;
+    if (!att?.id || !att?.file_url) {
+      console.warn("Missing attachment data for Sub-Assembly form:", att);
+      return;
+    }
     const effectiveDept = att?.department || selDept || "Sub-assembly";
-    const attWithDept = { ...att, department: effectiveDept };
+    // CRITICAL: Ensure all required fields are present
+    const attWithDept = {
+      id: att.id,
+      file_url: att.file_url,
+      file_name: att.file_name,
+      department: effectiveDept,
+      ...att
+    };
     setOcrTargetAtt(attWithDept);
     
     // Initialize sequential flow queue for Sub-assembly
