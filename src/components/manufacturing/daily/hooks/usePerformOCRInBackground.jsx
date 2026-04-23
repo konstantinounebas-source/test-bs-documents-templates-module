@@ -31,14 +31,17 @@ export function usePerformOCRInBackground(
       failedStep = "analyzeFilePages";
       console.log("[OCR] analyzeFilePages start", { attachmentId: att.id, fileName: att.file_name, failedStep });
       if (!silentBulk && isMountedRef.current) addMsg("bot", `🔍 **Stage 1/5: Αναλύω αρχείο...**`);
+      let pageCountResult = 1;
       try {
-        await base44.functions.invoke("analyzeFilePages", {
+        const analyzeRes = await base44.functions.invoke("analyzeFilePages", {
           file_url: att.file_url,
         });
-        console.log("[OCR] analyzeFilePages ok", { attachmentId: att.id, elapsedMs: Date.now() - startTime });
+        pageCountResult = analyzeRes?.data?.page_count || analyzeRes?.page_count || 1;
+        console.log("[OCR] analyzeFilePages ok", { attachmentId: att.id, pageCount: pageCountResult, elapsedMs: Date.now() - startTime });
+        if (!silentBulk && isMountedRef.current) addMsg("bot", `✅ Stage 1: Αρχείο αναλύθηκε • **${pageCountResult} σελίδες**`);
       } catch (analyzeErr) {
         console.warn("[OCR] analyzeFilePages failed, continuing...", analyzeErr?.message);
-        // Continue anyway - file might still be processable
+        if (!silentBulk && isMountedRef.current) addMsg("bot", `⚠️ Stage 1: Δεν ήταν δυνατή η ανάλυση σελίδων, συνεχίζω...`);
       }
 
       await new Promise((r) => setTimeout(r, 300));
@@ -52,11 +55,15 @@ export function usePerformOCRInBackground(
           file_url: att.file_url,
         });
         detectResult = detectResultRaw?.data || detectResultRaw?.result || detectResultRaw?.output || detectResultRaw || {};
-        console.log("[OCR] detectFormType ok", { attachmentId: att.id, elapsedMs: Date.now() - startTime });
+        console.log("[OCR] detectFormType ok", { attachmentId: att.id, detectResult, elapsedMs: Date.now() - startTime });
+        const detectedTypesPerPage = Object.entries(detectResult.pages || {})
+          .map(([page, data]) => `Σ${page}: ${data?.form_type || "unknown"}`)
+          .join(", ");
+        if (!silentBulk && isMountedRef.current) addMsg("bot", `✅ Stage 2: Ανιχνεύτηκαν φόρμες • **${detectedTypesPerPage}**`);
       } catch (detectErr) {
         console.warn("[OCR] detectFormType failed:", detectErr?.message);
-        // Default to empty result - no forms detected
         detectResult = {};
+        if (!silentBulk && isMountedRef.current) addMsg("bot", `❌ Stage 2: Αποτυχία ανίχνευσης: ${detectErr?.message}`);
       }
       const detectedPages = detectResult?.pages || {};
 
@@ -101,74 +108,78 @@ export function usePerformOCRInBackground(
         }
 
         failedStep = `checkOCRCacheStatus:${formType}`;
-        if (!silentBulk && isMountedRef.current) addMsg("bot", `🔍 **Stage 3/5: Έλεγχος cache για ${formType}...**`);
-        const cacheStatus = await checkOCRCacheStatus(att.id, formType);
+          const cacheStatus = await checkOCRCacheStatus(att.id, formType);
 
-        if (cacheStatus.isProcessing) {
-          if (isMountedRef.current) addMsg("bot", `⏳ OCR για "${formType}" ήδη σε εξέλιξη.`);
-          return;
-        }
+          if (cacheStatus.isProcessing) {
+            if (!silentBulk && isMountedRef.current) addMsg("bot", `⏳ Stage 3: OCR για "${formType}" ήδη σε εξέλιξη...`);
+            return;
+          }
 
-        if (cacheStatus.canUseCache) {
-          const cached = cacheStatus.record;
-          if (!silentBulk && isMountedRef.current) addMsg("bot", `💾 Χρησιμοποιώ cached δεδομένα για "${formType}"`);
+          if (cacheStatus.canUseCache) {
+            const cached = cacheStatus.record;
+            if (!silentBulk && isMountedRef.current) addMsg("bot", `✅ Stage 3: Cache για "${formType}" βρέθηκε • **Cache ID: ${cached.id.substring(0, 8)}...**`);
+            if (isMountedRef.current) {
+              setAttachmentOcrStatus((prev) => ({
+                ...prev,
+                [att.id]: {
+                  ...prev[att.id],
+                  [formType]: { status: "completed", cache_id: cached.id },
+                },
+              }));
+            }
+            if (formType === "production") {
+              prodCacheId = cached.id;
+            } else if (formType === "teams_time") {
+              teamsCacheId = cached.id;
+            } else if (formType === "sub_assembly") {
+              subAssemblyCacheId = cached.id;
+            }
+            return;
+          }
+
+          // No usable cache — run fresh OCR
+          const dept = att.department || selDept;
+          if (!dept) {
+            if (isMountedRef.current) addMsg("bot", `❌ Stage 3: Δεν υπάρχει τμήμα για ${att.file_name}. Απαιτείται τμήμα.`);
+            return;
+          }
+
+          failedStep = `ocrWithCache:${formType}`;
+          console.log("[OCR] ocrWithCache start", { attachmentId: att.id, formType, failedStep });
+          if (!silentBulk && isMountedRef.current) addMsg("bot", `🤖 **Stage 4/5: Εκτελώ OCR για ${formType}...**`);
+          const res = await ocrWithCache({
+            attachment_id: att.id,
+            batch_header_id: att.batch_header_id || selBatch?.id,
+            department: dept,
+            form_type: formType,
+            file_name: att.file_name,
+            file_url: att.file_url,
+          });
+          console.log("[OCR] ocrWithCache ok", { attachmentId: att.id, formType, elapsedMs: Date.now() - startTime });
+          const data = res?.data || res;
+
+          if (!silentBulk && isMountedRef.current) {
+            const extractedKeys = data?.extracted_data_json ? Object.keys(data.extracted_data_json).length : 0;
+            addMsg("bot", `✅ Stage 4: OCR για "${formType}" ολοκληρώθηκε • **${extractedKeys} πεδία εξήχθησαν**`);
+          }
+
           if (isMountedRef.current) {
             setAttachmentOcrStatus((prev) => ({
               ...prev,
               [att.id]: {
                 ...prev[att.id],
-                [formType]: { status: "completed", cache_id: cached.id },
+                [formType]: { status: "completed", cache_id: data.cache_id },
               },
             }));
           }
+
           if (formType === "production") {
-            prodCacheId = cached.id;
+            prodCacheId = data.cache_id;
           } else if (formType === "teams_time") {
-            teamsCacheId = cached.id;
+            teamsCacheId = data.cache_id;
           } else if (formType === "sub_assembly") {
-            subAssemblyCacheId = cached.id;
+            subAssemblyCacheId = data.cache_id;
           }
-          return;
-        }
-
-        // No usable cache — run fresh OCR
-        const dept = att.department || selDept;
-        if (!dept) {
-          if (isMountedRef.current) addMsg("bot", `❌ Δεν υπάρχει τμήμα για ${att.file_name}. Απαιτείται τμήμα.`);
-          return;
-        }
-
-        failedStep = `ocrWithCache:${formType}`;
-        console.log("[OCR] ocrWithCache start", { attachmentId: att.id, formType, failedStep });
-        if (!silentBulk && isMountedRef.current) addMsg("bot", `🤖 **Stage 4/5: Εκτελώ OCR για ${formType}...**`);
-        const res = await ocrWithCache({
-          attachment_id: att.id,
-          batch_header_id: att.batch_header_id || selBatch?.id,
-          department: dept,
-          form_type: formType,
-          file_name: att.file_name,
-          file_url: att.file_url,
-        });
-        console.log("[OCR] ocrWithCache ok", { attachmentId: att.id, formType, elapsedMs: Date.now() - startTime });
-        const data = res?.data || res;
-
-        if (isMountedRef.current) {
-          setAttachmentOcrStatus((prev) => ({
-            ...prev,
-            [att.id]: {
-              ...prev[att.id],
-              [formType]: { status: "completed", cache_id: data.cache_id },
-            },
-          }));
-        }
-
-        if (formType === "production") {
-          prodCacheId = data.cache_id;
-        } else if (formType === "teams_time") {
-          teamsCacheId = data.cache_id;
-        } else if (formType === "sub_assembly") {
-          subAssemblyCacheId = data.cache_id;
-        }
       });
 
       await Promise.allSettled(ocrTasks);
@@ -197,8 +208,10 @@ export function usePerformOCRInBackground(
       }
 
       // Return success result (do NOT open modals during bulk OCR)
+      const completedForms = (prodCacheId ? ["production"] : []).concat(teamsCacheId ? ["teams_time"] : []).concat(subAssemblyCacheId ? ["sub_assembly"] : []);
       if (!silentBulk && isMountedRef.current) {
-        addMsg("bot", `✅ **Stage 5/5: OCR ολοκληρώθηκε!** Ανιχνεύτηκαν: ${detectedForms.join(", ")} | Αποτέλεσμα: **${(prodCacheId ? ["production"] : []).concat(teamsCacheId ? ["teams_time"] : []).concat(subAssemblyCacheId ? ["sub_assembly"] : []).join(", ")}**`);
+        const duration = Date.now() - startTime;
+        addMsg("bot", `✅ **Stage 5/5: OCR ΟΛΟΚΛΗΡΩΘΗΚΕ!**\n📋 Ανιχνεύθησαν: ${detectedForms.join(", ")}\n✔️ Αποτέλεσμα: ${completedForms.join(", ") || "χωρίς αποτέλεσμα"}\n⏱️ Διάρκεια: ${(duration/1000).toFixed(1)}s\n\n💡 Κάνε κλικ στο **"Forms"** κουμπί για να δεις και να επεξεργαστείς τα δεδομένα.`);
       }
 
       return {
@@ -211,7 +224,7 @@ export function usePerformOCRInBackground(
         teamsTimeCacheId: teamsCacheId,
         subAssemblyCacheId: subAssemblyCacheId,
         detectedForms,
-        completedForms: (prodCacheId ? ["production"] : []).concat(teamsCacheId ? ["teams_time"] : []).concat(subAssemblyCacheId ? ["sub_assembly"] : []),
+        completedForms,
         duration: Date.now() - startTime,
       };
     } catch (err) {

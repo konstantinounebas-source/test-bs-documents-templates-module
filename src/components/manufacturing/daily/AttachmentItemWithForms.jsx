@@ -23,25 +23,24 @@ export default function AttachmentItemWithForms({
   const isSubAssembly = att.file_name && (att.file_name.toLowerCase().includes("subassembly") || att.file_name.toLowerCase().includes("sub-assembly") || att.file_name.toLowerCase().includes("sub_assembly"));
   const fileType = getFileType(att.file_name);
   
-  // Determine overall OCR status
+  // Determine overall OCR status — include sub_assembly
   const prodStatus = ocrStatus.production?.status || "none";
   const teamsStatus = ocrStatus.teams_time?.status || "none";
-  const hasCompleted = prodStatus === "completed" || teamsStatus === "completed";
-  const hasFailed = prodStatus === "failed" || teamsStatus === "failed";
-  const isProcessing = prodStatus === "processing" || teamsStatus === "processing";
+  const subAssemblyStatus = ocrStatus.sub_assembly?.status || "none";
+  const hasCompleted = prodStatus === "completed" || teamsStatus === "completed" || subAssemblyStatus === "completed";
+  const hasFailed = prodStatus === "failed" || teamsStatus === "failed" || subAssemblyStatus === "failed";
+  const isProcessing = prodStatus === "processing" || teamsStatus === "processing" || subAssemblyStatus === "processing";
   
   // Build status tooltip
   let statusTooltip = "No OCR data";
   if (isProcessing) {
-    statusTooltip = "OCR Processing...";
+    statusTooltip = `OCR Processing... (prod: ${prodStatus}, teams: ${teamsStatus}, sub: ${subAssemblyStatus})`;
   } else if (hasCompleted) {
-    if (prodStatus === "completed" && teamsStatus === "completed") {
-      statusTooltip = "✓ OCR completed for both Production and Teams Time forms";
-    } else if (prodStatus === "completed") {
-      statusTooltip = "✓ Production form OCR ready (Teams Time missing)";
-    } else if (teamsStatus === "completed") {
-      statusTooltip = "✓ Teams Time form OCR ready (Production missing)";
-    }
+    const completed = [];
+    if (prodStatus === "completed") completed.push("Production");
+    if (teamsStatus === "completed") completed.push("Teams Time");
+    if (subAssemblyStatus === "completed") completed.push("Sub-Assembly");
+    statusTooltip = `✓ OCR completed for: ${completed.join(", ")}`;
   } else if (hasFailed) {
     statusTooltip = "✗ OCR extraction failed - retry recommended";
   }
