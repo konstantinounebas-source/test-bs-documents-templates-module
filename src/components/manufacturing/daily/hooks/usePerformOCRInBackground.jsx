@@ -30,6 +30,7 @@ export function usePerformOCRInBackground(
       // Step 1: Analyze file and detect form types FIRST
       failedStep = "analyzeFilePages";
       console.log("[OCR] analyzeFilePages start", { attachmentId: att.id, fileName: att.file_name, failedStep });
+      if (!silentBulk && isMountedRef.current) addMsg("bot", `🔍 **Stage 1/5: Αναλύω αρχείο...**`);
       try {
         await base44.functions.invoke("analyzeFilePages", {
           file_url: att.file_url,
@@ -44,6 +45,7 @@ export function usePerformOCRInBackground(
 
       failedStep = "detectFormType";
       console.log("[OCR] detectFormType start", { attachmentId: att.id, fileName: att.file_name, failedStep });
+      if (!silentBulk && isMountedRef.current) addMsg("bot", `🔍 **Stage 2/5: Ανιχνεύω τύπο φόρμας...**`);
       let detectResult = {};
       try {
         const detectResultRaw = await base44.functions.invoke("detectFormType", {
@@ -99,6 +101,7 @@ export function usePerformOCRInBackground(
         }
 
         failedStep = `checkOCRCacheStatus:${formType}`;
+        if (!silentBulk && isMountedRef.current) addMsg("bot", `🔍 **Stage 3/5: Έλεγχος cache για ${formType}...**`);
         const cacheStatus = await checkOCRCacheStatus(att.id, formType);
 
         if (cacheStatus.isProcessing) {
@@ -108,6 +111,7 @@ export function usePerformOCRInBackground(
 
         if (cacheStatus.canUseCache) {
           const cached = cacheStatus.record;
+          if (!silentBulk && isMountedRef.current) addMsg("bot", `💾 Χρησιμοποιώ cached δεδομένα για "${formType}"`);
           if (isMountedRef.current) {
             setAttachmentOcrStatus((prev) => ({
               ...prev,
@@ -136,6 +140,7 @@ export function usePerformOCRInBackground(
 
         failedStep = `ocrWithCache:${formType}`;
         console.log("[OCR] ocrWithCache start", { attachmentId: att.id, formType, failedStep });
+        if (!silentBulk && isMountedRef.current) addMsg("bot", `🤖 **Stage 4/5: Εκτελώ OCR για ${formType}...**`);
         const res = await ocrWithCache({
           attachment_id: att.id,
           batch_header_id: att.batch_header_id || selBatch?.id,
@@ -193,7 +198,7 @@ export function usePerformOCRInBackground(
 
       // Return success result (do NOT open modals during bulk OCR)
       if (!silentBulk && isMountedRef.current) {
-        addMsg("bot", `✅ OCR ολοκληρώθηκε! Κάνε κλικ στο "View OCR" για να δεις τα αποτελέσματα.`);
+        addMsg("bot", `✅ **Stage 5/5: OCR ολοκληρώθηκε!** Ανιχνεύτηκαν: ${detectedForms.join(", ")} | Αποτέλεσμα: **${(prodCacheId ? ["production"] : []).concat(teamsCacheId ? ["teams_time"] : []).concat(subAssemblyCacheId ? ["sub_assembly"] : []).join(", ")}**`);
       }
 
       return {
