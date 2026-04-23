@@ -33,7 +33,7 @@ export default function OCRModalsSection({
         <OCRVerificationModal
           key={`${ocrTargetAtt?.id || "none"}-${currentProductionCacheId || "manual"}`}
           open={showOcrModal}
-          onClose={() => { /* handled by parent */ }}
+          onClose={() => { }} 
           fileUrl={ocrTargetAtt.file_url}
           fileName={ocrTargetAtt.file_name}
           ocrResult={viewProductionOcrResult || {}}
@@ -50,7 +50,7 @@ export default function OCRModalsSection({
         <OCRTeamsTimeVerificationModal
           key={`${ocrTargetAtt?.id || "none"}-${currentTeamsTimeCacheId || "manual"}`}
           open={showTeamsTimeOcrModal}
-          onClose={() => { /* handled by parent */ }}
+          onClose={() => { }} 
           fileUrl={ocrTargetAtt.file_url}
           fileName={ocrTargetAtt.file_name}
           ocrResult={viewTeamsTimeOcrResult || {}}
@@ -67,7 +67,7 @@ export default function OCRModalsSection({
         <OCRSubAssemblyVerificationModal
           key={`${ocrTargetAtt?.id || "none"}-${currentSubAssemblyCacheId || "manual"}`}
           open={showSubAssemblyModal}
-          onClose={() => { /* handled by parent */ }}
+          onClose={() => { }} 
           fileUrl={ocrTargetAtt.file_url}
           fileName={ocrTargetAtt.file_name}
           ocrResult={viewSubAssemblyOcrResult || {}}

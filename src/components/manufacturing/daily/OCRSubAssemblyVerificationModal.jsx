@@ -260,12 +260,14 @@ export default function OCRSubAssemblyVerificationModal({
                         <div className="px-1 py-2 overflow-hidden">
                           <div style={{ display: 'grid', gridTemplateColumns: gridColDef, gap: '0', fontSize: '10px' }}>
                             {sectionItems.map((entry) => (
-                              <React.Fragment key={entry.id}>
+                             <React.Fragment key={entry.id}>
                                 <div className="py-1 px-2 text-left border-b border-slate-200 border-r border-slate-300 flex items-center">{entry.name}</div>
-                                {COLUMNS.map(col => (
-                                  <React.Fragment key={col}>
-                                    {SUB_COLUMNS.map((subCol, idx) => (
-                                      <div key={`${col}_${subCol}`} className={`py-0.5 px-0.5 border-b border-slate-200 ${idx === 2 ? 'border-r border-red-500' : 'border-r border-slate-200'}`}>
+                                {COLUMNS.map(col => {
+                                  const colKey = `${entry.id}-${col}`;
+                                  return (
+                                    <React.Fragment key={colKey}>
+                                      {SUB_COLUMNS.map((subCol, idx) => (
+                                        <div key={`${col}_${subCol}`} className={`py-0.5 px-0.5 border-b border-slate-200 ${idx === 2 ? 'border-r border-red-500' : 'border-r border-slate-200'}`}>
                                         <input
                                           type="number"
                                           step="0.01"
@@ -274,11 +276,12 @@ export default function OCRSubAssemblyVerificationModal({
                                           className="w-full h-4 text-[8px] text-center border border-slate-300 rounded px-0 py-0.5 focus:border-blue-400 focus:ring-1 focus:ring-blue-200"
                                         />
                                       </div>
-                                    ))}
-                                  </React.Fragment>
-                                ))}
-                              </React.Fragment>
-                            ))}
+                                      ))}
+                                      </React.Fragment>
+                                      );
+                                      })}
+                                      </React.Fragment>
+                                      ))}
                           </div>
                         </div>
                       )}
