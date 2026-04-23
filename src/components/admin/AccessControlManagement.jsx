@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { AccessProfile } from '@/entities/AccessProfile';
+import { base44 } from '@/api/base44Client';
+const AccessProfile = base44.entities.AccessProfile;
 import { Button } from '@/components/ui/button';
 import { Plus, Trash2, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
