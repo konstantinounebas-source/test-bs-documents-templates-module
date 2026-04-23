@@ -236,7 +236,8 @@ export function usePerformOCRInBackground(
           ...prev, 
           [att.id]: {
             production: { status: "failed", cache_id: null },
-            teams_time: { status: "failed", cache_id: null }
+            teams_time: { status: "failed", cache_id: null },
+            sub_assembly: { status: "failed", cache_id: null }
           } 
         };
         return newStatus;

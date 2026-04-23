@@ -79,8 +79,9 @@ Deno.serve(async (req) => {
 
     let formType = detectFormTypeFromTitle(result?.form_title);
 
-    // Fallback: if filename indicates sub-assembly and title detection failed, force it
-    if (isSubAssemblyFile && formType === "unknown") {
+    // Fallback: if filename indicates sub-assembly, force it regardless of title detection
+    // This handles cases where PDF title extraction fails or returns generic text
+    if (isSubAssemblyFile) {
       formType = "sub_assembly";
     }
 
