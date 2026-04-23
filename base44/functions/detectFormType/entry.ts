@@ -62,56 +62,84 @@ Deno.serve(async (req) => {
   const pages = Array.from({ length: pageCount }, (_, i) => i + 1);
   const detectedForms = {};
 
-  for (const pageNum of pages) {
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      model: model,
-      prompt: `Δες ΜΟΝΟ τη σελίδα ${pageNum} αυτού του PDF document.
-Ποιος είναι ο ΤΙΤΛΟΣ της φόρμας;
-Απάντησε με τον τίτλο ΑΚΡΙΒΩΣ όπως φαίνεται στη συγκεκριμένη σελίδα.`,
-      file_urls: [file_url],
-      response_json_schema: {
-        type: "object",
-        properties: {
-          form_title: { type: "string" }
+  // Batch detection - one LLM call to analyze all pages at once
+  const batchResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    model: model,
+    prompt: `Αναλύσε το ακόλουθο PDF document με ${pageCount} σελίδες.
+Για ΚΑΘΕ σελίδα, βρες:
+1. Τον ΤΙΤΛΟ της φόρμας (ακριβώς όπως φαίνεται)
+2. Τον ΤΥΠΟ: "production", "teams_time", ή "sub_assembly"
+
+Αν ο τίτλος περιέχει:
+- "ΣΥΝΟΛΙΚΕΣ ΩΡΕΣ" ή "TEAMS TIME" → teams_time
+- "SUB-ASSEMBLY" ή "SMART BUS STOP" → sub_assembly
+- "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ" ή item codes/ποσότητες → production
+
+Επίστρεψε JSON με structure: { pages: { "1": { form_type: "...", form_title: "..." }, "2": { ... } } }`,
+    file_urls: [file_url],
+    response_json_schema: {
+      type: "object",
+      properties: {
+        pages: {
+          type: "object",
+          additionalProperties: {
+            type: "object",
+            properties: {
+              form_type: { type: "string" },
+              form_title: { type: "string" }
+            }
+          }
         }
       }
-    });
-
-    let formType = detectFormTypeFromTitle(result?.form_title);
-
-    // Fallback: if filename indicates sub-assembly, force it regardless of title detection
-    // This handles cases where PDF title extraction fails or returns generic text
-    if (isSubAssemblyFile) {
-      formType = "sub_assembly";
     }
+  });
 
-    if (formType === "sub_assembly") {
-      // Sub-assembly detected - keep it
-    } else if (formType === "production" && result?.form_title === "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ") {
-      const detailCheck = await base44.asServiceRole.integrations.Core.InvokeLLM({
+  // Populate detectedForms from batch result
+  if (batchResult?.pages) {
+    for (const pageNum of pages) {
+      const pageData = batchResult.pages[String(pageNum)];
+      let formType = pageData?.form_type || "unknown";
+
+      // Validate form_type is one of the allowed values
+      if (!["production", "teams_time", "sub_assembly"].includes(formType)) {
+        formType = detectFormTypeFromTitle(pageData?.form_title || "");
+      }
+
+      // Fallback: if filename indicates sub-assembly, force it
+      if (isSubAssemblyFile && formType !== "teams_time") {
+        formType = "sub_assembly";
+      }
+
+      detectedForms[pageNum] = {
+        form_type: formType,
+        form_title: pageData?.form_title || "UNKNOWN",
+        confidence: formType !== "unknown" ? "high" : "low"
+      };
+    }
+  } else {
+    // Fallback if batch detection fails - single scan per page (slower but safer)
+    for (const pageNum of pages) {
+      const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
         model: model,
-        prompt: `Δες ΜΟΝΟ τη σελίδα ${pageNum} αυτού του PDF και βρες ΤΙ είναι το κύριο περιεχόμενο.
-    Πράγματι έχει τα παρακάτω;
-    - Πίνακα με "Ονοματεπώνυμο", "Από", "Έως", "ΣΧΟΛΙΑ" (Teams Time)?
-    - Ή πίνακα με item codes/κωδικούς, ποσότητες (Production)?
-    Απάντησε ΜΟΝΟ με: "TEAMS_TIME" ή "PRODUCTION".`,
+        prompt: `Δες τη σελίδα ${pageNum} και πες τον τίτλο της φόρμας.`,
         file_urls: [file_url],
         response_json_schema: {
           type: "object",
           properties: {
-            answer: { type: "string", enum: ["TEAMS_TIME", "PRODUCTION"] }
+            form_title: { type: "string" }
           }
         }
       });
 
-      formType = detailCheck?.answer === "TEAMS_TIME" ? "teams_time" : "production";
-    }
+      let formType = detectFormTypeFromTitle(result?.form_title);
+      if (isSubAssemblyFile) formType = "sub_assembly";
 
-    detectedForms[pageNum] = {
-      form_type: formType,
-      form_title: result?.form_title || "UNKNOWN",
-      confidence: formType !== "unknown" ? "high" : "low"
-    };
+      detectedForms[pageNum] = {
+        form_type: formType,
+        form_title: result?.form_title || "UNKNOWN",
+        confidence: formType !== "unknown" ? "high" : "low"
+      };
+    }
   }
 
   return Response.json({
