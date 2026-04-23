@@ -70,10 +70,11 @@ Deno.serve(async (req) => {
 1. Τον ΤΙΤΛΟ της φόρμας (ακριβώς όπως φαίνεται)
 2. Τον ΤΥΠΟ: "production", "teams_time", ή "sub_assembly"
 
-Αν ο τίτλος περιέχει:
-- "ΣΥΝΟΛΙΚΕΣ ΩΡΕΣ" ή "TEAMS TIME" → teams_time
-- "SUB-ASSEMBLY" ή "SMART BUS STOP" → sub_assembly
-- "ΗΜΕΡΗΣΙΑ ΠΑΡΑΓΩΓΗ" ή item codes/ποσότητες → production
+Κανόνες ανίχνευσης ΑΝΑ ΣΕΛΙΔΑ:
+- Αν ο τίτλος περιέχει "TEAMS TIME" ή "PRODUCTION TEAMS TIME" → **teams_time**
+- Αν ο τίτλος περιέχει "SUB-ASSEMBLY" ή "SMART BUS STOP" → **sub_assembly**
+- Αν περιέχει item codes, ποσότητες παραγωγής, "ΣΥΝΟΛΙΚΕΣ ΩΡΕΣ" → **production**
+- Κάνε αυτή την ανίχνευση ΑΝΕΞΑΡΤΗΤΑ από το όνομα αρχείου
 
 Επίστρεψε JSON με structure: { pages: { "1": { form_type: "...", form_title: "..." }, "2": { ... } } }`,
     file_urls: [file_url],
@@ -95,6 +96,7 @@ Deno.serve(async (req) => {
   });
 
   // Populate detectedForms from batch result
+  // CRITICAL: Per-page LLM detection is authoritative. Do NOT override based on filename.
   if (batchResult?.pages) {
     for (const pageNum of pages) {
       const pageData = batchResult.pages[String(pageNum)];
@@ -103,11 +105,6 @@ Deno.serve(async (req) => {
       // Validate form_type is one of the allowed values
       if (!["production", "teams_time", "sub_assembly"].includes(formType)) {
         formType = detectFormTypeFromTitle(pageData?.form_title || "");
-      }
-
-      // Fallback: if filename indicates sub-assembly, force it
-      if (isSubAssemblyFile && formType !== "teams_time") {
-        formType = "sub_assembly";
       }
 
       detectedForms[pageNum] = {

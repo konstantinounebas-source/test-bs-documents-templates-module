@@ -12,6 +12,7 @@ export default function DailyFormsTab({
   selDate,
   onOpenProduction,
   onOpenTeams,
+  onOpenSubAssembly,
   onPreview,
   onOCR,
   onDelete,
@@ -294,19 +295,20 @@ export default function DailyFormsTab({
                     const attWithDept = { ...att, department: att.department || selectedDept };
                     return (
                       <AttachmentItemWithForms
-                        key={att.id}
-                        att={attWithDept}
-                        onDelete={onDelete}
-                        onPreview={onPreview}
-                        onOCR={onOCR}
-                        onOpenProduction={() => onOpenProduction(attWithDept)}
-                        onOpenTeams={() => onOpenTeams(attWithDept)}
-                        isOcrLoading={runningOcrAttachmentIds.has(att.id)}
-                        isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
-                        isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
-                        ocrStatus={attachmentOcrStatus[att.id] || {}}
-                        selDept={selectedDept}
-                      />
+                         key={att.id}
+                         att={attWithDept}
+                         onDelete={onDelete}
+                         onPreview={onPreview}
+                         onOCR={onOCR}
+                         onOpenProduction={() => onOpenProduction(attWithDept)}
+                         onOpenTeams={() => onOpenTeams(attWithDept)}
+                         onOpenSubAssembly={() => onOpenSubAssembly(attWithDept)}
+                         isOcrLoading={runningOcrAttachmentIds.has(att.id)}
+                         isAnyOcrLoading={runningOcrAttachmentIds.size > 0}
+                         isDeleting={deleteMutation.isPending && deleteMutation.variables === att.id}
+                         ocrStatus={attachmentOcrStatus[att.id] || {}}
+                         selDept={selectedDept}
+                       />
                     );
                   })}
                 </div>

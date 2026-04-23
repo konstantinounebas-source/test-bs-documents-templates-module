@@ -1855,6 +1855,7 @@ CRITICAL SAFETY RULES:
                       selDate={selDate}
                       onOpenProduction={openProductionForm}
                       onOpenTeams={openTeamsTimeForm}
+                      onOpenSubAssembly={openSubAssemblyForm}
                       onPreview={setPreviewFile}
                       onOCR={handleOCR}
                       onDelete={att => deleteMutation.mutate(att)}
