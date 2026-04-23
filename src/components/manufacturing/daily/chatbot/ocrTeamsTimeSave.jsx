@@ -78,33 +78,6 @@ export async function saveOCRTeamsTimeData(confirmed, batchHeaderId, onSuccess, 
     return;
   }
 
-  // Check if data already exists
-  const existingPersons = await base44.entities.TeamTimePerson.filter({ batch_header_id: batchHeaderId });
-  const existingExtra = await base44.entities.Team_Time_Extra.filter({ batch_header_id: batchHeaderId });
-  const existingHelpIn = await base44.entities.Help_In.filter({ batch_header_id: batchHeaderId });
-  
-  if (existingPersons.length > 0 || existingExtra.length > 0 || existingHelpIn.length > 0) {
-    const shouldReplace = window.confirm(
-      `⚠️ Υπάρχουν ήδη δεδομένα Teams Time για αυτό το batch.\n\nΘέλετε να:\n- ΟΚ: Αντικαταστήστε τα παλιά δεδομένα\n- Άκυρο: Ακυρώστε την αποθήκευση`
-    );
-    
-    if (!shouldReplace) {
-      toast.info("Η αποθήκευση ακυρώθηκε.");
-      return;
-    }
-    
-    // Delete existing data
-    for (const p of existingPersons) {
-      await base44.entities.TeamTimePerson.delete(p.id);
-    }
-    for (const e of existingExtra) {
-      await base44.entities.Team_Time_Extra.delete(e.id);
-    }
-    for (const h of existingHelpIn) {
-      await base44.entities.Help_In.delete(h.id);
-    }
-  }
-
   let personsCreated = 0;
   let extraCreated = 0;
   let helpInCreated = 0;

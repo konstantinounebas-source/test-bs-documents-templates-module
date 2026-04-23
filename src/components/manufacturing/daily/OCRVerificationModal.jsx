@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, CheckCircle2, Loader2, ZoomIn, ZoomOut, RotateCw, RotateCcw, Scan, Info, Check, Maximize2, Minimize2, AlertCircle, Trash2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
 import { 
   parseFilenameDate, 
   parseOcrDate, 
@@ -113,84 +112,21 @@ export default function OCRVerificationModal({ open, onClose, fileUrl, fileName,
 
   // Rehydrate all state from ocrResult when it changes, open status changes, or fileName changes
   useEffect(() => {
-    // Check if there's already saved data in the database for this batch
-    const loadSavedDataIfExists = async () => {
-      try {
-        if (ocrResult?.batch_header_id) {
-          const savedLines = await base44.entities.Batch_Lines.filter({
-            batch_header_id: ocrResult.batch_header_id
-          });
-          
-          if (savedLines.length > 0) {
-            // Convert saved data to modal format
-            const savedData = savedLines.map(line => ({
-              item_code: line.item_code,
-              batch_number: line.batch_number || "",
-              scheduled_quantity: line.scheduled_qty,
-              initial_qc_stock_pull: line.qty_from_stock,
-              initial_qc_remake: line.qty_remake,
-              initial_qc_rusty: line.initial_qc_rusty,
-              initial_qc_scratches_dents: line.initial_qc_scratches_dents,
-              initial_qc_oils_primers_dirt: line.initial_qc_oils_primers_dirt,
-              initial_qc_other_issues: line.initial_qc_other_issues,
-              required_treatments_zink: line.required_treatments_zink,
-              required_treatments_sanding: line.required_treatments_sanding,
-              required_treatments_color_masking: line.required_treatments_color_masking,
-              required_treatments_fillers_silicone: line.required_treatments_fillers_silicone,
-              additional_treatments_total_pieces: line.additional_treatments_total_pieces,
-              additional_treatments_time_mins: line.additional_treatments_time_mins,
-              paint_preparation_hanging: line.paint_preparation_hanging,
-              paint_preparation_oven_cleaning: line.paint_preparation_oven_cleaning,
-              rework_from_dept_head: line.qty_reforward,
-              total_delivery_quantity: line.qty_processed,
-              destroyed_beyond_repair: line.qty_scrap
-            }));
-            
-            setAllPagesData([savedData]);
-            setLines(savedData);
-            return; // Don't load OCR data
+    // Rehydrate allPagesData from ocrResult
+    const pages = ocrResult?.extracted_data?.pages || [ocrResult?.extracted_data || {}];
+    const newAllPagesData = pages.map(pageData => {
+      const rawLines = pageData?.production_lines || [];
+      return rawLines.map(line => {
+        const updated = { ...line };
+        numericKeys.forEach(key => {
+          if (updated[key] === true) {
+            updated[key] = updated.total_delivery_quantity || null;
           }
-        }
-      } catch (error) {
-        console.warn("Could not load saved data, will use OCR:", error);
-      }
-      
-      // Rehydrate allPagesData from ocrResult
-      const pages = ocrResult?.extracted_data?.pages || [ocrResult?.extracted_data || {}];
-      const newAllPagesData = pages.map(pageData => {
-        const rawLines = pageData?.production_lines || [];
-        return rawLines.map(line => {
-          const updated = { ...line };
-          numericKeys.forEach(key => {
-            if (updated[key] === true) {
-              updated[key] = updated.total_delivery_quantity || null;
-            }
-          });
-          return updated;
         });
+        return updated;
       });
-      setAllPagesData(newAllPagesData);
-    };
-    
-    if (open) {
-      loadSavedDataIfExists();
-    } else {
-      // Fallback if not opened (shouldn't happen)
-      const pages = ocrResult?.extracted_data?.pages || [ocrResult?.extracted_data || {}];
-      const newAllPagesData = pages.map(pageData => {
-        const rawLines = pageData?.production_lines || [];
-        return rawLines.map(line => {
-          const updated = { ...line };
-          numericKeys.forEach(key => {
-            if (updated[key] === true) {
-              updated[key] = updated.total_delivery_quantity || null;
-            }
-          });
-          return updated;
-        });
-      });
-      setAllPagesData(newAllPagesData);
-    }
+    });
+    setAllPagesData(newAllPagesData);
     
     // Reset page to 0
     setCurrentPage(0);

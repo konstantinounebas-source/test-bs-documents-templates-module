@@ -41,38 +41,6 @@ export async function saveOCRData(confirmed, batchHeaderId, onSuccess) {
     return;
   }
 
-  // Check if data already exists for this batch
-  const existingBatchLines = await base44.entities.Batch_Lines.filter({ batch_header_id: batchHeaderId });
-  
-  if (existingBatchLines.length > 0) {
-    // Ask user if they want to replace existing data
-    const shouldReplace = window.confirm(
-      `⚠️ Υπάρχουν ήδη ${existingBatchLines.length} γραμμές δεδομένων για αυτό το batch.\n\nΘέλετε να:\n- ΟΚ: Αντικαταστήστε τα παλιά δεδομένα\n- Άκυρο: Ακυρώστε την αποθήκευση`
-    );
-    
-    if (!shouldReplace) {
-      toast.info("Η αποθήκευση ακυρώθηκε.");
-      return;
-    }
-    
-    // Delete existing data before saving new
-    const existingIds = existingBatchLines.map(bl => bl.id);
-    for (const id of existingIds) {
-      await base44.entities.Batch_Lines.delete(id);
-    }
-    
-    // Also delete related QC and Operations records
-    const existingQC = await base44.entities.QC_Initial_Stock.filter({ batch_header_id: batchHeaderId });
-    for (const qc of existingQC) {
-      await base44.entities.QC_Initial_Stock.delete(qc.id);
-    }
-    
-    const existingOps = await base44.entities.Operations.filter({ batch_header_id: batchHeaderId });
-    for (const op of existingOps) {
-      await base44.entities.Operations.delete(op.id);
-    }
-  }
-
   // Fetch batch header to get bundle_id
   const batchHeaders = await base44.entities.BatchHeader.filter({ id: batchHeaderId });
   const batchHeader = batchHeaders?.[0];
