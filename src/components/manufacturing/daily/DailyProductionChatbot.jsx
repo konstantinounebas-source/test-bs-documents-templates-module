@@ -538,7 +538,8 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
       ...prev,
       [att.id]: prev[att.id] || {
         production: { status: "none", cache_id: null },
-        teams_time: { status: "none", cache_id: null }
+        teams_time: { status: "none", cache_id: null },
+        sub_assembly: { status: "none", cache_id: null }
       }
     }));
 
@@ -1863,16 +1864,18 @@ CRITICAL SAFETY RULES:
                       onRehydrateOcrStatus={async (atts) => {
                         for (const att of atts) {
                           if (!isMountedRef.current) return;
-                          const [p, t] = await Promise.all([
+                          const [p, t, s] = await Promise.all([
                             checkOCRCacheStatus(att.id, "production"),
-                            checkOCRCacheStatus(att.id, "teams_time")
+                            checkOCRCacheStatus(att.id, "teams_time"),
+                            checkOCRCacheStatus(att.id, "sub_assembly")
                           ]);
                           if (!isMountedRef.current) return;
                           setAttachmentOcrStatus(prev => ({
                             ...prev,
                             [att.id]: {
                               production: { status: p.canUseCache ? "completed" : (p.isProcessing ? "processing" : "none"), cache_id: p.record?.id || null },
-                              teams_time: { status: t.canUseCache ? "completed" : (t.isProcessing ? "processing" : "none"), cache_id: t.record?.id || null }
+                              teams_time: { status: t.canUseCache ? "completed" : (t.isProcessing ? "processing" : "none"), cache_id: t.record?.id || null },
+                              sub_assembly: { status: s.canUseCache ? "completed" : (s.isProcessing ? "processing" : "none"), cache_id: s.record?.id || null }
                             }
                           }));
                         }
