@@ -58,34 +58,42 @@ Deno.serve(async (req) => {
       required: ["date", "department", "entries"]
     };
 
-    const prompt = `You are extracting data from a "Sub-Assembly Smart Bus Stop / Shelter V.4" form.
+    const prompt = `You are extracting data from a "Sub-Assembly Smart Bus Stop / Shelter V.4 / V.5 / V.6" form.
 
-The form has the following structure:
-- Date field at the top (format DD/MM/YY)
-- Department field
-- A table with sub-assemblies organized in sections: LIGHTBOXES, GLASS (ΤΟΜΙΑ), PAINTING (Παιντάκι), LIGHTGUIDES, STATION (Κοσμήτια στάσης), WORK (Εργασίες στη στάση)
-- Each section has multiple items (rows)
-- For each item, there are 3 main columns: A, B, C
-- Under each column, there are 3 sub-columns: "Ημερ." (Remainder), "Σχεδ." (Planned), "Πρ." (Actual)
-- Each cell contains a number or is empty
+FORM STRUCTURE:
+The form has sections like: LIGHTBOXES (Φώτα), GLASS (ΤΟΜΙΑ), PAINTING (Παιντάκι), LIGHTGUIDES (Φωτοδηγοί), STATION (Κοσμήτια στάσης), WORK (Εργασίες στη στάση)
 
-Extract all the data from this form:
-1. Extract the date
-2. Extract the department/team name
-3. For each item in each section, extract:
-   - The item name
-   - The section it belongs to
-   - All 9 values (A_Remainder, A_Planned, A_Actual, B_Remainder, B_Planned, B_Actual, C_Remainder, C_Planned, C_Actual)
+Each section contains rows of items. For each item, the values are organized in 3 main columns (A, B, C).
+Each column has 3 sub-values:
+- First sub-column: "Ημερ." (Remainder/Balance)
+- Second sub-column: "Σχεδ." (Planned/Design) 
+- Third sub-column: "Πρ." (Actual/Production)
 
-Important notes:
-- Convert all Greek headers to English column names as specified above
-- If a cell is empty or unreadable, use null
-- Parse any numeric values as numbers (not strings)
-- Be careful with hand-written entries - extract the value even if it's hard to read
-- Do not include section headers or empty rows
-- Handle symbols like "/" or "V" as symbols, not as values
+EXTRACTION RULES:
+1. Extract the date (top of form, format DD/MM/YY)
+2. Extract the department/employee name
+3. For EVERY item in EVERY section:
+   - Item name (first column, leftmost)
+   - Section name (e.g., "LIGHTBOXES", "GLASS", etc.)
+   - A_Remainder: value in column A, sub-column 1
+   - A_Planned: value in column A, sub-column 2
+   - A_Actual: value in column A, sub-column 3
+   - B_Remainder: value in column B, sub-column 1
+   - B_Planned: value in column B, sub-column 2
+   - B_Actual: value in column B, sub-column 3
+   - C_Remainder: value in column C, sub-column 1
+   - C_Planned: value in column C, sub-column 2
+   - C_Actual: value in column C, sub-column 3
 
-Return the extracted data in the specified JSON format.`;
+IMPORTANT NOTES:
+- Include items even if most cells are empty (null is valid)
+- Extract hand-written values carefully, even if hard to read
+- Skip completely empty rows
+- Convert all values to numbers where possible, use null for empty/unreadable cells
+- Do NOT include section header rows (e.g., row with just "LIGHTBOXES" label)
+- Preserve the original item names in Greek
+
+Return the data in the specified JSON format.`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: prompt,
