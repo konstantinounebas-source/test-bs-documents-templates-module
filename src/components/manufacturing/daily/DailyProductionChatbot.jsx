@@ -536,10 +536,10 @@ export default function DailyProductionChatbot({ departments = [], isSplitLayout
     // Initialize OCR status for this attachment with full default shape
     setAttachmentOcrStatus(prev => ({
       ...prev,
-      [att.id]: {
-        production: { status: "processing", cache_id: null },
-        teams_time: { status: "processing", cache_id: null },
-        sub_assembly: { status: "processing", cache_id: null }
+      [att.id]: prev[att.id] || {
+        production: { status: "none", cache_id: null },
+        teams_time: { status: "none", cache_id: null },
+        sub_assembly: { status: "none", cache_id: null }
       }
     }));
 
