@@ -45,7 +45,7 @@ export function usePerformOCRInBackground(
 
       failedStep = "detectFormType";
       console.log("[OCR] detectFormType start", { attachmentId: att.id, fileName: att.file_name, failedStep });
-      if (!silentBulk && isMountedRef.current) addMsg("bot", `🔍 **Stage 2/5: Ανιχνεύω τύπο φόρμας...**`);
+      if (!silentBulk && isMountedRef.current) addMsg("bot", `🔍 **Stage 2/5: Ανιχνεύω τύπο φόρμας ανά σελίδα...**`);
       let detectResult = {};
       try {
         const detectResultRaw = await base44.functions.invoke("detectFormType", {
@@ -53,6 +53,44 @@ export function usePerformOCRInBackground(
         });
         detectResult = detectResultRaw?.data || detectResultRaw?.result || detectResultRaw?.output || detectResultRaw || {};
         console.log("[OCR] detectFormType ok", { attachmentId: att.id, elapsedMs: Date.now() - startTime });
+        
+        // Show detailed page-by-page analysis
+        if (!silentBulk && isMountedRef.current && detectResult?.pages) {
+          const pageCount = detectResult?.page_count || 1;
+          let analysisText = `📊 Ανάλυση ${pageCount} σελίδων:\n`;
+          
+          // Group consecutive pages with same form type
+          const pages = detectResult.pages;
+          const pageNums = Object.keys(pages).map(Number).sort((a, b) => a - b);
+          let currentType = null;
+          let rangeStart = null;
+          
+          pageNums.forEach((pageNum, idx) => {
+            const pageType = pages[pageNum]?.form_type;
+            
+            if (pageType !== currentType) {
+              if (currentType !== null && rangeStart !== null) {
+                // Finish previous range
+                const rangeEnd = pageNums[idx - 1];
+                const rangeText = rangeStart === rangeEnd ? `${rangeStart}` : `${rangeStart}-${rangeEnd}`;
+                const typeEmoji = currentType === "production" ? "📦" : currentType === "teams_time" ? "👥" : "⚙️";
+                analysisText += `${typeEmoji} σελ. ${rangeText} → ${currentType}\n`;
+              }
+              currentType = pageType;
+              rangeStart = pageNum;
+            }
+            
+            // Handle last page
+            if (idx === pageNums.length - 1 && currentType !== null) {
+              const rangeEnd = pageNum;
+              const rangeText = rangeStart === rangeEnd ? `${rangeStart}` : `${rangeStart}-${rangeEnd}`;
+              const typeEmoji = currentType === "production" ? "📦" : currentType === "teams_time" ? "👥" : "⚙️";
+              analysisText += `${typeEmoji} σελ. ${rangeText} → ${currentType}\n`;
+            }
+          });
+          
+          addMsg("bot", analysisText);
+        }
       } catch (detectErr) {
         console.warn("[OCR] detectFormType failed:", detectErr?.message);
         // Default to empty result - no forms detected
