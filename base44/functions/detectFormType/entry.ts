@@ -10,6 +10,10 @@ Deno.serve(async (req) => {
 
   const isPDF = file_url.toLowerCase().includes('.pdf');
   const model = isPDF ? "gemini_3_flash" : "gpt_5_mini";
+  
+  // Extract filename for fallback detection
+  const filename = file_url.split('/').pop() || '';
+  const isSubAssemblyFile = filename.toLowerCase().includes('subassembly') || filename.toLowerCase().includes('sub_assembly') || filename.toLowerCase().includes('sub-assembly');
 
   const normalizeTitle = (title) => {
     if (!title) return "";
@@ -74,6 +78,11 @@ Deno.serve(async (req) => {
     });
 
     let formType = detectFormTypeFromTitle(result?.form_title);
+
+    // Fallback: if filename indicates sub-assembly and title detection failed, force it
+    if (isSubAssemblyFile && formType === "unknown") {
+      formType = "sub_assembly";
+    }
 
     if (formType === "sub_assembly") {
       // Sub-assembly detected - keep it
