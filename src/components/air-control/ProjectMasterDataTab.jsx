@@ -446,9 +446,9 @@ export default function ProjectMasterDataTab() {
                 </div>
             </div>
 
-            {/* 4. Tender JV Budget Profit */}
+            {/* 4. Project JV Budget Profit */}
             <div className="bg-white rounded-lg border border-slate-200 p-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">Tender JV Budget Profit</h2>
+                <h2 className="text-lg font-semibold text-slate-800 mb-4">Project JV Budget Profit</h2>
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-sm">
                         <thead>
