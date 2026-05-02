@@ -531,7 +531,7 @@ export default function ProjectMasterDataTab() {
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Expected Project Profit</TD>
-                                <CalcCell value={projectIncomeTotal + fabricationIncomeTotal + parseNum(fabricationBudget.profit) - projectCostTotal - fabricationCostTotal - parseNum(fabricationBudget.profit_cost)} className="font-bold" />
+                                <CalcCell value={(projectIncomeTotal + fabricationIncomeTotal + parseNum(fabricationBudget.profit)) - (projectCostTotal + fabricationCostTotal + parseNum(fabricationBudget.profit_cost)) + projectTotalProfit.ac_share} className="font-bold" />
                             </tr>
                         </tbody>
                     </table>
