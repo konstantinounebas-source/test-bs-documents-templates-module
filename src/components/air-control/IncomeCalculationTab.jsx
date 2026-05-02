@@ -771,7 +771,7 @@ export default function IncomeCalculationTab() {
                         <h3 className="text-sm font-bold text-slate-700 mb-2">Other Works Not Claimed</h3>
                         <table className="w-full border-collapse text-sm">
                             <thead>
-                                <tr><TH className="text-left">Category</TH><TH>Value</TH><TH></TH></tr>
+                                <tr><TH className="text-left">Description</TH><TH>Amount</TH><TH></TH></tr>
                             </thead>
                             <tbody>
                                 {otherRows.map((row, idx) => (
@@ -802,12 +802,12 @@ export default function IncomeCalculationTab() {
                         <h3 className="text-sm font-bold text-slate-700 mb-2">Retention</h3>
                         <table className="w-full border-collapse text-sm">
                             <thead>
-                                    <tr><TH className="text-left">Category</TH><TH>Value</TH></tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <TD>Total Certified Works 60% AirControl</TD>
-                                        <CalcCell value={totalCertWorksAC60} />
+                                <tr><TH className="text-left">Description</TH><TH>Value</TH></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <TD>Total Certified Works 60% AirControl</TD>
+                                    <CalcCell value={totalCertWorksAC60} />
                                 </tr>
                                 <tr>
                                     <TD>Total Retention {(retentionPct * 100).toFixed(0)}%
