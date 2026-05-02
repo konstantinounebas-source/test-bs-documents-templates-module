@@ -45,9 +45,9 @@ const CalcCell = ({ value, className = '' }) => (
         {fmt(value)}
     </td>
 );
-const InputCell = ({ value, onChange, className = '' }) => (
+const InputCell = ({ value, onChange, className = '', type = 'number', align = 'right' }) => (
     <td className={`border border-slate-300 p-0 ${className}`}>
-        <CellInput value={value} onChange={onChange} />
+        <CellInput value={value} onChange={onChange} type={type} align={align} />
     </td>
 );
 
@@ -484,6 +484,7 @@ export default function IncomeCalculationTab() {
                                         <th colSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 text-center">Total</th>
                                         <th colSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 text-center">AirControl</th>
                                         <th colSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 text-center">Amco</th>
+                                        <th rowSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 align-middle"></th>
                                     </tr>
                                     <tr>
                                         <TH>100%</TH><TH>60%</TH>
@@ -494,21 +495,25 @@ export default function IncomeCalculationTab() {
                                 <tbody>
                                     {certPayments.map((p, idx) => (
                                         <tr key={idx}>
-                                            <InputCell value={certified.payments[idx].description} onChange={v => updateCertifiedPayment(idx, 'description', v)} className="min-w-[120px]" />
-                                            <InputCell value={certified.payments[idx].batch} onChange={v => updateCertifiedPayment(idx, 'batch', v)} />
+                                            <InputCell value={certified.payments[idx].description} onChange={v => updateCertifiedPayment(idx, 'description', v)} className="min-w-[120px]" type="text" align="left" />
+                                            <InputCell value={certified.payments[idx].batch} onChange={v => updateCertifiedPayment(idx, 'batch', v)} type="text" align="left" />
                                             <InputCell value={certified.payments[idx].total100} onChange={v => updateCertifiedPayment(idx, 'total100', v)} />
                                             <InputCell value={certified.payments[idx].total60} onChange={v => updateCertifiedPayment(idx, 'total60', v)} />
                                             <InputCell value={certified.payments[idx].ac100} onChange={v => updateCertifiedPayment(idx, 'ac100', v)} />
                                             <InputCell value={certified.payments[idx].ac60} onChange={v => updateCertifiedPayment(idx, 'ac60', v)} />
                                             <InputCell value={certified.payments[idx].amco100} onChange={v => updateCertifiedPayment(idx, 'amco100', v)} />
                                             <InputCell value={certified.payments[idx].amco60} onChange={v => updateCertifiedPayment(idx, 'amco60', v)} />
+                                            <td className="border border-slate-300 px-1 py-1 text-center">
+                                                <button onClick={() => removeCertifiedPayment(idx)} className="text-red-400 hover:text-red-600 text-xs font-bold">×</button>
+                                            </td>
                                         </tr>
                                     ))}
                                     <tr>
-                                        <td colSpan={8} className="border border-slate-300 px-2 py-1">
+                                        <td colSpan={9} className="border border-slate-300 px-2 py-1">
                                             <button onClick={addCertifiedPayment} className="text-xs text-blue-600 hover:underline">+ Add payment</button>
                                         </td>
                                     </tr>
+                                    {/* Total Certified Works — sums all 6 numeric columns */}
                                     <tr className="bg-slate-50 font-bold">
                                         <TD bold colSpan={2}>Total Certified Works</TD>
                                         <CalcCell value={totalCertTotal100} />
@@ -517,19 +522,27 @@ export default function IncomeCalculationTab() {
                                         <CalcCell value={grandTotalAC60} />
                                         <CalcCell value={grandTotalAmco100} />
                                         <CalcCell value={grandTotalAmco60} />
+                                        <TD></TD>
                                     </tr>
+                                    {/* Grand Total JV = Total 100% + Total 60% */}
+                                    <tr className="bg-slate-100 font-bold">
+                                        <TD bold colSpan={2}>Grand Total JV</TD>
+                                        <CalcCell value={totalCertTotal100 + totalCertTotal60} className="font-bold" />
+                                        <TD colSpan={6}></TD>
+                                    </tr>
+                                    {/* Grand Total AirControl = AC100 + AC60 */}
                                     <tr className="bg-slate-100 font-bold">
                                         <TD bold colSpan={2}>Grand Total AirControl</TD>
-                                        <CalcCell value={totalCertifiedWorks} />
+                                        <TD colSpan={2}></TD>
                                         <CalcCell value={grandTotalAC} className="font-bold" />
                                         <TD colSpan={4}></TD>
                                     </tr>
+                                    {/* Grand Total Amco = Amco100 + Amco60 */}
                                     <tr className="bg-slate-100 font-bold">
                                         <TD bold colSpan={2}>Grand Total Amco</TD>
-                                        <CalcCell value={totalCertifiedWorks} />
-                                        <TD colSpan={3}></TD>
+                                        <TD colSpan={4}></TD>
                                         <CalcCell value={grandTotalAmco} className="font-bold" />
-                                        <TD></TD>
+                                        <TD colSpan={2}></TD>
                                     </tr>
                                 </tbody>
                             </table>
