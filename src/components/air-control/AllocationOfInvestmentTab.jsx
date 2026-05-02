@@ -56,7 +56,7 @@ export default function AllocationOfInvestmentTab() {
 
     useEffect(() => {
         loadProjectData();
-    }, []);
+    }, [investment.expected_income]);
 
     const loadProjectData = async () => {
         try {
@@ -64,14 +64,21 @@ export default function AllocationOfInvestmentTab() {
             const incomeMap = {};
             incomeRecords.forEach(r => { incomeMap[r.section] = r; });
 
-            // Get Total Value of Work Performed directly from the summary section
-            let totalValueOfWorkPerformed = incomeMap.summary?.data?.total_value_of_work_performed 
-                || investment.total_value_work;
+            // Get Total Value of Work Performed and Expected Income from summary
+            let totalValueOfWorkPerformed = investment.total_value_work;
+            let expectedIncome = investment.expected_income;
+
+            if (incomeMap.summary?.data) {
+                totalValueOfWorkPerformed = incomeMap.summary.data.total_value_of_work_performed 
+                    || investment.total_value_work;
+                expectedIncome = incomeMap.summary.data.expected_total_project_income 
+                    || investment.expected_income;
+            }
 
             setInvestment(prev => ({
                 ...prev,
                 total_value_work: totalValueOfWorkPerformed,
-                expected_income: prev.expected_income
+                expected_income: expectedIncome
             }));
         } catch (error) {
             console.error('Failed to load project data:', error);
