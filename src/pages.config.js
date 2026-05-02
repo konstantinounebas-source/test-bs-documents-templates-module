@@ -48,7 +48,6 @@
  * The mainPage value must match a key in the PAGES object exactly.
  */
 import AirControlCalculations from './pages/AirControlCalculations';
-import ProjectMasterData from './pages/ProjectMasterData';
 import AccessControl from './pages/AccessControl';
 import AccessDenied from './pages/AccessDenied';
 import Approvals from './pages/Approvals';
@@ -132,7 +131,6 @@ import __Layout from './Layout.jsx';
 
 export const PAGES = {
     "AirControlCalculations": AirControlCalculations,
-    "ProjectMasterData": ProjectMasterData,
     "AccessControl": AccessControl,
     "AccessDenied": AccessDenied,
     "Approvals": Approvals,
