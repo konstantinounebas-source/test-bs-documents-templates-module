@@ -30,8 +30,8 @@ const DEFAULT_REMOVAL = { unit_rate: 276, approved_qty: 0 };
 const DEFAULT_OTHER_NOT_CLAIMED = { months: 0, monthly_fee: 0, samples: 0, claim_inspections: 0 };
 
 // ─── Table helpers ────────────────────────────────────────────────────────────
-const TD = ({ children, className = '', bold = false, bg = '' }) => (
-    <td className={`border border-slate-300 px-2 py-1 text-xs ${bold ? 'font-bold' : ''} ${bg} ${className}`}>
+const TD = ({ children, className = '', bold = false, bg = '', colSpan }) => (
+    <td colSpan={colSpan} className={`border border-slate-300 px-2 py-1 text-xs ${bold ? 'font-bold' : ''} ${bg} ${className}`}>
         {children}
     </td>
 );
@@ -524,14 +524,14 @@ export default function IncomeCalculationTab() {
                                         <CalcCell value={grandTotalAmco60} />
                                         <TD></TD>
                                     </tr>
-                                    {/* Grand Total JV = Total 100% + Total 60% — value in col 3 (Total 100%) spanning 2 */}
+                                    {/* Grand Total JV: cols 1-2=label, cols 3-4=value, cols 5-8=empty, col 9=empty */}
                                     <tr className="bg-slate-100 font-bold">
                                         <TD bold colSpan={2}>Grand Total JV</TD>
                                         <CalcCell value={totalCertTotal100 + totalCertTotal60} className="font-bold" colSpan={2} />
                                         <TD colSpan={4}></TD>
                                         <TD></TD>
                                     </tr>
-                                    {/* Grand Total AirControl = AC100 + AC60 — value in col 5 (AC 100%) spanning 2 */}
+                                    {/* Grand Total AirControl: cols 1-2=label, cols 3-4=empty, cols 5-6=value, cols 7-8=empty, col 9=empty */}
                                     <tr className="bg-slate-100 font-bold">
                                         <TD bold colSpan={2}>Grand Total AirControl</TD>
                                         <TD colSpan={2}></TD>
@@ -539,7 +539,7 @@ export default function IncomeCalculationTab() {
                                         <TD colSpan={2}></TD>
                                         <TD></TD>
                                     </tr>
-                                    {/* Grand Total Amco = Amco100 + Amco60 — value in col 7 (Amco 100%) spanning 2 */}
+                                    {/* Grand Total Amco: cols 1-2=label, cols 3-6=empty, cols 7-8=value, col 9=empty */}
                                     <tr className="bg-slate-100 font-bold">
                                         <TD bold colSpan={2}>Grand Total Amco</TD>
                                         <TD colSpan={4}></TD>
