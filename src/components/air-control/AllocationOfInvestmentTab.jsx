@@ -91,7 +91,8 @@ export default function AllocationOfInvestmentTab() {
                 
                 setInvestment(prev => ({
                     ...prev,
-                    expected_income: totalIncome || prev.expected_income
+                    expected_income: totalIncome || prev.expected_income,
+                    total_value_work: totalIncome || prev.total_value_work
                 }));
             }
         } catch (error) {
