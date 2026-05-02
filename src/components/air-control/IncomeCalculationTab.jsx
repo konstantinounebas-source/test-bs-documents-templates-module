@@ -40,8 +40,8 @@ const TH = ({ children, className = '' }) => (
         {children}
     </th>
 );
-const CalcCell = ({ value, className = '' }) => (
-    <td className={`border border-slate-300 px-2 py-1 text-xs text-right font-semibold text-slate-800 bg-white ${className}`}>
+const CalcCell = ({ value, className = '', colSpan }) => (
+    <td colSpan={colSpan} className={`border border-slate-300 px-2 py-1 text-xs text-right font-semibold text-slate-800 bg-white ${className}`}>
         {fmt(value)}
     </td>
 );
@@ -527,22 +527,22 @@ export default function IncomeCalculationTab() {
                                     {/* Grand Total JV = Total 100% + Total 60% */}
                                     <tr className="bg-slate-100 font-bold">
                                         <TD bold colSpan={2}>Grand Total JV</TD>
-                                        <CalcCell value={totalCertTotal100 + totalCertTotal60} className="font-bold" />
-                                        <TD colSpan={6}></TD>
+                                        <CalcCell value={totalCertTotal100 + totalCertTotal60} className="font-bold" colSpan={2} />
+                                        <TD colSpan={5}></TD>
                                     </tr>
                                     {/* Grand Total AirControl = AC100 + AC60 */}
                                     <tr className="bg-slate-100 font-bold">
                                         <TD bold colSpan={2}>Grand Total AirControl</TD>
                                         <TD colSpan={2}></TD>
-                                        <CalcCell value={grandTotalAC} className="font-bold" />
-                                        <TD colSpan={4}></TD>
+                                        <CalcCell value={grandTotalAC} className="font-bold" colSpan={2} />
+                                        <TD colSpan={3}></TD>
                                     </tr>
                                     {/* Grand Total Amco = Amco100 + Amco60 */}
                                     <tr className="bg-slate-100 font-bold">
                                         <TD bold colSpan={2}>Grand Total Amco</TD>
                                         <TD colSpan={4}></TD>
-                                        <CalcCell value={grandTotalAmco} className="font-bold" />
-                                        <TD colSpan={2}></TD>
+                                        <CalcCell value={grandTotalAmco} className="font-bold" colSpan={2} />
+                                        <TD colSpan={1}></TD>
                                     </tr>
                                 </tbody>
                             </table>
