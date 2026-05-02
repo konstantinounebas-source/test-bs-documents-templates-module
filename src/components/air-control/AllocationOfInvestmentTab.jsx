@@ -61,11 +61,17 @@ export default function AllocationOfInvestmentTab() {
     const loadProjectData = async () => {
         try {
             const records = await base44.entities.ProjectMasterData.list();
-            if (records.length > 0 && records[0].project_total_profit) {
-                const projectData = records[0].project_total_profit;
+            if (records.length > 0) {
+                const record = records[0];
+                // Use Total Project Income = Total Project Income (Contract Budget + Fabrication Income)
+                const totalIncome = record.project_total_profit?.income || record.project_budget_correction && record.fabrication_budget ? 
+                    (Object.values(record.project_budget_correction).reduce((sum, v) => sum + (parseNum(v) || 0), 0) / 2 +
+                     Object.values(record.fabrication_budget).reduce((sum, v) => sum + (parseNum(v) || 0), 0) / 2) : 
+                    20294790.48;
+                
                 setInvestment(prev => ({
                     ...prev,
-                    expected_income: projectData.income || prev.expected_income
+                    expected_income: totalIncome
                 }));
             }
         } catch (error) {

@@ -119,10 +119,10 @@ export default function ProjectMasterDataTab() {
     });
 
     const [projectTotalProfit, setProjectTotalProfit] = useState({
-        income: 20294790.46,
-        cost: 16842007.55,
-        ac_share: 1769133.57,
-        expected: 5421916.50,
+        income: 0,
+        cost: 0,
+        ac_share: 0,
+        expected: 0,
     });
 
     const [saving, setSaving] = useState(false);
@@ -197,7 +197,9 @@ export default function ProjectMasterDataTab() {
     const tenderExpectedProfit = tenderTotalProfitAmount + tenderACShare75;
 
     // Total Project Expected Profit calculations
-    const projectTotalProfitAmount = projectIncomeTotal - projectCostTotal;
+    const projectTotalIncomeWithFab = projectIncomeTotal + fabricationIncomeTotal + parseNum(fabricationBudget.profit);
+    const projectTotalCostWithFab = projectCostTotal + fabricationCostTotal + parseNum(fabricationBudget.profit_cost);
+    const projectTotalProfitAmount = projectTotalIncomeWithFab - projectTotalCostWithFab;
     const projectACShare75 = projectTotalProfitAmount * 0.75;
     const projectExpectedProfitAmount = projectTotalProfitAmount;
 
@@ -519,19 +521,19 @@ export default function ProjectMasterDataTab() {
                         <tbody>
                             <tr>
                                 <TD>Total Project Income</TD>
-                                <CalcCell value={projectIncomeTotal + fabricationIncomeTotal + parseNum(fabricationBudget.profit)} />
+                                <CalcCell value={projectTotalIncomeWithFab} />
                             </tr>
                             <tr>
                                 <TD>Total Project Cost</TD>
-                                <CalcCell value={projectCostTotal + fabricationCostTotal + parseNum(fabricationBudget.profit_cost)} />
+                                <CalcCell value={projectTotalCostWithFab} />
                             </tr>
                             <tr>
                                 <TD>JV-Aircontrol Share Tender 75%</TD>
-                                <CalcCell value={projectTotalProfit.ac_share} />
+                                <CalcCell value={projectACShare75} />
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Expected Project Profit</TD>
-                                <CalcCell value={(projectIncomeTotal + fabricationIncomeTotal + parseNum(fabricationBudget.profit)) - (projectCostTotal + fabricationCostTotal + parseNum(fabricationBudget.profit_cost)) + projectTotalProfit.ac_share} className="font-bold" />
+                                <CalcCell value={projectTotalProfitAmount + projectACShare75} className="font-bold" />
                             </tr>
                         </tbody>
                     </table>
