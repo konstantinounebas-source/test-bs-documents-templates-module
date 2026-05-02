@@ -524,25 +524,27 @@ export default function IncomeCalculationTab() {
                                         <CalcCell value={grandTotalAmco60} />
                                         <TD></TD>
                                     </tr>
-                                    {/* Grand Total JV = Total 100% + Total 60% */}
+                                    {/* Grand Total JV = Total 100% + Total 60% — value in col 3 (Total 100%) spanning 2 */}
                                     <tr className="bg-slate-100 font-bold">
                                         <TD bold colSpan={2}>Grand Total JV</TD>
                                         <CalcCell value={totalCertTotal100 + totalCertTotal60} className="font-bold" colSpan={2} />
-                                        <TD colSpan={5}></TD>
+                                        <TD colSpan={4}></TD>
+                                        <TD></TD>
                                     </tr>
-                                    {/* Grand Total AirControl = AC100 + AC60 */}
+                                    {/* Grand Total AirControl = AC100 + AC60 — value in col 5 (AC 100%) spanning 2 */}
                                     <tr className="bg-slate-100 font-bold">
                                         <TD bold colSpan={2}>Grand Total AirControl</TD>
                                         <TD colSpan={2}></TD>
                                         <CalcCell value={grandTotalAC} className="font-bold" colSpan={2} />
-                                        <TD colSpan={3}></TD>
+                                        <TD colSpan={2}></TD>
+                                        <TD></TD>
                                     </tr>
-                                    {/* Grand Total Amco = Amco100 + Amco60 */}
+                                    {/* Grand Total Amco = Amco100 + Amco60 — value in col 7 (Amco 100%) spanning 2 */}
                                     <tr className="bg-slate-100 font-bold">
                                         <TD bold colSpan={2}>Grand Total Amco</TD>
                                         <TD colSpan={4}></TD>
                                         <CalcCell value={grandTotalAmco} className="font-bold" colSpan={2} />
-                                        <TD colSpan={1}></TD>
+                                        <TD></TD>
                                     </tr>
                                 </tbody>
                             </table>
