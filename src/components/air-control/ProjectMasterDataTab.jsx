@@ -505,39 +505,6 @@ export default function ProjectMasterDataTab() {
                 </div>
             </div>
 
-            {/* 5. Total Project Expected Profit */}
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">Total Project Expected Profit</h2>
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
-                        <thead>
-                            <tr>
-                                <TH className="text-left">Description</TH>
-                                <TH>Value</TH>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <TD>Total Project Income</TD>
-                                <CalcCell value={projectIncomeTotal} />
-                            </tr>
-                            <tr>
-                                <TD>Total Project Cost</TD>
-                                <CalcCell value={projectCostTotal} />
-                            </tr>
-                            <tr>
-                                <TD>JV-Aircontrol Share Project 75%</TD>
-                                <CalcCell value={projectACShare75} />
-                            </tr>
-                            <tr className="bg-slate-100 font-bold">
-                                <TD bold>Expected Project Profit</TD>
-                                <CalcCell value={projectExpectedProfitAmount} className="font-bold" />
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
             {/* 6. Total Project Profit */}
             <div className="bg-white rounded-lg border border-slate-200 p-6">
                 <h2 className="text-lg font-semibold text-slate-800 mb-4">Total Project Profit</h2>
