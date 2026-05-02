@@ -61,16 +61,17 @@ export default function ProjectSummaryTab() {
                 allocatedInvestmentCost = (parseFloat(master.tender_budget?.allocated_cost) || 0);
             }
 
-            // Load Outcome Calculation - sum all NOT in software columns
+            // Load Outcome Calculation - sum total outcome per category row
             const outcomeRecords = await base44.entities.OutcomeCalculation.list();
             let totalOutcome = 0;
             outcomeRecords.forEach(r => {
                 if (r.data) {
-                    totalOutcome += (parseFloat(r.data.pm_not_in_software) || 0) +
-                                   (parseFloat(r.data.labour_not_in_software) || 0) +
-                                   (parseFloat(r.data.assets_not_in_software) || 0) +
-                                   (parseFloat(r.data.materials_not_in_software) || 0) +
-                                   (parseFloat(r.data.other_not_in_software) || 0);
+                    // Sum the total_outcome column from each category
+                    totalOutcome += (parseFloat(r.data.pm_total_outcome) || 0) +
+                                   (parseFloat(r.data.labour_total_outcome) || 0) +
+                                   (parseFloat(r.data.assets_total_outcome) || 0) +
+                                   (parseFloat(r.data.materials_total_outcome) || 0) +
+                                   (parseFloat(r.data.other_total_outcome) || 0);
                 }
             });
 
