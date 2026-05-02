@@ -6,6 +6,7 @@ import OutcomeCalculationTab from "@/components/air-control/OutcomeCalculationTa
 import IncomeCalculationTab from "@/components/air-control/IncomeCalculationTab";
 import ProjectMasterDataTab from "@/components/air-control/ProjectMasterDataTab";
 import AllocationOfInvestmentTab from "@/components/air-control/AllocationOfInvestmentTab";
+import ProjectSummaryTab from "@/components/air-control/ProjectSummaryTab";
 
 const TABS = [
     { key: 'master_data', label: 'Project Master Data' },
@@ -52,6 +53,8 @@ export default function AirControlCalculations() {
                     <TabsContent key={tab.key} value={tab.key}>
                         {tab.key === 'master_data' ? (
                             <ProjectMasterDataTab />
+                        ) : tab.key === 'project_summary' ? (
+                            <ProjectSummaryTab />
                         ) : tab.key === 'outcome_calculation' ? (
                             <OutcomeCalculationTab />
                         ) : tab.key === 'income_calculation' ? (
