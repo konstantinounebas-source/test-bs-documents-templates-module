@@ -100,8 +100,8 @@ export default function AllocationOfInvestmentTab() {
     };
 
     const totalInvestment = parseNum(investment.pm_labour) + parseNum(investment.material) + parseNum(investment.assets);
-    const allocationPct = ((totalInvestment - parseNum(investment.asset_after_depr)) / parseNum(investment.expected_income)) * 100;
-    const allocatedCost = (allocationPct / 100) * parseNum(investment.total_value_work);
+    const allocationPct = (totalInvestment / parseNum(investment.expected_income)) * 100;
+    const allocatedCost = (allocationPct / 100) * totalInvestment;
 
     return (
         <div className="bg-white rounded-lg border border-slate-200 p-6">
