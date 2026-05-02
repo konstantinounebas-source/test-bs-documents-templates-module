@@ -17,7 +17,7 @@ const DEFAULT_ASSUMPTIONS = {
 };
 
 const DEFAULT_CERTIFIED = { payments: [{ description: 'Payment 1', batch: 'Batch 1', total100: '', total60: '', ac100: '', ac60: '', amco100: '', amco60: '' }] };
-const DEFAULT_ADVANCE = { payments: [{ description: 'Advance Payment 1', label: 'Advance Payment', total: '' }] };
+const DEFAULT_ADVANCE = { payments: [{ description: 'Advance Payment 1', label: 'Advance Payment', total: '', aircontrol: '', amco: '' }] };
 
 const DEFAULT_SHELTER_TYPES = [
     { key: 'type_a', label: 'Type A', unit_rate: 1467, total_qty: 109, approved_qty: 0, jv_rate: 314.71, extra_rate: 0, roofing: 0, earthing: 94.78, stickers: 39.10 },
@@ -135,7 +135,7 @@ export default function IncomeCalculationTab() {
     const addAdvancePayment = () => {
         setAdvance(prev => ({
             ...prev,
-            payments: [...prev.payments, { description: `Advance Payment ${prev.payments.length + 1}`, label: 'Advance Payment', total: '' }]
+            payments: [...prev.payments, { description: `Advance Payment ${prev.payments.length + 1}`, label: 'Advance Payment', total: '', aircontrol: '', amco: '' }]
         }));
     };
 
@@ -177,8 +177,11 @@ export default function IncomeCalculationTab() {
     const grandTotalAmco = grandTotalAmco100 + grandTotalAmco60;
 
     // JV Advance Payments
-    const advPayments = advance.payments.map(p => ({ ...p, total: parseNum(p.total) }));
+    const advPayments = advance.payments.map(p => ({ ...p, total: parseNum(p.total), aircontrol: parseNum(p.aircontrol), amco: parseNum(p.amco) }));
     const totalAdvancePayment = advPayments.reduce((s, p) => s + p.total, 0);
+    const totalAdvanceAC = advPayments.reduce((s, p) => s + p.aircontrol, 0);
+    const totalAdvanceAmco = advPayments.reduce((s, p) => s + p.amco, 0);
+    const advanceCheckOK = advPayments.every(p => Math.abs(p.total - p.aircontrol - p.amco) < 0.01);
 
     // 1. Income Received
     const incomeAdvancePayment = totalAdvancePayment;
@@ -559,29 +562,38 @@ export default function IncomeCalculationTab() {
                                 <thead>
                                     <tr>
                                         <TH>Description</TH><TH>Label</TH><TH>Total</TH>
-                                        <TH>AirControl</TH><TH>Amco</TH>
+                                        <TH>AirControl</TH><TH>Amco</TH><TH></TH>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {advPayments.map((p, idx) => (
-                                        <tr key={idx}>
+                                    {advPayments.map((p, idx) => {
+                                        const rowCheckOK = Math.abs(p.total - p.aircontrol - p.amco) < 0.01;
+                                        return (
+                                        <tr key={idx} className={!rowCheckOK && p.total !== 0 ? 'bg-red-50' : ''}>
                                             <InputCell value={advance.payments[idx].description} onChange={v => updateAdvancePayment(idx, 'description', v)} type="text" align="left" />
                                             <InputCell value={advance.payments[idx].label} onChange={v => updateAdvancePayment(idx, 'label', v)} type="text" align="left" />
-                                            <InputCell value={p.total} onChange={v => updateAdvancePayment(idx, 'total', v)} />
-                                            <CalcCell value={p.total * pct100} />
-                                            <CalcCell value={p.total * pct100} />
+                                            <InputCell value={advance.payments[idx].total} onChange={v => updateAdvancePayment(idx, 'total', v)} />
+                                            <InputCell value={advance.payments[idx].aircontrol} onChange={v => updateAdvancePayment(idx, 'aircontrol', v)} />
+                                            <InputCell value={advance.payments[idx].amco} onChange={v => updateAdvancePayment(idx, 'amco', v)} />
+                                            <td className="border border-slate-300 px-1 py-1 text-center">
+                                                {!rowCheckOK && p.total !== 0 && <span title="Total ≠ AirControl + Amco" className="text-red-500 text-xs font-bold">!</span>}
+                                            </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                     <tr>
-                                        <td colSpan={5} className="border border-slate-300 px-2 py-1">
+                                        <td colSpan={6} className="border border-slate-300 px-2 py-1">
                                             <button onClick={addAdvancePayment} className="text-xs text-blue-600 hover:underline">+ Add advance payment</button>
                                         </td>
                                     </tr>
                                     <tr className="bg-slate-50 font-bold">
                                         <TD bold colSpan={2}>Total Advance Payment</TD>
                                         <CalcCell value={totalAdvancePayment} />
-                                        <CalcCell value={totalAdvancePayment * pct100} />
-                                        <CalcCell value={totalAdvancePayment * pct100} />
+                                        <CalcCell value={totalAdvanceAC} />
+                                        <CalcCell value={totalAdvanceAmco} />
+                                        <td className="border border-slate-300 px-1 py-1 text-center">
+                                            {!advanceCheckOK && <span className="text-red-500 text-xs font-bold" title="Total ≠ AirControl + Amco">!</span>}
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
