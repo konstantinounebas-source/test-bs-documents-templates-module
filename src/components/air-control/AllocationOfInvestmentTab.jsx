@@ -56,7 +56,7 @@ export default function AllocationOfInvestmentTab() {
 
     useEffect(() => {
         loadProjectData();
-    }, [investment.expected_income]);
+    }, []);
 
     const loadProjectData = async () => {
         try {
