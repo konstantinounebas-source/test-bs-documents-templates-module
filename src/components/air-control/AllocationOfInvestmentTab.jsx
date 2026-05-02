@@ -60,40 +60,47 @@ export default function AllocationOfInvestmentTab() {
 
     const loadProjectData = async () => {
         try {
-            const records = await base44.entities.ProjectMasterData.list();
-            if (records.length > 0) {
-                const record = records[0];
-                const projectBudgetData = record.project_budget_correction || {};
-                const fabricationData = record.fabrication_budget || {};
+            const incomeRecords = await base44.entities.IncomeCalculation.list();
+            const incomeMap = {};
+            incomeRecords.forEach(r => { incomeMap[r.section] = r; });
+
+            let totalValueOfWorkPerformed = investment.total_value_work;
+            if (incomeMap.assumptions?.data) {
+                const assumptions = incomeMap.assumptions.data;
+                const pct60 = parseNum(assumptions.pct_60);
                 
-                // Calculate Total Project Income: sum of contract budget income + fabrication income
-                const contractBudgetIncome = 
-                    parseNum(projectBudgetData.pm) +
-                    parseNum(projectBudgetData.pm_allocation) +
-                    parseNum(projectBudgetData.labour) +
-                    parseNum(projectBudgetData.labour_allocation) +
-                    parseNum(projectBudgetData.assets) +
-                    parseNum(projectBudgetData.materials) +
-                    parseNum(projectBudgetData.other) +
-                    parseNum(projectBudgetData.road_marking) +
-                    parseNum(projectBudgetData.sealour) +
-                    parseNum(projectBudgetData.maintenance);
+                // Retrieve related income data to calculate totalValueOfWorkPerformed
+                const certData = incomeMap.certified?.data;
+                const advData = incomeMap.advance?.data;
+                const notPaidData = incomeMap.not_paid?.data;
                 
-                const fabricationIncome = 
-                    parseNum(fabricationData.pm) +
-                    parseNum(fabricationData.labour) +
-                    parseNum(fabricationData.setup_cost_asset) +
-                    parseNum(fabricationData.materials) +
-                    parseNum(fabricationData.other) +
-                    parseNum(fabricationData.profit);
-                
-                const totalIncome = contractBudgetIncome + fabricationIncome;
-                
-                setInvestment(prev => ({
-                    ...prev,
-                    expected_income: totalIncome || prev.expected_income
-                }));
+                if (certData && advData && notPaidData) {
+                    const certPayments = certData.payments || [];
+                    const advPayments = advData.payments || [];
+                    const notPaidPayments = notPaidData.payments || [];
+                    
+                    const incomeAdvancePayment = advPayments.reduce((s, p) => s + parseNum(p.aircontrol), 0);
+                    const incomeCertifiedWorks = certPayments.reduce((s, p) => s + parseNum(p.ac100) + parseNum(p.ac60), 0);
+                    const totalIncomeReceived = incomeAdvancePayment + incomeCertifiedWorks;
+                    
+                    const certWorksAC60 = certPayments.reduce((s, p) => s + parseNum(p.ac60), 0);
+                    const advAdjPct = parseNum(assumptions.advance_adj_pct) || 0.35;
+                    const certAdjustment = (certWorksAC60 / (pct60 || 1)) * advAdjPct;
+                    const advancePaymentRemaining = incomeAdvancePayment - certAdjustment;
+                    
+                    const certifiedNotPaid = notPaidPayments.reduce((s, p) => s + parseNum(p.ac100) + parseNum(p.ac60), 0);
+                    // Assuming totalIncomeNotEarned is available or calculate separately
+                    // For now, use a simple estimate
+                    const totalIncomeNotEarned = certifiedNotPaid;
+                    
+                    totalValueOfWorkPerformed = totalIncomeReceived + totalIncomeNotEarned - advancePaymentRemaining;
+                }
             }
+
+            setInvestment(prev => ({
+                ...prev,
+                total_value_work: totalValueOfWorkPerformed
+            }));
         } catch (error) {
             console.error('Failed to load project data:', error);
         }
