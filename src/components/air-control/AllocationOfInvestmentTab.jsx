@@ -156,10 +156,7 @@ export default function AllocationOfInvestmentTab() {
                         </tr>
                         <tr>
                             <TD>Allocation %</TD>
-                            <CalcCell value={allocationPct} className="text-right" />
-                        </tr>
-                        <tr>
-                            <TD colSpan={2} className="text-right text-sm">%</TD>
+                            <CalcCell value={`${fmt(allocationPct)} %`} className="text-right" />
                         </tr>
                         <tr className="bg-slate-100 font-bold">
                             <TD bold>Allocated Investment Cost</TD>
