@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 
 const fmt = (val) => {
     if (val === null || val === undefined || val === '') return '';
@@ -52,6 +53,25 @@ export default function AllocationOfInvestmentTab() {
         total_value_work: 3273500.96,
         expected_income: 20294790.48,
     });
+
+    useEffect(() => {
+        loadProjectData();
+    }, []);
+
+    const loadProjectData = async () => {
+        try {
+            const records = await base44.entities.ProjectMasterData.list();
+            if (records.length > 0 && records[0].project_total_profit) {
+                const projectData = records[0].project_total_profit;
+                setInvestment(prev => ({
+                    ...prev,
+                    expected_income: projectData.income || prev.expected_income
+                }));
+            }
+        } catch (error) {
+            console.error('Failed to load project data:', error);
+        }
+    };
 
     const totalInvestment = parseNum(investment.pm_labour) + parseNum(investment.material) + parseNum(investment.assets);
     const allocationPct = (totalInvestment / parseNum(investment.expected_income)) * 100;
