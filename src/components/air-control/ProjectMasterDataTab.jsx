@@ -192,7 +192,7 @@ export default function ProjectMasterDataTab() {
     // Total Tender Expected Profit calculations
     const tenderTotalProfitAmount = tenderIncomeTotal - tenderCostTotal;
     const tenderACShare75 = parseNum(tenderJVProfit.ac_share_70);
-    const tenderExpectedProfit = tenderIncomeTotal - tenderCostTotal;
+    const tenderExpectedProfit = tenderTotalProfitAmount + tenderACShare75;
 
     // Total Project Expected Profit calculations
     const projectTotalProfitAmount = projectIncomeTotal - projectCostTotal;
