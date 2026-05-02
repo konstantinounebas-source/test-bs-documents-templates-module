@@ -479,19 +479,16 @@ export default function IncomeCalculationTab() {
                             <table className="border-collapse text-xs w-full">
                                 <thead>
                                     <tr>
-                                        <TH rowSpan={2}>Description</TH>
-                                        <TH rowSpan={2}>Batch</TH>
-                                        <TH colSpan={2} className="text-center">Total</TH>
-                                        <TH colSpan={2} className="text-center">AirControl</TH>
-                                        <TH colSpan={2} className="text-center">Amco</TH>
+                                        <th rowSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 align-middle">Description</th>
+                                        <th rowSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 align-middle">Batch</th>
+                                        <th colSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 text-center">Total</th>
+                                        <th colSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 text-center">AirControl</th>
+                                        <th colSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 text-center">Amco</th>
                                     </tr>
                                     <tr>
-                                        <TH>100%</TH>
-                                        <TH>60%</TH>
-                                        <TH>100%</TH>
-                                        <TH>60%</TH>
-                                        <TH>100%</TH>
-                                        <TH>60%</TH>
+                                        <TH>100%</TH><TH>60%</TH>
+                                        <TH>100%</TH><TH>60%</TH>
+                                        <TH>100%</TH><TH>60%</TH>
                                     </tr>
                                 </thead>
                                 <tbody>
