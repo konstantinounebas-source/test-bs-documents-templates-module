@@ -1,0 +1,57 @@
+{
+  "name": "OutcomeCalculation",
+  "type": "object",
+  "properties": {
+    "period_label": {
+      "type": "string",
+      "description": "Period label, e.g. 'As per 31/3/2026' or 'Apr-26'"
+    },
+    "period_type": {
+      "type": "string",
+      "enum": [
+        "baseline",
+        "month"
+      ],
+      "description": "Whether this is the baseline period or a monthly period"
+    },
+    "period_order": {
+      "type": "number",
+      "description": "Sort order of the period column"
+    },
+    "pm_from_software": {
+      "type": "number"
+    },
+    "pm_not_in_software": {
+      "type": "number"
+    },
+    "labour_from_software": {
+      "type": "number"
+    },
+    "labour_not_in_software": {
+      "type": "number"
+    },
+    "assets_from_software": {
+      "type": "number"
+    },
+    "assets_not_in_software": {
+      "type": "number"
+    },
+    "materials_from_software": {
+      "type": "number"
+    },
+    "materials_not_in_software": {
+      "type": "number"
+    },
+    "other_from_software": {
+      "type": "number"
+    },
+    "other_not_in_software": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "period_label",
+    "period_type",
+    "period_order"
+  ]
+}

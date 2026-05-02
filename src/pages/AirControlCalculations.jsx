@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { usePageAccess } from "@/components/lib/usePageAccess";
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import OutcomeCalculationTab from "@/components/air-control/OutcomeCalculationTab";
 
 const TABS = [
     { key: 'master_data', label: 'Project Master Data' },
@@ -46,9 +47,13 @@ export default function AirControlCalculations() {
 
                 {TABS.map(tab => (
                     <TabsContent key={tab.key} value={tab.key}>
-                        <div className="bg-white rounded-lg border border-slate-200 p-8 min-h-[400px] flex items-center justify-center">
-                            <p className="text-slate-400 text-sm">{tab.label}</p>
-                        </div>
+                        {tab.key === 'outcome_calculation' ? (
+                            <OutcomeCalculationTab />
+                        ) : (
+                            <div className="bg-white rounded-lg border border-slate-200 p-8 min-h-[400px] flex items-center justify-center">
+                                <p className="text-slate-400 text-sm">{tab.label}</p>
+                            </div>
+                        )}
                     </TabsContent>
                 ))}
             </Tabs>
