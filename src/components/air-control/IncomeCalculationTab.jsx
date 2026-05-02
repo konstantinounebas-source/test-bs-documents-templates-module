@@ -16,7 +16,7 @@ const DEFAULT_ASSUMPTIONS = {
     advance_adj_pct: 0.35,
 };
 
-const DEFAULT_CERTIFIED = { payments: [{ description: 'Payment 1', batch: 'Batch 1', total: '' }] };
+const DEFAULT_CERTIFIED = { payments: [{ description: 'Payment 1', batch: 'Batch 1', total100: '', total60: '', ac100: '', ac60: '', amco100: '', amco60: '' }] };
 const DEFAULT_ADVANCE = { payments: [{ description: 'Advance Payment 1', label: 'Advance Payment', total: '' }] };
 
 const DEFAULT_SHELTER_TYPES = [
@@ -117,7 +117,7 @@ export default function IncomeCalculationTab() {
     const addCertifiedPayment = () => {
         setCertified(prev => ({
             ...prev,
-            payments: [...prev.payments, { description: `Payment ${prev.payments.length + 1}`, batch: '', total: '' }]
+            payments: [...prev.payments, { description: `Payment ${prev.payments.length + 1}`, batch: '', total100: '', total60: '', ac100: '', ac60: '', amco100: '', amco60: '' }]
         }));
     };
     const removeCertifiedPayment = (idx) => {
@@ -156,19 +156,19 @@ export default function IncomeCalculationTab() {
     const retentionPct = parseNum(assumptions.retention_pct);
     const advAdjPct = parseNum(assumptions.advance_adj_pct);
 
-    // 3. JV Payments – Certified Works
-    const certPayments = certified.payments.map(p => {
-        const total = parseNum(p.total);
-        return {
-            ...p,
-            total,
-            ac100: total * pct100,
-            ac60: total * pct60,
-            amco100: total * pct100,
-            amco60: total * pct60,
-        };
-    });
-    const totalCertifiedWorks = certPayments.reduce((s, p) => s + p.total, 0);
+    // 3. JV Payments – Certified Works (all columns manually editable)
+    const certPayments = certified.payments.map(p => ({
+        ...p,
+        total100: parseNum(p.total100),
+        total60: parseNum(p.total60),
+        ac100: parseNum(p.ac100),
+        ac60: parseNum(p.ac60),
+        amco100: parseNum(p.amco100),
+        amco60: parseNum(p.amco60),
+    }));
+    const totalCertTotal100 = certPayments.reduce((s, p) => s + p.total100, 0);
+    const totalCertTotal60 = certPayments.reduce((s, p) => s + p.total60, 0);
+    const totalCertifiedWorks = totalCertTotal100 + totalCertTotal60;
     const grandTotalAC100 = certPayments.reduce((s, p) => s + p.ac100, 0);
     const grandTotalAC60 = certPayments.reduce((s, p) => s + p.ac60, 0);
     const grandTotalAmco100 = certPayments.reduce((s, p) => s + p.amco100, 0);
@@ -186,7 +186,7 @@ export default function IncomeCalculationTab() {
     const totalIncomeReceived = incomeAdvancePayment + incomeCertifiedWorks;
 
     // Advance payment remaining
-    const certWorksAC60 = grandTotalAC60;
+    const certWorksAC60 = grandTotalAC60; // sum of manually-entered AC 60% column
     const certAdjustment = (certWorksAC60 / (pct60 || 1)) * advAdjPct;
     const advancePaymentRemaining = totalAdvancePayment + certAdjustment;
 
@@ -479,54 +479,60 @@ export default function IncomeCalculationTab() {
                             <table className="border-collapse text-xs w-full">
                                 <thead>
                                     <tr>
-                                        <TH>Description</TH>
-                                        <TH>Batch</TH>
-                                        <TH>Total</TH>
+                                        <TH rowSpan={2}>Description</TH>
+                                        <TH rowSpan={2}>Batch</TH>
+                                        <TH colSpan={2} className="text-center">Total</TH>
                                         <TH colSpan={2} className="text-center">AirControl</TH>
                                         <TH colSpan={2} className="text-center">Amco</TH>
                                     </tr>
                                     <tr>
-                                        <TH></TH><TH></TH><TH></TH>
-                                        <TH>{(pct100 * 100).toFixed(0)}%</TH>
-                                        <TH>{(pct60 * 100).toFixed(0)}%</TH>
-                                        <TH>{(pct100 * 100).toFixed(0)}%</TH>
-                                        <TH>{(pct60 * 100).toFixed(0)}%</TH>
+                                        <TH>100%</TH>
+                                        <TH>60%</TH>
+                                        <TH>100%</TH>
+                                        <TH>60%</TH>
+                                        <TH>100%</TH>
+                                        <TH>60%</TH>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {certPayments.map((p, idx) => (
                                         <tr key={idx}>
-                                            <InputCell value={p.description} onChange={v => updateCertifiedPayment(idx, 'description', v)} className="min-w-[100px]" />
-                                            <InputCell value={p.batch} onChange={v => updateCertifiedPayment(idx, 'batch', v)} />
-                                            <InputCell value={p.total} onChange={v => updateCertifiedPayment(idx, 'total', v)} />
-                                            <CalcCell value={p.ac100} />
-                                            <CalcCell value={p.ac60} />
-                                            <CalcCell value={p.amco100} />
-                                            <CalcCell value={p.amco60} />
+                                            <InputCell value={certified.payments[idx].description} onChange={v => updateCertifiedPayment(idx, 'description', v)} className="min-w-[120px]" />
+                                            <InputCell value={certified.payments[idx].batch} onChange={v => updateCertifiedPayment(idx, 'batch', v)} />
+                                            <InputCell value={certified.payments[idx].total100} onChange={v => updateCertifiedPayment(idx, 'total100', v)} />
+                                            <InputCell value={certified.payments[idx].total60} onChange={v => updateCertifiedPayment(idx, 'total60', v)} />
+                                            <InputCell value={certified.payments[idx].ac100} onChange={v => updateCertifiedPayment(idx, 'ac100', v)} />
+                                            <InputCell value={certified.payments[idx].ac60} onChange={v => updateCertifiedPayment(idx, 'ac60', v)} />
+                                            <InputCell value={certified.payments[idx].amco100} onChange={v => updateCertifiedPayment(idx, 'amco100', v)} />
+                                            <InputCell value={certified.payments[idx].amco60} onChange={v => updateCertifiedPayment(idx, 'amco60', v)} />
                                         </tr>
                                     ))}
                                     <tr>
-                                        <td colSpan={7} className="border border-slate-300 px-2 py-1">
+                                        <td colSpan={8} className="border border-slate-300 px-2 py-1">
                                             <button onClick={addCertifiedPayment} className="text-xs text-blue-600 hover:underline">+ Add payment</button>
                                         </td>
                                     </tr>
                                     <tr className="bg-slate-50 font-bold">
                                         <TD bold colSpan={2}>Total Certified Works</TD>
-                                        <CalcCell value={totalCertifiedWorks} />
+                                        <CalcCell value={totalCertTotal100} />
+                                        <CalcCell value={totalCertTotal60} />
                                         <CalcCell value={grandTotalAC100} />
                                         <CalcCell value={grandTotalAC60} />
                                         <CalcCell value={grandTotalAmco100} />
                                         <CalcCell value={grandTotalAmco60} />
                                     </tr>
                                     <tr className="bg-slate-100 font-bold">
-                                        <TD bold colSpan={3}>Grand Total AirControl</TD>
-                                        <CalcCell value={grandTotalAC} className="font-bold" colSpan={2} />
-                                        <TD colSpan={2}></TD>
+                                        <TD bold colSpan={2}>Grand Total AirControl</TD>
+                                        <CalcCell value={totalCertifiedWorks} />
+                                        <CalcCell value={grandTotalAC} className="font-bold" />
+                                        <TD colSpan={4}></TD>
                                     </tr>
                                     <tr className="bg-slate-100 font-bold">
-                                        <TD bold colSpan={3}>Grand Total Amco</TD>
-                                        <TD colSpan={2}></TD>
-                                        <CalcCell value={grandTotalAmco} className="font-bold" colSpan={2} />
+                                        <TD bold colSpan={2}>Grand Total Amco</TD>
+                                        <CalcCell value={totalCertifiedWorks} />
+                                        <TD colSpan={3}></TD>
+                                        <CalcCell value={grandTotalAmco} className="font-bold" />
+                                        <TD></TD>
                                     </tr>
                                 </tbody>
                             </table>
