@@ -18,6 +18,7 @@ const DEFAULT_ASSUMPTIONS = {
 
 const DEFAULT_CERTIFIED = { payments: [{ description: 'Payment 1', batch: 'Batch 1', total100: '', total60: '', ac100: '', ac60: '', amco100: '', amco60: '' }] };
 const DEFAULT_ADVANCE = { payments: [{ description: 'Advance Payment 1', label: 'Advance Payment', total: '', aircontrol: '', amco: '' }] };
+const DEFAULT_NOT_PAID = { payments: [{ description: 'Payment 1', batch: '', total100: '', total60: '', ac100: '', ac60: '', amco100: '', amco60: '' }] };
 
 const DEFAULT_SHELTER_TYPES = [
     { key: 'type_a', label: 'Type A', unit_rate: 1467, total_qty: 109, approved_qty: 0, jv_rate: 314.71, extra_rate: 0, roofing: 0, earthing: 94.78, stickers: 39.10 },
@@ -60,6 +61,7 @@ export default function IncomeCalculationTab() {
     const [assumptions, setAssumptions] = useState(DEFAULT_ASSUMPTIONS);
     const [certified, setCertified] = useState(DEFAULT_CERTIFIED);
     const [advance, setAdvance] = useState(DEFAULT_ADVANCE);
+    const [notPaid, setNotPaid] = useState(DEFAULT_NOT_PAID);
     const [shelterTypes, setShelterTypes] = useState(DEFAULT_SHELTER_TYPES);
     const [removal, setRemoval] = useState(DEFAULT_REMOVAL);
     const [otherNotClaimed, setOtherNotClaimed] = useState(DEFAULT_OTHER_NOT_CLAIMED);
@@ -76,6 +78,7 @@ export default function IncomeCalculationTab() {
         if (map.assumptions?.data) setAssumptions({ ...DEFAULT_ASSUMPTIONS, ...map.assumptions.data });
         if (map.certified?.data) setCertified({ ...DEFAULT_CERTIFIED, ...map.certified.data });
         if (map.advance?.data) setAdvance({ ...DEFAULT_ADVANCE, ...map.advance.data });
+        if (map.not_paid?.data) setNotPaid({ ...DEFAULT_NOT_PAID, ...map.not_paid.data });
         if (map.shelter_types?.data) setShelterTypes(map.shelter_types.data.types || DEFAULT_SHELTER_TYPES);
         if (map.removal?.data) setRemoval({ ...DEFAULT_REMOVAL, ...map.removal.data });
         if (map.other_not_claimed?.data) setOtherNotClaimed({ ...DEFAULT_OTHER_NOT_CLAIMED, ...map.other_not_claimed.data });
@@ -98,6 +101,7 @@ export default function IncomeCalculationTab() {
             saveSection('assumptions', assumptions),
             saveSection('certified', certified),
             saveSection('advance', advance),
+            saveSection('not_paid', notPaid),
             saveSection('shelter_types', { types: shelterTypes }),
             saveSection('removal', removal),
             saveSection('other_not_claimed', otherNotClaimed),
@@ -137,6 +141,24 @@ export default function IncomeCalculationTab() {
             ...prev,
             payments: [...prev.payments, { description: `Advance Payment ${prev.payments.length + 1}`, label: 'Advance Payment', total: '', aircontrol: '', amco: '' }]
         }));
+    };
+
+    // ── Not Paid helpers ──────────────────────────────────────────────────────
+    const updateNotPaidPayment = (idx, field, val) => {
+        setNotPaid(prev => {
+            const payments = [...prev.payments];
+            payments[idx] = { ...payments[idx], [field]: val };
+            return { ...prev, payments };
+        });
+    };
+    const addNotPaidPayment = () => {
+        setNotPaid(prev => ({
+            ...prev,
+            payments: [...prev.payments, { description: `Payment ${prev.payments.length + 1}`, batch: '', total100: '', total60: '', ac100: '', ac60: '', amco100: '', amco60: '' }]
+        }));
+    };
+    const removeNotPaidPayment = (idx) => {
+        setNotPaid(prev => ({ ...prev, payments: prev.payments.filter((_, i) => i !== idx) }));
     };
 
     // ── Shelter helpers ───────────────────────────────────────────────────────
@@ -240,8 +262,20 @@ export default function IncomeCalculationTab() {
 
     const totalExtraWorksNotApproved = totalFabricationExtraIncome + totalOtherExtraIncome;
 
+    // JV Certified – Not Paid
+    const notPaidPayments = notPaid.payments.map(p => ({
+        ...p,
+        total100: parseNum(p.total100),
+        total60: parseNum(p.total60),
+        ac100: parseNum(p.ac100),
+        ac60: parseNum(p.ac60),
+        amco100: parseNum(p.amco100),
+        amco60: parseNum(p.amco60),
+    }));
+    const notPaidTotalAC = notPaidPayments.reduce((s, p) => s + p.ac100 + p.ac60, 0);
+
     // 2. Income Not Earned
-    const certifiedNotPaid = 0; // manual for now – can be linked to an unpaid certified section
+    const certifiedNotPaid = notPaidTotalAC;
     const totalIncomeNotEarned = certifiedNotPaid + totalNotCertified + totalFabricationIncome + totalExtraWorksNotApproved;
 
     // 4. Value of Work Performed
@@ -605,6 +639,69 @@ export default function IncomeCalculationTab() {
                             <div className="flex justify-between"><span>Total Advance Payment</span><span>{fmt(totalAdvancePayment)}</span></div>
                             <div className="flex justify-between text-slate-500 italic"><span>Adjustment (÷{pct60}×{advAdjPct})</span><span>({fmt(certAdjustment)})</span></div>
                             <div className="flex justify-between font-bold border-t border-slate-300 pt-1"><span>Advance Payment (Remaining)</span><span>{fmt(advancePaymentRemaining)}</span></div>
+                        </div>
+                    </div>
+
+                    {/* ── JV Certified – As per Contract but Not Paid ──────────────── */}
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-700 mb-2">JV Certified – As per Contract but Not Paid</h3>
+                        <div className="overflow-x-auto">
+                            <table className="border-collapse text-xs w-full">
+                                <thead>
+                                    <tr>
+                                        <th rowSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 align-middle">Description</th>
+                                        <th rowSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 align-middle">Batch</th>
+                                        <th colSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 text-center">Total</th>
+                                        <th colSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 text-center">AirControl</th>
+                                        <th colSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 text-center">Amco</th>
+                                        <th rowSpan={2} className="border border-slate-300 px-2 py-2 text-xs font-semibold bg-slate-100 text-slate-700 align-middle"></th>
+                                    </tr>
+                                    <tr>
+                                        <TH>100%</TH><TH>60%</TH>
+                                        <TH>100%</TH><TH>60%</TH>
+                                        <TH>100%</TH><TH>60%</TH>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {notPaidPayments.map((p, idx) => (
+                                        <tr key={idx}>
+                                            <InputCell value={notPaid.payments[idx].description} onChange={v => updateNotPaidPayment(idx, 'description', v)} className="min-w-[120px]" type="text" align="left" />
+                                            <InputCell value={notPaid.payments[idx].batch} onChange={v => updateNotPaidPayment(idx, 'batch', v)} type="text" align="left" />
+                                            <InputCell value={notPaid.payments[idx].total100} onChange={v => updateNotPaidPayment(idx, 'total100', v)} />
+                                            <InputCell value={notPaid.payments[idx].total60} onChange={v => updateNotPaidPayment(idx, 'total60', v)} />
+                                            <InputCell value={notPaid.payments[idx].ac100} onChange={v => updateNotPaidPayment(idx, 'ac100', v)} />
+                                            <InputCell value={notPaid.payments[idx].ac60} onChange={v => updateNotPaidPayment(idx, 'ac60', v)} />
+                                            <InputCell value={notPaid.payments[idx].amco100} onChange={v => updateNotPaidPayment(idx, 'amco100', v)} />
+                                            <InputCell value={notPaid.payments[idx].amco60} onChange={v => updateNotPaidPayment(idx, 'amco60', v)} />
+                                            <td className="border border-slate-300 px-1 py-1 text-center">
+                                                <button onClick={() => removeNotPaidPayment(idx)} className="text-red-400 hover:text-red-600 text-xs font-bold">×</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    <tr>
+                                        <td colSpan={9} className="border border-slate-300 px-2 py-1">
+                                            <button onClick={addNotPaidPayment} className="text-xs text-blue-600 hover:underline">+ Add payment</button>
+                                        </td>
+                                    </tr>
+                                    <tr className="bg-slate-50 font-bold">
+                                        <TD bold colSpan={2}>Total Not Paid</TD>
+                                        <CalcCell value={notPaidPayments.reduce((s,p)=>s+p.total100,0)} />
+                                        <CalcCell value={notPaidPayments.reduce((s,p)=>s+p.total60,0)} />
+                                        <CalcCell value={notPaidPayments.reduce((s,p)=>s+p.ac100,0)} />
+                                        <CalcCell value={notPaidPayments.reduce((s,p)=>s+p.ac60,0)} />
+                                        <CalcCell value={notPaidPayments.reduce((s,p)=>s+p.amco100,0)} />
+                                        <CalcCell value={notPaidPayments.reduce((s,p)=>s+p.amco60,0)} />
+                                        <TD></TD>
+                                    </tr>
+                                    <tr className="bg-slate-100 font-bold">
+                                        <TD bold colSpan={2}>Grand Total AirControl (Not Paid)</TD>
+                                        <TD colSpan={2}></TD>
+                                        <CalcCell value={notPaidTotalAC} className="font-bold" colSpan={2} />
+                                        <TD colSpan={2}></TD>
+                                        <TD></TD>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
 
