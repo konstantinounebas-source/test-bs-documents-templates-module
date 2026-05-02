@@ -28,7 +28,11 @@ const DEFAULT_SHELTER_TYPES = [
     { key: 'excavation', label: 'Excavation', unit_rate: 1412, total_qty: 90, approved_qty: 0, jv_rate: 0, extra_rate: 0, roofing: 0, earthing: 0, stickers: 0 },
 ];
 const DEFAULT_REMOVAL = { unit_rate: 276, approved_qty: 0 };
-const DEFAULT_OTHER_NOT_CLAIMED = { months: 0, monthly_fee: 0, samples: 0, claim_inspections: 0 };
+const DEFAULT_OTHER_NOT_CLAIMED = { rows: [
+    { description: 'Monthly Fees', amount: 0 },
+    { description: 'Samples', amount: 0 },
+    { description: 'Claim for Inspections', amount: 0 },
+] };
 
 // ─── Table helpers ────────────────────────────────────────────────────────────
 const TD = ({ children, className = '', bold = false, bg = '', colSpan }) => (
@@ -81,7 +85,19 @@ export default function IncomeCalculationTab() {
         if (map.not_paid?.data) setNotPaid({ ...DEFAULT_NOT_PAID, ...map.not_paid.data });
         if (map.shelter_types?.data) setShelterTypes(map.shelter_types.data.types || DEFAULT_SHELTER_TYPES);
         if (map.removal?.data) setRemoval({ ...DEFAULT_REMOVAL, ...map.removal.data });
-        if (map.other_not_claimed?.data) setOtherNotClaimed({ ...DEFAULT_OTHER_NOT_CLAIMED, ...map.other_not_claimed.data });
+        if (map.other_not_claimed?.data) {
+            const d = map.other_not_claimed.data;
+            // migrate old format
+            if (d.rows) {
+                setOtherNotClaimed(d);
+            } else {
+                setOtherNotClaimed({ rows: [
+                    { description: 'Monthly Fees', amount: (parseFloat(d.months)||0) * (parseFloat(d.monthly_fee)||0) },
+                    { description: 'Samples', amount: parseFloat(d.samples)||0 },
+                    { description: 'Claim for Inspections', amount: parseFloat(d.claim_inspections)||0 },
+                ]});
+            }
+        }
         setLoading(false);
     };
 
@@ -229,8 +245,8 @@ export default function IncomeCalculationTab() {
     const totalNotDeliveredWorks = shelterNotDelivered.reduce((s, t) => s + t.notDeliveredTotal, 0) + removalTotal;
 
     // 8. Other Works Not Claimed
-    const monthlyFees = parseNum(otherNotClaimed.months) * parseNum(otherNotClaimed.monthly_fee);
-    const totalOtherNotClaimed = monthlyFees + parseNum(otherNotClaimed.samples) + parseNum(otherNotClaimed.claim_inspections);
+    const otherRows = otherNotClaimed.rows || [];
+    const totalOtherNotClaimed = otherRows.reduce((s, r) => s + parseNum(r.amount), 0);
 
     // 6. Retention
     const totalCertWorksAC60 = certWorksAC60; // received only for now (could add unpaid)
@@ -427,32 +443,27 @@ export default function IncomeCalculationTab() {
                         <h3 className="text-sm font-bold text-slate-700 mb-2">Other Works Not Claimed</h3>
                         <table className="w-full border-collapse text-sm">
                             <thead>
-                                <tr><TH className="text-left">Description</TH><TH>Value</TH></tr>
+                                <tr><TH className="text-left">Description</TH><TH>Amount</TH><TH></TH></tr>
                             </thead>
                             <tbody>
+                                {otherRows.map((row, idx) => (
+                                    <tr key={idx}>
+                                        <InputCell value={row.description} onChange={v => setOtherNotClaimed(p => { const rows = [...p.rows]; rows[idx] = { ...rows[idx], description: v }; return { ...p, rows }; })} type="text" align="left" />
+                                        <InputCell value={row.amount} onChange={v => setOtherNotClaimed(p => { const rows = [...p.rows]; rows[idx] = { ...rows[idx], amount: v }; return { ...p, rows }; })} />
+                                        <td className="border border-slate-300 px-1 py-1 text-center">
+                                            <button onClick={() => setOtherNotClaimed(p => ({ ...p, rows: p.rows.filter((_, i) => i !== idx) }))} className="text-red-400 hover:text-red-600 text-xs font-bold">×</button>
+                                        </td>
+                                    </tr>
+                                ))}
                                 <tr>
-                                    <TD>Number of Months</TD>
-                                    <InputCell value={otherNotClaimed.months} onChange={v => setOtherNotClaimed(p => ({ ...p, months: v }))} />
-                                </tr>
-                                <tr>
-                                    <TD>Monthly Fee</TD>
-                                    <InputCell value={otherNotClaimed.monthly_fee} onChange={v => setOtherNotClaimed(p => ({ ...p, monthly_fee: v }))} />
-                                </tr>
-                                <tr>
-                                    <TD>Monthly Fees (calculated)</TD>
-                                    <CalcCell value={monthlyFees} />
-                                </tr>
-                                <tr>
-                                    <TD>Samples</TD>
-                                    <InputCell value={otherNotClaimed.samples} onChange={v => setOtherNotClaimed(p => ({ ...p, samples: v }))} />
-                                </tr>
-                                <tr>
-                                    <TD>Claim for Inspections</TD>
-                                    <InputCell value={otherNotClaimed.claim_inspections} onChange={v => setOtherNotClaimed(p => ({ ...p, claim_inspections: v }))} />
+                                    <td colSpan={3} className="border border-slate-300 px-2 py-1">
+                                        <button onClick={() => setOtherNotClaimed(p => ({ ...p, rows: [...p.rows, { description: '', amount: 0 }] }))} className="text-xs text-blue-600 hover:underline">+ Add row</button>
+                                    </td>
                                 </tr>
                                 <tr className="bg-slate-50">
                                     <TD bold>Total Other Works Not Claimed</TD>
                                     <CalcCell value={totalOtherNotClaimed} className="font-bold" />
+                                    <TD></TD>
                                 </tr>
                             </tbody>
                         </table>
