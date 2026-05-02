@@ -576,7 +576,8 @@ export default function IncomeCalculationTab() {
                                             <InputCell value={advance.payments[idx].aircontrol} onChange={v => updateAdvancePayment(idx, 'aircontrol', v)} />
                                             <InputCell value={advance.payments[idx].amco} onChange={v => updateAdvancePayment(idx, 'amco', v)} />
                                             <td className="border border-slate-300 px-1 py-1 text-center">
-                                                {!rowCheckOK && p.total !== 0 && <span title="Total ≠ AirControl + Amco" className="text-red-500 text-xs font-bold">!</span>}
+                                                {!rowCheckOK && p.total !== 0 && <span title="Total ≠ AirControl + Amco" className="text-red-500 text-xs font-bold mr-1">!</span>}
+                                                <button onClick={() => setAdvance(prev => ({ ...prev, payments: prev.payments.filter((_, i) => i !== idx) }))} className="text-red-400 hover:text-red-600 text-xs font-bold">×</button>
                                             </td>
                                         </tr>
                                         );
