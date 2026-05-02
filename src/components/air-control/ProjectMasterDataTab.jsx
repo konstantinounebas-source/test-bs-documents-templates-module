@@ -77,6 +77,16 @@ export default function ProjectMasterDataTab() {
         road_marking: 594000.00,
         sealour: 1050000.00,
         maintenance: 2650980.00,
+        pm_cost: 1691870.00,
+        pm_allocation_cost: 205200.00,
+        labour_cost: 4216936.12,
+        labour_allocation_cost: 307800.00,
+        assets_cost: 682700.00,
+        materials_cost: 1817725.02,
+        other_cost: 2000972.41,
+        road_marking_cost: 540000.00,
+        sealour_cost: 540000.00,
+        maintenance_cost: 2035720.00,
     });
 
     const [fabricationBudget, setFabricationBudget] = useState({
@@ -124,7 +134,7 @@ export default function ProjectMasterDataTab() {
 
     // Project Budget Correction totals
     const projectIncomeTotal = parseNum(projectBudgetCorrection.pm) + parseNum(projectBudgetCorrection.pm_allocation) + parseNum(projectBudgetCorrection.labour) + parseNum(projectBudgetCorrection.labour_allocation) + parseNum(projectBudgetCorrection.assets) + parseNum(projectBudgetCorrection.materials) + parseNum(projectBudgetCorrection.other) + parseNum(projectBudgetCorrection.road_marking) + parseNum(projectBudgetCorrection.sealour) + parseNum(projectBudgetCorrection.maintenance);
-    const projectCostTotal = 1691870.00 + 205200.00 + 4216936.12 + 307800.00 + 682700.00 + 1817725.02 + 2000972.41 + 540000.00 + 540000.00 + 2035720.00;
+    const projectCostTotal = parseNum(projectBudgetCorrection.pm_cost) + parseNum(projectBudgetCorrection.pm_allocation_cost) + parseNum(projectBudgetCorrection.labour_cost) + parseNum(projectBudgetCorrection.labour_allocation_cost) + parseNum(projectBudgetCorrection.assets_cost) + parseNum(projectBudgetCorrection.materials_cost) + parseNum(projectBudgetCorrection.other_cost) + parseNum(projectBudgetCorrection.road_marking_cost) + parseNum(projectBudgetCorrection.sealour_cost) + parseNum(projectBudgetCorrection.maintenance_cost);
 
     // Fabrication Budget totals
     const fabricationIncomeTotal = parseNum(fabricationBudget.pm) + parseNum(fabricationBudget.labour) + parseNum(fabricationBudget.setup_cost_asset) + parseNum(fabricationBudget.materials) + parseNum(fabricationBudget.other);
@@ -302,52 +312,52 @@ export default function ProjectMasterDataTab() {
                             <tr>
                                 <TD>PM</TD>
                                 <InputCell value={fmt(projectBudgetCorrection.pm)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, pm: parseNum(v)})} />
-                                <InputCell value={fmt(1691870.00)} onChange={() => {}} />
+                                <InputCell value={fmt(projectBudgetCorrection.pm_cost)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, pm_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>PM - Allocation Fabrication</TD>
                                 <InputCell value={fmt(projectBudgetCorrection.pm_allocation)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, pm_allocation: parseNum(v)})} />
-                                <InputCell value={fmt(205200.00)} onChange={() => {}} />
+                                <InputCell value={fmt(projectBudgetCorrection.pm_allocation_cost)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, pm_allocation_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Labour</TD>
                                 <InputCell value={fmt(projectBudgetCorrection.labour)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, labour: parseNum(v)})} />
-                                <InputCell value={fmt(4216936.12)} onChange={() => {}} />
+                                <InputCell value={fmt(projectBudgetCorrection.labour_cost)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, labour_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Labour - Allocation Fabrication</TD>
                                 <InputCell value={fmt(projectBudgetCorrection.labour_allocation)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, labour_allocation: parseNum(v)})} />
-                                <InputCell value={fmt(307800.00)} onChange={() => {}} />
+                                <InputCell value={fmt(projectBudgetCorrection.labour_allocation_cost)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, labour_allocation_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Assets</TD>
                                 <InputCell value={fmt(projectBudgetCorrection.assets)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, assets: parseNum(v)})} />
-                                <InputCell value={fmt(682700.00)} onChange={() => {}} />
+                                <InputCell value={fmt(projectBudgetCorrection.assets_cost)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, assets_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Materials</TD>
                                 <InputCell value={fmt(projectBudgetCorrection.materials)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, materials: parseNum(v)})} />
-                                <InputCell value={fmt(1817725.02)} onChange={() => {}} />
+                                <InputCell value={fmt(projectBudgetCorrection.materials_cost)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, materials_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Other</TD>
                                 <InputCell value={fmt(projectBudgetCorrection.other)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, other: parseNum(v)})} />
-                                <InputCell value={fmt(2000972.41)} onChange={() => {}} />
+                                <InputCell value={fmt(projectBudgetCorrection.other_cost)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, other_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Road Marking</TD>
                                 <InputCell value={fmt(projectBudgetCorrection.road_marking)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, road_marking: parseNum(v)})} />
-                                <InputCell value={fmt(540000.00)} onChange={() => {}} />
+                                <InputCell value={fmt(projectBudgetCorrection.road_marking_cost)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, road_marking_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Options</TD>
                                 <InputCell value={fmt(projectBudgetCorrection.sealour)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, sealour: parseNum(v)})} />
-                                <InputCell value={fmt(540000.00)} onChange={() => {}} />
+                                <InputCell value={fmt(projectBudgetCorrection.sealour_cost)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, sealour_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Maintenance</TD>
                                 <InputCell value={fmt(projectBudgetCorrection.maintenance)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, maintenance: parseNum(v)})} />
-                                <InputCell value={fmt(2035720.00)} onChange={() => {}} />
+                                <InputCell value={fmt(projectBudgetCorrection.maintenance_cost)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, maintenance_cost: parseNum(v)})} />
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Total Contract Budget</TD>
