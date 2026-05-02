@@ -96,11 +96,13 @@ export default function ProjectMasterDataTab() {
         setup_cost_asset: 354000.00,
         materials: 539840.00,
         other: 293112.00,
+        profit: 0,
         pm_cost: 424800.00,
         labour_cost: 1857332.00,
         setup_cost_cost: 354000.00,
         materials_cost: 339940.00,
         other_cost: 293112.00,
+        profit_cost: 0,
     });
 
     const [tenderJVProfit, setTenderJVProfit] = useState({
@@ -456,10 +458,15 @@ export default function ProjectMasterDataTab() {
                                 <InputCell value={fmt(fabricationBudget.other)} onChange={v => setFabricationBudget({...fabricationBudget, other: parseNum(v)})} />
                                 <InputCell value={fmt(fabricationBudget.other_cost)} onChange={v => setFabricationBudget({...fabricationBudget, other_cost: parseNum(v)})} />
                             </tr>
+                            <tr>
+                                <TD>Profit</TD>
+                                <InputCell value={fmt(fabricationBudget.profit)} onChange={v => setFabricationBudget({...fabricationBudget, profit: parseNum(v)})} />
+                                <InputCell value={fmt(fabricationBudget.profit_cost)} onChange={v => setFabricationBudget({...fabricationBudget, profit_cost: parseNum(v)})} />
+                            </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Total Fabrication Analysis</TD>
-                                <CalcCell value={fabricationIncomeTotal} className="font-bold" />
-                                <CalcCell value={fabricationCostTotal} className="font-bold" />
+                                <CalcCell value={fabricationIncomeTotal + parseNum(fabricationBudget.profit)} className="font-bold" />
+                                <CalcCell value={fabricationCostTotal + parseNum(fabricationBudget.profit_cost)} className="font-bold" />
                             </tr>
                         </tbody>
                     </table>
