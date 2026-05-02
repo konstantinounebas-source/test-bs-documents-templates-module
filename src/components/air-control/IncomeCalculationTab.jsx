@@ -310,34 +310,7 @@ export default function IncomeCalculationTab() {
                 </Button>
             </div>
 
-            {/* ── Assumptions ───────────────────────────────────────────────────── */}
-            <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Assumptions / Percentage References</h3>
-                <table className="text-sm border-collapse">
-                    <thead>
-                        <tr>
-                            <TH>Parameter</TH>
-                            <TH>Value</TH>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {[
-                            ['AirControl 100%', 'pct_100'],
-                            ['AirControl 60%', 'pct_60'],
-                            ['Amco 100%', 'pct_amco_100'],
-                            ['Amco 60%', 'pct_amco_60'],
-                            ['Retention %', 'retention_pct'],
-                            ['Advance Adj %', 'advance_adj_pct'],
-                        ].map(([label, key]) => (
-                            <tr key={key}>
-                                <TD>{label}</TD>
-                                <InputCell value={assumptions[key]} onChange={v => setAssumptions(p => ({ ...p, [key]: v }))} />
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-                <p className="text-xs text-slate-400 mt-1">Blue cells = manual input. All formulas reference these values.</p>
-            </div>
+
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 {/* LEFT COLUMN */}
