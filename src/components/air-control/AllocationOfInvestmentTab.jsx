@@ -23,16 +23,19 @@ const TD = ({ children, bold = false, className = '' }) => (
     </td>
 );
 
-const InputCell = ({ value, onChange }) => (
-    <td className="border border-slate-300 px-1 py-1">
-        <input
-            type="number"
-            className="h-7 text-right text-xs border-0 focus:ring-1 w-full px-2"
-            value={value}
-            onChange={e => onChange(e.target.value)}
-        />
-    </td>
-);
+const InputCell = ({ value, onChange }) => {
+    const numValue = parseNum(value);
+    return (
+        <td className="border border-slate-300 px-1 py-1">
+            <input
+                type="text"
+                className="h-7 text-right text-xs border-0 focus-visible:ring-1 w-full px-2"
+                value={fmt(numValue)}
+                onChange={e => onChange(e.target.value)}
+            />
+        </td>
+    );
+};
 
 const CalcCell = ({ value, className = '' }) => (
     <td className={`border border-slate-300 px-3 py-1 text-right text-slate-800 bg-slate-50 ${className}`}>
