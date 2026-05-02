@@ -167,7 +167,7 @@ export default function AllocationOfInvestmentTab() {
                         </tr>
                         <tr>
                             <TD>Total Value of Work Performed</TD>
-                            <InputCell value={fmt(investment.total_value_work)} onChange={v => setInvestment({...investment, total_value_work: parseNum(v)})} />
+                            <CalcCell value={investment.total_value_work} />
                         </tr>
                         <tr>
                             <TD>Expected Total Project Income</TD>
