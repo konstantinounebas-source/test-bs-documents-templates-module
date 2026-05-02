@@ -105,17 +105,22 @@ export default function ProjectMasterDataTab() {
     };
 
     return (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="space-y-6">
+            {/* Save Button at Top */}
+            <div className="flex justify-end">
+                <Button onClick={handleSave} disabled={saving}>
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                    Save All Changes
+                </Button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
             {/* LEFT COLUMN: TENDER TABLES */}
             <div className="space-y-6">
             {/* 1. Tender Budget */}
             <div className="bg-white rounded-lg border border-slate-200 p-6">
                 <div className="flex items-center justify-between mb-4">
                     <h2 className="text-lg font-semibold text-slate-800">Tender Budget</h2>
-                    <Button size="sm" onClick={handleSave} disabled={saving}>
-                        {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-                        Save
-                    </Button>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-sm">
@@ -129,43 +134,43 @@ export default function ProjectMasterDataTab() {
                         <tbody>
                             <tr>
                                 <TD>PM</TD>
-                                <InputCell value={tenderBudget.pm} onChange={v => setTenderBudget({...tenderBudget, pm: v})} />
-                                <CalcCell value={1691870.00} />
+                                <InputCell value={fmt(tenderBudget.pm)} onChange={v => setTenderBudget({...tenderBudget, pm: parseNum(v)})} />
+                                <InputCell value={fmt(1691870.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Labour</TD>
-                                <InputCell value={tenderBudget.labour} onChange={v => setTenderBudget({...tenderBudget, labour: v})} />
-                                <CalcCell value={4218936.12} />
+                                <InputCell value={fmt(tenderBudget.labour)} onChange={v => setTenderBudget({...tenderBudget, labour: parseNum(v)})} />
+                                <InputCell value={fmt(4218936.12)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Assets</TD>
-                                <InputCell value={tenderBudget.assets} onChange={v => setTenderBudget({...tenderBudget, assets: v})} />
-                                <CalcCell value={682700.00} />
+                                <InputCell value={fmt(tenderBudget.assets)} onChange={v => setTenderBudget({...tenderBudget, assets: parseNum(v)})} />
+                                <InputCell value={fmt(682700.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Materials</TD>
-                                <InputCell value={tenderBudget.materials} onChange={v => setTenderBudget({...tenderBudget, materials: v})} />
-                                <CalcCell value={1817725.02} />
+                                <InputCell value={fmt(tenderBudget.materials)} onChange={v => setTenderBudget({...tenderBudget, materials: parseNum(v)})} />
+                                <InputCell value={fmt(1817725.02)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Other</TD>
-                                <InputCell value={tenderBudget.other} onChange={v => setTenderBudget({...tenderBudget, other: v})} />
-                                <CalcCell value={2000972.41} />
+                                <InputCell value={fmt(tenderBudget.other)} onChange={v => setTenderBudget({...tenderBudget, other: parseNum(v)})} />
+                                <InputCell value={fmt(2000972.41)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Road Marking</TD>
-                                <InputCell value={tenderBudget.road_marking} onChange={v => setTenderBudget({...tenderBudget, road_marking: v})} />
-                                <CalcCell value={540000.00} />
+                                <InputCell value={fmt(tenderBudget.road_marking)} onChange={v => setTenderBudget({...tenderBudget, road_marking: parseNum(v)})} />
+                                <InputCell value={fmt(540000.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Options</TD>
-                                <InputCell value={tenderBudget.options} onChange={v => setTenderBudget({...tenderBudget, options: v})} />
-                                <CalcCell value={900000.00} />
+                                <InputCell value={fmt(tenderBudget.options)} onChange={v => setTenderBudget({...tenderBudget, options: parseNum(v)})} />
+                                <InputCell value={fmt(900000.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Maintenance</TD>
-                                <InputCell value={tenderBudget.maintenance} onChange={v => setTenderBudget({...tenderBudget, maintenance: v})} />
-                                <CalcCell value={2035720.00} />
+                                <InputCell value={fmt(tenderBudget.maintenance)} onChange={v => setTenderBudget({...tenderBudget, maintenance: parseNum(v)})} />
+                                <InputCell value={fmt(2035720.00)} onChange={() => {}} />
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Total Tender Budget</TD>
@@ -260,53 +265,53 @@ export default function ProjectMasterDataTab() {
                         <tbody>
                             <tr>
                                 <TD>PM</TD>
-                                <InputCell value={projectBudgetCorrection.pm} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, pm: v})} />
-                                <CalcCell value={1691870.00} />
+                                <InputCell value={fmt(projectBudgetCorrection.pm)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, pm: parseNum(v)})} />
+                                <InputCell value={fmt(1691870.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>PM - Allocation Fabrication</TD>
-                                <InputCell value={projectBudgetCorrection.pm_allocation} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, pm_allocation: v})} />
-                                <CalcCell value={205200.00} />
+                                <InputCell value={fmt(projectBudgetCorrection.pm_allocation)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, pm_allocation: parseNum(v)})} />
+                                <InputCell value={fmt(205200.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Labour</TD>
-                                <InputCell value={projectBudgetCorrection.labour} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, labour: v})} />
-                                <CalcCell value={4216936.12} />
+                                <InputCell value={fmt(projectBudgetCorrection.labour)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, labour: parseNum(v)})} />
+                                <InputCell value={fmt(4216936.12)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Labour - Allocation Fabrication</TD>
-                                <InputCell value={projectBudgetCorrection.labour_allocation} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, labour_allocation: v})} />
-                                <CalcCell value={307800.00} />
+                                <InputCell value={fmt(projectBudgetCorrection.labour_allocation)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, labour_allocation: parseNum(v)})} />
+                                <InputCell value={fmt(307800.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Assets</TD>
-                                <InputCell value={projectBudgetCorrection.assets} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, assets: v})} />
-                                <CalcCell value={682700.00} />
+                                <InputCell value={fmt(projectBudgetCorrection.assets)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, assets: parseNum(v)})} />
+                                <InputCell value={fmt(682700.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Materials</TD>
-                                <InputCell value={projectBudgetCorrection.materials} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, materials: v})} />
-                                <CalcCell value={1817725.02} />
+                                <InputCell value={fmt(projectBudgetCorrection.materials)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, materials: parseNum(v)})} />
+                                <InputCell value={fmt(1817725.02)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Other</TD>
-                                <InputCell value={projectBudgetCorrection.other} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, other: v})} />
-                                <CalcCell value={2000972.41} />
+                                <InputCell value={fmt(projectBudgetCorrection.other)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, other: parseNum(v)})} />
+                                <InputCell value={fmt(2000972.41)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Road Marking</TD>
-                                <InputCell value={projectBudgetCorrection.road_marking} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, road_marking: v})} />
-                                <CalcCell value={540000.00} />
+                                <InputCell value={fmt(projectBudgetCorrection.road_marking)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, road_marking: parseNum(v)})} />
+                                <InputCell value={fmt(540000.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Sealour</TD>
-                                <InputCell value={projectBudgetCorrection.sealour} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, sealour: v})} />
-                                <CalcCell value={540000.00} />
+                                <InputCell value={fmt(projectBudgetCorrection.sealour)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, sealour: parseNum(v)})} />
+                                <InputCell value={fmt(540000.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Maintenance</TD>
-                                <InputCell value={projectBudgetCorrection.maintenance} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, maintenance: v})} />
-                                <CalcCell value={2035720.00} />
+                                <InputCell value={fmt(projectBudgetCorrection.maintenance)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, maintenance: parseNum(v)})} />
+                                <InputCell value={fmt(2035720.00)} onChange={() => {}} />
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Total Contract Budget</TD>
@@ -333,28 +338,28 @@ export default function ProjectMasterDataTab() {
                         <tbody>
                             <tr>
                                 <TD>PM</TD>
-                                <InputCell value={fabricationBudget.pm} onChange={v => setFabricationBudget({...fabricationBudget, pm: v})} />
-                                <CalcCell value={424800.00} />
+                                <InputCell value={fmt(fabricationBudget.pm)} onChange={v => setFabricationBudget({...fabricationBudget, pm: parseNum(v)})} />
+                                <InputCell value={fmt(424800.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Labour</TD>
-                                <InputCell value={fabricationBudget.labour} onChange={v => setFabricationBudget({...fabricationBudget, labour: v})} />
-                                <CalcCell value={1857332.00} />
+                                <InputCell value={fmt(fabricationBudget.labour)} onChange={v => setFabricationBudget({...fabricationBudget, labour: parseNum(v)})} />
+                                <InputCell value={fmt(1857332.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Set Up Cost - Asset</TD>
-                                <InputCell value={fabricationBudget.setup_cost_asset} onChange={v => setFabricationBudget({...fabricationBudget, setup_cost_asset: v})} />
-                                <CalcCell value={354000.00} />
+                                <InputCell value={fmt(fabricationBudget.setup_cost_asset)} onChange={v => setFabricationBudget({...fabricationBudget, setup_cost_asset: parseNum(v)})} />
+                                <InputCell value={fmt(354000.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Materials</TD>
-                                <InputCell value={fabricationBudget.materials} onChange={v => setFabricationBudget({...fabricationBudget, materials: v})} />
-                                <CalcCell value={339940.00} />
+                                <InputCell value={fmt(fabricationBudget.materials)} onChange={v => setFabricationBudget({...fabricationBudget, materials: parseNum(v)})} />
+                                <InputCell value={fmt(339940.00)} onChange={() => {}} />
                             </tr>
                             <tr>
                                 <TD>Other</TD>
-                                <InputCell value={fabricationBudget.other} onChange={v => setFabricationBudget({...fabricationBudget, other: v})} />
-                                <CalcCell value={293112.00} />
+                                <InputCell value={fmt(fabricationBudget.other)} onChange={v => setFabricationBudget({...fabricationBudget, other: parseNum(v)})} />
+                                <InputCell value={fmt(293112.00)} onChange={() => {}} />
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Total Fabrication Analysis</TD>
@@ -462,6 +467,7 @@ export default function ProjectMasterDataTab() {
                         </tbody>
                     </table>
                 </div>
+            </div>
             </div>
             </div>
         </div>
