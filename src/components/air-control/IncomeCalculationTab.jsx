@@ -312,65 +312,68 @@ export default function IncomeCalculationTab() {
 
 
 
+            {/* ── TOP SUMMARY: Income Type + Income Not Earned ─────────────── */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {/* Πίνακας 5 — Income */}
+                <div>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2">Πίνακας 5 — Income</h3>
+                    <table className="w-full border-collapse text-sm">
+                        <thead>
+                            <tr><SectionHeader title="Income Type" /></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <TD>AirControl Advance Payment</TD>
+                                <CalcCell value={incomeAdvancePayment} />
+                            </tr>
+                            <tr>
+                                <TD>Certified Works</TD>
+                                <CalcCell value={incomeCertifiedWorks} />
+                            </tr>
+                            <tr className="bg-blue-50">
+                                <TD bold>Total Income Received</TD>
+                                <CalcCell value={totalIncomeReceived} className="font-bold bg-blue-50" />
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Πίνακας 6 — Income Not Earned */}
+                <div>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2">Πίνακας 6 — Income Not Earned</h3>
+                    <table className="w-full border-collapse text-sm">
+                        <thead>
+                            <tr><SectionHeader title="Income Not Earned Type" /></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <TD>Certified – As per Contract but Not Paid</TD>
+                                <CalcCell value={certifiedNotPaid} />
+                            </tr>
+                            <tr>
+                                <TD>Not Certified – As per Contract</TD>
+                                <CalcCell value={totalNotCertified} />
+                            </tr>
+                            <tr>
+                                <TD>Fabrication</TD>
+                                <CalcCell value={totalFabricationIncome} />
+                            </tr>
+                            <tr>
+                                <TD>Extra Works – Not Approved</TD>
+                                <CalcCell value={totalExtraWorksNotApproved} />
+                            </tr>
+                            <tr className="bg-blue-50">
+                                <TD bold>Total Income Not Earned</TD>
+                                <CalcCell value={totalIncomeNotEarned} className="font-bold bg-blue-50" />
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 {/* LEFT COLUMN */}
                 <div className="space-y-8">
-
-                    {/* ── Section 1: Income Received ───────────────────────────────── */}
-                    <div>
-                        <h3 className="text-sm font-bold text-slate-700 mb-2">Πίνακας 5 — Income</h3>
-                        <table className="w-full border-collapse text-sm">
-                            <thead>
-                                <tr><SectionHeader title="Income Type" /></tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <TD>AirControl Advance Payment</TD>
-                                    <CalcCell value={incomeAdvancePayment} />
-                                </tr>
-                                <tr>
-                                    <TD>Certified Works</TD>
-                                    <CalcCell value={incomeCertifiedWorks} />
-                                </tr>
-                                <tr className="bg-blue-50">
-                                    <TD bold>Total Income Received</TD>
-                                    <CalcCell value={totalIncomeReceived} className="font-bold bg-blue-50" />
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* ── Section 2: Income Not Earned ─────────────────────────────── */}
-                    <div>
-                        <h3 className="text-sm font-bold text-slate-700 mb-2">Πίνακας 6 — Income Not Earned</h3>
-                        <table className="w-full border-collapse text-sm">
-                            <thead>
-                                <tr><SectionHeader title="Income Not Earned Type" /></tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <TD>Certified – As per Contract but Not Paid</TD>
-                                    <CalcCell value={certifiedNotPaid} />
-                                </tr>
-                                <tr>
-                                    <TD>Not Certified – As per Contract</TD>
-                                    <CalcCell value={totalNotCertified} />
-                                </tr>
-                                <tr>
-                                    <TD>Fabrication</TD>
-                                    <CalcCell value={totalFabricationIncome} />
-                                </tr>
-                                <tr>
-                                    <TD>Extra Works – Not Approved</TD>
-                                    <CalcCell value={totalExtraWorksNotApproved} />
-                                </tr>
-                                <tr className="bg-blue-50">
-                                    <TD bold>Total Income Not Earned</TD>
-                                    <CalcCell value={totalIncomeNotEarned} className="font-bold bg-blue-50" />
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
 
                     {/* ── Section 4: Value of Work Performed ───────────────────────── */}
                     <div>
