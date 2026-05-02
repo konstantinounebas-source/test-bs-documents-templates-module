@@ -327,7 +327,7 @@ export default function ProjectMasterDataTab() {
                                 <InputCell value={fmt(540000.00)} onChange={() => {}} />
                             </tr>
                             <tr>
-                                <TD>Sealour</TD>
+                                <TD>Options</TD>
                                 <InputCell value={fmt(projectBudgetCorrection.sealour)} onChange={v => setProjectBudgetCorrection({...projectBudgetCorrection, sealour: parseNum(v)})} />
                                 <InputCell value={fmt(540000.00)} onChange={() => {}} />
                             </tr>
