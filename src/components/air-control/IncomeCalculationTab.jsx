@@ -438,11 +438,6 @@ export default function IncomeCalculationTab() {
                 {/* LEFT COLUMN */}
                 <div className="space-y-8">
 
-                </div>
-
-                {/* RIGHT COLUMN */}
-                <div className="space-y-8">
-
                     {/* ── JV Payments – Certified Works ────────────────────────────── */}
                     <div>
                         <h3 className="text-sm font-bold text-slate-700 mb-2">JV Payments – Certified Works</h3>
@@ -522,7 +517,7 @@ export default function IncomeCalculationTab() {
                         </div>
                     </div>
 
-                    {/* ── JV Advance Payments ───────────────────────────────────────── */}
+                {/* ── JV Advance Payments ───────────────────────────────────────── */}
                     <div>
                         <h3 className="text-sm font-bold text-slate-700 mb-2">JV Advance Payments</h3>
                         <div className="overflow-x-auto">
@@ -576,7 +571,7 @@ export default function IncomeCalculationTab() {
                         </div>
                     </div>
 
-                    {/* ── JV Certified – As per Contract but Not Paid ──────────────── */}
+                {/* ── JV Certified – As per Contract but Not Paid ──────────────── */}
                     <div>
                         <h3 className="text-sm font-bold text-slate-700 mb-2">JV Certified – As per Contract but Not Paid</h3>
                         <div className="overflow-x-auto">
@@ -638,6 +633,11 @@ export default function IncomeCalculationTab() {
                             </table>
                         </div>
                     </div>
+
+                </div>
+
+                {/* RIGHT COLUMN */}
+                <div className="space-y-8">
 
                     {/* ── Section 7: Not Delivered Works ───────────────────────────── */}
                     <div>
