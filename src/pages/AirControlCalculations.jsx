@@ -10,7 +10,7 @@ const TABS = [
     { key: 'project_summary', label: 'Project Summary' },
     { key: 'project_projections', label: 'Project Projections' },
     { key: 'outcome_calculation', label: 'Outcome Calculation' },
-    { key: 'income_summary', label: 'Income Summary Calculation' },
+    { key: 'income_summary', label: 'Income Summary' },
     { key: 'income_calculation', label: 'Income Calculation' },
     { key: 'allocation_investment', label: 'Allocation of Investment' },
     { key: 'fabrication_calculation', label: 'Fabrication Calculation' },
