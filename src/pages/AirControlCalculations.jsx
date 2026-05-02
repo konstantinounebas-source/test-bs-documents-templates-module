@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OutcomeCalculationTab from "@/components/air-control/OutcomeCalculationTab";
 import IncomeCalculationTab from "@/components/air-control/IncomeCalculationTab";
+import ProjectMasterDataTab from "@/components/air-control/ProjectMasterDataTab";
 
 const TABS = [
     { key: 'master_data', label: 'Project Master Data' },
@@ -48,7 +49,9 @@ export default function AirControlCalculations() {
 
                 {TABS.map(tab => (
                     <TabsContent key={tab.key} value={tab.key}>
-                        {tab.key === 'outcome_calculation' ? (
+                        {tab.key === 'master_data' ? (
+                            <ProjectMasterDataTab />
+                        ) : tab.key === 'outcome_calculation' ? (
                             <OutcomeCalculationTab />
                         ) : tab.key === 'income_calculation' ? (
                             <IncomeCalculationTab />
