@@ -206,7 +206,7 @@ export default function IncomeCalculationTab() {
     const advanceCheckOK = advPayments.every(p => Math.abs(p.total - p.aircontrol - p.amco) < 0.01);
 
     // 1. Income Received
-    const incomeAdvancePayment = totalAdvancePayment;
+    const incomeAdvancePayment = totalAdvanceAC;
     const incomeCertifiedWorks = grandTotalAC;
     const totalIncomeReceived = incomeAdvancePayment + incomeCertifiedWorks;
 
@@ -352,7 +352,7 @@ export default function IncomeCalculationTab() {
                             </thead>
                             <tbody>
                                 <tr>
-                                    <TD>Advance Payment</TD>
+                                    <TD>AirControl Advance Payment</TD>
                                     <CalcCell value={incomeAdvancePayment} />
                                 </tr>
                                 <tr>
