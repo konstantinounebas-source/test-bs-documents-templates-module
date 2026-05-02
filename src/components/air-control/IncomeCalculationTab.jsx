@@ -335,7 +335,7 @@ export default function IncomeCalculationTab() {
                     <h3 className="text-sm font-bold text-slate-700 mb-2">Πίνακας 5 — Income</h3>
                     <table className="w-full border-collapse text-sm">
                         <thead>
-                            <tr><SectionHeader title="Income Type" /></tr>
+                            <tr><TH className="text-left">Category</TH><TH>Value</TH></tr>
                         </thead>
                         <tbody>
                             <tr>
@@ -359,7 +359,7 @@ export default function IncomeCalculationTab() {
                     <h3 className="text-sm font-bold text-slate-700 mb-2">Πίνακας 6 — Income Not Earned</h3>
                     <table className="w-full border-collapse text-sm">
                         <thead>
-                            <tr><SectionHeader title="Income Not Earned Type" /></tr>
+                            <tr><TH className="text-left">Category</TH><TH>Value</TH></tr>
                         </thead>
                         <tbody>
                             <tr>
@@ -407,7 +407,7 @@ export default function IncomeCalculationTab() {
                     <h3 className="text-sm font-bold text-slate-700 mb-2">Πίνακας 7 — Value of Work Performed</h3>
                     <table className="w-full border-collapse text-sm">
                         <thead>
-                            <tr><SectionHeader title="Value of Work Performed" /></tr>
+                            <tr><TH className="text-left">Category</TH><TH>Value</TH></tr>
                         </thead>
                         <tbody>
                             <tr>
