@@ -213,7 +213,7 @@ export default function IncomeCalculationTab() {
     // Advance payment remaining
     const certWorksAC60 = grandTotalAC60; // sum of manually-entered AC 60% column
     const certAdjustment = (certWorksAC60 / (pct60 || 1)) * advAdjPct;
-    const advancePaymentRemaining = totalAdvancePayment - certAdjustment;
+    const advancePaymentRemaining = totalAdvanceAC - certAdjustment;
 
     // 7. Not Delivered Works
     const removalTotalQty = shelterTypes
@@ -636,7 +636,7 @@ export default function IncomeCalculationTab() {
                         {/* Advance remaining breakdown */}
                         <div className="mt-2 p-3 bg-slate-50 rounded border border-slate-200 text-xs space-y-1">
                             <div className="font-semibold text-slate-700">Advance Payment (Remaining)</div>
-                            <div className="flex justify-between"><span>Total Advance Payment</span><span>{fmt(totalAdvancePayment)}</span></div>
+                            <div className="flex justify-between"><span>AirControl Advance Payment</span><span>{fmt(totalAdvanceAC)}</span></div>
                             <div className="flex justify-between text-slate-500 italic"><span>Adjustment (÷{pct60}×{advAdjPct})</span><span>({fmt(certAdjustment)})</span></div>
                             <div className="flex justify-between font-bold border-t border-slate-300 pt-1"><span>Advance Payment (Remaining)</span><span>{fmt(advancePaymentRemaining)}</span></div>
                         </div>
