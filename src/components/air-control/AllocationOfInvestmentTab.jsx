@@ -64,15 +64,43 @@ export default function AllocationOfInvestmentTab() {
             const incomeMap = {};
             incomeRecords.forEach(r => { incomeMap[r.section] = r; });
 
-            // Get Total Value of Work Performed and Expected Income from summary
             let totalValueOfWorkPerformed = investment.total_value_work;
             let expectedIncome = investment.expected_income;
 
-            if (incomeMap.summary?.data) {
-                totalValueOfWorkPerformed = incomeMap.summary.data.total_value_of_work_performed 
-                    || investment.total_value_work;
-                expectedIncome = incomeMap.summary.data.expected_total_project_income 
-                    || investment.expected_income;
+            if (incomeMap.certified?.data && incomeMap.advance?.data && incomeMap.not_paid?.data) {
+                const certPayments = incomeMap.certified.data.payments || [];
+                const advPayments = incomeMap.advance.data.payments || [];
+                const notPaidPayments = incomeMap.not_paid.data.payments || [];
+                
+                // Total Income Received = Advance Payment (AC) + Certified Works (AC)
+                const totalIncomeReceived = advPayments.reduce((s, p) => s + parseNum(p.aircontrol), 0) 
+                    + certPayments.reduce((s, p) => s + parseNum(p.ac100) + parseNum(p.ac60), 0);
+                
+                // Get assumptions
+                const assumptions = incomeMap.assumptions?.data || {};
+                const pct60 = parseNum(assumptions.pct_60) || 0.6;
+                const advAdjPct = parseNum(assumptions.advance_adj_pct) || 0.35;
+                const retentionPct = parseNum(assumptions.retention_pct) || 0.05;
+                
+                // Advance remaining
+                const certWorksAC60 = certPayments.reduce((s, p) => s + parseNum(p.ac60), 0);
+                const advancePaymentRemaining = advPayments.reduce((s, p) => s + parseNum(p.aircontrol), 0) 
+                    - ((certWorksAC60 / pct60) * advAdjPct);
+                
+                // Total Income Not Earned
+                const certifiedNotPaid = notPaidPayments.reduce((s, p) => s + parseNum(p.ac100) + parseNum(p.ac60), 0);
+                const retention = (certWorksAC60 / pct60) * retentionPct;
+                const otherNotClaimedAmount = incomeMap.other_not_claimed?.data?.rows?.reduce((s, r) => s + parseNum(r.amount), 0) || 0;
+                const shelterData = incomeMap.shelter_types?.data?.types || [];
+                const totalFabricationIncome = shelterData.filter(t => ['type_a', 'type_b', 'type_c'].includes(t.key))
+                    .reduce((s, t) => s + (parseNum(t.total_qty) * parseNum(t.jv_rate)), 0);
+                const totalIncomeNotEarned = certifiedNotPaid + retention + totalFabricationIncome + otherNotClaimedAmount;
+                
+                // Correct formula: Total Value of Work Performed = Total Income Received + Total Income Not Earned - Advance Payment Remaining
+                totalValueOfWorkPerformed = totalIncomeReceived + totalIncomeNotEarned - advancePaymentRemaining;
+                
+                // Get Expected Income from summary
+                expectedIncome = incomeMap.summary?.data?.expected_total_project_income || investment.expected_income;
             }
 
             setInvestment(prev => ({
