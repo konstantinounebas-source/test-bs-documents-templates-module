@@ -50,7 +50,7 @@ export default function ProjectMasterDataTab() {
         assets: 823336.20,
         materials: 2192176.37,
         other: 2413172.73,
-        road_marking: 504000.00,
+        road_marking: 594000.00,
         options: 1050000.00,
         maintenance: 2650980.00,
     });
