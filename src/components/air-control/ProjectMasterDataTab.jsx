@@ -106,9 +106,9 @@ export default function ProjectMasterDataTab() {
     });
 
     const [tenderJVProfit, setTenderJVProfit] = useState({
-        total_jv: 1399753.13,
-        ac_share_70: 979627.19,
-        amco_share_30: 419925.94,
+        total_jv: 2358844.76,
+        ac_share_70: 1769133.57,
+        amco_share_30: 589711.19,
     });
 
     const [totalTenderProfit, setTotalTenderProfit] = useState({
