@@ -105,7 +105,9 @@ export default function ProjectMasterDataTab() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="grid grid-cols-2 gap-6">
+            {/* LEFT COLUMN: TENDER TABLES */}
+            <div className="space-y-6">
             {/* 1. Tender Budget */}
             <div className="bg-white rounded-lg border border-slate-200 p-6">
                 <div className="flex items-center justify-between mb-4">
@@ -175,6 +177,74 @@ export default function ProjectMasterDataTab() {
                 </div>
             </div>
 
+            {/* 4. Tender JV Budget Profit */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4">Tender JV Budget Profit</h2>
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-sm">
+                        <thead>
+                            <tr>
+                                <TH className="text-left">Description</TH>
+                                <TH>Value</TH>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <TD>Total Tender JV</TD>
+                                <CalcCell value={tenderJVProfit.total_jv} />
+                            </tr>
+                            <tr>
+                                <TD>JV-Aircontrol Share Tender 70%</TD>
+                                <CalcCell value={tenderJVProfit.ac_share_70} />
+                            </tr>
+                            <tr>
+                                <TD>JV-Amco Share Tender 30%</TD>
+                                <CalcCell value={tenderJVProfit.amco_share_30} />
+                            </tr>
+                            <tr className="bg-slate-50">
+                                <TD colSpan={2} className="text-xs text-slate-500">*Note Refer Budget Analysis Sheet</TD>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* 5. Total Tender Expected Profit */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6">
+                <h2 className="text-lg font-semibold text-slate-800 mb-4">Total Tender Expected Profit</h2>
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-sm">
+                        <thead>
+                            <tr>
+                                <TH className="text-left">Description</TH>
+                                <TH>Value</TH>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <TD>Total TenderBudget Income</TD>
+                                <CalcCell value={totalTenderProfit.income} />
+                            </tr>
+                            <tr>
+                                <TD>Total Tender Budget Cost</TD>
+                                <CalcCell value={totalTenderProfit.cost} />
+                            </tr>
+                            <tr>
+                                <TD>JV-Aircontrol Share Tender 75%</TD>
+                                <CalcCell value={totalTenderProfit.ac_share} />
+                            </tr>
+                            <tr className="bg-slate-100 font-bold">
+                                <TD bold>Expected Tender Profit</TD>
+                                <CalcCell value={totalTenderProfit.expected} className="font-bold" />
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            </div>
+
+            {/* RIGHT COLUMN: PROJECT TABLES */}
+            <div className="space-y-6">
             {/* 2. Project Budget with Correction to Fabrication */}
             <div className="bg-white rounded-lg border border-slate-200 p-6">
                 <h2 className="text-lg font-semibold text-slate-800 mb-4">Project Budget with Correction to Fabrication</h2>
@@ -392,6 +462,7 @@ export default function ProjectMasterDataTab() {
                         </tbody>
                     </table>
                 </div>
+            </div>
             </div>
         </div>
     );
