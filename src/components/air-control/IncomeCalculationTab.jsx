@@ -565,8 +565,8 @@ export default function IncomeCalculationTab() {
                                 <tbody>
                                     {advPayments.map((p, idx) => (
                                         <tr key={idx}>
-                                            <InputCell value={p.description} onChange={v => updateAdvancePayment(idx, 'description', v)} />
-                                            <InputCell value={p.label} onChange={v => updateAdvancePayment(idx, 'label', v)} />
+                                            <InputCell value={advance.payments[idx].description} onChange={v => updateAdvancePayment(idx, 'description', v)} type="text" align="left" />
+                                            <InputCell value={advance.payments[idx].label} onChange={v => updateAdvancePayment(idx, 'label', v)} type="text" align="left" />
                                             <InputCell value={p.total} onChange={v => updateAdvancePayment(idx, 'total', v)} />
                                             <CalcCell value={p.total * pct100} />
                                             <CalcCell value={p.total * pct100} />
