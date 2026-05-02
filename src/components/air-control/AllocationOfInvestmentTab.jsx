@@ -155,8 +155,8 @@ export default function AllocationOfInvestmentTab() {
                             <CalcCell value={totalInvestment} />
                         </tr>
                         <tr>
-                            <TD>Asset value after Depreciation</TD>
-                            <InputCell value={fmt(investment.asset_after_depr)} onChange={v => setInvestment({...investment, asset_after_depr: parseNum(v)})} />
+                            <TD>Asset Value after Depreciation</TD>
+                            <CalcCell value={parseNum(investment.assets) * 0.25} />
                         </tr>
                         <tr>
                             <TD>Total Value of Work Performed</TD>
