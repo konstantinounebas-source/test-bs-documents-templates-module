@@ -738,8 +738,8 @@ export default function IncomeCalculationTab() {
                     </div>
 
                     {/* ── Section 11: Other Extra Works Income ─────────────────────── */}
-                    <div>
-                        <h3 className="text-sm font-bold text-slate-700 mb-2">Other Extra Works Income</h3>
+                    <div className="space-y-4">
+                        <h3 className="text-sm font-bold text-slate-700 mb-4">Other Extra Works Income</h3>
                         <table className="border-collapse text-xs w-full">
                             <thead>
                                 <tr><TH>Type</TH><TH>QTY</TH><TH>Roofing</TH><TH>Earthing</TH><TH>Stickers</TH><TH>Total</TH></tr>
