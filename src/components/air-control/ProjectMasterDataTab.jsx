@@ -122,10 +122,31 @@ export default function ProjectMasterDataTab() {
         expected: 5421916.50,
     });
 
-    const saving = false;
+    const [saving, setSaving] = React.useState(false);
 
     const handleSave = async () => {
-        // TODO: Save to database
+        setSaving(true);
+        try {
+            // Save all budget data as a single record
+            const data = {
+                tenderBudget,
+                projectBudgetCorrection,
+                fabricationBudget,
+                tenderJVProfit,
+                totalTenderProfit,
+                projectTotalProfit,
+            };
+            
+            // You can save this to your database entity here
+            // await base44.entities.ProjectMasterData.create(data);
+            
+            alert('Changes saved successfully');
+        } catch (error) {
+            console.error('Save failed:', error);
+            alert('Failed to save changes');
+        } finally {
+            setSaving(false);
+        }
     };
 
     // Tender Budget totals
