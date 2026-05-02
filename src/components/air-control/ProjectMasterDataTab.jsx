@@ -486,16 +486,16 @@ export default function ProjectMasterDataTab() {
                         </thead>
                         <tbody>
                             <tr>
-                                <TD>Total Tender JV</TD>
-                                <CalcCell value={tenderJVProfit.total_jv} />
+                                <TD>Total JV</TD>
+                                <CalcCell value={projectTotalProfit.ac_share + (projectTotalProfit.ac_share / 0.75 * 0.25)} />
                             </tr>
                             <tr>
-                                <TD>JV-Aircontrol Share Tender 75%</TD>
-                                <CalcCell value={tenderJVProfit.ac_share_70} />
+                                <TD>Aircontrol 75%</TD>
+                                <CalcCell value={projectTotalProfit.ac_share} />
                             </tr>
                             <tr>
-                                <TD>JV-Amco Share Tender 25%</TD>
-                                <CalcCell value={tenderJVProfit.amco_share_30} />
+                                <TD>Amco 25%</TD>
+                                <CalcCell value={projectTotalProfit.ac_share / 0.75 * 0.25} />
                             </tr>
                             <tr className="bg-slate-50">
                                 <TD colSpan={2} className="text-xs text-slate-500">*Note Refer Budget Analysis Sheet</TD>
