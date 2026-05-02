@@ -102,6 +102,18 @@ export default function ProjectMasterDataTab() {
         // TODO: Save to database
     };
 
+    // Tender Budget totals
+    const tenderIncomeTotal = parseNum(tenderBudget.pm) + parseNum(tenderBudget.labour) + parseNum(tenderBudget.assets) + parseNum(tenderBudget.materials) + parseNum(tenderBudget.other) + parseNum(tenderBudget.road_marking) + parseNum(tenderBudget.options) + parseNum(tenderBudget.maintenance);
+    const tenderCostTotal = 1691870.00 + 4218936.12 + 682700.00 + 1817725.02 + 2000972.41 + 540000.00 + 900000.00 + 2035720.00;
+
+    // Project Budget Correction totals
+    const projectIncomeTotal = parseNum(projectBudgetCorrection.pm) + parseNum(projectBudgetCorrection.pm_allocation) + parseNum(projectBudgetCorrection.labour) + parseNum(projectBudgetCorrection.labour_allocation) + parseNum(projectBudgetCorrection.assets) + parseNum(projectBudgetCorrection.materials) + parseNum(projectBudgetCorrection.other) + parseNum(projectBudgetCorrection.road_marking) + parseNum(projectBudgetCorrection.sealour) + parseNum(projectBudgetCorrection.maintenance);
+    const projectCostTotal = 1691870.00 + 205200.00 + 4216936.12 + 307800.00 + 682700.00 + 1817725.02 + 2000972.41 + 540000.00 + 540000.00 + 2035720.00;
+
+    // Fabrication Budget totals
+    const fabricationIncomeTotal = parseNum(fabricationBudget.pm) + parseNum(fabricationBudget.labour) + parseNum(fabricationBudget.setup_cost_asset) + parseNum(fabricationBudget.materials) + parseNum(fabricationBudget.other);
+    const fabricationCostTotal = 424800.00 + 1857332.00 + 354000.00 + 339940.00 + 293112.00;
+
     return (
         <div className="space-y-6">
             {/* Save Button at Top */}
@@ -172,8 +184,8 @@ export default function ProjectMasterDataTab() {
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Total Tender Budget</TD>
-                                <CalcCell value={16849685.48} className="font-bold" />
-                                <CalcCell value={13885923.55} className="font-bold" />
+                                <CalcCell value={tenderIncomeTotal} className="font-bold" />
+                                <CalcCell value={tenderCostTotal} className="font-bold" />
                             </tr>
                         </tbody>
                     </table>
@@ -313,8 +325,8 @@ export default function ProjectMasterDataTab() {
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Total Contract Budget</TD>
-                                <CalcCell value={16206435.48} className="font-bold" />
-                                <CalcCell value={13372007.55} className="font-bold" />
+                                <CalcCell value={projectIncomeTotal} className="font-bold" />
+                                <CalcCell value={projectCostTotal} className="font-bold" />
                             </tr>
                         </tbody>
                     </table>
@@ -361,8 +373,8 @@ export default function ProjectMasterDataTab() {
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Total Fabrication Analysis</TD>
-                                <CalcCell value={4066350.00} className="font-bold" />
-                                <CalcCell value={3269084.00} className="font-bold" />
+                                <CalcCell value={fabricationIncomeTotal} className="font-bold" />
+                                <CalcCell value={fabricationCostTotal} className="font-bold" />
                             </tr>
                         </tbody>
                     </table>
