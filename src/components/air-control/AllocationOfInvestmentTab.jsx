@@ -156,7 +156,7 @@ export default function AllocationOfInvestmentTab() {
                         </tr>
                         <tr>
                             <TD>Allocation %</TD>
-                            <CalcCell value={`${fmt(allocationPct)} %`} className="text-right" />
+                            <CalcCell value={isNaN(allocationPct) ? 'N/A' : `${allocationPct.toFixed(2)} %`} className="text-right" />
                         </tr>
                         <tr className="bg-slate-100 font-bold">
                             <TD bold>Allocated Investment Cost</TD>
