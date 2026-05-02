@@ -386,6 +386,22 @@ export default function IncomeCalculationTab() {
                     </table>
                 </div>
 
+                {/* Not Certified – As per Contract */}
+                <div>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2">Not Certified – As per Contract</h3>
+                    <table className="w-full border-collapse text-sm">
+                        <thead>
+                            <tr><TH className="text-left">Category</TH><TH>Value</TH></tr>
+                        </thead>
+                        <tbody>
+                            <tr><TD>Retention 5%</TD><CalcCell value={totalRetention5} /></tr>
+                            <tr><TD>Not Delivered Works</TD><CalcCell value={totalNotDeliveredWorks} /></tr>
+                            <tr><TD>Other Works Not Claimed</TD><CalcCell value={totalOtherNotClaimed} /></tr>
+                            <tr className="bg-slate-50"><TD bold>Total</TD><CalcCell value={totalNotCertified} className="font-bold" /></tr>
+                        </tbody>
+                    </table>
+                </div>
+
                 {/* Πίνακας 7 — Value of Work Performed */}
                 <div>
                     <h3 className="text-sm font-bold text-slate-700 mb-2">Πίνακας 7 — Value of Work Performed</h3>
@@ -421,22 +437,6 @@ export default function IncomeCalculationTab() {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 {/* LEFT COLUMN */}
                 <div className="space-y-8">
-
-                    {/* ── Section 5: Not Certified As Per Contract ──────────────────── */}
-                    <div>
-                        <h3 className="text-sm font-bold text-slate-700 mb-2">Not Certified – As per Contract</h3>
-                        <table className="w-full border-collapse text-sm">
-                            <thead>
-                                <tr><TH className="text-left">Category</TH><TH>Value</TH></tr>
-                            </thead>
-                            <tbody>
-                                <tr><TD>Retention 5%</TD><CalcCell value={totalRetention5} /></tr>
-                                <tr><TD>Not Delivered Works</TD><CalcCell value={totalNotDeliveredWorks} /></tr>
-                                <tr><TD>Other Works Not Claimed</TD><CalcCell value={totalOtherNotClaimed} /></tr>
-                                <tr className="bg-slate-50"><TD bold>Total</TD><CalcCell value={totalNotCertified} className="font-bold" /></tr>
-                            </tbody>
-                        </table>
-                    </div>
 
                     {/* ── Section 8: Other Works Not Claimed ───────────────────────── */}
                     <div>
