@@ -527,7 +527,7 @@ export default function ProjectMasterDataTab() {
                             </tr>
                             <tr>
                                 <TD>JV-Aircontrol Share Tender 75%</TD>
-                                <CalcCell value={(projectIncomeTotal + fabricationIncomeTotal + parseNum(fabricationBudget.profit) - projectCostTotal - fabricationCostTotal - parseNum(fabricationBudget.profit_cost)) * 0.75} />
+                                <CalcCell value={projectTotalProfit.ac_share} />
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Expected Project Profit</TD>
