@@ -637,7 +637,7 @@ export default function IncomeCalculationTab() {
                         <div className="mt-2 p-3 bg-slate-50 rounded border border-slate-200 text-xs space-y-1">
                             <div className="font-semibold text-slate-700">Advance Payment (Remaining)</div>
                             <div className="flex justify-between"><span>AirControl Advance Payment</span><span>{fmt(totalAdvanceAC)}</span></div>
-                            <div className="flex justify-between text-slate-500 italic"><span>Adjustment (÷{pct60}×{advAdjPct})</span><span>({fmt(certAdjustment)})</span></div>
+                            <div className="flex justify-between text-slate-500 italic"><span>AirControl Total Income 60% Adjustment (÷{pct60}×{advAdjPct})</span><span>({fmt(certAdjustment)})</span></div>
                             <div className="flex justify-between font-bold border-t border-slate-300 pt-1"><span>Advance Payment (Remaining)</span><span>{fmt(advancePaymentRemaining)}</span></div>
                         </div>
                     </div>
