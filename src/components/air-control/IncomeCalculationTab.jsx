@@ -438,28 +438,6 @@ export default function IncomeCalculationTab() {
                 {/* LEFT COLUMN */}
                 <div className="space-y-8">
 
-                    {/* ── Section 6: Retention ─────────────────────────────────────── */}
-                    <div>
-                        <h3 className="text-sm font-bold text-slate-700 mb-2">Retention</h3>
-                        <table className="w-full border-collapse text-sm">
-                            <thead>
-                                <tr><TH className="text-left">Description</TH><TH>Value</TH></tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <TD>Total Certified Works 60% AirControl</TD>
-                                    <CalcCell value={totalCertWorksAC60} />
-                                </tr>
-                                <tr>
-                                    <TD>Total Retention {(retentionPct * 100).toFixed(0)}%
-                                        <span className="text-slate-400 ml-1 text-xs">(÷{pct60}×{retentionPct})</span>
-                                    </TD>
-                                    <CalcCell value={totalRetention5} />
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
                 </div>
 
                 {/* RIGHT COLUMN */}
@@ -819,7 +797,29 @@ export default function IncomeCalculationTab() {
                         </table>
                     </div>
 
-                    {/* ── Section 13: Control Checks ───────────────────────────────── */}
+                    {/* ── Section 13: Retention ─────────────────────────────────────── */}
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-700 mb-2">Retention</h3>
+                        <table className="w-full border-collapse text-sm">
+                            <thead>
+                                <tr><TH className="text-left">Description</TH><TH>Value</TH></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <TD>Total Certified Works 60% AirControl</TD>
+                                    <CalcCell value={totalCertWorksAC60} />
+                                </tr>
+                                <tr>
+                                    <TD>Total Retention {(retentionPct * 100).toFixed(0)}%
+                                        <span className="text-slate-400 ml-1 text-xs">(÷{pct60}×{retentionPct})</span>
+                                    </TD>
+                                    <CalcCell value={totalRetention5} />
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* ── Section 14: Control Checks ───────────────────────────────── */}
                     <div>
                         <h3 className="text-sm font-bold text-slate-700 mb-2">Control Checks</h3>
                         <table className="border-collapse text-xs w-full">
