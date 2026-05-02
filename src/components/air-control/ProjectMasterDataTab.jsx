@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 
 const fmt = (val) => {
     if (val === null || val === undefined || val === '') return '';
@@ -122,23 +123,50 @@ export default function ProjectMasterDataTab() {
         expected: 5421916.50,
     });
 
-    const [saving, setSaving] = React.useState(false);
+    const [saving, setSaving] = useState(false);
+    const [recordId, setRecordId] = useState(null);
+
+    // Load data on mount
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        try {
+            const records = await base44.entities.ProjectMasterData.list();
+            if (records.length > 0) {
+                const record = records[0];
+                setRecordId(record.id);
+                if (record.tender_budget) setTenderBudget(record.tender_budget);
+                if (record.project_budget_correction) setProjectBudgetCorrection(record.project_budget_correction);
+                if (record.fabrication_budget) setFabricationBudget(record.fabrication_budget);
+                if (record.tender_jv_profit) setTenderJVProfit(record.tender_jv_profit);
+                if (record.total_tender_profit) setTotalTenderProfit(record.total_tender_profit);
+                if (record.project_total_profit) setProjectTotalProfit(record.project_total_profit);
+            }
+        } catch (error) {
+            console.error('Failed to load data:', error);
+        }
+    };
 
     const handleSave = async () => {
         setSaving(true);
         try {
-            // Save all budget data as a single record
             const data = {
-                tenderBudget,
-                projectBudgetCorrection,
-                fabricationBudget,
-                tenderJVProfit,
-                totalTenderProfit,
-                projectTotalProfit,
+                tender_budget: tenderBudget,
+                project_budget_correction: projectBudgetCorrection,
+                fabrication_budget: fabricationBudget,
+                tender_jv_profit: tenderJVProfit,
+                total_tender_profit: totalTenderProfit,
+                project_total_profit: projectTotalProfit,
             };
             
-            // You can save this to your database entity here
-            // await base44.entities.ProjectMasterData.create(data);
+            if (recordId) {
+                await base44.entities.ProjectMasterData.update(recordId, data);
+            } else {
+                const newRecord = await base44.entities.ProjectMasterData.create(data);
+                setRecordId(newRecord.id);
+            }
             
             alert('Changes saved successfully');
         } catch (error) {

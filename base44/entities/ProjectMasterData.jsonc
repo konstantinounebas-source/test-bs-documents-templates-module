@@ -1,0 +1,31 @@
+{
+  "name": "ProjectMasterData",
+  "type": "object",
+  "properties": {
+    "tender_budget": {
+      "type": "object",
+      "description": "Tender budget data"
+    },
+    "project_budget_correction": {
+      "type": "object",
+      "description": "Project budget with fabrication correction"
+    },
+    "fabrication_budget": {
+      "type": "object",
+      "description": "Fabrication budget data"
+    },
+    "tender_jv_profit": {
+      "type": "object",
+      "description": "Tender JV profit calculations"
+    },
+    "total_tender_profit": {
+      "type": "object",
+      "description": "Total tender expected profit"
+    },
+    "project_total_profit": {
+      "type": "object",
+      "description": "Total project profit"
+    }
+  },
+  "required": []
+}
