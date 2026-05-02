@@ -438,37 +438,6 @@ export default function IncomeCalculationTab() {
                 {/* LEFT COLUMN */}
                 <div className="space-y-8">
 
-                    {/* ── Section 8: Other Works Not Claimed ───────────────────────── */}
-                    <div>
-                        <h3 className="text-sm font-bold text-slate-700 mb-2">Other Works Not Claimed</h3>
-                        <table className="w-full border-collapse text-sm">
-                            <thead>
-                                <tr><TH className="text-left">Description</TH><TH>Amount</TH><TH></TH></tr>
-                            </thead>
-                            <tbody>
-                                {otherRows.map((row, idx) => (
-                                    <tr key={idx}>
-                                        <InputCell value={row.description} onChange={v => setOtherNotClaimed(p => { const rows = [...p.rows]; rows[idx] = { ...rows[idx], description: v }; return { ...p, rows }; })} type="text" align="left" />
-                                        <InputCell value={row.amount} onChange={v => setOtherNotClaimed(p => { const rows = [...p.rows]; rows[idx] = { ...rows[idx], amount: v }; return { ...p, rows }; })} />
-                                        <td className="border border-slate-300 px-1 py-1 text-center">
-                                            <button onClick={() => setOtherNotClaimed(p => ({ ...p, rows: p.rows.filter((_, i) => i !== idx) }))} className="text-red-400 hover:text-red-600 text-xs font-bold">×</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                                <tr>
-                                    <td colSpan={3} className="border border-slate-300 px-2 py-1">
-                                        <button onClick={() => setOtherNotClaimed(p => ({ ...p, rows: [...p.rows, { description: '', amount: 0 }] }))} className="text-xs text-blue-600 hover:underline">+ Add row</button>
-                                    </td>
-                                </tr>
-                                <tr className="bg-slate-50">
-                                    <TD bold>Total Other Works Not Claimed</TD>
-                                    <CalcCell value={totalOtherNotClaimed} className="font-bold" />
-                                    <TD></TD>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
                     {/* ── Section 6: Retention ─────────────────────────────────────── */}
                     <div>
                         <h3 className="text-sm font-bold text-slate-700 mb-2">Retention</h3>
@@ -819,7 +788,38 @@ export default function IncomeCalculationTab() {
                         </table>
                     </div>
 
-                    {/* ── Section 12: Control Checks ───────────────────────────────── */}
+                    {/* ── Section 12: Other Works Not Claimed ───────────────────────── */}
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-700 mb-2">Other Works Not Claimed</h3>
+                        <table className="w-full border-collapse text-sm">
+                            <thead>
+                                <tr><TH className="text-left">Description</TH><TH>Amount</TH><TH></TH></tr>
+                            </thead>
+                            <tbody>
+                                {otherRows.map((row, idx) => (
+                                    <tr key={idx}>
+                                        <InputCell value={row.description} onChange={v => setOtherNotClaimed(p => { const rows = [...p.rows]; rows[idx] = { ...rows[idx], description: v }; return { ...p, rows }; })} type="text" align="left" />
+                                        <InputCell value={row.amount} onChange={v => setOtherNotClaimed(p => { const rows = [...p.rows]; rows[idx] = { ...rows[idx], amount: v }; return { ...p, rows }; })} />
+                                        <td className="border border-slate-300 px-1 py-1 text-center">
+                                            <button onClick={() => setOtherNotClaimed(p => ({ ...p, rows: p.rows.filter((_, i) => i !== idx) }))} className="text-red-400 hover:text-red-600 text-xs font-bold">×</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                <tr>
+                                    <td colSpan={3} className="border border-slate-300 px-2 py-1">
+                                        <button onClick={() => setOtherNotClaimed(p => ({ ...p, rows: [...p.rows, { description: '', amount: 0 }] }))} className="text-xs text-blue-600 hover:underline">+ Add row</button>
+                                    </td>
+                                </tr>
+                                <tr className="bg-slate-50">
+                                    <TD bold>Total Other Works Not Claimed</TD>
+                                    <CalcCell value={totalOtherNotClaimed} className="font-bold" />
+                                    <TD></TD>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* ── Section 13: Control Checks ───────────────────────────────── */}
                     <div>
                         <h3 className="text-sm font-bold text-slate-700 mb-2">Control Checks</h3>
                         <table className="border-collapse text-xs w-full">
