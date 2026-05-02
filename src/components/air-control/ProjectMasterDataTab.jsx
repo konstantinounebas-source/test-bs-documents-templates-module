@@ -519,19 +519,19 @@ export default function ProjectMasterDataTab() {
                         <tbody>
                             <tr>
                                 <TD>Total Project Income</TD>
-                                <CalcCell value={projectTotalProfit.income} />
+                                <CalcCell value={projectIncomeTotal + fabricationIncomeTotal + parseNum(fabricationBudget.profit)} />
                             </tr>
                             <tr>
                                 <TD>Total Project Cost</TD>
-                                <CalcCell value={projectTotalProfit.cost} />
+                                <CalcCell value={projectCostTotal + fabricationCostTotal + parseNum(fabricationBudget.profit_cost)} />
                             </tr>
                             <tr>
                                 <TD>JV-Aircontrol Share Tender 75%</TD>
-                                <CalcCell value={projectTotalProfit.ac_share} />
+                                <CalcCell value={(projectIncomeTotal + fabricationIncomeTotal + parseNum(fabricationBudget.profit) - projectCostTotal - fabricationCostTotal - parseNum(fabricationBudget.profit_cost)) * 0.75} />
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Expected Project Profit</TD>
-                                <CalcCell value={projectTotalProfit.expected} className="font-bold" />
+                                <CalcCell value={projectIncomeTotal + fabricationIncomeTotal + parseNum(fabricationBudget.profit) - projectCostTotal - fabricationCostTotal - parseNum(fabricationBudget.profit_cost)} className="font-bold" />
                             </tr>
                         </tbody>
                     </table>
