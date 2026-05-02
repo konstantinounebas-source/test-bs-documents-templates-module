@@ -335,7 +335,7 @@ export default function ProjectMasterDataTab() {
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Expected Tender Profit</TD>
-                                <CalcCell value={tenderTotalProfitAmount} className="font-bold" />
+                                <CalcCell value={parseNum(totalTenderProfit.expected)} className="font-bold" />
                             </tr>
                         </tbody>
                     </table>
