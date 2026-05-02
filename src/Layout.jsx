@@ -490,6 +490,13 @@ const allNavigationGroups = [
         pageKey: "JVFinancialCalculations"
       },
       {
+        title: "Air Control Calculations",
+        url: createPageUrl("AirControlCalculations"),
+        icon: BarChart3,
+        description: "Air Control profit share calculations per shelter instance",
+        pageKey: "AirControlCalculations"
+      },
+      {
         title: "Factory Financial Calculations",
         url: createPageUrl("FactoryFinancialCalculations"),
         icon: FileText,
