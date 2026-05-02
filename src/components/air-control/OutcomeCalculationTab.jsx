@@ -201,18 +201,18 @@ export default function OutcomeCalculationTab() {
                                 {periods.map(p => (
                                     <React.Fragment key={p.id}>
                                         <td className="border border-slate-300 px-1 py-1">
-                                            <Input
-                                                type="number"
-                                                className="h-7 text-right text-xs border-0 focus-visible:ring-1 w-full"
-                                                value={editData[p.id]?.[`${cat.key}_from_software`] ?? ''}
+                                            <input
+                                                type="text"
+                                                className="h-7 text-right text-xs border-0 focus-visible:ring-1 w-full px-2"
+                                                value={fmt(parseNum(editData[p.id]?.[`${cat.key}_from_software`] ?? ''))}
                                                 onChange={e => handleCellChange(p.id, `${cat.key}_from_software`, e.target.value)}
                                             />
                                         </td>
                                         <td className="border border-slate-300 px-1 py-1">
-                                            <Input
-                                                type="number"
-                                                className="h-7 text-right text-xs border-0 focus-visible:ring-1 w-full"
-                                                value={editData[p.id]?.[`${cat.key}_not_in_software`] ?? ''}
+                                            <input
+                                                type="text"
+                                                className="h-7 text-right text-xs border-0 focus-visible:ring-1 w-full px-2"
+                                                value={fmt(parseNum(editData[p.id]?.[`${cat.key}_not_in_software`] ?? ''))}
                                                 onChange={e => handleCellChange(p.id, `${cat.key}_not_in_software`, e.target.value)}
                                             />
                                         </td>
