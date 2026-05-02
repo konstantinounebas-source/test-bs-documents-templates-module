@@ -328,8 +328,8 @@ export default function IncomeCalculationTab() {
 
 
 
-            {/* ── TOP SUMMARY: Income Type + Income Not Earned ─────────────── */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* ── TOP SUMMARY: 4 tables in first row ─── */}
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
                 {/* Πίνακας 5 — Income */}
                 <div>
                     <h3 className="text-sm font-bold text-slate-700 mb-2">Πίνακας 5 — Income</h3>
@@ -385,42 +385,42 @@ export default function IncomeCalculationTab() {
                         </tbody>
                     </table>
                 </div>
+
+                {/* Πίνακας 7 — Value of Work Performed */}
+                <div>
+                    <h3 className="text-sm font-bold text-slate-700 mb-2">Πίνακας 7 — Value of Work Performed</h3>
+                    <table className="w-full border-collapse text-sm">
+                        <thead>
+                            <tr><SectionHeader title="Value of Work Performed" /></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <TD>Total Income Received</TD>
+                                <CalcCell value={totalIncomeReceived} />
+                            </tr>
+                            <tr>
+                                <TD>Total Income Not Earned</TD>
+                                <CalcCell value={totalIncomeNotEarned} />
+                            </tr>
+                            <tr>
+                                <TD>Advance Payment (Remaining)</TD>
+                                <CalcCell value={advancePaymentRemaining} />
+                            </tr>
+                            <tr className="bg-green-50">
+                                <TD bold>Total Value of Work Performed</TD>
+                                <CalcCell value={totalValueOfWorkPerformed} className="font-bold bg-green-50" />
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p className="text-xs text-slate-400 mt-1">
+                        = Income Received + Income Not Earned − Advance Remaining
+                    </p>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 {/* LEFT COLUMN */}
                 <div className="space-y-8">
-
-                    {/* ── Section 4: Value of Work Performed ───────────────────────── */}
-                    <div>
-                        <h3 className="text-sm font-bold text-slate-700 mb-2">Πίνακας 7 — Value of Work Performed</h3>
-                        <table className="w-full border-collapse text-sm">
-                            <thead>
-                                <tr><SectionHeader title="Value of Work Performed" /></tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <TD>Total Income Received</TD>
-                                    <CalcCell value={totalIncomeReceived} />
-                                </tr>
-                                <tr>
-                                    <TD>Total Income Not Earned</TD>
-                                    <CalcCell value={totalIncomeNotEarned} />
-                                </tr>
-                                <tr>
-                                    <TD>Advance Payment (Remaining)</TD>
-                                    <CalcCell value={advancePaymentRemaining} />
-                                </tr>
-                                <tr className="bg-green-50">
-                                    <TD bold>Total Value of Work Performed</TD>
-                                    <CalcCell value={totalValueOfWorkPerformed} className="font-bold bg-green-50" />
-                                </tr>
-                            </tbody>
-                        </table>
-                        <p className="text-xs text-slate-400 mt-1">
-                            Total Value of Work Performed = Total Income Received + Total Income Not Earned − Advance Payment (Remaining)
-                        </p>
-                    </div>
 
                     {/* ── Section 5: Not Certified As Per Contract ──────────────────── */}
                     <div>
