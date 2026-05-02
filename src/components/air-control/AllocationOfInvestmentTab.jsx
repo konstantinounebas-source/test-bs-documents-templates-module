@@ -49,7 +49,7 @@ export default function AllocationOfInvestmentTab() {
         pm_labour: 350000.00,
         material: 252908.13,
         assets: 450000.00,
-        asset_after_depr: 112500.00,
+        asset_depr_pct: 25,
         total_value_work: 3273500.96,
         expected_income: 20294790.48,
     });
@@ -112,7 +112,8 @@ export default function AllocationOfInvestmentTab() {
     };
 
     const totalInvestment = parseNum(investment.pm_labour) + parseNum(investment.material) + parseNum(investment.assets);
-    const allocationPct = ((totalInvestment - parseNum(investment.asset_after_depr)) / parseNum(investment.expected_income)) * 100;
+    const assetAfterDepr = parseNum(investment.assets) * (parseNum(investment.asset_depr_pct) / 100);
+    const allocationPct = ((totalInvestment - assetAfterDepr) / parseNum(investment.expected_income)) * 100;
     const allocatedCost = (allocationPct / 100) * parseNum(investment.total_value_work);
 
     return (
@@ -155,8 +156,12 @@ export default function AllocationOfInvestmentTab() {
                             <CalcCell value={totalInvestment} />
                         </tr>
                         <tr>
+                            <TD>Asset Value after Depreciation %</TD>
+                            <InputCell value={fmt(investment.asset_depr_pct)} onChange={v => setInvestment({...investment, asset_depr_pct: parseNum(v)})} />
+                        </tr>
+                        <tr>
                             <TD>Asset Value after Depreciation</TD>
-                            <CalcCell value={parseNum(investment.assets) * 0.25} />
+                            <CalcCell value={parseNum(investment.assets) * (parseNum(investment.asset_depr_pct) / 100)} />
                         </tr>
                         <tr>
                             <TD>Total Value of Work Performed</TD>
