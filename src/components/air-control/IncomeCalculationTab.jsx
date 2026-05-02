@@ -718,7 +718,7 @@ export default function IncomeCalculationTab() {
                                     return (
                                         <tr key={t.key}>
                                             <TD>{t.label}</TD>
-                                            <CalcCell value={t.total_qty} />
+                                            <InputCell value={shelterTypes[stIdx]?.total_qty} onChange={v => updateShelter(stIdx, 'total_qty', v)} />
                                             <InputCell value={shelterTypes[stIdx]?.jv_rate} onChange={v => updateShelter(stIdx, 'jv_rate', v)} />
                                             <CalcCell value={t.fabTotal} />
                                         </tr>
@@ -745,7 +745,7 @@ export default function IncomeCalculationTab() {
                                     return (
                                         <tr key={t.key}>
                                             <TD>{t.label}</TD>
-                                            <CalcCell value={t.total_qty} />
+                                            <InputCell value={shelterTypes[stIdx]?.total_qty} onChange={v => updateShelter(stIdx, 'total_qty', v)} />
                                             <InputCell value={shelterTypes[stIdx]?.extra_rate} onChange={v => updateShelter(stIdx, 'extra_rate', v)} />
                                             <CalcCell value={t.extraTotal} />
                                         </tr>
@@ -772,7 +772,7 @@ export default function IncomeCalculationTab() {
                                     return (
                                         <tr key={t.key}>
                                             <TD>{t.label}</TD>
-                                            <CalcCell value={t.total_qty} />
+                                            <InputCell value={shelterTypes[stIdx]?.total_qty} onChange={v => updateShelter(stIdx, 'total_qty', v)} />
                                             <InputCell value={shelterTypes[stIdx]?.roofing} onChange={v => updateShelter(stIdx, 'roofing', v)} />
                                             <InputCell value={shelterTypes[stIdx]?.earthing} onChange={v => updateShelter(stIdx, 'earthing', v)} />
                                             <InputCell value={shelterTypes[stIdx]?.stickers} onChange={v => updateShelter(stIdx, 'stickers', v)} />
