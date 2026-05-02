@@ -56,6 +56,14 @@ export default function ProjectMasterDataTab() {
         road_marking: 594000.00,
         options: 1050000.00,
         maintenance: 2650980.00,
+        pm_cost: 1691870.00,
+        labour_cost: 4218936.12,
+        assets_cost: 682700.00,
+        materials_cost: 1817725.02,
+        other_cost: 2000972.41,
+        road_marking_cost: 540000.00,
+        options_cost: 900000.00,
+        maintenance_cost: 2035720.00,
     });
 
     const [projectBudgetCorrection, setProjectBudgetCorrection] = useState({
@@ -77,6 +85,11 @@ export default function ProjectMasterDataTab() {
         setup_cost_asset: 354000.00,
         materials: 539840.00,
         other: 293112.00,
+        pm_cost: 424800.00,
+        labour_cost: 1857332.00,
+        setup_cost_cost: 354000.00,
+        materials_cost: 339940.00,
+        other_cost: 293112.00,
     });
 
     const [tenderJVProfit, setTenderJVProfit] = useState({
@@ -107,7 +120,7 @@ export default function ProjectMasterDataTab() {
 
     // Tender Budget totals
     const tenderIncomeTotal = parseNum(tenderBudget.pm) + parseNum(tenderBudget.labour) + parseNum(tenderBudget.assets) + parseNum(tenderBudget.materials) + parseNum(tenderBudget.other) + parseNum(tenderBudget.road_marking) + parseNum(tenderBudget.options) + parseNum(tenderBudget.maintenance);
-    const tenderCostTotal = 1691870.00 + 4218936.12 + 682700.00 + 1817725.02 + 2000972.41 + 540000.00 + 900000.00 + 2035720.00;
+    const tenderCostTotal = parseNum(tenderBudget.pm_cost) + parseNum(tenderBudget.labour_cost) + parseNum(tenderBudget.assets_cost) + parseNum(tenderBudget.materials_cost) + parseNum(tenderBudget.other_cost) + parseNum(tenderBudget.road_marking_cost) + parseNum(tenderBudget.options_cost) + parseNum(tenderBudget.maintenance_cost);
 
     // Project Budget Correction totals
     const projectIncomeTotal = parseNum(projectBudgetCorrection.pm) + parseNum(projectBudgetCorrection.pm_allocation) + parseNum(projectBudgetCorrection.labour) + parseNum(projectBudgetCorrection.labour_allocation) + parseNum(projectBudgetCorrection.assets) + parseNum(projectBudgetCorrection.materials) + parseNum(projectBudgetCorrection.other) + parseNum(projectBudgetCorrection.road_marking) + parseNum(projectBudgetCorrection.sealour) + parseNum(projectBudgetCorrection.maintenance);
@@ -115,7 +128,7 @@ export default function ProjectMasterDataTab() {
 
     // Fabrication Budget totals
     const fabricationIncomeTotal = parseNum(fabricationBudget.pm) + parseNum(fabricationBudget.labour) + parseNum(fabricationBudget.setup_cost_asset) + parseNum(fabricationBudget.materials) + parseNum(fabricationBudget.other);
-    const fabricationCostTotal = 424800.00 + 1857332.00 + 354000.00 + 339940.00 + 293112.00;
+    const fabricationCostTotal = parseNum(fabricationBudget.pm_cost) + parseNum(fabricationBudget.labour_cost) + parseNum(fabricationBudget.setup_cost_cost) + parseNum(fabricationBudget.materials_cost) + parseNum(fabricationBudget.other_cost);
 
     // Total Tender Expected Profit calculations
     const tenderTotalProfitAmount = tenderIncomeTotal - tenderCostTotal;
@@ -158,42 +171,42 @@ export default function ProjectMasterDataTab() {
                             <tr>
                                 <TD>PM</TD>
                                 <InputCell value={fmt(tenderBudget.pm)} onChange={v => setTenderBudget({...tenderBudget, pm: parseNum(v)})} />
-                                <InputCell value={fmt(1691870.00)} onChange={() => {}} />
+                                <InputCell value={fmt(tenderBudget.pm_cost)} onChange={v => setTenderBudget({...tenderBudget, pm_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Labour</TD>
                                 <InputCell value={fmt(tenderBudget.labour)} onChange={v => setTenderBudget({...tenderBudget, labour: parseNum(v)})} />
-                                <InputCell value={fmt(4218936.12)} onChange={() => {}} />
+                                <InputCell value={fmt(tenderBudget.labour_cost)} onChange={v => setTenderBudget({...tenderBudget, labour_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Assets</TD>
                                 <InputCell value={fmt(tenderBudget.assets)} onChange={v => setTenderBudget({...tenderBudget, assets: parseNum(v)})} />
-                                <InputCell value={fmt(682700.00)} onChange={() => {}} />
+                                <InputCell value={fmt(tenderBudget.assets_cost)} onChange={v => setTenderBudget({...tenderBudget, assets_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Materials</TD>
                                 <InputCell value={fmt(tenderBudget.materials)} onChange={v => setTenderBudget({...tenderBudget, materials: parseNum(v)})} />
-                                <InputCell value={fmt(1817725.02)} onChange={() => {}} />
+                                <InputCell value={fmt(tenderBudget.materials_cost)} onChange={v => setTenderBudget({...tenderBudget, materials_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Other</TD>
                                 <InputCell value={fmt(tenderBudget.other)} onChange={v => setTenderBudget({...tenderBudget, other: parseNum(v)})} />
-                                <InputCell value={fmt(2000972.41)} onChange={() => {}} />
+                                <InputCell value={fmt(tenderBudget.other_cost)} onChange={v => setTenderBudget({...tenderBudget, other_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Road Marking</TD>
                                 <InputCell value={fmt(tenderBudget.road_marking)} onChange={v => setTenderBudget({...tenderBudget, road_marking: parseNum(v)})} />
-                                <InputCell value={fmt(540000.00)} onChange={() => {}} />
+                                <InputCell value={fmt(tenderBudget.road_marking_cost)} onChange={v => setTenderBudget({...tenderBudget, road_marking_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Options</TD>
                                 <InputCell value={fmt(tenderBudget.options)} onChange={v => setTenderBudget({...tenderBudget, options: parseNum(v)})} />
-                                <InputCell value={fmt(900000.00)} onChange={() => {}} />
+                                <InputCell value={fmt(tenderBudget.options_cost)} onChange={v => setTenderBudget({...tenderBudget, options_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Maintenance</TD>
                                 <InputCell value={fmt(tenderBudget.maintenance)} onChange={v => setTenderBudget({...tenderBudget, maintenance: parseNum(v)})} />
-                                <InputCell value={fmt(2035720.00)} onChange={() => {}} />
+                                <InputCell value={fmt(tenderBudget.maintenance_cost)} onChange={v => setTenderBudget({...tenderBudget, maintenance_cost: parseNum(v)})} />
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Total Tender Budget</TD>
@@ -362,27 +375,27 @@ export default function ProjectMasterDataTab() {
                             <tr>
                                 <TD>PM</TD>
                                 <InputCell value={fmt(fabricationBudget.pm)} onChange={v => setFabricationBudget({...fabricationBudget, pm: parseNum(v)})} />
-                                <InputCell value={fmt(424800.00)} onChange={() => {}} />
+                                <InputCell value={fmt(fabricationBudget.pm_cost)} onChange={v => setFabricationBudget({...fabricationBudget, pm_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Labour</TD>
                                 <InputCell value={fmt(fabricationBudget.labour)} onChange={v => setFabricationBudget({...fabricationBudget, labour: parseNum(v)})} />
-                                <InputCell value={fmt(1857332.00)} onChange={() => {}} />
+                                <InputCell value={fmt(fabricationBudget.labour_cost)} onChange={v => setFabricationBudget({...fabricationBudget, labour_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Set Up Cost - Asset</TD>
                                 <InputCell value={fmt(fabricationBudget.setup_cost_asset)} onChange={v => setFabricationBudget({...fabricationBudget, setup_cost_asset: parseNum(v)})} />
-                                <InputCell value={fmt(354000.00)} onChange={() => {}} />
+                                <InputCell value={fmt(fabricationBudget.setup_cost_cost)} onChange={v => setFabricationBudget({...fabricationBudget, setup_cost_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Materials</TD>
                                 <InputCell value={fmt(fabricationBudget.materials)} onChange={v => setFabricationBudget({...fabricationBudget, materials: parseNum(v)})} />
-                                <InputCell value={fmt(339940.00)} onChange={() => {}} />
+                                <InputCell value={fmt(fabricationBudget.materials_cost)} onChange={v => setFabricationBudget({...fabricationBudget, materials_cost: parseNum(v)})} />
                             </tr>
                             <tr>
                                 <TD>Other</TD>
                                 <InputCell value={fmt(fabricationBudget.other)} onChange={v => setFabricationBudget({...fabricationBudget, other: parseNum(v)})} />
-                                <InputCell value={fmt(293112.00)} onChange={() => {}} />
+                                <InputCell value={fmt(fabricationBudget.other_cost)} onChange={v => setFabricationBudget({...fabricationBudget, other_cost: parseNum(v)})} />
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Total Fabrication Analysis</TD>
