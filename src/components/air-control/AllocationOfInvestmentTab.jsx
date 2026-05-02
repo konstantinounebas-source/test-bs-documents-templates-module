@@ -64,47 +64,53 @@ export default function AllocationOfInvestmentTab() {
             const incomeMap = {};
             incomeRecords.forEach(r => { incomeMap[r.section] = r; });
 
+            // Get Total Value of Work Performed directly from the table calculation
+            // It's: Total Income Received + Total Income Not Earned - Advance Remaining
             let totalValueOfWorkPerformed = investment.total_value_work;
             
-            if (incomeMap.assumptions?.data && incomeMap.certified?.data && incomeMap.advance?.data && incomeMap.not_paid?.data) {
-                const assumptions = incomeMap.assumptions.data;
-                const pct60 = parseNum(assumptions.pct_60);
-                const retentionPct = parseNum(assumptions.retention_pct) || 0.05;
-                const advAdjPct = parseNum(assumptions.advance_adj_pct) || 0.35;
-                
+            if (incomeMap.certified?.data && incomeMap.advance?.data && incomeMap.not_paid?.data) {
                 const certPayments = incomeMap.certified.data.payments || [];
                 const advPayments = incomeMap.advance.data.payments || [];
                 const notPaidPayments = incomeMap.not_paid.data.payments || [];
                 
-                // 1. Income Received
+                // Total Income Received = Advance Payment (AC) + Certified Works (AC)
                 const incomeAdvancePayment = advPayments.reduce((s, p) => s + parseNum(p.aircontrol), 0);
                 const incomeCertifiedWorks = certPayments.reduce((s, p) => s + parseNum(p.ac100) + parseNum(p.ac60), 0);
                 const totalIncomeReceived = incomeAdvancePayment + incomeCertifiedWorks;
                 
-                // 2. Advance remaining
+                // Get assumptions for calculations
+                const assumptions = incomeMap.assumptions?.data || {};
+                const pct60 = parseNum(assumptions.pct_60) || 0.6;
+                const advAdjPct = parseNum(assumptions.advance_adj_pct) || 0.35;
+                const retentionPct = parseNum(assumptions.retention_pct) || 0.05;
+                
+                // Advance remaining
                 const certWorksAC60 = certPayments.reduce((s, p) => s + parseNum(p.ac60), 0);
-                const certAdjustment = (certWorksAC60 / (pct60 || 1)) * advAdjPct;
+                const certAdjustment = (certWorksAC60 / pct60) * advAdjPct;
                 const advancePaymentRemaining = incomeAdvancePayment - certAdjustment;
                 
-                // 3. Income Not Earned (simplified - includes certified not paid + retention)
+                // Total Income Not Earned
                 const certifiedNotPaid = notPaidPayments.reduce((s, p) => s + parseNum(p.ac100) + parseNum(p.ac60), 0);
-                const totalRetention5 = (certWorksAC60 / (pct60 || 1)) * retentionPct;
+                const retention = (certWorksAC60 / pct60) * retentionPct;
                 
-                // Get fabrication income from income calc
+                // Get other not earned components
+                const otherNotClaimedAmount = incomeMap.other_not_claimed?.data?.rows
+                    ?.reduce((s, r) => s + parseNum(r.amount), 0) || 0;
+                
                 const shelterData = incomeMap.shelter_types?.data?.types || [];
                 const totalFabricationIncome = shelterData
                     .filter(t => ['type_a', 'type_b', 'type_c'].includes(t.key))
                     .reduce((s, t) => s + (parseNum(t.total_qty) * parseNum(t.jv_rate)), 0);
                 
-                const totalIncomeNotEarned = certifiedNotPaid + totalRetention5 + totalFabricationIncome;
+                const totalIncomeNotEarned = certifiedNotPaid + retention + (totalFabricationIncome || 0) + otherNotClaimedAmount;
                 
-                // 4. Total Value of Work Performed
                 totalValueOfWorkPerformed = totalIncomeReceived + totalIncomeNotEarned - advancePaymentRemaining;
             }
 
             setInvestment(prev => ({
                 ...prev,
-                total_value_work: totalValueOfWorkPerformed
+                total_value_work: totalValueOfWorkPerformed,
+                expected_income: prev.expected_income
             }));
         } catch (error) {
             console.error('Failed to load project data:', error);
