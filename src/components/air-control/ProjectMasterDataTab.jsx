@@ -219,11 +219,11 @@ export default function ProjectMasterDataTab() {
                                 <CalcCell value={tenderJVProfit.total_jv} />
                             </tr>
                             <tr>
-                                <TD>JV-Aircontrol Share Tender 70%</TD>
+                                <TD>JV-Aircontrol Share Tender 75%</TD>
                                 <CalcCell value={tenderJVProfit.ac_share_70} />
                             </tr>
                             <tr>
-                                <TD>JV-Amco Share Tender 30%</TD>
+                                <TD>JV-Amco Share Tender 25%</TD>
                                 <CalcCell value={tenderJVProfit.amco_share_30} />
                             </tr>
                             <tr className="bg-slate-50">
@@ -408,11 +408,11 @@ export default function ProjectMasterDataTab() {
                                 <CalcCell value={tenderJVProfit.total_jv} />
                             </tr>
                             <tr>
-                                <TD>JV-Aircontrol Share Tender 70%</TD>
+                                <TD>JV-Aircontrol Share Tender 75%</TD>
                                 <CalcCell value={tenderJVProfit.ac_share_70} />
                             </tr>
                             <tr>
-                                <TD>JV-Amco Share Tender 30%</TD>
+                                <TD>JV-Amco Share Tender 25%</TD>
                                 <CalcCell value={tenderJVProfit.amco_share_30} />
                             </tr>
                             <tr className="bg-slate-50">
