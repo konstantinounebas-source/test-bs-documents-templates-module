@@ -30,8 +30,9 @@ const InputCell = ({ value, onChange }) => (
     <td className="border border-slate-300 px-1 py-1">
         <Input
             type="number"
+            step="0.01"
             className="h-7 text-right text-xs border-0 focus-visible:ring-1 w-full"
-            value={value}
+            value={parseNum(value)}
             onChange={e => onChange(e.target.value)}
         />
     </td>
