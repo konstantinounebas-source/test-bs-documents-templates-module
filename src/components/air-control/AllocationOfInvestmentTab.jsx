@@ -65,36 +65,41 @@ export default function AllocationOfInvestmentTab() {
             incomeRecords.forEach(r => { incomeMap[r.section] = r; });
 
             let totalValueOfWorkPerformed = investment.total_value_work;
-            if (incomeMap.assumptions?.data) {
+            
+            if (incomeMap.assumptions?.data && incomeMap.certified?.data && incomeMap.advance?.data && incomeMap.not_paid?.data) {
                 const assumptions = incomeMap.assumptions.data;
                 const pct60 = parseNum(assumptions.pct_60);
+                const retentionPct = parseNum(assumptions.retention_pct) || 0.05;
+                const advAdjPct = parseNum(assumptions.advance_adj_pct) || 0.35;
                 
-                // Retrieve related income data to calculate totalValueOfWorkPerformed
-                const certData = incomeMap.certified?.data;
-                const advData = incomeMap.advance?.data;
-                const notPaidData = incomeMap.not_paid?.data;
+                const certPayments = incomeMap.certified.data.payments || [];
+                const advPayments = incomeMap.advance.data.payments || [];
+                const notPaidPayments = incomeMap.not_paid.data.payments || [];
                 
-                if (certData && advData && notPaidData) {
-                    const certPayments = certData.payments || [];
-                    const advPayments = advData.payments || [];
-                    const notPaidPayments = notPaidData.payments || [];
-                    
-                    const incomeAdvancePayment = advPayments.reduce((s, p) => s + parseNum(p.aircontrol), 0);
-                    const incomeCertifiedWorks = certPayments.reduce((s, p) => s + parseNum(p.ac100) + parseNum(p.ac60), 0);
-                    const totalIncomeReceived = incomeAdvancePayment + incomeCertifiedWorks;
-                    
-                    const certWorksAC60 = certPayments.reduce((s, p) => s + parseNum(p.ac60), 0);
-                    const advAdjPct = parseNum(assumptions.advance_adj_pct) || 0.35;
-                    const certAdjustment = (certWorksAC60 / (pct60 || 1)) * advAdjPct;
-                    const advancePaymentRemaining = incomeAdvancePayment - certAdjustment;
-                    
-                    const certifiedNotPaid = notPaidPayments.reduce((s, p) => s + parseNum(p.ac100) + parseNum(p.ac60), 0);
-                    // Assuming totalIncomeNotEarned is available or calculate separately
-                    // For now, use a simple estimate
-                    const totalIncomeNotEarned = certifiedNotPaid;
-                    
-                    totalValueOfWorkPerformed = totalIncomeReceived + totalIncomeNotEarned - advancePaymentRemaining;
-                }
+                // 1. Income Received
+                const incomeAdvancePayment = advPayments.reduce((s, p) => s + parseNum(p.aircontrol), 0);
+                const incomeCertifiedWorks = certPayments.reduce((s, p) => s + parseNum(p.ac100) + parseNum(p.ac60), 0);
+                const totalIncomeReceived = incomeAdvancePayment + incomeCertifiedWorks;
+                
+                // 2. Advance remaining
+                const certWorksAC60 = certPayments.reduce((s, p) => s + parseNum(p.ac60), 0);
+                const certAdjustment = (certWorksAC60 / (pct60 || 1)) * advAdjPct;
+                const advancePaymentRemaining = incomeAdvancePayment - certAdjustment;
+                
+                // 3. Income Not Earned (simplified - includes certified not paid + retention)
+                const certifiedNotPaid = notPaidPayments.reduce((s, p) => s + parseNum(p.ac100) + parseNum(p.ac60), 0);
+                const totalRetention5 = (certWorksAC60 / (pct60 || 1)) * retentionPct;
+                
+                // Get fabrication income from income calc
+                const shelterData = incomeMap.shelter_types?.data?.types || [];
+                const totalFabricationIncome = shelterData
+                    .filter(t => ['type_a', 'type_b', 'type_c'].includes(t.key))
+                    .reduce((s, t) => s + (parseNum(t.total_qty) * parseNum(t.jv_rate)), 0);
+                
+                const totalIncomeNotEarned = certifiedNotPaid + totalRetention5 + totalFabricationIncome;
+                
+                // 4. Total Value of Work Performed
+                totalValueOfWorkPerformed = totalIncomeReceived + totalIncomeNotEarned - advancePaymentRemaining;
             }
 
             setInvestment(prev => ({
