@@ -46,32 +46,36 @@ export default function ProjectSummaryTab() {
             const totalValueOfWorkPerformed = incomeMap.summary?.data?.total_value_of_work_performed || 0;
             const totalIncomeReceived = incomeMap.summary?.data?.total_income_received || 0;
 
-            // Load Project Master Data
+            // Load AllocationOfInvestment data for totalInvestment and allocatedInvestmentCost
             const masterRecords = await base44.entities.ProjectMasterData.list();
-            const totalInvestment = masterRecords.length > 0 
-                ? (masterRecords[0].tender_budget?.pm || 0) +
-                  (masterRecords[0].tender_budget?.labour || 0) +
-                  (masterRecords[0].tender_budget?.assets || 0) +
-                  (masterRecords[0].tender_budget?.materials || 0) +
-                  (masterRecords[0].tender_budget?.other || 0)
-                : 0;
+            let totalInvestment = 0;
+            let allocatedInvestmentCost = 0;
+            
+            if (masterRecords.length > 0) {
+                const master = masterRecords[0];
+                totalInvestment = (parseFloat(master.tender_budget?.pm) || 0) +
+                                (parseFloat(master.tender_budget?.labour) || 0) +
+                                (parseFloat(master.tender_budget?.assets) || 0) +
+                                (parseFloat(master.tender_budget?.materials) || 0) +
+                                (parseFloat(master.tender_budget?.other) || 0);
+                allocatedInvestmentCost = (parseFloat(master.tender_budget?.allocated_cost) || 0);
+            }
 
-            // Load Outcome Calculation
+            // Load Outcome Calculation - sum all NOT in software columns
             const outcomeRecords = await base44.entities.OutcomeCalculation.list();
             let totalOutcome = 0;
             outcomeRecords.forEach(r => {
                 if (r.data) {
-                    totalOutcome += (r.data.pm_not_in_software || 0) +
-                                   (r.data.labour_not_in_software || 0) +
-                                   (r.data.assets_not_in_software || 0) +
-                                   (r.data.materials_not_in_software || 0) +
-                                   (r.data.other_not_in_software || 0);
+                    totalOutcome += (parseFloat(r.data.pm_not_in_software) || 0) +
+                                   (parseFloat(r.data.labour_not_in_software) || 0) +
+                                   (parseFloat(r.data.assets_not_in_software) || 0) +
+                                   (parseFloat(r.data.materials_not_in_software) || 0) +
+                                   (parseFloat(r.data.other_not_in_software) || 0);
                 }
             });
 
             // Calculate derived values
-            const allocatedInvestmentCost = totalInvestment * 0.14; // Placeholder calculation
-            const stockMaterial = 28500.00; // From image
+            const stockMaterial = 28500.00;
             const profitLoss = totalValueOfWorkPerformed - totalInvestment - totalOutcome;
             const netCashFlow = totalIncomeReceived + totalOutcome;
 
