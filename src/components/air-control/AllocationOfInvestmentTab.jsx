@@ -63,15 +63,35 @@ export default function AllocationOfInvestmentTab() {
             const records = await base44.entities.ProjectMasterData.list();
             if (records.length > 0) {
                 const record = records[0];
-                // Use Total Project Income = Total Project Income (Contract Budget + Fabrication Income)
-                const totalIncome = record.project_total_profit?.income || record.project_budget_correction && record.fabrication_budget ? 
-                    (Object.values(record.project_budget_correction).reduce((sum, v) => sum + (parseNum(v) || 0), 0) / 2 +
-                     Object.values(record.fabrication_budget).reduce((sum, v) => sum + (parseNum(v) || 0), 0) / 2) : 
-                    20294790.48;
+                const projectBudgetData = record.project_budget_correction || {};
+                const fabricationData = record.fabrication_budget || {};
+                
+                // Calculate Total Project Income: sum of contract budget income + fabrication income
+                const contractBudgetIncome = 
+                    parseNum(projectBudgetData.pm) +
+                    parseNum(projectBudgetData.pm_allocation) +
+                    parseNum(projectBudgetData.labour) +
+                    parseNum(projectBudgetData.labour_allocation) +
+                    parseNum(projectBudgetData.assets) +
+                    parseNum(projectBudgetData.materials) +
+                    parseNum(projectBudgetData.other) +
+                    parseNum(projectBudgetData.road_marking) +
+                    parseNum(projectBudgetData.sealour) +
+                    parseNum(projectBudgetData.maintenance);
+                
+                const fabricationIncome = 
+                    parseNum(fabricationData.pm) +
+                    parseNum(fabricationData.labour) +
+                    parseNum(fabricationData.setup_cost_asset) +
+                    parseNum(fabricationData.materials) +
+                    parseNum(fabricationData.other) +
+                    parseNum(fabricationData.profit);
+                
+                const totalIncome = contractBudgetIncome + fabricationIncome;
                 
                 setInvestment(prev => ({
                     ...prev,
-                    expected_income: totalIncome
+                    expected_income: totalIncome || prev.expected_income
                 }));
             }
         } catch (error) {
