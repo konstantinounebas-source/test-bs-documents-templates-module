@@ -245,13 +245,13 @@ export default function IncomeCalculationTab() {
     const totalIncomeNotEarned = certifiedNotPaid + totalNotCertified + totalFabricationIncome + totalExtraWorksNotApproved;
 
     // 4. Value of Work Performed
-    const totalValueOfWorkPerformed = totalIncomeReceived + totalIncomeNotEarned + advancePaymentRemaining;
+    const totalValueOfWorkPerformed = totalIncomeReceived + totalIncomeNotEarned - advancePaymentRemaining;
 
     // 12. Control Checks
     const check1OK = Math.abs((grandTotalAC + grandTotalAmco) - (totalAdvancePayment + totalCertifiedWorks)) < 0.01;
     const check2OK = Math.abs(totalIncomeReceived - (incomeAdvancePayment + incomeCertifiedWorks)) < 0.01;
     const check3OK = Math.abs(totalIncomeNotEarned - (certifiedNotPaid + totalNotCertified + totalFabricationIncome + totalExtraWorksNotApproved)) < 0.01;
-    const check4OK = Math.abs(totalValueOfWorkPerformed - (totalIncomeReceived + totalIncomeNotEarned + advancePaymentRemaining)) < 0.01;
+    const check4OK = Math.abs(totalValueOfWorkPerformed - (totalIncomeReceived + totalIncomeNotEarned - advancePaymentRemaining)) < 0.01;
 
     const CheckBadge = ({ ok }) => (
         <span className={`px-2 py-0.5 rounded text-xs font-bold ${ok ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -392,7 +392,7 @@ export default function IncomeCalculationTab() {
                             </tbody>
                         </table>
                         <p className="text-xs text-slate-400 mt-1">
-                            Advance Payment Remaining = Total Advance − (Certified Works 60% AirControl / {pct60} × {advAdjPct})
+                            Total Value of Work Performed = Total Income Received + Total Income Not Earned − Advance Payment (Remaining)
                         </p>
                     </div>
 
@@ -756,7 +756,7 @@ export default function IncomeCalculationTab() {
                                     <td className="border border-slate-300 px-2 py-1 text-center"><CheckBadge ok={check3OK} /></td>
                                 </tr>
                                 <tr>
-                                    <TD>Check 4: Value of Work Performed = Received + Not Earned + Advance Remaining</TD>
+                                    <TD>Check 4: Value of Work Performed = Received + Not Earned − Advance Remaining</TD>
                                     <td className="border border-slate-300 px-2 py-1 text-center"><CheckBadge ok={check4OK} /></td>
                                 </tr>
                             </tbody>
