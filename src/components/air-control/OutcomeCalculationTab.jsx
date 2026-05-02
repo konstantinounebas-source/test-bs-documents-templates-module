@@ -21,7 +21,7 @@ const CATEGORIES = [
 
 const fmt = (val) => {
     if (val === null || val === undefined || val === '') return '';
-    return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return Number(val).toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 const parseNum = (val) => {
