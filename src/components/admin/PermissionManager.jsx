@@ -68,6 +68,8 @@ const ALL_PAGES = [
   { key: 'MfgDailyProduction', label: 'Daily Production Entry', module: 'Manufacturing Production' },
   { key: 'MfgKPIDashboard', label: 'KPI Dashboard', module: 'Manufacturing Production' },
 
+  { key: 'ProjectMasterData', label: 'Project Master Data', module: 'Project Master Data' },
+
   { key: 'JVFinancialResults', label: 'JV Financial Results', module: 'Shelter Financial Performance' },
   { key: 'JVFinancialCalculations', label: 'JV Financial Calculations', module: 'Shelter Financial Performance' },
   { key: 'AirControlCalculations', label: 'Air Control Calculations', module: 'Shelter Financial Performance' },

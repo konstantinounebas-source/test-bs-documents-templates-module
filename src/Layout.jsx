@@ -472,6 +472,19 @@ const allNavigationGroups = [
     ]
   },
   {
+    id: 'project-master-data',
+    label: 'Project Master Data',
+    items: [
+      {
+        title: "Project Master Data",
+        url: createPageUrl("ProjectMasterData"),
+        icon: FileText,
+        description: "Project financial data and calculations",
+        pageKey: "ProjectMasterData"
+      }
+    ]
+  },
+  {
     id: 'shelter-financial-performance',
     label: 'Shelter Financial Performance',
     items: [
