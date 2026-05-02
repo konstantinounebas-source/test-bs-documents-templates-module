@@ -1,0 +1,18 @@
+{
+  "name": "IncomeCalculation",
+  "type": "object",
+  "properties": {
+    "section": {
+      "type": "string",
+      "description": "Section identifier: assumptions, certified_payments, advance_payments, not_delivered, other_not_claimed, fabrication, fabrication_extra, other_extra"
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Flexible JSON object storing all section data"
+    }
+  },
+  "required": [
+    "section"
+  ]
+}
