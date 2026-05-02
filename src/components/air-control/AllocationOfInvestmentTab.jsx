@@ -101,7 +101,7 @@ export default function AllocationOfInvestmentTab() {
 
     const totalInvestment = parseNum(investment.pm_labour) + parseNum(investment.material) + parseNum(investment.assets);
     const allocationPct = (totalInvestment / parseNum(investment.expected_income)) * 100;
-    const allocatedCost = (allocationPct / 100) * totalInvestment;
+    const allocatedCost = (allocationPct / 100) * parseNum(investment.total_value_work);
 
     return (
         <div className="bg-white rounded-lg border border-slate-200 p-6">
@@ -156,7 +156,10 @@ export default function AllocationOfInvestmentTab() {
                         </tr>
                         <tr>
                             <TD>Allocation %</TD>
-                            <CalcCell value={allocationPct} />
+                            <CalcCell value={allocationPct} className="text-right" />
+                        </tr>
+                        <tr>
+                            <TD colSpan={2} className="text-right text-sm">%</TD>
                         </tr>
                         <tr className="bg-slate-100 font-bold">
                             <TD bold>Allocated Investment Cost</TD>
