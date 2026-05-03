@@ -104,44 +104,13 @@ function ProjectMasterDataContent() {
         );
     }
 
-    // Extract data from ProjectMasterData
-    const tenderBudget = data?.tender_budget || {};
-    const projectBudgetCorrection = data?.project_budget_correction || {};
-    const fabricationBudget = data?.fabrication_budget || {};
-    const tenderJVProfit = data?.tender_jv_profit || {};
+    // Read pre-calculated values from ProjectMasterData (no calculations here)
+    const totalTenderProfit = data?.total_tender_profit || {};
     const projectTotalProfit = data?.project_total_profit || {};
 
-    // Tender calculations
-    const tenderIncomeTotal = (tenderBudget.pm || 0) + (tenderBudget.labour || 0) + (tenderBudget.assets || 0) + 
-                              (tenderBudget.materials || 0) + (tenderBudget.other || 0) + (tenderBudget.road_marking || 0) + 
-                              (tenderBudget.options || 0) + (tenderBudget.maintenance || 0);
-    const tenderCostTotal = (tenderBudget.pm_cost || 0) + (tenderBudget.labour_cost || 0) + (tenderBudget.assets_cost || 0) + 
-                            (tenderBudget.materials_cost || 0) + (tenderBudget.other_cost || 0) + (tenderBudget.road_marking_cost || 0) + 
-                            (tenderBudget.options_cost || 0) + (tenderBudget.maintenance_cost || 0);
-    const tenderIncomeCostDiff = tenderIncomeTotal - tenderCostTotal;
-    const tenderJVProfitValue = tenderJVProfit?.total_jv || 0;
-    const tenderExpectedProfit = tenderIncomeCostDiff + tenderJVProfitValue;
-
-    // Project calculations
-    const projectIncomeTotal = (projectBudgetCorrection.pm || 0) + (projectBudgetCorrection.pm_allocation || 0) + (projectBudgetCorrection.labour || 0) + 
-                               (projectBudgetCorrection.labour_allocation || 0) + (projectBudgetCorrection.assets || 0) + (projectBudgetCorrection.materials || 0) + 
-                               (projectBudgetCorrection.other || 0) + (projectBudgetCorrection.road_marking || 0) + (projectBudgetCorrection.sealour || 0) + 
-                               (projectBudgetCorrection.maintenance || 0);
-    const projectCostTotal = (projectBudgetCorrection.pm_cost || 0) + (projectBudgetCorrection.pm_allocation_cost || 0) + (projectBudgetCorrection.labour_cost || 0) + 
-                             (projectBudgetCorrection.labour_allocation_cost || 0) + (projectBudgetCorrection.assets_cost || 0) + (projectBudgetCorrection.materials_cost || 0) + 
-                             (projectBudgetCorrection.other_cost || 0) + (projectBudgetCorrection.road_marking_cost || 0) + (projectBudgetCorrection.sealour_cost || 0) + 
-                             (projectBudgetCorrection.maintenance_cost || 0);
-
-    const fabricationIncomeTotal = (fabricationBudget.pm || 0) + (fabricationBudget.labour || 0) + (fabricationBudget.setup_cost_asset || 0) + 
-                                   (fabricationBudget.materials || 0) + (fabricationBudget.other || 0) + (fabricationBudget.profit || 0);
-    const fabricationCostTotal = (fabricationBudget.pm_cost || 0) + (fabricationBudget.labour_cost || 0) + (fabricationBudget.setup_cost_cost || 0) + 
-                                 (fabricationBudget.materials_cost || 0) + (fabricationBudget.other_cost || 0) + (fabricationBudget.profit_cost || 0);
-
-    const totalProjectIncome = projectIncomeTotal + fabricationIncomeTotal;
-    const totalProjectCost = projectCostTotal + fabricationCostTotal;
-    const projectIncomeCostDiff = totalProjectIncome - totalProjectCost;
-    const projectJVProfit = projectTotalProfit?.ac_share || 0;
-    const projectExpectedProfit = projectIncomeCostDiff + projectJVProfit;
+    // Display values from saved data
+    const tenderExpectedProfit = totalTenderProfit?.expected || 0;
+    const projectExpectedProfit = projectTotalProfit?.expected || 0;
 
     return (
         <div className="space-y-6">
@@ -150,10 +119,9 @@ function ProjectMasterDataContent() {
                 <SummaryCard
                     title="Expected Tender Profit"
                     rows={[
-                        { label: 'Income', value: tenderIncomeTotal },
-                        { label: 'Cost', value: tenderCostTotal },
-                        { label: 'Income - Cost', value: tenderIncomeCostDiff },
-                        { label: 'JV Profit', value: tenderJVProfitValue },
+                        { label: 'Income', value: totalTenderProfit?.income || 0 },
+                        { label: 'Cost', value: totalTenderProfit?.cost || 0 },
+                        { label: 'AC Share (70%)', value: totalTenderProfit?.ac_share || 0 },
                         { label: 'Expected Profit', value: tenderExpectedProfit, isBold: true },
                     ]}
                 />
@@ -162,10 +130,9 @@ function ProjectMasterDataContent() {
                 <SummaryCard
                     title="Expected Project Profit"
                     rows={[
-                        { label: 'Income', value: totalProjectIncome },
-                        { label: 'Cost', value: totalProjectCost },
-                        { label: 'Income - Cost', value: projectIncomeCostDiff },
-                        { label: 'JV Profit', value: projectJVProfit },
+                        { label: 'Income', value: projectTotalProfit?.income || 0 },
+                        { label: 'Cost', value: projectTotalProfit?.cost || 0 },
+                        { label: 'AC Share (75%)', value: projectTotalProfit?.ac_share || 0 },
                         { label: 'Expected Profit', value: projectExpectedProfit, isBold: true },
                     ]}
                 />
