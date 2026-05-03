@@ -165,8 +165,8 @@ export default function IncomeSummaryTab() {
     const setField = (key, val) => setSummaryData(prev => ({ ...prev, [key]: val }));
     const setNote = (key, val) => setNotes(prev => ({ ...prev, [key]: val }));
 
-    // Income Summary formula: Total Value of Work Performed = Received + Not Earned (no advance adjustment)
-    const summaryTotalValueOfWorkPerformed = (calcValues.totalIncomeReceived || 0) + (calcValues.totalIncomeNotEarned || 0);
+    // Income Summary formula: Total Value of Work Performed = Received + Not Earned - Advance Remaining
+    const summaryTotalValueOfWorkPerformed = (calcValues.totalIncomeReceived || 0) + (calcValues.totalIncomeNotEarned || 0) - (calcValues.advancePaymentRemaining || 0);
 
     if (loading) return (
         <div className="flex items-center justify-center py-20">
@@ -202,15 +202,17 @@ export default function IncomeSummaryTab() {
                         </tr>
                         <tr>
                             <td className="border border-slate-300 px-3 py-2"></td>
-                            <td className="border border-slate-300 px-3 py-2 text-slate-700">Certified Works</td>
-                            <td className="border border-slate-300 px-3 py-2 text-right font-semibold">{fmt(calcValues.certifiedWorks)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-slate-700">Total Income Received</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right font-semibold">{fmt(calcValues.totalIncomeReceived)}</td>
                             <td className="border border-slate-300 px-3 py-2 text-right"></td>
                             <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400 italic">From Πίνακας 5</td>
                         </tr>
                         <tr>
-                            <td colSpan={3} className="border border-slate-300 px-3 py-2 font-bold text-slate-800">Total Income Received</td>
-                            <td className="border border-slate-300 px-3 py-2 text-right font-bold">{fmt(calcValues.certifiedWorks)}</td>
-                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400 italic">= Certified Works</td>
+                            <td className="border border-slate-300 px-3 py-2"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-slate-700">Advance Payment (Remaining)</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right font-semibold">{fmt(calcValues.advancePaymentRemaining)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400 italic">From Πίνακας 7</td>
                         </tr>
 
                         {/* ── Income Not Earned Type ── */}
@@ -261,7 +263,7 @@ export default function IncomeSummaryTab() {
                             <td colSpan={2} className="border border-slate-300 px-3 py-2 font-bold text-slate-800">Total Value of Work Performed</td>
                             <td className="border border-slate-300 px-3 py-2 text-right"></td>
                             <td className="border border-slate-300 px-3 py-2 text-right font-bold">{fmt(summaryTotalValueOfWorkPerformed)}</td>
-                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400">= Total Income Received + Total Income Not Earned</td>
+                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400">= Total Income Received + Total Income Not Earned - Advance Payment (Remaining)</td>
                         </tr>
 
                     </tbody>
