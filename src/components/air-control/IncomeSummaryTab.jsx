@@ -212,8 +212,8 @@ export default function IncomeSummaryTab() {
                         </tr>
                         <tr>
                             <td colSpan={3} className="border border-slate-300 px-3 py-2 font-bold text-slate-800">Total Income Received</td>
-                            <td className="border border-slate-300 px-3 py-2 text-right font-bold">{fmt(calcValues.certifiedWorks)}</td>
-                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400 italic">= Certified Works</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right font-bold">{fmt(calcValues.totalIncomeReceived)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400 italic">= Advance Payment + Certified Works</td>
                         </tr>
 
                         {/* ── Income Not Earned Type ── */}
