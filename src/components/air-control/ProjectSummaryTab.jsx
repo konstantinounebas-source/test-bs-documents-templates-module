@@ -66,14 +66,12 @@ export default function ProjectSummaryTab() {
         totalInvestment: '',
         allocatedInvestmentCost: '',
         stockMaterial: '',
-        profitLoss: '',
     });
     const [data, setData] = useState({
         totalValueOfWorkPerformed: 0,
         totalOutcome: 0,
         totalInvestment: 0,
         allocatedInvestmentCost: 0,
-        stockMaterial: 0,
         totalIncomeReceived: 0,
         netCashFlow: 0,
     });
@@ -147,8 +145,7 @@ export default function ProjectSummaryTab() {
                 setRecordId(summaryExtra.id);
             }
 
-            // Calculate derived values
-            const profitLoss = totalValueOfWorkPerformed - totalInvestment - totalOutcome;
+            // Calculate derived values (profitLoss computed at render since it depends on state)
             const netCashFlow = totalIncomeReceived + totalOutcome;
 
             setData({
@@ -158,7 +155,6 @@ export default function ProjectSummaryTab() {
                 allocatedInvestmentCost,
                 totalIncomeReceived,
                 netCashFlow,
-                profitLoss,
             });
         } catch (error) {
             console.error('Failed to load project data:', error);
@@ -191,6 +187,14 @@ export default function ProjectSummaryTab() {
             setSaving(false);
         }
     };
+
+    // Profit/Loss = Total Value of Work Performed - Total Outcome + Total Investment - Allocated Investment Cost - Expected Missing Invoice + Stock Material
+    const profitLoss = data.totalValueOfWorkPerformed
+        - data.totalOutcome
+        + data.totalInvestment
+        - data.allocatedInvestmentCost
+        - (parseFloat(String(expectedMissingInvoice).replace(/,/g, '')) || 0)
+        + (parseFloat(String(stockMaterial).replace(/,/g, '')) || 0);
 
     if (loading) return (
         <div className="flex items-center justify-center py-20">
@@ -264,8 +268,10 @@ export default function ProjectSummaryTab() {
                             </tr>
                             <tr className="bg-blue-50">
                                 <TD bold>Profit / Loss</TD>
-                                <CalcCell value={data.profitLoss} className="bg-blue-50" />
-                                <td className="border border-slate-300 px-2 py-1 bg-blue-50"><Input className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500 bg-blue-50" value={notes.profitLoss} onChange={e => setNotes({...notes, profitLoss: e.target.value})} /></td>
+                                <CalcCell value={profitLoss} className="bg-blue-50" />
+                                <td className="border border-slate-300 px-2 py-1 bg-blue-50">
+                                    <span className="text-xs text-slate-400 italic">= Work Performed − Outcome + Investment − Allocated − Missing Invoice + Stock Material</span>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
