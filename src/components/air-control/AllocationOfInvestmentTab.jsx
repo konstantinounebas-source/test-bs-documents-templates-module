@@ -99,15 +99,30 @@ export default function AllocationOfInvestmentTab() {
             ]);
 
             // ── 1. Total Value of Work Performed (from IncomeCalculation summary)
-            // DB structure: record.data = { section: 'summary', data: { data: { total_value_of_work_performed: ... } } }
-            const summaryRecord = incomeRecords.find(r => (r.data?.section || r.section) === 'summary');
-            const tvwp = parseNum(summaryRecord?.data?.data?.data?.total_value_of_work_performed);
+            // SDK returns entity fields flat at top level AND also inside .data
+            // DB: record.data.data.data.total_value_of_work_performed
+            const summaryRecord = incomeRecords.find(r =>
+                r.section === 'summary' || r.data?.section === 'summary'
+            );
+            // Try all possible nesting levels the SDK might return
+            const tvwp = parseNum(
+                summaryRecord?.data?.data?.data?.total_value_of_work_performed ||
+                summaryRecord?.data?.data?.total_value_of_work_performed ||
+                summaryRecord?.data?.total_value_of_work_performed ||
+                summaryRecord?.total_value_of_work_performed
+            );
             setTotalValueOfWork(tvwp);
 
             // ── 2. Expected Total Project Income (from ProjectMasterData)
-            // DB structure: record.data = { project_total_profit: { income: ... }, ... }
+            // The base44 SDK returns entity object-type fields FLAT at the record root level
+            // e.g. record.project_total_profit = { income: 20294790.46 }
             if (masterRecords.length > 0) {
-                const income = parseNum(masterRecords[0].data?.project_total_profit?.income);
+                const m = masterRecords[0];
+                // SDK flat access — object fields are at root, NOT under .data
+                const income = parseNum(m.project_total_profit?.income);
+                console.log('[AllocationTab] masterRecord keys:', Object.keys(m));
+                console.log('[AllocationTab] project_total_profit:', m.project_total_profit);
+                console.log('[AllocationTab] parsed income:', income);
                 if (income > 0) setExpectedIncome(income);
             }
 
