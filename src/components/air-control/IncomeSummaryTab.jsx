@@ -238,31 +238,7 @@ export default function IncomeSummaryTab() {
                         <tr>
                             <td className="border border-slate-300 px-3 py-2"></td>
                             <td className="border border-slate-300 px-3 py-2 font-semibold text-slate-700">Not Certified - As per Contract</td>
-                            <td className="border border-slate-300 px-3 py-2"></td>
-                            <td className="border border-slate-300 px-3 py-2 text-right">{fmt(calcValues.totalNotCertified)}</td>
-                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400">Not Delivered + Other Works Not Claimed + Retention 5%</td>
-                        </tr>
-
-                        <tr>
-                            <td className="border border-slate-300 px-3 py-2 pl-6"></td>
-                            <td className="border border-slate-300 px-3 py-2 text-slate-600">Not Delivered Works</td>
-                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
-                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
-                            <td className="border border-slate-300 px-3 py-2"></td>
-                        </tr>
-
-                        <tr>
-                            <td className="border border-slate-300 px-3 py-2 pl-6"></td>
-                            <td className="border border-slate-300 px-3 py-2 text-slate-600">Other Works Not Claimed</td>
-                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
-                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
-                            <td className="border border-slate-300 px-3 py-2"></td>
-                        </tr>
-
-                        <tr>
-                            <td className="border border-slate-300 px-3 py-2 pl-6"></td>
-                            <td className="border border-slate-300 px-3 py-2 text-slate-600">Retention 5%</td>
-                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-right font-semibold">{fmt(calcValues.totalNotCertified)}</td>
                             <td className="border border-slate-300 px-3 py-2 text-right"></td>
                             <td className="border border-slate-300 px-3 py-2"></td>
                         </tr>
