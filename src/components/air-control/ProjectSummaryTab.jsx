@@ -27,6 +27,7 @@ export default function ProjectSummaryTab() {
     const [recordId, setRecordId] = useState(null);
     const [expectedMissingInvoice, setExpectedMissingInvoice] = useState('');
     const [missingInvoiceNote, setMissingInvoiceNote] = useState('Εξω Υποψία 250K');
+    const [stockMaterial, setStockMaterial] = useState('28500');
     const [data, setData] = useState({
         totalValueOfWorkPerformed: 0,
         totalOutcome: 0,
@@ -94,11 +95,11 @@ export default function ProjectSummaryTab() {
             if (summaryExtra?.data) {
                 setExpectedMissingInvoice(summaryExtra.data.expected_missing_invoice ?? '');
                 setMissingInvoiceNote(summaryExtra.data.missing_invoice_note ?? 'Εξω Υποψία 250K');
+                setStockMaterial(summaryExtra.data.stock_material ?? '28500');
                 setRecordId(summaryExtra.id);
             }
 
             // Calculate derived values
-            const stockMaterial = 28500.00;
             const profitLoss = totalValueOfWorkPerformed - totalInvestment - totalOutcome;
             const netCashFlow = totalIncomeReceived + totalOutcome;
 
@@ -107,7 +108,6 @@ export default function ProjectSummaryTab() {
                 totalOutcome,
                 totalInvestment,
                 allocatedInvestmentCost,
-                stockMaterial,
                 totalIncomeReceived,
                 netCashFlow,
                 profitLoss,
@@ -127,6 +127,7 @@ export default function ProjectSummaryTab() {
                 data: {
                     expected_missing_invoice: expectedMissingInvoice,
                     missing_invoice_note: missingInvoiceNote,
+                    stock_material: stockMaterial,
                 }
             };
             if (recordId) {
@@ -211,9 +212,17 @@ export default function ProjectSummaryTab() {
                                     />
                                 </td>
                             </tr>
-                            <tr className="bg-yellow-50">
+                            <tr>
                                 <TD bold>Stock Material</TD>
-                                <CalcCell value={data.stockMaterial} className="bg-yellow-50" />
+                                <td className="border border-slate-300 px-2 py-1">
+                                    <Input
+                                        type="number"
+                                        className="h-7 text-right text-sm border-0 focus-visible:ring-1 w-full"
+                                        value={stockMaterial}
+                                        onChange={e => setStockMaterial(e.target.value)}
+                                        placeholder="0.00"
+                                    />
+                                </td>
                                 <TD></TD>
                             </tr>
                             <tr className="bg-blue-50">
