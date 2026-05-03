@@ -168,6 +168,9 @@ export default function IncomeSummaryTab() {
     // Income Summary formula: Total Value of Work Performed = Received + Not Earned - Advance Remaining
     const summaryTotalValueOfWorkPerformed = (calcValues.totalIncomeReceived || 0) + (calcValues.totalIncomeNotEarned || 0) - (calcValues.advancePaymentRemaining || 0);
 
+    // Net Earned Income = Received - Advance Remaining
+    const netEarnedIncome = (calcValues.totalIncomeReceived || 0) - (calcValues.advancePaymentRemaining || 0);
+
     if (loading) return (
         <div className="flex items-center justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
@@ -213,6 +216,17 @@ export default function IncomeSummaryTab() {
                             <td className="border border-slate-300 px-3 py-2 text-right font-semibold">{fmt(calcValues.advancePaymentRemaining)}</td>
                             <td className="border border-slate-300 px-3 py-2 text-right"></td>
                             <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400 italic">From Πίνακας 7</td>
+                        </tr>
+                        <tr className="bg-slate-50">
+                            <td className="border border-slate-300 px-3 py-2"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-slate-700 font-semibold">Net Earned Income</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right font-bold">{fmt(netEarnedIncome)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400">= Total Income Received – Advance Payment (Remaining)</td>
+                        </tr>
+                        <tr>
+                            <td className="border border-slate-300 px-3 py-2"></td>
+                            <td colSpan={4} className="border border-slate-300 px-3 py-1 text-xs text-slate-500 italic">Represents the portion of income that corresponds to actual work performed, after deducting the remaining (unrecovered) advance payment that has not yet been earned.</td>
                         </tr>
 
                         {/* ── Income Not Earned Type ── */}
