@@ -28,6 +28,14 @@ export default function ProjectSummaryTab() {
     const [expectedMissingInvoice, setExpectedMissingInvoice] = useState('');
     const [missingInvoiceNote, setMissingInvoiceNote] = useState('Εξω Υποψία 250K');
     const [stockMaterial, setStockMaterial] = useState('28500');
+    const [notes, setNotes] = useState({
+        totalValueOfWorkPerformed: '',
+        totalOutcome: '',
+        totalInvestment: '',
+        allocatedInvestmentCost: '',
+        stockMaterial: '',
+        profitLoss: '',
+    });
     const [data, setData] = useState({
         totalValueOfWorkPerformed: 0,
         totalOutcome: 0,
@@ -96,6 +104,14 @@ export default function ProjectSummaryTab() {
                 setExpectedMissingInvoice(summaryExtra.data.expected_missing_invoice ?? '');
                 setMissingInvoiceNote(summaryExtra.data.missing_invoice_note ?? 'Εξω Υποψία 250K');
                 setStockMaterial(summaryExtra.data.stock_material ?? '28500');
+                setNotes(summaryExtra.data.notes ?? {
+                    totalValueOfWorkPerformed: '',
+                    totalOutcome: '',
+                    totalInvestment: '',
+                    allocatedInvestmentCost: '',
+                    stockMaterial: '',
+                    profitLoss: '',
+                });
                 setRecordId(summaryExtra.id);
             }
 
@@ -128,6 +144,7 @@ export default function ProjectSummaryTab() {
                     expected_missing_invoice: expectedMissingInvoice,
                     missing_invoice_note: missingInvoiceNote,
                     stock_material: stockMaterial,
+                    notes: notes,
                 }
             };
             if (recordId) {
@@ -175,22 +192,22 @@ export default function ProjectSummaryTab() {
                             <tr>
                                 <TD bold>Total Value of Work Performed</TD>
                                 <CalcCell value={data.totalValueOfWorkPerformed} />
-                                <TD></TD>
+                                <td className="border border-slate-300 px-2 py-1"><Input className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500" value={notes.totalValueOfWorkPerformed} onChange={e => setNotes({...notes, totalValueOfWorkPerformed: e.target.value})} /></td>
                             </tr>
                             <tr>
                                 <TD bold>Total Outcome</TD>
                                 <CalcCell value={data.totalOutcome} />
-                                <TD></TD>
+                                <td className="border border-slate-300 px-2 py-1"><Input className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500" value={notes.totalOutcome} onChange={e => setNotes({...notes, totalOutcome: e.target.value})} /></td>
                             </tr>
                             <tr>
                                 <TD bold>Total Investment</TD>
                                 <CalcCell value={data.totalInvestment} />
-                                <TD></TD>
+                                <td className="border border-slate-300 px-2 py-1"><Input className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500" value={notes.totalInvestment} onChange={e => setNotes({...notes, totalInvestment: e.target.value})} /></td>
                             </tr>
                             <tr>
                                 <TD bold>Allocated Investment Cost</TD>
                                 <CalcCell value={data.allocatedInvestmentCost} />
-                                <TD></TD>
+                                <td className="border border-slate-300 px-2 py-1"><Input className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500" value={notes.allocatedInvestmentCost} onChange={e => setNotes({...notes, allocatedInvestmentCost: e.target.value})} /></td>
                             </tr>
                             <tr>
                                 <TD bold>Expected Missing Invoice</TD>
@@ -215,20 +232,14 @@ export default function ProjectSummaryTab() {
                             <tr>
                                 <TD bold>Stock Material</TD>
                                 <td className="border border-slate-300 px-2 py-1">
-                                    <Input
-                                        type="number"
-                                        className="h-7 text-right text-sm border-0 focus-visible:ring-1 w-full"
-                                        value={stockMaterial}
-                                        onChange={e => setStockMaterial(e.target.value)}
-                                        placeholder="0.00"
-                                    />
+                                    <Input type="number" className="h-7 text-right text-sm border-0 focus-visible:ring-1 w-full" value={stockMaterial} onChange={e => setStockMaterial(e.target.value)} placeholder="0.00" />
                                 </td>
-                                <TD></TD>
+                                <td className="border border-slate-300 px-2 py-1"><Input className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500" value={notes.stockMaterial} onChange={e => setNotes({...notes, stockMaterial: e.target.value})} /></td>
                             </tr>
                             <tr className="bg-blue-50">
                                 <TD bold>Profit / Loss</TD>
                                 <CalcCell value={data.profitLoss} className="bg-blue-50" />
-                                <TD></TD>
+                                <td className="border border-slate-300 px-2 py-1 bg-blue-50"><Input className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500 bg-blue-50" value={notes.profitLoss} onChange={e => setNotes({...notes, profitLoss: e.target.value})} /></td>
                             </tr>
                         </tbody>
                     </table>
