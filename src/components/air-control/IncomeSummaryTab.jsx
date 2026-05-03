@@ -125,17 +125,13 @@ export default function IncomeSummaryTab() {
                 const section = r.data?.section || r.section;
                 return section === 'summary';
             });
-            console.log('[IncomeSummaryTab] Income summary record:', incSummary);
+            console.log('[IncomeSummaryTab] Full income summary record:', incSummary);
+            console.log('[IncomeSummaryTab] incSummary.data:', incSummary?.data);
+            console.log('[IncomeSummaryTab] incSummary.data.data:', incSummary?.data?.data);
             
-            // Try multiple paths to get the data
-            let summaryData = incSummary?.data?.data;
-            if (!summaryData && incSummary?.data) {
-                summaryData = incSummary.data;
-            }
-            
-            if (summaryData) {
-                const d = summaryData;
-                console.log('[IncomeSummaryTab] Summary data:', d);
+            if (incSummary?.data?.data) {
+                const d = incSummary.data.data;
+                console.log('[IncomeSummaryTab] Using incSummary.data.data:', d);
                 setCalcValues({
                     totalIncomeReceived: parseNum(d.total_income_received || 0),
                     totalIncomeNotEarned: parseNum(d.total_income_not_earned || 0),
@@ -148,7 +144,7 @@ export default function IncomeSummaryTab() {
                     certifiedWorks: parseNum(d.certified_works || 0),
                 });
             } else {
-                console.log('[IncomeSummaryTab] No summary data found, using defaults');
+                console.log('[IncomeSummaryTab] No summary data found');
             }
         } catch (err) {
             console.error('IncomeSummaryTab load error:', err);
