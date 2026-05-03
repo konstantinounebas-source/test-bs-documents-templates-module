@@ -138,6 +138,8 @@ export default function IncomeSummaryTab() {
             // Calculate total certified works (100% + 60%)
             let totalCertifiedWorks = 0;
             certPayments.forEach((p, idx) => {
+                console.log(`[IncomeSummaryTab] Payment ${idx} full object:`, p);
+                console.log(`[IncomeSummaryTab] Payment ${idx} keys:`, Object.keys(p));
                 const t100 = parseFloat(String(p.total100).replace(/,/g, '')) || 0;
                 const t60 = parseFloat(String(p.total60).replace(/,/g, '')) || 0;
                 console.log(`[IncomeSummaryTab] Payment ${idx}: total100=${t100}, total60=${t60}`);
