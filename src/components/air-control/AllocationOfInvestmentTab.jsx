@@ -103,10 +103,13 @@ export default function AllocationOfInvestmentTab() {
             const summaryData = incomeMap.summary?.data?.data || {};
             const totalValueOfWorkPerformed = parseFloat(summaryData.total_value_of_work_performed) || 0;
 
-            // Expected Total Project Income — always from ProjectMasterData.data.project_total_profit.income
+            // Expected Total Project Income — from ProjectMasterData
+            // Frontend SDK returns entity fields flat (without .data wrapper)
             let expectedIncome = 20294790.48; // fallback
             if (masterRecords.length > 0) {
-                const income = parseNum(masterRecords[0].data?.project_total_profit?.income);
+                const m = masterRecords[0];
+                // Try both flat (SDK) and nested (raw) access
+                const income = parseNum(m.project_total_profit?.income ?? m.data?.project_total_profit?.income);
                 if (income > 0) expectedIncome = income;
             }
 
