@@ -237,8 +237,8 @@ export default function IncomeSummaryTab() {
 
                         <tr>
                             <td className="border border-slate-300 px-3 py-2"></td>
-                            <td className="border border-slate-300 px-3 py-2 text-slate-700">Not Certified - As per Contract</td>
-                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2 font-semibold text-slate-700">Not Certified - As per Contract</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right font-semibold">{fmt(calcValues.totalNotCertified)}</td>
                             <td className="border border-slate-300 px-3 py-2 text-right"></td>
                             <td className="border border-slate-300 px-3 py-2"></td>
                         </tr>
