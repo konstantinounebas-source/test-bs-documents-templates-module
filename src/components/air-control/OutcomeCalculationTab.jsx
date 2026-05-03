@@ -251,27 +251,16 @@ export default function OutcomeCalculationTab() {
                             <td className="border border-slate-300 px-3 py-2 text-right text-slate-800">
                                  {fmt(getGrandTotal())}
                              </td>
-                             <td className="border border-slate-300 px-1 py-1"></td>
-                            </tr>
-                            {/* Notes Row */}
-                            <tr className="border-t-2 border-slate-300">
-                                <td colSpan={periods.length * 2 + 2} className="border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">
-                                    Notes
-                                </td>
-                            </tr>
-                            <tr>
-                                <td className="border border-slate-300 px-3 py-2"></td>
-                                {periods.map(p => (
-                                    <td key={p.id} colSpan={2} className="border border-slate-300 px-1 py-2 align-top">
-                                        <textarea
-                                            className="w-full h-24 text-xs border border-slate-200 rounded p-2 focus-visible:ring-1 focus-visible:outline-none resize-none"
-                                            placeholder="Add note..."
-                                            value={notes[p.id] || ''}
-                                            onChange={e => setNotes(prev => ({ ...prev, [p.id]: e.target.value }))}
-                                        />
-                                    </td>
-                                ))}
-                                <td className="border border-slate-300 px-3 py-2"></td>
+                             {periods.map(p => (
+                                 <td key={`note-${p.id}`} className="border border-slate-300 px-2 py-2 align-top" style={{ minWidth: '200px' }}>
+                                     <textarea
+                                         className="w-full h-20 text-xs border border-slate-200 rounded p-2 focus-visible:ring-1 focus-visible:outline-none resize-none"
+                                         placeholder="Add note..."
+                                         value={notes[p.id] || ''}
+                                         onChange={e => setNotes(prev => ({ ...prev, [p.id]: e.target.value }))}
+                                     />
+                                 </td>
+                             ))}
                             </tr>
                     </tbody>
                 </table>
