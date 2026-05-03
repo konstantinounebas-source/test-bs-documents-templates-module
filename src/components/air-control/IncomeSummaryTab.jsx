@@ -106,7 +106,7 @@ export default function IncomeSummaryTab() {
             const incomeRecords = await base44.entities.IncomeCalculation.list();
 
             // Load summary record
-            const summaryRecord = incomeRecords.find(r => (r.data?.section || r.section) === 'summary');
+            const summaryRecord = incomeRecords.find(r => (r.data?.section || r.section) === 'income_summary');
             if (summaryRecord) {
                 setSummaryRecordId(summaryRecord.id);
                 const saved = summaryRecord.data?.data || {};
@@ -118,10 +118,10 @@ export default function IncomeSummaryTab() {
                 }
             }
 
-            // Load calculated values from IncomeCalculation summary
-            const summaryData = incomeRecords.find(r => (r.data?.section || r.section) === 'summary');
-            if (summaryData?.data?.data) {
-                const d = summaryData.data.data;
+            // Load calculated values from IncomeCalculation 'summary' section
+            const incSummary = incomeRecords.find(r => (r.data?.section || r.section) === 'summary');
+            if (incSummary?.data?.data) {
+                const d = incSummary.data.data;
                 setCalcValues({
                     totalIncomeReceived: parseNum(d.total_income_received || 0),
                     totalIncomeNotEarned: parseNum(d.total_income_not_earned || 0),
@@ -135,9 +135,8 @@ export default function IncomeSummaryTab() {
             }
         } catch (err) {
             console.error('IncomeSummaryTab load error:', err);
-        } finally {
-            setLoading(false);
         }
+        setLoading(false);
     };
 
     const handleSave = async () => {
