@@ -76,30 +76,33 @@ function ProjectMasterDataContent() {
         );
     }
 
-    // Safe parsing
-    const tenderBudget = data?.tender_budget || {};
-    const fabricationBudget = data?.fabrication_budget || {};
-    const tenderJVProfit = data?.tender_jv_profit || {};
-    const projectBudgetCorrection = data?.project_budget_correction || {};
-    const projectTotalProfit = data?.project_total_profit || {};
+    if (!data) {
+        return (
+            <div className="bg-white rounded-lg border border-slate-200 p-8 text-center">
+                <p className="text-slate-500">No project data available</p>
+            </div>
+        );
+    }
 
-    // Tender calculations
+    // Safe parsing - read only from saved data
+    const tenderBudget = data.tender_budget || {};
+    const fabricationBudget = data.fabrication_budget || {};
+    const tenderJVProfit = data.tender_jv_profit || {};
+    const projectBudgetCorrection = data.project_budget_correction || {};
+    const projectTotalProfit = data.project_total_profit || {};
+
+    // Tender calculations - read from tender_budget
     const tenderIncomeTotal = parseNum(tenderBudget.pm) + parseNum(tenderBudget.labour) + parseNum(tenderBudget.assets) + 
                               parseNum(tenderBudget.materials) + parseNum(tenderBudget.other) + parseNum(tenderBudget.road_marking) + 
                               parseNum(tenderBudget.options) + parseNum(tenderBudget.maintenance);
     const tenderCostTotal = parseNum(tenderBudget.pm_cost) + parseNum(tenderBudget.labour_cost) + parseNum(tenderBudget.assets_cost) + 
                             parseNum(tenderBudget.materials_cost) + parseNum(tenderBudget.other_cost) + parseNum(tenderBudget.road_marking_cost) + 
                             parseNum(tenderBudget.options_cost) + parseNum(tenderBudget.maintenance_cost);
-    const tenderProfitFromIncomeCost = tenderIncomeTotal - tenderCostTotal;
-    const tenderJVProfitShare = parseNum(tenderJVProfit.total_jv) || 0;
-    const tenderExpectedProfit = tenderProfitFromIncomeCost + tenderJVProfitShare;
+    const tenderIncomeCostDiff = tenderIncomeTotal - tenderCostTotal;
+    const tenderJVProfitValue = parseNum(tenderJVProfit.total_jv);
+    const tenderExpectedProfit = tenderIncomeCostDiff + tenderJVProfitValue;
 
-    // Project calculations
-    const fabricationIncomeTotal = parseNum(fabricationBudget.pm) + parseNum(fabricationBudget.labour) + parseNum(fabricationBudget.setup_cost_asset) + 
-                                   parseNum(fabricationBudget.materials) + parseNum(fabricationBudget.other) + parseNum(fabricationBudget.profit);
-    const fabricationCostTotal = parseNum(fabricationBudget.pm_cost) + parseNum(fabricationBudget.labour_cost) + parseNum(fabricationBudget.setup_cost_cost) + 
-                                 parseNum(fabricationBudget.materials_cost) + parseNum(fabricationBudget.other_cost) + parseNum(fabricationBudget.profit_cost);
-
+    // Project calculations - read from project_budget_correction + fabrication_budget
     const projectIncomeTotal = parseNum(projectBudgetCorrection.pm) + parseNum(projectBudgetCorrection.pm_allocation) + parseNum(projectBudgetCorrection.labour) + 
                                parseNum(projectBudgetCorrection.labour_allocation) + parseNum(projectBudgetCorrection.assets) + parseNum(projectBudgetCorrection.materials) + 
                                parseNum(projectBudgetCorrection.other) + parseNum(projectBudgetCorrection.road_marking) + parseNum(projectBudgetCorrection.sealour) + 
@@ -109,11 +112,16 @@ function ProjectMasterDataContent() {
                              parseNum(projectBudgetCorrection.other_cost) + parseNum(projectBudgetCorrection.road_marking_cost) + parseNum(projectBudgetCorrection.sealour_cost) + 
                              parseNum(projectBudgetCorrection.maintenance_cost);
 
+    const fabricationIncomeTotal = parseNum(fabricationBudget.pm) + parseNum(fabricationBudget.labour) + parseNum(fabricationBudget.setup_cost_asset) + 
+                                   parseNum(fabricationBudget.materials) + parseNum(fabricationBudget.other) + parseNum(fabricationBudget.profit);
+    const fabricationCostTotal = parseNum(fabricationBudget.pm_cost) + parseNum(fabricationBudget.labour_cost) + parseNum(fabricationBudget.setup_cost_cost) + 
+                                 parseNum(fabricationBudget.materials_cost) + parseNum(fabricationBudget.other_cost) + parseNum(fabricationBudget.profit_cost);
+
     const totalProjectIncome = projectIncomeTotal + fabricationIncomeTotal;
     const totalProjectCost = projectCostTotal + fabricationCostTotal;
-    const projectProfitFromIncomeCost = totalProjectIncome - totalProjectCost;
-    const projectJVProfitShare = parseNum(projectTotalProfit.ac_share) || 0;
-    const projectExpectedProfit = projectProfitFromIncomeCost + projectJVProfitShare;
+    const projectIncomeCostDiff = totalProjectIncome - totalProjectCost;
+    const projectJVProfit = parseNum(projectTotalProfit.ac_share);
+    const projectExpectedProfit = projectIncomeCostDiff + projectJVProfit;
 
     return (
         <div className="space-y-6">
@@ -124,8 +132,8 @@ function ProjectMasterDataContent() {
                     rows={[
                         { label: 'Income', value: tenderIncomeTotal },
                         { label: 'Cost', value: tenderCostTotal },
-                        { label: 'Profit from Income - Cost', value: tenderProfitFromIncomeCost },
-                        { label: 'JV Profit', value: tenderJVProfitShare },
+                        { label: 'Income - Cost', value: tenderIncomeCostDiff },
+                        { label: 'JV Profit', value: tenderJVProfitValue },
                         { label: 'Expected Profit', value: tenderExpectedProfit, isBold: true },
                     ]}
                 />
@@ -136,8 +144,8 @@ function ProjectMasterDataContent() {
                     rows={[
                         { label: 'Income', value: totalProjectIncome },
                         { label: 'Cost', value: totalProjectCost },
-                        { label: 'Profit from Income - Cost', value: projectProfitFromIncomeCost },
-                        { label: 'JV Profit', value: projectJVProfitShare },
+                        { label: 'Income - Cost', value: projectIncomeCostDiff },
+                        { label: 'JV Profit', value: projectJVProfit },
                         { label: 'Expected Profit', value: projectExpectedProfit, isBold: true },
                     ]}
                 />
