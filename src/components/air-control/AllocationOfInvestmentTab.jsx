@@ -261,7 +261,7 @@ export default function AllocationOfInvestmentTab() {
                             <NoteCell value={notes.expected_income}   onChange={v => setNote('expected_income', v)} />
                         </tr>
                         <tr>
-                            <LabelCell>Allocation %</LabelCell>
+                            <LabelCell>Investment Allocation per Unit of Income %</LabelCell>
                             <CalcCell value={allocationPct} />
                             <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic">= (Total Investment - Asset after Depr.) / Expected Income × 100</td>
                         </tr>
