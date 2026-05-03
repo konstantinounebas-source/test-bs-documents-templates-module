@@ -146,10 +146,8 @@ export default function IncomeSummaryTab() {
         setSaving(true);
         try {
             const payload = {
-                data: {
-                    section: 'income_summary',
-                    data: { investment: summaryData, notes },
-                }
+                section: 'income_summary',
+                data: { investment: summaryData, notes }
             };
             if (summaryRecordId) {
                 await base44.entities.IncomeCalculation.update(summaryRecordId, payload);
