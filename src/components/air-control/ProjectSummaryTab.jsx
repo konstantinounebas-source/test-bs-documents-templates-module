@@ -90,7 +90,14 @@ export default function ProjectSummaryTab() {
             incomeRecords.forEach(r => { incomeMap[r.section] = r; });
 
             const totalValueOfWorkPerformed = incomeMap.summary?.data?.total_value_of_work_performed || 0;
-            const totalIncomeReceived = incomeMap.summary?.data?.total_income_received || 0;
+
+            // Recompute Total Income Received the same way IncomeCalculationTab does:
+            // totalIncomeReceived = AirControl Advance Payment (sum of advance.aircontrol) + Certified Works (sum of certified ac100+ac60)
+            const certifiedPayments = incomeMap.certified?.data?.payments || [];
+            const advancePayments = incomeMap.advance?.data?.payments || [];
+            const grandTotalAC = certifiedPayments.reduce((s, p) => s + (parseFloat(p.ac100) || 0) + (parseFloat(p.ac60) || 0), 0);
+            const totalAdvanceAC = advancePayments.reduce((s, p) => s + (parseFloat(p.aircontrol) || 0), 0);
+            const totalIncomeReceived = totalAdvanceAC + grandTotalAC;
 
             // Load AllocationOfInvestment data - compute allocatedCost the same way AllocationOfInvestmentTab does
             // totalInvestment in P&L = Allocated Investment Cost from Allocation of Investment tab
