@@ -200,8 +200,8 @@ export default function ProjectMasterDataTab() {
     const projectTotalIncomeWithFab = projectIncomeTotal + fabricationIncomeTotal + parseNum(fabricationBudget.profit);
     const projectTotalCostWithFab = projectCostTotal + fabricationCostTotal + parseNum(fabricationBudget.profit_cost);
     const projectTotalProfitAmount = projectTotalIncomeWithFab - projectTotalCostWithFab;
-    const projectACShare75 = projectTotalProfitAmount * 0.75;
-    const projectExpectedProfitAmount = projectTotalProfitAmount;
+    // JV-Aircontrol Share = Project JV Budget Profit Aircontrol 75% (from projectTotalProfit.ac_share)
+    const projectACShare75 = parseNum(projectTotalProfit.ac_share);
 
     return (
         <div className="space-y-6">
