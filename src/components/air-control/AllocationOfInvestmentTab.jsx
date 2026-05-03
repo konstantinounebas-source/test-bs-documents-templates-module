@@ -57,6 +57,7 @@ const NoteCell = ({ value, onChange }) => (
 );
 
 export default function AllocationOfInvestmentTab() {
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [recordId, setRecordId] = useState(null);
     const [investment, setInvestment] = useState({
@@ -64,7 +65,7 @@ export default function AllocationOfInvestmentTab() {
         material: 252908.13,
         assets: 450000.00,
         asset_depr_pct: 25,
-        total_value_work: 3273500.96,
+        total_value_work: 0,
         expected_income: 20294790.48,
     });
     const [notes, setNotes] = useState({
@@ -102,12 +103,10 @@ export default function AllocationOfInvestmentTab() {
             const summaryData = incomeMap.summary?.data?.data || {};
             const totalValueOfWorkPerformed = parseFloat(summaryData.total_value_of_work_performed) || 0;
 
-            // Expected Total Project Income = project_total_profit.income from ProjectMasterData
-            // ProjectMasterData stores fields flat inside record.data
-            let expectedIncome = 20294790.48; // fallback default
+            // Expected Total Project Income — always from ProjectMasterData.data.project_total_profit.income
+            let expectedIncome = 20294790.48; // fallback
             if (masterRecords.length > 0) {
-                const raw = masterRecords[0].data || masterRecords[0];
-                const income = parseNum(raw.project_total_profit?.income);
+                const income = parseNum(masterRecords[0].data?.project_total_profit?.income);
                 if (income > 0) expectedIncome = income;
             }
 
@@ -126,6 +125,8 @@ export default function AllocationOfInvestmentTab() {
             }
         } catch (error) {
             console.error('Failed to load project data:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -152,6 +153,12 @@ export default function AllocationOfInvestmentTab() {
     const assetAfterDepr = parseNum(investment.assets) * (parseNum(investment.asset_depr_pct) / 100);
     const allocationPct = ((totalInvestment - assetAfterDepr) / parseNum(investment.expected_income)) * 100;
     const allocatedCost = (allocationPct / 100) * parseNum(investment.total_value_work);
+
+    if (loading) return (
+        <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+        </div>
+    );
 
     return (
         <div className="bg-white rounded-lg border border-slate-200 p-6">
