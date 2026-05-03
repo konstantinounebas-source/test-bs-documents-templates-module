@@ -241,7 +241,7 @@ export default function IncomeCalculationTab() {
     // 1. Income Received
     const incomeAdvancePayment = totalAdvanceAC;
     const incomeCertifiedWorks = grandTotalAC;
-    const totalIncomeReceived = incomeAdvancePayment + incomeCertifiedWorks;
+    const totalIncomeReceived = incomeCertifiedWorks;
 
     // Advance payment remaining
     const certWorksAC60 = grandTotalAC60; // sum of manually-entered AC 60% column
@@ -356,16 +356,12 @@ export default function IncomeCalculationTab() {
                         </thead>
                         <tbody>
                             <tr>
-                                <TD>AirControl Advance Payment</TD>
-                                <CalcCell value={incomeAdvancePayment} />
-                            </tr>
-                            <tr>
-                                <TD>Certified Works</TD>
-                                <CalcCell value={incomeCertifiedWorks} />
+                            <TD>Certified Works</TD>
+                            <CalcCell value={incomeCertifiedWorks} />
                             </tr>
                             <tr className="bg-blue-50">
-                                <TD bold>Total Income Received</TD>
-                                <CalcCell value={totalIncomeReceived} className="font-bold bg-blue-50" />
+                            <TD bold>Total Income Received</TD>
+                            <CalcCell value={totalIncomeReceived} className="font-bold bg-blue-50" />
                             </tr>
                         </tbody>
                     </table>
