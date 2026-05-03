@@ -77,24 +77,29 @@ export default function IncomeCalculationTab() {
         setLoading(true);
         const all = await base44.entities.IncomeCalculation.list();
         const map = {};
-        all.forEach(r => { map[r.section] = r; });
+        // section is stored inside data.section (not r.section directly)
+        all.forEach(r => {
+            const section = r.data?.section || r.section;
+            if (section) map[section] = r;
+        });
         setRecords(map);
-        if (map.assumptions?.data) setAssumptions({ ...DEFAULT_ASSUMPTIONS, ...map.assumptions.data });
-        if (map.certified?.data) setCertified({ ...DEFAULT_CERTIFIED, ...map.certified.data });
-        if (map.advance?.data) setAdvance({ ...DEFAULT_ADVANCE, ...map.advance.data });
-        if (map.not_paid?.data) setNotPaid({ ...DEFAULT_NOT_PAID, ...map.not_paid.data });
-        if (map.shelter_types?.data) setShelterTypes(map.shelter_types.data.types || DEFAULT_SHELTER_TYPES);
-        if (map.removal?.data) setRemoval({ ...DEFAULT_REMOVAL, ...map.removal.data });
-        if (map.other_not_claimed?.data) {
-            const d = map.other_not_claimed.data;
-            // migrate old format
-            if (d.rows) {
-                setOtherNotClaimed(d);
+        // Each record's payload is in r.data.data (double-nested)
+        const d = (key) => map[key]?.data?.data;
+        if (d('assumptions')) setAssumptions({ ...DEFAULT_ASSUMPTIONS, ...d('assumptions') });
+        if (d('certified')) setCertified({ ...DEFAULT_CERTIFIED, ...d('certified') });
+        if (d('advance')) setAdvance({ ...DEFAULT_ADVANCE, ...d('advance') });
+        if (d('not_paid')) setNotPaid({ ...DEFAULT_NOT_PAID, ...d('not_paid') });
+        if (d('shelter_types')) setShelterTypes(d('shelter_types').types || DEFAULT_SHELTER_TYPES);
+        if (d('removal')) setRemoval({ ...DEFAULT_REMOVAL, ...d('removal') });
+        if (d('other_not_claimed')) {
+            const od = d('other_not_claimed');
+            if (od.rows) {
+                setOtherNotClaimed(od);
             } else {
                 setOtherNotClaimed({ rows: [
-                    { description: 'Monthly Fees', amount: (parseFloat(d.months)||0) * (parseFloat(d.monthly_fee)||0) },
-                    { description: 'Samples', amount: parseFloat(d.samples)||0 },
-                    { description: 'Claim for Inspections', amount: parseFloat(d.claim_inspections)||0 },
+                    { description: 'Monthly Fees', amount: (parseFloat(od.months)||0) * (parseFloat(od.monthly_fee)||0) },
+                    { description: 'Samples', amount: parseFloat(od.samples)||0 },
+                    { description: 'Claim for Inspections', amount: parseFloat(od.claim_inspections)||0 },
                 ]});
             }
         }
@@ -104,9 +109,9 @@ export default function IncomeCalculationTab() {
     const saveSection = async (section, data) => {
         const existing = records[section];
         if (existing) {
-            await base44.entities.IncomeCalculation.update(existing.id, { data });
+            await base44.entities.IncomeCalculation.update(existing.id, { data: { section, data } });
         } else {
-            const created = await base44.entities.IncomeCalculation.create({ section, data });
+            const created = await base44.entities.IncomeCalculation.create({ data: { section, data } });
             setRecords(prev => ({ ...prev, [section]: created }));
         }
     };

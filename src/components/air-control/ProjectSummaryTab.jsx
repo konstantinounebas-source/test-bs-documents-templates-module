@@ -84,91 +84,26 @@ export default function ProjectSummaryTab() {
 
     const loadProjectData = async () => {
         try {
-            // Load Income Calculation summary
-            const incomeRecords = await base44.entities.IncomeCalculation.list();
+            const [incomeRecords, outcomeRecords] = await Promise.all([
+                base44.entities.IncomeCalculation.list(),
+                base44.entities.OutcomeCalculation.list(),
+            ]);
+
+            // Build map: section key → record (section is in r.data.section)
             const incomeMap = {};
             incomeRecords.forEach(r => {
                 const section = r.data?.section || r.section;
                 if (section) incomeMap[section] = r;
             });
 
-            // Recompute all values live from raw data (same as IncomeCalculationTab)
-            // NOTE: all records are double-nested: record.data.data.xxx
-            const certifiedPayments = incomeMap.certified?.data?.data?.payments || [];
-            const advancePayments = incomeMap.advance?.data?.data?.payments || [];
-            const notPaidPayments = incomeMap.not_paid?.data?.data?.payments || [];
-            const assumptions = incomeMap.assumptions?.data?.data || {};
-            const shelterTypesArr = incomeMap.shelter_types?.data?.data?.types || [];
-            const removalData = incomeMap.removal?.data?.data || {};
-            const otherNotClaimedRows = incomeMap.other_not_claimed?.data?.data?.rows || [];
+            // Read Total Value of Work Performed from the 'summary' record saved by IncomeCalculationTab
+            const summaryData = incomeMap.summary?.data?.data || incomeMap.summary?.data || {};
+            const totalValueOfWorkPerformed = parseFloat(summaryData.total_value_of_work_performed) || 0;
+            const totalIncomeReceived = parseFloat(summaryData.total_income_received) || 0;
 
-            const grandTotalAC = certifiedPayments.reduce((s, p) => s + (parseFloat(p.ac100) || 0) + (parseFloat(p.ac60) || 0), 0);
-            const grandTotalAC60 = certifiedPayments.reduce((s, p) => s + (parseFloat(p.ac60) || 0), 0);
-            const totalAdvanceAC = advancePayments.reduce((s, p) => s + (parseFloat(p.aircontrol) || 0), 0);
-            const totalIncomeReceived = totalAdvanceAC + grandTotalAC;
-
-            // Advance payment remaining
-            const pct60 = parseFloat(assumptions.pct_60) || 0.6;
-            const advAdjPct = parseFloat(assumptions.advance_adj_pct) || 0;
-            const certAdjustment = (grandTotalAC60 / pct60) * advAdjPct;
-            const advancePaymentRemaining = totalAdvanceAC - certAdjustment;
-
-            // Income Not Earned components
-            const notPaidTotalAC = notPaidPayments.reduce((s, p) => s + (parseFloat(p.ac100) || 0) + (parseFloat(p.ac60) || 0), 0);
-
-            // Not Delivered Works (shelter types + removal)
-            const removalTotalQty = shelterTypesArr.filter(s => ['type_a','type_b','type_c','excavation'].includes(s.key)).reduce((s, t) => s + (parseFloat(t.total_qty) || 0), 0);
-            const removalRemainingQty = removalTotalQty - (parseFloat(removalData.approved_qty) || 0);
-            const removalTotal = removalRemainingQty * (parseFloat(removalData.unit_rate) || 0);
-            const totalNotDeliveredWorks = shelterTypesArr.reduce((s, t) => {
-                const rem = (parseFloat(t.total_qty) || 0) - (parseFloat(t.approved_qty) || 0);
-                return s + rem * (parseFloat(t.unit_rate) || 0);
-            }, 0) + removalTotal;
-
-            const retentionPct = parseFloat(assumptions.retention_pct) || 0;
-            const totalRetention5 = (grandTotalAC60 / pct60) * retentionPct;
-            const totalOtherNotClaimed = otherNotClaimedRows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
-            const totalNotCertified = totalRetention5 + totalNotDeliveredWorks + totalOtherNotClaimed;
-
-            const totalFabricationIncome = shelterTypesArr.filter(t => ['type_a','type_b','type_c'].includes(t.key)).reduce((s, t) => s + (parseFloat(t.total_qty) || 0) * (parseFloat(t.jv_rate) || 0), 0);
-            const totalFabricationExtraIncome = shelterTypesArr.filter(t => ['type_a','type_b','type_c'].includes(t.key)).reduce((s, t) => s + (parseFloat(t.total_qty) || 0) * (parseFloat(t.extra_rate) || 0), 0);
-            const totalOtherExtraIncome = shelterTypesArr.filter(t => ['type_a','type_b','type_c'].includes(t.key)).reduce((s, t) => s + (parseFloat(t.total_qty) || 0) * ((parseFloat(t.roofing) || 0) + (parseFloat(t.earthing) || 0) + (parseFloat(t.stickers) || 0)), 0);
-            const totalIncomeNotEarned = notPaidTotalAC + totalNotCertified + totalFabricationIncome + totalFabricationExtraIncome + totalOtherExtraIncome;
-
-            // Πίνακας 7: Value of Work Performed
-            const totalValueOfWorkPerformed = totalIncomeReceived + totalIncomeNotEarned - advancePaymentRemaining;
-
-            // Load AllocationOfInvestment data - compute allocatedCost the same way AllocationOfInvestmentTab does
-            // totalInvestment in P&L = Allocated Investment Cost from Allocation of Investment tab
-            let totalInvestment = 0;
-            let allocatedInvestmentCost = 0;
-
-            // Default investment values (same as AllocationOfInvestmentTab defaults)
-            let inv_pm_labour = 350000.00;
-            let inv_material = 252908.13;
-            let inv_assets = 450000.00;
-            let inv_asset_depr_pct = 25;
-            let inv_expected_income = 20294790.48;
-            const inv_total_value_work = parseFloat(incomeMap.summary?.data?.total_value_of_work_performed) || 3273500.96;
-
-            if (incomeMap.summary?.data?.expected_total_project_income) {
-                inv_expected_income = parseFloat(incomeMap.summary.data.expected_total_project_income);
-            }
-
-            const inv_totalInvestment = inv_pm_labour + inv_material + inv_assets;
-            const inv_assetAfterDepr = inv_assets * (inv_asset_depr_pct / 100);
-            const inv_allocationPct = ((inv_totalInvestment - inv_assetAfterDepr) / inv_expected_income) * 100;
-            const allocatedCost = (inv_allocationPct / 100) * inv_total_value_work;
-
-            // P&L "Total Investment" = PM Labour + Material + Assets (same as Allocation of Investment tab)
-            totalInvestment = inv_totalInvestment;
-            allocatedInvestmentCost = allocatedCost;
-
-            // Load Outcome Calculation - sum total outcome (from_software + not_in_software) per category
-            const outcomeRecords = await base44.entities.OutcomeCalculation.list();
+            // Total Outcome from OutcomeCalculation
             let totalOutcome = 0;
             outcomeRecords.forEach(r => {
-                // Total outcome = (from_software + not_in_software) for each category
                 totalOutcome += ((parseFloat(r.pm_from_software) || 0) + (parseFloat(r.pm_not_in_software) || 0)) +
                                ((parseFloat(r.labour_from_software) || 0) + (parseFloat(r.labour_not_in_software) || 0)) +
                                ((parseFloat(r.assets_from_software) || 0) + (parseFloat(r.assets_not_in_software) || 0)) +
@@ -176,10 +111,21 @@ export default function ProjectSummaryTab() {
                                ((parseFloat(r.other_from_software) || 0) + (parseFloat(r.other_not_in_software) || 0));
             });
 
-            // Load saved editable fields from IncomeCalculation entity
+            // AllocationOfInvestment defaults (same as AllocationOfInvestmentTab)
+            const inv_pm_labour = 350000.00;
+            const inv_material = 252908.13;
+            const inv_assets = 450000.00;
+            const inv_asset_depr_pct = 25;
+            const inv_expected_income = parseFloat(summaryData.expected_total_project_income) || 20294790.48;
+            const totalInvestment = inv_pm_labour + inv_material + inv_assets;
+            const inv_assetAfterDepr = inv_assets * (inv_asset_depr_pct / 100);
+            const inv_allocationPct = ((totalInvestment - inv_assetAfterDepr) / inv_expected_income) * 100;
+            const allocatedInvestmentCost = (inv_allocationPct / 100) * totalValueOfWorkPerformed;
+
+            // Load saved editable fields
             const summaryExtra = incomeMap['project_summary_extra'];
-            if (summaryExtra?.data?.data) {
-                const sed = summaryExtra.data.data;
+            if (summaryExtra) {
+                const sed = summaryExtra.data?.data || summaryExtra.data || {};
                 setExpectedMissingInvoice(sed.expected_missing_invoice ?? '');
                 setMissingInvoiceNote(sed.missing_invoice_note ?? 'Εξω Υποψία 250K');
                 setStockMaterial(sed.stock_material ?? '28500');
@@ -194,16 +140,13 @@ export default function ProjectSummaryTab() {
                 setRecordId(summaryExtra.id);
             }
 
-            // Calculate derived values (profitLoss computed at render since it depends on state)
-            const netCashFlow = totalIncomeReceived - totalOutcome;
-
             setData({
                 totalValueOfWorkPerformed,
                 totalOutcome,
                 totalInvestment,
                 allocatedInvestmentCost,
                 totalIncomeReceived,
-                netCashFlow,
+                netCashFlow: totalIncomeReceived - totalOutcome,
             });
         } catch (error) {
             console.error('Failed to load project data:', error);
