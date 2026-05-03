@@ -240,8 +240,8 @@ export default function IncomeCalculationTab() {
 
     // 1. Income Received
     const incomeAdvancePayment = totalAdvanceAC;
-    const incomeCertifiedWorks = totalCertifiedWorks; // Sum of all Total 100% + 60% certified works
-    const totalIncomeReceived = incomeCertifiedWorks; // Only Certified Works, not advance
+    const incomeCertifiedWorks = grandTotalAC;
+    const totalIncomeReceived = incomeAdvancePayment + incomeCertifiedWorks;
 
     // Advance payment remaining
     const certWorksAC60 = grandTotalAC60; // sum of manually-entered AC 60% column
@@ -312,7 +312,7 @@ export default function IncomeCalculationTab() {
     const totalIncomeNotEarned = certifiedNotPaid + totalNotCertified + totalFabricationIncome + totalExtraWorksNotApproved;
 
     // 4. Value of Work Performed
-    const totalValueOfWorkPerformed = totalIncomeReceived + totalIncomeNotEarned;
+    const totalValueOfWorkPerformed = totalIncomeReceived + totalIncomeNotEarned - advancePaymentRemaining;
 
     // 12. Control Checks
     const check1OK = Math.abs((grandTotalAC + grandTotalAmco) - (totalAdvancePayment + totalCertifiedWorks)) < 0.01;
@@ -446,7 +446,7 @@ export default function IncomeCalculationTab() {
                         </tbody>
                     </table>
                     <p className="text-xs text-slate-400 mt-1">
-                        = Income Received + Income Not Earned
+                        = Income Received + Income Not Earned − Advance Remaining
                     </p>
                 </div>
             </div>
@@ -849,7 +849,7 @@ export default function IncomeCalculationTab() {
                                     <td className="border border-slate-300 px-2 py-1 text-center"><CheckBadge ok={check1OK} /></td>
                                 </tr>
                                 <tr>
-                                    <TD>Check 2: Total Income Received = Certified Works</TD>
+                                    <TD>Check 2: Total Income Received = Advance + Certified Works</TD>
                                     <td className="border border-slate-300 px-2 py-1 text-center"><CheckBadge ok={check2OK} /></td>
                                 </tr>
                                 <tr>
