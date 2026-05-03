@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import OutcomeCalculationTab from "@/components/air-control/OutcomeCalculationTab";
 import IncomeCalculationTab from "@/components/air-control/IncomeCalculationTab";
+import IncomeSummaryTab from "@/components/air-control/IncomeSummaryTab";
 import ProjectMasterDataTab from "@/components/air-control/ProjectMasterDataTab";
 import AllocationOfInvestmentTab from "@/components/air-control/AllocationOfInvestmentTab";
 import ProjectSummaryTab from "@/components/air-control/ProjectSummaryTab";
@@ -57,6 +58,8 @@ export default function AirControlCalculations() {
                             <ProjectSummaryTab />
                         ) : tab.key === 'outcome_calculation' ? (
                             <OutcomeCalculationTab />
+                        ) : tab.key === 'income_summary' ? (
+                            <IncomeSummaryTab />
                         ) : tab.key === 'income_calculation' ? (
                             <IncomeCalculationTab />
                         ) : tab.key === 'allocation_investment' ? (
