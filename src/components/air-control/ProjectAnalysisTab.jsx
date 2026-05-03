@@ -54,6 +54,163 @@ const KPICard = ({ label, value, isPercentage }) => (
     </div>
 );
 
+function BudgetRunwayContent() {
+    const [data, setData] = useState(null);
+    const [outcomeData, setOutcomeData] = useState([]);
+    const [scenarios, setScenarios] = useState([
+        { id: 'A', label: 'Scenario A (Current)', avgMonthlyCost: 0 },
+        { id: 'B', label: 'Scenario B', avgMonthlyCost: 0 },
+        { id: 'C', label: 'Scenario C', avgMonthlyCost: 0 },
+        { id: 'D', label: 'Scenario D', avgMonthlyCost: 0 },
+    ]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadData = async () => {
+            try {
+                const masterRecords = await base44.entities.ProjectMasterData.list();
+                const outcomeRecords = await base44.entities.OutcomeCalculation.list();
+                
+                if (isMounted) {
+                    setData(masterRecords.length > 0 ? masterRecords[0] : null);
+                    setOutcomeData(outcomeRecords);
+
+                    // Initialize scenarios with default Avg Monthly Cost
+                    if (masterRecords.length > 0 && outcomeRecords.length > 0) {
+                        const baselinePeriod = outcomeRecords.find(o => o.period_type === 'baseline');
+                        const totalOutcome = 
+                            parseNum(baselinePeriod?.pm_from_software) + parseNum(baselinePeriod?.pm_not_in_software) +
+                            parseNum(baselinePeriod?.labour_from_software) + parseNum(baselinePeriod?.labour_not_in_software) +
+                            parseNum(baselinePeriod?.assets_from_software) + parseNum(baselinePeriod?.assets_not_in_software) +
+                            parseNum(baselinePeriod?.materials_from_software) + parseNum(baselinePeriod?.materials_not_in_software) +
+                            parseNum(baselinePeriod?.other_from_software) + parseNum(baselinePeriod?.other_not_in_software);
+                        
+                        const defaultAvg = totalOutcome > 0 ? totalOutcome / 6 : 0;
+                        setScenarios(prev => prev.map(s => ({ ...s, avgMonthlyCost: defaultAvg })));
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load Budget Runway data:', error);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        loadData();
+
+        const unsubscribeProjectMasterData = base44.entities.ProjectMasterData.subscribe(() => {
+            if (isMounted) {
+                base44.entities.ProjectMasterData.list().then(records => {
+                    if (isMounted && records.length > 0) {
+                        setData(records[0]);
+                    }
+                });
+            }
+        });
+
+        const unsubscribeOutcome = base44.entities.OutcomeCalculation.subscribe(() => {
+            if (isMounted) {
+                base44.entities.OutcomeCalculation.list().then(records => {
+                    if (isMounted) {
+                        setOutcomeData(records);
+                    }
+                });
+            }
+        });
+
+        return () => {
+            isMounted = false;
+            unsubscribeProjectMasterData();
+            unsubscribeOutcome();
+        };
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+            </div>
+        );
+    }
+
+    // Extract budget values from ProjectMasterData (using cost fields)
+    const projectBudgetData = data?.project_budget_correction || {};
+    const pmBudget = parseNum(projectBudgetData.pm_cost);
+    const labourBudget = parseNum(projectBudgetData.labour_cost);
+    const assetsBudget = parseNum(projectBudgetData.assets_cost);
+    const materialsBudget = parseNum(projectBudgetData.materials_cost);
+    const otherBudget = parseNum(projectBudgetData.other_cost);
+
+    // Extract outcome values - use baseline period
+    const baselinePeriod = outcomeData.find(o => o.period_type === 'baseline');
+    const pmOutcome = parseNum(baselinePeriod?.pm_from_software) + parseNum(baselinePeriod?.pm_not_in_software);
+    const labourOutcome = parseNum(baselinePeriod?.labour_from_software) + parseNum(baselinePeriod?.labour_not_in_software);
+    const assetsOutcome = parseNum(baselinePeriod?.assets_from_software) + parseNum(baselinePeriod?.assets_not_in_software);
+    const materialsOutcome = parseNum(baselinePeriod?.materials_from_software) + parseNum(baselinePeriod?.materials_not_in_software);
+    const otherOutcome = parseNum(baselinePeriod?.other_from_software) + parseNum(baselinePeriod?.other_not_in_software);
+
+    // Calculate totals
+    const totalBudget = pmBudget + labourBudget + assetsBudget + materialsBudget + otherBudget;
+    const totalOutcome = pmOutcome + labourOutcome + assetsOutcome + materialsOutcome + otherOutcome;
+    const remainingBudget = totalBudget - totalOutcome;
+
+    const handleScenarioChange = (scenarioId, avgMonthlyCost) => {
+        setScenarios(prev =>
+            prev.map(s => s.id === scenarioId ? { ...s, avgMonthlyCost: parseNum(avgMonthlyCost) } : s)
+        );
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-3 gap-4">
+                <KPICard label="Total Budget" value={fmt(totalBudget)} />
+                <KPICard label="Total Outcome" value={fmt(totalOutcome)} />
+                <KPICard label="Remaining Budget" value={fmt(remainingBudget)} />
+            </div>
+
+            {/* Budget Runway Table */}
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-sm">
+                        <thead>
+                            <tr>
+                                <th className="border border-slate-300 px-4 py-3 bg-slate-100 font-semibold text-slate-700 text-xs text-left">Scenario</th>
+                                <th className="border border-slate-300 px-4 py-3 bg-slate-100 font-semibold text-slate-700 text-xs text-right">Avg Monthly Cost</th>
+                                <th className="border border-slate-300 px-4 py-3 bg-slate-100 font-semibold text-slate-700 text-xs text-right">Runway Months</th>
+                                <th className="border border-slate-300 px-4 py-3 bg-slate-100 font-semibold text-slate-700 text-xs text-right">Remaining Budget After 6 Months</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {scenarios.map((scenario, idx) => {
+                                const runwayMonths = scenario.avgMonthlyCost > 0 ? (remainingBudget / scenario.avgMonthlyCost).toFixed(2) : 0;
+                                const remainingAfter6 = remainingBudget - (scenario.avgMonthlyCost * 6);
+                                return (
+                                    <tr key={scenario.id} className="hover:bg-slate-50">
+                                        <td className="border border-slate-300 px-4 py-3 text-slate-700 font-medium">{scenario.label}</td>
+                                        <td className="border border-slate-300 px-4 py-3 text-right">
+                                            <input
+                                                type="number"
+                                                value={scenario.avgMonthlyCost}
+                                                onChange={(e) => handleScenarioChange(scenario.id, e.target.value)}
+                                                className="w-full text-right border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </td>
+                                        <td className="border border-slate-300 px-4 py-3 text-right text-slate-700 bg-slate-50 font-semibold">{runwayMonths}</td>
+                                        <td className="border border-slate-300 px-4 py-3 text-right text-slate-700 bg-slate-50">{fmt(remainingAfter6)}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function BudgetOverviewContent() {
     const [data, setData] = useState(null);
     const [outcomeData, setOutcomeData] = useState([]);
@@ -322,10 +479,11 @@ export default function ProjectAnalysisTab() {
                             <ProjectMasterDataContent />
                         ) : tab.key === 'budget_overview' ? (
                             <BudgetOverviewContent />
+                        ) : tab.key === 'budget_runway' ? (
+                            <BudgetRunwayContent />
                         ) : (
                             <div className="bg-white rounded-lg border border-slate-200 p-8 min-h-[500px] flex items-center justify-center">
                                 <p className="text-slate-400 text-sm">
-                                    {tab.key === 'budget_runway' && 'Budget Runway content will be loaded here'}
                                     {tab.key === 'capacity_scenarios' && 'Capacity Scenarios content will be loaded here'}
                                 </p>
                             </div>
