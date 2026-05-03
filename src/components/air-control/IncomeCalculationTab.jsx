@@ -132,6 +132,11 @@ export default function IncomeCalculationTab() {
                 total_income_not_earned: totalIncomeNotEarned,
                 advance_payment_remaining: advancePaymentRemaining,
                 expected_total_project_income: totalValueOfWorkPerformed,
+                certified_works: totalCertifiedWorks,
+                certified_not_paid: certifiedNotPaid,
+                total_not_certified: totalNotCertified,
+                fabrication_income: totalFabricationIncome,
+                extra_works_not_approved: totalExtraWorksNotApproved,
             }),
         ]);
         await loadAll();

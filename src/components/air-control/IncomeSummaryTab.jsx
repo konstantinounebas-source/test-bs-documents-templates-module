@@ -85,6 +85,7 @@ export default function IncomeSummaryTab() {
         fabricationIncome: 0,
         extraWorksNotApproved: 0,
         advancePaymentRemaining: 0,
+        certifiedWorks: 0,
     });
 
     // Notes
@@ -134,6 +135,7 @@ export default function IncomeSummaryTab() {
                     fabricationIncome: parseNum(d.fabrication_income || 0),
                     extraWorksNotApproved: parseNum(d.extra_works_not_approved || 0),
                     advancePaymentRemaining: parseNum(d.advance_payment_remaining || 0),
+                    certifiedWorks: parseNum(d.certified_works || 0),
                 });
             } else {
                 console.log('[IncomeSummaryTab] No summary data found, using defaults');
@@ -204,11 +206,9 @@ export default function IncomeSummaryTab() {
                         <tr>
                             <td className="border border-slate-300 px-3 py-2"></td>
                             <td className="border border-slate-300 px-3 py-2 text-slate-700">Certified Works</td>
-                            <td className="border border-slate-300 px-3 py-2 text-right">
-                                <input type="text" className="w-full text-right border-0 bg-white text-slate-700" value={fmt(summaryData.certified_works) || ''} onChange={e => setField('certified_works', parseNum(e.target.value))} />
-                            </td>
+                            <td className="border border-slate-300 px-3 py-2 text-right font-semibold">{fmt(calcValues.certifiedWorks)}</td>
                             <td className="border border-slate-300 px-3 py-2 text-right"></td>
-                            <td className="border border-slate-300 px-3 py-2"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400 italic">From Πίνακας 5</td>
                         </tr>
                         <tr>
                             <td colSpan={3} className="border border-slate-300 px-3 py-2 font-bold text-slate-800">Total Income Received</td>
