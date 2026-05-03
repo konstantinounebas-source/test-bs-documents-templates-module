@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import DragDropFileInput from '@/components/ui/drag-drop-file-input';
 import {
   Select,
   SelectContent,
@@ -421,11 +422,10 @@ export default function Annexes() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">New File</label>
-              <input
-                type="file"
-                onChange={e => setReviseForm({ ...reviseForm, file: e.target.files?.[0] })}
-                className="block w-full text-sm"
+              <label className="block text-sm font-medium mb-2">New File</label>
+              <DragDropFileInput
+                value={reviseForm.file}
+                onChange={file => setReviseForm({ ...reviseForm, file })}
               />
             </div>
             <div>
