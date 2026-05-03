@@ -95,6 +95,7 @@ export default function Annexes() {
     }
 
     try {
+      setLoading(true);
       const fileUrl = await uploadFile(uploadForm.file);
       const documentId = `doc_${Date.now()}`;
 
@@ -114,6 +115,8 @@ export default function Annexes() {
     } catch (error) {
       console.error('Upload failed:', error);
       alert('Failed to upload document');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -124,6 +127,7 @@ export default function Annexes() {
     }
 
     try {
+      setLoading(true);
       const fileUrl = await uploadFile(reviseForm.file);
       const currentRevision = documents[selectedDoc][0];
 
@@ -151,6 +155,8 @@ export default function Annexes() {
     } catch (error) {
       console.error('Revise failed:', error);
       alert('Failed to revise document');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -173,9 +179,13 @@ export default function Annexes() {
   };
 
   const uploadFile = async (file) => {
-    // In a real app, use base44.integrations.Core.UploadFile
-    // For now, return a placeholder
-    return URL.createObjectURL(file);
+    try {
+      const result = await base44.integrations.Core.UploadFile({ file });
+      return result.file_url;
+    } catch (error) {
+      console.error('File upload error:', error);
+      throw new Error('Failed to upload file');
+    }
   };
 
   const toggleExpand = (docId) => {
