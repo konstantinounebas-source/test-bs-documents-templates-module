@@ -102,20 +102,15 @@ export default function AllocationOfInvestmentTab() {
             const summaryData = incomeMap.summary?.data?.data || {};
             const totalValueOfWorkPerformed = parseFloat(summaryData.total_value_of_work_performed) || investment.total_value_work;
 
-            // Expected Total Project Income = Total Project Income from ProjectMasterData
+            // Expected Total Project Income = project_total_profit.income from ProjectMasterData
             let expectedIncome = investment.expected_income;
             if (masterRecords.length > 0) {
                 const m = masterRecords[0];
-                const pb = m.project_budget_correction || {};
-                const fb = m.fabrication_budget || {};
-                const projectIncomeTotal =
-                    parseNum(pb.pm) + parseNum(pb.pm_allocation) + parseNum(pb.labour) + parseNum(pb.labour_allocation) +
-                    parseNum(pb.assets) + parseNum(pb.materials) + parseNum(pb.other) + parseNum(pb.road_marking) +
-                    parseNum(pb.sealour) + parseNum(pb.maintenance);
-                const fabricationIncomeTotal =
-                    parseNum(fb.pm) + parseNum(fb.labour) + parseNum(fb.setup_cost_asset) +
-                    parseNum(fb.materials) + parseNum(fb.other);
-                expectedIncome = projectIncomeTotal + fabricationIncomeTotal + parseNum(fb.profit);
+                // Data is stored flat inside m.data
+                const projectTotalProfit = m.data?.project_total_profit || m.project_total_profit || {};
+                if (projectTotalProfit.income) {
+                    expectedIncome = parseNum(projectTotalProfit.income);
+                }
             }
 
             setInvestment(prev => ({
