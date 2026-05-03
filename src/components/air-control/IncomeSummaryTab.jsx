@@ -104,6 +104,7 @@ export default function IncomeSummaryTab() {
     const loadData = async () => {
         try {
             const incomeRecords = await base44.entities.IncomeCalculation.list();
+            console.log('[IncomeSummaryTab] Income records loaded:', incomeRecords);
 
             // Load summary record
             const summaryRecord = incomeRecords.find(r => (r.data?.section || r.section) === 'income_summary');
@@ -120,8 +121,10 @@ export default function IncomeSummaryTab() {
 
             // Load calculated values from IncomeCalculation 'summary' section
             const incSummary = incomeRecords.find(r => (r.data?.section || r.section) === 'summary');
+            console.log('[IncomeSummaryTab] Income summary record:', incSummary);
             if (incSummary?.data?.data) {
                 const d = incSummary.data.data;
+                console.log('[IncomeSummaryTab] Summary data:', d);
                 setCalcValues({
                     totalIncomeReceived: parseNum(d.total_income_received || 0),
                     totalIncomeNotEarned: parseNum(d.total_income_not_earned || 0),
@@ -132,6 +135,8 @@ export default function IncomeSummaryTab() {
                     extraWorksNotApproved: parseNum(d.extra_works_not_approved || 0),
                     advancePaymentRemaining: parseNum(d.advance_payment_remaining || 0),
                 });
+            } else {
+                console.log('[IncomeSummaryTab] No summary data found, using defaults');
             }
         } catch (err) {
             console.error('IncomeSummaryTab load error:', err);
