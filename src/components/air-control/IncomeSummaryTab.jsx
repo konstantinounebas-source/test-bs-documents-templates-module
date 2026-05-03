@@ -143,8 +143,9 @@ export default function IncomeSummaryTab() {
                     advancePaymentRemaining: parseNum(d.advance_payment_remaining || 0),
                     certifiedWorks: parseNum(d.certified_works || 0),
                 });
+                console.log('[IncomeSummaryTab] certifiedWorks loaded:', parseNum(d.certified_works || 0));
             } else {
-                console.log('[IncomeSummaryTab] No summary data found');
+                console.log('[IncomeSummaryTab] No summary data found, all values default to 0');
             }
         } catch (err) {
             console.error('IncomeSummaryTab load error:', err);
@@ -237,8 +238,8 @@ export default function IncomeSummaryTab() {
 
                         <tr>
                             <td className="border border-slate-300 px-3 py-2"></td>
-                            <td className="border border-slate-300 px-3 py-2 font-semibold text-slate-700">Not Certified - As per Contract</td>
-                            <td className="border border-slate-300 px-3 py-2 text-right font-semibold">{fmt(calcValues.totalNotCertified)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-slate-700">Not Certified - As per Contract</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right">{fmt(calcValues.totalNotCertified)}</td>
                             <td className="border border-slate-300 px-3 py-2 text-right"></td>
                             <td className="border border-slate-300 px-3 py-2"></td>
                         </tr>
