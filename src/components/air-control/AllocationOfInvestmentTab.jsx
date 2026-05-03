@@ -253,7 +253,7 @@ export default function AllocationOfInvestmentTab() {
                         <tr>
                             <LabelCell>Asset Value after Depreciation</LabelCell>
                             <CalcCell value={assetAfterDepr} />
-                            <NoteCell value={notes.asset_after_depr}  onChange={v => setNote('asset_after_depr', v)} />
+                            <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic">= Assets × Depreciation %</td>
                         </tr>
                         <tr>
                             <LabelCell>Total Value of Work Performed</LabelCell>
