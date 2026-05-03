@@ -105,7 +105,6 @@ export default function IncomeSummaryTab() {
     const loadData = async () => {
         try {
             const incomeRecords = await base44.entities.IncomeCalculation.list();
-            console.log('[IncomeSummaryTab] Income records loaded:', incomeRecords);
 
             // Load summary record
             const summaryRecord = incomeRecords.find(r => (r.data?.section || r.section) === 'income_summary');
@@ -121,17 +120,23 @@ export default function IncomeSummaryTab() {
             }
 
             // Load calculated values from IncomeCalculation 'summary' section
-            const incSummary = incomeRecords.find(r => {
-                const section = r.data?.section || r.section;
-                return section === 'summary';
+            const incSummary = incomeRecords.find(r => (r.data?.section || r.section) === 'summary');
+            
+            // Load certified works from 'certified' section
+            const certRecord = incomeRecords.find(r => (r.data?.section || r.section) === 'certified');
+            const certData = certRecord?.data?.data || {};
+            const certPayments = certData.payments || [];
+            
+            // Calculate total certified works (100% + 60%)
+            let totalCertifiedWorks = 0;
+            certPayments.forEach(p => {
+                const t100 = parseFloat(String(p.total100).replace(/,/g, '')) || 0;
+                const t60 = parseFloat(String(p.total60).replace(/,/g, '')) || 0;
+                totalCertifiedWorks += t100 + t60;
             });
-            console.log('[IncomeSummaryTab] Full income summary record:', incSummary);
-            console.log('[IncomeSummaryTab] incSummary.data:', incSummary?.data);
-            console.log('[IncomeSummaryTab] incSummary.data.data:', incSummary?.data?.data);
             
             if (incSummary?.data?.data) {
                 const d = incSummary.data.data;
-                console.log('[IncomeSummaryTab] Using incSummary.data.data:', d);
                 setCalcValues({
                     totalIncomeReceived: parseNum(d.total_income_received || 0),
                     totalIncomeNotEarned: parseNum(d.total_income_not_earned || 0),
@@ -141,11 +146,8 @@ export default function IncomeSummaryTab() {
                     fabricationIncome: parseNum(d.fabrication_income || 0),
                     extraWorksNotApproved: parseNum(d.extra_works_not_approved || 0),
                     advancePaymentRemaining: parseNum(d.advance_payment_remaining || 0),
-                    certifiedWorks: parseNum(d.certified_works || 0),
+                    certifiedWorks: totalCertifiedWorks,
                 });
-                console.log('[IncomeSummaryTab] certifiedWorks loaded:', parseNum(d.certified_works || 0));
-            } else {
-                console.log('[IncomeSummaryTab] No summary data found, all values default to 0');
             }
         } catch (err) {
             console.error('IncomeSummaryTab load error:', err);
