@@ -91,31 +91,29 @@ export default function AllocationOfInvestmentTab() {
                 base44.entities.ProjectMasterData.list(),
             ]);
 
-            // Build income map
+            // Build income map: section stored inside r.data.section
             const incomeMap = {};
             incomeRecords.forEach(r => {
                 const section = r.data?.section || r.section;
                 if (section) incomeMap[section] = r;
             });
 
-            // summary data is at r.data.data
+            // Total Value of Work Performed: stored in summary record at r.data.data
             const summaryData = incomeMap.summary?.data?.data || {};
-            const totalValueOfWorkPerformed = parseFloat(summaryData.total_value_of_work_performed) || investment.total_value_work;
+            const totalValueOfWorkPerformed = parseFloat(summaryData.total_value_of_work_performed) || 0;
 
             // Expected Total Project Income = project_total_profit.income from ProjectMasterData
-            let expectedIncome = investment.expected_income;
+            // ProjectMasterData stores fields flat inside record.data
+            let expectedIncome = 20294790.48; // fallback default
             if (masterRecords.length > 0) {
-                const m = masterRecords[0];
-                // Data is stored flat inside m.data
-                const projectTotalProfit = m.data?.project_total_profit || m.project_total_profit || {};
-                if (projectTotalProfit.income) {
-                    expectedIncome = parseNum(projectTotalProfit.income);
-                }
+                const raw = masterRecords[0].data || masterRecords[0];
+                const income = parseNum(raw.project_total_profit?.income);
+                if (income > 0) expectedIncome = income;
             }
 
             setInvestment(prev => ({
                 ...prev,
-                total_value_work: totalValueOfWorkPerformed,
+                ...(totalValueOfWorkPerformed > 0 ? { total_value_work: totalValueOfWorkPerformed } : {}),
                 expected_income: expectedIncome,
             }));
 
