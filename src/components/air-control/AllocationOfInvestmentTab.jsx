@@ -256,11 +256,6 @@ export default function AllocationOfInvestmentTab() {
                             <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic">= Assets × Depreciation %</td>
                         </tr>
                         <tr>
-                            <LabelCell>Total Value of Work Performed</LabelCell>
-                            <CalcCell value={totalValueOfWork} />
-                            <NoteCell value={notes.total_value_work}  onChange={v => setNote('total_value_work', v)} />
-                        </tr>
-                        <tr>
                             <LabelCell>Expected Total Project Income</LabelCell>
                             <CalcCell value={expectedIncome} />
                             <NoteCell value={notes.expected_income}   onChange={v => setNote('expected_income', v)} />
@@ -269,6 +264,11 @@ export default function AllocationOfInvestmentTab() {
                             <LabelCell>Allocation %</LabelCell>
                             <CalcCell value={allocationPct} />
                             <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic">= (Total Investment - Asset after Depr.) / Expected Income × 100</td>
+                        </tr>
+                        <tr>
+                            <LabelCell>Total Value of Work Performed</LabelCell>
+                            <CalcCell value={totalValueOfWork} />
+                            <NoteCell value={notes.total_value_work}  onChange={v => setNote('total_value_work', v)} />
                         </tr>
                         <tr className="bg-slate-100">
                             <LabelCell bold>Allocated Investment Cost</LabelCell>
