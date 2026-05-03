@@ -8,6 +8,7 @@ import IncomeSummaryTab from "@/components/air-control/IncomeSummaryTab";
 import ProjectMasterDataTab from "@/components/air-control/ProjectMasterDataTab";
 import AllocationOfInvestmentTab from "@/components/air-control/AllocationOfInvestmentTab";
 import ProjectSummaryTab from "@/components/air-control/ProjectSummaryTab";
+import ProjectAnalysisTab from "@/components/air-control/ProjectAnalysisTab";
 import AnnexesTab from "@/components/air-control/AnnexesTab";
 
 const TABS = [
@@ -64,6 +65,8 @@ export default function AirControlCalculations() {
                             <IncomeCalculationTab />
                         ) : tab.key === 'allocation_investment' ? (
                             <AllocationOfInvestmentTab />
+                        ) : tab.key === 'project_projections' ? (
+                            <ProjectAnalysisTab />
                         ) : tab.key === 'annexes' ? (
                             <AnnexesTab />
                         ) : (
