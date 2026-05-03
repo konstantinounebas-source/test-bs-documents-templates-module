@@ -104,49 +104,23 @@ function ProjectMasterDataContent() {
         );
     }
 
-    // Extract saved data from ProjectMasterData
-    const tenderBudget = data?.tender_budget || {};
-    const projectBudgetCorrection = data?.project_budget_correction || {};
-    const fabricationBudget = data?.fabrication_budget || {};
-    const tenderJVProfit = data?.tender_jv_profit || {};
+    // Read pre-calculated values from ProjectMasterData
     const totalTenderProfit = data?.total_tender_profit || {};
     const projectTotalProfit = data?.project_total_profit || {};
 
-    // Calculate Tender Income and Cost from saved budget
-    const tenderIncome = parseNum(tenderBudget.pm) + parseNum(tenderBudget.labour) + parseNum(tenderBudget.assets) +
-                         parseNum(tenderBudget.materials) + parseNum(tenderBudget.other) + parseNum(tenderBudget.road_marking) +
-                         parseNum(tenderBudget.options) + parseNum(tenderBudget.maintenance);
-    const tenderCost = parseNum(tenderBudget.pm_cost) + parseNum(tenderBudget.labour_cost) + parseNum(tenderBudget.assets_cost) +
-                       parseNum(tenderBudget.materials_cost) + parseNum(tenderBudget.other_cost) + parseNum(tenderBudget.road_marking_cost) +
-                       parseNum(tenderBudget.options_cost) + parseNum(tenderBudget.maintenance_cost);
+    // Tender Profit values
+    const tenderIncome = parseNum(totalTenderProfit.income);
+    const tenderCost = parseNum(totalTenderProfit.cost);
     const tenderIncomeCost = tenderIncome - tenderCost;
-    const tenderJVShare = parseNum(tenderJVProfit.total_jv) * 0.70;
-    const tenderExpectedProfit = tenderIncomeCost + tenderJVShare;
+    const tenderJVShare = parseNum(totalTenderProfit.ac_share);
+    const tenderExpectedProfit = parseNum(totalTenderProfit.expected);
 
-    // Calculate Project Income and Cost from saved budget
-    const projectIncome = parseNum(projectBudgetCorrection.pm) + parseNum(projectBudgetCorrection.pm_allocation) +
-                          parseNum(projectBudgetCorrection.labour) + parseNum(projectBudgetCorrection.labour_allocation) +
-                          parseNum(projectBudgetCorrection.assets) + parseNum(projectBudgetCorrection.materials) +
-                          parseNum(projectBudgetCorrection.other) + parseNum(projectBudgetCorrection.road_marking) +
-                          parseNum(projectBudgetCorrection.sealour) + parseNum(projectBudgetCorrection.maintenance);
-    const projectCost = parseNum(projectBudgetCorrection.pm_cost) + parseNum(projectBudgetCorrection.pm_allocation_cost) +
-                        parseNum(projectBudgetCorrection.labour_cost) + parseNum(projectBudgetCorrection.labour_allocation_cost) +
-                        parseNum(projectBudgetCorrection.assets_cost) + parseNum(projectBudgetCorrection.materials_cost) +
-                        parseNum(projectBudgetCorrection.other_cost) + parseNum(projectBudgetCorrection.road_marking_cost) +
-                        parseNum(projectBudgetCorrection.sealour_cost) + parseNum(projectBudgetCorrection.maintenance_cost);
-    
-    const fabricationIncome = parseNum(fabricationBudget.pm) + parseNum(fabricationBudget.labour) +
-                              parseNum(fabricationBudget.setup_cost_asset) + parseNum(fabricationBudget.materials) +
-                              parseNum(fabricationBudget.other) + parseNum(fabricationBudget.profit);
-    const fabricationCost = parseNum(fabricationBudget.pm_cost) + parseNum(fabricationBudget.labour_cost) +
-                            parseNum(fabricationBudget.setup_cost_cost) + parseNum(fabricationBudget.materials_cost) +
-                            parseNum(fabricationBudget.other_cost) + parseNum(fabricationBudget.profit_cost);
-
-    const totalProjectIncome = projectIncome + fabricationIncome;
-    const totalProjectCost = projectCost + fabricationCost;
-    const projectIncomeCost = totalProjectIncome - totalProjectCost;
+    // Project Profit values
+    const projectIncome = parseNum(projectTotalProfit.income);
+    const projectCost = parseNum(projectTotalProfit.cost);
+    const projectIncomeCost = projectIncome - projectCost;
     const projectJVShare = parseNum(projectTotalProfit.ac_share);
-    const projectExpectedProfit = projectIncomeCost + projectJVShare;
+    const projectExpectedProfit = parseNum(projectTotalProfit.expected);
 
     return (
         <div className="space-y-6">
@@ -167,8 +141,8 @@ function ProjectMasterDataContent() {
                 <SummaryCard
                     title="Expected Project Profit"
                     rows={[
-                        { label: 'Income', value: totalProjectIncome },
-                        { label: 'Cost', value: totalProjectCost },
+                        { label: 'Income', value: projectIncome },
+                        { label: 'Cost', value: projectCost },
                         { label: 'Income - Cost', value: projectIncomeCost },
                         { label: 'JV Profit (75%)', value: projectJVShare },
                         { label: 'Expected Profit', value: projectExpectedProfit, isBold: true },
