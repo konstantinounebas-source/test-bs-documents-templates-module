@@ -281,70 +281,6 @@ export default function ProjectMasterDataTab() {
                 </div>
             </div>
 
-            {/* 4. Tender JV Budget Profit */}
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">Tender JV Budget Profit</h2>
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
-                        <thead>
-                            <tr>
-                                <TH className="text-left">Description</TH>
-                                <TH>Value</TH>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <TD>Total Tender JV</TD>
-                                <CalcCell value={tenderJVProfit.total_jv} />
-                            </tr>
-                            <tr>
-                                <TD>JV-Aircontrol Share Tender 75%</TD>
-                                <CalcCell value={tenderJVProfit.ac_share_70} />
-                            </tr>
-                            <tr>
-                                <TD>JV-Amco Share Tender 25%</TD>
-                                <CalcCell value={tenderJVProfit.amco_share_30} />
-                            </tr>
-                            <tr className="bg-slate-50">
-                                <TD colSpan={2} className="text-xs text-slate-500">*Note Refer Budget Analysis Sheet</TD>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {/* 5. Total Tender Expected Profit */}
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">Total Tender Expected Profit</h2>
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
-                        <thead>
-                            <tr>
-                                <TH className="text-left">Description</TH>
-                                <TH>Value</TH>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <TD>Total TenderBudget Income</TD>
-                                <CalcCell value={tenderIncomeTotal} />
-                            </tr>
-                            <tr>
-                                <TD>Total Tender Budget Cost</TD>
-                                <CalcCell value={tenderCostTotal} />
-                            </tr>
-                            <tr>
-                                <TD>JV-Aircontrol Share Tender 75%</TD>
-                                <CalcCell value={tenderACShare75} />
-                            </tr>
-                            <tr className="bg-slate-100 font-bold">
-                                <TD bold>Expected Tender Profit</TD>
-                                <CalcCell value={parseNum(totalTenderProfit.expected)} className="font-bold" />
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
             </div>
 
             {/* RIGHT COLUMN: PROJECT TABLES */}
@@ -475,71 +411,143 @@ export default function ProjectMasterDataTab() {
                 </div>
             </div>
 
-            {/* 4. Project JV Budget Profit */}
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">Project JV Budget Profit</h2>
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
-                        <thead>
-                            <tr>
-                                <TH className="text-left">Description</TH>
-                                <TH>Value</TH>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <TD>Total JV</TD>
-                                <CalcCell value={projectTotalProfit.ac_share + (projectTotalProfit.ac_share / 0.75 * 0.25)} />
-                            </tr>
-                            <tr>
-                                <TD>Aircontrol 75%</TD>
-                                <CalcCell value={projectTotalProfit.ac_share} />
-                            </tr>
-                            <tr>
-                                <TD>Amco 25%</TD>
-                                <CalcCell value={projectTotalProfit.ac_share / 0.75 * 0.25} />
-                            </tr>
-                            <tr className="bg-slate-50">
-                                <TD colSpan={2} className="text-xs text-slate-500">*Note Refer Budget Analysis Sheet</TD>
-                            </tr>
-                        </tbody>
-                    </table>
+            </div>
+            </div>
+
+            {/* BOTTOM ROW: JV Budget Profit + Total Profit side by side */}
+            <div className="grid grid-cols-2 gap-6">
+                {/* Tender JV Budget Profit */}
+                <div className="bg-white rounded-lg border border-slate-200 p-6">
+                    <h2 className="text-lg font-semibold text-slate-800 mb-4">Tender JV Budget Profit</h2>
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-sm">
+                            <thead>
+                                <tr>
+                                    <TH className="text-left">Description</TH>
+                                    <TH>Value</TH>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <TD>Total Tender JV</TD>
+                                    <CalcCell value={tenderJVProfit.total_jv} />
+                                </tr>
+                                <tr>
+                                    <TD>JV-Aircontrol Share Tender 75%</TD>
+                                    <CalcCell value={tenderJVProfit.ac_share_70} />
+                                </tr>
+                                <tr>
+                                    <TD>JV-Amco Share Tender 25%</TD>
+                                    <CalcCell value={tenderJVProfit.amco_share_30} />
+                                </tr>
+                                <tr className="bg-slate-50">
+                                    <TD colSpan={2} className="text-xs text-slate-500">*Note Refer Budget Analysis Sheet</TD>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Project JV Budget Profit */}
+                <div className="bg-white rounded-lg border border-slate-200 p-6">
+                    <h2 className="text-lg font-semibold text-slate-800 mb-4">Project JV Budget Profit</h2>
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-sm">
+                            <thead>
+                                <tr>
+                                    <TH className="text-left">Description</TH>
+                                    <TH>Value</TH>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <TD>Total JV</TD>
+                                    <CalcCell value={parseNum(projectTotalProfit.ac_share) + (parseNum(projectTotalProfit.ac_share) / 0.75 * 0.25)} />
+                                </tr>
+                                <tr>
+                                    <TD>Aircontrol 75%</TD>
+                                    <CalcCell value={parseNum(projectTotalProfit.ac_share)} />
+                                </tr>
+                                <tr>
+                                    <TD>Amco 25%</TD>
+                                    <CalcCell value={parseNum(projectTotalProfit.ac_share) / 0.75 * 0.25} />
+                                </tr>
+                                <tr className="bg-slate-50">
+                                    <TD colSpan={2} className="text-xs text-slate-500">*Note Refer Budget Analysis Sheet</TD>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
-            {/* 6. Total Project Profit */}
-            <div className="bg-white rounded-lg border border-slate-200 p-6">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">Total Project Profit</h2>
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
-                        <thead>
-                            <tr>
-                                <TH className="text-left">Description</TH>
-                                <TH>Value</TH>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <TD>Total Project Income</TD>
-                                <CalcCell value={projectTotalIncomeWithFab} />
-                            </tr>
-                            <tr>
-                                <TD>Total Project Cost</TD>
-                                <CalcCell value={projectTotalCostWithFab} />
-                            </tr>
-                            <tr>
-                                <TD>JV-Aircontrol Share Tender 75%</TD>
-                                <CalcCell value={projectACShare75} />
-                            </tr>
-                            <tr className="bg-slate-100 font-bold">
-                                <TD bold>Expected Project Profit</TD>
-                                <CalcCell value={projectTotalProfitAmount + projectACShare75} className="font-bold" />
-                            </tr>
-                        </tbody>
-                    </table>
+            {/* BOTTOM ROW 2: Total Tender Expected Profit + Total Project Profit side by side */}
+            <div className="grid grid-cols-2 gap-6">
+                {/* Total Tender Expected Profit */}
+                <div className="bg-white rounded-lg border border-slate-200 p-6">
+                    <h2 className="text-lg font-semibold text-slate-800 mb-4">Total Tender Expected Profit</h2>
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-sm">
+                            <thead>
+                                <tr>
+                                    <TH className="text-left">Description</TH>
+                                    <TH>Value</TH>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <TD>Total TenderBudget Income</TD>
+                                    <CalcCell value={tenderIncomeTotal} />
+                                </tr>
+                                <tr>
+                                    <TD>Total Tender Budget Cost</TD>
+                                    <CalcCell value={tenderCostTotal} />
+                                </tr>
+                                <tr>
+                                    <TD>JV-Aircontrol Share Tender 75%</TD>
+                                    <CalcCell value={tenderACShare75} />
+                                </tr>
+                                <tr className="bg-slate-100 font-bold">
+                                    <TD bold>Expected Tender Profit</TD>
+                                    <CalcCell value={parseNum(totalTenderProfit.expected)} className="font-bold" />
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            </div>
+
+                {/* Total Project Profit */}
+                <div className="bg-white rounded-lg border border-slate-200 p-6">
+                    <h2 className="text-lg font-semibold text-slate-800 mb-4">Total Project Profit</h2>
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-sm">
+                            <thead>
+                                <tr>
+                                    <TH className="text-left">Description</TH>
+                                    <TH>Value</TH>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <TD>Total Project Income</TD>
+                                    <CalcCell value={projectTotalIncomeWithFab} />
+                                </tr>
+                                <tr>
+                                    <TD>Total Project Cost</TD>
+                                    <CalcCell value={projectTotalCostWithFab} />
+                                </tr>
+                                <tr>
+                                    <TD>JV-Aircontrol Share Tender 75%</TD>
+                                    <CalcCell value={projectACShare75} />
+                                </tr>
+                                <tr className="bg-slate-100 font-bold">
+                                    <TD bold>Expected Project Profit</TD>
+                                    <CalcCell value={projectTotalProfitAmount + projectACShare75} className="font-bold" />
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     );
