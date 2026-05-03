@@ -186,81 +186,109 @@ export default function IncomeSummaryTab() {
             </div>
 
             <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-sm table-fixed">
-                    <colgroup>
-                        <col style={{ width: '35%' }} />
-                        <col style={{ width: '20%' }} />
-                        <col style={{ width: '45%' }} />
-                    </colgroup>
+                <table className="w-full border-collapse text-sm">
                     <thead>
                         <tr>
                             <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-xs text-left">Category</th>
+                            <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-xs text-left">Item</th>
                             <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-xs text-right">Amount</th>
+                            <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-xs text-right">Total Amount</th>
                             <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-xs text-left">Note</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {/* ── Income Section ── */}
+                        {/* ── Income ── */}
                         <tr className="bg-slate-50">
-                            <LabelCell bold>Income</LabelCell>
-                            <EmptyCell /><EmptyCell />
+                            <td colSpan={5} className="border border-slate-300 px-3 py-2 font-bold text-slate-800">Income</td>
                         </tr>
                         <tr>
-                            <LabelCell>Certified Works</LabelCell>
-                            <EditCell value={summaryData.certified_works} onChange={v => setField('certified_works', v)} />
-                            <NoteCell value={notes.certified_works} onChange={v => setNote('certified_works', v)} />
+                            <td className="border border-slate-300 px-3 py-2"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-slate-700">Certified Works</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right">
+                                <input type="text" className="w-full text-right border-0 bg-white text-slate-700" value={fmt(summaryData.certified_works) || ''} onChange={e => setField('certified_works', parseNum(e.target.value))} />
+                            </td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2"></td>
                         </tr>
                         <tr>
-                            <LabelCell>Advance Payment (Remaining)</LabelCell>
-                            <CalcCell value={calcValues.advancePaymentRemaining} />
-                            <NoteCell value={notes.total_income_received} onChange={v => setNote('total_income_received', v)} />
-                        </tr>
-                        <tr className="bg-blue-50">
-                            <LabelCell bold>Total Income Received</LabelCell>
-                            <CalcCell value={calcValues.totalIncomeReceived} />
-                            <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic bg-blue-50">= Certified Works + Advance Payment</td>
+                            <td colSpan={3} className="border border-slate-300 px-3 py-2 font-bold text-slate-800">Total Income Received</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right font-bold">{fmt(calcValues.totalIncomeReceived)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400 italic">= Advance Payment + Certified Works</td>
                         </tr>
 
                         {/* ── Income Not Earned Type ── */}
-                        <tr>
-                            <LabelCell colSpan={3} sub>Income Not Earned Type</LabelCell>
+                        <tr className="bg-slate-50">
+                            <td colSpan={5} className="border border-slate-300 px-3 py-2 font-bold text-slate-800 italic text-slate-600">Income Not Earned Type</td>
                         </tr>
 
                         <tr>
-                            <LabelCell>Certified – As per Contract but Not Paid</LabelCell>
-                            <CalcCell value={calcValues.certifiedNotPaid} />
-                            <NoteCell value={notes.income_not_earned_certified} onChange={v => setNote('income_not_earned_certified', v)} />
+                            <td className="border border-slate-300 px-3 py-2"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-slate-700">Certified - As per Contract but Not Paid</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right">{fmt(calcValues.certifiedNotPaid)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2"></td>
                         </tr>
 
                         <tr>
-                            <LabelCell>Not Certified – As per Contract</LabelCell>
-                            <CalcCell value={calcValues.totalNotCertified} />
-                            <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic">= Not Delivered + Other Works Not Claimed + Retention 5%</td>
+                            <td className="border border-slate-300 px-3 py-2"></td>
+                            <td className="border border-slate-300 px-3 py-2 font-semibold text-slate-700">Not Certified - As per Contract</td>
+                            <td className="border border-slate-300 px-3 py-2"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-right">{fmt(calcValues.totalNotCertified)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400">Not Delivered + Other Works Not Claimed + Retention 5%</td>
                         </tr>
 
                         <tr>
-                            <LabelCell>Fabrication Income</LabelCell>
-                            <CalcCell value={calcValues.fabricationIncome} />
-                            <NoteCell value={notes.income_not_earned_fabrication} onChange={v => setNote('income_not_earned_fabrication', v)} />
+                            <td className="border border-slate-300 px-3 py-2 pl-6"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-slate-600">Not Delivered Works</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2"></td>
                         </tr>
 
                         <tr>
-                            <LabelCell>Extra Works Income – Not Approved</LabelCell>
-                            <CalcCell value={calcValues.extraWorksNotApproved} />
-                            <NoteCell value={notes.income_not_earned_extra} onChange={v => setNote('income_not_earned_extra', v)} />
+                            <td className="border border-slate-300 px-3 py-2 pl-6"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-slate-600">Other Works Not Claimed</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2"></td>
+                        </tr>
+
+                        <tr>
+                            <td className="border border-slate-300 px-3 py-2 pl-6"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-slate-600">Retention 5%</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2"></td>
+                        </tr>
+
+                        <tr>
+                            <td className="border border-slate-300 px-3 py-2"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-slate-700">Fabrication Income</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right">{fmt(calcValues.fabricationIncome)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2"></td>
+                        </tr>
+
+                        <tr>
+                            <td className="border border-slate-300 px-3 py-2"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-slate-700">Extra Works Income - Not Approved</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right">{fmt(calcValues.extraWorksNotApproved)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2"></td>
                         </tr>
 
                         <tr className="bg-blue-50">
-                            <LabelCell bold>Total Income Not Earned</LabelCell>
-                            <CalcCell value={calcValues.totalIncomeNotEarned} />
-                            <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic bg-blue-50">= Sum of above categories</td>
+                            <td colSpan={2} className="border border-slate-300 px-3 py-2 font-bold text-slate-800">Total Income Not Earned</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-right font-bold">{fmt(calcValues.totalIncomeNotEarned)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400">= Sum of above categories</td>
                         </tr>
 
-                        {/* ── Total Value of Work Performed ── */}
                         <tr className="bg-green-50">
-                            <LabelCell bold>Total Value of Work Performed</LabelCell>
-                            <CalcCell value={calcValues.totalValueOfWorkPerformed} />
-                            <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic bg-green-50">= Total Income Received + Total Income Not Earned</td>
+                            <td colSpan={2} className="border border-slate-300 px-3 py-2 font-bold text-slate-800">Total Value of Work Performed</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right"></td>
+                            <td className="border border-slate-300 px-3 py-2 text-right font-bold">{fmt(calcValues.totalValueOfWorkPerformed)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400">= Total Income Received + Total Income Not Earned</td>
                         </tr>
 
                     </tbody>
