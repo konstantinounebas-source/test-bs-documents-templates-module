@@ -278,11 +278,11 @@ function ProjectMasterDataContent() {
                 <SummaryCard
                     title="Expected Tender Profit"
                     rows={[
-                        { label: 'Income', value: fmt(tenderIncome) },
-                        { label: 'Cost', value: fmt(tenderCost) },
-                        { label: 'Income - Cost', value: fmt(tenderIncomeMinusCost) },
-                        { label: 'JV Profit', value: fmt(tenderJVProfit) },
-                        { label: 'Expected Profit', value: fmt(tenderExpectedProfit), isBold: true },
+                        { label: 'Income', value: tenderIncome },
+                        { label: 'Cost', value: tenderCost },
+                        { label: 'Income - Cost', value: tenderIncomeMinusCost },
+                        { label: 'JV Profit', value: tenderJVProfit },
+                        { label: 'Expected Profit', value: tenderExpectedProfit, isBold: true },
                     ]}
                 />
 
@@ -290,11 +290,11 @@ function ProjectMasterDataContent() {
                 <SummaryCard
                     title="Expected Project Profit"
                     rows={[
-                        { label: 'Income', value: fmt(projectIncome) },
-                        { label: 'Cost', value: fmt(projectCost) },
-                        { label: 'Income - Cost', value: fmt(projectIncomeMinusCost) },
-                        { label: 'JV Profit', value: fmt(projectJVProfit) },
-                        { label: 'Expected Profit', value: fmt(projectExpectedProfit), isBold: true },
+                        { label: 'Income', value: projectIncome },
+                        { label: 'Cost', value: projectCost },
+                        { label: 'Income - Cost', value: projectIncomeMinusCost },
+                        { label: 'JV Profit', value: projectJVProfit },
+                        { label: 'Expected Profit', value: projectExpectedProfit, isBold: true },
                     ]}
                 />
             </div>
