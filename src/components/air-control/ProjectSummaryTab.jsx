@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 const fmt = (val) => {
     if (val === null || val === undefined || val === '') return '—';
@@ -21,12 +23,15 @@ const CalcCell = ({ value, className = '' }) => (
 
 export default function ProjectSummaryTab() {
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [recordId, setRecordId] = useState(null);
+    const [expectedMissingInvoice, setExpectedMissingInvoice] = useState('');
+    const [missingInvoiceNote, setMissingInvoiceNote] = useState('Εξω Υποψία 250K');
     const [data, setData] = useState({
         totalValueOfWorkPerformed: 0,
         totalOutcome: 0,
         totalInvestment: 0,
         allocatedInvestmentCost: 0,
-        expectedMissingInvoice: null,
         stockMaterial: 0,
         totalIncomeReceived: 0,
         netCashFlow: 0,
@@ -84,6 +89,14 @@ export default function ProjectSummaryTab() {
                                ((parseFloat(r.other_from_software) || 0) + (parseFloat(r.other_not_in_software) || 0));
             });
 
+            // Load saved editable fields from IncomeCalculation entity
+            const summaryExtra = incomeMap['project_summary_extra'];
+            if (summaryExtra?.data) {
+                setExpectedMissingInvoice(summaryExtra.data.expected_missing_invoice ?? '');
+                setMissingInvoiceNote(summaryExtra.data.missing_invoice_note ?? 'Εξω Υποψία 250K');
+                setRecordId(summaryExtra.id);
+            }
+
             // Calculate derived values
             const stockMaterial = 28500.00;
             const profitLoss = totalValueOfWorkPerformed - totalInvestment - totalOutcome;
@@ -94,7 +107,6 @@ export default function ProjectSummaryTab() {
                 totalOutcome,
                 totalInvestment,
                 allocatedInvestmentCost,
-                expectedMissingInvoice: null,
                 stockMaterial,
                 totalIncomeReceived,
                 netCashFlow,
@@ -107,6 +119,29 @@ export default function ProjectSummaryTab() {
         }
     };
 
+    const handleSave = async () => {
+        setSaving(true);
+        try {
+            const saveData = {
+                section: 'project_summary_extra',
+                data: {
+                    expected_missing_invoice: expectedMissingInvoice,
+                    missing_invoice_note: missingInvoiceNote,
+                }
+            };
+            if (recordId) {
+                await base44.entities.IncomeCalculation.update(recordId, saveData);
+            } else {
+                const rec = await base44.entities.IncomeCalculation.create(saveData);
+                setRecordId(rec.id);
+            }
+        } catch (error) {
+            console.error('Save failed:', error);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading) return (
         <div className="flex items-center justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
@@ -115,7 +150,13 @@ export default function ProjectSummaryTab() {
 
     return (
         <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-8">
-            <h2 className="text-lg font-semibold text-slate-800">Project Summary</h2>
+            <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-slate-800">Project Summary</h2>
+                <Button onClick={handleSave} disabled={saving} size="sm">
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                    Save Changes
+                </Button>
+            </div>
 
             {/* P&L Item */}
             <div>
@@ -152,8 +193,23 @@ export default function ProjectSummaryTab() {
                             </tr>
                             <tr>
                                 <TD bold>Expected Missing Invoice</TD>
-                                <CalcCell value={data.expectedMissingInvoice || '—'} />
-                                <TD className="text-xs text-slate-500">Εξω Υποψία 250K</TD>
+                                <td className="border border-slate-300 px-2 py-1">
+                                    <Input
+                                        type="number"
+                                        className="h-7 text-right text-sm border-0 focus-visible:ring-1 w-full"
+                                        value={expectedMissingInvoice}
+                                        onChange={e => setExpectedMissingInvoice(e.target.value)}
+                                        placeholder="0.00"
+                                    />
+                                </td>
+                                <td className="border border-slate-300 px-2 py-1">
+                                    <Input
+                                        type="text"
+                                        className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500"
+                                        value={missingInvoiceNote}
+                                        onChange={e => setMissingInvoiceNote(e.target.value)}
+                                    />
+                                </td>
                             </tr>
                             <tr className="bg-yellow-50">
                                 <TD bold>Stock Material</TD>
