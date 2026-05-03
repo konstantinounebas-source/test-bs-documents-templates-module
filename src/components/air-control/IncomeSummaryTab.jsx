@@ -121,10 +121,20 @@ export default function IncomeSummaryTab() {
             }
 
             // Load calculated values from IncomeCalculation 'summary' section
-            const incSummary = incomeRecords.find(r => (r.data?.section || r.section) === 'summary');
+            const incSummary = incomeRecords.find(r => {
+                const section = r.data?.section || r.section;
+                return section === 'summary';
+            });
             console.log('[IncomeSummaryTab] Income summary record:', incSummary);
-            if (incSummary?.data?.data) {
-                const d = incSummary.data.data;
+            
+            // Try multiple paths to get the data
+            let summaryData = incSummary?.data?.data;
+            if (!summaryData && incSummary?.data) {
+                summaryData = incSummary.data;
+            }
+            
+            if (summaryData) {
+                const d = summaryData;
                 console.log('[IncomeSummaryTab] Summary data:', d);
                 setCalcValues({
                     totalIncomeReceived: parseNum(d.total_income_received || 0),
