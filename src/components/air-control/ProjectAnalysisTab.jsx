@@ -116,13 +116,13 @@ function BudgetOverviewContent() {
         );
     }
 
-    // Extract budget values from ProjectMasterData
+    // Extract budget values from ProjectMasterData (using cost fields)
     const projectBudgetData = data?.project_budget_correction || {};
-    const pmBudget = parseNum(projectBudgetData.pm);
-    const labourBudget = parseNum(projectBudgetData.labour);
-    const assetsBudget = parseNum(projectBudgetData.assets);
-    const materialsBudget = parseNum(projectBudgetData.materials);
-    const otherBudget = parseNum(projectBudgetData.other);
+    const pmBudget = parseNum(projectBudgetData.pm_cost);
+    const labourBudget = parseNum(projectBudgetData.labour_cost);
+    const assetsBudget = parseNum(projectBudgetData.assets_cost);
+    const materialsBudget = parseNum(projectBudgetData.materials_cost);
+    const otherBudget = parseNum(projectBudgetData.other_cost);
 
     // Extract outcome values - use baseline period
     const baselinePeriod = outcomeData.find(o => o.period_type === 'baseline');
