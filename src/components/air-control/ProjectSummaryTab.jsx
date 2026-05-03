@@ -9,6 +9,38 @@ const fmt = (val) => {
     return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
+const fmtInput = (val) => {
+    const n = parseFloat(String(val).replace(/,/g, ''));
+    if (isNaN(n)) return '';
+    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const parseNum = (val) => {
+    const n = parseFloat(String(val).replace(/,/g, ''));
+    return isNaN(n) ? '' : n;
+};
+
+// Formatted number input: shows formatted on blur, raw on focus
+function NumInput({ value, onChange, className = '' }) {
+    const [focused, setFocused] = React.useState(false);
+    const [raw, setRaw] = React.useState(String(value ?? ''));
+
+    React.useEffect(() => {
+        if (!focused) setRaw(String(value ?? ''));
+    }, [value, focused]);
+
+    return (
+        <input
+            type="text"
+            className={`h-7 text-right text-sm w-full bg-transparent outline-none focus:ring-1 focus:ring-slate-300 rounded px-2 ${className}`}
+            value={focused ? raw : fmtInput(value)}
+            onFocus={() => { setFocused(true); setRaw(String(value ?? '')); }}
+            onBlur={() => { setFocused(false); onChange(parseNum(raw)); }}
+            onChange={e => setRaw(e.target.value)}
+        />
+    );
+}
+
 const TD = ({ children, bold = false, className = '' }) => (
     <td className={`border border-slate-300 px-3 py-2 ${bold ? 'font-bold' : ''} ${className}`}>
         {children}
@@ -212,13 +244,7 @@ export default function ProjectSummaryTab() {
                             <tr>
                                 <TD bold>Expected Missing Invoice</TD>
                                 <td className="border border-slate-300 px-2 py-1">
-                                    <Input
-                                        type="number"
-                                        className="h-7 text-right text-sm border-0 focus-visible:ring-1 w-full"
-                                        value={expectedMissingInvoice}
-                                        onChange={e => setExpectedMissingInvoice(e.target.value)}
-                                        placeholder="0.00"
-                                    />
+                                    <NumInput value={expectedMissingInvoice} onChange={setExpectedMissingInvoice} />
                                 </td>
                                 <td className="border border-slate-300 px-2 py-1">
                                     <Input
@@ -232,7 +258,7 @@ export default function ProjectSummaryTab() {
                             <tr>
                                 <TD bold>Stock Material</TD>
                                 <td className="border border-slate-300 px-2 py-1">
-                                    <Input type="number" className="h-7 text-right text-sm border-0 focus-visible:ring-1 w-full" value={stockMaterial} onChange={e => setStockMaterial(e.target.value)} placeholder="0.00" />
+                                    <NumInput value={stockMaterial} onChange={setStockMaterial} />
                                 </td>
                                 <td className="border border-slate-300 px-2 py-1"><Input className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500" value={notes.stockMaterial} onChange={e => setNotes({...notes, stockMaterial: e.target.value})} /></td>
                             </tr>
