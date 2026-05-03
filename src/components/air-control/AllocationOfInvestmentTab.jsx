@@ -178,11 +178,6 @@ export default function AllocationOfInvestmentTab() {
         : 0;
     const allocatedCost    = (allocationPct / 100) * totalValueOfWork;
 
-    // ── Income Summary Calculations ──────────────────────────────────────────
-    const certifiedWorks   = expectedIncome; // From ProjectMasterData
-    const totalIncomeReceived = certifiedWorks;
-    const totalValueOfWorkPerformed = totalValueOfWork;
-
     if (loading) return (
         <div className="flex items-center justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
@@ -190,100 +185,13 @@ export default function AllocationOfInvestmentTab() {
     );
 
     return (
-        <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-6">
+        <div className="bg-white rounded-lg border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-slate-800">Allocation of Investment</h2>
                 <Button onClick={handleSave} disabled={saving} size="sm">
                     {saving && <Loader2 className="w-4 h-4 animate-spin mr-1" />}
                     Save Changes
                 </Button>
-            </div>
-
-            {/* ── Income Summary Table ── */}
-            <div className="overflow-x-auto border-b border-slate-200 pb-6">
-                <h3 className="text-sm font-semibold text-slate-700 mb-3">Income Summary</h3>
-                <table className="w-full border-collapse text-sm table-fixed">
-                    <colgroup>
-                        <col style={{ width: '25%' }} />
-                        <col style={{ width: '25%' }} />
-                        <col style={{ width: '25%' }} />
-                        <col style={{ width: '25%' }} />
-                    </colgroup>
-                    <thead>
-                        <tr>
-                            <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-xs text-left">Category</th>
-                            <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-xs text-left">Item</th>
-                            <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-xs text-right">Amount</th>
-                            <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-xs text-left">Note</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr className="bg-slate-50">
-                            <LabelCell>Income</LabelCell>
-                            <LabelCell>Certified Works</LabelCell>
-                            <CalcCell value={certifiedWorks} />
-                            <EmptyCell />
-                        </tr>
-                        <tr className="bg-slate-100">
-                            <LabelCell bold colSpan={2}>Total Income Received</LabelCell>
-                            <CalcCell value={totalIncomeReceived} bold />
-                            <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic bg-slate-100">= Certified Works</td>
-                        </tr>
-                        <tr>
-                            <LabelCell colSpan={4} sub>Income Not Earned Type</LabelCell>
-                        </tr>
-                        <tr>
-                            <td colSpan={2} className="border border-slate-300 px-3 py-2 text-sm">Certified - As per Contract but Not Paid</td>
-                            <CalcCell value={0} />
-                            <EmptyCell />
-                        </tr>
-                        <tr>
-                            <td colSpan={2} className="border border-slate-300 px-3 py-2 text-sm">Not Certified - As per Contract</td>
-                            <CalcCell value={0} />
-                            <EmptyCell />
-                        </tr>
-                        <tr>
-                            <td colSpan={2} className="border border-slate-300 px-3 py-2 text-sm">Not Delivered Works</td>
-                            <CalcCell value={0} />
-                            <EmptyCell />
-                        </tr>
-                        <tr>
-                            <td colSpan={2} className="border border-slate-300 px-3 py-2 text-sm">Other Workss Not Claimed</td>
-                            <CalcCell value={0} />
-                            <EmptyCell />
-                        </tr>
-                        <tr>
-                            <td colSpan={2} className="border border-slate-300 px-3 py-2 text-sm">Retention 5%</td>
-                            <CalcCell value={0} />
-                            <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic">= Certified Works / 0.6 * 0.05</td>
-                        </tr>
-                        <tr className="bg-slate-100">
-                            <LabelCell bold colSpan={2}>Total Not Certified - As per Contract</LabelCell>
-                            <CalcCell value={0} bold />
-                            <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic bg-slate-100">= Not Delivered Works + Other Workss Not Claimed</td>
-                        </tr>
-                        <tr>
-                            <td colSpan={2} className="border border-slate-300 px-3 py-2 text-sm">Fabrication Income</td>
-                            <CalcCell value={0} />
-                            <EmptyCell />
-                        </tr>
-                        <tr>
-                            <td colSpan={2} className="border border-slate-300 px-3 py-2 text-sm">Extra Works Income - Not Approved</td>
-                            <CalcCell value={0} />
-                            <EmptyCell />
-                        </tr>
-                        <tr className="bg-slate-100">
-                            <LabelCell bold colSpan={2}>Total Income Not Earned</LabelCell>
-                            <CalcCell value={0} bold />
-                            <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic bg-slate-100">= Certified - As per Contract but Not Paid + Total Not Certified - As per Contract + Fabrication Income + Extra Works Income - Not Approved</td>
-                        </tr>
-                        <tr className="bg-slate-50">
-                            <LabelCell bold colSpan={2}>Total Value of Work Performed</LabelCell>
-                            <CalcCell value={totalValueOfWorkPerformed} bold />
-                            <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic">= Total Income Received + Total Income Not Earned</td>
-                        </tr>
-                    </tbody>
-                </table>
             </div>
 
             <div className="overflow-x-auto">
