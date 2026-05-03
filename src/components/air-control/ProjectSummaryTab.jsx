@@ -114,8 +114,8 @@ export default function ProjectSummaryTab() {
             const inv_allocationPct = ((inv_totalInvestment - inv_assetAfterDepr) / inv_expected_income) * 100;
             const allocatedCost = (inv_allocationPct / 100) * inv_total_value_work;
 
-            // P&L "Total Investment" = Allocated Investment Cost
-            totalInvestment = allocatedCost;
+            // P&L "Total Investment" = PM Labour + Material + Assets (same as Allocation of Investment tab)
+            totalInvestment = inv_totalInvestment;
             allocatedInvestmentCost = allocatedCost;
 
             // Load Outcome Calculation - sum total outcome (from_software + not_in_software) per category
