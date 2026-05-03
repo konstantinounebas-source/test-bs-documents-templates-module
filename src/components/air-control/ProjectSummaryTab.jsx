@@ -46,20 +46,31 @@ export default function ProjectSummaryTab() {
             const totalValueOfWorkPerformed = incomeMap.summary?.data?.total_value_of_work_performed || 0;
             const totalIncomeReceived = incomeMap.summary?.data?.total_income_received || 0;
 
-            // Load AllocationOfInvestment data for totalInvestment and allocatedInvestmentCost
-            const masterRecords = await base44.entities.ProjectMasterData.list();
+            // Load AllocationOfInvestment data - compute allocatedCost the same way AllocationOfInvestmentTab does
+            // totalInvestment in P&L = Allocated Investment Cost from Allocation of Investment tab
             let totalInvestment = 0;
             let allocatedInvestmentCost = 0;
-            
-            if (masterRecords.length > 0) {
-                const master = masterRecords[0];
-                totalInvestment = (parseFloat(master.tender_budget?.pm) || 0) +
-                                (parseFloat(master.tender_budget?.labour) || 0) +
-                                (parseFloat(master.tender_budget?.assets) || 0) +
-                                (parseFloat(master.tender_budget?.materials) || 0) +
-                                (parseFloat(master.tender_budget?.other) || 0);
-                allocatedInvestmentCost = (parseFloat(master.tender_budget?.allocated_cost) || 0);
+
+            // Default investment values (same as AllocationOfInvestmentTab defaults)
+            let inv_pm_labour = 350000.00;
+            let inv_material = 252908.13;
+            let inv_assets = 450000.00;
+            let inv_asset_depr_pct = 25;
+            let inv_expected_income = 20294790.48;
+            const inv_total_value_work = parseFloat(incomeMap.summary?.data?.total_value_of_work_performed) || 3273500.96;
+
+            if (incomeMap.summary?.data?.expected_total_project_income) {
+                inv_expected_income = parseFloat(incomeMap.summary.data.expected_total_project_income);
             }
+
+            const inv_totalInvestment = inv_pm_labour + inv_material + inv_assets;
+            const inv_assetAfterDepr = inv_assets * (inv_asset_depr_pct / 100);
+            const inv_allocationPct = ((inv_totalInvestment - inv_assetAfterDepr) / inv_expected_income) * 100;
+            const allocatedCost = (inv_allocationPct / 100) * inv_total_value_work;
+
+            // P&L "Total Investment" = Allocated Investment Cost
+            totalInvestment = allocatedCost;
+            allocatedInvestmentCost = allocatedCost;
 
             // Load Outcome Calculation - sum total outcome (from_software + not_in_software) per category
             const outcomeRecords = await base44.entities.OutcomeCalculation.list();
