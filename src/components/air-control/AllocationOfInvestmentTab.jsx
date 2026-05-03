@@ -88,15 +88,16 @@ export default function AllocationOfInvestmentTab() {
         try {
             const incomeRecords = await base44.entities.IncomeCalculation.list();
             const incomeMap = {};
-            incomeRecords.forEach(r => { incomeMap[r.section] = r; });
+            // section is stored inside r.data.section (double-nested)
+            incomeRecords.forEach(r => {
+                const section = r.data?.section || r.section;
+                if (section) incomeMap[section] = r;
+            });
 
-            let totalValueOfWorkPerformed = investment.total_value_work;
-            let expectedIncome = investment.expected_income;
-
-            if (incomeMap.summary?.data) {
-                totalValueOfWorkPerformed = incomeMap.summary.data.total_value_of_work_performed || investment.total_value_work;
-                expectedIncome = incomeMap.summary.data.expected_total_project_income || investment.expected_income;
-            }
+            // summary data is at r.data.data
+            const summaryData = incomeMap.summary?.data?.data || {};
+            const totalValueOfWorkPerformed = parseFloat(summaryData.total_value_of_work_performed) || investment.total_value_work;
+            const expectedIncome = parseFloat(summaryData.expected_total_project_income) || investment.expected_income;
 
             setInvestment(prev => ({
                 ...prev,
@@ -106,8 +107,9 @@ export default function AllocationOfInvestmentTab() {
 
             // Load saved notes
             const alloc = incomeMap['allocation_notes'];
-            if (alloc?.data) {
-                setNotes(prev => ({ ...prev, ...alloc.data.notes }));
+            if (alloc) {
+                const allocData = alloc.data?.data || alloc.data || {};
+                if (allocData.notes) setNotes(prev => ({ ...prev, ...allocData.notes }));
                 setRecordId(alloc.id);
             }
         } catch (error) {
@@ -118,7 +120,7 @@ export default function AllocationOfInvestmentTab() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const saveData = { section: 'allocation_notes', data: { notes } };
+            const saveData = { data: { section: 'allocation_notes', data: { notes } } };
             if (recordId) {
                 await base44.entities.IncomeCalculation.update(recordId, saveData);
             } else {
