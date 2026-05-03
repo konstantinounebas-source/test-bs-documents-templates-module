@@ -165,6 +165,9 @@ export default function IncomeSummaryTab() {
     const setField = (key, val) => setSummaryData(prev => ({ ...prev, [key]: val }));
     const setNote = (key, val) => setNotes(prev => ({ ...prev, [key]: val }));
 
+    // Income Summary formula: Total Value of Work Performed = Received + Not Earned (no advance adjustment)
+    const summaryTotalValueOfWorkPerformed = (calcValues.totalIncomeReceived || 0) + (calcValues.totalIncomeNotEarned || 0);
+
     if (loading) return (
         <div className="flex items-center justify-center py-20">
             <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
@@ -257,7 +260,7 @@ export default function IncomeSummaryTab() {
                         <tr className="bg-green-50">
                             <td colSpan={2} className="border border-slate-300 px-3 py-2 font-bold text-slate-800">Total Value of Work Performed</td>
                             <td className="border border-slate-300 px-3 py-2 text-right"></td>
-                            <td className="border border-slate-300 px-3 py-2 text-right font-bold">{fmt(calcValues.totalValueOfWorkPerformed)}</td>
+                            <td className="border border-slate-300 px-3 py-2 text-right font-bold">{fmt(summaryTotalValueOfWorkPerformed)}</td>
                             <td className="border border-slate-300 px-3 py-2 text-xs text-slate-400">= Total Income Received + Total Income Not Earned</td>
                         </tr>
 
