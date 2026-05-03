@@ -17,7 +17,6 @@ const TABS = [
     { key: 'income_summary', label: 'Income Summary' },
     { key: 'income_calculation', label: 'Income Calculation' },
     { key: 'allocation_investment', label: 'Allocation of Investment' },
-    { key: 'fabrication_calculation', label: 'Fabrication Calculation' },
     { key: 'annexes', label: 'Annexes' },
 ];
 
