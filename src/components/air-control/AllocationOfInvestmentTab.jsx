@@ -233,7 +233,7 @@ export default function AllocationOfInvestmentTab() {
                         <tr className="bg-slate-100">
                             <LabelCell bold>Total Investment</LabelCell>
                             <CalcCell value={totalInvestment} bold />
-                            <NoteCell value={notes.total_investment} onChange={v => setNote('total_investment', v)} />
+                            <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic bg-slate-100">= PM &amp; Labour + Material + Assets</td>
                         </tr>
 
                         {/* ── Section: Πίνακας 9 ── */}
@@ -273,7 +273,7 @@ export default function AllocationOfInvestmentTab() {
                         <tr className="bg-slate-100">
                             <LabelCell bold>Allocated Investment Cost</LabelCell>
                             <CalcCell value={allocatedCost} bold />
-                            <NoteCell value={notes.allocated_cost}    onChange={v => setNote('allocated_cost', v)} />
+                            <td className="border border-slate-300 px-3 py-1 text-xs text-slate-400 italic bg-slate-100">= (Allocation % / 100) × Total Value of Work Performed</td>
                         </tr>
 
                     </tbody>
