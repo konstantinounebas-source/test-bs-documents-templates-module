@@ -11,13 +11,12 @@ import ProjectSummaryTab from "@/components/air-control/ProjectSummaryTab";
 
 const TABS = [
     { key: 'master_data', label: 'Project Master Data' },
-    { key: 'project_summary', label: 'Project Summary' },
-    { key: 'project_projections', label: 'Project Projections' },
     { key: 'outcome_calculation', label: 'Outcome Calculation' },
     { key: 'income_summary', label: 'Income Summary' },
     { key: 'income_calculation', label: 'Income Calculation' },
     { key: 'allocation_investment', label: 'Allocation of Investment' },
-    { key: 'annexes', label: 'Annexes' },
+    { key: 'project_summary', label: 'Project Summary' },
+    { key: 'project_projections', label: 'Project Projections' },
 ];
 
 export default function AirControlCalculations() {
