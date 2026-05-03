@@ -4,9 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { base44 } from '@/api/base44Client';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
 const fmt = (val) => {
     if (val === null || val === undefined || val === '') return '';
-    return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const n = parseFloat(String(val).replace(/,/g, ''));
+    if (isNaN(n)) return '';
+    return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 const parseNum = (val) => {
@@ -15,45 +18,36 @@ const parseNum = (val) => {
     return isNaN(n) ? 0 : n;
 };
 
-// Editable input cell — shows formatted on blur, raw on focus
+// ── Cell Components ───────────────────────────────────────────────────────────
+// Editable number cell: formatted display, raw on focus
 const EditCell = ({ value, onChange }) => {
-    const [editing, setEditing] = useState(false);
+    const [focused, setFocused] = useState(false);
     const [raw, setRaw] = useState('');
-    const inputRef = useRef(null);
-
-    const handleFocus = () => {
-        setRaw(value === 0 ? '' : String(value));
-        setEditing(true);
-    };
-
-    const handleBlur = () => {
-        setEditing(false);
-        onChange(parseNum(raw));
-    };
 
     return (
         <td className="border border-slate-300 p-0">
             <input
-                ref={inputRef}
                 type="text"
-                className="h-8 w-full text-right text-sm px-3 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"
-                value={editing ? raw : fmt(value)}
-                onFocus={handleFocus}
+                className="h-8 w-full text-right text-sm px-3 bg-white focus:outline-none focus:ring-1 focus:ring-inset focus:ring-blue-400"
+                value={focused ? raw : fmt(value)}
+                onFocus={() => { setRaw(value === 0 ? '' : String(value)); setFocused(true); }}
                 onChange={e => setRaw(e.target.value)}
-                onBlur={handleBlur}
+                onBlur={() => { setFocused(false); onChange(parseNum(raw)); }}
             />
         </td>
     );
 };
 
-const CalcCell = ({ value, bold = false }) => (
+const CalcCell = ({ value, bold }) => (
     <td className={`border border-slate-300 px-3 py-2 text-right text-sm bg-slate-50 ${bold ? 'font-bold' : ''}`}>
         {fmt(value)}
     </td>
 );
 
-const LabelCell = ({ children, bold = false, colSpan, sub = false }) => (
-    <td colSpan={colSpan} className={`border border-slate-300 px-3 py-2 text-sm ${bold ? 'font-bold' : ''} ${sub ? 'text-xs text-slate-500 bg-slate-50' : ''}`}>
+const LabelCell = ({ children, bold, colSpan, sub }) => (
+    <td colSpan={colSpan} className={`border border-slate-300 px-3 py-2 text-sm
+        ${bold ? 'font-bold' : ''}
+        ${sub ? 'text-xs text-blue-600 bg-slate-50 italic' : ''}`}>
         {children}
     </td>
 );
@@ -68,22 +62,27 @@ const NoteCell = ({ value, onChange }) => (
     </td>
 );
 
-const EmptyCell = () => <td className="border border-slate-300" />;
+const EmptyCell = () => <td className="border border-slate-300 bg-white" />;
 
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function AllocationOfInvestmentTab() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [recordId, setRecordId] = useState(null);
+    const [allocRecordId, setAllocRecordId] = useState(null);
 
+    // Editable investment inputs
     const [inv, setInv] = useState({
         pm_labour: 350000,
         material: 252908.13,
         assets: 450000,
         asset_depr_pct: 25,
-        total_value_work: 0,
-        expected_income: 20294790.46,
     });
 
+    // Read-only values from other modules
+    const [totalValueOfWork, setTotalValueOfWork] = useState(0);
+    const [expectedIncome, setExpectedIncome] = useState(0);
+
+    // Notes column
     const [notes, setNotes] = useState({
         pm_labour: '', material: '', assets: '', total_investment: '',
         asset_depr_pct: '', asset_after_depr: '', total_value_work: '',
@@ -99,50 +98,33 @@ export default function AllocationOfInvestmentTab() {
                 base44.entities.ProjectMasterData.list(),
             ]);
 
-            // Build income map by section
-            const incomeMap = {};
-            incomeRecords.forEach(r => {
-                const section = r.data?.section || r.section;
-                if (section) incomeMap[section] = r;
-            });
+            // ── 1. Total Value of Work Performed (from IncomeCalculation summary)
+            // DB structure: record.data = { section: 'summary', data: { data: { total_value_of_work_performed: ... } } }
+            const summaryRecord = incomeRecords.find(r => (r.data?.section || r.section) === 'summary');
+            const tvwp = parseNum(summaryRecord?.data?.data?.data?.total_value_of_work_performed);
+            setTotalValueOfWork(tvwp);
 
-            // Total Value of Work Performed from saved summary
-            const summaryData = incomeMap.summary?.data?.data || {};
-            const totalValueOfWork = parseNum(summaryData.total_value_of_work_performed);
-
-            // Expected Total Project Income from ProjectMasterData
-            // The entity stores object fields inside `data` — SDK returns them flat at top level
-            // but the actual stored value is in data.project_total_profit.income
-            let expectedIncome = 20294790.46; // fallback
+            // ── 2. Expected Total Project Income (from ProjectMasterData)
+            // DB structure: record.data = { project_total_profit: { income: ... }, ... }
             if (masterRecords.length > 0) {
-                const m = masterRecords[0];
-                // SDK returns entity data fields at top level (flat), not under .data
-                const ptp = m.project_total_profit;
-                const income = parseNum(ptp?.income);
-                if (income > 0) expectedIncome = income;
+                const income = parseNum(masterRecords[0].data?.project_total_profit?.income);
+                if (income > 0) setExpectedIncome(income);
             }
 
-            // Load saved investment values + notes
-            const alloc = incomeMap['allocation_notes'];
-            let savedInv = {};
-            let savedNotes = {};
-            if (alloc) {
-                const d = alloc.data?.data || alloc.data || {};
-                if (d.investment) savedInv = d.investment;
-                if (d.notes) savedNotes = d.notes;
-                setRecordId(alloc.id);
+            // ── 3. Saved allocation notes + investment values
+            const allocRecord = incomeRecords.find(r => (r.data?.section || r.section) === 'allocation_notes');
+            if (allocRecord) {
+                setAllocRecordId(allocRecord.id);
+                const saved = allocRecord.data?.data || {};
+                if (saved.investment) {
+                    setInv(prev => ({ ...prev, ...saved.investment }));
+                }
+                if (saved.notes) {
+                    setNotes(prev => ({ ...prev, ...saved.notes }));
+                }
             }
-
-            setInv(prev => ({
-                ...prev,
-                ...savedInv,
-                ...(totalValueOfWork > 0 ? { total_value_work: totalValueOfWork } : {}),
-                expected_income: expectedIncome,
-            }));
-            setNotes(prev => ({ ...prev, ...savedNotes }));
-
         } catch (err) {
-            console.error('Load failed:', err);
+            console.error('AllocationOfInvestmentTab load error:', err);
         } finally {
             setLoading(false);
         }
@@ -151,44 +133,35 @@ export default function AllocationOfInvestmentTab() {
     const handleSave = async () => {
         setSaving(true);
         try {
-            const saveData = {
+            const payload = {
                 data: {
                     section: 'allocation_notes',
-                    data: {
-                        investment: {
-                            pm_labour: inv.pm_labour,
-                            material: inv.material,
-                            assets: inv.assets,
-                            asset_depr_pct: inv.asset_depr_pct,
-                        },
-                        notes,
-                    }
+                    data: { investment: inv, notes },
                 }
             };
-            if (recordId) {
-                await base44.entities.IncomeCalculation.update(recordId, saveData);
+            if (allocRecordId) {
+                await base44.entities.IncomeCalculation.update(allocRecordId, payload);
             } else {
-                const rec = await base44.entities.IncomeCalculation.create(saveData);
-                setRecordId(rec.id);
+                const rec = await base44.entities.IncomeCalculation.create(payload);
+                setAllocRecordId(rec.id);
             }
         } catch (err) {
-            console.error('Save failed:', err);
+            console.error('AllocationOfInvestmentTab save error:', err);
         } finally {
             setSaving(false);
         }
     };
 
-    const setNote = (key, val) => setNotes(prev => ({ ...prev, [key]: val }));
     const setField = (key, val) => setInv(prev => ({ ...prev, [key]: val }));
+    const setNote  = (key, val) => setNotes(prev => ({ ...prev, [key]: val }));
 
     // ── Derived calculations ──────────────────────────────────────────────────
-    const totalInvestment = parseNum(inv.pm_labour) + parseNum(inv.material) + parseNum(inv.assets);
-    const assetAfterDepr = parseNum(inv.assets) * (parseNum(inv.asset_depr_pct) / 100);
-    const investedMinusDepr = totalInvestment - assetAfterDepr;
-    const allocationPct = inv.expected_income > 0
-        ? (investedMinusDepr / parseNum(inv.expected_income)) * 100
+    const totalInvestment  = parseNum(inv.pm_labour) + parseNum(inv.material) + parseNum(inv.assets);
+    const assetAfterDepr   = parseNum(inv.assets) * (parseNum(inv.asset_depr_pct) / 100);
+    const allocationPct    = expectedIncome > 0
+        ? ((totalInvestment - assetAfterDepr) / expectedIncome) * 100
         : 0;
-    const allocatedCost = (allocationPct / 100) * parseNum(inv.total_value_work);
+    const allocatedCost    = (allocationPct / 100) * totalValueOfWork;
 
     if (loading) return (
         <div className="flex items-center justify-center py-20">
@@ -221,25 +194,26 @@ export default function AllocationOfInvestmentTab() {
                         </tr>
                     </thead>
                     <tbody>
-                        {/* ── Capital Expenditure section ── */}
+
+                        {/* ── Section: Capital Expenditure ── */}
                         <tr className="bg-slate-50">
                             <LabelCell bold>Capital Expenditure</LabelCell>
                             <EmptyCell /><EmptyCell />
                         </tr>
                         <tr>
                             <LabelCell>PM &amp; Labour Intensive</LabelCell>
-                            <EditCell value={inv.pm_labour} onChange={v => setField('pm_labour', v)} />
-                            <NoteCell value={notes.pm_labour} onChange={v => setNote('pm_labour', v)} />
+                            <EditCell value={inv.pm_labour}      onChange={v => setField('pm_labour', v)} />
+                            <NoteCell value={notes.pm_labour}    onChange={v => setNote('pm_labour', v)} />
                         </tr>
                         <tr>
                             <LabelCell>Material</LabelCell>
-                            <EditCell value={inv.material} onChange={v => setField('material', v)} />
-                            <NoteCell value={notes.material} onChange={v => setNote('material', v)} />
+                            <EditCell value={inv.material}       onChange={v => setField('material', v)} />
+                            <NoteCell value={notes.material}     onChange={v => setNote('material', v)} />
                         </tr>
                         <tr>
                             <LabelCell>Assets</LabelCell>
-                            <EditCell value={inv.assets} onChange={v => setField('assets', v)} />
-                            <NoteCell value={notes.assets} onChange={v => setNote('assets', v)} />
+                            <EditCell value={inv.assets}         onChange={v => setField('assets', v)} />
+                            <NoteCell value={notes.assets}       onChange={v => setNote('assets', v)} />
                         </tr>
                         <tr className="bg-slate-100">
                             <LabelCell bold>Total Investment</LabelCell>
@@ -247,12 +221,10 @@ export default function AllocationOfInvestmentTab() {
                             <NoteCell value={notes.total_investment} onChange={v => setNote('total_investment', v)} />
                         </tr>
 
-                        {/* ── Πίνακας 9 separator ── */}
+                        {/* ── Section: Πίνακας 9 ── */}
                         <tr>
                             <LabelCell colSpan={3} sub>Πίνακας 9 — Allocated Investment Cost</LabelCell>
                         </tr>
-
-                        {/* ── Πίνακας 9 rows ── */}
                         <tr>
                             <LabelCell>Total Investment</LabelCell>
                             <CalcCell value={totalInvestment} />
@@ -260,34 +232,35 @@ export default function AllocationOfInvestmentTab() {
                         </tr>
                         <tr>
                             <LabelCell>Asset Value after Depreciation %</LabelCell>
-                            <EditCell value={inv.asset_depr_pct} onChange={v => setField('asset_depr_pct', v)} />
-                            <NoteCell value={notes.asset_depr_pct} onChange={v => setNote('asset_depr_pct', v)} />
+                            <EditCell value={inv.asset_depr_pct}      onChange={v => setField('asset_depr_pct', v)} />
+                            <NoteCell value={notes.asset_depr_pct}    onChange={v => setNote('asset_depr_pct', v)} />
                         </tr>
                         <tr>
                             <LabelCell>Asset Value after Depreciation</LabelCell>
                             <CalcCell value={assetAfterDepr} />
-                            <NoteCell value={notes.asset_after_depr} onChange={v => setNote('asset_after_depr', v)} />
+                            <NoteCell value={notes.asset_after_depr}  onChange={v => setNote('asset_after_depr', v)} />
                         </tr>
                         <tr>
                             <LabelCell>Total Value of Work Performed</LabelCell>
-                            <CalcCell value={inv.total_value_work} />
-                            <NoteCell value={notes.total_value_work} onChange={v => setNote('total_value_work', v)} />
+                            <CalcCell value={totalValueOfWork} />
+                            <NoteCell value={notes.total_value_work}  onChange={v => setNote('total_value_work', v)} />
                         </tr>
                         <tr>
                             <LabelCell>Expected Total Project Income</LabelCell>
-                            <CalcCell value={inv.expected_income} />
-                            <NoteCell value={notes.expected_income} onChange={v => setNote('expected_income', v)} />
+                            <CalcCell value={expectedIncome} />
+                            <NoteCell value={notes.expected_income}   onChange={v => setNote('expected_income', v)} />
                         </tr>
                         <tr>
                             <LabelCell>Allocation %</LabelCell>
                             <CalcCell value={allocationPct} />
-                            <NoteCell value={notes.allocation_pct} onChange={v => setNote('allocation_pct', v)} />
+                            <NoteCell value={notes.allocation_pct}    onChange={v => setNote('allocation_pct', v)} />
                         </tr>
                         <tr className="bg-slate-100">
                             <LabelCell bold>Allocated Investment Cost</LabelCell>
                             <CalcCell value={allocatedCost} bold />
-                            <NoteCell value={notes.allocated_cost} onChange={v => setNote('allocated_cost', v)} />
+                            <NoteCell value={notes.allocated_cost}    onChange={v => setNote('allocated_cost', v)} />
                         </tr>
+
                     </tbody>
                 </table>
             </div>
