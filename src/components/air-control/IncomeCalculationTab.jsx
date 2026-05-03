@@ -137,6 +137,8 @@ export default function IncomeCalculationTab() {
                 total_not_certified: totalNotCertified,
                 fabrication_income: totalFabricationIncome,
                 extra_works_not_approved: totalExtraWorksNotApproved,
+                certified_total100: totalCertTotal100,
+                certified_total60: totalCertTotal60,
             }),
         ]);
         await loadAll();
