@@ -84,9 +84,10 @@ export default function ProjectSummaryTab() {
 
     const loadProjectData = async () => {
         try {
-            const [incomeRecords, outcomeRecords] = await Promise.all([
+            const [incomeRecords, outcomeRecords, masterRecords] = await Promise.all([
                 base44.entities.IncomeCalculation.list(),
                 base44.entities.OutcomeCalculation.list(),
+                base44.entities.ProjectMasterData.list(),
             ]);
 
             // Build map: section key → record (section is in r.data.section)
@@ -111,12 +112,18 @@ export default function ProjectSummaryTab() {
                                ((parseFloat(r.other_from_software) || 0) + (parseFloat(r.other_not_in_software) || 0));
             });
 
-            // AllocationOfInvestment defaults (same as AllocationOfInvestmentTab)
-            const inv_pm_labour = 350000.00;
-            const inv_material = 252908.13;
-            const inv_assets = 450000.00;
-            const inv_asset_depr_pct = 25;
-            const inv_expected_income = parseFloat(summaryData.expected_total_project_income) || 20294790.48;
+            // AllocationOfInvestment — read saved values or fall back to defaults
+            const allocRecord = incomeRecords.find(r => (r.data?.section || r.section) === 'allocation_notes');
+            const allocSaved = allocRecord?.data?.data?.investment || {};
+            const inv_pm_labour = parseFloat(allocSaved.pm_labour) || 350000.00;
+            const inv_material  = parseFloat(allocSaved.material)  || 252908.13;
+            const inv_assets    = parseFloat(allocSaved.assets)    || 450000.00;
+            const inv_asset_depr_pct = parseFloat(allocSaved.asset_depr_pct) || 25;
+
+            // Expected Total Project Income — read from ProjectMasterData (SDK returns fields flat at root)
+            const masterRec = masterRecords[0];
+            const inv_expected_income = parseFloat(masterRec?.project_total_profit?.income) || 0;
+
             const totalInvestment = inv_pm_labour + inv_material + inv_assets;
             const inv_assetAfterDepr = inv_assets * (inv_asset_depr_pct / 100);
             const inv_allocationPct = ((totalInvestment - inv_assetAfterDepr) / inv_expected_income) * 100;
