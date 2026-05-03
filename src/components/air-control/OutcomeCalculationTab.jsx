@@ -36,6 +36,7 @@ export default function OutcomeCalculationTab() {
     const [showAddMonth, setShowAddMonth] = useState(false);
     const [newMonthLabel, setNewMonthLabel] = useState('');
     const [editData, setEditData] = useState({});
+    const [notes, setNotes] = useState({});
 
     useEffect(() => {
         loadData();
@@ -48,23 +49,26 @@ export default function OutcomeCalculationTab() {
         const sorted = [...records].sort((a, b) => (a.period_order || 0) - (b.period_order || 0));
         setPeriods(sorted);
 
-        // Initialize editData
-        const initial = {};
-        sorted.forEach(p => {
-            initial[p.id] = {
-                pm_from_software: p.pm_from_software ?? '',
-                pm_not_in_software: p.pm_not_in_software ?? '',
-                labour_from_software: p.labour_from_software ?? '',
-                labour_not_in_software: p.labour_not_in_software ?? '',
-                assets_from_software: p.assets_from_software ?? '',
-                assets_not_in_software: p.assets_not_in_software ?? '',
-                materials_from_software: p.materials_from_software ?? '',
-                materials_not_in_software: p.materials_not_in_software ?? '',
-                other_from_software: p.other_from_software ?? '',
-                other_not_in_software: p.other_not_in_software ?? '',
-            };
-        });
-        setEditData(initial);
+        // Initialize editData and notes
+         const initial = {};
+         const initialNotes = {};
+         sorted.forEach(p => {
+             initial[p.id] = {
+                 pm_from_software: p.pm_from_software ?? '',
+                 pm_not_in_software: p.pm_not_in_software ?? '',
+                 labour_from_software: p.labour_from_software ?? '',
+                 labour_not_in_software: p.labour_not_in_software ?? '',
+                 assets_from_software: p.assets_from_software ?? '',
+                 assets_not_in_software: p.assets_not_in_software ?? '',
+                 materials_from_software: p.materials_from_software ?? '',
+                 materials_not_in_software: p.materials_not_in_software ?? '',
+                 other_from_software: p.other_from_software ?? '',
+                 other_not_in_software: p.other_not_in_software ?? '',
+             };
+             initialNotes[p.id] = p.notes ?? '';
+         });
+         setEditData(initial);
+         setNotes(initialNotes);
         setLoading(false);
     };
 
@@ -76,19 +80,19 @@ export default function OutcomeCalculationTab() {
     };
 
     const handleSave = async () => {
-        setSaving(true);
-        for (const period of periods) {
-            const d = editData[period.id] || {};
-            const update = {};
-            CATEGORIES.forEach(cat => {
-                update[`${cat.key}_from_software`] = parseNum(d[`${cat.key}_from_software`]);
-                update[`${cat.key}_not_in_software`] = parseNum(d[`${cat.key}_not_in_software`]);
-            });
-            await base44.entities.OutcomeCalculation.update(period.id, update);
-        }
-        await loadData();
-        setSaving(false);
-    };
+         setSaving(true);
+         for (const period of periods) {
+             const d = editData[period.id] || {};
+             const update = { notes: notes[period.id] || '' };
+             CATEGORIES.forEach(cat => {
+                 update[`${cat.key}_from_software`] = parseNum(d[`${cat.key}_from_software`]);
+                 update[`${cat.key}_not_in_software`] = parseNum(d[`${cat.key}_not_in_software`]);
+             });
+             await base44.entities.OutcomeCalculation.update(period.id, update);
+         }
+         await loadData();
+         setSaving(false);
+     };
 
     const handleAddMonth = async () => {
         if (!newMonthLabel.trim()) return;
@@ -174,9 +178,12 @@ export default function OutcomeCalculationTab() {
                                 </th>
                             ))}
                             <th className="border border-slate-300 px-3 py-2 text-center font-semibold text-slate-700">
-                                Total Outcome
-                            </th>
-                        </tr>
+                                 Total Outcome
+                             </th>
+                             <th className="border border-slate-300 px-3 py-2 text-center font-semibold text-slate-700">
+                                 Note
+                             </th>
+                            </tr>
                         <tr className="bg-slate-50">
                             <th className="border border-slate-300 px-3 py-2"></th>
                             {periods.map(p => (
@@ -219,10 +226,11 @@ export default function OutcomeCalculationTab() {
                                     </React.Fragment>
                                 ))}
                                 <td className="border border-slate-300 px-3 py-1 text-right font-semibold text-slate-800 bg-slate-50">
-                                    {fmt(getCategoryTotal(cat.key))}
-                                </td>
-                            </tr>
-                        ))}
+                                     {fmt(getCategoryTotal(cat.key))}
+                                 </td>
+                                 <td className="border border-slate-300 px-1 py-1"></td>
+                                </tr>
+                                ))}
                         {/* Total Row */}
                         <tr className="bg-slate-100 font-bold">
                             <td className="border border-slate-300 px-3 py-2 text-slate-800">Total Outcome</td>
@@ -241,9 +249,31 @@ export default function OutcomeCalculationTab() {
                                 </React.Fragment>
                             ))}
                             <td className="border border-slate-300 px-3 py-2 text-right text-slate-800">
-                                {fmt(getGrandTotal())}
-                            </td>
-                        </tr>
+                                 {fmt(getGrandTotal())}
+                             </td>
+                             <td className="border border-slate-300 px-1 py-1"></td>
+                            </tr>
+                            {/* Notes Row */}
+                            <tr className="border-t-2 border-slate-300">
+                             <td colSpan={periods.length * 2 + 2} className="border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700">
+                                 Notes
+                             </td>
+                            </tr>
+                            <tr>
+                             <td className="border border-slate-300 px-3 py-2"></td>
+                             {periods.map(p => (
+                                 <td key={p.id} colSpan={2} className="border border-slate-300 px-1 py-1">
+                                     <input
+                                         type="text"
+                                         className="h-7 text-xs border-0 focus-visible:ring-1 w-full px-2"
+                                         placeholder="Add note..."
+                                         value={notes[p.id] || ''}
+                                         onChange={e => setNotes(prev => ({ ...prev, [p.id]: e.target.value }))}
+                                     />
+                                 </td>
+                             ))}
+                             <td className="border border-slate-300 px-3 py-2"></td>
+                            </tr>
                     </tbody>
                 </table>
 
