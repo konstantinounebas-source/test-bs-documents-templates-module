@@ -86,9 +86,13 @@ export default function AllocationOfInvestmentTab() {
 
     const loadProjectData = async () => {
         try {
-            const incomeRecords = await base44.entities.IncomeCalculation.list();
+            const [incomeRecords, masterRecords] = await Promise.all([
+                base44.entities.IncomeCalculation.list(),
+                base44.entities.ProjectMasterData.list(),
+            ]);
+
+            // Build income map
             const incomeMap = {};
-            // section is stored inside r.data.section (double-nested)
             incomeRecords.forEach(r => {
                 const section = r.data?.section || r.section;
                 if (section) incomeMap[section] = r;
@@ -97,7 +101,22 @@ export default function AllocationOfInvestmentTab() {
             // summary data is at r.data.data
             const summaryData = incomeMap.summary?.data?.data || {};
             const totalValueOfWorkPerformed = parseFloat(summaryData.total_value_of_work_performed) || investment.total_value_work;
-            const expectedIncome = parseFloat(summaryData.expected_total_project_income) || investment.expected_income;
+
+            // Expected Total Project Income = Total Project Income from ProjectMasterData
+            let expectedIncome = investment.expected_income;
+            if (masterRecords.length > 0) {
+                const m = masterRecords[0];
+                const pb = m.project_budget_correction || {};
+                const fb = m.fabrication_budget || {};
+                const projectIncomeTotal =
+                    parseNum(pb.pm) + parseNum(pb.pm_allocation) + parseNum(pb.labour) + parseNum(pb.labour_allocation) +
+                    parseNum(pb.assets) + parseNum(pb.materials) + parseNum(pb.other) + parseNum(pb.road_marking) +
+                    parseNum(pb.sealour) + parseNum(pb.maintenance);
+                const fabricationIncomeTotal =
+                    parseNum(fb.pm) + parseNum(fb.labour) + parseNum(fb.setup_cost_asset) +
+                    parseNum(fb.materials) + parseNum(fb.other);
+                expectedIncome = projectIncomeTotal + fabricationIncomeTotal + parseNum(fb.profit);
+            }
 
             setInvestment(prev => ({
                 ...prev,
@@ -215,7 +234,7 @@ export default function AllocationOfInvestmentTab() {
                         </tr>
                         <tr>
                             <TD>Expected Total Project Income</TD>
-                            <InputCell value={fmt(investment.expected_income)} onChange={v => setInvestment({...investment, expected_income: parseNum(v)})} />
+                            <CalcCell value={investment.expected_income} />
                             <NoteCell value={notes.expected_income} onChange={v => setNote('expected_income', v)} />
                         </tr>
                         <tr>
