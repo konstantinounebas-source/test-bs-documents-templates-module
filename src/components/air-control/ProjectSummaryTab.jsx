@@ -87,7 +87,10 @@ export default function ProjectSummaryTab() {
             // Load Income Calculation summary
             const incomeRecords = await base44.entities.IncomeCalculation.list();
             const incomeMap = {};
-            incomeRecords.forEach(r => { incomeMap[r.section] = r; });
+            incomeRecords.forEach(r => {
+                const section = r.data?.section || r.section;
+                if (section) incomeMap[section] = r;
+            });
 
             // Recompute all values live from raw data (same as IncomeCalculationTab)
             // NOTE: all records are double-nested: record.data.data.xxx
@@ -175,11 +178,12 @@ export default function ProjectSummaryTab() {
 
             // Load saved editable fields from IncomeCalculation entity
             const summaryExtra = incomeMap['project_summary_extra'];
-            if (summaryExtra?.data) {
-                setExpectedMissingInvoice(summaryExtra.data.expected_missing_invoice ?? '');
-                setMissingInvoiceNote(summaryExtra.data.missing_invoice_note ?? 'Εξω Υποψία 250K');
-                setStockMaterial(summaryExtra.data.stock_material ?? '28500');
-                setNotes(summaryExtra.data.notes ?? {
+            if (summaryExtra?.data?.data) {
+                const sed = summaryExtra.data.data;
+                setExpectedMissingInvoice(sed.expected_missing_invoice ?? '');
+                setMissingInvoiceNote(sed.missing_invoice_note ?? 'Εξω Υποψία 250K');
+                setStockMaterial(sed.stock_material ?? '28500');
+                setNotes(sed.notes ?? {
                     totalValueOfWorkPerformed: '',
                     totalOutcome: '',
                     totalInvestment: '',
