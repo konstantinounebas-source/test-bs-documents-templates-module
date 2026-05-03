@@ -356,6 +356,160 @@ function BudgetOverviewContent() {
     );
 }
 
+function CapacitySectionTable({ title }) {
+    const [rows, setRows] = useState([
+        { id: 'typeA', label: 'Type A', qty: 0, extra: 0, fabrication: 0, civil: 0 },
+        { id: 'typeB', label: 'Type B', qty: 0, extra: 0, fabrication: 0, civil: 0 },
+        { id: 'typeC', label: 'Type C', qty: 0, extra: 0, fabrication: 0, civil: 0 },
+        { id: 'refurbish', label: 'Refurbish', qty: 0, extra: 0, fabrication: 0, civil: 0 },
+        { id: 'removal', label: 'Removal', qty: 0, extra: 0, fabrication: 0, civil: 0 },
+        { id: 'monthlyFees', label: 'Monthly Fees', qty: 0, extra: 0, fabrication: 0, civil: 0 },
+    ]);
+    const [workingMonths, setWorkingMonths] = useState(0);
+    const [avgMonthlyCost, setAvgMonthlyCost] = useState(0);
+
+    const updateRow = (id, field, value) => {
+        setRows(prev =>
+            prev.map(r => r.id === id ? { ...r, [field]: parseNum(value) } : r)
+        );
+    };
+
+    // Calculate totals for each row and grand total
+    const rowTotals = rows.map(row => row.qty * (row.extra + row.fabrication + row.civil));
+    const totalMonthlyIncome = rowTotals.reduce((sum, val) => sum + val, 0);
+    const totalIncomeForMonths = totalMonthlyIncome * parseNum(workingMonths);
+    const totalExpectedCost = parseNum(workingMonths) * parseNum(avgMonthlyCost);
+    const availableIncome = totalIncomeForMonths - totalExpectedCost;
+
+    return (
+        <div className="space-y-6">
+            {/* Table */}
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-sm">
+                        <thead>
+                            <tr>
+                                <th className="border border-slate-300 px-4 py-3 bg-slate-100 font-semibold text-slate-700 text-xs text-left">Type</th>
+                                <th className="border border-slate-300 px-4 py-3 bg-slate-100 font-semibold text-slate-700 text-xs text-right">QTY</th>
+                                <th className="border border-slate-300 px-4 py-3 bg-slate-100 font-semibold text-slate-700 text-xs text-right">Extra</th>
+                                <th className="border border-slate-300 px-4 py-3 bg-slate-100 font-semibold text-slate-700 text-xs text-right">Fabrication</th>
+                                <th className="border border-slate-300 px-4 py-3 bg-slate-100 font-semibold text-slate-700 text-xs text-right">Civil & Installation</th>
+                                <th className="border border-slate-300 px-4 py-3 bg-slate-100 font-semibold text-slate-700 text-xs text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows.map((row, idx) => (
+                                <tr key={row.id} className="hover:bg-slate-50">
+                                    <td className="border border-slate-300 px-4 py-3 text-slate-700 font-medium">{row.label}</td>
+                                    <td className="border border-slate-300 px-4 py-3 text-right">
+                                        <input
+                                            type="number"
+                                            value={row.qty}
+                                            onChange={(e) => updateRow(row.id, 'qty', e.target.value)}
+                                            className="w-full text-right border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </td>
+                                    <td className="border border-slate-300 px-4 py-3 text-right">
+                                        <input
+                                            type="number"
+                                            value={row.extra}
+                                            onChange={(e) => updateRow(row.id, 'extra', e.target.value)}
+                                            className="w-full text-right border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </td>
+                                    <td className="border border-slate-300 px-4 py-3 text-right">
+                                        <input
+                                            type="number"
+                                            value={row.fabrication}
+                                            onChange={(e) => updateRow(row.id, 'fabrication', e.target.value)}
+                                            className="w-full text-right border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </td>
+                                    <td className="border border-slate-300 px-4 py-3 text-right">
+                                        <input
+                                            type="number"
+                                            value={row.civil}
+                                            onChange={(e) => updateRow(row.id, 'civil', e.target.value)}
+                                            className="w-full text-right border border-slate-300 rounded px-2 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                    </td>
+                                    <td className="border border-slate-300 px-4 py-3 text-right text-slate-700 bg-slate-50 font-semibold">{fmt(rowTotals[idx])}</td>
+                                </tr>
+                            ))}
+                            <tr className="bg-slate-100 font-bold">
+                                <td colSpan="5" className="border border-slate-300 px-4 py-3 text-slate-800 text-right">Total Expected Monthly Income</td>
+                                <td className="border border-slate-300 px-4 py-3 text-right text-slate-800">{fmt(totalMonthlyIncome)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {/* Inputs and Calculations */}
+            <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-6">
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Available Working Months</label>
+                        <input
+                            type="number"
+                            value={workingMonths}
+                            onChange={(e) => setWorkingMonths(e.target.value)}
+                            className="w-full border border-slate-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-2">Avg Monthly Cost</label>
+                        <input
+                            type="number"
+                            value={avgMonthlyCost}
+                            onChange={(e) => setAvgMonthlyCost(e.target.value)}
+                            className="w-full border border-slate-300 rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                </div>
+
+                {/* Calculations */}
+                <div className="border-t border-slate-200 pt-4 space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-700">Total Expected Income for Months</span>
+                        <span className="font-semibold text-slate-900">{fmt(totalIncomeForMonths)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                        <span className="text-slate-700">Total Expected Cost</span>
+                        <span className="font-semibold text-slate-900">{fmt(totalExpectedCost)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm bg-blue-50 px-3 py-2 rounded border border-blue-200">
+                        <span className="font-semibold text-slate-900">Available Income</span>
+                        <span className="font-bold text-blue-700 text-lg">{fmt(availableIncome)}</span>
+                    </div>
+                </div>
+
+                {/* Notes */}
+                <div className="border-t border-slate-200 pt-4 space-y-2 text-xs text-slate-600">
+                    <p>• Total Expected Income for Months = Total Expected Monthly Income × Available Working Months</p>
+                    <p>• Total Expected Cost = Available Working Months × Avg Monthly Cost</p>
+                    <p>• Available Income = Total Expected Income for Months − Total Expected Cost</p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function CapacityScenarioContent() {
+    return (
+        <div className="space-y-8">
+            <div>
+                <h3 className="text-lg font-semibold text-slate-800 mb-4">Medium Capacity</h3>
+                <CapacitySectionTable title="Medium Capacity" />
+            </div>
+            <div>
+                <h3 className="text-lg font-semibold text-slate-800 mb-4">Full Capacity</h3>
+                <CapacitySectionTable title="Full Capacity" />
+            </div>
+        </div>
+    );
+}
+
 function ProjectMasterDataContent() {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -481,13 +635,9 @@ export default function ProjectAnalysisTab() {
                             <BudgetOverviewContent />
                         ) : tab.key === 'budget_runway' ? (
                             <BudgetRunwayContent />
-                        ) : (
-                            <div className="bg-white rounded-lg border border-slate-200 p-8 min-h-[500px] flex items-center justify-center">
-                                <p className="text-slate-400 text-sm">
-                                    {tab.key === 'capacity_scenarios' && 'Capacity Scenarios content will be loaded here'}
-                                </p>
-                            </div>
-                        )}
+                        ) : tab.key === 'capacity_scenarios' ? (
+                            <CapacityScenarioContent />
+                        ) : null}
                     </TabsContent>
                 ))}
             </Tabs>
