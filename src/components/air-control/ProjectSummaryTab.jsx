@@ -90,9 +90,14 @@ export default function ProjectSummaryTab() {
             incomeRecords.forEach(r => { incomeMap[r.section] = r; });
 
             // Recompute all values live from raw data (same as IncomeCalculationTab)
-            const certifiedPayments = incomeMap.certified?.data?.payments || [];
-            const advancePayments = incomeMap.advance?.data?.payments || [];
-            const notPaidPayments = incomeMap.not_delivered?.data?.payments || [];
+            // NOTE: all records are double-nested: record.data.data.xxx
+            const certifiedPayments = incomeMap.certified?.data?.data?.payments || [];
+            const advancePayments = incomeMap.advance?.data?.data?.payments || [];
+            const notPaidPayments = incomeMap.not_paid?.data?.data?.payments || [];
+            const assumptions = incomeMap.assumptions?.data?.data || {};
+            const shelterTypesArr = incomeMap.shelter_types?.data?.data?.types || [];
+            const removalData = incomeMap.removal?.data?.data || {};
+            const otherNotClaimedRows = incomeMap.other_not_claimed?.data?.data?.rows || [];
 
             const grandTotalAC = certifiedPayments.reduce((s, p) => s + (parseFloat(p.ac100) || 0) + (parseFloat(p.ac60) || 0), 0);
             const grandTotalAC60 = certifiedPayments.reduce((s, p) => s + (parseFloat(p.ac60) || 0), 0);
@@ -100,31 +105,31 @@ export default function ProjectSummaryTab() {
             const totalIncomeReceived = totalAdvanceAC + grandTotalAC;
 
             // Advance payment remaining
-            const assumptions = incomeMap.assumptions?.data || {};
-            const pct60 = parseFloat(assumptions.pct_60) || 60;
+            const pct60 = parseFloat(assumptions.pct_60) || 0.6;
             const advAdjPct = parseFloat(assumptions.advance_adj_pct) || 0;
             const certAdjustment = (grandTotalAC60 / pct60) * advAdjPct;
             const advancePaymentRemaining = totalAdvanceAC - certAdjustment;
 
             // Income Not Earned components
-            const notPaidTotalAC = (incomeMap.not_paid?.data?.payments || []).reduce((s, p) => s + (parseFloat(p.ac100) || 0) + (parseFloat(p.ac60) || 0), 0);
-            const shelterTypesData = incomeMap.not_delivered?.data?.shelter_types || [];
-            const removalData = incomeMap.not_delivered?.data?.removal || {};
-            const removalTotalQty = shelterTypesData.filter(s => ['type_a','type_b','type_c','excavation'].includes(s.key)).reduce((s, t) => s + (parseFloat(t.total_qty) || 0), 0);
+            const notPaidTotalAC = notPaidPayments.reduce((s, p) => s + (parseFloat(p.ac100) || 0) + (parseFloat(p.ac60) || 0), 0);
+
+            // Not Delivered Works (shelter types + removal)
+            const removalTotalQty = shelterTypesArr.filter(s => ['type_a','type_b','type_c','excavation'].includes(s.key)).reduce((s, t) => s + (parseFloat(t.total_qty) || 0), 0);
             const removalRemainingQty = removalTotalQty - (parseFloat(removalData.approved_qty) || 0);
             const removalTotal = removalRemainingQty * (parseFloat(removalData.unit_rate) || 0);
-            const totalNotDeliveredWorks = shelterTypesData.reduce((s, t) => {
+            const totalNotDeliveredWorks = shelterTypesArr.reduce((s, t) => {
                 const rem = (parseFloat(t.total_qty) || 0) - (parseFloat(t.approved_qty) || 0);
                 return s + rem * (parseFloat(t.unit_rate) || 0);
             }, 0) + removalTotal;
+
             const retentionPct = parseFloat(assumptions.retention_pct) || 0;
             const totalRetention5 = (grandTotalAC60 / pct60) * retentionPct;
-            const otherNotClaimedRows = incomeMap.other_not_claimed?.data?.rows || [];
             const totalOtherNotClaimed = otherNotClaimedRows.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
             const totalNotCertified = totalRetention5 + totalNotDeliveredWorks + totalOtherNotClaimed;
-            const totalFabricationIncome = shelterTypesData.filter(t => ['type_a','type_b','type_c'].includes(t.key)).reduce((s, t) => s + (parseFloat(t.total_qty) || 0) * (parseFloat(t.jv_rate) || 0), 0);
-            const totalFabricationExtraIncome = shelterTypesData.filter(t => ['type_a','type_b','type_c'].includes(t.key)).reduce((s, t) => s + (parseFloat(t.total_qty) || 0) * (parseFloat(t.extra_rate) || 0), 0);
-            const totalOtherExtraIncome = shelterTypesData.filter(t => ['type_a','type_b','type_c'].includes(t.key)).reduce((s, t) => s + (parseFloat(t.total_qty) || 0) * ((parseFloat(t.roofing) || 0) + (parseFloat(t.earthing) || 0) + (parseFloat(t.stickers) || 0)), 0);
+
+            const totalFabricationIncome = shelterTypesArr.filter(t => ['type_a','type_b','type_c'].includes(t.key)).reduce((s, t) => s + (parseFloat(t.total_qty) || 0) * (parseFloat(t.jv_rate) || 0), 0);
+            const totalFabricationExtraIncome = shelterTypesArr.filter(t => ['type_a','type_b','type_c'].includes(t.key)).reduce((s, t) => s + (parseFloat(t.total_qty) || 0) * (parseFloat(t.extra_rate) || 0), 0);
+            const totalOtherExtraIncome = shelterTypesArr.filter(t => ['type_a','type_b','type_c'].includes(t.key)).reduce((s, t) => s + (parseFloat(t.total_qty) || 0) * ((parseFloat(t.roofing) || 0) + (parseFloat(t.earthing) || 0) + (parseFloat(t.stickers) || 0)), 0);
             const totalIncomeNotEarned = notPaidTotalAC + totalNotCertified + totalFabricationIncome + totalFabricationExtraIncome + totalOtherExtraIncome;
 
             // Πίνακας 7: Value of Work Performed
