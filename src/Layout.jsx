@@ -153,6 +153,13 @@ const allNavigationGroups = [
         description: "Instructions for using the app",
         pageKey: "UserGuide"
       },
+      {
+        title: "Annexes",
+        url: createPageUrl("Annexes"),
+        icon: FileText,
+        description: "Document register with revision management",
+        pageKey: "Annexes"
+      },
     ]
   },
   {

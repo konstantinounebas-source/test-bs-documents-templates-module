@@ -1,0 +1,62 @@
+{
+  "name": "Annex",
+  "type": "object",
+  "properties": {
+    "document_name": {
+      "type": "string",
+      "description": "The name/title of the document"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "Contract",
+        "Drawings",
+        "MoM",
+        "Technical Submittals",
+        "Approvals",
+        "Photos",
+        "Correspondence",
+        "Financial Documents",
+        "Other"
+      ],
+      "description": "Document category"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL to the current/latest revision file"
+    },
+    "revision_number": {
+      "type": "number",
+      "default": 0,
+      "description": "Current revision number (0, 1, 2, etc.)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Current",
+        "Superseded"
+      ],
+      "default": "Current",
+      "description": "Current or Superseded status"
+    },
+    "document_id": {
+      "type": "string",
+      "description": "Unique identifier grouping all revisions of the same document"
+    },
+    "revision_date": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Date this revision was created"
+    },
+    "revision_notes": {
+      "type": "string",
+      "description": "Notes about this revision"
+    }
+  },
+  "required": [
+    "document_name",
+    "category",
+    "file_url",
+    "document_id"
+  ]
+}
