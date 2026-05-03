@@ -440,9 +440,6 @@ export default function ProjectMasterDataTab() {
                                     <TD>JV-Amco Share Tender 25%</TD>
                                     <CalcCell value={tenderJVProfit.amco_share_30} />
                                 </tr>
-                                <tr className="bg-slate-50">
-                                    <TD colSpan={2} className="text-xs text-slate-500">*Note Refer Budget Analysis Sheet</TD>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
