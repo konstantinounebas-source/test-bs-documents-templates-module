@@ -132,7 +132,7 @@ export default function IncomeCalculationTab() {
                 total_income_not_earned: totalIncomeNotEarned,
                 advance_payment_remaining: advancePaymentRemaining,
                 expected_total_project_income: totalValueOfWorkPerformed,
-                certified_works: totalCertifiedWorks,
+                certified_works: incomeCertifiedWorks,
                 certified_not_paid: certifiedNotPaid,
                 total_not_certified: totalNotCertified,
                 fabrication_income: totalFabricationIncome,
