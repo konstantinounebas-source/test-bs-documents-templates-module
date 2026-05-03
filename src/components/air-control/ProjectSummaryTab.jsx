@@ -225,7 +225,12 @@ export default function ProjectSummaryTab() {
             <div>
                 <h3 className="text-sm font-bold text-slate-700 mb-3">P&L Item</h3>
                 <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
+                    <table className="w-full border-collapse text-sm table-fixed">
+                        <colgroup>
+                            <col style={{ width: '30%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '50%' }} />
+                        </colgroup>
                         <thead>
                             <tr>
                                 <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-left">Item</th>
@@ -291,29 +296,34 @@ export default function ProjectSummaryTab() {
             <div>
                 <h3 className="text-sm font-bold text-slate-700 mb-3">Πίνακας 10 — Cash Flow</h3>
                 <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-sm">
+                    <table className="w-full border-collapse text-sm table-fixed">
+                        <colgroup>
+                            <col style={{ width: '30%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '50%' }} />
+                        </colgroup>
                         <thead>
                             <tr>
-                                <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-left">Category</th>
+                                <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-left">Item</th>
                                 <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-right">Amount</th>
                                 <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-left">Note</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <TD>Total Income Received</TD>
+                                <TD bold>Total Income Received</TD>
                                 <CalcCell value={data.totalIncomeReceived} />
                                 <td className="border border-slate-300 px-2 py-1"><Input className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500" value={notes.totalIncomeReceived ?? ''} onChange={e => setNotes({...notes, totalIncomeReceived: e.target.value})} /></td>
                             </tr>
                             <tr>
-                                <TD>Total Outcome</TD>
+                                <TD bold>Total Outcome</TD>
                                 <CalcCell value={data.totalOutcome} />
                                 <td className="border border-slate-300 px-2 py-1"><Input className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500" value={notes.cashFlowTotalOutcome ?? ''} onChange={e => setNotes({...notes, cashFlowTotalOutcome: e.target.value})} /></td>
                             </tr>
-                            <tr className="bg-slate-100 font-bold">
+                            <tr className="bg-blue-50">
                                 <TD bold>Net Cash Flow</TD>
-                                <CalcCell value={data.netCashFlow} className="font-bold" />
-                                <td className="border border-slate-300 px-2 py-1 bg-slate-100">
+                                <CalcCell value={data.netCashFlow} className="bg-blue-50" />
+                                <td className="border border-slate-300 px-2 py-1 bg-blue-50">
                                     <span className="text-xs text-slate-400 italic">= Total Income Received − Total Outcome</span>
                                 </td>
                             </tr>
