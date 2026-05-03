@@ -66,6 +66,8 @@ export default function ProjectSummaryTab() {
         totalInvestment: '',
         allocatedInvestmentCost: '',
         stockMaterial: '',
+        totalIncomeReceived: '',
+        cashFlowTotalOutcome: '',
     });
     const [data, setData] = useState({
         totalValueOfWorkPerformed: 0,
@@ -146,7 +148,7 @@ export default function ProjectSummaryTab() {
             }
 
             // Calculate derived values (profitLoss computed at render since it depends on state)
-            const netCashFlow = totalIncomeReceived + totalOutcome;
+            const netCashFlow = totalIncomeReceived - totalOutcome;
 
             setData({
                 totalValueOfWorkPerformed,
@@ -287,20 +289,26 @@ export default function ProjectSummaryTab() {
                             <tr>
                                 <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-left">Category</th>
                                 <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-right">Amount</th>
+                                <th className="border border-slate-300 px-3 py-2 bg-slate-100 font-semibold text-slate-700 text-left">Note</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <TD>Total Income Received</TD>
                                 <CalcCell value={data.totalIncomeReceived} />
+                                <td className="border border-slate-300 px-2 py-1"><Input className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500" value={notes.totalIncomeReceived ?? ''} onChange={e => setNotes({...notes, totalIncomeReceived: e.target.value})} /></td>
                             </tr>
                             <tr>
                                 <TD>Total Outcome</TD>
                                 <CalcCell value={data.totalOutcome} />
+                                <td className="border border-slate-300 px-2 py-1"><Input className="h-7 text-xs border-0 focus-visible:ring-1 w-full text-slate-500" value={notes.cashFlowTotalOutcome ?? ''} onChange={e => setNotes({...notes, cashFlowTotalOutcome: e.target.value})} /></td>
                             </tr>
                             <tr className="bg-slate-100 font-bold">
                                 <TD bold>Net Cash Flow</TD>
                                 <CalcCell value={data.netCashFlow} className="font-bold" />
+                                <td className="border border-slate-300 px-2 py-1 bg-slate-100">
+                                    <span className="text-xs text-slate-400 italic">= Total Income Received − Total Outcome</span>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
