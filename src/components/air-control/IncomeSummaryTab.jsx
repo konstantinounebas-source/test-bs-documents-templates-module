@@ -122,34 +122,8 @@ export default function IncomeSummaryTab() {
             // Load calculated values from IncomeCalculation 'summary' section
             const incSummary = incomeRecords.find(r => (r.data?.section || r.section) === 'summary');
             
-            // Load certified works from 'certified' section
-            const certRecord = incomeRecords.find(r => (r.data?.section || r.section) === 'certified');
-            console.log('[IncomeSummaryTab] certRecord full:', certRecord);
-            console.log('[IncomeSummaryTab] certRecord.data:', certRecord?.data);
-            
-            // Try both possible paths for certified data
-            const certData = certRecord?.data?.data || certRecord?.data || {};
-            console.log('[IncomeSummaryTab] certData:', certData);
-            console.log('[IncomeSummaryTab] certData.payments:', certData?.payments);
-            
-            const certPayments = certData.payments || [];
-            console.log('[IncomeSummaryTab] certPayments length:', certPayments.length);
-            
-            // Calculate total certified works (100% + 60%)
-            let totalCertifiedWorks = 0;
-            certPayments.forEach((p, idx) => {
-                console.log(`[IncomeSummaryTab] Payment ${idx} full object:`, p);
-                console.log(`[IncomeSummaryTab] Payment ${idx} keys:`, Object.keys(p));
-                const t100 = parseFloat(String(p.total100).replace(/,/g, '')) || 0;
-                const t60 = parseFloat(String(p.total60).replace(/,/g, '')) || 0;
-                console.log(`[IncomeSummaryTab] Payment ${idx}: total100=${t100}, total60=${t60}`);
-                totalCertifiedWorks += t100 + t60;
-            });
-            console.log('[IncomeSummaryTab] Final totalCertifiedWorks:', totalCertifiedWorks);
-            
             if (incSummary?.data?.data) {
                 const d = incSummary.data.data;
-                console.log('[IncomeSummaryTab] Summary data certified_works from DB:', d.certified_works);
                 setCalcValues({
                     totalIncomeReceived: parseNum(d.total_income_received || 0),
                     totalIncomeNotEarned: parseNum(d.total_income_not_earned || 0),
@@ -159,7 +133,7 @@ export default function IncomeSummaryTab() {
                     fabricationIncome: parseNum(d.fabrication_income || 0),
                     extraWorksNotApproved: parseNum(d.extra_works_not_approved || 0),
                     advancePaymentRemaining: parseNum(d.advance_payment_remaining || 0),
-                    certifiedWorks: totalCertifiedWorks,
+                    certifiedWorks: parseNum(d.certified_works || 0),
                 });
             }
         } catch (err) {
