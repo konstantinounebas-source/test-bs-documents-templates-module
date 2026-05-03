@@ -121,6 +121,13 @@ export default function IncomeCalculationTab() {
             saveSection('shelter_types', { types: shelterTypes }),
             saveSection('removal', removal),
             saveSection('other_not_claimed', otherNotClaimed),
+            saveSection('summary', {
+                total_value_of_work_performed: totalValueOfWorkPerformed,
+                total_income_received: totalIncomeReceived,
+                total_income_not_earned: totalIncomeNotEarned,
+                advance_payment_remaining: advancePaymentRemaining,
+                expected_total_project_income: totalValueOfWorkPerformed,
+            }),
         ]);
         await loadAll();
         setSaving(false);

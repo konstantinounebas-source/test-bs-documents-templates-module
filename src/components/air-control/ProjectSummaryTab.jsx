@@ -89,7 +89,7 @@ export default function ProjectSummaryTab() {
             const incomeMap = {};
             incomeRecords.forEach(r => { incomeMap[r.section] = r; });
 
-            const totalValueOfWorkPerformed = incomeMap.summary?.data?.total_value_of_work_performed || 0;
+            const totalValueOfWorkPerformed = parseFloat(incomeMap.summary?.data?.total_value_of_work_performed) || 0;
 
             // Recompute Total Income Received the same way IncomeCalculationTab does:
             // totalIncomeReceived = AirControl Advance Payment (sum of advance.aircontrol) + Certified Works (sum of certified ac100+ac60)
