@@ -105,22 +105,19 @@ function ProjectMasterDataContent() {
     }
 
     // Read pre-calculated values from ProjectMasterData
-    const totalTenderProfit = data?.total_tender_profit || {};
-    const projectTotalProfit = data?.project_total_profit || {};
+    const tender = data?.total_tender_profit || {};
+    const tenderIncome = parseNum(tender.income);
+    const tenderCost = parseNum(tender.cost);
+    const tenderIncomeMinusCost = tenderIncome - tenderCost;
+    const tenderJVProfit = parseNum(tender.ac_share);
+    const tenderExpectedProfit = parseNum(tender.expected);
 
-    // Tender Profit values
-    const tenderIncome = parseNum(totalTenderProfit.income);
-    const tenderCost = parseNum(totalTenderProfit.cost);
-    const tenderIncomeCost = tenderIncome - tenderCost;
-    const tenderJVShare = parseNum(totalTenderProfit.ac_share);
-    const tenderExpectedProfit = parseNum(totalTenderProfit.expected);
-
-    // Project Profit values
-    const projectIncome = parseNum(projectTotalProfit.income);
-    const projectCost = parseNum(projectTotalProfit.cost);
-    const projectIncomeCost = projectIncome - projectCost;
-    const projectJVShare = parseNum(projectTotalProfit.ac_share);
-    const projectExpectedProfit = parseNum(projectTotalProfit.expected);
+    const project = data?.project_total_profit || {};
+    const projectIncome = parseNum(project.income);
+    const projectCost = parseNum(project.cost);
+    const projectIncomeMinusCost = projectIncome - projectCost;
+    const projectJVProfit = parseNum(project.ac_share);
+    const projectExpectedProfit = parseNum(project.expected);
 
     return (
         <div className="space-y-6">
@@ -129,11 +126,11 @@ function ProjectMasterDataContent() {
                 <SummaryCard
                     title="Expected Tender Profit"
                     rows={[
-                        { label: 'Income', value: tenderIncome },
-                        { label: 'Cost', value: tenderCost },
-                        { label: 'Income - Cost', value: tenderIncomeCost },
-                        { label: 'JV Profit (70%)', value: tenderJVShare },
-                        { label: 'Expected Profit', value: tenderExpectedProfit, isBold: true },
+                        { label: 'Income', value: fmt(tenderIncome) },
+                        { label: 'Cost', value: fmt(tenderCost) },
+                        { label: 'Income - Cost', value: fmt(tenderIncomeMinusCost) },
+                        { label: 'JV Profit', value: fmt(tenderJVProfit) },
+                        { label: 'Expected Profit', value: fmt(tenderExpectedProfit), isBold: true },
                     ]}
                 />
 
@@ -141,11 +138,11 @@ function ProjectMasterDataContent() {
                 <SummaryCard
                     title="Expected Project Profit"
                     rows={[
-                        { label: 'Income', value: projectIncome },
-                        { label: 'Cost', value: projectCost },
-                        { label: 'Income - Cost', value: projectIncomeCost },
-                        { label: 'JV Profit (75%)', value: projectJVShare },
-                        { label: 'Expected Profit', value: projectExpectedProfit, isBold: true },
+                        { label: 'Income', value: fmt(projectIncome) },
+                        { label: 'Cost', value: fmt(projectCost) },
+                        { label: 'Income - Cost', value: fmt(projectIncomeMinusCost) },
+                        { label: 'JV Profit', value: fmt(projectJVProfit) },
+                        { label: 'Expected Profit', value: fmt(projectExpectedProfit), isBold: true },
                     ]}
                 />
             </div>
